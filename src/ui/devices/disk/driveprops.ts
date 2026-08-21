@@ -15,7 +15,12 @@ import { parseGameList } from "./totalreplayutilities"
 import { getHotReload, setHelpText } from "../../ui_settings"
 import { getDiskImageFromLocalStorage, setDiskImageToLocalStorage } from "../../localstorage"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
-import { createHelpTextSelector, findCatalogHelpFile } from "./helpfile"
+import {
+  createHelpTextSelector,
+  findCatalogHelpFile,
+  getHelpFileUrl,
+  readHelpResponseText
+} from "./helpfile"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -862,16 +867,9 @@ const resetAllDiskDrives = () => {
 
 const loadHelpText = async (helpFile: string) => {
   try {
-    const help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
-    if (!help.ok) {
-      return "<Default>"
-    }
-    let helptext = await help.text()
-    // Hack: when running on localhost, if the file is missing it just
-    // returns the index.html. So just return an empty string instead.
-    if (helptext.startsWith("<!DOCTYPE html>")) {
-      helptext = "<Default>"
-    }
+    const help = await fetch(getHelpFileUrl(helpFile), { credentials: "include", redirect: "error" })
+    let helptext = await readHelpResponseText(help)
+    if (helptext === null) return "<Default>"
     if (helpFile === "TotalReplay.txt") {
       helptext = parseGameList(helptext)
     }

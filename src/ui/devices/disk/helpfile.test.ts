@@ -1,4 +1,9 @@
-import { createHelpTextSelector, findCatalogHelpFile } from "./helpfile"
+import {
+  createHelpTextSelector,
+  findCatalogHelpFile,
+  getHelpFileUrl,
+  readHelpResponseText
+} from "./helpfile"
 import { diskImages, internalDiskResources } from "./diskimages"
 import { newReleases } from "./newreleases"
 import fs from "node:fs"
@@ -34,6 +39,50 @@ describe("findCatalogHelpFile", () => {
     ({ helpFile }) => {
       expect(fs.existsSync(path.resolve(__dirname, "../../../../public/disks", helpFile ?? "")))
         .toBe(true)
+    }
+  )
+})
+
+describe("getHelpFileUrl", () => {
+  it("encodes a declared filesystem filename for an HTTP request", () => {
+    expect(getHelpFileUrl("Eamon 1.txt")).toBe("disks/Eamon%201.txt")
+  })
+})
+
+describe("readHelpResponseText", () => {
+  const response = (ok: boolean, contentType: string | null, body: string) => {
+    const text = jest.fn().mockResolvedValue(body)
+    return {
+      value: {
+        ok,
+        headers: { get: jest.fn().mockReturnValue(contentType) },
+        text
+      } as unknown as Pick<Response, "ok" | "headers" | "text">,
+      text
+    }
+  }
+
+  it("rejects an unsuccessful response without reading its body", async () => {
+    const result = response(false, "text/plain", "Missing")
+
+    await expect(readHelpResponseText(result.value)).resolves.toBeNull()
+    expect(result.text).not.toHaveBeenCalled()
+  })
+
+  it("rejects an HTML fallback without inspecting its body", async () => {
+    const result = response(true, "text/html; charset=utf-8", "<!DOCTYPE html>")
+
+    await expect(readHelpResponseText(result.value)).resolves.toBeNull()
+    expect(result.text).not.toHaveBeenCalled()
+  })
+
+  it.each(["text/plain; charset=utf-8", null])(
+    "reads Help text with content type %p",
+    async (contentType) => {
+      const result = response(true, contentType, "Disk Help")
+
+      await expect(readHelpResponseText(result.value)).resolves.toBe("Disk Help")
+      expect(result.text).toHaveBeenCalledTimes(1)
     }
   )
 })
