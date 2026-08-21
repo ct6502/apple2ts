@@ -304,23 +304,36 @@ export function listMCPTools(): Array<{
     },
     {
       name: "load_binary",
-      description: "Loads a binary file directly into memory",
+      description: "Loads bytes directly into memory without mounting disk media, and optionally resets and runs them",
       inputSchema: {
         type: "object",
         properties: {
           data: {
             type: "array",
-            items: { type: "number" },
+            items: {
+              type: "integer",
+              minimum: 0,
+              maximum: 0xFF,
+            },
+            minItems: 1,
             description: "Binary data as array of bytes",
           },
           address: {
-            type: "number",
-            description: "Starting address (default: 0x300)",
+            type: "integer",
+            description: "Starting address (default: 0x300); the complete block must fit in $0000-$BFFF",
+            minimum: 0,
+            maximum: 0xFFFF,
             default: 0x300,
+          },
+          entryAddress: {
+            type: "integer",
+            description: "Execution address when run is true (default: starting address)",
+            minimum: 0,
+            maximum: 0xFFFF,
           },
           run: {
             type: "boolean",
-            description: "Whether to execute after loading",
+            description: "Whether to reset the emulator and execute after loading",
             default: false,
           },
         },
@@ -435,4 +448,3 @@ export function listMCPTools(): Array<{
     },
   ]
 }
-

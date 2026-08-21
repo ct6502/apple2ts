@@ -726,6 +726,18 @@ export const setMemoryBlock = (addr: number, data: Uint8Array) => {
   memory.set(data, offset)
 }
 
+export const setMappedMemoryBlock = (addr: number, data: Uint8Array) => {
+  let dataOffset = 0
+  while (dataOffset < data.length) {
+    const currentAddress = addr + dataOffset
+    const pageOffset = currentAddress & 0xFF
+    const pageLength = Math.min(0x100 - pageOffset, data.length - dataOffset)
+    const memoryOffset = addressSetTable[currentAddress >>> 8] + pageOffset
+    memory.set(data.subarray(dataOffset, dataOffset + pageLength), memoryOffset)
+    dataOffset += pageLength
+  }
+}
+
 export const matchMemory = (addr: number, data: number[]) => {
   for (let i = 0; i < data.length; i++) {
    if (memGet(addr + i, false) !== data[i]) return false

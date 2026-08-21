@@ -6,11 +6,11 @@
 import {
   passKeypress,
   passKeyRelease,
-  passSetBinaryBlock,
   passPasteText,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
 } from "../main2worker"
+import { getBinaryLoadError, loadBinary, runBinary } from "../binaryload"
 import {
   handleEjectDisk,
   handleSetDiskOrFileFromBuffer,
@@ -223,30 +223,52 @@ export function toolSendText(text: string): MCPToolResult {
 }
 
 /**
- * Loads a binary file directly into memory
+ * Loads bytes directly into memory
  * @param data Binary data as array of bytes
  * @param address Starting address (default: 0x300)
- * @param run Whether to execute after loading (default: false)
+ * @param run Whether to reset and execute after loading (default: false)
+ * @param entryAddress Execution address (default: starting address)
  */
-export function toolLoadBinary(data: number[], address = 0x300, run = false): MCPToolResult {
+export function toolLoadBinary(data: number[], address = 0x300, run = false, entryAddress = address): MCPToolResult {
   try {
-    if (address < 0 || address > 0xFFFF) {
+    if (!Array.isArray(data)) {
       return {
         success: false,
-        error: `Invalid address: ${address}. Must be 0-65535`,
+        error: "Binary data must be an array of bytes",
+      }
+    }
+
+    if (data.some((byte) => !Number.isInteger(byte) || byte < 0 || byte > 0xFF)) {
+      return {
+        success: false,
+        error: "Binary data values must be integers from 0 to 255",
       }
     }
 
     const uint8Data = new Uint8Array(data)
-    passSetBinaryBlock(address, uint8Data, run)
+    const loadError = getBinaryLoadError(address, uint8Data, run ? entryAddress : null)
+    if (loadError) {
+      return {
+        success: false,
+        error: loadError,
+      }
+    }
+    if (run) {
+      runBinary(address, uint8Data, entryAddress)
+    } else {
+      loadBinary(address, uint8Data)
+    }
 
     return {
       success: true,
       data: {
         address: address,
+        entryAddress: run ? entryAddress : null,
         size: data.length,
         run: run,
-        message: `Binary loaded at $${address.toString(16).padStart(4, "0").toUpperCase()}`,
+        message: run
+          ? `Binary accepted for execution at $${entryAddress.toString(16).padStart(4, "0").toUpperCase()}`
+          : `Binary accepted for loading at $${address.toString(16).padStart(4, "0").toUpperCase()}`,
       },
     }
   } catch (error) {

@@ -298,6 +298,17 @@ type SetMemoryBlock = {
   run: boolean
 }
 
+type RunBinary = {
+  address: number,
+  data: Uint8Array,
+  entryAddress: number
+}
+
+type LoadBinary = {
+  address: number,
+  data: Uint8Array
+}
+
 type AudioDevice = {
   context: AudioContext,
   element: HTMLAudioElement,

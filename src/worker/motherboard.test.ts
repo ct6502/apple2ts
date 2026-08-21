@@ -1,17 +1,118 @@
 import { BREAKPOINT_RESULT, breakpointMap, doSetBreakpoints, hitBreakpoint, processInstruction } from "./cpu6502"
 import { getHires, memGet, memory, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
-import { hiresLineToAddress, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
+import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSpeedMode, getExternalMachineState, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doLoadBinary, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSpeedMode, getExternalMachineState, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
+import { getCurrentDriveState } from "./devices/drivestate"
 
 // Make sure we don't accidentally leave debug mode on.
 test("debugMode", () => {
   expect(TEST_DEBUG).toEqual(false)
   expect(TEST_GRAPHICS).toEqual(false)
+})
+
+test("run binary resets hardware before loading and starting the program", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const drive = getCurrentDriveState()
+  const previousFilename = drive.filename
+  const previousMotorRunning = drive.motorRunning
+
+  try {
+    drive.filename = "mounted.woz"
+    drive.motorRunning = true
+    s6502.Accum = 0x99
+
+    // Keep execution at the distinct entry address after the first refresh.
+    const program = new Uint8Array([0xEA, 0x4C, 0x01, 0x60])
+    doRunBinary(0x6000, program, 0x6001)
+
+    expect(memory.slice(0x6000, 0x6004)).toEqual(program)
+    expect(s6502.PC).toEqual(0x6001)
+    expect(s6502.Accum).toEqual(0)
+    expect(getExternalMachineState().runMode).toEqual(RUN_MODE.RUNNING)
+    expect(drive.motorRunning).toEqual(false)
+    expect(drive.filename).toEqual("mounted.woz")
+  } finally {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    resetCpuSpeedForTesting()
+    drive.filename = previousFilename
+    drive.motorRunning = previousMotorRunning
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
+})
+
+test("load binary changes memory without changing execution or device state", () => {
+  setIsTesting()
+  const drive = getCurrentDriveState()
+  const previousMotorRunning = drive.motorRunning
+  const previousPC = s6502.PC
+  const previousAccum = s6502.Accum
+  const previousRunMode = getExternalMachineState().runMode
+
+  try {
+    s6502.PC = 0x4321
+    s6502.Accum = 0x99
+    drive.motorRunning = true
+    const program = new Uint8Array([0xEA, 0x60])
+
+    doLoadBinary(0x6000, program)
+
+    expect(memory.slice(0x6000, 0x6002)).toEqual(program)
+    expect(s6502.PC).toEqual(0x4321)
+    expect(s6502.Accum).toEqual(0x99)
+    expect(getExternalMachineState().runMode).toEqual(previousRunMode)
+    expect(drive.motorRunning).toEqual(true)
+  } finally {
+    s6502.PC = previousPC
+    s6502.Accum = previousAccum
+    drive.motorRunning = previousMotorRunning
+  }
+})
+
+test("load binary follows auxiliary-memory mappings across page boundaries", () => {
+  const previousAltZp = SWITCHES.ALTZP.isSet
+  const previousPage2 = SWITCHES.PAGE2.isSet
+  const previousRamWrite = SWITCHES.RAMWRT.isSet
+  const previousStore80 = SWITCHES.STORE80.isSet
+  const touchedAddresses = [
+    RamWorksMemoryStart + 0x01FF,
+    0x0200,
+    0x03FF,
+    RamWorksMemoryStart + 0x0400,
+  ]
+  const previousMemory = touchedAddresses.map((address) => memory[address])
+
+  try {
+    SWITCHES.ALTZP.isSet = true
+    SWITCHES.RAMWRT.isSet = false
+    updateAddressTables()
+    doLoadBinary(0x01FF, new Uint8Array([0xA1, 0xB2]))
+    expect(memory[RamWorksMemoryStart + 0x01FF]).toEqual(0xA1)
+    expect(memory[0x0200]).toEqual(0xB2)
+
+    SWITCHES.ALTZP.isSet = false
+    SWITCHES.STORE80.isSet = true
+    SWITCHES.PAGE2.isSet = true
+    updateAddressTables()
+    doLoadBinary(0x03FF, new Uint8Array([0xC3, 0xD4]))
+    expect(memory[0x03FF]).toEqual(0xC3)
+    expect(memory[RamWorksMemoryStart + 0x0400]).toEqual(0xD4)
+  } finally {
+    SWITCHES.ALTZP.isSet = previousAltZp
+    SWITCHES.PAGE2.isSet = previousPage2
+    SWITCHES.RAMWRT.isSet = previousRamWrite
+    SWITCHES.STORE80.isSet = previousStore80
+    touchedAddresses.forEach((address, index) => {
+      memory[address] = previousMemory[index]
+    })
+    updateAddressTables()
+  }
 })
 
 test("processInstruction", () => {

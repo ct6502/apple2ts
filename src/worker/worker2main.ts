@@ -1,5 +1,5 @@
 import { doSetRunMode, doSetSpeedMode,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetState6502, doTakeSnapshot, doSetPastedText, forceSoftSwitches,
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doLoadBinary, doRunBinary, doSetIsDebugging, doSetState6502, doTakeSnapshot, doSetPastedText, forceSoftSwitches,
   forceVideo7Override,
   doSetMemory,
   doSetMachineName,
@@ -247,6 +247,16 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.SET_BINARY_BLOCK: {
         const memBlock = e.data.payload as SetMemoryBlock
         doSetBinaryBlock(memBlock.address, memBlock.data, memBlock.run)
+        break
+      }
+      case MSG_MAIN.RUN_BINARY: {
+        const binary = e.data.payload as RunBinary
+        doRunBinary(binary.address, binary.data, binary.entryAddress)
+        break
+      }
+      case MSG_MAIN.LOAD_BINARY: {
+        const binary = e.data.payload as LoadBinary
+        doLoadBinary(binary.address, binary.data)
         break
       }
       case MSG_MAIN.SET_CYCLECOUNT:

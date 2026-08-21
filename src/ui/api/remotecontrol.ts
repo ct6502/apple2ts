@@ -27,8 +27,8 @@ import {
   passKeypress,
   passMouseEvent,
   passPasteText,
-  passSetBinaryBlock,
   passSetDebug,
+  passSetBinaryBlock,
   passSetState6502,
   passSetMemory,
   passSetRunMode,
@@ -40,6 +40,7 @@ import {
   passTimeTravelSnapshot,
   passSetShowDebugTab,
 } from "../main2worker"
+import { getBinaryLoadError, loadBinary, runBinary } from "../binaryload"
 import {
   setPreferenceBreakpoints,
   setPreferenceColorMode,
@@ -567,9 +568,61 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       }
       const address = Number(payload.address ?? 0x300)
       const autoRun = payload.autoRun !== false
-      passSetBinaryBlock(address, decodeBase64(dataBase64), autoRun)
+      const entryAddress = Number(payload.entryAddress ?? address)
+      const data = decodeBase64(dataBase64)
+      const error = getBinaryLoadError(
+        address,
+        data,
+        autoRun ? entryAddress : null,
+        autoRun,
+      )
+      if (error) throw new Error(error)
+      // Deprecated compatibility adapter. Use loadBinary or runBinary.
+      if (autoRun) {
+        runBinary(address, data, entryAddress)
+      } else {
+        passSetBinaryBlock(address, data)
+      }
       return {
+        deprecated: true,
+        replacementAction: autoRun ? "runBinary" : "loadBinary",
         status: collectStatus(),
+      }
+    }
+
+    case "loadBinary": {
+      const dataBase64 = String(payload.dataBase64 || "")
+      if (!dataBase64) {
+        throw new Error("dataBase64 is required")
+      }
+      const address = Number(payload.address ?? 0x300)
+      const data = decodeBase64(dataBase64)
+      const error = getBinaryLoadError(address, data, null)
+      if (error) throw new Error(error)
+      loadBinary(address, data)
+      return {
+        accepted: true,
+        address,
+        size: data.length,
+      }
+    }
+
+    case "runBinary": {
+      const dataBase64 = String(payload.dataBase64 || "")
+      if (!dataBase64) {
+        throw new Error("dataBase64 is required")
+      }
+      const address = Number(payload.address ?? 0x300)
+      const entryAddress = Number(payload.entryAddress ?? address)
+      const data = decodeBase64(dataBase64)
+      const error = getBinaryLoadError(address, data, entryAddress)
+      if (error) throw new Error(error)
+      runBinary(address, data, entryAddress)
+      return {
+        accepted: true,
+        address,
+        entryAddress,
+        size: data.length,
       }
     }
 
