@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { COLOR_MODE } from "../../common/utility"
+import { COLOR_MODE, DEFAULT_SLOT_CONFIG } from "../../common/utility"
 import {
   setPreferenceBoolean,
   setPreferenceColorMode,
@@ -20,6 +20,8 @@ import {
   getLowercaseMode,
   getShowScanlines,
   getUseOpenAppleKey,
+  setColorMode,
+  setUIStateBoolean,
 } from "../ui_settings"
 import { audioEnable, getAudioStatus } from "../devices/audio/speaker"
 import { changeSerialMode, getSerialMode, getSerialNames } from "../devices/serial/serialhub"
@@ -37,9 +39,24 @@ import "./retrocontrolpanel.css"
 type RetroMenuItem = {
   label: string
   value?: string
-  selected?: boolean
   action?: () => void
   children?: RetroMenuItem[]
+  options?: RetroMenuOption[]
+  optionIndex?: number
+  defaultIndex?: number
+}
+
+type RetroMenuOption = {
+  label: string
+  action?: () => void
+  preview?: () => void
+}
+
+type RetroMenuFrame = {
+  title: string
+  items: RetroMenuItem[]
+  originalValues: number[]
+  values: number[]
 }
 
 type DiskLoadDialog = {
@@ -48,8 +65,11 @@ type DiskLoadDialog = {
 }
 
 const mouseTextDown = String.fromCodePoint(0x2193)
+const mouseTextLeft = String.fromCodePoint(0x2190)
+const mouseTextRight = String.fromCodePoint(0x2192)
 const mouseTextUp = String.fromCodePoint(0x2191)
 const mouseTextReturn = String.fromCodePoint(0x21B5)
+const checkmark = String.fromCodePoint(0x2713)
 
 const RetroBorder = ({ className, separatorRow }: {
   className: string
@@ -68,6 +88,7 @@ const RetroBorder = ({ className, separatorRow }: {
 )
 
 const colorOptions = ["Color", "Color (no fringe)", "Green", "Amber", "White", "Inverse"]
+const colorModeClasses = ["color", "color", "green", "amber", "white", "inverse"]
 const speedOptions = ["Snail", "Slow", "Normal", "2 MHz", "3 MHz", "Fast", "Warp"]
 const speedModes = [-2, -1, 0, 1, 2, 3, 4]
 const ramOptions = [64, 512, 1024, 4096, 8192]
@@ -86,22 +107,52 @@ const cardLabels: Record<SLOT_CARD_ID, string> = {
   smartport: "SmartPort drive",
 }
 
-const choiceItems = (
+const choiceItem = (
+  label: string,
   labels: string[],
   currentIndex: number,
   select: (index: number) => void,
-): RetroMenuItem[] => labels.map((label, index) => ({
+  defaultIndex?: number,
+  preview?: (index: number) => void,
+): RetroMenuItem => ({
   label,
-  selected: index === currentIndex,
-  action: () => select(index),
-}))
-
-const toggleItem = (label: string, enabled: boolean, action: () => void): RetroMenuItem => ({
-  label,
-  value: enabled ? "On" : "Off",
-  selected: enabled,
-  action,
+  options: labels.map((option, index) => ({
+    label: option,
+    action: () => select(index),
+    preview: preview ? () => preview(index) : undefined,
+  })),
+  optionIndex: currentIndex,
+  defaultIndex: defaultIndex !== undefined && defaultIndex >= 0 ? defaultIndex : undefined,
 })
+
+const toggleItem = (
+  label: string,
+  enabled: boolean,
+  action: (enabled: boolean) => void,
+  preview?: (enabled: boolean) => void,
+) => (
+  choiceItem(
+    label,
+    ["Off", "On"],
+    enabled ? 1 : 0,
+    index => action(index === 1),
+    0,
+    preview ? index => preview(index === 1) : undefined,
+  )
+)
+
+const createMenuFrame = (title: string, items: RetroMenuItem[]): RetroMenuFrame => {
+  const values = items.map(item => item.optionIndex ?? -1)
+  return { title, items, originalValues: values, values }
+}
+
+const restoreMenuFramePreview = (frame: RetroMenuFrame) => {
+  frame.items.forEach((item, index) => {
+    if (frame.values[index] !== frame.originalValues[index]) {
+      item.options?.[frame.originalValues[index]]?.preview?.()
+    }
+  })
+}
 
 const getRetroMenu = (
   displayProps: DisplayProps,
@@ -191,21 +242,34 @@ const getRetroMenu = (
       label: "Display",
       value: colorOptions[getColorMode()],
       children: [
-        ...choiceItems(colorOptions, getColorMode(), index => {
+        choiceItem("Color", colorOptions, getColorMode(), index => {
           setPreferenceColorMode(index as COLOR_MODE)
           updateDisplay()
-        }),
-        toggleItem("Scanlines", getShowScanlines(), () => {
-          setPreferenceBoolean("showScanlines", !getShowScanlines())
-          document.body.style.setProperty("--scanlines-display", getShowScanlines() ? "block" : "none")
+        }, COLOR_MODE.COLOR, index => {
+          setColorMode(index as COLOR_MODE)
           updateDisplay()
         }),
-        toggleItem("Ghosting", getGhosting(), () => {
-          setPreferenceBoolean("ghosting", !getGhosting())
+        toggleItem("Scanlines", getShowScanlines(), enabled => {
+          setPreferenceBoolean("showScanlines", enabled)
+          document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
+          updateDisplay()
+        }, enabled => {
+          setUIStateBoolean("showScanlines", enabled)
+          document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
           updateDisplay()
         }),
-        toggleItem("CRT distortion", getCrtDistortion(), () => {
-          setPreferenceBoolean("crtDistortion", !getCrtDistortion())
+        toggleItem("Ghosting", getGhosting(), enabled => {
+          setPreferenceBoolean("ghosting", enabled)
+          updateDisplay()
+        }, enabled => {
+          setUIStateBoolean("ghosting", enabled)
+          updateDisplay()
+        }),
+        toggleItem("CRT distortion", getCrtDistortion(), enabled => {
+          setPreferenceBoolean("crtDistortion", enabled)
+          updateDisplay()
+        }, enabled => {
+          setUIStateBoolean("crtDistortion", enabled)
           updateDisplay()
         }),
       ],
@@ -213,34 +277,34 @@ const getRetroMenu = (
     {
       label: "Sound",
       value: audioEnabled ? "On" : "Off",
-      children: choiceItems(["Off", "On"], audioEnabled ? 1 : 0, index => {
+      children: [choiceItem("Sound", ["Off", "On"], audioEnabled ? 1 : 0, index => {
         audioEnable(index === 1)
         updateDisplay()
-      }),
+      })],
     },
     {
       label: "System Speed",
       value: speedOptions[speedModes.indexOf(handleGetSpeedMode())],
-      children: choiceItems(speedOptions, speedModes.indexOf(handleGetSpeedMode()), index => {
+      children: [choiceItem("Speed", speedOptions, speedModes.indexOf(handleGetSpeedMode()), index => {
         setPreferenceSpeedMode(speedModes[index])
         updateDisplay()
-      }),
+      }, speedModes.indexOf(0))],
     },
     {
       label: "Clock",
       value: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      children: [{ label: "Host system clock", selected: true }],
+      children: [choiceItem("Clock", ["Host system clock"], 0, () => { }, 0)],
     },
     {
       label: "Keyboard",
       value: getLowercaseMode() ? "Lowercase" : "Caps Lock",
       children: [
-        toggleItem("Lowercase input", getLowercaseMode(), () => {
-          setPreferenceBoolean("lowercaseMode", !getLowercaseMode())
+        toggleItem("Lowercase input", getLowercaseMode(), enabled => {
+          setPreferenceBoolean("lowercaseMode", enabled)
           updateDisplay()
         }),
-        toggleItem("Open Apple key", getUseOpenAppleKey(), () => {
-          setPreferenceBoolean("useOpenAppleKey", !getUseOpenAppleKey())
+        toggleItem("Open Apple key", getUseOpenAppleKey(), enabled => {
+          setPreferenceBoolean("useOpenAppleKey", enabled)
           updateDisplay()
         }),
       ],
@@ -248,62 +312,63 @@ const getRetroMenu = (
     {
       label: "Slots",
       value: `${slotNumbers.filter(slot => slotConfig[slot] !== "none").length} configured`,
-      children: slotNumbers.map(slot => ({
-        label: `Slot ${slot}`,
-        value: cardLabels[slotConfig[slot]],
-        children: slotOptions[slot].map(card => ({
-          label: cardLabels[card],
-          selected: slotConfig[slot] === card,
-          action: () => selectSlotCard(slot, card),
-        })),
-      })),
+      children: slotNumbers.map(slot => choiceItem(
+        `Slot ${slot}`,
+        slotOptions[slot].map(card => cardLabels[card]),
+        slotOptions[slot].indexOf(slotConfig[slot]),
+        index => selectSlotCard(slot, slotOptions[slot][index]),
+        slotOptions[slot].indexOf(
+          slot === 3 && currentMachine === "APPLE2P" ? "videoterm" : DEFAULT_SLOT_CONFIG[slot],
+        ),
+      )),
     },
     {
       label: "Printer Port",
       value: serialNames[serialMode],
-      children: choiceItems(serialNames, serialMode, index => {
+      children: [choiceItem("Port", serialNames, serialMode, index => {
         changeSerialMode(index)
         updateDisplay()
-      }),
+      }, 0)],
     },
     {
       label: "Modem Port",
       value: serialNames[serialMode],
-      children: choiceItems(serialNames, serialMode, index => {
+      children: [choiceItem("Port", serialNames, serialMode, index => {
         changeSerialMode(index)
         updateDisplay()
-      }),
+      }, 0)],
     },
     {
       label: "RAM Disk",
       value: currentRam >= 1024 ? `${currentRam / 1024} MB` : `${currentRam} KB`,
-      children: ramOptions.map(size => ({
-        label: size >= 1024 ? `${size / 1024} MB` : `${size} KB`,
-        selected: size === currentRam,
-        action: () => {
-          setPreferenceRamWorks(size)
+      children: [choiceItem(
+        "Size",
+        ramOptions.map(size => size >= 1024 ? `${size / 1024} MB` : `${size} KB`),
+        ramOptions.indexOf(currentRam),
+        index => {
+          setPreferenceRamWorks(ramOptions[index])
           updateDisplay()
         },
-      })),
+        ramOptions.indexOf(64),
+      )],
     },
     {
       label: "Mouse",
       value: mouseSlot === 0 ? "Off" : `Slot ${mouseSlot}`,
-      children: [
-        {
-          label: "Off",
-          selected: mouseSlot === 0,
-          action: () => {
-            const nextConfig = { ...handleGetSlotConfig() }
-            if (nextConfig[4] === "mouse") nextConfig[4] = "none"
-            if (nextConfig[5] === "mouse") nextConfig[5] = "none"
-            setPreferenceSlotConfig(nextConfig)
-            updateDisplay()
-          },
-        },
-        { label: "Slot 4", selected: mouseSlot === 4, action: () => selectSlotCard(4, "mouse") },
-        { label: "Slot 5", selected: mouseSlot === 5, action: () => selectSlotCard(5, "mouse") },
-      ],
+      children: [choiceItem("Mouse", ["Off", "Slot 4", "Slot 5"], [0, 4, 5].indexOf(mouseSlot), index => {
+        const slot = [0, 4, 5][index]
+        if (slot === 0) {
+          const nextConfig = { ...handleGetSlotConfig() }
+          if (nextConfig[4] === "mouse") nextConfig[4] = "none"
+          if (nextConfig[5] === "mouse") nextConfig[5] = "none"
+          setPreferenceSlotConfig(nextConfig)
+          updateDisplay()
+        } else {
+          selectSlotCard(slot as 4 | 5, "mouse")
+        }
+      }, [0, 4, 5].indexOf(
+        DEFAULT_SLOT_CONFIG[4] === "mouse" ? 4 : DEFAULT_SLOT_CONFIG[5] === "mouse" ? 5 : 0,
+      ))],
     },
     { label: "Quit", action: close },
   ]
@@ -312,7 +377,7 @@ const getRetroMenu = (
 const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [diskLoadDialog, setDiskLoadDialog] = useState<DiskLoadDialog | null>(null)
-  const [menuStack, setMenuStack] = useState<RetroMenuItem[][]>([])
+  const [menuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const close = () => setIsOpen(false)
@@ -321,7 +386,13 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
     setDiskLoadDialog(dialog)
   }
   const rootMenu = getRetroMenu(displayProps, close, openDiskDialog)
-  const currentMenu = menuStack.length > 0 ? menuStack[menuStack.length - 1] : rootMenu
+  const currentFrame = menuStack[menuStack.length - 1]
+  const currentMenu = currentFrame?.items ?? rootMenu
+  const panelEffects = [
+    `retro-color-${colorModeClasses[getColorMode()]}`,
+    getGhosting() ? "retro-effect-ghosting" : "",
+    getCrtDistortion() ? "retro-effect-crt" : "",
+  ].filter(Boolean).join(" ")
 
   useEffect(() => {
     if (!isOpen) return
@@ -334,6 +405,7 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
         event.preventDefault()
         event.stopPropagation()
+        menuStack.toReversed().forEach(restoreMenuFramePreview)
         setNow(new Date())
         setIsOpen(open => !open)
         setMenuStack([])
@@ -347,24 +419,45 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
         event.stopPropagation()
         const direction = event.key === "ArrowUp" ? -1 : 1
         setSelectedIndex(index => (index + direction + currentMenu.length) % currentMenu.length)
+      } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        const item = currentMenu[selectedIndex]
+        const options = item.options
+        if (currentFrame && options && options.length > 0) {
+          event.preventDefault()
+          event.stopPropagation()
+          const direction = event.key === "ArrowLeft" ? -1 : 1
+          const nextValue = (currentFrame.values[selectedIndex] + direction + options.length) % options.length
+          options[nextValue].preview?.()
+          setMenuStack(stack => stack.map((frame, index) => {
+            if (index !== stack.length - 1) return frame
+            const values = [...frame.values]
+            values[selectedIndex] = nextValue
+            return { ...frame, values }
+          }))
+        }
       } else if (event.key === "Enter") {
         event.preventDefault()
         event.stopPropagation()
         const item = currentMenu[selectedIndex]
         if (item.children) {
-          setMenuStack(stack => [...stack, item.children ?? []])
+          setMenuStack(stack => [...stack, createMenuFrame(item.label, item.children ?? [])])
+          setSelectedIndex(0)
+        } else if (currentFrame && currentFrame.items.some(frameItem => frameItem.options)) {
+          currentFrame.items.forEach((frameItem, index) => {
+            if (currentFrame.values[index] !== currentFrame.originalValues[index]) {
+              frameItem.options?.[currentFrame.values[index]]?.action?.()
+            }
+          })
+          setMenuStack(stack => stack.slice(0, -1))
           setSelectedIndex(0)
         } else {
           item.action?.()
-          if (menuStack.length > 0) {
-            setMenuStack([])
-            setSelectedIndex(0)
-          }
         }
-      } else if (event.key === "Escape" || event.key === "ArrowLeft") {
+      } else if (event.key === "Escape") {
         event.preventDefault()
         event.stopPropagation()
         if (menuStack.length > 0) {
+          restoreMenuFramePreview(currentFrame)
           setMenuStack(stack => stack.slice(0, -1))
           setSelectedIndex(0)
         }
@@ -384,16 +477,23 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
 
     window.addEventListener("keydown", handleKeyDown, true)
     return () => window.removeEventListener("keydown", handleKeyDown, true)
-  }, [currentMenu, isOpen, menuStack.length, selectedIndex])
+  }, [currentFrame, currentMenu, isOpen, menuStack, selectedIndex])
 
   return (
     <main className={`retro-shell${isOpen ? " menu-open" : ""}`}>
       <Apple2Canvas {...displayProps} />
       {isOpen && (
-        <section className="retro-panel scanline-gradient" role="dialog" aria-label="Apple2TS control panel">
+        <section
+          className={`retro-panel scanline-gradient ${panelEffects}`}
+          role="dialog"
+          aria-label="Apple2TS control panel"
+        >
           <div className="retro-window">
             <RetroBorder className="retro-outer-border" separatorRow={2} />
-            <header className="retro-title"><span>{"Apple2TS "}&#8198;</span></header>
+            <header className={`retro-title${currentFrame ? " submenu-open" : ""}`}>
+              <span>{"Apple2TS "}&#8198;</span>
+            </header>
+            {currentFrame && <div className="retro-submenu-title"><span>{currentFrame.title}</span></div>}
             {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString()} ${now.toLocaleDateString()}`}>
               <RetroBorder className="retro-clock-border" />
               <time>{now.toLocaleTimeString([], {
@@ -407,21 +507,39 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
                 year: "2-digit",
               })}</time>
             </div>}
-            <div className={`retro-menu${menuStack.length === 0 ? " retro-root-menu" : ""}`} role="menu">
+            <div className={`retro-menu${currentFrame ? " retro-submenu-menu" : " retro-root-menu"}`} role="menu">
               {currentMenu.map((item, index) => (
-                <div
-                  className={`retro-menu-item${selectedIndex === index ? " selected" : ""}`}
-                  key={item.label}
-                  role="menuitem"
-                  aria-current={selectedIndex === index ? "true" : undefined}
-                >
-                  <span>{item.selected ? "*" : " "}{item.label}</span>
-                </div>
+                (() => {
+                  const valueIndex = currentFrame?.values[index] ?? item.optionIndex ?? -1
+                  const option = item.options?.[valueIndex]
+                  const isDefault = item.defaultIndex !== undefined && valueIndex === item.defaultIndex
+                  return (
+                    <div
+                      className={`retro-menu-item${selectedIndex === index ? " selected" : ""}`}
+                      key={item.label}
+                      role="menuitem"
+                      aria-current={selectedIndex === index ? "true" : undefined}
+                    >
+                      {currentFrame && <span className="retro-menu-check">
+                        {isDefault ? checkmark : " "}
+                      </span>}
+                      <span className="retro-menu-name">{item.label}</span>
+                      {option && <span className="retro-menu-value">: {option.label}</span>}
+                    </div>
+                  )
+                })()
               ))}
             </div>
-            <footer>
-              <span>{" Select: "}<i className="retro-mousetext">{mouseTextDown} {mouseTextUp}</i></span>
-              <span>{"Open: "}<i className="retro-mousetext">{mouseTextReturn}</i>{" "}</span>
+            <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
+              <span className="retro-footer-select">{" Select: "}<i className="retro-mousetext">
+                {currentFrame
+                  ? <>{mouseTextLeft} {mouseTextRight} {mouseTextUp} {mouseTextDown}</>
+                  : <>{mouseTextDown} {mouseTextUp}</>}
+              </i></span>
+              {currentFrame && <span className="retro-footer-cancel">Cancel:Esc</span>}
+              <span className="retro-footer-action">
+                {currentFrame ? "Save: " : "Open: "}<i className="retro-mousetext">{mouseTextReturn}</i>{" "}
+              </span>
             </footer>
           </div>
         </section>

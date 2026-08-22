@@ -30,15 +30,17 @@
 }
 
 .retro-panel {
-  --retro-cell-height: min(calc(100vh / 24), calc(100vw / 35));
-  --retro-row-height: calc(100vh / 24);
+  --retro-cell-height: min(calc(100vh / 30), calc(100vw / 40.25));
+  --retro-row-height: var(--retro-cell-height);
   --retro-border-width: max(1px, calc(var(--retro-cell-height) / 8));
+  --retro-background: #2022ff;
+  --retro-foreground: #fff;
   --scanlines-height: 100%;
   --scanlines-left: 0;
   --scanlines-top: 0;
   --scanlines-width: 100%;
-  background: #2022ff;
-  color: #fff;
+  background: var(--retro-background);
+  color: var(--retro-foreground);
   display: grid;
   font-size: var(--retro-cell-height);
   inset: 0;
@@ -48,14 +50,43 @@
   z-index: 10000;
 }
 
+.retro-panel.retro-color-green {
+  --retro-background: #000;
+  --retro-foreground: #39ff14;
+}
+
+.retro-panel.retro-color-amber {
+  --retro-background: #000;
+  --retro-foreground: #ffa500;
+}
+
+.retro-panel.retro-color-white {
+  --retro-background: #000;
+  --retro-foreground: #f0f0f0;
+}
+
+.retro-panel.retro-color-inverse {
+  --retro-background: #f0f0f0;
+  --retro-foreground: #000;
+}
+
+.retro-panel.retro-effect-ghosting .retro-window {
+  text-shadow: 0.08em 0 color-mix(in srgb, var(--retro-foreground) 45%, transparent);
+}
+
+.retro-panel.retro-effect-crt .retro-window {
+  transform: perspective(100vh) rotateX(0.4deg) scale(0.985, 0.97);
+}
+
 .retro-window {
+  align-self: center;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: repeat(40, 1fr);
-  grid-template-rows: repeat(24, var(--retro-row-height));
-  height: 100vh;
+  grid-template-columns: repeat(46, 1fr);
+  grid-template-rows: repeat(30, var(--retro-row-height));
+  height: calc(30 * var(--retro-row-height));
   justify-self: center;
-  width: min(100vw, calc(35 * var(--retro-cell-height)));
+  width: min(100vw, calc(40.25 * var(--retro-cell-height)));
 }
 
 .retro-mousetext {
@@ -79,8 +110,8 @@
 
 .retro-border::before {
   bottom: 0;
-  border-bottom: var(--retro-border-width) solid #fff;
-  border-top: var(--retro-border-width) solid #fff;
+  border-bottom: var(--retro-border-width) solid var(--retro-foreground);
+  border-top: var(--retro-border-width) solid var(--retro-foreground);
   left: var(--retro-border-width);
   right: var(--retro-border-width);
   top: 0;
@@ -88,15 +119,15 @@
 
 .retro-border::after {
   bottom: var(--retro-border-width);
-  border-left: var(--retro-border-width) solid #fff;
-  border-right: var(--retro-border-width) solid #fff;
+  border-left: var(--retro-border-width) solid var(--retro-foreground);
+  border-right: var(--retro-border-width) solid var(--retro-foreground);
   left: 0;
   right: 0;
   top: var(--retro-border-width);
 }
 
 .retro-border-separator {
-  background: #fff;
+  background: var(--retro-foreground);
   height: var(--retro-border-width);
   left: 0;
   position: absolute;
@@ -104,17 +135,17 @@
 }
 
 .retro-outer-border {
-  grid-column: 4 / 38;
-  grid-row: 4 / 22;
+  grid-column: 4 / 44;
+  grid-row: 4 / 27;
 }
 
 .retro-title {
-  background: #fff;
+  background: var(--retro-foreground);
   box-sizing: border-box;
-  color: #2022ff;
+  color: var(--retro-background);
   font-size: inherit;
   font-weight: normal;
-  grid-column: 5 / 38;
+  grid-column: 5 / 44;
   grid-row: 4;
   height: calc(var(--retro-row-height) + var(--retro-border-width));
   line-height: 1;
@@ -125,10 +156,18 @@
   white-space: nowrap;
 }
 
+.retro-title.submenu-open {
+  background: transparent;
+}
+
+.retro-title.submenu-open::after {
+  display: none;
+}
+
 .retro-title span {
-  background: #2022ff;
+  background: var(--retro-background);
   box-sizing: border-box;
-  color: #fff;
+  color: var(--retro-foreground);
   display: inline-block;
   height: var(--retro-row-height);
   line-height: 1;
@@ -139,7 +178,7 @@
 }
 
 .retro-title::after {
-  background: #2022ff;
+  background: var(--retro-background);
   content: "";
   height: var(--retro-border-width);
   position: absolute;
@@ -148,10 +187,34 @@
   width: var(--retro-border-width);
 }
 
+.retro-submenu-title {
+  background: var(--retro-foreground);
+  border-bottom: var(--retro-border-width) solid var(--retro-foreground);
+  border-left: var(--retro-border-width) solid var(--retro-foreground);
+  border-top: var(--retro-border-width) solid var(--retro-foreground);
+  box-sizing: border-box;
+  grid-column: 4 / 44;
+  grid-row: 6;
+  height: calc(var(--retro-row-height) + var(--retro-border-width) + var(--retro-border-width));
+  line-height: 1;
+  overflow: hidden;
+  position: relative;
+  white-space: nowrap;
+}
+
+.retro-submenu-title span {
+  background: var(--retro-background);
+  box-sizing: border-box;
+  color: var(--retro-foreground);
+  display: inline-block;
+  height: var(--retro-row-height);
+  padding: 2px 1ch 0;
+}
+
 .retro-clock {
   display: grid;
-  grid-column: 23 / 36;
-  grid-row: 8 / 10;
+  grid-column: 29 / 42;
+  grid-row: 9 / 11;
   grid-template-columns: subgrid;
   grid-template-rows: subgrid;
   text-align: center;
@@ -173,13 +236,14 @@
 .retro-clock time:nth-of-type(1) {
   grid-column: 1 / -1;
   grid-row: 1;
-  padding: 0 1ch;
+  padding-left: 1ch;
   position: relative;
   text-align: center;
   top: var(--retro-border-width);
 }
 
 .retro-clock time:nth-of-type(2) {
+  bottom: 1px;
   grid-row: 2;
   position: relative;
 }
@@ -188,11 +252,17 @@
   align-self: start;
   box-sizing: border-box;
   font-size: inherit;
-  grid-column: 6 / 36;
-  grid-row: 6 / span 13;
+  grid-column: 6 / 42;
+  grid-row: 7 / span 13;
   margin: 0;
   min-width: 0;
   padding: var(--retro-cell-height) 1ch;
+}
+
+.retro-submenu-menu {
+  grid-column: 4 / 42;
+  grid-row: 8 / span 11;
+  padding-top: 0;
 }
 
 .retro-menu-item {
@@ -213,24 +283,28 @@
   color: inherit;
 }
 
-.retro-menu-item span {
+.retro-menu-item>span {
   display: inline-block;
   position: relative;
   top: var(--retro-border-width);
 }
 
-.retro-menu-item.selected span {
-  background: #fff;
-  color: #0066cc;
+.retro-menu-item.selected .retro-menu-name {
+  background: var(--retro-foreground);
+  color: var(--retro-background);
+}
+
+.retro-menu-check {
+  width: 2ch;
 }
 
 .retro-window footer {
   box-sizing: border-box;
-  display: flex;
+  display: grid;
   font-size: inherit;
-  grid-column: 4 / 38;
-  grid-row: 21;
-  justify-content: space-between;
+  grid-column: 4 / 44;
+  grid-row: 26;
+  grid-template-columns: repeat(40, 1fr);
   line-height: calc(var(--retro-cell-height) - 2px);
   overflow: visible;
   padding: 0 0 2px;
@@ -238,6 +312,19 @@
 }
 
 .retro-window footer>span {
-  bottom: calc(var(--retro-border-width) / 2);
+  bottom: var(--retro-border-width);
   position: relative;
+}
+
+.retro-footer-select {
+  grid-column: 1 / span 16;
+}
+
+.retro-footer-cancel {
+  grid-column: 20 / span 10;
+}
+
+.retro-footer-action {
+  grid-column: 33 / -1;
+  justify-self: end;
 }
