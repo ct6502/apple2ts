@@ -127,10 +127,18 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "搖桿設定"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 #, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr "機器配置"
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
+msgstr ""
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -1226,7 +1234,9 @@ msgstr "鍵盤快捷鍵"
 
 #, fuzzy
 msgctxt "help.shortcutsUnavailable"
-msgid "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
+msgid ""
+"{{keyMod}} emulator shortcuts are unavailable while that key is assigned to "
+"Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
 msgstr "當 {{keyMod}} 鍵被指定為 Open Apple 時，使用該鍵的模擬器快捷鍵無法使用。Ctrl+0 到 Ctrl+5 仍可選擇模擬器速度。"
 
 #, fuzzy
@@ -2092,26 +2102,6 @@ msgstr "模擬器速度："
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
 msgstr "介面主題："
-
-#, fuzzy
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr "CRT 失真效果"
-
-#, fuzzy
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr "CRT 磷光殘影"
-
-#, fuzzy
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr "CRT 掃描線"
-
-#, fuzzy
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
-msgstr "大寫鎖定"
 
 #, fuzzy
 msgctxt "linkBuilder.showDebugTab"

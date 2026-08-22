@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
+"PO-Revision-Date: 2026-08-22 00:11+0000\n"
+"Last-Translator: Warren James "
+"<19525653+3amcinnamonroll@users.noreply.github.com>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/apple2ts/browser-emulator/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2026-08-22 00:11+0000\n"
-"Last-Translator: Warren James "
-"<19525653+3amcinnamonroll@users.noreply.github.com>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/apple2ts/browser-"
-"emulator/de/>\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 2026.9.dev0\n"
 
@@ -134,10 +134,18 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "Joystick-Konfiguration"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 #, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr "Maschinenkonfiguration"
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
+msgstr ""
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -1285,8 +1293,13 @@ msgstr "Tastaturkürzel"
 
 #, fuzzy
 msgctxt "help.shortcutsUnavailable"
-msgid "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
-msgstr "Die Emulator-Tastaturkürzel mit {{keyMod}} sind nicht verfügbar, solange diese Taste als Open Apple verwendet wird. Mit Strg+0 bis Strg+5 lässt sich die Emulatorgeschwindigkeit weiterhin auswählen."
+msgid ""
+"{{keyMod}} emulator shortcuts are unavailable while that key is assigned to "
+"Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
+msgstr ""
+"Die Emulator-Tastaturkürzel mit {{keyMod}} sind nicht verfügbar, solange "
+"diese Taste als Open Apple verwendet wird. Mit Strg+0 bis Strg+5 lässt sich "
+"die Emulatorgeschwindigkeit weiterhin auswählen."
 
 msgctxt "help.diskImages"
 msgid "Disk images:"
@@ -2146,22 +2159,6 @@ msgstr ""
 
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
-msgstr ""
-
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr ""
-
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr ""
-
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr ""
-
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
 msgstr ""
 
 msgctxt "linkBuilder.showDebugTab"

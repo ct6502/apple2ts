@@ -224,6 +224,13 @@ export const passReverseYAxis = (mode: boolean) => {
   doPostMessage(MSG_MAIN.REVERSE_YAXIS, mode)
 }
 
+export const passSetProdosFloppy = (floppy: boolean) => {
+  doPostMessage(MSG_MAIN.PRODOS_FLOPPY, floppy)
+  // This will also come from the emulator, but set it here so the UI updates
+  // if the emulator hasn't been booted yet.
+  machineState.prodosFloppy = floppy
+}
+
 export const passSetRamWorks = (size: number) => {
   doPostMessage(MSG_MAIN.RAMWORKS, size)
   // This will also come from the emulator, but set it here so the UI updates
@@ -321,6 +328,7 @@ let machineState: MachineState = {
   machineName: "APPLE2EE",
   memoryDump: new Uint8Array(),
   noDelayMode: false,
+  prodosFloppy: false,
   ramWorksBank: 0,
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
@@ -552,6 +560,10 @@ export const handleGetMemoryDump = () => {
 
 export const handleGetAddressGetTable = () => {
   return machineState.addressGetTable
+}
+
+export const handleGetProdosFloppy = () => {
+  return machineState.prodosFloppy
 }
 
 export const handleGetLeftButton = () => {

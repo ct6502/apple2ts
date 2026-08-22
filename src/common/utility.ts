@@ -74,6 +74,7 @@ export enum MSG_MAIN {
   MIDI_DATA,
   MOUSEEVENT,
   PASTE_TEXT,
+  PRODOS_FLOPPY,
   RAMWORKS,
   RESTORE_STATE,
   REVERSE_YAXIS,
@@ -498,19 +499,19 @@ export const getSymbolTables = (machineName: string) => {
   return [machineSymbolTable, userSymbolTable]
 }
 
-export const isHardDriveImage = (filename: string, fileSize?: number) => {
+export const isHardDriveImage = (filename: string, fileSize: number, isProdosFloppy: boolean) => {
   const f = filename.toLowerCase()
   if (f.endsWith(".hdv") || f.endsWith(".2mg") || f.endsWith(".2meg")) {
     return true
   }
   if (f.endsWith(".po")) {
+    if (!isProdosFloppy || fileSize === undefined) {
+      return true
+    }
     // 5.25" ProDOS floppy disk is 140KB (143360 bytes).
     // Anything larger (e.g. 800KB 3.5" disk, 2MB, 16MB, 32MB hard drive images)
     // is treated as a Slot 7 SmartPort hard drive image.
-    if (fileSize !== undefined) {
-      return fileSize > 143360
-    }
-    return false
+    return fileSize > 143360
   }
   return false
 }

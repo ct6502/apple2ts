@@ -127,8 +127,16 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "Configurazione joystick"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
+msgstr ""
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
 msgstr ""
 
 msgctxt "machine.models.apple2p"
@@ -1268,8 +1276,13 @@ msgstr "Scorciatoie Tastiera"
 
 #, fuzzy
 msgctxt "help.shortcutsUnavailable"
-msgid "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
-msgstr "Le scorciatoie dell'emulatore con {{keyMod}} non sono disponibili mentre questo tasto è assegnato a Open Apple. Con Ctrl+0 fino a Ctrl+5 è comunque possibile selezionare la velocità dell'emulatore."
+msgid ""
+"{{keyMod}} emulator shortcuts are unavailable while that key is assigned to "
+"Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
+msgstr ""
+"Le scorciatoie dell'emulatore con {{keyMod}} non sono disponibili mentre "
+"questo tasto è assegnato a Open Apple. Con Ctrl+0 fino a Ctrl+5 è comunque "
+"possibile selezionare la velocità dell'emulatore."
 
 #, fuzzy
 msgctxt "help.diskImages"
@@ -2126,22 +2139,6 @@ msgstr ""
 
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
-msgstr ""
-
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr ""
-
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr ""
-
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr ""
-
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
 msgstr ""
 
 msgctxt "linkBuilder.showDebugTab"

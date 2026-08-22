@@ -148,6 +148,7 @@ type MachineState = {
   machineName: MACHINE_NAME,
   memoryDump: Uint8Array,
   noDelayMode: boolean,
+  prodosFloppy: boolean,
   ramWorksBank: number,
   runMode: number,
   s6502: STATE6502,
@@ -167,7 +168,7 @@ type UIState = {
   appMode: string,
   arrowKeysAsJoystick: boolean,
   manualNumbering: boolean,
-  capitalizeBasic: boolean
+  capitalizeBasic: boolean,
   lowercaseMode: boolean,
   colorMode: COLOR_MODE,
   crtDistortion: boolean,
