@@ -6,7 +6,7 @@ import PopupMenu from "./popupmenu"
 import { useState } from "react"
 import LanguageSwitch from "./languageswitch"
 import { setPreferenceBoolean, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
-import { getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity } from "../ui_settings"
+import { getTouchJoyStickMode, getTouchJoystickSensitivity, getUIStateBoolean } from "../ui_settings"
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
@@ -86,9 +86,9 @@ const KeyboardButtons = (props: DisplayProps) => {
         { label: "-" },
         {
           label: "Use Tilt Sensor as Joystick",
-          isSelected: () => { return getTiltSensorJoystick() },
+          isSelected: () => { return getUIStateBoolean("tiltSensorJoystick") },
           onClick: () => {
-            let turningOn = !getTiltSensorJoystick()
+            let turningOn = !getUIStateBoolean("tiltSensorJoystick")
             if (turningOn) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               if (typeof ((DeviceOrientationEvent as any).requestPermission) === "function") {

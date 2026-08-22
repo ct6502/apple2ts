@@ -22,7 +22,7 @@ import {
 } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
-import { getLowercaseMode, getUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
+import { getLowercaseMode, getTheme, getUIStateBoolean, isGameMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
 import { AudioConfig } from "../devices/audio/audioconfig"
 import { GamepadConfig } from "../devices/gamepadconfig"
@@ -35,7 +35,7 @@ const isMac = navigator.platform.startsWith("Mac")
 const ConfigButtons = (props: DisplayProps) => {
   const { t } = useTranslation()
   const lowercaseMode = getLowercaseMode()
-  const useOpenAppleKey = getUseOpenAppleKey()
+  const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
   const modKey = (isMac ? "Cmd" : "Alt")
   const modKeyDisplay = isMac ? "⌘" : "alt"
   const themeNames = [t("themes.classic"), t("themes.dark"), t("themes.minimal")]

@@ -2,7 +2,7 @@ import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGear } from "@fortawesome/free-solid-svg-icons"
 import { handleGetMachineName, handleGetMemSize, handleGetProdosFloppy, handleGetSlotConfig, passSetProdosFloppy } from "../main2worker"
-import { setPreferenceMachineName, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
+import { setPreferenceBoolean, setPreferenceMachineName, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
 import PopupMenu from "../controls/popupmenu"
 import { useTranslation } from "../../i18n/useTranslation"
 
@@ -165,7 +165,11 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
           { label: "-" },
           {label: t("config.prodosFloppy"),
             isSelected: () => { return handleGetProdosFloppy() },
-            onClick: () => { passSetProdosFloppy(!handleGetProdosFloppy()) }},
+            onClick: () => {
+              const newValue = !handleGetProdosFloppy()
+              passSetProdosFloppy(newValue)
+              setPreferenceBoolean("prodosFloppy", newValue)
+            }},
           { label: "-" },
           ...[{ label: t("machine.slotManager"), isHeading: true }],
           ...([1, 2, 3, 4, 5, 6, 7] as const).map((slot) => {

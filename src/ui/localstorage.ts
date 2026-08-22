@@ -2,14 +2,19 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
-import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
+import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetProdosFloppy, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
+import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf, getUIState } from "./ui_settings"
 
-const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
-  "showScanlines", "hotReload", "tiltSensorJoystick", "useOpenAppleKey", "debugMode"]
+const booleanUIKeys: BooleanKeyOf<UIState>[] = ["arrowKeysAsJoystick",
+  "capitalizeBasic", "crtDistortion",
+  "debugMode", "ghosting", "hotReload", "lowercaseMode",
+  "manualNumbering", "prodosFloppy",
+  "reverseYAxis", "showScanlines", "siriusJoyport",
+  "tiltSensorJoystick", "useOpenAppleKey"]
 
+type BooleanKeys = typeof booleanUIKeys[number]
 
-export const setPreferenceBoolean = (key: BooleanKeyOf<UIState>, value: boolean) => {
+export const setPreferenceBoolean = (key: BooleanKeys, value: boolean) => {
   if (value) {
     localStorage.setItem(key, JSON.stringify(value))
   } else {
@@ -18,7 +23,7 @@ export const setPreferenceBoolean = (key: BooleanKeyOf<UIState>, value: boolean)
   setUIStateBoolean(key as BooleanKeyOf<UIState>, value)
 }
 
-export const getPreferenceBoolean = (key: string): boolean => {
+export const getPreferenceBoolean = (key: BooleanKeys): boolean => {
   const item = localStorage.getItem(key)
   if (item) {
     try {
@@ -330,6 +335,20 @@ export const loadPreferences = () => {
     }
   })
 
+  // Extra processing for certain boolean prefs
+  if (getUIState().debugMode) {
+    passSetShowDebugTab(true)
+  }
+  if (getUIState().prodosFloppy) {
+    passSetProdosFloppy(true)
+  }
+  if (getUIState().reverseYAxis) {
+    passReverseYAxis(true)
+  }
+  if (getUIState().siriusJoyport) {
+    passSiriusJoyport(true)
+  }
+
   const colorMode = localStorage.getItem("colorMode")
   if (colorMode) {
     try {
@@ -370,15 +389,6 @@ export const loadPreferences = () => {
     }
   }
 
-  const debugMode = localStorage.getItem("debugMode")
-  if (debugMode) {
-    try {
-      passSetShowDebugTab(JSON.parse(debugMode))
-    } catch {
-      localStorage.removeItem("debugMode")
-    }
-  }
-
   const machineName = localStorage.getItem("machineName")
   if (machineName) {
     try {
@@ -407,24 +417,6 @@ export const loadPreferences = () => {
   }
 
   passSetVeraSlot(getPreferenceVeraSlot())
-
-  const reverseYAxis = localStorage.getItem("reverseYAxis")
-  if (reverseYAxis) {
-    try {
-      passReverseYAxis(JSON.parse(reverseYAxis))
-    } catch {
-      localStorage.removeItem("reverseYAxis")
-    }
-  }
-
-  const siriusJoyport = localStorage.getItem("siriusJoyport")
-  if (siriusJoyport) {
-    try {
-      passSiriusJoyport(JSON.parse(siriusJoyport))
-    } catch {
-      localStorage.removeItem("siriusJoyport")
-    }
-  }
 
   const touchJoystickMode = localStorage.getItem("touchJoystickMode")
   if (touchJoystickMode !== "off") {
@@ -455,10 +447,8 @@ export const resetPreferences = () => {
     localStorage.removeItem(key)
     setUIStateBoolean(key, false)
   })
-  // Reset other localStorage-only boolean preferences
-  localStorage.removeItem("reverseYAxis")
-  localStorage.removeItem("siriusJoyport")
-  localStorage.removeItem("debugMode")
+  // Extra processing for certain boolean prefs
+  passSetProdosFloppy(false)
   passReverseYAxis(false)
   passSiriusJoyport(false)
   passSetShowDebugTab(false)
