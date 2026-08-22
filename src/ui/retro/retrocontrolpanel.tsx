@@ -60,7 +60,7 @@ const RetroBorder = ({ className, separatorRow }: {
       <span
         className="retro-border-separator"
         style={{
-          top: `calc(${separatorRow - 1} * var(--retro-cell-height) + var(--retro-border-width))`,
+          top: `calc(${separatorRow - 1} * var(--retro-row-height) + var(--retro-border-width))`,
         }}
       />
     )}
@@ -393,7 +393,7 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
         <section className="retro-panel scanline-gradient" role="dialog" aria-label="Apple2TS control panel">
           <div className="retro-window">
             <RetroBorder className="retro-outer-border" separatorRow={2} />
-            <header className="retro-title"><span>{"Apple2TS "}</span></header>
+            <header className="retro-title"><span>{"Apple2TS "}&#8198;</span></header>
             {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString()} ${now.toLocaleDateString()}`}>
               <RetroBorder className="retro-clock-border" />
               <time>{now.toLocaleTimeString([], {
@@ -420,12 +420,8 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
               ))}
             </div>
             <footer>
-              <span>
-                {" Select: "}<i className="retro-mousetext">{mouseTextDown} {mouseTextUp}</i>
-              </span>
-              <span>
-                {"Open: "}<i className="retro-mousetext">{mouseTextReturn}</i>{" "}
-              </span>
+              <span>{" Select: "}<i className="retro-mousetext">{mouseTextDown} {mouseTextUp}</i></span>
+              <span>{"Open: "}<i className="retro-mousetext">{mouseTextReturn}</i>{" "}</span>
             </footer>
           </div>
         </section>
