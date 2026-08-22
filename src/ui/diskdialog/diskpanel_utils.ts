@@ -4,7 +4,7 @@ import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { diskImages } from "../devices/disk/diskimages"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/disk/driveprops"
 import { handleInputParams } from "../inputparams"
-import { DiskCollectionSortMode, getPreferenceVtocType } from "../localstorage"
+import { DiskCollectionSortMode, getPreferenceDiskCollectionSort, getPreferenceVtocType } from "../localstorage"
 import { passSetRunMode } from "../main2worker"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
@@ -23,6 +23,26 @@ export enum TAB_INDEX {
   FAVORITES = 2,
   EXPORT = 3,
 }
+
+export const diskCollectionSortOptions: Array<{ value: DiskCollectionSortMode; label: string }> = [
+  { value: "name-asc", label: "A-Z" },
+  { value: "name-desc", label: "Z-A" },
+  { value: "date-newest", label: "New" },
+  { value: "date-oldest", label: "Old" },
+]
+
+const defaultDiskCollectionSortModeByTab: Record<number, DiskCollectionSortMode> = {
+  [TAB_INDEX.BUILT_IN]: "name-asc",
+  [TAB_INDEX.NEW_RELEASES]: "date-newest",
+  [TAB_INDEX.FAVORITES]: "date-newest",
+  [TAB_INDEX.EXPORT]: "name-asc",
+}
+
+export const getDefaultDiskCollectionSortMode = (tabIndex: number): DiskCollectionSortMode =>
+  defaultDiskCollectionSortModeByTab[tabIndex] || "name-asc"
+
+export const getDiskCollectionSortMode = (tabIndex: number): DiskCollectionSortMode =>
+  getPreferenceDiskCollectionSort(tabIndex) || getDefaultDiskCollectionSortMode(tabIndex)
 
 const getLastUpdatedMs = (item: DiskCollectionItem): number => {
   if (!item.lastUpdated) return 0

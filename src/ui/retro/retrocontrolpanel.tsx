@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { COLOR_MODE, DEFAULT_SLOT_CONFIG } from "../../common/utility"
 import {
+  DiskCollectionSortMode,
+  setPreferenceDiskCollectionSort,
   setPreferenceBoolean,
   setPreferenceColorMode,
   setPreferenceRamWorks,
@@ -41,7 +43,20 @@ import {
 } from "../devices/disk/driveprops"
 import { GoogleDrive } from "../devices/disk/googledrive"
 import InternetArchivePopup from "../devices/disk/internetarchivedialog"
+import { DiskBookmarks } from "../devices/disk/diskbookmarks"
+import { newReleases } from "../devices/disk/newreleases"
 import { OneDriveCloudDrive } from "../devices/disk/onedriveclouddrive"
+import {
+  DISK_COLLECTION_ITEM_TYPE,
+  TAB_INDEX,
+  diskCollectionSortOptions,
+  getDefaultDiskCollectionSortMode,
+  getDiskCollection,
+  getDiskCollectionSortMode,
+  isDiskExportable,
+  loadDisk,
+  sortDisks,
+} from "../diskdialog/diskpanel_utils"
 import { isFileSystemApiSupported } from "../ui_utilities"
 import Apple2Canvas from "../canvas"
 import "./retrocontrolpanel.css"
@@ -54,6 +69,10 @@ type RetroMenuItem = {
   options?: RetroMenuOption[]
   optionIndex?: number
   defaultIndex?: number
+  selectable?: boolean
+  valueOnly?: boolean
+  actionLabel?: string
+  refreshOptions?: (index: number) => RetroMenuItem[]
 }
 
 type RetroMenuOption = {
@@ -67,6 +86,7 @@ type RetroMenuFrame = {
   items: RetroMenuItem[]
   originalValues: number[]
   values: number[]
+  actionLabel: string
   refresh?: () => RetroMenuItem[]
 }
 
@@ -156,9 +176,10 @@ const createMenuFrame = (
   title: string,
   items: RetroMenuItem[],
   refresh?: () => RetroMenuItem[],
+  actionLabel = "Save",
 ): RetroMenuFrame => {
   const values = items.map(item => item.optionIndex ?? -1)
-  return { title, items, originalValues: values, values, refresh }
+  return { title, items, originalValues: values, values, actionLabel, refresh }
 }
 
 const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
@@ -170,6 +191,7 @@ const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
     previousFrame.title,
     previousFrame.refresh(),
     previousFrame.refresh,
+    previousFrame.actionLabel,
   )
   return previousStack
 }
@@ -194,6 +216,67 @@ const getRetroMenu = (
   const currentMachine = handleGetMachineName()
   const currentRam = handleGetMemSize()
   const slotConfig = handleGetSlotConfig()
+  const diskCollection = getDiskCollection(new DiskBookmarks(), newReleases)
+  const createDiskCollectionTabItems = (
+    tabIndex: TAB_INDEX,
+    disks: DiskCollectionItem[],
+    sortMode: DiskCollectionSortMode = getDiskCollectionSortMode(tabIndex),
+  ): RetroMenuItem[] => {
+    const sortIndex = diskCollectionSortOptions.findIndex(option => option.value === sortMode)
+    const defaultSortIndex = diskCollectionSortOptions.findIndex(
+      option => option.value === getDefaultDiskCollectionSortMode(tabIndex),
+    )
+    const sortItem = choiceItem(
+      "",
+      diskCollectionSortOptions.map(option => option.label),
+      sortIndex,
+      index => setPreferenceDiskCollectionSort(tabIndex, diskCollectionSortOptions[index].value),
+      defaultSortIndex,
+    )
+    sortItem.valueOnly = true
+    sortItem.refreshOptions = index => createDiskCollectionTabItems(
+      tabIndex,
+      disks,
+      diskCollectionSortOptions[index].value,
+    )
+
+    return [
+      ...sortDisks(disks, sortMode).map(disk => ({
+        label: disk.title,
+        action: () => {
+          close()
+          loadDisk(-1, disk, updateDisplay)
+        },
+      })),
+      { label: "—Sort Order—", selectable: false },
+      sortItem,
+    ]
+  }
+  const diskCollectionTabs: Array<{ label: string; index: TAB_INDEX; disks: DiskCollectionItem[] }> = [
+    {
+      label: "Apple2TS Collection",
+      index: TAB_INDEX.BUILT_IN,
+      disks: diskCollection.filter(disk => disk.type === DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE),
+    },
+    {
+      label: "New Releases",
+      index: TAB_INDEX.NEW_RELEASES,
+      disks: diskCollection.filter(disk => disk.type === DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE),
+    },
+    {
+      label: "Favorites",
+      index: TAB_INDEX.FAVORITES,
+      disks: diskCollection.filter(disk =>
+        disk.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE ||
+        disk.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE ||
+        disk.type === DISK_COLLECTION_ITEM_TYPE.DEMOZOO),
+    },
+    {
+      label: "Export Disks to HDV",
+      index: TAB_INDEX.EXPORT,
+      disks: diskCollection.filter(isDiskExportable),
+    },
+  ]
   const slotOptions: Record<typeof slotNumbers[number], SLOT_CARD_ID[]> = {
     1: ["none", "ssc"],
     2: ["none", "softcard", "passport"],
@@ -283,17 +366,32 @@ const getRetroMenu = (
       },
     ]
   }
-  const diskDriveItems = (): RetroMenuItem[] => diskDrives.map(({ drive, index, slot }) => ({
-    label: `Slot ${slot}, Drive ${drive}: ${handleGetFilename(index) ?? "Empty"}`,
-    children: () => handleGetDriveProps(index).filename ? insertedDiskItems(index) : diskLoadItems(index),
-  }))
+  const diskDriveItems = (): RetroMenuItem[] => diskDrives.map(({ drive, index, slot }) => {
+    const driveProps = handleGetDriveProps(index)
+    const diskTitle = handleGetFilename(index)
+    return {
+      label: `Slot ${slot}, Drive ${drive}: ${diskTitle ? `${driveProps.diskHasChanges ? "*" : ""}${diskTitle}` : "Empty"}`,
+      children: () => handleGetDriveProps(index).filename ? insertedDiskItems(index) : diskLoadItems(index),
+      actionLabel: "Load",
+    }
+  })
 
   return [
+    {
+      label: "Disk Collection",
+      children: diskCollectionTabs.map(tab => ({
+        label: tab.label,
+        children: () => createDiskCollectionTabItems(tab.index, tab.disks),
+        actionLabel: tab.index === TAB_INDEX.EXPORT ? "Export" : "Load",
+      })),
+      actionLabel: "Open",
+    },
     {
       label: "Disk Drives",
       children: diskDrives.length > 0
         ? diskDriveItems
         : [{ label: "No disk drives available" }],
+      actionLabel: "Load",
     },
     {
       label: "Display",
@@ -434,6 +532,14 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
   const rootMenu = getRetroMenu(displayProps, close, openDiskDialog)
   const currentFrame = menuStack[menuStack.length - 1]
   const currentMenu = currentFrame?.items ?? rootMenu
+  const maxVisibleMenuItems = 16
+  const visibleMenuStart = currentFrame
+    ? Math.min(
+      Math.max(0, selectedIndex - maxVisibleMenuItems + 1),
+      Math.max(0, currentMenu.length - maxVisibleMenuItems),
+    )
+    : 0
+  const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
   const panelEffects = [
     `retro-color-${colorModeClasses[getColorMode()]}`,
     getGhosting() ? "retro-effect-ghosting" : "",
@@ -464,7 +570,14 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
         event.preventDefault()
         event.stopPropagation()
         const direction = event.key === "ArrowUp" ? -1 : 1
-        setSelectedIndex(index => (index + direction + currentMenu.length) % currentMenu.length)
+        setSelectedIndex(index => {
+          let nextIndex = index
+          for (let offset = 0; offset < currentMenu.length; offset += 1) {
+            nextIndex = (nextIndex + direction + currentMenu.length) % currentMenu.length
+            if (currentMenu[nextIndex].selectable !== false) return nextIndex
+          }
+          return index
+        })
       } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
         const item = currentMenu[selectedIndex]
         const options = item.options
@@ -476,9 +589,12 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
           options[nextValue].preview?.()
           setMenuStack(stack => stack.map((frame, index) => {
             if (index !== stack.length - 1) return frame
-            const values = [...frame.values]
+            const items = item.refreshOptions?.(nextValue) ?? frame.items
+            const values = item.refreshOptions
+              ? items.map(refreshedItem => refreshedItem.optionIndex ?? -1)
+              : [...frame.values]
             values[selectedIndex] = nextValue
-            return { ...frame, values }
+            return { ...frame, items, values }
           }))
         }
       } else if (event.key === "Enter") {
@@ -488,8 +604,11 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
         if (item.children) {
           const refresh = typeof item.children === "function" ? item.children : undefined
           const children = typeof item.children === "function" ? item.children() : item.children
-          setMenuStack(stack => [...stack, createMenuFrame(item.label, children, refresh)])
-          setSelectedIndex(0)
+          setMenuStack(stack => [
+            ...stack,
+            createMenuFrame(item.label, children, refresh, item.actionLabel),
+          ])
+          setSelectedIndex(Math.max(0, children.findIndex(child => child.selectable !== false)))
         } else if (currentFrame && item.options) {
           currentFrame.items.forEach((frameItem, index) => {
             if (currentFrame.values[index] !== currentFrame.originalValues[index]) {
@@ -518,7 +637,8 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
         const nextIndex = Array.from(
           { length: currentMenu.length },
           (_, offset) => (selectedIndex + offset + 1) % currentMenu.length,
-        ).find(index => currentMenu[index].label.toLocaleLowerCase().startsWith(shortcut))
+        ).find(index => currentMenu[index].selectable !== false &&
+          currentMenu[index].label.toLocaleLowerCase().startsWith(shortcut))
         if (nextIndex !== undefined) {
           event.preventDefault()
           event.stopPropagation()
@@ -560,23 +680,27 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
               })}</time>
             </div>}
             <div className={`retro-menu${currentFrame ? " retro-submenu-menu" : " retro-root-menu"}`} role="menu">
-              {currentMenu.map((item, index) => (
+              {visibleMenu.map((item, visibleIndex) => (
                 (() => {
+                  const index = visibleMenuStart + visibleIndex
                   const valueIndex = currentFrame?.values[index] ?? item.optionIndex ?? -1
                   const option = item.options?.[valueIndex]
                   const isDefault = item.defaultIndex !== undefined && valueIndex === item.defaultIndex
                   return (
                     <div
                       className={`retro-menu-item${selectedIndex === index ? " selected" : ""}`}
-                      key={item.label}
+                      key={`${index}-${item.label}`}
                       role="menuitem"
                       aria-current={selectedIndex === index ? "true" : undefined}
+                      aria-disabled={item.selectable === false ? "true" : undefined}
                     >
                       {currentFrame && <span className="retro-menu-check">
                         {isDefault ? checkmark : " "}
                       </span>}
-                      <span className="retro-menu-name">{item.label}</span>
-                      {option && <span className="retro-menu-value">: {option.label}</span>}
+                      <span className="retro-menu-name">
+                        {item.valueOnly && option ? option.label : item.label}
+                      </span>
+                      {option && !item.valueOnly && <span className="retro-menu-value">: {option.label}</span>}
                     </div>
                   )
                 })()
@@ -590,7 +714,8 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
               </i></span>
               {currentFrame && <span className="retro-footer-cancel">Cancel:Esc</span>}
               <span className="retro-footer-action">
-                {currentFrame ? "Save: " : "Open: "}<i className="retro-mousetext">{mouseTextReturn}</i>{" "}
+                {currentFrame ? `${currentFrame.actionLabel}: ` : "Open: "}
+                <i className="retro-mousetext">{mouseTextReturn}</i>{" "}
               </span>
             </footer>
           </div>
