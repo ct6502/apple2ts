@@ -1271,8 +1271,13 @@ msgstr "Горячие клавиши"
 
 #, fuzzy
 msgctxt "help.shortcutsUnavailable"
-msgid "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
-msgstr "Сочетания клавиш эмулятора с {{keyMod}} недоступны, пока эта клавиша используется в качестве клавиши Open Apple. Сочетания Ctrl+0–Ctrl+5 по-прежнему позволяют выбирать скорость эмулятора."
+msgid ""
+"{{keyMod}} emulator shortcuts are unavailable while that key is assigned to "
+"Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
+msgstr ""
+"Сочетания клавиш эмулятора с {{keyMod}} недоступны, пока эта клавиша "
+"используется в качестве клавиши Open Apple. Сочетания Ctrl+0–Ctrl+5 "
+"по-прежнему позволяют выбирать скорость эмулятора."
 
 #, fuzzy
 msgctxt "help.diskImages"
@@ -2476,8 +2481,13 @@ msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
 msgstr "(c) {{year}} C.Torrence + соавторы"
 
-#, fuzzy
 msgctxt "startup.diskCollections"
+msgid ""
+"Click on the Disk Collections icon\n"
+"to load a built-in disk or game."
+msgstr ""
+
+msgctxt "startup.retroControlPanel"
 msgid ""
 "Press SHIFT-ESC to display\n"
 "Apple2TS control panel."

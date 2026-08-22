@@ -101,7 +101,7 @@ const ConfigButtons = (props: DisplayProps) => {
             <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
             <span className={(modKey === "Alt") ? "text-key" : ""}>{modKeyDisplay}</span>}
         </button>
-        </>
+      </>
       }
 
       {!isTouchDevice && <GamepadConfig />}
@@ -130,13 +130,11 @@ const ConfigButtons = (props: DisplayProps) => {
           isSelected: () => { return value == getTheme() },
           onClick: () => {
             if (value != getTheme()) {
-              if (window.confirm(t("messages.confirmTheme"))) {
-                setPreferenceTheme(value)
-                const url = new URL(window.location.href)
-                url.searchParams.delete("theme")
-                url.searchParams.set("cache", new Date().getTime().toString())
-                window.location.href = url.toString()
-              }
+              setPreferenceTheme(value)
+              const url = new URL(window.location.href)
+              url.searchParams.delete("theme")
+              url.searchParams.set("cache", new Date().getTime().toString())
+              window.location.href = url.toString()
             }
           }
         }

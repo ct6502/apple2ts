@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { COLOR_MODE, DEFAULT_SLOT_CONFIG } from "../../common/utility"
+import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME, UI_THEMES } from "../../common/utility"
 import {
   DiskCollectionSortMode,
   setPreferenceDiskCollectionSort,
@@ -8,6 +8,7 @@ import {
   setPreferenceRamWorks,
   setPreferenceSlotConfig,
   setPreferenceSpeedMode,
+  setPreferenceTheme,
 } from "../localstorage"
 import {
   handleGetMachineName,
@@ -21,6 +22,7 @@ import {
   getGhosting,
   getLowercaseMode,
   getShowScanlines,
+  getTheme,
   getUseOpenAppleKey,
   setColorMode,
   setUIStateBoolean,
@@ -468,6 +470,19 @@ const getRetroMenu = (
             updateDisplay()
           },
           ramOptions.indexOf(64),
+        ),
+        choiceItem(
+          "Theme",
+          UI_THEMES.map(theme => theme.name),
+          UI_THEMES.findIndex(theme => theme.value === getTheme()),
+          index => {
+            setPreferenceTheme(UI_THEMES[index].value as UI_THEME)
+            const url = new URL(window.location.href)
+            url.searchParams.delete("theme")
+            url.searchParams.set("cache", Date.now().toString())
+            window.location.href = url.toString()
+          },
+          UI_THEMES.findIndex(theme => theme.value === UI_THEME.CLASSIC),
         ),
       ],
     },

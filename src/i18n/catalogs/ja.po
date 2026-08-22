@@ -1229,8 +1229,12 @@ msgstr "キーボードショートカット"
 
 #, fuzzy
 msgctxt "help.shortcutsUnavailable"
-msgid "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
-msgstr "{{keyMod}} を使うエミュレータのショートカットは、このキーが Open Apple に割り当てられている間は使用できません。Ctrl+0 から Ctrl+5 では引き続きエミュレータの速度を選択できます。"
+msgid ""
+"{{keyMod}} emulator shortcuts are unavailable while that key is assigned to "
+"Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
+msgstr ""
+"{{keyMod}} を使うエミュレータのショートカットは、このキーが Open Apple に割り当てられている間は使用できません。Ctrl+0 "
+"から Ctrl+5 では引き続きエミュレータの速度を選択できます。"
 
 #, fuzzy
 msgctxt "help.diskImages"
@@ -2423,8 +2427,13 @@ msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
 msgstr "(c) {{year}} C.Torrence + 協力者"
 
-#, fuzzy
 msgctxt "startup.diskCollections"
+msgid ""
+"Click on the Disk Collections icon\n"
+"to load a built-in disk or game."
+msgstr ""
+
+msgctxt "startup.retroControlPanel"
 msgid ""
 "Press SHIFT-ESC to display\n"
 "Apple2TS control panel."
