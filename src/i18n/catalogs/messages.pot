@@ -2141,6 +2141,6 @@ msgstr ""
 
 msgctxt "startup.diskCollections"
 msgid ""
-"Click on the Disk Collections icon\n"
-"to load a built-in disk or game."
+"Press SHIFT-ESC to display\n"
+"Apple2TS control panel."
 msgstr ""

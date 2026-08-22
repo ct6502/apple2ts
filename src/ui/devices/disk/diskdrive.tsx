@@ -20,7 +20,7 @@ import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import InternetArchivePopup from "./internetarchivedialog"
 import DemoZooDialog from "./demozoodialog"
 
-const demoZooEnabled = import.meta.env.DEV ||
+export const demoZooEnabled = import.meta.env.DEV ||
   import.meta.env.VITE_DEMOZOO_ENABLED === "true" ||
   (typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname))
 import { DiskBookmarks } from "./diskbookmarks"
@@ -29,6 +29,15 @@ import { isFileSystemApiSupported } from "../../ui_utilities"
 import { useTranslation } from "../../../i18n/useTranslation"
 
 export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
+
+export const loadDiskFromCloudDrive = async (cloudDrive: CloudProvider, driveIndex: number) => {
+  const result = await cloudDrive.download(FILE_SUFFIXES_DISK)
+  if (!result) return
+
+  const [blob, cloudData] = result
+  const buffer = await new Response(blob).arrayBuffer()
+  handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+}
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -156,15 +165,6 @@ const DiskDrive = (props: DiskDriveProps) => {
 
     return label
   }, [dprops.cloudData, dprops.diskHasChanges, dprops.filename, t])
-
-  const loadDiskFromCloud = async (newCloudDrive: CloudProvider) => {
-    const result = await newCloudDrive.download(FILE_SUFFIXES_DISK)
-    if (result) {
-      const [blob, cloudData] = result
-      const buffer = await new Response(blob).arrayBuffer()
-      handleSetDiskOrFileFromBuffer(dprops.index, buffer, cloudData.fileName, cloudData, null)
-    }
-  }
 
   const saveDiskToCloud = async (cloudProvider: CloudProvider) => {
     const blob = getBlobFromDiskData(dprops.diskData, getDriveFileName())
@@ -563,13 +563,13 @@ const DiskDrive = (props: DiskDriveProps) => {
               label: t("disk.loadDiskFromOneDrive"),
               icon: faCloud,
               isVisible: () => { return !isElectron },
-              onClick: () => { loadDiskFromCloud(new OneDriveCloudDrive()) }
+              onClick: () => { loadDiskFromCloudDrive(new OneDriveCloudDrive(), dprops.index) }
             },
             {
               label: t("disk.loadDiskFromGoogleDrive"),
               icon: faCloud,
               isVisible: () => { return !isElectron },
-              onClick: () => { loadDiskFromCloud(new GoogleDrive()) }
+              onClick: () => { loadDiskFromCloudDrive(new GoogleDrive(), dprops.index) }
             }
           ]
         ]}

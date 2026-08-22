@@ -6,7 +6,7 @@ import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddr
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { i18n } from "../i18n"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getCrtDistortion, getGhosting, isEmbedMode, isGameMode, isMinimalTheme } from "./ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, isCanvasOnlyTheme, isEmbedMode, isGameMode } from "./ui_settings"
 import { doCRTStartup } from "./crtstartup"
 let frameCount = 0
 
@@ -628,7 +628,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
 export const getCanvasSize = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
-  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme()
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isCanvasOnlyTheme()
   const margin = (handleGetMachineName() === "APPLE2P" && !isCanvasFullScreen) ? 0.12 : 0.075
   xmargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
   ymargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
@@ -642,7 +642,7 @@ export const getCanvasSize = () => {
   if (isEmbedMode()) {
     height -= noBackgroundImage ? 60 : 25
     width -= noBackgroundImage ? 60 : 25
-  } else if (isMinimalTheme()) {
+  } else if (isCanvasOnlyTheme()) {
     if (isLandscape) {
       height -= 150
     } else {

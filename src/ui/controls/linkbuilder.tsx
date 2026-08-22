@@ -6,7 +6,7 @@ import { Droplist } from "../panels/droplist"
 import { diskImages } from "../devices/disk/diskimages"
 import CheckBox from "../panels/checkbox"
 import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode } from "../ui_settings"
-import { UI_THEME } from "../../common/utility"
+import { UI_THEMES } from "../../common/utility"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode } from "../main2worker"
 import { useTranslation } from "../../i18n/useTranslation"
@@ -90,9 +90,10 @@ const LinkBuilder = () => {
   const themeValues = [
     t("linkBuilder.themes.classic"),
     t("linkBuilder.themes.dark"),
-    t("linkBuilder.themes.minimal")
+    t("linkBuilder.themes.minimal"),
+    "Retro",
   ]
-  const themeParams = ["classic", "dark", "minimal"]
+  const themeParams = UI_THEMES.map(option => option.queryValue)
 
   const diskNames = [t("linkBuilder.customDiskUrlOption"), ...diskImages.map(disk => disk.title).sort()]
   const isCustomURL = selectedDisk === "" || selectedDisk === t("linkBuilder.customDiskUrlOption")
@@ -260,7 +261,8 @@ const LinkBuilder = () => {
     setSelectedDisk("")
     
     const mytheme = getTheme()
-    setTheme(mytheme === UI_THEME.CLASSIC ? themeValues[0] : mytheme === UI_THEME.DARK ? themeValues[1] : themeValues[2])
+    const themeIndex = UI_THEMES.findIndex(option => option.value === mytheme)
+    setTheme(themeValues[Math.max(themeIndex, 0)])
     
     if (isEmbedMode()) {
       setAppmode(gameModes[2])

@@ -1,4 +1,4 @@
-import { lockedKeyStyle, UI_THEME } from "../../common/utility"
+import { lockedKeyStyle, UI_THEME, UI_THEMES } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faVolumeHigh,
@@ -38,7 +38,13 @@ const ConfigButtons = (props: DisplayProps) => {
   const useOpenAppleKey = getUseOpenAppleKey()
   const modKey = (isMac ? "Cmd" : "Alt")
   const modKeyDisplay = isMac ? "⌘" : "alt"
-  const themeNames = [t("themes.classic"), t("themes.dark"), t("themes.minimal")]
+  const themeNames: Record<UI_THEME, string> = {
+    [UI_THEME.CLASSIC]: t("themes.classic"),
+    [UI_THEME.DARK]: t("themes.dark"),
+    [UI_THEME.MINIMAL]: t("themes.minimal"),
+    [UI_THEME.RETRO]: "Retro",
+  }
+  const getThemeName = (theme: UI_THEME) => themeNames[theme]
   const audioStatus = useSyncExternalStore(subscribeAudioStatus, getAudioStatus)
   const audioUnavailable = audioStatus === "unavailable"
   const audioTitle = audioUnavailable
@@ -109,7 +115,7 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <button className="push-button"
       id="tour-theme-button"
-      title={`${themeNames[getTheme()]} ${t("config.theme")}`}
+      title={`${getThemeName(getTheme())} ${t("config.theme")}`}
       onClick={handleClick}>
       <FontAwesomeIcon icon={faPalette} />
     </button>
@@ -117,15 +123,15 @@ const ConfigButtons = (props: DisplayProps) => {
     <PopupMenu
       location={popupLocation}
       onClose={() => { setPopupLocation(undefined) }}
-      menuItems={[Object.values(UI_THEME).filter(value => typeof value === "number").map((value, i) => {
+      menuItems={[UI_THEMES.map(({ value }) => {
         return {
-          label: themeNames[i],
-          isVisible: () => { return (isGameMode() ? i != UI_THEME.MINIMAL : true) },
-          isSelected: () => { return i == getTheme() },
+          label: themeNames[value],
+          isVisible: () => { return !isGameMode() || (value != UI_THEME.MINIMAL && value != UI_THEME.RETRO) },
+          isSelected: () => { return value == getTheme() },
           onClick: () => {
-            if (i >= 0 && i != getTheme()) {
+            if (value != getTheme()) {
               if (window.confirm(t("messages.confirmTheme"))) {
-                setPreferenceTheme(i)
+                setPreferenceTheme(value)
                 const url = new URL(window.location.href)
                 url.searchParams.delete("theme")
                 url.searchParams.set("cache", new Date().getTime().toString())
