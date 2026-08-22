@@ -60,6 +60,40 @@ const downloadDisk = (diskData: Uint8Array, filename: string) => {
   document.body.removeChild(link)
 }
 
+export const downloadDiskToDevice = (index: number) => {
+  const dprops = handleGetDriveProps(index)
+  if (dprops.diskData.length === 0) return
+
+  downloadDisk(dprops.diskData, dprops.filename)
+  const nextProps: DriveProps = { ...dprops, diskHasChanges: false }
+  doSetUIDriveProps(nextProps)
+}
+
+export const saveDiskToDevice = async (index: number) => {
+  const dprops = handleGetDriveProps(index)
+  const fileExtension = dprops.filename.substring(dprops.filename.lastIndexOf("."))
+  const writableFileHandle = await window.showSaveFilePicker({
+    excludeAcceptAllOption: false,
+    suggestedName: dprops.filename,
+    types: [{
+      description: "Disk image",
+      accept: { "application/octet": [fileExtension] as `.${string}`[] },
+    }],
+  })
+
+  if (!writableFileHandle) return
+
+  const nextProps: DriveProps = {
+    ...dprops,
+    diskHasChanges: true,
+    filename: writableFileHandle.name,
+    writableFileHandle,
+    lastLocalFileWriteTime: -1,
+  }
+  passSetDriveProps(nextProps)
+  await prepWritableFile(index, writableFileHandle)
+}
+
 type DiskDriveProps = {
   index: number,
   renderCount: number,

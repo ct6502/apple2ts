@@ -28,11 +28,21 @@ import { changeSerialMode, getSerialMode, getSerialNames } from "../devices/seri
 import DemoZooDialog from "../devices/disk/demozoodialog"
 import {
   demoZooEnabled,
+  downloadDiskToDevice,
   loadDiskFromCloudDrive,
+  saveDiskToDevice,
 } from "../devices/disk/diskdrive"
+import {
+  handleEjectDisk,
+  handleGetDriveProps,
+  handleGetFilename,
+  handleSaveWritableFile,
+  handleSetDiskWriteProtected,
+} from "../devices/disk/driveprops"
 import { GoogleDrive } from "../devices/disk/googledrive"
 import InternetArchivePopup from "../devices/disk/internetarchivedialog"
 import { OneDriveCloudDrive } from "../devices/disk/onedriveclouddrive"
+import { isFileSystemApiSupported } from "../ui_utilities"
 import Apple2Canvas from "../canvas"
 import "./retrocontrolpanel.css"
 
@@ -40,7 +50,7 @@ type RetroMenuItem = {
   label: string
   value?: string
   action?: () => void
-  children?: RetroMenuItem[]
+  children?: RetroMenuItem[] | (() => RetroMenuItem[])
   options?: RetroMenuOption[]
   optionIndex?: number
   defaultIndex?: number
@@ -57,6 +67,7 @@ type RetroMenuFrame = {
   items: RetroMenuItem[]
   originalValues: number[]
   values: number[]
+  refresh?: () => RetroMenuItem[]
 }
 
 type DiskLoadDialog = {
@@ -141,9 +152,26 @@ const toggleItem = (
   )
 )
 
-const createMenuFrame = (title: string, items: RetroMenuItem[]): RetroMenuFrame => {
+const createMenuFrame = (
+  title: string,
+  items: RetroMenuItem[],
+  refresh?: () => RetroMenuItem[],
+): RetroMenuFrame => {
   const values = items.map(item => item.optionIndex ?? -1)
-  return { title, items, originalValues: values, values }
+  return { title, items, originalValues: values, values, refresh }
+}
+
+const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
+  const previousStack = stack.slice(0, -1)
+  const previousFrame = previousStack[previousStack.length - 1]
+  if (!previousFrame?.refresh) return previousStack
+
+  previousStack[previousStack.length - 1] = createMenuFrame(
+    previousFrame.title,
+    previousFrame.refresh(),
+    previousFrame.refresh,
+  )
+  return previousStack
 }
 
 const restoreMenuFramePreview = (frame: RetroMenuFrame) => {
@@ -227,15 +255,44 @@ const getRetroMenu = (
       },
     ] : []),
   ]
+  const insertedDiskItems = (driveIndex: number): RetroMenuItem[] => {
+    const drive = handleGetDriveProps(driveIndex)
+    return [
+      toggleItem("Write Protect Disk", drive.isWriteProtected, enabled => {
+          handleSetDiskWriteProtected(driveIndex, enabled)
+          updateDisplay()
+        }),
+      ...(drive.writableFileHandle ? [{
+        label: "Save Disk",
+        action: () => { void handleSaveWritableFile(driveIndex) },
+      }] : []),
+      ...(isFileSystemApiSupported() ? [{
+        label: "Save Disk to Device",
+        action: () => { void saveDiskToDevice(driveIndex) },
+      }] : []),
+      {
+        label: "Download Disk",
+        action: () => downloadDiskToDevice(driveIndex),
+      },
+      {
+        label: "Eject Disk",
+        action: () => {
+          handleEjectDisk(driveIndex)
+          updateDisplay()
+        },
+      },
+    ]
+  }
+  const diskDriveItems = (): RetroMenuItem[] => diskDrives.map(({ drive, index, slot }) => ({
+    label: `Slot ${slot}, Drive ${drive}: ${handleGetFilename(index) ?? "Empty"}`,
+    children: () => handleGetDriveProps(index).filename ? insertedDiskItems(index) : diskLoadItems(index),
+  }))
 
   return [
     {
       label: "Disk Drives",
       children: diskDrives.length > 0
-        ? diskDrives.map(({ drive, index, slot }) => ({
-          label: `Slot ${slot}, Drive ${drive}`,
-          children: diskLoadItems(index),
-        }))
+        ? diskDriveItems
         : [{ label: "No disk drives available" }],
     },
     {
@@ -440,25 +497,31 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
         event.stopPropagation()
         const item = currentMenu[selectedIndex]
         if (item.children) {
-          setMenuStack(stack => [...stack, createMenuFrame(item.label, item.children ?? [])])
+          const refresh = typeof item.children === "function" ? item.children : undefined
+          const children = typeof item.children === "function" ? item.children() : item.children
+          setMenuStack(stack => [...stack, createMenuFrame(item.label, children, refresh)])
           setSelectedIndex(0)
-        } else if (currentFrame && currentFrame.items.some(frameItem => frameItem.options)) {
+        } else if (currentFrame && item.options) {
           currentFrame.items.forEach((frameItem, index) => {
             if (currentFrame.values[index] !== currentFrame.originalValues[index]) {
               frameItem.options?.[currentFrame.values[index]]?.action?.()
             }
           })
-          setMenuStack(stack => stack.slice(0, -1))
+          setMenuStack(refreshPreviousMenu)
           setSelectedIndex(0)
         } else {
           item.action?.()
+          if (currentFrame) {
+            setMenuStack(refreshPreviousMenu)
+            setSelectedIndex(0)
+          }
         }
       } else if (event.key === "Escape") {
         event.preventDefault()
         event.stopPropagation()
         if (menuStack.length > 0) {
           restoreMenuFramePreview(currentFrame)
-          setMenuStack(stack => stack.slice(0, -1))
+          setMenuStack(refreshPreviousMenu)
           setSelectedIndex(0)
         }
       } else if (!event.ctrlKey && !event.altKey && !event.metaKey && /^[a-z]$/i.test(event.key)) {
