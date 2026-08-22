@@ -259,9 +259,9 @@ const getRetroMenu = (
     const drive = handleGetDriveProps(driveIndex)
     return [
       toggleItem("Write Protect Disk", drive.isWriteProtected, enabled => {
-          handleSetDiskWriteProtected(driveIndex, enabled)
-          updateDisplay()
-        }),
+        handleSetDiskWriteProtected(driveIndex, enabled)
+        updateDisplay()
+      }),
       ...(drive.writableFileHandle ? [{
         label: "Save Disk",
         action: () => { void handleSaveWritableFile(driveIndex) },
@@ -340,17 +340,38 @@ const getRetroMenu = (
       })],
     },
     {
-      label: "System Speed",
-      value: speedOptions[speedModes.indexOf(handleGetSpeedMode())],
-      children: [choiceItem("Speed", speedOptions, speedModes.indexOf(handleGetSpeedMode()), index => {
-        setPreferenceSpeedMode(speedModes[index])
-        updateDisplay()
-      }, speedModes.indexOf(0))],
-    },
-    {
-      label: "Clock",
-      value: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      children: [choiceItem("Clock", ["Host system clock"], 0, () => { }, 0)],
+      label: "Options",
+      children: [
+        choiceItem("System Speed", speedOptions, speedModes.indexOf(handleGetSpeedMode()), index => {
+          setPreferenceSpeedMode(speedModes[index])
+          updateDisplay()
+        }, speedModes.indexOf(0)),
+        choiceItem("Clock", ["Host system clock"], 0, () => { }, 0),
+        choiceItem("Mouse", ["Off", "Slot 4", "Slot 5"], [0, 4, 5].indexOf(mouseSlot), index => {
+          const slot = [0, 4, 5][index]
+          if (slot === 0) {
+            const nextConfig = { ...handleGetSlotConfig() }
+            if (nextConfig[4] === "mouse") nextConfig[4] = "none"
+            if (nextConfig[5] === "mouse") nextConfig[5] = "none"
+            setPreferenceSlotConfig(nextConfig)
+            updateDisplay()
+          } else {
+            selectSlotCard(slot as 4 | 5, "mouse")
+          }
+        }, [0, 4, 5].indexOf(
+          DEFAULT_SLOT_CONFIG[4] === "mouse" ? 4 : DEFAULT_SLOT_CONFIG[5] === "mouse" ? 5 : 0,
+        )),
+        choiceItem(
+          "RAM Disk",
+          ramOptions.map(size => size >= 1024 ? `${size / 1024} MB` : `${size} KB`),
+          ramOptions.indexOf(currentRam),
+          index => {
+            setPreferenceRamWorks(ramOptions[index])
+            updateDisplay()
+          },
+          ramOptions.indexOf(64),
+        ),
+      ],
     },
     {
       label: "Keyboard",
@@ -394,38 +415,6 @@ const getRetroMenu = (
         changeSerialMode(index)
         updateDisplay()
       }, 0)],
-    },
-    {
-      label: "RAM Disk",
-      value: currentRam >= 1024 ? `${currentRam / 1024} MB` : `${currentRam} KB`,
-      children: [choiceItem(
-        "Size",
-        ramOptions.map(size => size >= 1024 ? `${size / 1024} MB` : `${size} KB`),
-        ramOptions.indexOf(currentRam),
-        index => {
-          setPreferenceRamWorks(ramOptions[index])
-          updateDisplay()
-        },
-        ramOptions.indexOf(64),
-      )],
-    },
-    {
-      label: "Mouse",
-      value: mouseSlot === 0 ? "Off" : `Slot ${mouseSlot}`,
-      children: [choiceItem("Mouse", ["Off", "Slot 4", "Slot 5"], [0, 4, 5].indexOf(mouseSlot), index => {
-        const slot = [0, 4, 5][index]
-        if (slot === 0) {
-          const nextConfig = { ...handleGetSlotConfig() }
-          if (nextConfig[4] === "mouse") nextConfig[4] = "none"
-          if (nextConfig[5] === "mouse") nextConfig[5] = "none"
-          setPreferenceSlotConfig(nextConfig)
-          updateDisplay()
-        } else {
-          selectSlotCard(slot as 4 | 5, "mouse")
-        }
-      }, [0, 4, 5].indexOf(
-        DEFAULT_SLOT_CONFIG[4] === "mouse" ? 4 : DEFAULT_SLOT_CONFIG[5] === "mouse" ? 5 : 0,
-      ))],
     },
     { label: "Quit", action: close },
   ]
