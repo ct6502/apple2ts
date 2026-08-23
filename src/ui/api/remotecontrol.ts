@@ -70,11 +70,38 @@ type RemoteCommand = {
   payload?: Record<string, unknown>,
 }
 
+type RemoteControlIdentity = {
+  remoteControlToken?: string,
+  rendererId?: string,
+}
+
 let started = false
 let clientId = ""
 let eventSource: EventSource | null = null
 let heartbeatId = 0
 let reconnectId = 0
+let remoteControlIdentity: RemoteControlIdentity = {}
+
+const getRemoteControlIdentity = () => {
+  const identity: RemoteControlIdentity = {}
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const remoteControlToken = params.get("remoteControlToken")
+    const rendererId = params.get("rendererId")
+    if (remoteControlToken !== null) identity.remoteControlToken = remoteControlToken
+    if (rendererId !== null) identity.rendererId = rendererId
+  } catch {
+    return identity
+  }
+  return identity
+}
+
+const withRemoteControlIdentity = (body: Record<string, unknown>) => {
+  return {
+    ...body,
+    ...remoteControlIdentity,
+  }
+}
 
 const isRemoteControlEnabled = () => {
   try {
@@ -279,21 +306,21 @@ const postJson = async (url: string, body: Record<string, unknown>) => {
 
 const postState = async () => {
   if (!clientId) return
-  await postJson("/api/client/state", {
+  await postJson("/api/client/state", withRemoteControlIdentity({
     clientId,
     state: collectStatus(),
-  })
+  }))
 }
 
 const postReply = async (commandId: string, ok: boolean, result: unknown, error = "") => {
   if (!clientId) return
-  await postJson("/api/client/reply", {
+  await postJson("/api/client/reply", withRemoteControlIdentity({
     clientId,
     commandId,
     ok,
     result,
     error,
-  })
+  }))
 }
 
 const startHeartbeat = () => {
@@ -326,15 +353,16 @@ const connectToRemoteServer = async () => {
   if (!isRemoteServerAvailable()) return
 
   try {
+    remoteControlIdentity = getRemoteControlIdentity()
     const response = await fetch("/api/client/connect", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
+      body: JSON.stringify(withRemoteControlIdentity({
         pathname: window.location.pathname,
         userAgent: navigator.userAgent,
-      }),
+      })),
     })
     if (!response.ok) return
 
@@ -344,7 +372,11 @@ const connectToRemoteServer = async () => {
     if (eventSource) {
       eventSource.close()
     }
-    eventSource = new EventSource(`/api/client/events?clientId=${encodeURIComponent(clientId)}`)
+    const eventParams = new URLSearchParams({
+      clientId,
+      ...remoteControlIdentity,
+    })
+    eventSource = new EventSource(`/api/client/events?${eventParams.toString()}`)
     eventSource.addEventListener("command", (event) => {
       void handleCommand(event as MessageEvent<string>)
     })
