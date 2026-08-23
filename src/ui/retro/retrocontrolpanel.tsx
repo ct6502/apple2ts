@@ -2,10 +2,13 @@ import { useEffect, useState } from "react"
 import { COLOR_MODE, DEFAULT_SLOT_CONFIG, RUN_MODE, UI_THEME, UI_THEMES } from "../../common/utility"
 import {
   DiskCollectionSortMode,
+  getPreferenceRetroSkin,
+  RETRO_SKIN,
   setPreferenceDiskCollectionSort,
   setPreferenceBoolean,
   setPreferenceColorMode,
   setPreferenceRamWorks,
+  setPreferenceRetroSkin,
   setPreferenceSlotConfig,
   setPreferenceSpeedMode,
   setPreferenceTheme,
@@ -81,6 +84,7 @@ type RetroMenuItem = {
   valueOnly?: boolean
   actionLabel?: string
   refreshOptions?: (index: number) => RetroMenuItem[]
+  refreshTitle?: () => string
   disk?: DiskCollectionItem
   checkmarkIndex?: number
   submit?: (items: RetroMenuItem[], values: number[]) => void
@@ -146,6 +150,7 @@ const RetroBorder = ({ className, separatorRow }: {
 )
 
 const colorModeClasses = ["color", "color", "green", "amber", "white", "inverse"]
+const retroSkinClasses = ["apple-iie", "apple-iigs", "apple-iiplus"]
 const speedModes = [-2, -1, 0, 1, 2, 3, 4]
 const ramOptions = [64, 512, 1024, 4096, 8192]
 const slotNumbers = [1, 2, 3, 4, 5, 6, 7] as const
@@ -226,6 +231,7 @@ const getRetroMenu = (
   t: Translate,
   language: Language,
   changeLanguage: (language: Language) => void,
+  changeRetroSkin: (skin: RETRO_SKIN) => void,
 ): RetroMenuItem[] => {
   const { updateDisplay } = displayProps
   const audioEnabled = getAudioStatus() === "enabled"
@@ -471,15 +477,84 @@ const getRetroMenu = (
       actionLabel: t("retroControl.load"),
     }
   })
-  const languageItem = choiceItem(
-    t("retroControl.language"),
-    AllLanguages.map(language => LanguageNames[language]),
-    AllLanguages.indexOf(language),
-    index => changeLanguage(AllLanguages[index]),
-  )
-  languageItem.options?.forEach(option => {
-    option.useBrowserFont = !mouseTextSupports(option.label)
-  })
+  const createOptionsItems = (selectedLanguage: Language = language): RetroMenuItem[] => {
+    const languageItem = choiceItem(
+      t("retroControl.language"),
+      AllLanguages.map(language => LanguageNames[language]),
+      AllLanguages.indexOf(selectedLanguage),
+      index => changeLanguage(AllLanguages[index]),
+      undefined,
+      index => changeLanguage(AllLanguages[index]),
+    )
+    languageItem.options?.forEach(option => {
+      option.useBrowserFont = !mouseTextSupports(option.label)
+    })
+    languageItem.refreshOptions = index => createOptionsItems(AllLanguages[index])
+    languageItem.refreshTitle = () => t("retroControl.options")
+
+    return [
+      choiceItem(t("retroControl.systemSpeed"), speedOptions, speedModes.indexOf(handleGetSpeedMode()), index => {
+        setPreferenceSpeedMode(speedModes[index])
+        updateDisplay()
+      }, speedModes.indexOf(0)),
+      choiceItem(t("retroControl.clock"), [t("retroControl.hostSystemClock")], 0, () => { }, 0),
+      choiceItem(t("retroControl.mouse"), [
+        t("messages.off"),
+        t("retroControl.slot", { slot: "4" }),
+        t("retroControl.slot", { slot: "5" }),
+      ], [0, 4, 5].indexOf(mouseSlot), index => {
+        const slot = [0, 4, 5][index]
+        if (slot === 0) {
+          const nextConfig = { ...handleGetSlotConfig() }
+          if (nextConfig[4] === "mouse") nextConfig[4] = "none"
+          if (nextConfig[5] === "mouse") nextConfig[5] = "none"
+          setPreferenceSlotConfig(nextConfig)
+          updateDisplay()
+        } else {
+          selectSlotCard(slot as 4 | 5, "mouse")
+        }
+      }, [0, 4, 5].indexOf(
+        DEFAULT_SLOT_CONFIG[4] === "mouse" ? 4 : DEFAULT_SLOT_CONFIG[5] === "mouse" ? 5 : 0,
+      )),
+      choiceItem(
+        t("retroControl.ramDisk"),
+        ramOptions.map(size => size >= 1024 ? `${size / 1024} MB` : `${size} KB`),
+        ramOptions.indexOf(currentRam),
+        index => {
+          setPreferenceRamWorks(ramOptions[index])
+          updateDisplay()
+        },
+        ramOptions.indexOf(64),
+      ),
+      choiceItem(
+        t("config.theme"),
+        [
+          t("themes.classic"),
+          t("themes.dark"),
+          t("themes.minimal"),
+          t("retroControl.retroTheme"),
+        ],
+        UI_THEMES.findIndex(theme => theme.value === getTheme()),
+        index => {
+          setPreferenceTheme(UI_THEMES[index].value as UI_THEME)
+          const url = new URL(window.location.href)
+          url.searchParams.delete("theme")
+          url.searchParams.set("cache", Date.now().toString())
+          window.location.href = url.toString()
+        },
+        UI_THEMES.findIndex(theme => theme.value === UI_THEME.CLASSIC),
+      ),
+      choiceItem(
+        t("retroControl.skin"),
+        ["Apple //e", "Apple IIGS", "Apple ][+"],
+        getPreferenceRetroSkin(),
+        index => changeRetroSkin(index as RETRO_SKIN),
+        RETRO_SKIN.APPLE_IIE,
+        index => changeRetroSkin(index as RETRO_SKIN),
+      ),
+      languageItem,
+    ]
+  }
 
   return [
     {
@@ -585,60 +660,7 @@ const getRetroMenu = (
     },
     {
       label: t("retroControl.options"),
-      children: [
-        choiceItem(t("retroControl.systemSpeed"), speedOptions, speedModes.indexOf(handleGetSpeedMode()), index => {
-          setPreferenceSpeedMode(speedModes[index])
-          updateDisplay()
-        }, speedModes.indexOf(0)),
-        choiceItem(t("retroControl.clock"), [t("retroControl.hostSystemClock")], 0, () => { }, 0),
-        choiceItem(t("retroControl.mouse"), [
-          t("messages.off"),
-          t("retroControl.slot", { slot: "4" }),
-          t("retroControl.slot", { slot: "5" }),
-        ], [0, 4, 5].indexOf(mouseSlot), index => {
-          const slot = [0, 4, 5][index]
-          if (slot === 0) {
-            const nextConfig = { ...handleGetSlotConfig() }
-            if (nextConfig[4] === "mouse") nextConfig[4] = "none"
-            if (nextConfig[5] === "mouse") nextConfig[5] = "none"
-            setPreferenceSlotConfig(nextConfig)
-            updateDisplay()
-          } else {
-            selectSlotCard(slot as 4 | 5, "mouse")
-          }
-        }, [0, 4, 5].indexOf(
-          DEFAULT_SLOT_CONFIG[4] === "mouse" ? 4 : DEFAULT_SLOT_CONFIG[5] === "mouse" ? 5 : 0,
-        )),
-        choiceItem(
-          t("retroControl.ramDisk"),
-          ramOptions.map(size => size >= 1024 ? `${size / 1024} MB` : `${size} KB`),
-          ramOptions.indexOf(currentRam),
-          index => {
-            setPreferenceRamWorks(ramOptions[index])
-            updateDisplay()
-          },
-          ramOptions.indexOf(64),
-        ),
-        choiceItem(
-          t("config.theme"),
-          [
-            t("themes.classic"),
-            t("themes.dark"),
-            t("themes.minimal"),
-            t("retroControl.retroTheme"),
-          ],
-          UI_THEMES.findIndex(theme => theme.value === getTheme()),
-          index => {
-            setPreferenceTheme(UI_THEMES[index].value as UI_THEME)
-            const url = new URL(window.location.href)
-            url.searchParams.delete("theme")
-            url.searchParams.set("cache", Date.now().toString())
-            window.location.href = url.toString()
-          },
-          UI_THEMES.findIndex(theme => theme.value === UI_THEME.CLASSIC),
-        ),
-        languageItem,
-      ],
+      children: createOptionsItems,
     },
     {
       label: t("retroControl.keyboard"),
@@ -696,12 +718,25 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [menuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [now, setNow] = useState(() => new Date())
+  const [retroSkin, setRetroSkin] = useState(getPreferenceRetroSkin)
   const close = () => setIsOpen(false)
   const openDiskDialog = (dialog: DiskLoadDialog) => {
     close()
     setDiskLoadDialog(dialog)
   }
-  const rootMenu = getRetroMenu(displayProps, close, openDiskDialog, t, language, changeLanguage)
+  const changeRetroSkin = (skin: RETRO_SKIN) => {
+    setPreferenceRetroSkin(skin)
+    setRetroSkin(skin)
+  }
+  const rootMenu = getRetroMenu(
+    displayProps,
+    close,
+    openDiskDialog,
+    t,
+    language,
+    changeLanguage,
+    changeRetroSkin,
+  )
   const currentFrame = menuStack[menuStack.length - 1]
   const currentMenu = currentFrame?.items ?? rootMenu
   const maxVisibleMenuItems = 16
@@ -723,6 +758,7 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
       : currentFrame.actionLabel !== t("retroControl.load") || Boolean(selectedItem?.action))
   const panelEffects = [
     `retro-color-${colorModeClasses[getColorMode()]}`,
+    `retro-skin-${retroSkinClasses[retroSkin]}`,
     getGhosting() ? "retro-effect-ghosting" : "",
     getCrtDistortion() ? "retro-effect-crt" : "",
   ].filter(Boolean).join(" ")
@@ -791,7 +827,7 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
               ? items.map(refreshedItem => refreshedItem.optionIndex ?? -1)
               : [...frame.values]
             values[selectedIndex] = nextValue
-            return { ...frame, items, values }
+            return { ...frame, title: item.refreshTitle?.() ?? frame.title, items, values }
           }))
         }
       } else if (event.key === "Enter") {

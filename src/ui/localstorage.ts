@@ -8,6 +8,34 @@ import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivi
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
   "showScanlines", "hotReload", "tiltSensorJoystick", "useOpenAppleKey", "debugMode"]
 
+export enum RETRO_SKIN {
+  APPLE_IIE,
+  APPLE_IIGS,
+  APPLE_IIPLUS,
+}
+
+export const getPreferenceRetroSkin = (): RETRO_SKIN => {
+  const item = localStorage.getItem("retroSkin")
+  if (item) {
+    try {
+      const skin = JSON.parse(item)
+      if (skin === RETRO_SKIN.APPLE_IIGS || skin === RETRO_SKIN.APPLE_IIPLUS) return skin
+    } catch {
+      // Invalid data is cleared below.
+    }
+    localStorage.removeItem("retroSkin")
+  }
+  return RETRO_SKIN.APPLE_IIE
+}
+
+export const setPreferenceRetroSkin = (skin: RETRO_SKIN = RETRO_SKIN.APPLE_IIE) => {
+  if (skin === RETRO_SKIN.APPLE_IIE) {
+    localStorage.removeItem("retroSkin")
+  } else {
+    localStorage.setItem("retroSkin", JSON.stringify(skin))
+  }
+}
+
 
 export const setPreferenceBoolean = (key: BooleanKeyOf<UIState>, value: boolean) => {
   if (value) {
@@ -466,6 +494,7 @@ export const resetPreferences = () => {
   setPreferenceSpeedMode()
   setPreferenceColorMode()
   setPreferenceTheme()
+  setPreferenceRetroSkin()
   setPreferenceMockingboardMode()
   setPreferenceMachineName()
   setPreferenceRamWorks()

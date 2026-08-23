@@ -2557,6 +2557,10 @@ msgctxt "retroControl.options"
 msgid "Options"
 msgstr "選項"
 
+msgctxt "retroControl.skin"
+msgid "Skin"
+msgstr "外觀"
+
 msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr "鍵盤"

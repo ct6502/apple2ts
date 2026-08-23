@@ -75,6 +75,14 @@
   --retro-foreground: #000;
 }
 
+.retro-panel.retro-skin-apple-iigs {
+  --retro-background: #2022ff;
+}
+
+.retro-panel.retro-skin-apple-iiplus {
+  text-transform: uppercase;
+}
+
 .retro-panel.retro-effect-ghosting .retro-window {
   text-shadow: 0.08em 0 color-mix(in srgb, var(--retro-foreground) 45%, transparent);
 }

@@ -2183,6 +2183,10 @@ msgctxt "retroControl.options"
 msgid "Options"
 msgstr ""
 
+msgctxt "retroControl.skin"
+msgid "Skin"
+msgstr ""
+
 msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr ""
