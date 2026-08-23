@@ -65,6 +65,10 @@ msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Сообщить о проблеме"
 
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr ""
+
 #, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"

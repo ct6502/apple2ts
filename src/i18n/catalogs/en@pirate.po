@@ -61,6 +61,10 @@ msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Report Scurvy Trouble"
 
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr ""
+
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "Ship's Gait"
