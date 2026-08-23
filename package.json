@@ -35,6 +35,9 @@
     "preview": "vite preview",
     "pretest": "npm run check-qr-hgr-assembly && npm run test-po-catalog",
     "test": "jest",
+    "setup:ui-layout": "playwright install chromium",
+    "pretest:ui-layout": "npm run build",
+    "test:ui-layout": "playwright test --config=playwright.layout.config.ts",
     "generate-qr-hgr-assembly": "node tools/generate-qr-hgr-assembly.mjs",
     "check-qr-hgr-assembly": "node tools/generate-qr-hgr-assembly.mjs --check",
     "prereview-disassembly-tooltips": "npm run generate-i18n-catalogs",
@@ -70,6 +73,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",
+    "@playwright/test": "1.62.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/audioworklet": "^0.0.100",
     "@types/gapi.client.drive-v3": "^0.0.5",

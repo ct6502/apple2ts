@@ -3,5 +3,5 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "jsdom",
-  testPathIgnorePatterns: ["/node_modules/", "/tools/"],
+  testPathIgnorePatterns: ["/node_modules/", "/tools/", "/tests/ui-layout/"],
 }

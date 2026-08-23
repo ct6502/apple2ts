@@ -95,6 +95,20 @@ Run in watch mode:
 
 `npm test -- --watch`
 
+Run the focused Chromium layout-acceptance suite:
+
+```sh
+npm run setup:ui-layout # First run, and after Playwright upgrades
+npm run test:ui-layout
+```
+
+The layout suite requires a clean Git worktree, builds Apple2TS, starts and
+stops its own isolated preview server, and stores failure artifacts under
+`test-results/`. It complements
+manual review in Safari, Electron, native browser zoom, and real touch devices.
+See [Desktop Layout Behavior](docs/desktop-layout.md) for the requirements the
+suite enforces and the remaining human-review boundary.
+
 ### Building the Package
 
 To builds the app for production:

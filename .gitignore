@@ -10,6 +10,8 @@ src/worker/roms/65C02_extended_opcodes_test.bin
 # production
 /build
 /dist
+/playwright-report
+/test-results
 
 # generated from gettext catalogs
 /src/i18n/languages/*.ts
