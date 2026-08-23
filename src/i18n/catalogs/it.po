@@ -174,7 +174,7 @@ msgstr ""
 #, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
-msgstr "Velocità Lumaca (0.1 MHz)"
+msgstr "Lumaca (0.1 MHz)"
 
 #, fuzzy
 msgctxt "speed.slow"
@@ -1796,7 +1796,7 @@ msgstr "Segnala un problema di esportazione"
 #, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
-msgstr "Torna Indietro nel Tempo"
+msgstr "Riavvolgi"
 
 #, fuzzy
 msgctxt "debugControls.takeSnapshot"
