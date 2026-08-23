@@ -127,9 +127,9 @@ const collectionItems = (
     ...sortDisks(disks, sortMode).map((disk, index): RetroControlMetadata => ({
       id: `diskCollection.${tabIndex}.disk.${index}`,
       label: decodeDiskTitle(disk.title),
+      keepMenuOpen: true,
       action: runtime => {
-        runtime.close()
-        loadDisk(-1, disk, runtime.displayProps.updateDisplay)
+        loadDisk(-1, disk, runtime.displayProps.updateDisplay, undefined, runtime.close)
       },
     })),
     {
@@ -201,36 +201,42 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
   {
     id: `diskDrives.${driveIndex}.load.device`,
     label: context => context.t("disk.loadDisk"),
+    keepMenuOpen: true,
     action: context => {
-      context.close()
       context.displayProps.setShowFileOpenDialog(true, driveIndex)
     },
   },
   {
     id: `diskDrives.${driveIndex}.load.internetArchive`,
     label: context => context.t("disk.loadDiskFromInternetArchive"),
+    keepMenuOpen: true,
     action: context => context.openDiskDialog({ driveIndex, type: "internetArchive" }),
   },
   ...(demoZooEnabled ? [{
     id: `diskDrives.${driveIndex}.load.demoZoo`,
     label: (context: RetroMenuContext) => context.t("disk.loadDiskFromDemoZoo"),
+    keepMenuOpen: true,
     action: (context: RetroMenuContext) => context.openDiskDialog({ driveIndex, type: "demoZoo" }),
   }] : []),
   ...(!navigator.userAgent.includes("Electron") ? [
     {
       id: `diskDrives.${driveIndex}.load.oneDrive`,
       label: (context: RetroMenuContext) => context.t("disk.loadDiskFromOneDrive"),
+      keepMenuOpen: true,
       action: (context: RetroMenuContext) => {
-        context.close()
-        void loadDiskFromCloudDrive(new OneDriveCloudDrive(), driveIndex)
+        void loadDiskFromCloudDrive(new OneDriveCloudDrive(), driveIndex).then(loaded => {
+          if (loaded) context.close()
+        })
       },
     },
     {
       id: `diskDrives.${driveIndex}.load.googleDrive`,
       label: (context: RetroMenuContext) => context.t("disk.loadDiskFromGoogleDrive"),
+      keepMenuOpen: true,
       action: (context: RetroMenuContext) => {
-        context.close()
-        void loadDiskFromCloudDrive(new GoogleDrive(), driveIndex)
+        void loadDiskFromCloudDrive(new GoogleDrive(), driveIndex).then(loaded => {
+          if (loaded) context.close()
+        })
       },
     },
   ] : []),
@@ -274,40 +280,36 @@ const insertedDiskItems = (driveIndex: number): RetroControlMetadata[] => {
   ]
 }
 
-const diskDriveItems = (context: RetroMenuContext): RetroControlMetadata[] => {
-  const slotConfig = handleGetSlotConfig()
-  const drives = ([
-    { index: 0, slot: 7 },
-    { index: 1, slot: 7 },
-    { index: 2, slot: 6 },
-    { index: 3, slot: 6 },
-  ] as const).filter(({ slot }) => slotConfig[slot] !== "none")
-  if (drives.length === 0) return [{
-    id: "diskDrives.none",
-    label: context.t("retroControl.noDiskDrivesAvailable"),
-  }]
-  return drives.map(({ index }, order) => {
+const diskDrives = [
+  { index: 0, slot: 7 },
+  { index: 1, slot: 7 },
+  { index: 2, slot: 6 },
+  { index: 3, slot: 6 },
+] as const
+
+const diskDriveControls = diskDrives.map(({ index, slot }, order): RetroControlMetadata => ({
+      id: `diskDrives.${index}`,
+      parentId: "diskCollection",
+      order: order + 6,
+      label: context => {
     const drive = handleGetDriveProps(index)
     const filename = handleGetFilename(index)
-    return {
-      id: `diskDrives.${index}`,
-      order,
-      label: context.t("retroControl.drive", {
+        return context.t("retroControl.drive", {
         drive: DISK_DRIVE_LABELS[index],
         disk: filename
           ? `${drive.diskHasChanges ? "*" : ""}${decodeDiskTitle(filename)}`
           : context.t("retroControl.card.empty"),
-      }),
+        })
+      },
+      isVisible: () => handleGetSlotConfig()[slot] !== "none",
       dynamicChildren: () => handleGetDriveProps(index).filename
         ? insertedDiskItems(index)
         : diskLoadItems(index),
-      actionLabel: context.t("retroControl.load"),
-      contextualActionLabel: drive.filename
+      actionLabel: context => context.t("retroControl.load"),
+      contextualActionLabel: context => handleGetDriveProps(index).filename
         ? context.t("retroControl.options")
         : context.t("retroControl.load"),
-    }
-  })
-}
+    }))
 
 export const retroDiskControls: RetroControlMetadata[] = [
   {
@@ -319,13 +321,22 @@ export const retroDiskControls: RetroControlMetadata[] = [
   },
   ...diskCollectionControls,
   {
-    id: "diskDrives",
-    parentId: null,
-    order: 2,
+    id: "diskCollection.drivesSeparator",
+    parentId: "diskCollection",
+    order: 4,
     label: context => context.t("retroControl.diskDrives"),
-    dynamicChildren: diskDriveItems,
-    actionLabel: context => context.t("retroControl.load"),
+    separator: true,
+    selectable: false,
   },
+  {
+    id: "diskDrives.none",
+    parentId: "diskCollection",
+    order: 5,
+    label: context => context.t("retroControl.noDiskDrivesAvailable"),
+    isVisible: () => diskDrives.every(({ slot }) => handleGetSlotConfig()[slot] === "none"),
+    selectable: false,
+  },
+  ...diskDriveControls,
 ]
 
 const DiskInterface = (props: DisplayProps) => {

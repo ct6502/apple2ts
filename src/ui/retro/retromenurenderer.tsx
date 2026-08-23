@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react"
 import Apple2Canvas from "../canvas"
+import FileInput from "../fileinput"
 import type { RetroResolvedControl } from "./retromenucontext"
 import { formatControlLabel } from "../controls/controlregistry"
 import { useRetroMenuHost } from "./retromenuhost"
+import {
+  actionHintWidth,
+  fitControlText,
+  retroFontSupports,
+  selectArrowSpacing,
+  selectHintWidth,
+  truncateControlText,
+} from "./retrotext"
 import "./retrocontrolpanel.css"
 
 type RetroMenuItem = RetroResolvedControl
@@ -24,8 +33,9 @@ const mouseTextRight = String.fromCodePoint(0x2192)
 const mouseTextUp = String.fromCodePoint(0x2191)
 const mouseTextReturn = String.fromCodePoint(0x21B5)
 const checkmark = String.fromCodePoint(0x2713)
-
-const mouseTextSupports = (text: string) => /^[\x20-\x7E\u2014]*$/.test(text)
+const fixedWidthSpace = String.fromCodePoint(0x2007)
+const rootMenuContentWidth = 34
+const submenuContentWidth = 36
 
 const RetroBorder = ({ className, separatorRow }: {
   className: string
@@ -83,7 +93,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const close = () => setIsOpen(false)
-  const { dialogs, effects, language, rootMenu, t } = useRetroMenuHost(displayProps, close)
+  const { dialogs, effects, hasOpenDialog, language, rootMenu, t } = useRetroMenuHost(displayProps, close)
   const currentFrame = menuStack[menuStack.length - 1]
   const currentMenu = currentFrame?.items ?? rootMenu
   const maxVisibleMenuItems = 16
@@ -95,10 +105,15 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     : 0
   const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
   const selectedItem = currentMenu[selectedIndex]
+  const selectLabel = t("retroControl.select")
+  const arrowSpacing = selectArrowSpacing(selectLabel, language)
+  const selectHintHalfCells = Math.ceil(selectHintWidth(selectLabel, language) * 2)
   const saveActionLabel = t("retroControl.save")
   const footerActionLabel = selectedItem?.contextualActionLabel
     ?? currentFrame?.actionLabel
     ?? t("retroControl.open")
+  const actionHintHalfCells = Math.ceil(actionHintWidth(footerActionLabel, language) * 2)
+  const actionStartLine = 81 - actionHintHalfCells
   const showHorizontalSelectionHint = (selectedItem?.options?.length ?? 0) > 1
   const showFooterAction = selectedItem?.contextualActionLabel !== undefined
     ? Boolean(selectedItem.contextualActionLabel)
@@ -114,6 +129,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (hasOpenDialog) return
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
         event.preventDefault()
         event.stopPropagation()
@@ -211,7 +227,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           setSelectedIndex(0)
         } else {
           item.action?.()
-          if (currentFrame) {
+          if (currentFrame && !item.keepMenuOpen) {
             setMenuStack(refreshPreviousMenu)
             setSelectedIndex(0)
           }
@@ -241,7 +257,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
 
     window.addEventListener("keydown", handleKeyDown, true)
     return () => window.removeEventListener("keydown", handleKeyDown, true)
-  }, [currentFrame, currentMenu, isOpen, menuStack, saveActionLabel, selectedIndex])
+  }, [currentFrame, currentMenu, hasOpenDialog, isOpen, menuStack, saveActionLabel, selectedIndex])
 
   return (
     <main
@@ -261,8 +277,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               <span>{"Apple2TS "}&#8198;</span>
             </header>
             {currentFrame && <div className="retro-submenu-title">
-              <span className={mouseTextSupports(currentFrame.title) ? undefined : "retro-browser-font"}>
-                {currentFrame.title}
+              <span className={retroFontSupports(currentFrame.title) ? undefined : "retro-browser-font"}>
+                {truncateControlText(currentFrame.title, 38, language)}
               </span>
             </div>}
             {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString(language)} ${now.toLocaleDateString(language)}`}>
@@ -285,12 +301,23 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 const option = item.options?.[valueIndex]
                 const baseLabel = item.valueOnly && option ? option.label : item.label
                 const itemLabel = formatControlLabel(baseLabel, item.separator)
+                const hasOptionValue = option && !item.valueOnly && item.checkmarkIndex === undefined
+                const availableWidth = (currentFrame ? submenuContentWidth : rootMenuContentWidth) -
+                  (currentFrame ? 2 : 0)
+                const fittedText = fitControlText(
+                  itemLabel,
+                  hasOptionValue ? option.label : undefined,
+                  availableWidth,
+                  language,
+                )
+                const visibleOption = fittedText.option
+                const visibleLabel = fittedText.label
                 const isChecked = item.checkmarkIndex !== undefined
                   ? valueIndex === item.checkmarkIndex
                   : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
                 return (
                   <div
-                    className={`retro-menu-item${selectedIndex === index ? " selected" : ""}`}
+                    className={`retro-menu-item${item.separator ? " separator" : ""}${selectedIndex === index ? " selected" : ""}`}
                     key={item.id}
                     role="menuitem"
                     aria-current={selectedIndex === index ? "true" : undefined}
@@ -299,36 +326,46 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                     {currentFrame && <span className="retro-menu-check">
                       {isChecked ? checkmark : " "}
                     </span>}
-                    <span className={`retro-menu-name${mouseTextSupports(itemLabel) ? "" : " retro-browser-font"}`}>
-                      {itemLabel}
-                      {option && !item.valueOnly && item.checkmarkIndex === undefined ? ":" : ""}
+                    <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
+                      {visibleLabel}
+                      {visibleOption ? ":" : ""}
                     </span>
-                    {option && !item.valueOnly && item.checkmarkIndex === undefined &&
-                      <>{" "}<span className={`retro-menu-value${option.useBrowserFont || !mouseTextSupports(option.label) ? " retro-browser-font" : ""}`}>
-                        {option.label}
+                    {visibleOption &&
+                      <>{" "}<span className={`retro-menu-value${option?.useBrowserFont || !retroFontSupports(visibleOption) ? " retro-browser-font" : ""}`}>
+                        {visibleOption}
                       </span></>}
                   </div>
                 )
               })}
             </div>
             <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
-              <span className={`retro-footer-select${mouseTextSupports(t("retroControl.select")) ? "" : " retro-browser-font"}`}>{` ${t("retroControl.select")}:`}<i className="retro-mousetext">
-                {showHorizontalSelectionHint && <>{mouseTextLeft} {mouseTextRight} </>}
+              <span
+                className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}
+                style={{ gridColumn: `1 / ${selectHintHalfCells + 1}` }}
+              >{`${fixedWidthSpace}${selectLabel}:`}<i className="retro-mousetext">
+                {showHorizontalSelectionHint && <>{mouseTextLeft}{arrowSpacing}{mouseTextRight}{arrowSpacing}</>}
                 {currentFrame
-                  ? <>{mouseTextUp} {mouseTextDown}</>
-                  : <>{mouseTextDown} {mouseTextUp}</>}
+                  ? <>{mouseTextUp}{arrowSpacing}{mouseTextDown}</>
+                  : <>{mouseTextDown}{arrowSpacing}{mouseTextUp}</>}
               </i></span>
-              {currentFrame && <span className={`retro-footer-cancel${mouseTextSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}>{t("retroControl.cancelEsc")}</span>}
-              {showFooterAction &&
-                <span className={`retro-footer-action${mouseTextSupports(footerActionLabel) ? "" : " retro-browser-font"}`}>
-                  {`${footerActionLabel}:`}
-                  <i className="retro-mousetext">{mouseTextReturn}</i>{" "}
-                </span>}
+              {currentFrame && <span
+                className={`retro-footer-cancel${retroFontSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}
+                style={{ gridColumn: "1 / 81" }}
+              >{t("retroControl.cancelEsc")}</span>}
+              <span
+                aria-hidden={!showFooterAction}
+                className={`retro-footer-action${showFooterAction ? "" : " hidden"}${retroFontSupports(footerActionLabel) ? "" : " retro-browser-font"}`}
+                style={{ gridColumn: `${actionStartLine} / 81` }}
+              >
+                {`${footerActionLabel}:`}
+                <i className="retro-mousetext">{mouseTextReturn}</i>{fixedWidthSpace}
+              </span>
             </footer>
           </div>
         </section>
       )}
       {dialogs}
+      <FileInput {...displayProps} onLoadSuccess={close} />
     </main>
   )
 }

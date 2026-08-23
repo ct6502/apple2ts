@@ -91,7 +91,7 @@ const LinkBuilder = () => {
     t("linkBuilder.themes.classic"),
     t("linkBuilder.themes.dark"),
     t("linkBuilder.themes.minimal"),
-    "Retro",
+    t("retroControl.retroTheme"),
   ]
   const themeParams = UI_THEMES.map(option => option.queryValue)
 

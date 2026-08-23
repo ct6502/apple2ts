@@ -249,7 +249,6 @@
 .retro-clock time:nth-of-type(1) {
   grid-column: 1 / -1;
   grid-row: 1;
-  padding-left: 1ch;
   position: relative;
   text-align: center;
   top: var(--retro-border-width);
@@ -296,10 +295,13 @@
   color: inherit;
 }
 
+.retro-menu-item[aria-disabled="true"]:not(.separator) {
+  opacity: 0.5;
+}
+
 .retro-menu-item>span {
   display: inline-block;
   position: relative;
-  top: var(--retro-border-width);
 }
 
 .retro-menu-item.selected .retro-menu-name {
@@ -321,7 +323,7 @@
   font-size: inherit;
   grid-column: 4 / 44;
   grid-row: 26;
-  grid-template-columns: repeat(40, 1fr);
+  grid-template-columns: repeat(80, 1fr);
   line-height: calc(var(--retro-cell-height) - 2px);
   overflow: visible;
   padding: 0 0 2px;
@@ -334,14 +336,22 @@
 }
 
 .retro-footer-select {
-  grid-column: 1 / span 16;
+  justify-self: start;
 }
 
 .retro-footer-cancel {
-  grid-column: 19 / span 10;
+  justify-self: center;
 }
 
 .retro-footer-action {
-  grid-column: 33 / -1;
   justify-self: end;
+  text-align: right;
+}
+
+.retro-footer-action.hidden {
+  visibility: hidden;
+}
+
+.retro-shell .modal-overlay {
+  z-index: 10001;
 }

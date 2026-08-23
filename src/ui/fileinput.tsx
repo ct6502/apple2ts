@@ -5,7 +5,7 @@ import { RestoreSaveState } from "./savestate"
 import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
 import { isFileSystemApiSupported } from "./ui_utilities"
 
-const FileInput = (props: DisplayProps) => {
+const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
   const [binaryBuffer, setBinaryBuffer] = useState(new Uint8Array())
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
@@ -17,6 +17,7 @@ const FileInput = (props: DisplayProps) => {
       fileread.onload = function (ev) {
         if (ev.target) {
           RestoreSaveState(ev.target.result as string)
+          props.onLoadSuccess?.()
         }
       }
       fileread.readAsText(file)
@@ -30,6 +31,7 @@ const FileInput = (props: DisplayProps) => {
         }
       } else {
         handleSetDiskOrFileFromBuffer(index, buffer, file.name, null, null)
+        props.onLoadSuccess?.()
       }
     }
   }
@@ -74,6 +76,7 @@ const FileInput = (props: DisplayProps) => {
       }
       newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
       prepWritableFile(newIndex, writableFileHandle)
+      props.onLoadSuccess?.()
     }
   }
 
@@ -134,7 +137,8 @@ const FileInput = (props: DisplayProps) => {
       />
       <BinaryFileDialog displayDialog={displayBinaryDialog}
         displayClose={() => setDisplayBinaryDialog(false)}
-        binaryBuffer={binaryBuffer} />
+        binaryBuffer={binaryBuffer}
+        onLoadSuccess={props.onLoadSuccess} />
     </>
   )
 }

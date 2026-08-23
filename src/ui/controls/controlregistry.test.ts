@@ -65,6 +65,17 @@ describe("ControlRegistry", () => {
     })
   })
 
+  test("preserves menu retention metadata for external actions", () => {
+    const registry = new ControlRegistry<Context>([{
+      id: "load",
+      label: "Load",
+      action: () => undefined,
+      keepMenuOpen: true,
+    }])
+
+    expect(registry.resolve({ enabled: false }, "options")[0].keepMenuOpen).toBe(true)
+  })
+
   test("resolves contextual visibility and selectability", () => {
     const registry = new ControlRegistry<Context>([
       { id: "visible", label: "Visible", isVisible: context => context.enabled },

@@ -19,7 +19,6 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
   const [diskLoadDialog, setDiskLoadDialog] = useState<DiskLoadDialog | null>(null)
   const [retroSkin, setRetroSkin] = useState(getPreferenceRetroSkin)
   const openDiskDialog = (dialog: DiskLoadDialog) => {
-    close()
     setDiskLoadDialog(dialog)
   }
   const changeRetroSkin = (skin: RETRO_SKIN) => {
@@ -47,12 +46,14 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
       driveIndex={diskLoadDialog?.driveIndex ?? 0}
       open={diskLoadDialog?.type === "internetArchive"}
       onClose={() => setDiskLoadDialog(null)}
+      onLoadSuccess={close}
     />
     <DemoZooDialog
       driveIndex={diskLoadDialog?.driveIndex ?? 0}
       open={diskLoadDialog?.type === "demoZoo"}
       onClose={() => setDiskLoadDialog(null)}
+      onLoadSuccess={close}
     />
   </>
-  return { dialogs, effects, language, rootMenu, t }
+  return { dialogs, effects, hasOpenDialog: diskLoadDialog !== null, language, rootMenu, t }
 }

@@ -200,10 +200,7 @@ const DisplayApple2 = () => {
     return <Apple2Canvas {...props} />
   }
   if (theme === UI_THEME.RETRO && !isGameMode()) {
-    return <>
-      <RetroMenuRenderer displayProps={props} />
-      <FileInput {...props} />
-    </>
+    return <RetroMenuRenderer displayProps={props} />
   }
   return (
     <>

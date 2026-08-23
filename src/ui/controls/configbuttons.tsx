@@ -87,6 +87,7 @@ export const retroConfigControls: RetroControlMetadata[] = [
   }),
   {
     id: "settings.reset",
+    order: 2000,
     label: context => context.t("config.resetSettings"),
     action: context => {
       resetPreferences()

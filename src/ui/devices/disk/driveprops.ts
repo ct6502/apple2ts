@@ -231,7 +231,8 @@ export const handleSetDiskOrFileFromBuffer = (
 export const handleSetDiskFromCloudData = async (
   cloudData: CloudData,
   driveIndex: number = 0,
-  callback?: (buffer: ArrayBuffer | null) => void) => {
+  callback?: (buffer: ArrayBuffer | null) => void,
+  onLoadSuccess?: () => void) => {
   let cloudProvider
   switch (cloudData.providerName) {
     case "GoogleDrive":
@@ -283,6 +284,7 @@ export const handleSetDiskFromCloudData = async (
           } else {
             cloudData.lastSyncTime = Date.now()
             handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+            onLoadSuccess?.()
           }
         } else {
           if (callback) {
@@ -886,7 +888,8 @@ const selectHelpText = createHelpTextSelector(loadHelpText)
 
 export const handleSetDiskFromFile = async (disk: string,
   updateDisplay: UpdateDisplay | null, driveIndex: number = -1,
-  callback?: (buffer: ArrayBuffer | null) => void) => {
+  callback?: (buffer: ArrayBuffer | null) => void,
+  onLoadSuccess?: () => void) => {
   const configuredHelpFile = findCatalogHelpFile(disk)
   let data: ArrayBuffer
   try {
@@ -932,6 +935,7 @@ export const handleSetDiskFromFile = async (disk: string,
     if (needsBoot) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     }
+    onLoadSuccess?.()
 
   }
 }

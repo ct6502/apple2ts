@@ -2329,11 +2329,11 @@ msgid "Fullscreen"
 msgstr "Full Sail"
 
 msgctxt "retroControl.diskCollection"
-msgid "Disk Collection"
-msgstr "Disk Hoard"
+msgid "Disks"
+msgstr "Disks"
 
 msgctxt "retroControl.diskDrives"
-msgid "Disk Drives"
+msgid "Drives"
 msgstr "Disk Holds"
 
 msgctxt "retroControl.display"
@@ -2476,6 +2476,14 @@ msgctxt "retroControl.other"
 msgid "Other"
 msgstr "Other Booty"
 
+msgctxt "retroControl.timeMachine"
+msgid "Snapshots"
+msgstr "Snapshots"
+
+msgctxt "retroControl.ports"
+msgid "Ports"
+msgstr "Harbors"
+
 msgctxt "retroControl.clock"
 msgid "Clock"
 msgstr "Ship's Clock"
@@ -2490,11 +2498,11 @@ msgstr "Deck Mouse"
 
 msgctxt "retroControl.ramDisk"
 msgid "RAM Disk"
-msgstr ""
+msgstr "RAM Hold"
 
 msgctxt "retroControl.language"
 msgid "Language"
-msgstr ""
+msgstr "Tongue"
 
 msgctxt "retroControl.port"
 msgid "Port"
@@ -2513,8 +2521,8 @@ msgid "Open Apple key"
 msgstr ""
 
 msgctxt "retroControl.sortOrder"
-msgid "Sort Order"
-msgstr ""
+msgid "Sort"
+msgstr "Sort"
 
 msgctxt "retroControl.slot"
 msgid "Slot {{slot}}"
@@ -2602,4 +2610,4 @@ msgstr ""
 
 msgctxt "retroControl.retroTheme"
 msgid "Retro"
-msgstr ""
+msgstr "Old-School"

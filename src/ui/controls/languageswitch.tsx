@@ -7,8 +7,7 @@ import { choiceMetadata } from "../retro/retromenuhelpers"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
 import { controlOptionsToPopupItems } from "./controlpopup"
-
-const supportsMouseText = (text: string) => /^[\x20-\x7E\u2014]*$/.test(text)
+import { retroFontSupports } from "../retro/retrotext"
 
 const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMetadata => {
   const control = choiceMetadata({
@@ -25,7 +24,7 @@ const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMeta
     popupLabel: `${LanguageFlags[language]} ${LanguageNames[language]}`,
     action: runtime => runtime.changeLanguage(language),
     preview: runtime => runtime.changeLanguage(language),
-    useBrowserFont: !supportsMouseText(LanguageNames[language]),
+    useBrowserFont: !retroFontSupports(LanguageNames[language]),
   }))
   control.refreshParentOnOption = true
   control.refreshTitle = context => context.t("retroControl.options")

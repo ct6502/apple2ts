@@ -2164,11 +2164,11 @@ msgid "Fullscreen"
 msgstr ""
 
 msgctxt "retroControl.diskCollection"
-msgid "Disk Collection"
+msgid "Disks"
 msgstr ""
 
 msgctxt "retroControl.diskDrives"
-msgid "Disk Drives"
+msgid "Drives"
 msgstr ""
 
 msgctxt "retroControl.display"
@@ -2311,6 +2311,14 @@ msgctxt "retroControl.other"
 msgid "Other"
 msgstr ""
 
+msgctxt "retroControl.timeMachine"
+msgid "Snapshots"
+msgstr ""
+
+msgctxt "retroControl.ports"
+msgid "Ports"
+msgstr ""
+
 msgctxt "retroControl.clock"
 msgid "Clock"
 msgstr ""
@@ -2364,7 +2372,7 @@ msgid "Open Apple key"
 msgstr ""
 
 msgctxt "retroControl.sortOrder"
-msgid "Sort Order"
+msgid "Sort"
 msgstr ""
 
 msgctxt "retroControl.slot"

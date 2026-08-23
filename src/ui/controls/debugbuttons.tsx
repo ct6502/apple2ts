@@ -32,31 +32,49 @@ const emulatorStarted = () => {
 
 export const retroDebugControls: RetroControlMetadata[] = [
   {
+    id: "machine.timeMachine",
+    parentId: "machine",
+    order: 4,
+    label: context => context.t("retroControl.timeMachine"),
+    separator: true,
+    selectable: false,
+  },
+  {
     id: "snapshot.back",
+    parentId: "machine",
+    order: 5,
     label: context => context.t("debugControls.goBackInTime"),
     action: passGoBackInTime,
     selectable: () => emulatorStarted() && handleCanGoBackward(),
   },
   {
     id: "snapshot.take",
+    parentId: "machine",
+    order: 6,
     label: context => context.t("debugControls.takeSnapshot"),
     action: passTimeTravelSnapshot,
     selectable: emulatorStarted,
   },
   {
     id: "snapshot.forward",
+    parentId: "machine",
+    order: 7,
     label: context => context.t("debugControls.goForwardInTime"),
     action: passGoForwardInTime,
     selectable: () => emulatorStarted() && handleCanGoForward(),
   },
   {
     id: "snapshot.saveState",
+    parentId: "machine",
+    order: 8,
     label: context => context.t("debugControls.saveStateWithSnapshots"),
     action: () => handleFileSave(true),
     selectable: emulatorStarted,
   },
   {
     id: "emulator.pause",
+    parentId: "machine",
+    order: 9,
     label: context => context.t(handleGetRunMode() === RUN_MODE.PAUSED
       ? "debugControls.resume"
       : "debugControls.pause"),
@@ -68,6 +86,7 @@ export const retroDebugControls: RetroControlMetadata[] = [
   },
   toggleMetadata({
     id: "options.hotReload",
+    order: 1001,
     label: context => context.t(getHotReload()
       ? "debugControls.hotReloadEnabled"
       : "debugControls.hotReloadDisabled"),
@@ -85,17 +104,22 @@ const debugControlRegistry = new ControlRegistry(retroDebugControls)
 const DebugButtons = (props: DisplayProps) => {
   const { t, language, changeLanguage } = useTranslation()
   const runMode = handleGetRunMode()
-  const controls = debugControlRegistry.resolve(
+  const machineControls = debugControlRegistry.resolve(
+    createControlContext(props, t, language, changeLanguage),
+    "machine",
+  )
+  const optionControls = debugControlRegistry.resolve(
     createControlContext(props, t, language, changeLanguage),
     "options",
   )
+  const controls = machineControls.filter(item => item.id !== "machine.timeMachine")
   const control = (id: string) => controls.find(item => item.id === id)!
   const back = control("snapshot.back")
   const take = control("snapshot.take")
   const forward = control("snapshot.forward")
   const save = control("snapshot.saveState")
   const pause = control("emulator.pause")
-  const hotReload = controls.find(item => item.id === "options.hotReload")
+  const hotReload = optionControls.find(item => item.id === "options.hotReload")
   return <span className="flex-row">
     <div className="flex-row" id="tour-snapshot">
       <button className="push-button"

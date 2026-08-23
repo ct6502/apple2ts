@@ -19,6 +19,7 @@ export type ControlMetadata<Context, Payload = unknown> = {
   separator?: boolean
   value?: ControlValue<Context, string | undefined>
   action?: (context: Context) => void
+  keepMenuOpen?: boolean
   children?: ControlValue<Context, readonly ControlMetadata<Context, Payload>[]>
   dynamicChildren?: (context: Context) => readonly ControlMetadata<Context, Payload>[]
   options?: ControlValue<Context, readonly ControlOptionMetadata<Context>[]>
@@ -53,6 +54,7 @@ export type ResolvedControl<Payload = unknown> = {
   separator?: boolean
   value?: string
   action?: () => void
+  keepMenuOpen?: boolean
   children?: ResolvedControl<Payload>[] | (() => ResolvedControl<Payload>[])
   options?: ResolvedControlOption[]
   optionIndex?: number
@@ -166,6 +168,7 @@ export class ControlRegistry<Context, Payload = unknown> {
       separator: metadata.separator,
       value: metadata.value === undefined ? undefined : valueOf(metadata.value, context),
       action: metadata.action ? () => metadata.action!(context) : undefined,
+      keepMenuOpen: metadata.keepMenuOpen,
       children,
       options: resolvedOptions,
       optionIndex: metadata.optionIndex === undefined ? undefined : valueOf(metadata.optionIndex, context),

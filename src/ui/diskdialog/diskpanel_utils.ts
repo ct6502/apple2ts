@@ -180,7 +180,8 @@ export const loadDisk = (
   driveIndex: number,
   diskCollectionItem: DiskCollectionItem | undefined,
   updateDisplay: UpdateDisplay,
-  callback?: (buffer: ArrayBuffer | null) => void) => {
+  callback?: (buffer: ArrayBuffer | null) => void,
+  onLoadSuccess?: () => void) => {
   // Only force idle when actually loading into a drive. Background fetches for
   // export/VTOC pass a callback (and often driveIndex -1) and must not disrupt
   // the currently running program/canvas state.
@@ -190,11 +191,19 @@ export const loadDisk = (
 
   if (diskCollectionItem) {
     if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
-      handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback)
+      handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback, onLoadSuccess)
     } else if (diskCollectionItem.diskUrl && !diskCollectionItem.diskUrl.includes("://")) {
-      handleSetDiskFromFile(diskCollectionItem.diskUrl, updateDisplay, driveIndex, callback)
+      handleSetDiskFromFile(diskCollectionItem.diskUrl, updateDisplay, driveIndex, callback, onLoadSuccess)
     } else {
-      handleSetDiskFromURL(diskCollectionItem.diskUrl || "", undefined, driveIndex, diskCollectionItem.cloudData, callback)
+      void handleSetDiskFromURL(
+        diskCollectionItem.diskUrl || "",
+        undefined,
+        driveIndex,
+        diskCollectionItem.cloudData,
+        callback,
+      ).then(loaded => {
+        if (loaded && !callback) onLoadSuccess?.()
+      })
     }
     if (diskCollectionItem.params && !callback) {
       handleInputParams(diskCollectionItem.params)

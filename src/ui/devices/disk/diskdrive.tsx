@@ -32,11 +32,12 @@ export const DISK_DRIVE_LABELS = ["S7,D1", "S7,D2", "S6,D1", "S6,D2"]
 
 export const loadDiskFromCloudDrive = async (cloudDrive: CloudProvider, driveIndex: number) => {
   const result = await cloudDrive.download(FILE_SUFFIXES_DISK)
-  if (!result) return
+  if (!result) return false
 
   const [blob, cloudData] = result
   const buffer = await new Response(blob).arrayBuffer()
   handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+  return true
 }
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {

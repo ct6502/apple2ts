@@ -12,19 +12,12 @@ const serialNames = (context: RetroMenuContext) => [
   context.t(getSerialMode() === 0 ? "retroControl.selectExternalPort" : "retroControl.externalPort"),
 ]
 
-const serialPortControl = (id: string, order: number, labelKey: string): RetroControlMetadata[] => [
-  {
+const serialPortControl = (id: string, order: number, labelKey: string): RetroControlMetadata =>
+  choiceMetadata({
     id,
-    parentId: null,
+    parentId: "ports",
     order,
     label: context => context.t(labelKey),
-    value: context => serialNames(context)[getSerialMode()],
-  },
-  choiceMetadata({
-    id: `${id}.port`,
-    parentId: id,
-    order: 0,
-    label: context => context.t("retroControl.port"),
     labels: serialNames,
     currentIndex: getSerialMode,
     select: (context, index) => {
@@ -32,12 +25,17 @@ const serialPortControl = (id: string, order: number, labelKey: string): RetroCo
       context.displayProps.updateDisplay()
     },
     defaultIndex: 0,
-  }),
-]
+  })
 
 export const retroSerialControls: RetroControlMetadata[] = [
-  ...serialPortControl("printerPort", 8, "retroControl.printerPort"),
-  ...serialPortControl("modemPort", 9, "retroControl.modemPort"),
+  {
+    id: "ports",
+    parentId: null,
+    order: 8,
+    label: context => context.t("retroControl.ports"),
+  },
+  serialPortControl("printerPort", 0, "retroControl.printerPort"),
+  serialPortControl("modemPort", 1, "retroControl.modemPort"),
 ]
 
 const serialControlRegistry = new ControlRegistry(retroSerialControls)
@@ -46,8 +44,8 @@ export const SerialPortSelect = (props: DisplayProps) => {
   const { t, language, changeLanguage } = useTranslation()
   const control = serialControlRegistry.resolve(
     createControlContext(props, t, language, changeLanguage),
-    "printerPort",
-  )[0]
+    "ports",
+  ).find(item => item.id === "printerPort")!
 
   return (
     <DropdownButton 

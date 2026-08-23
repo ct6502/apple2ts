@@ -23,6 +23,8 @@ import { ControlRegistry } from "./controlregistry"
 export const retroStateControls: RetroControlMetadata[] = [
   {
     id: "state.restore",
+    parentId: "machine",
+    order: 2,
     label: context => context.t("controls.restoreState"),
     action: context => {
       context.close()
@@ -31,6 +33,8 @@ export const retroStateControls: RetroControlMetadata[] = [
   },
   {
     id: "state.save",
+    parentId: "machine",
+    order: 3,
     label: context => context.t("controls.saveState"),
     action: () => {
       const runMode = handleGetRunMode()
@@ -50,7 +54,7 @@ const ControlButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
   const stateControls = stateControlRegistry.resolve(
     createControlContext(props, t, language, changeLanguage),
-    "options",
+    "machine",
   )
   const restoreState = stateControls.find(control => control.id === "state.restore")!
   const saveState = stateControls.find(control => control.id === "state.save")!

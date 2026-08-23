@@ -354,6 +354,7 @@ export interface DemoZooDialogProps {
   driveIndex: number
   open: boolean
   onClose: () => void
+  onLoadSuccess?: () => void
 }
 
 const DemoZooDialog = (props: DemoZooDialogProps) => {
@@ -539,6 +540,7 @@ const DemoZooDialog = (props: DemoZooDialogProps) => {
         }
         if (loaded) {
           handleClose()
+          props.onLoadSuccess?.()
         } else {
           console.error(`DemoZoo disk could not be loaded: ${downloadUrl}`)
         }

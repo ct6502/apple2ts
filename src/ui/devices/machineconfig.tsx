@@ -96,8 +96,8 @@ export const retroMachineControls: RetroControlMetadata[] = [
   },
   choiceMetadata({
     id: "machine.fullscreen",
-    parentId: "machine",
-    order: 2,
+    parentId: "display",
+    order: 4,
     label: context => context.t("retroControl.fullscreen"),
     labels: context => [context.t("messages.off"), context.t("messages.on")],
     currentIndex: () => isCanvasFullscreen() ? 1 : 0,

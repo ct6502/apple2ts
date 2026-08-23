@@ -20,14 +20,12 @@ describe("Retro menu metadata structure", () => {
     expect(retroMenuRegistry.getIds(null)).toEqual([
       "machine",
       "diskCollection",
-      "diskDrives",
       "display",
       "sound",
       "options",
       "keyboard",
       "slots",
-      "printerPort",
-      "modemPort",
+      "ports",
       "quit",
     ])
   })
@@ -36,13 +34,26 @@ describe("Retro menu metadata structure", () => {
     expect(retroMenuRegistry.getIds("machine")).toEqual([
       "machine.boot",
       "machine.reset",
-      "machine.fullscreen",
+      "state.restore",
+      "state.save",
+      "machine.timeMachine",
+      "snapshot.back",
+      "snapshot.take",
+      "snapshot.forward",
+      "snapshot.saveState",
+      "emulator.pause",
     ])
     expect(retroMenuRegistry.getIds("diskCollection")).toEqual([
       "diskCollection.builtIn",
       "diskCollection.newReleases",
       "diskCollection.favorites",
       "diskCollection.export",
+      "diskCollection.drivesSeparator",
+      "diskDrives.none",
+      "diskDrives.0",
+      "diskDrives.1",
+      "diskDrives.2",
+      "diskDrives.3",
     ])
     expect(retroMenuRegistry.getIds("options")).toEqual([
       "options.speed",
@@ -53,21 +64,15 @@ describe("Retro menu metadata structure", () => {
       "options.retroSkin",
       "options.language",
       "options.other",
-      "settings.reset",
-      "state.restore",
-      "state.save",
-      "snapshot.back",
-      "snapshot.take",
-      "snapshot.forward",
-      "snapshot.saveState",
-      "emulator.pause",
       "options.hotReload",
+      "settings.reset",
     ])
     expect(retroMenuRegistry.getIds("display")).toEqual([
       "display.color",
       "display.scanlines",
       "display.ghosting",
       "display.crtDistortion",
+      "machine.fullscreen",
     ])
     expect(retroMenuRegistry.getIds("sound")).toEqual([
       "sound.enabled",
@@ -77,5 +82,8 @@ describe("Retro menu metadata structure", () => {
     expect(retroMenuRegistry.getIds("slots")).toEqual([
       "slots.1", "slots.2", "slots.3", "slots.4", "slots.5", "slots.6", "slots.7",
     ])
+    expect(retroMenuRegistry.getIds("ports")).toEqual(["printerPort", "modemPort"])
+    expect(retroMenuRegistry.getIds("printerPort")).toEqual([])
+    expect(retroMenuRegistry.getIds("modemPort")).toEqual([])
   })
 })

@@ -2522,11 +2522,11 @@ msgid "Fullscreen"
 msgstr "Vollbild"
 
 msgctxt "retroControl.diskCollection"
-msgid "Disk Collection"
-msgstr "Disk-Sammlung"
+msgid "Disks"
+msgstr "Disketten"
 
 msgctxt "retroControl.diskDrives"
-msgid "Disk Drives"
+msgid "Drives"
 msgstr "Laufwerke"
 
 msgctxt "retroControl.display"
@@ -2669,6 +2669,14 @@ msgctxt "retroControl.other"
 msgid "Other"
 msgstr "Sonstiges"
 
+msgctxt "retroControl.timeMachine"
+msgid "Snapshots"
+msgstr "Schnappschüsse"
+
+msgctxt "retroControl.ports"
+msgid "Ports"
+msgstr "Anschlüsse"
+
 msgctxt "retroControl.clock"
 msgid "Clock"
 msgstr "Uhr"
@@ -2683,11 +2691,11 @@ msgstr "Maus"
 
 msgctxt "retroControl.ramDisk"
 msgid "RAM Disk"
-msgstr ""
+msgstr "RAM-Disk"
 
 msgctxt "retroControl.language"
 msgid "Language"
-msgstr ""
+msgstr "Sprache"
 
 msgctxt "retroControl.port"
 msgid "Port"
@@ -2706,8 +2714,8 @@ msgid "Open Apple key"
 msgstr ""
 
 msgctxt "retroControl.sortOrder"
-msgid "Sort Order"
-msgstr ""
+msgid "Sort"
+msgstr "Sortierung"
 
 msgctxt "retroControl.slot"
 msgid "Slot {{slot}}"
@@ -2795,4 +2803,4 @@ msgstr ""
 
 msgctxt "retroControl.retroTheme"
 msgid "Retro"
-msgstr ""
+msgstr "Retro"
