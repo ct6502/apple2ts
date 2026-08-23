@@ -55,11 +55,13 @@ import {
   getDefaultDiskCollectionSortMode,
   getDiskCollection,
   getDiskCollectionSortMode,
+  getExportFilename,
   isDiskExportable,
   loadDisk,
   sortDisks,
+  createHdv,
 } from "../diskdialog/diskpanel_utils"
-import { isFileSystemApiSupported } from "../ui_utilities"
+import { isFileSystemApiSupported, showGlobalProgressModal } from "../ui_utilities"
 import Apple2Canvas from "../canvas"
 import "./retrocontrolpanel.css"
 
@@ -75,6 +77,10 @@ type RetroMenuItem = {
   valueOnly?: boolean
   actionLabel?: string
   refreshOptions?: (index: number) => RetroMenuItem[]
+  disk?: DiskCollectionItem
+  checkmarkIndex?: number
+  submit?: (items: RetroMenuItem[], values: number[]) => void
+  isSubmitVisible?: (items: RetroMenuItem[], values: number[]) => boolean
 }
 
 type RetroMenuOption = {
@@ -90,6 +96,8 @@ type RetroMenuFrame = {
   values: number[]
   actionLabel: string
   refresh?: () => RetroMenuItem[]
+  submit?: (items: RetroMenuItem[], values: number[]) => void
+  isSubmitVisible?: (items: RetroMenuItem[], values: number[]) => boolean
 }
 
 type DiskLoadDialog = {
@@ -179,9 +187,11 @@ const createMenuFrame = (
   items: RetroMenuItem[],
   refresh?: () => RetroMenuItem[],
   actionLabel = "Save",
+  submit?: (items: RetroMenuItem[], values: number[]) => void,
+  isSubmitVisible?: (items: RetroMenuItem[], values: number[]) => boolean,
 ): RetroMenuFrame => {
   const values = items.map(item => item.optionIndex ?? -1)
-  return { title, items, originalValues: values, values, actionLabel, refresh }
+  return { title, items, originalValues: values, values, actionLabel, refresh, submit, isSubmitVisible }
 }
 
 const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
@@ -219,11 +229,47 @@ const getRetroMenu = (
   const currentRam = handleGetMemSize()
   const slotConfig = handleGetSlotConfig()
   const diskCollection = getDiskCollection(new DiskBookmarks(), newReleases)
+  const exportDisks = async (disks: DiskCollectionItem[]) => {
+    close()
+    const downloadedDisks: DownloadedExportDisk[] = []
+    try {
+      for (let index = 0; index < disks.length; index += 1) {
+        const disk = disks[index]
+        showGlobalProgressModal(true, `Fetching disk ${index + 1}/${disks.length}`)
+        const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+          loadDisk(-1, disk, updateDisplay, result => {
+            if (result) resolve(result)
+            else reject(new Error(`Unable to download ${disk.title}`))
+          })
+        })
+        const data = new Uint8Array(buffer)
+        downloadedDisks.push({ item: disk, buffer: data, filename: getExportFilename(disk, data) })
+      }
+      await createHdv(downloadedDisks)
+    } catch (error) {
+      showGlobalProgressModal(false)
+      const message = error instanceof Error ? error.message : String(error)
+      alert(`Export to HDV failed: ${message}`)
+    }
+  }
+  const createExportItems = (disks: DiskCollectionItem[]): RetroMenuItem[] =>
+    sortDisks(disks, getDiskCollectionSortMode(TAB_INDEX.EXPORT)).map(disk => ({
+      label: disk.title,
+      options: [
+        { label: "" },
+        { label: "" },
+      ],
+      optionIndex: 0,
+      disk,
+      checkmarkIndex: 1,
+    }))
   const createDiskCollectionTabItems = (
     tabIndex: TAB_INDEX,
     disks: DiskCollectionItem[],
     sortMode: DiskCollectionSortMode = getDiskCollectionSortMode(tabIndex),
   ): RetroMenuItem[] => {
+    if (disks.length === 0) return []
+
     const sortIndex = diskCollectionSortOptions.findIndex(option => option.value === sortMode)
     const defaultSortIndex = diskCollectionSortOptions.findIndex(
       option => option.value === getDefaultDiskCollectionSortMode(tabIndex),
@@ -276,7 +322,7 @@ const getRetroMenu = (
     {
       label: "Export Disks to HDV",
       index: TAB_INDEX.EXPORT,
-      disks: diskCollection.filter(isDiskExportable),
+      disks: diskCollection.filter(disk => isDiskExportable(disk) && disk.vtocType !== undefined),
     },
   ]
   const slotOptions: Record<typeof slotNumbers[number], SLOT_CARD_ID[]> = {
@@ -383,8 +429,21 @@ const getRetroMenu = (
       label: "Disk Collection",
       children: diskCollectionTabs.map(tab => ({
         label: tab.label,
-        children: () => createDiskCollectionTabItems(tab.index, tab.disks),
+        children: () => tab.index === TAB_INDEX.EXPORT
+          ? createExportItems(tab.disks)
+          : createDiskCollectionTabItems(tab.index, tab.disks),
         actionLabel: tab.index === TAB_INDEX.EXPORT ? "Export" : "Load",
+        submit: tab.index === TAB_INDEX.EXPORT
+          ? (items: RetroMenuItem[], values: number[]) => {
+            const selectedDisks = items
+              .filter((item, index) => values[index] === 1 && item.disk)
+              .map(item => item.disk as DiskCollectionItem)
+            void exportDisks(selectedDisks)
+          }
+          : undefined,
+        isSubmitVisible: tab.index === TAB_INDEX.EXPORT
+          ? (_items: RetroMenuItem[], values: number[]) => values.some(value => value === 1)
+          : undefined,
       })),
       actionLabel: "Open",
     },
@@ -555,6 +614,14 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
     )
     : 0
   const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
+  const selectedItem = currentMenu[selectedIndex]
+  const showHorizontalSelectionHint = (Boolean(currentFrame?.submit) &&
+    currentMenu.some(item => (item.options?.length ?? 0) > 1)) ||
+    (Boolean(selectedItem?.refreshOptions) && (selectedItem?.options?.length ?? 0) > 1)
+  const showFooterAction = !currentFrame ||
+    (currentFrame.isSubmitVisible
+      ? currentFrame.isSubmitVisible(currentFrame.items, currentFrame.values)
+      : currentFrame.actionLabel !== "Load" || Boolean(selectedItem?.action))
   const panelEffects = [
     `retro-color-${colorModeClasses[getColorMode()]}`,
     getGhosting() ? "retro-effect-ghosting" : "",
@@ -595,8 +662,9 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
         })
       } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
         const item = currentMenu[selectedIndex]
+        if (!item) return
         const options = item.options
-        if (currentFrame && options && options.length > 0) {
+        if (currentFrame && options && options.length > 1) {
           event.preventDefault()
           event.stopPropagation()
           const direction = event.key === "ArrowLeft" ? -1 : 1
@@ -616,15 +684,31 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
         event.preventDefault()
         event.stopPropagation()
         const item = currentMenu[selectedIndex]
+        if (!item) return
         if (item.children) {
           const refresh = typeof item.children === "function" ? item.children : undefined
           const children = typeof item.children === "function" ? item.children() : item.children
           setMenuStack(stack => [
             ...stack,
-            createMenuFrame(item.label, children, refresh, item.actionLabel),
+            createMenuFrame(
+              item.label,
+              children,
+              refresh,
+              item.actionLabel,
+              item.submit,
+              item.isSubmitVisible,
+            ),
           ])
           setSelectedIndex(Math.max(0, children.findIndex(child => child.selectable !== false)))
         } else if (currentFrame && item.options) {
+          if (currentFrame.submit) {
+            if (currentFrame.isSubmitVisible?.(currentFrame.items, currentFrame.values)) {
+              currentFrame.submit(currentFrame.items, currentFrame.values)
+              setMenuStack([])
+              setSelectedIndex(0)
+            }
+            return
+          }
           currentFrame.items.forEach((frameItem, index) => {
             if (currentFrame.values[index] !== currentFrame.originalValues[index]) {
               frameItem.options?.[currentFrame.values[index]]?.action?.()
@@ -700,7 +784,9 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
                   const index = visibleMenuStart + visibleIndex
                   const valueIndex = currentFrame?.values[index] ?? item.optionIndex ?? -1
                   const option = item.options?.[valueIndex]
-                  const isDefault = item.defaultIndex !== undefined && valueIndex === item.defaultIndex
+                  const isChecked = item.checkmarkIndex !== undefined
+                    ? valueIndex === item.checkmarkIndex
+                    : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
                   return (
                     <div
                       className={`retro-menu-item${selectedIndex === index ? " selected" : ""}`}
@@ -710,12 +796,13 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
                       aria-disabled={item.selectable === false ? "true" : undefined}
                     >
                       {currentFrame && <span className="retro-menu-check">
-                        {isDefault ? checkmark : " "}
+                        {isChecked ? checkmark : " "}
                       </span>}
                       <span className="retro-menu-name">
                         {item.valueOnly && option ? option.label : item.label}
                       </span>
-                      {option && !item.valueOnly && <span className="retro-menu-value">: {option.label}</span>}
+                      {option && !item.valueOnly && item.checkmarkIndex === undefined &&
+                        <span className="retro-menu-value">: {option.label}</span>}
                     </div>
                   )
                 })()
@@ -723,15 +810,17 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
             </div>
             <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
               <span className="retro-footer-select">{" Select: "}<i className="retro-mousetext">
+                {showHorizontalSelectionHint && <>{mouseTextLeft} {mouseTextRight} </>}
                 {currentFrame
-                  ? <>{mouseTextLeft} {mouseTextRight} {mouseTextUp} {mouseTextDown}</>
+                  ? <>{mouseTextUp} {mouseTextDown}</>
                   : <>{mouseTextDown} {mouseTextUp}</>}
               </i></span>
               {currentFrame && <span className="retro-footer-cancel">Cancel:Esc</span>}
-              <span className="retro-footer-action">
-                {currentFrame ? `${currentFrame.actionLabel}: ` : "Open: "}
-                <i className="retro-mousetext">{mouseTextReturn}</i>{" "}
-              </span>
+              {showFooterAction &&
+                <span className="retro-footer-action">
+                  {currentFrame ? `${currentFrame.actionLabel}: ` : "Open: "}
+                  <i className="retro-mousetext">{mouseTextReturn}</i>{" "}
+                </span>}
             </footer>
           </div>
         </section>
