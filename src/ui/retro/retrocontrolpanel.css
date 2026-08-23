@@ -332,6 +332,7 @@
 
 .retro-window footer>span {
   bottom: var(--retro-border-width);
+  grid-row: 1;
   position: relative;
 }
 

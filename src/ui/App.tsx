@@ -2,7 +2,7 @@ import { useState } from "react"
 import "./App.css"
 import DisplayApple2 from "./display"
 import { GlobalContext } from "./globalcontext"
-import { isMinimalTheme } from "./ui_settings"
+import { getTheme, isMinimalTheme } from "./ui_settings"
 
 const App = () => {
   const [updateHgrMagnifier, setUpdateHgrMagnifier] = useState(false)
@@ -11,6 +11,8 @@ const App = () => {
   const [updateBreakpoint, setUpdateBreakpoint] = useState(0)
   const [runTour, setRunTour] = useState("")
   const [tourIndex, setTourIndex] = useState(0)
+  const [tourSourceTheme, setTourSourceTheme] = useState(getTheme)
+  const [returnToTourHelp, setReturnToTourHelp] = useState(false)
 
   window.setTimeout(() => {
     if (isMinimalTheme()) {
@@ -25,6 +27,10 @@ const App = () => {
         setRunTour: setRunTour,
         tourIndex: tourIndex,
         setTourIndex: setTourIndex,
+        tourSourceTheme,
+        setTourSourceTheme,
+        returnToTourHelp,
+        setReturnToTourHelp,
         updateHgrMagnifier: updateHgrMagnifier,
         setUpdateHgrMagnifier: setUpdateHgrMagnifier,
         hgrMagnifierLoc: hgrMagnifierLoc,

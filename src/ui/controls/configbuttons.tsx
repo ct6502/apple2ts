@@ -44,6 +44,7 @@ export const retroConfigControls: RetroControlMetadata[] = [
   choiceMetadata({
     id: "options.theme",
     order: 4,
+    tourTargets: ["#tour-theme-button"],
     label: context => context.t("config.theme"),
     labels: context => themeLabels(context.t),
     currentIndex: () => UI_THEMES.findIndex(theme => theme.value === getTheme()),
@@ -67,6 +68,7 @@ export const retroConfigControls: RetroControlMetadata[] = [
     id: "keyboard.lowercase",
     parentId: "keyboard",
     order: 0,
+    tourTargets: ["#tour-keyboardbuttons"],
     label: context => context.t("retroControl.lowercaseInput"),
     enabled: getLowercaseMode,
     setEnabled: (context, enabled) => {
@@ -88,6 +90,7 @@ export const retroConfigControls: RetroControlMetadata[] = [
   {
     id: "settings.reset",
     order: 2000,
+    tourTargets: ["#tour-clearcookies"],
     label: context => context.t("config.resetSettings"),
     action: context => {
       resetPreferences()

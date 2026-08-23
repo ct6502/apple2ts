@@ -709,8 +709,16 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr ""
 
+msgctxt "tour.retroBootButton"
+msgid "Select this option to start the emulator."
+msgstr ""
+
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
+msgstr ""
+
+msgctxt "tour.retroResetButton"
+msgid "Select this option to reset the Apple II and either reboot or enter BASIC."
 msgstr ""
 
 msgctxt "tour.diskImages"
@@ -721,14 +729,28 @@ msgctxt "tour.floppyDisks"
 msgid "Or click one of the floppy disk icons to load a disk image."
 msgstr ""
 
+msgctxt "tour.retroFloppyDisks"
+msgid "Or select a disk drive to load a disk image."
+msgstr ""
+
 msgctxt "tour.saveRestore"
 msgid ""
 "You can save and restore the complete state of the emulator using these "
 "buttons."
 msgstr ""
 
+msgctxt "tour.retroSaveRestore"
+msgid ""
+"You can save and restore the complete state of the emulator using these "
+"options."
+msgstr ""
+
 msgctxt "tour.themeButton"
 msgid "Click here to change the emulator UI theme."
+msgstr ""
+
+msgctxt "tour.retroThemeButton"
+msgid "Use the arrow keys to change the emulator UI theme."
 msgstr ""
 
 msgctxt "tour.endTour"
@@ -739,6 +761,12 @@ msgctxt "tour.tourSelectorHint"
 msgid ""
 "Click on the globe tour button to try one of the other tours, or press "
 "Finish to start using the emulator."
+msgstr ""
+
+msgctxt "tour.retroTourSelectorHint"
+msgid ""
+"Select a menu item to try one of the other tours, or press Finish to start "
+"using the emulator."
 msgstr ""
 
 msgctxt "tour.settingsWelcome"
@@ -776,6 +804,12 @@ msgid ""
 "the emulator speed, the screen color, and muting the sound."
 msgstr ""
 
+msgctxt "tour.retroConfigButtons"
+msgid ""
+"The Options menu controls the state of the Apple II, starting with the "
+"emulator speed, the screen color, and muting the sound."
+msgstr ""
+
 msgctxt "tour.keyboardButtons"
 msgid "If the caps lock key is turned on, then all typed characters are UPPERCASE."
 msgstr ""
@@ -791,6 +825,12 @@ msgctxt "tour.clearCookies"
 msgid ""
 "Apple2TS automatically saves the current emulator settings as browser "
 "cookies. Press this button to reset these settings and delete the cookies."
+msgstr ""
+
+msgctxt "tour.retroClearCookies"
+msgid ""
+"Apple2TS automatically saves the current emulator settings as browser "
+"cookies. Select this option to reset these settings and delete the cookies."
 msgstr ""
 
 msgctxt "tour.debugWelcome"
@@ -861,19 +901,19 @@ msgid "Close"
 msgstr ""
 
 msgctxt "tour.guidedTour"
-msgid "Guided Tour"
+msgid "Tours"
 msgstr ""
 
 msgctxt "tour.mainLabel"
-msgid "Guided Tour: Main"
+msgid "Guided Tours: Main"
 msgstr ""
 
 msgctxt "tour.settingsLabel"
-msgid "Guided Tour: Settings"
+msgid "Guided Tours: Settings"
 msgstr ""
 
 msgctxt "tour.debugLabel"
-msgid "Guided Tour: Debug"
+msgid "Guided Tours: Debug"
 msgstr ""
 
 msgctxt "disk.drive1"
@@ -2191,6 +2231,14 @@ msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr ""
 
+msgctxt "retroControl.input"
+msgid "Input"
+msgstr ""
+
+msgctxt "retroControl.joystick"
+msgid "Joystick"
+msgstr ""
+
 msgctxt "retroControl.slots"
 msgid "Slots"
 msgstr ""
@@ -2245,6 +2293,10 @@ msgstr ""
 
 msgctxt "retroControl.save"
 msgid "Save"
+msgstr ""
+
+msgctxt "retroControl.clipboard"
+msgid "Clipboard"
 msgstr ""
 
 msgctxt "retroControl.cancelEsc"

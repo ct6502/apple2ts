@@ -17,6 +17,7 @@ export type RetroMenuContext = {
   language: Language
   changeLanguage: (language: Language) => void
   changeRetroSkin: (skin: RETRO_SKIN) => void
+  startTour: (tour: string) => void
 }
 
 export const createControlContext = (
@@ -32,6 +33,7 @@ export const createControlContext = (
   close: () => undefined,
   openDiskDialog: () => undefined,
   changeRetroSkin: () => undefined,
+  startTour: () => undefined,
 })
 
 export type RetroControlMetadata<Payload = unknown> = ControlMetadata<RetroMenuContext, Payload>

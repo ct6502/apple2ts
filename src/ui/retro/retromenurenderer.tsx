@@ -13,6 +13,8 @@ import {
   truncateControlText,
 } from "./retrotext"
 import "./retrocontrolpanel.css"
+import RunTour, { getTour } from "../tours/runtour"
+import { tourTargetForStep } from "../tours/tourutils"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -87,15 +89,74 @@ const restoreMenuFramePreview = (frame: RetroMenuFrame) => {
   })
 }
 
+const controlChildren = (item: RetroMenuItem) =>
+  typeof item.children === "function" ? item.children() : item.children
+
+const findTourPath = (
+  items: RetroMenuItem[],
+  target: string,
+  ancestors: RetroMenuItem[] = [],
+): RetroMenuItem[] | undefined => {
+  for (const item of items) {
+    const path = [...ancestors, item]
+    if (item.tourTargets?.includes(target)) return path
+    const children = controlChildren(item)
+    if (children) {
+      const result = findTourPath(children, target, path)
+      if (result) return result
+    }
+  }
+}
+
+const createTourFrames = (path: RetroMenuItem[], saveActionLabel: string) => {
+  const frames: RetroMenuFrame[] = []
+  for (const parent of path.slice(0, -1)) {
+    const children = controlChildren(parent)
+    if (!children) break
+    const refresh = typeof parent.children === "function" ? parent.children : undefined
+    frames.push(createMenuFrame(
+      parent.label,
+      children,
+      refresh,
+      parent.actionLabel ?? saveActionLabel,
+      parent.submit,
+      parent.isSubmitVisible,
+    ))
+  }
+  return frames
+}
+
 const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [menuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [manualIsOpen, setIsOpen] = useState(false)
+  const [manualMenuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
+  const [manualSelectedIndex, setSelectedIndex] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const close = () => setIsOpen(false)
-  const { dialogs, effects, hasOpenDialog, language, rootMenu, t } = useRetroMenuHost(displayProps, close)
+  const {
+    dialogs,
+    effects,
+    hasOpenDialog,
+    language,
+    returnToTourHelp,
+    rootMenu,
+    runTour,
+    setReturnToTourHelp,
+    t,
+    tourIndex,
+  } = useRetroMenuHost(displayProps, close)
+  const tour = getTour(runTour, t, true)
+  const activeTourTarget = returnToTourHelp
+    ? "#tour-help-menu"
+    : tourTargetForStep(tour, tourIndex, "#tour-help-menu")
+  const tourPath = typeof activeTourTarget === "string" ? findTourPath(rootMenu, activeTourTarget) : undefined
+  const tourMenuStack = tourPath ? createTourFrames(tourPath, t("retroControl.save")) : undefined
+  const menuStack = tourMenuStack ?? manualMenuStack
   const currentFrame = menuStack[menuStack.length - 1]
   const currentMenu = currentFrame?.items ?? rootMenu
+  const selectedIndex = tourPath
+    ? Math.max(0, currentMenu.findIndex(item => item.id === tourPath.at(-1)?.id))
+    : manualSelectedIndex
+  const isOpen = manualIsOpen || Boolean(tourPath)
   const maxVisibleMenuItems = 16
   const visibleMenuStart = currentFrame
     ? Math.min(
@@ -134,13 +195,20 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         event.preventDefault()
         event.stopPropagation()
         menuStack.toReversed().forEach(restoreMenuFramePreview)
+        setReturnToTourHelp(false)
         setNow(new Date())
-        setIsOpen(open => !open)
+        setIsOpen(open => returnToTourHelp ? false : !open)
         setMenuStack([])
         setSelectedIndex(0)
         return
       }
       if (!isOpen) return
+      if (returnToTourHelp) {
+        setIsOpen(true)
+        setMenuStack(menuStack)
+        setSelectedIndex(selectedIndex)
+        setReturnToTourHelp(false)
+      }
 
       const isSubmitFrame = Boolean(currentFrame?.submit) && currentMenu.length > 0 &&
         currentMenu.every(item => item.checkmarkIndex !== undefined)
@@ -257,7 +325,17 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
 
     window.addEventListener("keydown", handleKeyDown, true)
     return () => window.removeEventListener("keydown", handleKeyDown, true)
-  }, [currentFrame, currentMenu, hasOpenDialog, isOpen, menuStack, saveActionLabel, selectedIndex])
+  }, [
+    currentFrame,
+    currentMenu,
+    hasOpenDialog,
+    isOpen,
+    menuStack,
+    returnToTourHelp,
+    saveActionLabel,
+    selectedIndex,
+    setReturnToTourHelp,
+  ])
 
   return (
     <main
@@ -317,6 +395,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
                 return (
                   <div
+                    id={item.tourTargets?.find(target => target === activeTourTarget)?.replace(/^#/, "")}
                     className={`retro-menu-item${item.separator ? " separator" : ""}${selectedIndex === index ? " selected" : ""}`}
                     key={item.id}
                     role="menuitem"
@@ -350,7 +429,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               </i></span>
               {currentFrame && <span
                 className={`retro-footer-cancel${retroFontSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}
-                style={{ gridColumn: "1 / 81" }}
+                style={{
+                  gridColumn: `${selectHintHalfCells + 1} / ${actionStartLine}`,
+                }}
               >{t("retroControl.cancelEsc")}</span>}
               <span
                 aria-hidden={!showFooterAction}
@@ -366,6 +447,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       )}
       {dialogs}
       <FileInput {...displayProps} onLoadSuccess={close} />
+      <RunTour showSelector={false} />
     </main>
   )
 }

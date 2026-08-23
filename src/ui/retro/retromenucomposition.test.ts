@@ -22,10 +22,12 @@ describe("Retro menu metadata structure", () => {
       "diskCollection",
       "display",
       "sound",
-      "options",
       "keyboard",
+      "keyboard.joystick",
       "slots",
       "ports",
+      "options",
+      "guidedTours",
       "quit",
     ])
   })
@@ -36,6 +38,9 @@ describe("Retro menu metadata structure", () => {
       "machine.reset",
       "state.restore",
       "state.save",
+      "machine.clipboard",
+      "clipboard.copyText",
+      "clipboard.pasteText",
       "machine.timeMachine",
       "snapshot.back",
       "snapshot.take",
@@ -83,6 +88,20 @@ describe("Retro menu metadata structure", () => {
       "slots.1", "slots.2", "slots.3", "slots.4", "slots.5", "slots.6", "slots.7",
     ])
     expect(retroMenuRegistry.getIds("ports")).toEqual(["printerPort", "modemPort"])
+    expect(retroMenuRegistry.getIds("keyboard")).toEqual([
+      "keyboard.lowercase",
+      "keyboard.openApple",
+    ])
+    expect(retroMenuRegistry.getIds("keyboard.joystick")).toEqual([
+      "keyboard.joystick.arrowKeys",
+      "keyboard.joystick.reverseYAxis",
+      "keyboard.joystick.siriusJoyport",
+    ])
+    expect(retroMenuRegistry.getIds("guidedTours")).toEqual([
+      "guidedTours.main",
+      "guidedTours.settings",
+      "guidedTours.debug",
+    ])
     expect(retroMenuRegistry.getIds("printerPort")).toEqual([])
     expect(retroMenuRegistry.getIds("modemPort")).toEqual([])
   })

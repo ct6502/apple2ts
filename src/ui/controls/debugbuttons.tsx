@@ -35,6 +35,7 @@ export const retroDebugControls: RetroControlMetadata[] = [
     id: "machine.timeMachine",
     parentId: "machine",
     order: 4,
+    tourTargets: ["#tour-snapshot"],
     label: context => context.t("retroControl.timeMachine"),
     separator: true,
     selectable: false,
@@ -75,6 +76,7 @@ export const retroDebugControls: RetroControlMetadata[] = [
     id: "emulator.pause",
     parentId: "machine",
     order: 9,
+    tourTargets: ["#tour-pause-button", "#tour-debug-pause"],
     label: context => context.t(handleGetRunMode() === RUN_MODE.PAUSED
       ? "debugControls.resume"
       : "debugControls.pause"),

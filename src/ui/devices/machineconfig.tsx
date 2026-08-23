@@ -71,6 +71,7 @@ export const retroMachineControls: RetroControlMetadata[] = [
     id: "machine",
     parentId: null,
     order: 0,
+    tourTargets: ["#tour-maincontrols"],
     label: context => context.t("retroControl.machine"),
     actionLabel: context => context.t("retroControl.select"),
   },
@@ -78,6 +79,7 @@ export const retroMachineControls: RetroControlMetadata[] = [
     id: "machine.boot",
     parentId: "machine",
     order: 0,
+    tourTargets: ["#tour-boot-button"],
     label: context => context.t("controls.boot"),
     action: context => {
       handleSetCPUState(RUN_MODE.NEED_BOOT)
@@ -88,6 +90,7 @@ export const retroMachineControls: RetroControlMetadata[] = [
     id: "machine.reset",
     parentId: "machine",
     order: 1,
+    tourTargets: ["#tour-reset-button"],
     label: context => context.t("controls.reset"),
     action: context => {
       handleSetCPUState(RUN_MODE.NEED_RESET)

@@ -176,6 +176,7 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
     id: tab.id,
     parentId: "diskCollection",
     order,
+    tourTargets: tab.index === TAB_INDEX.BUILT_IN ? ["#tour-disk-images"] : undefined,
     label: context => context.t(tab.labelKey),
     dynamicChildren: runtime => {
       const disks = getCollection().filter(tab.filter)
@@ -324,6 +325,7 @@ export const retroDiskControls: RetroControlMetadata[] = [
     id: "diskCollection.drivesSeparator",
     parentId: "diskCollection",
     order: 4,
+    tourTargets: ["#tour-floppy-disks"],
     label: context => context.t("retroControl.diskDrives"),
     separator: true,
     selectable: false,

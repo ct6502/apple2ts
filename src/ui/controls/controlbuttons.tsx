@@ -25,6 +25,7 @@ export const retroStateControls: RetroControlMetadata[] = [
     id: "state.restore",
     parentId: "machine",
     order: 2,
+    tourTargets: ["#tour-saverestore"],
     label: context => context.t("controls.restoreState"),
     action: context => {
       context.close()
@@ -43,6 +44,31 @@ export const retroStateControls: RetroControlMetadata[] = [
     selectable: () => {
       const runMode = handleGetRunMode()
       return runMode !== RUN_MODE.IDLE && runMode !== RUN_MODE.NEED_BOOT
+    },
+  },
+  {
+    id: "machine.clipboard",
+    parentId: "machine",
+    order: 3.1,
+    label: context => context.t("retroControl.clipboard"),
+    separator: true,
+    selectable: false,
+  },
+  {
+    id: "clipboard.copyText",
+    parentId: "machine",
+    order: 3.2,
+    label: context => context.t("controls.copyText"),
+    action: handleCopyToClipboard,
+    selectable: () => handleGetTextPage().length > 0,
+  },
+  {
+    id: "clipboard.pasteText",
+    parentId: "machine",
+    order: 3.3,
+    label: context => context.t("controls.pasteText"),
+    action: () => {
+      void navigator.clipboard.readText().then(data => passPasteText(data))
     },
   },
 ]

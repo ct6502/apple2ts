@@ -14,6 +14,7 @@ export type ControlMetadata<Context, Payload = unknown> = {
   id: string
   kind?: ControlKind
   parentId?: string | null
+  tourTargets?: readonly string[]
   order?: number
   label: ControlValue<Context, string>
   separator?: boolean
@@ -49,7 +50,9 @@ export type ResolvedControlOption = {
 
 export type ResolvedControl<Payload = unknown> = {
   id: string
+  parentId?: string | null
   kind: ControlKind
+  tourTargets?: readonly string[]
   label: string
   separator?: boolean
   value?: string
@@ -163,7 +166,9 @@ export class ControlRegistry<Context, Payload = unknown> {
 
     return {
       id: metadata.id,
+      parentId: parentId ?? null,
       kind: inferControlKind(metadata),
+      tourTargets: metadata.tourTargets,
       label: valueOf(metadata.label, context),
       separator: metadata.separator,
       value: metadata.value === undefined ? undefined : valueOf(metadata.value, context),

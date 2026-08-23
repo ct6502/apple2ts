@@ -7,11 +7,60 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGlobe } from "@fortawesome/free-solid-svg-icons"
 import { DropdownButton } from "../controls/dropdownbutton"
 import { useTranslation } from "../../i18n/useTranslation"
+import type { RetroControlMetadata } from "../retro/retromenucontext"
+import { navigateToTourStep } from "./tourutils"
+import { getTheme, setTheme } from "../ui_settings"
+import { UI_THEME } from "../../common/utility"
 
-const RunTour = () => {
+const tourName = (index: number) => ["main", "settings", "debug"][index] ?? ""
+
+export const retroTourControls: RetroControlMetadata[] = [
+  {
+    id: "guidedTours",
+    parentId: null,
+    order: 9,
+    label: context => context.t("debug.helpTab"),
+  },
+  ...(["mainLabel", "settingsLabel", "debugLabel"] as const).map((labelKey, index): RetroControlMetadata => ({
+    id: `guidedTours.${tourName(index)}`,
+    parentId: "guidedTours",
+    order: index,
+    label: context => context.t(`tour.${labelKey}`),
+    action: context => {
+      if (tourName(index) === "debug") context.close()
+      context.startTour(tourName(index))
+    },
+    keepMenuOpen: true,
+    tourTargets: index === 0 ? ["#tour-help-menu"] : undefined,
+  })),
+]
+
+export const getTour = (name: string, t: ReturnType<typeof useTranslation>["t"], retro = false): Step[] => {
+  switch (name.toLowerCase()) {
+    case "main": return getTourMain(t, retro)
+    case "debug": return getTourDebug(t, retro)
+    case "settings": return getTourSettings(t, retro)
+    default: return []
+  }
+}
+
+const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
   const { t } = useTranslation()
   const { runTour: runTour, setRunTour: setRunTour,
-    tourIndex: tourIndex, setTourIndex: setTourIndex } = useGlobalContext()
+    tourIndex: tourIndex, setTourIndex: setTourIndex,
+    tourSourceTheme, setTourSourceTheme, setReturnToTourHelp } = useGlobalContext()
+  const isRetroTour = tourSourceTheme === UI_THEME.RETRO
+
+  const goToTourIndex = (index: number) => {
+    if (isRetroTour && runTour.toLowerCase() === "debug" && index === getTourDebug(t, true).length - 1) {
+      setTheme(UI_THEME.RETRO)
+    }
+    navigateToTourStep(
+      getTour(runTour, t, isRetroTour),
+      index,
+      setTourIndex,
+    )
+  }
 
   const handleJoyrideCallback = (data: EventData) => {
     const stepCallbackFunction = data.step.data as StepCallbackFunction
@@ -23,16 +72,20 @@ const RunTour = () => {
 
     if (data.type === EVENTS.STEP_AFTER) {
       if (data.action === ACTIONS.PREV) {
-        setTourIndex(Math.max(0, data.index - 1))
+        goToTourIndex(Math.max(0, data.index - 1))
       } else {
-        setTourIndex(data.index + 1)
+        goToTourIndex(data.index + 1)
       }
     } else if (data.type === EVENTS.TARGET_NOT_FOUND) {
       console.warn(`Joyride target not found for step index ${data.index}, advancing...`)
-      setTourIndex(data.index + 1)
+      goToTourIndex(data.index + 1)
     }
 
     if (data.type === EVENTS.TOUR_END || data.action === ACTIONS.SKIP || data.action === ACTIONS.CLOSE || data.status === "finished" || data.status === "skipped") {
+      if (isRetroTour) {
+        setTheme(UI_THEME.RETRO)
+        setReturnToTourHelp(true)
+      }
       setRunTour("")
       setTourIndex(0)
       // If our URL contains the "tour" parameter, be sure to turn it off
@@ -49,38 +102,12 @@ const RunTour = () => {
     }
   }
 
-  let tour: Step[] = []
-
-  switch (runTour.toLowerCase()) {
-    case "main":
-      tour = getTourMain(t)
-      break
-    case "debug":
-      tour = getTourDebug(t)
-      break
-    case "settings":
-      tour = getTourSettings(t)
-      break
-    default:
-      break
-  }
+  const tour = getTour(runTour, t, isRetroTour)
 
   const selectGuidedTour = (index: number) => {
-    let tourName = ""
-    switch (index) {
-      case 0:
-        tourName = "main"
-        break
-      case 1:
-        tourName = "settings"
-        break
-      case 2:
-        tourName = "debug"
-        break
-      default:
-        break
-    }
-    setRunTour(tourName)
+    setReturnToTourHelp(false)
+    setTourSourceTheme(getTheme())
+    setRunTour(tourName(index))
     setTourIndex(0)
   }
 
@@ -105,8 +132,11 @@ const RunTour = () => {
           locale={locale}
           options={{
             showProgress: true,
-            buttons: ["back", "close", "primary", "skip"],
+            buttons: ["back", "close", "primary"],
             blockTargetInteraction: false,
+            closeButtonAction: "skip",
+            dismissKeyAction: false,
+            overlayClickAction: false,
           }}
           run={tour.length > 0}
           continuous={true}
@@ -122,7 +152,7 @@ const RunTour = () => {
         />
         </div>
       }
-      <DropdownButton
+      {showSelector && <DropdownButton
         currentIndex={-1}
         itemNames={[
           t("tour.mainLabel"),
@@ -132,7 +162,7 @@ const RunTour = () => {
         closeCallback={selectGuidedTour}
         icon={<FontAwesomeIcon icon={faGlobe} />}
         tooltip={t("tour.guidedTour")}
-      />
+      />}
     </span>
   )
 

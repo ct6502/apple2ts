@@ -76,6 +76,20 @@ describe("ControlRegistry", () => {
     expect(registry.resolve({ enabled: false }, "options")[0].keepMenuOpen).toBe(true)
   })
 
+  test("preserves parent and guided-tour target metadata", () => {
+    const registry = new ControlRegistry<Context>([{
+      id: "boot",
+      parentId: "machine",
+      label: "Boot",
+      tourTargets: ["#tour-boot-button"],
+    }])
+
+    expect(registry.resolve({ enabled: false }, "machine")[0]).toMatchObject({
+      parentId: "machine",
+      tourTargets: ["#tour-boot-button"],
+    })
+  })
+
   test("resolves contextual visibility and selectability", () => {
     const registry = new ControlRegistry<Context>([
       { id: "visible", label: "Visible", isVisible: context => context.enabled },

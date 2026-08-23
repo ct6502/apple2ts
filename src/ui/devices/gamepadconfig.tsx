@@ -8,18 +8,49 @@ import { getArrowKeysAsJoystick } from "../ui_settings"
 import { getPreferenceBoolean, setPreferenceBoolean } from "../localstorage"
 
 import { useTranslation } from "../../i18n/useTranslation"
+import { toggleMetadata } from "../retro/retromenuhelpers"
+import type { RetroControlMetadata } from "../retro/retromenucontext"
+import { createControlContext } from "../retro/retromenucontext"
+import { ControlRegistry } from "../controls/controlregistry"
+import { controlsToPopupItems } from "../controls/controlpopup"
+
+const joystickSettings = [
+  ["keyboard.joystick.arrowKeys", "gamepad.useArrowKeys", "arrowKeysAsJoystick", getArrowKeysAsJoystick],
+  ["keyboard.joystick.reverseYAxis", "gamepad.reverseYAxis", "reverseYAxis", () => getPreferenceBoolean("reverseYAxis")],
+  ["keyboard.joystick.siriusJoyport", "gamepad.siriusJoyport", "siriusJoyport", () => getPreferenceBoolean("siriusJoyport")],
+] as const
+
+export const retroGamepadControls: RetroControlMetadata[] = [
+  {
+    id: "keyboard.joystick",
+    parentId: null,
+    order: 6.5,
+    label: context => context.t("retroControl.joystick"),
+  },
+  ...joystickSettings.map(([id, labelKey, preference, getter], order) => toggleMetadata({
+    id,
+    parentId: "keyboard.joystick",
+    order,
+    label: context => context.t(labelKey),
+    enabled: getter,
+    setEnabled: (_context, enabled) => setPreferenceBoolean(preference, enabled),
+  })),
+]
+
+const gamepadControlRegistry = new ControlRegistry(retroGamepadControls)
 
 export const GamepadConfig = () => {
-  const { t } = useTranslation()
+  const { t, language, changeLanguage } = useTranslation()
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
   }
 
-  const arrowKeysAsJoystick = getArrowKeysAsJoystick()
-  const reverseYAxis = getPreferenceBoolean("reverseYAxis")
-  const siriusJoyport = getPreferenceBoolean("siriusJoyport")
+  const controls = gamepadControlRegistry.resolve(
+    createControlContext(undefined, t, language, changeLanguage),
+    "keyboard.joystick",
+  )
 
   return (
     <span>
@@ -35,29 +66,7 @@ export const GamepadConfig = () => {
       <PopupMenu
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
-        menuItems={[[
-            {
-              label: t("gamepad.useArrowKeys"),
-              isSelected: () => {return arrowKeysAsJoystick},
-              onClick: () => {
-                setPreferenceBoolean("arrowKeysAsJoystick", !arrowKeysAsJoystick)
-              }
-            },
-            {
-              label: t("gamepad.reverseYAxis"),
-              isSelected: () => {return reverseYAxis},
-              onClick: () => {
-                setPreferenceBoolean("reverseYAxis", !reverseYAxis)
-              }
-            },
-            {
-              label: t("gamepad.siriusJoyport"),
-              isSelected: () => {return siriusJoyport},
-              onClick: () => {
-                setPreferenceBoolean("siriusJoyport", !siriusJoyport)
-              }
-            },
-        ]]}
+        menuItems={[controlsToPopupItems(controls)]}
       />
     </span>
   )

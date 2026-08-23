@@ -11,6 +11,8 @@ import { retroMachineControls } from "../devices/machineconfig"
 import { retroSerialControls } from "../devices/serial/serialselect"
 import type { RetroControlMetadata, RetroMenuContext } from "./retromenucontext"
 import { retroSkinControl } from "./retroskincontrol"
+import { retroTourControls } from "../tours/runtour"
+import { retroGamepadControls } from "../devices/gamepadconfig"
 
 const menuControls: RetroControlMetadata[] = [
   ...retroMachineControls,
@@ -20,11 +22,13 @@ const menuControls: RetroControlMetadata[] = [
   {
     id: "options",
     parentId: null,
-    order: 5,
+    order: 8.5,
+    tourTargets: ["#tour-configbuttons"],
     label: context => context.t("retroControl.options"),
   },
   retroSpeedControl,
   ...retroConfigControls,
+  ...retroGamepadControls,
   retroSkinControl,
   ...createRetroLanguageControls(),
   {
@@ -38,6 +42,7 @@ const menuControls: RetroControlMetadata[] = [
   ...retroStateControls,
   ...retroDebugControls,
   ...retroSerialControls,
+  ...retroTourControls,
   {
     id: "quit",
     parentId: null,

@@ -8,14 +8,26 @@ import {
   setPreferenceRetroSkin,
 } from "../localstorage"
 import { getColorMode, getCrtDistortion, getGhosting } from "../ui_settings"
+import { setTheme } from "../ui_settings"
+import { UI_THEME } from "../../common/utility"
 import { retroMenuRegistry } from "./retromenucomposition"
 import type { DiskLoadDialog, RetroMenuContext } from "./retromenucontext"
+import { useGlobalContext } from "../globalcontext"
 
 const colorModeClasses = ["color", "color", "green", "amber", "white", "inverse"]
 const retroSkinClasses = ["apple-iie", "apple-iigs", "apple-iiplus"]
 
 export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) => {
   const { t, language, changeLanguage } = useTranslation()
+  const {
+    returnToTourHelp,
+    runTour,
+    setReturnToTourHelp,
+    setRunTour,
+    setTourIndex,
+    setTourSourceTheme,
+    tourIndex,
+  } = useGlobalContext()
   const [diskLoadDialog, setDiskLoadDialog] = useState<DiskLoadDialog | null>(null)
   const [retroSkin, setRetroSkin] = useState(getPreferenceRetroSkin)
   const openDiskDialog = (dialog: DiskLoadDialog) => {
@@ -33,6 +45,13 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     language,
     changeLanguage,
     changeRetroSkin,
+    startTour: tour => {
+      setReturnToTourHelp(false)
+      setTourSourceTheme(UI_THEME.RETRO)
+      if (tour === "debug") setTheme(UI_THEME.CLASSIC)
+      setRunTour(tour)
+      setTourIndex(0)
+    },
   }
   const rootMenu = retroMenuRegistry.resolve(context)
   const effects = [
@@ -55,5 +74,16 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
       onLoadSuccess={close}
     />
   </>
-  return { dialogs, effects, hasOpenDialog: diskLoadDialog !== null, language, rootMenu, t }
+  return {
+    dialogs,
+    effects,
+    hasOpenDialog: diskLoadDialog !== null,
+    language,
+    returnToTourHelp,
+    rootMenu,
+    runTour,
+    setReturnToTourHelp,
+    t,
+    tourIndex,
+  }
 }
