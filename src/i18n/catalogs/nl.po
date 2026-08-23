@@ -64,9 +64,10 @@ msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Een probleem melden"
 
+#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
-msgstr ""
+msgstr "Privacybeleid"
 
 #, fuzzy
 msgctxt "config.speed"
@@ -1257,9 +1258,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr ""
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence en de Apple2TS-bijdragers"
 
 #, fuzzy
 msgctxt "help.keyboardShortcuts"
