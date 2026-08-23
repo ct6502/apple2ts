@@ -333,7 +333,7 @@ const MemoryTable = (props: MemoryTableProps) => {
   const applyHighlightAnimation = (element: HTMLElement) => {
     const isDarkMode = getTheme() == UI_THEME.DARK
     const animationName = isDarkMode ? "highlight-anim-dark" : "highlight-anim"
-    element.style.animation = `${animationName} 1s 0.1s`
+    element.style.animation = `${animationName} 3s 0.5s`
   }
 
   // This scrolling code is used by the higher-level MemoryDump component to
@@ -350,7 +350,7 @@ const MemoryTable = (props: MemoryTableProps) => {
       setTimeout(() => {
         row.style.animation = ""
         // row.cells[0].style.animation = ''
-      }, 2250)
+      }, 3500)
     }
   }
 

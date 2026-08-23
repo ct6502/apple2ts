@@ -11,6 +11,7 @@ const App = () => {
   const [updateBreakpoint, setUpdateBreakpoint] = useState(0)
   const [runTour, setRunTour] = useState("")
   const [tourIndex, setTourIndex] = useState(0)
+  const [memdumpAddress, setMemdumpAddress] = useState(-1)
 
   window.setTimeout(() => {
     if (isMinimalTheme()) {
@@ -33,6 +34,8 @@ const App = () => {
         setLockHgrMagnifier: setLockHgrMagnifier,
         updateBreakpoint: updateBreakpoint,
         setUpdateBreakpoint: setUpdateBreakpoint,
+        memdumpAddress: memdumpAddress,
+        setMemdumpAddress: setMemdumpAddress
       }}>
       <DisplayApple2 />
       <div className="global-progress-modal-overlay">

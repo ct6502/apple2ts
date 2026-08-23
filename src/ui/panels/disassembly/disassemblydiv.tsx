@@ -18,7 +18,7 @@ const DisassemblyDiv = (props: {
   hideFakePoint: () => void,
   setAllowScrollEvent: (value: boolean) => void,
   refresh: () => void}) => {
-  const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
+  const { updateBreakpoint, setUpdateBreakpoint, setMemdumpAddress } = useGlobalContext()
   const { t } = useTranslation()
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const scrollToRef = useRef<HTMLDivElement>(null)
@@ -36,6 +36,11 @@ const DisassemblyDiv = (props: {
   // define it here so it can access our local variables.
   const onJumpClick = (addr: number) => {
     setDisassemblyAddress(addr)
+    props.refresh()
+  }
+
+  const onMemoryClick = (addr: number) => {
+    setMemdumpAddress(addr)
     props.refresh()
   }
 
@@ -175,7 +180,7 @@ const DisassemblyDiv = (props: {
             className={"breakpoint-position " + getBreakpointStyle(bp[index])}
             data-key={bp[index].address}
             onClick={handleBreakpointClick} />)}
-        {getChromacodedLine(line, onJumpClick, width, t)}
+        {getChromacodedLine(line, width, onJumpClick, onMemoryClick, t)}
       </div>
     ))}
     {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}

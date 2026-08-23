@@ -381,7 +381,7 @@ body.dark-mode .disassembly-immediate {
 .disassembly-address {
   color: var(--address);
   font-weight: bold;
-  cursor: default;
+  cursor: crosshair;
 }
 
 body.dark-mode .disassembly-address {

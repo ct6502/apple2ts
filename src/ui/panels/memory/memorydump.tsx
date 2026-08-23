@@ -24,7 +24,7 @@ enum MEMORY_RANGE {
 }
 
 const MemoryDump = () => {
-  const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
+  const { updateBreakpoint, setUpdateBreakpoint, memdumpAddress, setMemdumpAddress } = useGlobalContext()
   const memoryDumpRef = useRef(null)
   const [address, setAddress] = useState("")
   const [memoryRange, setMemoryRange] = useState(`${MEMORY_RANGE.CURRENT}`)
@@ -39,6 +39,7 @@ const MemoryDump = () => {
   const previousMemLengthRef = useRef(0)
 
   const doSetScrollRow = (row: number) => {
+    if (row < 0) return
     setScrollRow(row)
     // Turn off our new scroll position after a brief moment. Otherwise the
     // memorytable will just keep returning to the same scroll position.
@@ -82,6 +83,8 @@ const MemoryDump = () => {
 
   const addrToRow = (addr: number) => {
     if (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2) {
+      const memLow = (memoryRange === MEMORY_RANGE.HGR1) ? 0x2000 : 0x4000
+      if (addr < memLow || addr >= memLow + 0x2000) return -1
       return hiresAddressToLine(addr)
     }
     return Math.floor(addr / 16)
@@ -103,6 +106,15 @@ const MemoryDump = () => {
       doSetScrollRow(scrollRow)
     }
   }
+
+  useEffect(() => {
+    if (memdumpAddress < 0) return
+    const row = addrToRow(memdumpAddress)
+    setMemdumpAddress(-1)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    doSetScrollRow(row)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memdumpAddress])
 
   const doSearchAscii = (value: string) => {
     const len = value.length
