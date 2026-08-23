@@ -199,8 +199,9 @@ msgstr "Snabb (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "Löjlig/Warp Hastighet"
+#| msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
+msgstr "Löjlig hastighet"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -2275,9 +2276,11 @@ msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr ""
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr ""
+msgid "Ludicrous"
+msgstr "Löjlig"
 
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"
