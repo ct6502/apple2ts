@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME, UI_THEMES } from "../../common/utility"
+import { COLOR_MODE, DEFAULT_SLOT_CONFIG, RUN_MODE, UI_THEME, UI_THEMES } from "../../common/utility"
 import {
   DiskCollectionSortMode,
   setPreferenceDiskCollectionSort,
@@ -62,6 +62,8 @@ import {
   createHdv,
 } from "../diskdialog/diskpanel_utils"
 import { isFileSystemApiSupported, showGlobalProgressModal } from "../ui_utilities"
+import { handleSetCPUState } from "../controller"
+import { isCanvasFullscreen, setCanvasFullscreen } from "../controls/fullscreenbutton"
 import Apple2Canvas from "../canvas"
 import "./retrocontrolpanel.css"
 
@@ -425,6 +427,34 @@ const getRetroMenu = (
   })
 
   return [
+    {
+      label: "Machine",
+      children: [
+        {
+          label: "Boot",
+          action: () => {
+            handleSetCPUState(RUN_MODE.NEED_BOOT)
+            close()
+          },
+        },
+        {
+          label: "Reset",
+          action: () => {
+            handleSetCPUState(RUN_MODE.NEED_RESET)
+            close()
+          },
+        },
+        choiceItem(
+          "Fullscreen",
+          ["Off", "On"],
+          isCanvasFullscreen() ? 1 : 0,
+          () => { },
+          0,
+          index => setCanvasFullscreen(index === 1),
+        ),
+      ],
+      actionLabel: "Select",
+    },
     {
       label: "Disk Collection",
       children: diskCollectionTabs.map(tab => ({
