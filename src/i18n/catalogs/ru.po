@@ -2273,13 +2273,15 @@ msgctxt "linkBuilder.speedNames.normal"
 msgid "1 MHz (default)"
 msgstr ""
 
+#, fuzzy
 msgctxt "linkBuilder.speedNames.two"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 МГц"
 
+#, fuzzy
 msgctxt "linkBuilder.speedNames.three"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 МГц"
 
 msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
