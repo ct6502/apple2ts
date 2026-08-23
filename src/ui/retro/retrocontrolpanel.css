@@ -24,6 +24,11 @@
   padding: 0;
 }
 
+.retro-shell.menu-open {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .retro-shell.menu-open .canvas-text {
   pointer-events: none;
   visibility: hidden;

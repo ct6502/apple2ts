@@ -713,6 +713,7 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
     : 0
   const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
   const selectedItem = currentMenu[selectedIndex]
+  const saveActionLabel = t("retroControl.save")
   const showHorizontalSelectionHint = (Boolean(currentFrame?.submit) &&
     currentMenu.some(item => (item.options?.length ?? 0) > 1)) ||
     (Boolean(selectedItem?.refreshOptions) && (selectedItem?.options?.length ?? 0) > 1)
@@ -746,7 +747,22 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
       }
       if (!isOpen) return
 
-      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      const isExportFrame = Boolean(currentFrame?.submit) && currentMenu.length > 0 &&
+        currentMenu.every(item => item.checkmarkIndex !== undefined)
+      if (event.ctrlKey && !event.altKey && !event.metaKey && event.key.toLocaleLowerCase() === "a" &&
+        currentFrame && isExportFrame) {
+        event.preventDefault()
+        event.stopPropagation()
+        const allSelected = currentFrame.items.every(
+          (item, index) => currentFrame.values[index] === item.checkmarkIndex,
+        )
+        setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
+          ? {
+            ...frame,
+            values: frame.items.map(item => allSelected ? 0 : item.checkmarkIndex ?? 0),
+          }
+          : frame))
+      } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         event.preventDefault()
         event.stopPropagation()
         const direction = event.key === "ArrowUp" ? -1 : 1
@@ -792,7 +808,7 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
               item.label,
               children,
               refresh,
-              item.actionLabel ?? t("retroControl.save"),
+              item.actionLabel ?? saveActionLabel,
               item.submit,
               item.isSubmitVisible,
             ),
@@ -846,10 +862,13 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
 
     window.addEventListener("keydown", handleKeyDown, true)
     return () => window.removeEventListener("keydown", handleKeyDown, true)
-  }, [currentFrame, currentMenu, isOpen, menuStack, selectedIndex])
+  }, [currentFrame, currentMenu, isOpen, menuStack, saveActionLabel, selectedIndex])
 
   return (
-    <main className={`retro-shell${isOpen ? " menu-open" : ""}`}>
+    <main
+      className={`retro-shell${isOpen ? " menu-open" : ""}`}
+      onContextMenu={isOpen ? event => event.preventDefault() : undefined}
+    >
       <Apple2Canvas {...displayProps} />
       {isOpen && (
         <section
