@@ -417,6 +417,58 @@ body.dark-mode .desktop-panel-width-toggle {
   width: max-content;
 }
 
+.mobile-controls {
+  align-items: flex-start;
+  display: flex;
+  width: 100%;
+}
+
+.mobile-portrait-stack {
+  width: 100%;
+}
+
+.mobile-landscape-sidebar {
+  flex: 0 1 320px;
+  min-width: 0;
+}
+
+.mobile-control-panel {
+  flex: 1 1 390px;
+  min-width: 0;
+}
+
+.mobile-status {
+  margin-left: 0;
+  margin-right: auto;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.mobile-status .footer-item {
+  margin-left: 2px;
+  margin-right: auto;
+  width: max-content;
+}
+
+.divider.mobile-divider {
+  margin-bottom: 3px;
+  margin-top: 0;
+}
+
+#debug-section.debug-section-horizontal {
+  box-sizing: border-box;
+  max-width: 100vw;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+#debug-section.debug-section-horizontal > .debug-section {
+  box-sizing: border-box;
+  margin-right: 0;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .control-panel-two-rows .push-button,
 .control-panel-two-rows .joystick-button {
   zoom: var(--desktop-control-scale);

@@ -9,6 +9,7 @@ import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen
 import { getColorMode, getCrtDistortion, getGhosting, isEmbedMode, isGameMode, isMinimalTheme } from "./ui_settings"
 import { doCRTStartup } from "./crtstartup"
 let frameCount = 0
+const maximumTouchViewportHeight = { landscape: 0, portrait: 0 }
 
 export const nRowsHgrMagnifier = 16
 export const nColsHgrMagnifier = 2
@@ -639,9 +640,25 @@ export const getCanvasSize = (bounds?: CanvasBounds) => {
   if (bounds && !isCanvasFullScreen) {
     return [Math.floor(bounds.width), Math.floor(bounds.height)]
   }
-  let width = window.innerWidth ? window.innerWidth : window.outerWidth
-  let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
+  let width = isTouchDevice
+    ? document.documentElement.clientWidth || window.innerWidth || window.outerWidth
+    : window.innerWidth || window.outerWidth
+  let height = isTouchDevice
+    ? Math.max(
+      document.documentElement.clientHeight,
+      window.innerHeight,
+      window.visualViewport?.height ?? 0,
+    ) || window.outerHeight - 150
+    : window.innerHeight || window.outerHeight - 150
+  const touchOrientation = width > height ? "landscape" : "portrait"
+  if (isTouchDevice && !isCanvasFullScreen) {
+    maximumTouchViewportHeight[touchOrientation] = Math.max(
+      maximumTouchViewportHeight[touchOrientation],
+      height,
+    )
+    height = maximumTouchViewportHeight[touchOrientation]
+  }
+  const isLandscape = isTouchDevice && touchOrientation === "landscape"
   if (isEmbedMode()) {
     height -= noBackgroundImage ? 60 : 25
     width -= noBackgroundImage ? 60 : 25

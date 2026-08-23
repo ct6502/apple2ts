@@ -18,6 +18,7 @@ const AgentTabConfig = (props: {
   onConfigChange?: () => void
 }) => {
   const { t } = useTranslation()
+  const isTouchDevice = "ontouchstart" in document.documentElement
   const initialConfig = loadAgentConfig()
   const initialProvider: ProviderType = initialConfig?.provider ?? "anthropic"
   const initialModel = initialConfig?.model || getDefaultModel(initialProvider)
@@ -182,7 +183,7 @@ const AgentTabConfig = (props: {
 return (
 <div>
   {props.showConfig &&
-  <div className="modal-overlay agent-config-overlay"
+  <div className={`modal-overlay agent-config-overlay${isTouchDevice ? " agent-config-overlay-mobile" : ""}`}
       tabIndex={0} // Make the div focusable
       onKeyDown={(event) => {
         if (event.key === "Escape") props.setShowConfig(false)

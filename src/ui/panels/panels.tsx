@@ -113,7 +113,7 @@ const DebugSection = (props: {
         setIsFlyoutOpen(!isFlyoutOpen)
         props.updateDisplay()
       }}>
-      <div id="debug-section" className={`${horizontalTabs ? "flex-column" : "flex-row"}`}>
+      <div id="debug-section" className={`${horizontalTabs ? "flex-column debug-section-horizontal" : "flex-row"}`}>
         {!isSmall && <div className={`${horizontalTabs ? "flex-row" : "flex-column"} dbg-tab-row`}>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 0 ? " dbg-tab-active" : ""}`}

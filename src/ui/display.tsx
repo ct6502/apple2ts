@@ -31,12 +31,17 @@ import { useTranslation } from "../i18n/useTranslation"
 import { desktopLayoutPolicy, getDesktopLayout } from "./layout"
 import FitControlRow from "./controls/fitcontrolrow"
 import DesktopPanel from "./panels/desktoppanel"
+import { subscribeViewportResize } from "./viewport"
 
 // The classic emulator and Help panel need about this much room side by side.
 const specialLayoutNarrowWidth = 1000
 
 const getViewport = () => ({
-  height: window.innerHeight || window.outerHeight - 120,
+  height: Math.max(
+    document.documentElement.clientHeight,
+    window.innerHeight,
+    window.visualViewport?.height ?? 0,
+  ) || window.outerHeight - 120,
   width: document.documentElement.clientWidth || window.innerWidth || window.outerWidth - 20,
 })
 
@@ -58,8 +63,7 @@ const DisplayApple2 = () => {
 
   useEffect(() => {
     const handleResize = () => setViewport(getViewport())
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
+    return subscribeViewportResize(handleResize)
   }, [])
 
   // We need to create our worker here so it has access to our properties
@@ -293,16 +297,30 @@ const DisplayApple2 = () => {
     <div className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
     <div className={isLandscape ? "flex-row" : "flex-column"}>
     <Apple2Canvas {...props} />
-    <div className={"flex-row-gap" + " flexwrap"}  style={{ paddingLeft: "2px" }}>
-      <ControlPanel {...props} />
-      {!isGameMode() && <DiskInterface {...props} />}
+    {isTouchDevice ? <div className={isLandscape ? "mobile-landscape-sidebar" : "mobile-portrait-stack"}>
+      <div className="mobile-controls">
+        <div className="mobile-control-panel">
+          <FitControlRow minHeight={desktopLayoutPolicy.controlStripHeight}>
+            <ControlPanel {...props} singleRow />
+          </FitControlRow>
+        </div>
+      </div>
+      {!isGameMode() && <div className="mobile-device-row flex-row-gap flexwrap" style={{ paddingLeft: "2px" }}>
+        <DiskInterface {...props} />
+      </div>}
+    </div> : <>
+      <div className="flex-row-gap flexwrap" style={{ paddingLeft: "2px" }}>
+        <ControlPanel {...props} />
+        {!isGameMode() && <DiskInterface {...props} />}
+      </div>
+      {!isLandscape && !isGameMode() && status}
+    </>}
     </div>
-    {!isLandscape && !isGameMode() && status}
-    </div>
-    {isLandscape && !isGameMode() && status}
-    {narrow && !isMinimalTheme() && !isGameMode() && <div className="divider"></div>}
+    {!isTouchDevice && isLandscape && !isGameMode() && status}
+    {narrow && !isMinimalTheme() && !isGameMode() && <div className={`divider${isTouchDevice ? " mobile-divider" : ""}`}></div>}
     {!isGameMode() && <DebugSection updateDisplay={updateDisplay} narrow={narrow}/>}
     </div>
+    {isTouchDevice && !isGameMode() && <div className="mobile-status">{status}</div>}
     {isMinimalTheme() && <DiskCollectionPanel {...props} />}
     {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
     <FileInput {...props} />

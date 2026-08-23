@@ -14,7 +14,6 @@ type PopupMenuProps = {
 
 const PopupMenu = (props: PopupMenuProps) => {
 
-  const isTouchDevice = "ontouchstart" in document.documentElement
   const menuRef = useRef<HTMLDivElement>(null)
   const [posStyle, setPosStyle] = useState<{ left: number, top: number } | undefined>(undefined)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
@@ -126,13 +125,16 @@ const PopupMenu = (props: PopupMenuProps) => {
               }
               props.onClose()
             }}>
-            <span>
-              {menuItem.isSelected != undefined && menuItem.isSelected()
-                ? "\u2714\u2009"
-                : `${isTouchDevice ? "\u2003" : "\u2004"}\u2007`}
-              {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
-              {menuItem.svg && menuItem.svg}
-              {`${menuItem.label}\u2004`}
+            <span className="popup-item-main">
+              <span
+                className="popup-selection-marker">
+                {menuItem.isSelected?.() ? "\u2714" : ""}
+              </span>
+              <span className="popup-item-label">
+                {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
+                {menuItem.svg && menuItem.svg}
+                {`${menuItem.label}\u2004`}
+              </span>
             </span>
             {menuItem.subMenu && menuItem.subMenu.length > 0 && (
               <FontAwesomeIcon icon={faCaretRight} style={{ marginLeft: "12px", opacity: 0.7 }} />
