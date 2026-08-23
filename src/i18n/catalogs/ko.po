@@ -2536,6 +2536,10 @@ msgctxt "retroControl.load"
 msgid "Load"
 msgstr "불러오기"
 
+msgctxt "retroControl.go"
+msgid "Go"
+msgstr "실행"
+
 msgctxt "retroControl.save"
 msgid "Save"
 msgstr "저장"
@@ -2645,7 +2649,7 @@ msgid "Slot {{slot}}"
 msgstr ""
 
 msgctxt "retroControl.drive"
-msgid "Slot {{slot}}, Drive {{drive}}: {{disk}}"
+msgid "{{drive}}: {{disk}}"
 msgstr ""
 
 msgctxt "retroControl.configured"

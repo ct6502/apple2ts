@@ -28,7 +28,7 @@ import { determineVtocType, VTOC_REFRESH } from "../../../common/prodos_hdv"
 import { isFileSystemApiSupported } from "../../ui_utilities"
 import { useTranslation } from "../../../i18n/useTranslation"
 
-export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
+export const DISK_DRIVE_LABELS = ["S7,D1", "S7,D2", "S6,D1", "S6,D2"]
 
 export const loadDiskFromCloudDrive = async (cloudDrive: CloudProvider, driveIndex: number) => {
   const result = await cloudDrive.download(FILE_SUFFIXES_DISK)

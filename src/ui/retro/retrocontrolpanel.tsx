@@ -7,6 +7,7 @@ import {
   setPreferenceDiskCollectionSort,
   setPreferenceBoolean,
   setPreferenceColorMode,
+  setPreferenceMockingboardMode,
   setPreferenceRamWorks,
   setPreferenceRetroSkin,
   setPreferenceSlotConfig,
@@ -31,9 +32,12 @@ import {
   setUIStateBoolean,
 } from "../ui_settings"
 import { audioEnable, getAudioStatus } from "../devices/audio/speaker"
+import { getMockingboardMode, MockingboardNames } from "../devices/audio/mockingboard_audio"
+import { getMidiDeviceOptions, handleMidiDeviceSelect, isMidiDeviceSelected } from "../devices/audio/midiselect"
 import { changeSerialMode, getSerialMode } from "../devices/serial/serialhub"
 import DemoZooDialog from "../devices/disk/demozoodialog"
 import {
+  DISK_DRIVE_LABELS,
   demoZooEnabled,
   downloadDiskToDevice,
   loadDiskFromCloudDrive,
@@ -83,6 +87,7 @@ type RetroMenuItem = {
   selectable?: boolean
   valueOnly?: boolean
   actionLabel?: string
+  contextualActionLabel?: string
   refreshOptions?: (index: number) => RetroMenuItem[]
   refreshTitle?: () => string
   disk?: DiskCollectionItem
@@ -124,14 +129,16 @@ const mouseTextReturn = String.fromCodePoint(0x21B5)
 const checkmark = String.fromCodePoint(0x2713)
 
 const decodeDiskTitle = (title: string) => {
+  let decodedTitle = title
   try {
-    return decodeURIComponent(title)
+    decodedTitle = decodeURIComponent(title)
   } catch {
-    return title
+    // Keep malformed URL text as-is.
   }
+  return decodedTitle.replace(/\u00A0/g, " ")
 }
 
-const mouseTextSupports = (text: string) => /^[\x20-\x7E]*$/.test(text)
+const mouseTextSupports = (text: string) => /^[\x20-\x7E\u2014]*$/.test(text)
 
 const RetroBorder = ({ className, separatorRow }: {
   className: string
@@ -260,6 +267,8 @@ const getRetroMenu = (
     t("retroControl.fast"),
     t("retroControl.warp"),
   ]
+  const midiOptions = getMidiDeviceOptions()
+  const selectedMidiIndex = midiOptions.findIndex(isMidiDeviceSelected)
   const cardLabels: Record<SLOT_CARD_ID, string> = {
     none: t("retroControl.card.empty"),
     ssc: t("retroControl.card.ssc"),
@@ -462,19 +471,19 @@ const getRetroMenu = (
       },
     ]
   }
-  const diskDriveItems = (): RetroMenuItem[] => diskDrives.map(({ drive, index, slot }) => {
+  const diskDriveItems = (): RetroMenuItem[] => diskDrives.map(({ index }) => {
     const driveProps = handleGetDriveProps(index)
     const diskTitle = handleGetFilename(index)
     return {
       label: t("retroControl.drive", {
-        slot: String(slot),
-        drive: String(drive),
+        drive: DISK_DRIVE_LABELS[index],
         disk: diskTitle
           ? `${driveProps.diskHasChanges ? "*" : ""}${decodeDiskTitle(diskTitle)}`
           : t("retroControl.card.empty"),
       }),
       children: () => handleGetDriveProps(index).filename ? insertedDiskItems(index) : diskLoadItems(index),
       actionLabel: t("retroControl.load"),
+      contextualActionLabel: driveProps.filename ? t("retroControl.options") : t("retroControl.load"),
     }
   })
   const createOptionsItems = (selectedLanguage: Language = language): RetroMenuItem[] => {
@@ -653,10 +662,25 @@ const getRetroMenu = (
     {
       label: t("retroControl.sound"),
       value: audioEnabled ? t("messages.on") : t("messages.off"),
-      children: [choiceItem(t("retroControl.sound"), [t("messages.off"), t("messages.on")], audioEnabled ? 1 : 0, index => {
-        audioEnable(index === 1)
-        updateDisplay()
-      })],
+      children: [
+        choiceItem(t("retroControl.sound"), [t("messages.off"), t("messages.on")], audioEnabled ? 1 : 0, index => {
+          audioEnable(index === 1)
+          updateDisplay()
+        }),
+        choiceItem(
+          t("audio.mockingboard"),
+          MockingboardNames,
+          getMockingboardMode(),
+          setPreferenceMockingboardMode,
+          0,
+        ),
+        choiceItem(
+          t("audio.midi"),
+          midiOptions.map(option => option.label),
+          selectedMidiIndex >= 0 ? selectedMidiIndex : 0,
+          index => { void handleMidiDeviceSelect(midiOptions[index]) },
+        ),
+      ],
     },
     {
       label: t("retroControl.options"),
@@ -749,11 +773,14 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
   const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
   const selectedItem = currentMenu[selectedIndex]
   const saveActionLabel = t("retroControl.save")
-  const showHorizontalSelectionHint = (Boolean(currentFrame?.submit) &&
-    currentMenu.some(item => (item.options?.length ?? 0) > 1)) ||
-    (Boolean(selectedItem?.refreshOptions) && (selectedItem?.options?.length ?? 0) > 1)
-  const showFooterAction = !currentFrame ||
-    (currentFrame.isSubmitVisible
+  const isDiskDrivesFrame = currentFrame?.title === t("retroControl.diskDrives")
+  const footerActionLabel = isDiskDrivesFrame
+    ? selectedItem?.contextualActionLabel ?? ""
+    : currentFrame?.actionLabel ?? t("retroControl.open")
+  const showHorizontalSelectionHint = (selectedItem?.options?.length ?? 0) > 1
+  const showFooterAction = isDiskDrivesFrame
+    ? Boolean(selectedItem?.contextualActionLabel)
+    : !currentFrame || (currentFrame.isSubmitVisible
       ? currentFrame.isSubmitVisible(currentFrame.items, currentFrame.values)
       : currentFrame.actionLabel !== t("retroControl.load") || Boolean(selectedItem?.action))
   const panelEffects = [
@@ -970,7 +997,7 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
               ))}
             </div>
             <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
-              <span className={`retro-footer-select${mouseTextSupports(t("retroControl.select")) ? "" : " retro-browser-font"}`}>{` ${t("retroControl.select")}: `}<i className="retro-mousetext">
+              <span className={`retro-footer-select${mouseTextSupports(t("retroControl.select")) ? "" : " retro-browser-font"}`}>{` ${t("retroControl.select")}:`}<i className="retro-mousetext">
                 {showHorizontalSelectionHint && <>{mouseTextLeft} {mouseTextRight} </>}
                 {currentFrame
                   ? <>{mouseTextUp} {mouseTextDown}</>
@@ -978,8 +1005,8 @@ const RetroControlPanel = ({ displayProps }: { displayProps: DisplayProps }) => 
               </i></span>
               {currentFrame && <span className={`retro-footer-cancel${mouseTextSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}>{t("retroControl.cancelEsc")}</span>}
               {showFooterAction &&
-                <span className={`retro-footer-action${mouseTextSupports(currentFrame ? currentFrame.actionLabel : t("retroControl.open")) ? "" : " retro-browser-font"}`}>
-                  {`${currentFrame ? currentFrame.actionLabel : t("retroControl.open")}: `}
+                <span className={`retro-footer-action${mouseTextSupports(footerActionLabel) ? "" : " retro-browser-font"}`}>
+                  {`${footerActionLabel}:`}
                   <i className="retro-mousetext">{mouseTextReturn}</i>{" "}
                 </span>}
             </footer>

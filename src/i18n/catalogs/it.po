@@ -2578,6 +2578,10 @@ msgctxt "retroControl.load"
 msgid "Load"
 msgstr "Carica"
 
+msgctxt "retroControl.go"
+msgid "Go"
+msgstr "Vai"
+
 msgctxt "retroControl.save"
 msgid "Save"
 msgstr "Salva"
@@ -2687,7 +2691,7 @@ msgid "Slot {{slot}}"
 msgstr ""
 
 msgctxt "retroControl.drive"
-msgid "Slot {{slot}}, Drive {{drive}}: {{disk}}"
+msgid "{{drive}}: {{disk}}"
 msgstr ""
 
 msgctxt "retroControl.configured"
