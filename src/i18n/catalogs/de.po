@@ -21,12 +21,12 @@ msgstr "Starten"
 #, fuzzy
 msgctxt "controls.reset"
 msgid "Reset"
-msgstr "Zurücksetzen"
+msgstr "Reset"
 
 #, fuzzy
 msgctxt "controls.copyScreen"
 msgid "Copy Screen"
-msgstr "Bildschirm Kopieren"
+msgstr "Bildkopie"
 
 #, fuzzy
 msgctxt "controls.copyText"
@@ -36,17 +36,17 @@ msgstr "Text Kopieren"
 #, fuzzy
 msgctxt "controls.pasteText"
 msgid "Paste Text"
-msgstr "Text Einfügen"
+msgstr "Einfügen"
 
 #, fuzzy
 msgctxt "controls.saveState"
 msgid "Save State"
-msgstr "Zustand Speichern"
+msgstr "Speichern"
 
 #, fuzzy
 msgctxt "controls.restoreState"
 msgid "Restore State"
-msgstr "Zustand Wiederherstellen"
+msgstr "Laden"
 
 #, fuzzy
 msgctxt "controls.toggleSound"
@@ -1815,7 +1815,7 @@ msgstr "Exportproblem melden"
 #, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
-msgstr "In der Zeit zurückgehen"
+msgstr "Zurückspulen"
 
 #, fuzzy
 msgctxt "debugControls.takeSnapshot"
@@ -1825,7 +1825,7 @@ msgstr "Schnappschuss erstellen"
 #, fuzzy
 msgctxt "debugControls.goForwardInTime"
 msgid "Go Forward in Time"
-msgstr "In der Zeit vorwärts gehen"
+msgstr "Vorspulen"
 
 #, fuzzy
 msgctxt "debugControls.saveStateWithSnapshots"
