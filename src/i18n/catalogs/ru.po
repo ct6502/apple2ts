@@ -202,8 +202,9 @@ msgstr "Быстрая (4 МГц)"
 
 #, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "Безумная/Варп скорость"
+#| msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
+msgstr "Безумная скорость"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -2272,21 +2273,25 @@ msgctxt "linkBuilder.speedNames.normal"
 msgid "1 MHz (default)"
 msgstr ""
 
+#, fuzzy
 msgctxt "linkBuilder.speedNames.two"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 МГц"
 
+#, fuzzy
 msgctxt "linkBuilder.speedNames.three"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 МГц"
 
 msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr ""
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr ""
+msgid "Ludicrous"
+msgstr "Безумная"
 
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"

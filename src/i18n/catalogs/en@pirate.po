@@ -177,8 +177,10 @@ msgctxt "speed.fast"
 msgid "Fast Speed (4 MHz)"
 msgstr "Full Sail (4 MHz)"
 
+#, fuzzy
+#| msgid "Ludicrous/Warp Speed"
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
 msgstr "Kraken Speed"
 
 msgctxt "colors.color"
@@ -2099,8 +2101,10 @@ msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr "4 MHz (Full sail)"
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
+msgid "Ludicrous"
 msgstr "Kraken!"
 
 msgctxt "linkBuilder.machines.enhanced"

@@ -170,7 +170,7 @@ msgid "Fast Speed (4 MHz)"
 msgstr ""
 
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
 msgstr ""
 
 msgctxt "colors.color"
@@ -1946,7 +1946,7 @@ msgid "4 MHz"
 msgstr ""
 
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
+msgid "Ludicrous"
 msgstr ""
 
 msgctxt "linkBuilder.machines.enhanced"

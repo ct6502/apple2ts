@@ -174,7 +174,7 @@ msgstr ""
 #, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
-msgstr "Velocità Lumaca (0.1 MHz)"
+msgstr "Lumaca (0.1 MHz)"
 
 #, fuzzy
 msgctxt "speed.slow"
@@ -201,8 +201,9 @@ msgstr "Veloce (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "Velocità Ridicola/Warp"
+#| msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
+msgstr "Velocità ridicola"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -1796,7 +1797,7 @@ msgstr "Segnala un problema di esportazione"
 #, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
-msgstr "Torna Indietro nel Tempo"
+msgstr "Riavvolgi"
 
 #, fuzzy
 msgctxt "debugControls.takeSnapshot"
@@ -2281,9 +2282,11 @@ msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr ""
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr ""
+msgid "Ludicrous"
+msgstr "Ridicola"
 
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"
