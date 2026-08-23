@@ -57,6 +57,34 @@ msgctxt "controls.debugPanel"
 msgid "Debug Panel"
 msgstr "Debuggin' Deck"
 
+msgctxt "controls.hideSidePanel"
+msgid "Hide side panel"
+msgstr ""
+
+msgctxt "controls.showSidePanel"
+msgid "Show side panel"
+msgstr ""
+
+msgctxt "controls.widenSidePanel"
+msgid "Widen side panel"
+msgstr ""
+
+msgctxt "controls.restoreSidePanelWidth"
+msgid "Restore side panel width"
+msgstr ""
+
+msgctxt "controls.sidePanelWidthAvailableBeside"
+msgid "Width control is available beside the emulator"
+msgstr ""
+
+msgctxt "controls.moveSidePanelBelow"
+msgid "Move side panel below emulator"
+msgstr ""
+
+msgctxt "controls.moveSidePanelBeside"
+msgid "Move side panel beside emulator"
+msgstr ""
+
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Report Scurvy Trouble"
@@ -1854,6 +1882,14 @@ msgstr ""
 
 msgctxt "basic.value"
 msgid "Value"
+msgstr ""
+
+msgctxt "basic.showVariables"
+msgid "Show variables"
+msgstr ""
+
+msgctxt "basic.hideVariables"
+msgid "Hide variables"
 msgstr ""
 
 msgctxt "expectin.runScript"

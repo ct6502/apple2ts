@@ -28,9 +28,17 @@ import { messagelistener } from "./api/messagelistener"
 import { CRTStartup } from "./graphics"
 import { startRemoteControlBridge } from "./api/remotecontrol"
 import { useTranslation } from "../i18n/useTranslation"
+import { desktopLayoutPolicy, getDesktopLayout } from "./layout"
+import FitControlRow from "./controls/fitcontrolrow"
+import DesktopPanel from "./panels/desktoppanel"
 
 // The classic emulator and Help panel need about this much room side by side.
-const wideLayoutMinWidth = 1000
+const specialLayoutNarrowWidth = 1000
+
+const getViewport = () => ({
+  height: window.innerHeight || window.outerHeight - 120,
+  width: document.documentElement.clientWidth || window.innerWidth || window.outerWidth - 20,
+})
 
 const DisplayApple2 = () => {
   const { t } = useTranslation()
@@ -42,17 +50,14 @@ const DisplayApple2 = () => {
   const [openAppleKeyMode, setOpenAppleKeyMode] = useState(0)
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
+  const [desktopPanelBelow, setDesktopPanelBelow] = useState(false)
+  const [desktopPanelCollapsed, setDesktopPanelCollapsed] = useState(false)
+  const [wideDesktopPanel, setWideDesktopPanel] = useState(false)
   const [worker, setWorker] = useState<Worker | null>(null)
-  const [viewport, setViewport] = useState(() => ({
-    height: window.innerHeight || window.outerHeight - 120,
-    width: window.innerWidth || window.outerWidth - 20,
-  }))
+  const [viewport, setViewport] = useState(getViewport)
 
   useEffect(() => {
-    const handleResize = () => setViewport({
-      height: window.innerHeight || window.outerHeight - 120,
-      width: window.innerWidth || window.outerWidth - 20,
-    })
+    const handleResize = () => setViewport(getViewport())
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
@@ -186,7 +191,8 @@ const DisplayApple2 = () => {
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const { height, width } = viewport
-  const narrow = isTouchDevice || width < wideLayoutMinWidth
+  const desktop = !isTouchDevice && !isEmbedMode() && !isMinimalTheme() && !isGameMode()
+  const narrow = isTouchDevice || (!desktop && width < specialLayoutNarrowWidth)
   const isLandscape = isTouchDevice && (width > height)
   useEffect(() => {
     if (isTouchDevice) {
@@ -195,24 +201,93 @@ const DisplayApple2 = () => {
       document.body.style.marginTop = isLandscape ? "10px" : "0"
     }
   }, [isTouchDevice, isLandscape])
+  useEffect(() => {
+    document.documentElement.classList.toggle("desktop-layout", desktop)
+    return () => document.documentElement.classList.remove("desktop-layout")
+  }, [desktop])
   const machineName = handleGetMachineName()
   const slotConfig = handleGetSlotConfig()
   const isApple2Plus = machineName === "APPLE2P"
   const hasAuxCard = !isApple2Plus && slotConfig[3] === "aux"
   const mem = isApple2Plus ? 64 : (hasAuxCard ? (handleGetMemSize() + 64) : 64)
-  const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
+  const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + "MB") : (mem + "KB")
   const status = <div className="default-font footer-item">
-  <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
-  <br />
-  <span>©{new Date().getFullYear()}&nbsp;Chris Torrence and the Apple2TS contributors<br/>
-  <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">{t("controls.reportIssue")}</a>&nbsp;&nbsp;
-  <a href="https://ct6502.org/privacy/">Privacy Policy</a>
-  </span>
+    <div>{currentSpeed}MHz, {memSize}, {avgFPS.toFixed(1)} FPS</div>
+    <div>©{new Date().getFullYear()} Chris Torrence and</div>
+    <div>the Apple2TS contributors</div>
+    <div><a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">{t("controls.reportIssue")}</a></div>
+    <div><a href="https://ct6502.org/privacy/">Privacy Policy</a></div>
   </div>
 
   if (isEmbedMode()) {
     return <Apple2Canvas {...props} />
   }
+
+  if (desktop) {
+    const layout = getDesktopLayout(width, height, {
+      panelBelow: desktopPanelBelow,
+      panelCollapsed: desktopPanelCollapsed,
+      widePanel: wideDesktopPanel,
+    })
+    const desktopProps = {
+      ...props,
+      canvasBounds: { height: layout.screenHeight, width: layout.screenWidth },
+    }
+    return <>
+      <div className={`desktop-emulator-layout${desktopPanelBelow ? " desktop-panel-layout-below" : ""}`} style={{
+        gap: desktopLayoutPolicy.columnGap,
+        gridTemplateColumns: desktopPanelBelow
+          ? `${layout.monitorWidth}px`
+          : `${layout.monitorWidth}px ${layout.panelWidth}px`,
+      }}>
+        <div className="desktop-primary-column" style={{
+          minHeight: desktopPanelBelow
+            ? undefined
+            : layout.boundedPanelHeight,
+          width: layout.monitorWidth,
+        }}>
+          <div className="desktop-primary-sticky">
+            <Apple2Canvas {...desktopProps} />
+            <div className="desktop-controls-and-status">
+              <FitControlRow minHeight={desktopLayoutPolicy.controlStripHeight}>
+                <ControlPanel {...desktopProps} singleRow />
+              </FitControlRow>
+              <div className="desktop-status-strip">
+                {status}
+              </div>
+            </div>
+            <div className="desktop-device-strip" style={{
+              minHeight: desktopLayoutPolicy.deviceStripHeight,
+            }}>
+              <div className="desktop-disk-strip">
+                <FitControlRow maxScale={0.8} minHeight={desktopLayoutPolicy.deviceStripHeight}>
+                  <DiskInterface {...desktopProps} singleRow />
+                </FitControlRow>
+              </div>
+            </div>
+          </div>
+        </div>
+        <DesktopPanel
+          boundedHeight={layout.boundedPanelHeight}
+          collapsed={desktopPanelCollapsed}
+          expandedWidth={layout.panelWidth}
+          height={layout.panelHeight}
+          below={desktopPanelBelow}
+          onBelowChange={setDesktopPanelBelow}
+          onCollapsedChange={setDesktopPanelCollapsed}
+          wide={wideDesktopPanel}
+          onWideChange={setWideDesktopPanel}>
+          <DebugSection
+            updateDisplay={updateDisplay}
+            narrow={false}
+            desktop
+            horizontalTabs={desktopPanelBelow} />
+        </DesktopPanel>
+      </div>
+      <FileInput {...desktopProps} />
+    </>
+  }
+
   return (
     <>
     <div className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>

@@ -1,5 +1,6 @@
 import { COLOR_MODE, toHex } from "../common/utility"
-import { useEffect } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useGlobalContext } from "./globalcontext"
 import { nColsHgrMagnifier, nRowsHgrMagnifier, getOverrideHiresPixels, screenBytesToCanvasPixels, screenCoordToCanvasCoord, canvasCoordToNormScreenCoord } from "./graphics"
 import { drawHiresTile } from "./graphicshgr"
@@ -10,10 +11,80 @@ type MagnifyProps = {
   lockHgrMagnifier: boolean
 }
 
+const drawBytes = (canvas: HTMLCanvasElement, pixels: number[][]) => {
+  const context = canvas.getContext("2d")
+  if (!context) return
+
+  context.fillStyle = "black"
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  const tile = new Uint8Array(nColsHgrMagnifier * nRowsHgrMagnifier)
+  for (let j = 0; j < nRowsHgrMagnifier; j++) {
+    for (let i = 0; i < nColsHgrMagnifier; i++) {
+      tile[nColsHgrMagnifier * j + i] = pixels[j][i + 1]
+    }
+  }
+  context.imageSmoothingEnabled = false
+  const addr = pixels[0][0]
+  const isEven = addr % 2 === 0
+  drawHiresTile(context, tile, COLOR_MODE.NOFRINGE,
+    nRowsHgrMagnifier, 0, 0, 11, isEven)
+  const nPixels = 7 * nColsHgrMagnifier
+  for (let i = 1; i < nPixels; i++) {
+    const x = Math.round((canvas.width / nPixels) * i + 0.5) - 0.5
+    context.moveTo(x, 0)
+    context.lineTo(x, canvas.height)
+  }
+  for (let i = 1; i <= nRowsHgrMagnifier - 1; i++) {
+    const y = Math.round((canvas.height / nRowsHgrMagnifier) * i + 0.5) - 0.5
+    context.moveTo(0, y)
+    context.lineTo(canvas.width, y)
+  }
+  context.strokeStyle = "#888"
+  context.stroke()
+}
+
+const HgrInfoCanvas = ({ pixels }: { pixels: number[][] }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useLayoutEffect(() => {
+    if (canvasRef.current) drawBytes(canvasRef.current, pixels)
+  }, [pixels])
+
+  return <canvas ref={canvasRef} id="hgr-info-canvas"
+    style={{
+      height: `${11 * nRowsHgrMagnifier}px`,
+      width: `${77 * nColsHgrMagnifier}px`,
+    }}
+    width={77 * nColsHgrMagnifier} height={11 * nRowsHgrMagnifier} />
+}
+
 const HgrMagnifier = (props: MagnifyProps) => {
   const { updateHgrMagnifier: updateHgrMagnifier, setUpdateHgrMagnifier: setUpdateHgrMagnifier,
     hgrMagnifierLoc: hgrMagnifierLoc, setHgrMagnifierLoc: setHgrMagnifierLoc,
     setLockHgrMagnifier } = useGlobalContext()
+  const [, setPositionVersion] = useState(0)
+  const wasLockedRef = useRef(props.lockHgrMagnifier)
+
+  useEffect(() => {
+    let animationFrame = 0
+    const updatePosition = () => {
+      cancelAnimationFrame(animationFrame)
+      animationFrame = requestAnimationFrame(() => {
+        setPositionVersion(version => version + 1)
+      })
+    }
+    window.addEventListener("scroll", updatePosition, true)
+    window.addEventListener("resize", updatePosition)
+    const resizeObserver = props.mainCanvas
+      ? new ResizeObserver(updatePosition)
+      : undefined
+    if (props.mainCanvas) resizeObserver?.observe(props.mainCanvas)
+    return () => {
+      cancelAnimationFrame(animationFrame)
+      window.removeEventListener("scroll", updatePosition, true)
+      window.removeEventListener("resize", updatePosition)
+      resizeObserver?.disconnect()
+    }
+  }, [props.mainCanvas])
 
   let x = 0, y = 0
   if (props.mainCanvas) {
@@ -29,14 +100,17 @@ const HgrMagnifier = (props: MagnifyProps) => {
   }
 
   useEffect(() => {
-    if (props.lockHgrMagnifier && props.mainCanvas) {
+    if (props.lockHgrMagnifier && !wasLockedRef.current && props.mainCanvas) {
       setHgrMagnifierLoc([x, y])
     }
+    wasLockedRef.current = props.lockHgrMagnifier
   }, [x, y, props.lockHgrMagnifier, props.mainCanvas, setHgrMagnifierLoc])
 
   useEffect(() => {
     if (updateHgrMagnifier) {
       setUpdateHgrMagnifier(false)
+      // The memory table has already supplied the location for this lock.
+      wasLockedRef.current = true
       setLockHgrMagnifier(true)
     }
   }, [updateHgrMagnifier, setUpdateHgrMagnifier, setLockHgrMagnifier])
@@ -51,44 +125,6 @@ const HgrMagnifier = (props: MagnifyProps) => {
     ? Math.max(Math.min(hgrMagnifierLoc[1], 192), 0)
     : Math.max(Math.min(y, 192), 0)
 
-  const drawBytes = (pixels: number[][]) => {
-    const infoCanvas = document.getElementById("hgr-info-canvas") as HTMLCanvasElement | null
-    if (infoCanvas) {
-      const canvas = infoCanvas
-      const context = canvas.getContext("2d")
-      if (context) {
-        context.fillStyle = "black"
-        context.fillRect(0, 0, canvas.width, canvas.height)
-        const tile = new Uint8Array(nColsHgrMagnifier * nRowsHgrMagnifier)
-        for (let j = 0; j < nRowsHgrMagnifier; j++) {
-          for (let i = 0; i < nColsHgrMagnifier; i++) {
-            tile[nColsHgrMagnifier * j + i] = pixels[j][i + 1]
-          }
-        }
-        context.imageSmoothingEnabled = false
-        const addr = pixels[0][0]
-        const isEven = addr % 2 === 0
-        drawHiresTile(context, tile, COLOR_MODE.NOFRINGE,
-          nRowsHgrMagnifier, 0, 0, 11, isEven)
-        // Draw vertical lines
-        const nPixels = 7 * nColsHgrMagnifier
-        for (let i = 1; i < nPixels; i++) {
-          const x = Math.round((canvas.width / nPixels) * i + 0.5) - 0.5
-          context.moveTo(x, 0)
-          context.lineTo(x, canvas.height)
-        }
-        // Draw horizontal lines
-        for (let i = 1; i <= nRowsHgrMagnifier - 1; i++) {
-          const y = Math.round((canvas.height / nRowsHgrMagnifier) * i + 0.5) - 0.5
-          context.moveTo(0, y)
-          context.lineTo(canvas.width, y)
-        }
-        context.strokeStyle = "#888"
-        context.stroke()
-      }
-    }
-  }
-
   const pixels = getOverrideHiresPixels(displayX, displayY)
   if (!pixels) return <></>
   const pixelText = pixels.map((line: Array<number>, i) => {
@@ -102,16 +138,12 @@ const HgrMagnifier = (props: MagnifyProps) => {
   let [xPos, yPos] = screenCoordToCanvasCoord(props.mainCanvas, col, row)
   xPos -= 2
   yPos -= 2
-  setTimeout(() => drawBytes(pixels), 50)
-
-  return <div className="hgr-view flex-row"
+  return createPortal(<div className="hgr-view flex-row"
     style={{ left: `${xPos}px`, top: `${yPos}px` }}>
     <div className="hgr-view-box" style={{ width: `${dx}px`, height: `${dy}px` }}>&nbsp;</div>
     <div className="hgr-view-text">{pixelText}</div>
-    <canvas id="hgr-info-canvas"
-      style={{ zIndex: "9999", border: "2px solid red" }}
-      width={`${77 * nColsHgrMagnifier}pt`} height={`${11 * nRowsHgrMagnifier}pt`} />
-  </div>
+    <HgrInfoCanvas pixels={pixels} />
+  </div>, document.body)
 
 }
 

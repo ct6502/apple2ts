@@ -53,7 +53,10 @@ export const Droplist = (props: DroplistProps) => {
       style={{
         visibility: "hidden",
         whiteSpace: "nowrap",
-        position: "absolute",
+        position: "fixed",
+        left: 0,
+        top: 0,
+        pointerEvents: "none",
         fontSize: "1rem", // Adjust this to match the font size of the select element
       }}
     />

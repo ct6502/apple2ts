@@ -36,12 +36,12 @@ const ExpectinTab = () => {
   }
 
   return (
-    <div className="flex-column-gap debug-section">
+    <div className="flex-column-gap debug-section desktop-code-workspace">
       <CodeMirrorEditor value={expectinText} setValue={setExpectinText} />
-      <div className="flex-row-gap">
+      <div className="flex-row-gap desktop-code-controls">
         {expectinError === "" ?
           <button
-            className="dbg-expect-button"
+            className="push-button"
             title={expectinObject?.IsRunning() ? t("expectin.stopScript") : t("expectin.runScript")}
             onClick={handleExpectButtonClick}>{expectinObject?.IsRunning() ?
               <FontAwesomeIcon icon={faStop} /> :

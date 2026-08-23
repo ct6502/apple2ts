@@ -625,7 +625,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   // }
 }
 
-export const getCanvasSize = () => {
+export const getCanvasSize = (bounds?: CanvasBounds) => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme()
@@ -635,6 +635,9 @@ export const getCanvasSize = () => {
   const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
+  }
+  if (bounds && !isCanvasFullScreen) {
+    return [Math.floor(bounds.width), Math.floor(bounds.height)]
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)

@@ -79,10 +79,11 @@ describe("HelpTab", () => {
     reactEnvironment.IS_REACT_ACT_ENVIRONMENT = previousActEnvironment
   })
 
-  const renderHelp = (useOpenAppleKey: boolean, narrow = false) => {
+  const renderHelp = (useOpenAppleKey: boolean, narrow = false, desktop = false) => {
     root.render(
       <div className="flyout">
         <HelpTab
+          desktop={desktop}
           helptext="<Default>"
           narrow={narrow}
           theme={UI_THEME.CLASSIC}
@@ -92,6 +93,18 @@ describe("HelpTab", () => {
       </div>
     )
   }
+
+  it("lets the desktop shell own its width and vertical flow", () => {
+    setViewport(1200, 800)
+    act(() => {
+      renderHelp(false, false, true)
+    })
+
+    const help = container.querySelector<HTMLElement>(".help-parent")
+    expect(help?.style.width).toBe("100%")
+    expect(help?.style.height).toBe("")
+    expect(help?.style.overflow).toBe("visible")
+  })
 
   it("updates its layout when the viewport changes", () => {
     setViewport(1200, 800)

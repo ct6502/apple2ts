@@ -9,7 +9,7 @@ import { isMinimalTheme } from "../../ui_settings"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { handleGetSlotConfig } from "../../main2worker"
 
-const DiskInterface = (props: DisplayProps) => {
+const DiskInterface = (props: DisplayProps & { singleRow?: boolean }) => {
   const { t } = useTranslation()
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
@@ -27,7 +27,9 @@ const DiskInterface = (props: DisplayProps) => {
         isOpen={() => { return isFlyoutOpen && !allSlotsDisabled }}
         onClick={() => { if (!allSlotsDisabled) setIsFlyoutOpen(!isFlyoutOpen) }}
         position="bottom-left">
-      <div className={`${isMinimalTheme() && isScreenNarrow ? "flex-column" : "flex-row"} flexwrap`}>
+      <div className={props.singleRow
+        ? "disk-interface-single-row"
+        : `${isMinimalTheme() && isScreenNarrow ? "flex-column" : "flex-row"} flexwrap`}>
         <span className="flex-row">
           {!isMinimalTheme() && <DiskImageChooser {...props} />}
           <DiskDrive key={0} index={0} renderCount={props.renderCount}

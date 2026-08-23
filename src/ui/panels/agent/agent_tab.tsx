@@ -363,28 +363,28 @@ const AgentTab = () => {
       </form>
       </div>
       
+      <AgentTabConfig
+        showConfig={showConfig}
+        setShowConfig={setShowConfig}
+        onConfigChange={handleConfigChange}
+      />
+
       <div className="agent-controls">
-            <button
-              type={isProcessing ? "button" : "submit"}
-              onClick={isProcessing ? handleStop : handleSubmit}
-              disabled={!isProcessing && !inputValue.trim()}
-              className="agent-submit"
-              title={isProcessing ? t("agent.stop") : t("agent.send")}
-            >
-              <FontAwesomeIcon icon={isProcessing ? faStop : faPlay} />
-            </button>
+        <button
+          type={isProcessing ? "button" : "submit"}
+          onClick={isProcessing ? handleStop : handleSubmit}
+          disabled={!isProcessing && !inputValue.trim()}
+          className="push-button agent-submit"
+          title={isProcessing ? t("agent.stop") : t("agent.send")}
+        >
+          <FontAwesomeIcon icon={isProcessing ? faStop : faPlay} />
+        </button>
         <button onClick={() => setShowConfig(true)}
-          className="agent-submit"
+          className="push-button agent-submit"
           title={t("agent.changeConfiguration")}>
           <FontAwesomeIcon icon={faCog} />
         </button>
       </div>
-
-      <AgentTabConfig 
-        showConfig={showConfig} 
-        setShowConfig={setShowConfig}
-        onConfigChange={handleConfigChange}
-      />
     </div>
   )
 }

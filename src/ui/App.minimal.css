@@ -31,6 +31,12 @@ body {
   user-select: none;
 }
 
+.desktop-status-strip .footer-item {
+  bottom: auto;
+  position: static;
+  width: auto;
+}
+
 #reportIssue {
   display: none;
 }

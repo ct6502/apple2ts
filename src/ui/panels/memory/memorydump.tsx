@@ -38,6 +38,21 @@ const MemoryDump = () => {
   const [highAscii, setHighAscii] = useState(false)
   const previousMemLengthRef = useRef(0)
 
+  useEffect(() => {
+    switch (memoryRange) {
+      case MEMORY_RANGE.HGR1:
+        overrideHires(true, false)
+        break
+      case MEMORY_RANGE.HGR2:
+        overrideHires(true, true)
+        break
+      default:
+        overrideHires(false, false)
+        break
+    }
+    return () => overrideHires(false, false)
+  }, [memoryRange])
+
   const doSetScrollRow = (row: number) => {
     setScrollRow(row)
     // Turn off our new scroll position after a brief moment. Otherwise the
@@ -239,17 +254,6 @@ const MemoryDump = () => {
   const handleSetMemoryRange = (value: string) => {
     setAddress("")
     setMemoryRange(value)
-    switch (value) {
-      case MEMORY_RANGE.HGR1:
-        overrideHires(true, false)
-        break
-      case MEMORY_RANGE.HGR2:
-        overrideHires(true, true)
-        break
-      default:
-        overrideHires(false, false)
-        break
-    }
   }
 
   const doPickWatchpoint = (addr: number) => {

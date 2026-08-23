@@ -80,16 +80,6 @@ const State6502Controls = () => {
       </div>
       <div className="flex-row" style={{ alignItems: "center" }}>
         <div className="flex-row">
-          {createCheckbox("N", 7, s6502.PStatus, runMode)}
-          {createCheckbox("V", 6, s6502.PStatus, runMode)}
-          {createCheckbox("B", 4, s6502.PStatus, runMode)}
-          {createCheckbox("D", 3, s6502.PStatus, runMode)}
-          {createCheckbox("I", 2, s6502.PStatus, runMode)}
-          {createCheckbox("Z", 1, s6502.PStatus, runMode)}
-          {createCheckbox("C", 0, s6502.PStatus, runMode)}
-          {createCheckbox("NMI", 0, s6502.flagNMI ? 1 : 0, runMode)}
-        </div>
-        <div className="flex-row" style={{ marginLeft: "1em" }}>
           <span className="bigger-font">Cycles:</span>
           <span className="bigger-monospace"
             style={{ marginLeft: "2pt", marginRight: "2pt", marginTop: "1pt" }}> {s6502.cycleCount}</span>
@@ -98,6 +88,16 @@ const State6502Controls = () => {
             onClick={() => { passSetCycleCount(0) }}>
             <FontAwesomeIcon icon={faSync} style={{ fontSize: "0.7em" }}/>
           </button>
+        </div>
+        <div className="flex-row" style={{ marginLeft: "1em" }}>
+          {createCheckbox("N", 7, s6502.PStatus, runMode)}
+          {createCheckbox("V", 6, s6502.PStatus, runMode)}
+          {createCheckbox("B", 4, s6502.PStatus, runMode)}
+          {createCheckbox("D", 3, s6502.PStatus, runMode)}
+          {createCheckbox("I", 2, s6502.PStatus, runMode)}
+          {createCheckbox("Z", 1, s6502.PStatus, runMode)}
+          {createCheckbox("C", 0, s6502.PStatus, runMode)}
+          {createCheckbox("NMI", 0, s6502.flagNMI ? 1 : 0, runMode)}
         </div>
       </div>
     </div>

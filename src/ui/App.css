@@ -1,5 +1,14 @@
 html {
   overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+html.desktop-layout {
+  overflow-x: auto;
+}
+
+html.desktop-layout body.no-scroll {
+  overflow: visible;
 }
 
 :root {
@@ -117,6 +126,481 @@ input:focus {
 
 .flexwrap {
   flex-wrap: wrap;
+}
+
+.desktop-emulator-layout {
+  display: grid;
+  align-items: start;
+  grid-template-columns: auto auto;
+  width: max-content;
+}
+
+.desktop-emulator-layout.desktop-panel-layout-below {
+  grid-template-columns: auto;
+}
+
+.desktop-primary-column,
+.desktop-tab-column {
+  min-width: 0;
+}
+
+.desktop-primary-column {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-emulator-layout:not(.desktop-panel-layout-below) .desktop-primary-column {
+  position: relative;
+  z-index: 1;
+}
+
+.desktop-emulator-layout:not(.desktop-panel-layout-below) .desktop-primary-sticky {
+  position: sticky;
+  top: 10px;
+}
+
+.desktop-panel-shell:has(.modal-overlay) {
+  z-index: 3;
+}
+
+.desktop-emulator-layout .desktop-primary-column:has(.modal-overlay) {
+  z-index: 4;
+}
+
+.desktop-primary-sticky {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.desktop-device-strip {
+  display: flex;
+  width: 100%;
+}
+
+.desktop-status-strip {
+  align-items: center;
+  background-color: var(--panel-background);
+  border: 1px solid var(--text-color);
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 0.72em;
+  justify-content: center;
+  line-height: 1.1;
+  overflow: hidden;
+  padding: 2px 6px;
+  text-align: center;
+  width: max-content;
+}
+
+body.dark-mode .desktop-status-strip {
+  background-color: var(--panel-background-dark);
+  border-color: var(--text-color-dark);
+}
+
+.desktop-status-strip .footer-item {
+  margin: 0;
+  position: static;
+  white-space: normal;
+  width: auto;
+}
+
+.desktop-status-strip .footer-item > div {
+  white-space: nowrap;
+}
+
+.desktop-tab-column {
+  box-sizing: border-box;
+}
+
+.desktop-panel-shell {
+  --desktop-horizontal-tab-height: 0px;
+  position: relative;
+}
+
+.desktop-panel-shell.desktop-panel-below {
+  --desktop-horizontal-tab-height: 34px;
+}
+
+.desktop-panel-controls {
+  height: 0;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 34px;
+  z-index: 2;
+}
+
+.desktop-panel-below .desktop-panel-controls {
+  position: absolute;
+  top: 0;
+  width: 108px;
+}
+
+.desktop-panel-below .desktop-panel-toggle {
+  border-radius: 10px 10px 0 0;
+  height: var(--desktop-horizontal-tab-height);
+}
+
+.desktop-panel-shell.desktop-panel-wide {
+  overflow-x: clip;
+}
+
+.desktop-panel-toggle {
+  align-items: center;
+  background-color: var(--background-color);
+  border: 1px solid black;
+  border-radius: 10px 0 0 10px;
+  color: var(--text-color);
+  cursor: pointer;
+  display: flex;
+  height: 28px;
+  justify-content: center;
+  left: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  width: 34px;
+  z-index: 1;
+}
+
+.desktop-panel-width-toggle {
+  font-family: monospace;
+  font-size: 15px;
+  font-weight: 700;
+  top: 60px;
+}
+
+.desktop-panel-orientation-toggle {
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.desktop-panel-orientation-glyph {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  line-height: 1;
+  transform: translateY(1px) scaleY(-1);
+  width: 100%;
+}
+
+.desktop-panel-below .desktop-panel-orientation-glyph {
+  transform: translateY(-1px) scaleX(-1);
+}
+
+.desktop-panel-shell:not(.desktop-panel-below) .desktop-panel-collapse-toggle {
+  top: 30px;
+}
+
+.desktop-panel-below .desktop-panel-orientation-toggle {
+  left: 0;
+  top: 0;
+}
+
+.desktop-panel-below .desktop-panel-collapse-toggle {
+  left: 36px;
+}
+
+.desktop-panel-below .desktop-panel-width-toggle {
+  left: 72px;
+  top: 0;
+}
+
+body.dark-mode .desktop-panel-toggle {
+  background-color: var(--background-color-dark);
+  border-color: var(--text-color-dark);
+  color: var(--text-color-dark);
+}
+
+.desktop-panel-orientation-toggle,
+body.dark-mode .desktop-panel-orientation-toggle {
+  background-color: #ff5f57;
+  color: #222;
+}
+
+.desktop-panel-collapse-toggle,
+body.dark-mode .desktop-panel-collapse-toggle {
+  background-color: #febc2e;
+  color: #222;
+}
+
+.desktop-panel-width-toggle,
+body.dark-mode .desktop-panel-width-toggle {
+  background-color: #28c840;
+  color: #222;
+}
+
+.desktop-panel-orientation-toggle:hover,
+.desktop-panel-orientation-toggle:focus-visible,
+.desktop-panel-collapse-toggle:hover,
+.desktop-panel-collapse-toggle:focus-visible,
+.desktop-panel-width-toggle:hover,
+.desktop-panel-width-toggle:focus-visible {
+  filter: brightness(0.88);
+}
+
+.desktop-panel-toggle:disabled {
+  cursor: default;
+  filter: none;
+  opacity: 0.55;
+}
+
+.desktop-panel-body {
+  height: 100%;
+  overflow: visible;
+  width: 100%;
+}
+
+.desktop-panel-shell:not(.desktop-panel-collapsed) .dbg-tab-row {
+  padding-top: 90px;
+}
+
+.desktop-emulator-layout:not(.desktop-panel-layout-below) .desktop-panel-shell .dbg-tab-row {
+  align-self: flex-start;
+  position: relative;
+  z-index: 1;
+}
+
+/* Ordinary bounded panels stay with the monitor even if the document has a
+   small amount of unrelated overflow. Debugger output and BASIC variables
+   intentionally remain in document flow. */
+.desktop-emulator-layout:not(.desktop-panel-layout-below) .desktop-panel-shell.desktop-panel-collapsed,
+.desktop-emulator-layout:not(.desktop-panel-layout-below) .desktop-panel-shell:not(.desktop-panel-collapsed):not(:has(.desktop-panel-content-debug)):not(:has(.desktop-basic-variables-visible)) {
+  align-self: start;
+  position: sticky;
+  top: 10px;
+}
+
+.desktop-panel-shell.desktop-panel-below:not(.desktop-panel-collapsed) .dbg-tab-row {
+  padding-left: 108px;
+  padding-top: 0;
+}
+
+.desktop-panel-body > .flyout,
+.desktop-tab-column #debug-section {
+  box-sizing: border-box;
+  min-height: 100%;
+  width: 100%;
+}
+
+.desktop-panel-body > .flyout {
+  height: 100%;
+}
+
+.desktop-tab-column #debug-section {
+  height: 100%;
+  min-width: 0;
+  overflow: visible;
+}
+
+.desktop-tab-column .help-parent {
+  box-sizing: border-box;
+  height: 100%;
+  margin-right: 0;
+  max-width: none;
+}
+
+.desktop-tab-column .help-paper {
+  min-height: 100%;
+}
+
+.desktop-control-strip {
+  width: 100%;
+}
+
+.desktop-control-fit-content {
+  width: max-content;
+}
+
+.control-panel-two-rows .push-button,
+.control-panel-two-rows .joystick-button {
+  zoom: var(--desktop-control-scale);
+}
+
+.control-panel-two-rows .modal-overlay .push-button,
+.control-panel-two-rows .modal-overlay .joystick-button,
+.control-panel-two-rows .floating-dialog .push-button,
+.control-panel-two-rows .floating-dialog .joystick-button {
+  zoom: 1;
+}
+
+.desktop-controls-and-status {
+  align-items: flex-start;
+  display: flex;
+  width: 100%;
+}
+
+.desktop-controls-and-status .desktop-control-strip {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.desktop-controls-and-status .desktop-status-strip {
+  align-self: flex-start;
+  flex: 0 0 auto;
+}
+
+.desktop-disk-strip {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.desktop-disk-strip .desktop-control-fit-content {
+  zoom: var(--desktop-control-scale);
+}
+
+.desktop-disk-strip .modal-overlay,
+.desktop-disk-strip .floating-dialog:not(.modal-overlay .floating-dialog) {
+  zoom: var(--desktop-control-inverse-scale);
+}
+
+.control-panel-two-rows,
+.control-panel-row,
+.disk-interface-single-row {
+  display: flex;
+  width: max-content;
+}
+
+.control-panel-two-rows {
+  flex-direction: column;
+}
+
+.control-panel-row,
+.disk-interface-single-row {
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+
+.control-panel-row {
+  align-items: flex-start;
+}
+
+.disk-interface-single-row > span {
+  display: flex;
+  flex-direction: row;
+}
+
+.desktop-panel-content {
+  box-sizing: border-box;
+  flex: 1;
+  max-width: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
+.desktop-panel-shell:not(.desktop-panel-wide) .desktop-panel-content {
+  margin-right: 2px;
+  max-width: calc(100% - 2px);
+}
+
+.desktop-panel-shell:has(.desktop-panel-content-debug) .desktop-panel-body,
+.desktop-panel-shell:has(.desktop-panel-content-debug) .desktop-panel-body > .flyout,
+.desktop-panel-shell:has(.desktop-panel-content-debug) #debug-section {
+  height: auto;
+  overflow: visible;
+}
+
+.desktop-panel-shell:has(.desktop-panel-content-debug) .desktop-panel-content {
+  height: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.desktop-panel-shell:not(.desktop-panel-collapsed):has(.desktop-panel-content-debug),
+.desktop-panel-shell:not(.desktop-panel-collapsed):has(.desktop-basic-variables-visible) {
+  height: auto !important;
+  min-height: var(--desktop-panel-height);
+}
+
+.desktop-panel-content > .debug-section {
+  box-sizing: border-box;
+  margin-right: 0;
+}
+
+.desktop-panel-content > .desktop-code-workspace {
+  height: calc(100% - 24px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.desktop-basic-primary > .basic-editor,
+.desktop-code-workspace > .expectin-editor {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 180px;
+  width: 100%;
+}
+
+.desktop-panel-wide .desktop-panel-content > .desktop-code-workspace {
+  height: calc(var(--desktop-bounded-panel-height) - 24px);
+}
+
+.desktop-panel-content > .agent-container {
+  box-sizing: border-box;
+  height: calc(100% - 24px);
+}
+
+.desktop-panel-wide .desktop-panel-content > .agent-container {
+  height: calc(var(--desktop-bounded-panel-height) - 24px);
+}
+
+.desktop-basic-primary {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 7px;
+  height: 100%;
+  min-height: 0;
+}
+
+.desktop-panel-content .desktop-basic-primary {
+  height: calc(var(--desktop-bounded-panel-height) - 24px - var(--desktop-horizontal-tab-height));
+}
+
+.desktop-panel-content > .desktop-basic-variables-visible {
+  height: auto;
+  overflow: visible;
+}
+
+.desktop-panel-shell:has(.desktop-basic-variables-visible) .desktop-panel-body,
+.desktop-panel-shell:has(.desktop-basic-variables-visible) .desktop-panel-body > .flyout,
+.desktop-panel-shell:has(.desktop-basic-variables-visible) #debug-section,
+.desktop-panel-shell:has(.desktop-basic-variables-visible) .desktop-panel-content {
+  height: auto;
+  overflow: visible;
+}
+
+.desktop-code-controls {
+  flex: 0 0 auto;
+}
+
+.desktop-panel-content .desktop-code-controls,
+.desktop-panel-content .agent-controls {
+  box-sizing: border-box;
+  padding-right: 60px;
+  width: 100%;
+}
+
+.basic-debug-view {
+  flex: 0 0 auto;
+}
+
+.basic-debug-view > .basic-variables-pane {
+  max-height: none;
+  overflow: visible;
+}
+
+.vera-panel {
+  display: flex;
+  height: 100%;
+  width: 100%;
 }
 
 .push-button {
@@ -251,7 +735,7 @@ body.dark-mode .button-locked {
   border-radius: 50%;
   box-shadow: 0px 6px 0px rgba(81, 2, 2, 0.8);
   transform: translateY(-2px);
-  transition: all 0.1s ease-in-out;
+  transition: box-shadow 0.1s ease-in-out, transform 0.1s ease-in-out;
 }
 
 .joystick-active {

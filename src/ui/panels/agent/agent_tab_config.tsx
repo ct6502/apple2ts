@@ -182,13 +182,12 @@ const AgentTabConfig = (props: {
 return (
 <div>
   {props.showConfig &&
-  <div className="modal-overlay"
+  <div className="modal-overlay agent-config-overlay"
       tabIndex={0} // Make the div focusable
       onKeyDown={(event) => {
         if (event.key === "Escape") props.setShowConfig(false)
       }}>
-    <div className="floating-dialog flex-column"
-        style={{ left: "35%", top: "25%", width: "70%", maxWidth: "500px" }}>
+    <div className="floating-dialog flex-column agent-config-dialog">
       <div className="agent-config-panel">
       <div className="flex-row-space-between">
         <div className="dialog-title" style={{padding: 0, paddingTop: "6px"}}>{t("agent.configTitle")}</div>

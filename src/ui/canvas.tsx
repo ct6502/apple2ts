@@ -54,6 +54,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const myCanvas = useRef<HTMLCanvasElement>(null)
   const hiddenCanvas = useRef<HTMLCanvasElement>(null)
+  const canvasBounds = useRef(props.canvasBounds)
   const hardwareKeyboardKey = useRef<{ code: string, key: number } | null>(null)
 
   const pasteHandler = (e: ClipboardEvent) => {
@@ -437,7 +438,11 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const [width, height] = getCanvasSize()
+  useEffect(() => {
+    canvasBounds.current = props.canvasBounds
+  }, [props.canvasBounds])
+
+  const [width, height] = getCanvasSize(props.canvasBounds)
 
   const RenderCanvas = (timestamp: number) => {
     const elapsed = timestamp - lastFrameTimeRef.current
@@ -454,7 +459,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d")
         const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
         if (ctx && hiddenCtx) {
-          const [w, h] = getCanvasSize()   // always current
+          const [w, h] = getCanvasSize(canvasBounds.current)   // always current
           ProcessDisplay(ctx, hiddenCtx, w, h)
         }
         checkGamepad()
@@ -604,7 +609,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const setFocus = () => {
     if (mainCanvas) {
-      (mainCanvas as HTMLCanvasElement).focus()
+      (mainCanvas as HTMLCanvasElement).focus({ preventScroll: true })
     }
   }
 
@@ -636,6 +641,11 @@ const Apple2Canvas = (props: DisplayProps) => {
         id="apple2canvas"
         className="main-canvas"
         style={{
+          ...(props.canvasBounds ? {
+            boxSizing: "border-box",
+            height,
+            width,
+          } : {}),
           cursor: cursor,
           borderColor: (machine === "APPLE2P" || getTheme() === UI_THEME.DARK) ? "black" : "#583927",
           borderRadius: noBackgroundImage ? "0" : "18px",

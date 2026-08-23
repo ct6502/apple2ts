@@ -87,6 +87,11 @@ type Apple2SaveState = {
 
 type UpdateDisplay = (speed = 0, helptext = "") => void
 
+type CanvasBounds = {
+  height: number,
+  width: number,
+}
+
 type DisplayProps = {
   speed: number,
   renderCount: number,
@@ -100,6 +105,7 @@ type DisplayProps = {
   handleOpenAppleDown: (mode: number) => void,
   handleClosedAppleDown: (mode: number) => void,
   setShowFileOpenDialog: (show: boolean, index: number) => void,
+  canvasBounds?: CanvasBounds,
 }
 
 type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P"

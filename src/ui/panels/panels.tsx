@@ -16,7 +16,12 @@ import VeraTab from "./vera/veratab"
 import { setPreferenceBoolean } from "../localstorage"
 import { isDefaultHelp } from "./help/helpselection"
 
-const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) => {
+const DebugSection = (props: {
+  desktop?: boolean,
+  horizontalTabs?: boolean,
+  narrow: boolean,
+  updateDisplay: UpdateDisplay,
+}) => {
 
   const [activeTab, setActiveTab] = useState<number>(getTabView())
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
@@ -41,7 +46,9 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
     }
     setActiveTab(tabIndex)
     event.stopPropagation()
-    forceRefresh()
+    if (!props.desktop) {
+      forceRefresh()
+    }
     if (tabIndex == 1) {
       setPreferenceBoolean("debugMode", true)
       passSetDebug(true)
@@ -61,10 +68,39 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
   }
 
   useEffect(() => {
-    forceRefresh()
-  }, [isFlyoutOpen])
+    if (!props.desktop) {
+      forceRefresh()
+    }
+  }, [isFlyoutOpen, props.desktop])
 
-  const tabClass = props.narrow ? "dbg-tab-horizontal" : "dbg-tab-vertical"
+  const horizontalTabs = props.narrow || props.horizontalTabs
+  const tabClass = horizontalTabs ? "dbg-tab-horizontal" : "dbg-tab-vertical"
+
+  const panelContent = <>
+    {(activeTab == 1 && !isSmall) &&
+      <DebugTab updateDisplay={props.updateDisplay} />
+    }
+    {(activeTab == 2 && !isSmall) &&
+      <BasicTab updateDisplay={props.updateDisplay} />
+    }
+    {(activeTab == 3 && !isSmall) &&
+      <ExpectinTab />
+    }
+    {(activeTab == 4 && !isSmall) &&
+      <VeraTab />
+    }
+    {(activeTab == 5 && !isSmall) &&
+      <AgentTab />
+    }
+  </>
+
+  const helpPanel = <HelpTab
+    desktop={props.desktop}
+    helptext={getHelpText()}
+    narrow={props.narrow}
+    theme={getTheme()}
+    useOpenAppleKey={getUIStateBoolean("useOpenAppleKey")}
+  />
 
   return (
     <Flyout
@@ -77,8 +113,8 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
         setIsFlyoutOpen(!isFlyoutOpen)
         props.updateDisplay()
       }}>
-      <div id="debug-section" className={`${props.narrow ? "flex-column" : "flex-row"}`}>
-        {!isSmall && <div className={`${props.narrow ? "flex-row" : "flex-column"} dbg-tab-row`}>
+      <div id="debug-section" className={`${horizontalTabs ? "flex-column" : "flex-row"}`}>
+        {!isSmall && <div className={`${horizontalTabs ? "flex-row" : "flex-column"} dbg-tab-row`}>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 0 ? " dbg-tab-active" : ""}`}
             title={t("debug.helpTab")}
@@ -118,29 +154,12 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
           </div>
         </div>
         }
-        {(activeTab == 0 || isSmall) &&
-          <HelpTab
-            helptext={getHelpText()}
-            narrow={props.narrow}
-            theme={getTheme()}
-            useOpenAppleKey={getUIStateBoolean("useOpenAppleKey")}
-          />
-        }
-        {(activeTab == 1 && !isSmall) &&
-          <DebugTab updateDisplay={props.updateDisplay} />
-        }
-        {(activeTab == 2 && !isSmall) && 
-          <BasicTab updateDisplay={props.updateDisplay} />
-        }
-        {(activeTab == 3 && !isSmall) && 
-          <ExpectinTab />
-        }
-        {(activeTab == 4 && !isSmall) && 
-          <VeraTab />
-        }
-        {(activeTab == 5 && !isSmall) && 
-          <AgentTab />
-        }
+        {(activeTab == 0 || isSmall) && (props.desktop
+          ? <div className="desktop-panel-content">{helpPanel}</div>
+          : helpPanel)}
+        {activeTab > 0 && (props.desktop
+          ? <div className={`desktop-panel-content${activeTab == 1 ? " desktop-panel-content-debug" : ""}`}>{panelContent}</div>
+          : panelContent)}
       </div>
     </Flyout>
   )

@@ -234,10 +234,7 @@ const BasicEditor = (props: EditorProps) => {
     }
   }, [props.breakpoints, handleBreakpointToggle])
 
-  return <div ref={editorRef} style={{
-    height: "560px", width: "687px",
-    overflowY: "hidden"
-  }} />
+  return <div ref={editorRef} className="basic-editor" />
 }
 
 export default BasicEditor

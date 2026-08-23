@@ -1,5 +1,5 @@
 import "../panels.css"
-import { faDatabase, faFile, faFolderOpen, faForwardStep, faGear, faListOl, faPlay, faRepeat, faSave, faSnowflake, faStop } from "@fortawesome/free-solid-svg-icons"
+import { faDatabase, faDollarSign, faFile, faFolderOpen, faForwardStep, faGear, faListOl, faPlay, faRepeat, faSave, faSlash, faSnowflake, faStop } from "@fortawesome/free-solid-svg-icons"
 import { handleGetManualNumbering, handleGetCapitalizeBasic, isMinimalTheme } from "../../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -26,6 +26,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   })
   const [isBooting, setIsBooting] = useState<boolean>(false)
   const [highlightLine, setHighlightLine] = useState<number>(5)
+  const [showVariables, setShowVariables] = useState(false)
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const handleSettingsClick = (event: React.MouseEvent) => {
@@ -266,67 +267,67 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const runMode = handleGetRunMode()
 
   return (
-    <div className="flex-column-gap debug-section">
-      <BasicEditor value={programText} setValue={setProgramText}
-        highlightLine={highlightLine} readOnly={running} />
-      <BasicDebugView/>
-      <div className="flex-row">
-        <div className="flex-row">
-          <button
-            className="push-button"
-            title={t("basic.runFromBeginning")}
-            onClick={handleRunButtonClick}>
-            <FontAwesomeIcon icon={faPlay} />
-          </button>
-          <button
-            className="push-button"
-            title={t("basic.break")}
-            disabled={runMode === RUN_MODE.IDLE || !isRunning()}
-            onClick={handleBreakButtonClick}>
-            <FontAwesomeIcon icon={faStop} />
-          </button>
-          <button
-            className="push-button"
-            title={t("basic.continueRunning")}
-            disabled={runMode === RUN_MODE.IDLE || (running && runMode !== RUN_MODE.PAUSED)}
-            onClick={handleContinueButtonClick}>
-            <FontAwesomeIcon icon={faRepeat} />
-          </button>
-          <button
-            className="push-button"
-            title={t("basic.stepProgram")}
-            disabled={(running && runMode !== RUN_MODE.PAUSED) || runMode === RUN_MODE.IDLE}
-            onClick={handleStepButtonClick}>
-            <FontAwesomeIcon icon={faForwardStep} />
-          </button>
-          <button
-            className={paused ? "push-button button-active" : "push-button"}
-            title={paused ? t("basic.resumeOutput") : t("basic.freezeOutput")}
-            disabled={!running || runMode === RUN_MODE.PAUSED || runMode === RUN_MODE.IDLE}
-            onClick={handlePauseButtonClick}>
-            <FontAwesomeIcon icon={faSnowflake} />
-          </button>
-          <button
-            className="push-button"
-            title={t("basic.importProgram")}
-            onClick={handleImportButtonClick}>
-            <FontAwesomeIcon icon={faFolderOpen} />
-          </button>
-          <button
-            className="push-button"
-            title={t("basic.exportProgram")}
-            onClick={handleExportButtonClick}>
-            <FontAwesomeIcon icon={faSave} />
-          </button>
-          <button
-            className="push-button"
-            title={t("basic.renumberProgram")}
-            onClick={handleRenumberClick}>
-            <FontAwesomeIcon icon={faListOl} />
-          </button>
-        </div>
+    <div className={`flex-column-gap debug-section desktop-code-workspace desktop-basic-workspace${showVariables ? " desktop-basic-variables-visible" : ""}`}>
+      <div className="desktop-basic-primary">
+        <BasicEditor value={programText} setValue={setProgramText}
+          highlightLine={highlightLine} readOnly={running} />
+        <div className="flex-row desktop-code-controls">
+          <div className="flex-row">
+            <button
+              className="push-button"
+              title={t("basic.runFromBeginning")}
+              onClick={handleRunButtonClick}>
+              <FontAwesomeIcon icon={faPlay} />
+            </button>
+            <button
+              className="push-button"
+              title={t("basic.break")}
+              disabled={runMode === RUN_MODE.IDLE || !isRunning()}
+              onClick={handleBreakButtonClick}>
+              <FontAwesomeIcon icon={faStop} />
+            </button>
+            <button
+              className="push-button"
+              title={t("basic.continueRunning")}
+              disabled={runMode === RUN_MODE.IDLE || (running && runMode !== RUN_MODE.PAUSED)}
+              onClick={handleContinueButtonClick}>
+              <FontAwesomeIcon icon={faRepeat} />
+            </button>
+            <button
+              className="push-button"
+              title={t("basic.stepProgram")}
+              disabled={(running && runMode !== RUN_MODE.PAUSED) || runMode === RUN_MODE.IDLE}
+              onClick={handleStepButtonClick}>
+              <FontAwesomeIcon icon={faForwardStep} />
+            </button>
+            <button
+              className={paused ? "push-button button-active" : "push-button"}
+              title={paused ? t("basic.resumeOutput") : t("basic.freezeOutput")}
+              disabled={!running || runMode === RUN_MODE.PAUSED || runMode === RUN_MODE.IDLE}
+              onClick={handlePauseButtonClick}>
+              <FontAwesomeIcon icon={faSnowflake} />
+            </button>
+            <button
+              className="push-button"
+              title={t("basic.importProgram")}
+              onClick={handleImportButtonClick}>
+              <FontAwesomeIcon icon={faFolderOpen} />
+            </button>
+            <button
+              className="push-button"
+              title={t("basic.exportProgram")}
+              onClick={handleExportButtonClick}>
+              <FontAwesomeIcon icon={faSave} />
+            </button>
+            <button
+              className="push-button"
+              title={t("basic.renumberProgram")}
+              onClick={handleRenumberClick}>
+              <FontAwesomeIcon icon={faListOl} />
+            </button>
+          </div>
 
-        <div className="flex-row" style={{ marginLeft: "10px" }}>
+          <div className="flex-row" style={{ marginLeft: "10px" }}>
           <button
             className="push-button"
             title={t("basic.newProgram")}
@@ -350,9 +351,9 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
           >
             <FontAwesomeIcon icon={faGear} />
           </button>
-        </div>
+          </div>
 
-        <PopupMenu
+          <PopupMenu
           location={popupLocation}
           onClose={() => { setPopupLocation(undefined) }}
           menuItems={[[
@@ -371,12 +372,28 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
               }
             },
           ]]}
-        />
+          />
+          <button
+          type="button"
+          className="push-button basic-variables-toggle"
+          aria-pressed={showVariables}
+          title={showVariables ? t("basic.hideVariables") : t("basic.showVariables")}
+          aria-label={showVariables ? t("basic.hideVariables") : t("basic.showVariables")}
+          onClick={() => setShowVariables(previous => !previous)}>
+          <span className="basic-variables-toggle-icon">
+            <FontAwesomeIcon icon={faDollarSign} />
+            {showVariables && <FontAwesomeIcon
+              className="basic-variables-toggle-slash"
+              icon={faSlash}
+              aria-hidden="true" />}
+          </span>
+          </button>
+        </div>
+        {programError !== "" && <div
+          title={programError}
+          className="dbg-program-error">❌ {programError}</div>}
       </div>
-      {programError !== "" && <div
-        style={{ gridColumn: "span 2" }}
-        title={programError}
-        className="dbg-program-error">❌ {programError}</div>}
+      {showVariables && <BasicDebugView/>}
     </div>
   )
 }

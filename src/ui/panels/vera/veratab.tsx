@@ -36,13 +36,14 @@ const VeraTab = () => {
   }, [])
 
   return (
-    <div className="flex-column-gap debug-section" style={{ display: "flex", height: "100%", width: "calc(50vw - 40px)" }}>
+    <div className="flex-column-gap debug-section vera-panel">
       <div style={{ flex: 1, display: "flex", justifyContent: "flex-start", alignItems: "flex-start", paddingTop: "20px" }}>
         <canvas 
           ref={canvasRef} 
           width={640} 
           height={480} 
           style={{ 
+            boxSizing: "border-box",
             width: "100%", 
             objectFit: "contain",
             backgroundColor: "#000",

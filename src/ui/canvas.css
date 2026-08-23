@@ -23,17 +23,22 @@
 }
 
 .hgr-view {
-  position: absolute;
+  align-items: flex-start;
+  position: fixed;
   user-select: none;
   pointer-events: none;
+  width: max-content;
+  z-index: 2;
 }
 
 .hgr-view-box {
   border: 2px solid red;
+  box-sizing: border-box;
+  flex: none;
 }
 
 .hgr-view-text {
-  z-index: 9999;
+  flex: none;
   background-color: var(--input-background);
   color: var(--text-color);
   user-select: none;
@@ -46,6 +51,12 @@
   padding-top: 2px;
   border-radius: 10px;
   margin-left: 15px;
+}
+
+#hgr-info-canvas {
+  border: 2px solid red;
+  box-sizing: border-box;
+  flex: none;
 }
 
 body.dark-mode .hgr-view-text {

@@ -154,11 +154,7 @@ const BasicVariablesView = () => {
     passExecuteBasicCommand(command)
   }
 
-  return <div style={{
-      height: "200px",
-      overflowX: "auto",
-      overflowY: "auto"
-    }}>
+  return <div className="basic-variables-pane">
     <table className="basic-vars default-font"
       style={{
         width: "250px",

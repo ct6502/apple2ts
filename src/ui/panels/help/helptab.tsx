@@ -7,6 +7,7 @@ import { DefaultHelpContent } from "./defaulthelpcontent"
 import { isDefaultHelp } from "./helpselection"
 
 type HelpPanelProps = {
+  desktop?: boolean,
   helptext: string,
   narrow: boolean,
   theme: UI_THEME,
@@ -34,13 +35,14 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   }
 
   React.useLayoutEffect(() => {
+    if (props.desktop) return
     const handleResize = () => {
       setPaperHeight(getPaperHeight(helpRef.current, getViewportHeight()))
     }
     handleResize()
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
-  }, [props.narrow])
+  }, [props.desktop, props.narrow])
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const helpClassName = "help-text " + (isDarkMode ? "help-text-dark" : "help-text-light")
@@ -49,9 +51,9 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   return (
     <div ref={helpRef} className="help-parent" translate="no"
       style={{
-        width: minimalTheme ? "687px" : 500,
-        height: props.narrow || minimalTheme ? "" : paperHeight,
-        overflow: (props.narrow ? "visible" : "auto")
+        width: props.desktop ? "100%" : (minimalTheme ? "687px" : 500),
+        height: props.desktop || props.narrow || minimalTheme ? "" : paperHeight,
+        overflow: (props.desktop || props.narrow ? "visible" : "auto")
       }}>
       <div className={isDarkMode ? "" : "help-paper"}>
         {showDefaultHelp
@@ -70,6 +72,7 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   return prevProps.helptext === nextProps.helptext
     && prevProps.theme === nextProps.theme
     && prevProps.narrow === nextProps.narrow
+    && prevProps.desktop === nextProps.desktop
     && prevProps.useOpenAppleKey === nextProps.useOpenAppleKey
 })
 

@@ -608,7 +608,14 @@ body.dark-mode .icon-text {
 
 .dbg-tab-active {
   background-color: var(--button-active);
-  border-bottom-style: none;
+}
+
+.dbg-tab-horizontal.dbg-tab-active {
+  border-bottom-color: transparent;
+}
+
+.dbg-tab-vertical.dbg-tab-active {
+  border-right-color: transparent;
 }
 
 .dbg-tab-horizontal {
@@ -638,22 +645,6 @@ body.dark-mode .icon-text {
   white-space: nowrap;
 }
 
-.dbg-expect-button {
-  width: 96px;
-  height: 32px;
-  margin-top: 6px;
-  font-size: 12pt;
-  color: black;
-  padding: 4px;
-  border-radius: 8px;
-  border: 1px solid black;
-  cursor: pointer;
-}
-
-.dbg-expect-button:hover {
-  background-color: gray;
-}
-
 .cm-tooltip-autocomplete {
   border: 1px solid var(--background-color) !important;
 }
@@ -680,6 +671,38 @@ body.dark-mode .basic-vars-field {
   background-color: var(--input-background-dark);
   border-color: var(--text-color-dark);
   color: var(--text-color-dark);
+}
+
+.basic-editor {
+  height: 560px;
+  overflow: hidden;
+  width: min(687px, 100%);
+}
+
+.expectin-editor {
+  height: 760px;
+  overflow: hidden;
+  width: min(687px, 100%);
+}
+
+.basic-variables-pane {
+  max-height: none;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.basic-variables-toggle {
+  margin-left: auto;
+}
+
+.basic-variables-toggle-icon {
+  display: inline-block;
+  position: relative;
+}
+
+.basic-variables-toggle-slash {
+  inset: 0;
+  position: absolute;
 }
 
 .link-builder-textarea {

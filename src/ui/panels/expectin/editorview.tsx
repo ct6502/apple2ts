@@ -103,10 +103,7 @@ const CodeMirrorEditor = (props: EditorProps) => {
     }
   }, [])
 
-  return <div ref={editorRef} style={{
-    height: "760px", width: "687px",
-    overflowY: "hidden"
-  }} />
+  return <div ref={editorRef} className="expectin-editor" />
 }
 
 export default CodeMirrorEditor
