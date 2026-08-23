@@ -2150,3 +2150,279 @@ msgid ""
 "Press SHIFT-ESC to display\n"
 "Apple2TS control panel."
 msgstr ""
+
+msgctxt "retroControl.ariaLabel"
+msgid "Apple2TS control panel"
+msgstr ""
+
+msgctxt "retroControl.machine"
+msgid "Machine"
+msgstr ""
+
+msgctxt "retroControl.fullscreen"
+msgid "Fullscreen"
+msgstr ""
+
+msgctxt "retroControl.diskCollection"
+msgid "Disk Collection"
+msgstr ""
+
+msgctxt "retroControl.diskDrives"
+msgid "Disk Drives"
+msgstr ""
+
+msgctxt "retroControl.display"
+msgid "Display"
+msgstr ""
+
+msgctxt "retroControl.sound"
+msgid "Sound"
+msgstr ""
+
+msgctxt "retroControl.options"
+msgid "Options"
+msgstr ""
+
+msgctxt "retroControl.keyboard"
+msgid "Keyboard"
+msgstr ""
+
+msgctxt "retroControl.slots"
+msgid "Slots"
+msgstr ""
+
+msgctxt "retroControl.printerPort"
+msgid "Printer Port"
+msgstr ""
+
+msgctxt "retroControl.modemPort"
+msgid "Modem Port"
+msgstr ""
+
+msgctxt "retroControl.quit"
+msgid "Quit"
+msgstr ""
+
+msgctxt "retroControl.apple2tsCollection"
+msgid "Apple2TS Collection"
+msgstr ""
+
+msgctxt "retroControl.newReleases"
+msgid "New Releases"
+msgstr ""
+
+msgctxt "retroControl.favorites"
+msgid "Favorites"
+msgstr ""
+
+msgctxt "retroControl.exportDisksToHdv"
+msgid "Export Disks to HDV"
+msgstr ""
+
+msgctxt "retroControl.noDiskDrivesAvailable"
+msgid "No disk drives available"
+msgstr ""
+
+msgctxt "retroControl.select"
+msgid "Select"
+msgstr ""
+
+msgctxt "retroControl.open"
+msgid "Open"
+msgstr ""
+
+msgctxt "retroControl.load"
+msgid "Load"
+msgstr ""
+
+msgctxt "retroControl.save"
+msgid "Save"
+msgstr ""
+
+msgctxt "retroControl.cancelEsc"
+msgid "Cancel:Esc"
+msgstr ""
+
+msgctxt "retroControl.color"
+msgid "Color"
+msgstr ""
+
+msgctxt "retroControl.colorNoFringe"
+msgid "Color (no fringe)"
+msgstr ""
+
+msgctxt "retroControl.green"
+msgid "Green"
+msgstr ""
+
+msgctxt "retroControl.amber"
+msgid "Amber"
+msgstr ""
+
+msgctxt "retroControl.white"
+msgid "White"
+msgstr ""
+
+msgctxt "retroControl.inverse"
+msgid "Inverse"
+msgstr ""
+
+msgctxt "retroControl.snail"
+msgid "Snail"
+msgstr ""
+
+msgctxt "retroControl.slow"
+msgid "Slow"
+msgstr ""
+
+msgctxt "retroControl.normal"
+msgid "Normal"
+msgstr ""
+
+msgctxt "retroControl.twoMhz"
+msgid "2 MHz"
+msgstr ""
+
+msgctxt "retroControl.threeMhz"
+msgid "3 MHz"
+msgstr ""
+
+msgctxt "retroControl.fast"
+msgid "Fast"
+msgstr ""
+
+msgctxt "retroControl.warp"
+msgid "Warp"
+msgstr ""
+
+msgctxt "retroControl.systemSpeed"
+msgid "System Speed"
+msgstr ""
+
+msgctxt "retroControl.clock"
+msgid "Clock"
+msgstr ""
+
+msgctxt "retroControl.hostSystemClock"
+msgid "Host system clock"
+msgstr ""
+
+msgctxt "retroControl.mouse"
+msgid "Mouse"
+msgstr ""
+
+msgctxt "retroControl.ramDisk"
+msgid "RAM Disk"
+msgstr ""
+
+msgctxt "retroControl.language"
+msgid "Language"
+msgstr ""
+
+msgctxt "retroControl.port"
+msgid "Port"
+msgstr ""
+
+msgctxt "retroControl.builtinImageWriter"
+msgid "Builtin ImageWriter"
+msgstr ""
+
+msgctxt "retroControl.selectExternalPort"
+msgid "Select External Port"
+msgstr ""
+
+msgctxt "retroControl.externalPort"
+msgid "External Port"
+msgstr ""
+
+msgctxt "retroControl.retroTheme"
+msgid "Retro"
+msgstr ""
+
+msgctxt "retroControl.lowercaseInput"
+msgid "Lowercase input"
+msgstr ""
+
+msgctxt "retroControl.lowercase"
+msgid "Lowercase"
+msgstr ""
+
+msgctxt "retroControl.openAppleKey"
+msgid "Open Apple key"
+msgstr ""
+
+msgctxt "retroControl.sortOrder"
+msgid "Sort Order"
+msgstr ""
+
+msgctxt "retroControl.slot"
+msgid "Slot {{slot}}"
+msgstr ""
+
+msgctxt "retroControl.drive"
+msgid "Slot {{slot}}, Drive {{drive}}: {{disk}}"
+msgstr ""
+
+msgctxt "retroControl.configured"
+msgid "{{count}} configured"
+msgstr ""
+
+msgctxt "retroControl.saveDisk"
+msgid "Save Disk"
+msgstr ""
+
+msgctxt "retroControl.card.empty"
+msgid "Empty"
+msgstr ""
+
+msgctxt "retroControl.card.ssc"
+msgid "Super Serial Card"
+msgstr ""
+
+msgctxt "retroControl.card.softcard"
+msgid "Z-80 SoftCard"
+msgstr ""
+
+msgctxt "retroControl.card.aux"
+msgid "Auxiliary memory"
+msgstr ""
+
+msgctxt "retroControl.card.videoterm"
+msgid "Videx VideoTerm"
+msgstr ""
+
+msgctxt "retroControl.card.mockingboard"
+msgid "Mockingboard"
+msgstr ""
+
+msgctxt "retroControl.card.mouse"
+msgid "Mouse card"
+msgstr ""
+
+msgctxt "retroControl.card.vera"
+msgid "VERA graphics"
+msgstr ""
+
+msgctxt "retroControl.card.passport"
+msgid "Passport MIDI"
+msgstr ""
+
+msgctxt "retroControl.card.disk2"
+msgid "Disk II controller"
+msgstr ""
+
+msgctxt "retroControl.card.smartport"
+msgid "SmartPort drive"
+msgstr ""
+
+msgctxt "retroControl.fetchingDisk"
+msgid "Fetching disk {{current}}/{{total}}"
+msgstr ""
+
+msgctxt "retroControl.downloadFailed"
+msgid "Unable to download {{title}}"
+msgstr ""
+
+msgctxt "retroControl.exportFailed"
+msgid "Export to HDV failed: {{message}}"
+msgstr ""

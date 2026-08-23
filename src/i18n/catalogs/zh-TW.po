@@ -2524,3 +2524,279 @@ msgid ""
 "Press SHIFT-ESC to display\n"
 "Apple2TS control panel."
 msgstr ""
+
+msgctxt "retroControl.ariaLabel"
+msgid "Apple2TS control panel"
+msgstr ""
+
+msgctxt "retroControl.machine"
+msgid "Machine"
+msgstr "機器"
+
+msgctxt "retroControl.fullscreen"
+msgid "Fullscreen"
+msgstr "全螢幕"
+
+msgctxt "retroControl.diskCollection"
+msgid "Disk Collection"
+msgstr "磁碟收藏"
+
+msgctxt "retroControl.diskDrives"
+msgid "Disk Drives"
+msgstr "磁碟機"
+
+msgctxt "retroControl.display"
+msgid "Display"
+msgstr "顯示"
+
+msgctxt "retroControl.sound"
+msgid "Sound"
+msgstr "聲音"
+
+msgctxt "retroControl.options"
+msgid "Options"
+msgstr "選項"
+
+msgctxt "retroControl.keyboard"
+msgid "Keyboard"
+msgstr "鍵盤"
+
+msgctxt "retroControl.slots"
+msgid "Slots"
+msgstr "插槽"
+
+msgctxt "retroControl.printerPort"
+msgid "Printer Port"
+msgstr "印表機連接埠"
+
+msgctxt "retroControl.modemPort"
+msgid "Modem Port"
+msgstr "數據機連接埠"
+
+msgctxt "retroControl.quit"
+msgid "Quit"
+msgstr "結束"
+
+msgctxt "retroControl.apple2tsCollection"
+msgid "Apple2TS Collection"
+msgstr "Apple2TS 收藏"
+
+msgctxt "retroControl.newReleases"
+msgid "New Releases"
+msgstr "最新發行"
+
+msgctxt "retroControl.favorites"
+msgid "Favorites"
+msgstr "我的最愛"
+
+msgctxt "retroControl.exportDisksToHdv"
+msgid "Export Disks to HDV"
+msgstr "將磁碟匯出為 HDV"
+
+msgctxt "retroControl.noDiskDrivesAvailable"
+msgid "No disk drives available"
+msgstr "沒有可用的磁碟機"
+
+msgctxt "retroControl.select"
+msgid "Select"
+msgstr "選取"
+
+msgctxt "retroControl.open"
+msgid "Open"
+msgstr "開啟"
+
+msgctxt "retroControl.load"
+msgid "Load"
+msgstr "載入"
+
+msgctxt "retroControl.save"
+msgid "Save"
+msgstr "儲存"
+
+msgctxt "retroControl.cancelEsc"
+msgid "Cancel:Esc"
+msgstr "取消:Esc"
+
+msgctxt "retroControl.color"
+msgid "Color"
+msgstr ""
+
+msgctxt "retroControl.colorNoFringe"
+msgid "Color (no fringe)"
+msgstr ""
+
+msgctxt "retroControl.green"
+msgid "Green"
+msgstr ""
+
+msgctxt "retroControl.amber"
+msgid "Amber"
+msgstr ""
+
+msgctxt "retroControl.white"
+msgid "White"
+msgstr ""
+
+msgctxt "retroControl.inverse"
+msgid "Inverse"
+msgstr ""
+
+msgctxt "retroControl.snail"
+msgid "Snail"
+msgstr ""
+
+msgctxt "retroControl.slow"
+msgid "Slow"
+msgstr ""
+
+msgctxt "retroControl.normal"
+msgid "Normal"
+msgstr ""
+
+msgctxt "retroControl.twoMhz"
+msgid "2 MHz"
+msgstr ""
+
+msgctxt "retroControl.threeMhz"
+msgid "3 MHz"
+msgstr ""
+
+msgctxt "retroControl.fast"
+msgid "Fast"
+msgstr ""
+
+msgctxt "retroControl.warp"
+msgid "Warp"
+msgstr ""
+
+msgctxt "retroControl.systemSpeed"
+msgid "System Speed"
+msgstr ""
+
+msgctxt "retroControl.clock"
+msgid "Clock"
+msgstr ""
+
+msgctxt "retroControl.hostSystemClock"
+msgid "Host system clock"
+msgstr ""
+
+msgctxt "retroControl.mouse"
+msgid "Mouse"
+msgstr ""
+
+msgctxt "retroControl.ramDisk"
+msgid "RAM Disk"
+msgstr ""
+
+msgctxt "retroControl.language"
+msgid "Language"
+msgstr ""
+
+msgctxt "retroControl.port"
+msgid "Port"
+msgstr ""
+
+msgctxt "retroControl.lowercaseInput"
+msgid "Lowercase input"
+msgstr ""
+
+msgctxt "retroControl.lowercase"
+msgid "Lowercase"
+msgstr ""
+
+msgctxt "retroControl.openAppleKey"
+msgid "Open Apple key"
+msgstr ""
+
+msgctxt "retroControl.sortOrder"
+msgid "Sort Order"
+msgstr ""
+
+msgctxt "retroControl.slot"
+msgid "Slot {{slot}}"
+msgstr ""
+
+msgctxt "retroControl.drive"
+msgid "Slot {{slot}}, Drive {{drive}}: {{disk}}"
+msgstr ""
+
+msgctxt "retroControl.configured"
+msgid "{{count}} configured"
+msgstr ""
+
+msgctxt "retroControl.saveDisk"
+msgid "Save Disk"
+msgstr ""
+
+msgctxt "retroControl.card.empty"
+msgid "Empty"
+msgstr ""
+
+msgctxt "retroControl.card.ssc"
+msgid "Super Serial Card"
+msgstr ""
+
+msgctxt "retroControl.card.softcard"
+msgid "Z-80 SoftCard"
+msgstr ""
+
+msgctxt "retroControl.card.aux"
+msgid "Auxiliary memory"
+msgstr ""
+
+msgctxt "retroControl.card.videoterm"
+msgid "Videx VideoTerm"
+msgstr ""
+
+msgctxt "retroControl.card.mockingboard"
+msgid "Mockingboard"
+msgstr ""
+
+msgctxt "retroControl.card.mouse"
+msgid "Mouse card"
+msgstr ""
+
+msgctxt "retroControl.card.vera"
+msgid "VERA graphics"
+msgstr ""
+
+msgctxt "retroControl.card.passport"
+msgid "Passport MIDI"
+msgstr ""
+
+msgctxt "retroControl.card.disk2"
+msgid "Disk II controller"
+msgstr ""
+
+msgctxt "retroControl.card.smartport"
+msgid "SmartPort drive"
+msgstr ""
+
+msgctxt "retroControl.fetchingDisk"
+msgid "Fetching disk {{current}}/{{total}}"
+msgstr ""
+
+msgctxt "retroControl.downloadFailed"
+msgid "Unable to download {{title}}"
+msgstr ""
+
+msgctxt "retroControl.exportFailed"
+msgid "Export to HDV failed: {{message}}"
+msgstr ""
+
+msgctxt "retroControl.builtinImageWriter"
+msgid "Builtin ImageWriter"
+msgstr ""
+
+msgctxt "retroControl.selectExternalPort"
+msgid "Select External Port"
+msgstr ""
+
+msgctxt "retroControl.externalPort"
+msgid "External Port"
+msgstr ""
+
+msgctxt "retroControl.retroTheme"
+msgid "Retro"
+msgstr ""

@@ -33,7 +33,7 @@
   --retro-cell-height: min(calc(100vh / 30), calc(100vw / 40.25));
   --retro-row-height: var(--retro-cell-height);
   --retro-border-width: max(1px, calc(var(--retro-cell-height) / 8));
-  --retro-background: #2022ff;
+  --retro-background: #000;
   --retro-foreground: #fff;
   --scanlines-height: 100%;
   --scanlines-left: 0;
@@ -296,6 +296,10 @@
 
 .retro-menu-check {
   width: 2ch;
+}
+
+.retro-browser-font {
+  font-family: sans-serif;
 }
 
 .retro-window footer {
