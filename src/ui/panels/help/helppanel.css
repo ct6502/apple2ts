@@ -104,9 +104,3 @@
   padding: 5px;
   color: #00FF00;
 }
-
-@media (max-width: 600px) {
-  .help-text {
-    font-size: 0.5em;
-  }
-}

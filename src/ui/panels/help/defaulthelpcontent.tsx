@@ -107,30 +107,32 @@ export const DefaultHelpContent = ({
     </HelpLink>
     {isTouchDevice ? "\n\n\n" : "\n\n"}
     {isTouchDevice ? <>
-      <b>{t("help.mobileInstructions")}</b>{"\n"}
+      <strong>{t("help.mobileInstructions")}</strong>{"\n"}
       {t("help.tapScreen")}{"\n"}
       {t("help.arrowKeys")}{"\n"}
       {t("help.ctrlKey")}{"\n"}
       {t("help.ctrlLock")}{"\n"}
       {t("help.appleKeys")}{"\n"}
     </> : <>
-      <b>{t("help.keyboardShortcuts")}</b>{"\n"}
+      <strong>{t("help.keyboardShortcuts")}</strong>{"\n"}
       {useOpenAppleKey
-        ? t("help.shortcutsUnavailable", { keyMod: shortcutKeyName })
-        : <>
+        ? <span key="shortcuts-unavailable" className="help-shortcuts-unavailable">
+          {t("help.shortcutsUnavailable", { keyMod: shortcutKeyName })}
+        </span>
+        : <span key="shortcuts-available" className="help-shortcuts-available">
           <ShortcutTable rows={shortcutRows} />
           {"\n"}{t("help.openAppleKey")}
           {"\n"}{t("help.closedAppleKey")}
           {"\n"}{t("help.joystickKeys")}
           {"\n\n"}{t("help.onScreenKeyboard")}
-        </>}{"\n"}
+        </span>}{"\n"}
     </>}
-    {"\n"}<b>{t("help.diskImages")}</b>{" "}hdv, 2mg, dsk, woz, po, do, bin, bas
-    {"\n\n"}<b>{t("help.urlParameters")}</b>{"\n"}
+    {"\n"}<strong>{t("help.diskImages")}</strong>{" "}hdv, 2mg, dsk, woz, po, do, bin, bas
+    {"\n\n"}<strong>{t("help.urlParameters")}</strong>{"\n"}
     {t("help.urlParametersBody")}
-    {"\n\n"}<b>{t("help.examples")}</b>{"\n"}
+    {"\n\n"}<strong>{t("help.examples")}</strong>{"\n"}
     <LinkList links={helpExamples} />
-    {"\n\n"}<b>{t("help.links")}</b>{"\n"}
+    {"\n\n"}<strong>{t("help.links")}</strong>{"\n"}
     <LinkList links={helpResources} />
   </>
 }

@@ -13,17 +13,14 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
 "X-Generator: Weblate 2026.9.dev0\n"
 
-#, fuzzy
 msgctxt "controls.boot"
 msgid "Boot"
 msgstr "Démarrer"
 
-#, fuzzy
 msgctxt "controls.reset"
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#, fuzzy
 msgctxt "controls.copyScreen"
 msgid "Copy Screen"
 msgstr "Copier l'Écran"
@@ -33,17 +30,14 @@ msgctxt "controls.copyText"
 msgid "Copy Text"
 msgstr "Copier le texte"
 
-#, fuzzy
 msgctxt "controls.pasteText"
 msgid "Paste Text"
 msgstr "Coller le Texte"
 
-#, fuzzy
 msgctxt "controls.saveState"
 msgid "Save State"
 msgstr "Sauvegarder l'État"
 
-#, fuzzy
 msgctxt "controls.restoreState"
 msgid "Restore State"
 msgstr "Restaurer l'État"
@@ -179,7 +173,6 @@ msgctxt "machine.ram.8mb"
 msgid "8 MB"
 msgstr ""
 
-#, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
 msgstr "Vitesse d'Escargot (0.1 MHz)"
@@ -189,28 +182,25 @@ msgctxt "speed.slow"
 msgid "Slow Speed (0.5 MHz)"
 msgstr "Lente (0.5 MHz)"
 
-#, fuzzy
 msgctxt "speed.normal"
 msgid "Normal Speed (1 MHz)"
 msgstr "Vitesse Normale (1 MHz)"
 
 msgctxt "speed.two"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 MHz"
 
 msgctxt "speed.three"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 MHz"
 
-#, fuzzy
 msgctxt "speed.fast"
 msgid "Fast Speed (4 MHz)"
 msgstr "Rapide (4 MHz)"
 
-#, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "Vitesse Ridicule/Warp"
+msgid "Ludicrous Speed"
+msgstr "Vitesse ridicule"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -1284,7 +1274,6 @@ msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
 msgstr ""
 
-#, fuzzy
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
 msgstr "Raccourcis Clavier"
@@ -1814,7 +1803,6 @@ msgctxt "collection.reportExportIssue"
 msgid "Report an export issue"
 msgstr "Signaler un problème d'exportation"
 
-#, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
 msgstr "Remonter dans le Temps"
@@ -1824,7 +1812,6 @@ msgctxt "debugControls.takeSnapshot"
 msgid "Take a Snapshot"
 msgstr "Prendre un Instantané"
 
-#, fuzzy
 msgctxt "debugControls.goForwardInTime"
 msgid "Go Forward in Time"
 msgstr "Avancer dans le Temps"
@@ -2301,7 +2288,7 @@ msgid "4 MHz"
 msgstr ""
 
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
+msgid "Ludicrous"
 msgstr ""
 
 msgctxt "linkBuilder.machines.enhanced"

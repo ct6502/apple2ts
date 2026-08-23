@@ -13,17 +13,14 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 2026.9.dev0\n"
 
-#, fuzzy
 msgctxt "controls.boot"
 msgid "Boot"
 msgstr "Arrancar"
 
-#, fuzzy
 msgctxt "controls.reset"
 msgid "Reset"
 msgstr "Reiniciar"
 
-#, fuzzy
 msgctxt "controls.copyScreen"
 msgid "Copy Screen"
 msgstr "Copiar Pantalla"
@@ -33,17 +30,14 @@ msgctxt "controls.copyText"
 msgid "Copy Text"
 msgstr "Copiar texto"
 
-#, fuzzy
 msgctxt "controls.pasteText"
 msgid "Paste Text"
 msgstr "Pegar Texto"
 
-#, fuzzy
 msgctxt "controls.saveState"
 msgid "Save State"
 msgstr "Guardar Estado"
 
-#, fuzzy
 msgctxt "controls.restoreState"
 msgid "Restore State"
 msgstr "Restaurar Estado"
@@ -191,18 +185,18 @@ msgstr "Velocidad normal (1 MHz)"
 
 msgctxt "speed.two"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 MHz"
 
 msgctxt "speed.three"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 MHz"
 
 msgctxt "speed.fast"
 msgid "Fast Speed (4 MHz)"
 msgstr "Velocidad rápida (4 MHz)"
 
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
 msgstr "Velocidad absurda"
 
 msgctxt "colors.color"
@@ -1271,7 +1265,6 @@ msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
 msgstr ""
 
-#, fuzzy
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
 msgstr "Atajos de Teclado"
@@ -1795,7 +1788,6 @@ msgctxt "collection.reportExportIssue"
 msgid "Report an export issue"
 msgstr "Reportar un problema de exportación"
 
-#, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
 msgstr "Retroceder en el Tiempo"
@@ -1805,7 +1797,6 @@ msgctxt "debugControls.takeSnapshot"
 msgid "Take a Snapshot"
 msgstr "Tomar Captura"
 
-#, fuzzy
 msgctxt "debugControls.goForwardInTime"
 msgid "Go Forward in Time"
 msgstr "Avanzar en el Tiempo"
@@ -2285,7 +2276,7 @@ msgid "4 MHz"
 msgstr ""
 
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
+msgid "Ludicrous"
 msgstr ""
 
 msgctxt "linkBuilder.machines.enhanced"

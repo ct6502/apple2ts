@@ -121,6 +121,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
         {(activeTab == 0 || isSmall) &&
           <HelpTab
             helptext={getHelpText()}
+            narrow={props.narrow}
             theme={getTheme()}
             useOpenAppleKey={getUIStateBoolean("useOpenAppleKey")}
           />

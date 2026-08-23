@@ -8,12 +8,14 @@ describe("DefaultHelpContent", () => {
       key === "help.exampleLinks.totalReplayDebugging" ? maliciousTranslation : key
     ))
 
-    const html = renderToStaticMarkup(<DefaultHelpContent t={t} />)
+    const html = renderToStaticMarkup(<DefaultHelpContent t={t} isTouchDevice={false} />)
 
     expect(html).toContain("&lt;a href=&quot;javascript:alert(1)&quot;&gt;owned&lt;/a&gt;")
     expect(html).not.toContain("href=\"javascript:")
     expect(html).toContain("href=\"https://apple2ts.com/?debug=on#Replay\"")
     expect(html).toContain("rel=\"noopener noreferrer\"")
+    expect(html).toContain("<strong>help.keyboardShortcuts</strong>")
+    expect(html).not.toContain("<b>")
   })
 
   it("explains unavailable shortcuts while the modifier controls Open Apple", () => {

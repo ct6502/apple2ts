@@ -29,6 +29,9 @@ import { CRTStartup } from "./graphics"
 import { startRemoteControlBridge } from "./api/remotecontrol"
 import { useTranslation } from "../i18n/useTranslation"
 
+// The classic emulator and Help panel need about this much room side by side.
+const wideLayoutMinWidth = 1000
+
 const DisplayApple2 = () => {
   const { t } = useTranslation()
   const [myInit, setMyInit] = useState(false)
@@ -40,6 +43,19 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
+  const [viewport, setViewport] = useState(() => ({
+    height: window.innerHeight || window.outerHeight - 120,
+    width: window.innerWidth || window.outerWidth - 20,
+  }))
+
+  useEffect(() => {
+    const handleResize = () => setViewport({
+      height: window.innerHeight || window.outerHeight - 120,
+      width: window.innerWidth || window.outerWidth - 20,
+    })
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
@@ -169,9 +185,8 @@ const DisplayApple2 = () => {
   handleSetTheme(theme)
 
   const isTouchDevice = "ontouchstart" in document.documentElement
-  const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
-  const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
-  const narrow = isTouchDevice || (width < (1.1 * height))
+  const { height, width } = viewport
+  const narrow = isTouchDevice || width < wideLayoutMinWidth
   const isLandscape = isTouchDevice && (width > height)
   useEffect(() => {
     if (isTouchDevice) {

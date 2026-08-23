@@ -199,9 +199,10 @@ msgid "Fast Speed (4 MHz)"
 msgstr "高速 (4 MHz)"
 
 #, fuzzy
+#| msgid "Ludicrous/Warp Speed"
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "ばかげた/ワープ速度"
+msgid "Ludicrous Speed"
+msgstr "ばかげた速度"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -2231,7 +2232,7 @@ msgid "4 MHz"
 msgstr ""
 
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
+msgid "Ludicrous"
 msgstr ""
 
 msgctxt "linkBuilder.machines.enhanced"
