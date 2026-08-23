@@ -5,9 +5,185 @@ import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../
 import { setPreferenceMachineName, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
 import PopupMenu from "../controls/popupmenu"
 import { useTranslation } from "../../i18n/useTranslation"
+import { DEFAULT_SLOT_CONFIG, RUN_MODE } from "../../common/utility"
+import { handleSetCPUState } from "../controller"
+import { isCanvasFullscreen, setCanvasFullscreen } from "../controls/fullscreenbutton"
+import { choiceMetadata } from "../retro/retromenuhelpers"
+import type { RetroControlMetadata, RetroMenuContext } from "../retro/retromenucontext"
+import { createControlContext } from "../retro/retromenucontext"
+import { ControlRegistry } from "../controls/controlregistry"
+import { controlOptionsToPopupItems } from "../controls/controlpopup"
 
-export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
-  const { t } = useTranslation()
+export const RAM_OPTIONS = [64, 512, 1024, 4096, 8192] as const
+
+export const SLOT_NUMBERS = [1, 2, 3, 4, 5, 6, 7] as const
+type SlotNumber = typeof SLOT_NUMBERS[number]
+
+const retroSlotOptions = (slot: SlotNumber, machine: MACHINE_NAME): SLOT_CARD_ID[] => {
+  const options: Record<SlotNumber, SLOT_CARD_ID[]> = {
+    1: ["none", "ssc"],
+    2: ["none", "vera", "passport", "softcard"],
+    3: machine === "APPLE2P" ? ["none", "videoterm"] : ["none", "aux"],
+    4: ["none", "mouse", "mockingboard", "vera", "softcard"],
+    5: ["none", "mouse", "mockingboard", "softcard"],
+    6: ["none", "disk2"],
+    7: ["none", "smartport"],
+  }
+  return options[slot]
+}
+
+const retroCardLabels = (context: RetroMenuContext): Record<SLOT_CARD_ID, string> => ({
+  none: context.t("retroControl.card.empty"),
+  ssc: context.t("retroControl.card.ssc"),
+  softcard: context.t("retroControl.card.softcard"),
+  aux: context.t("retroControl.card.aux"),
+  videoterm: context.t("retroControl.card.videoterm"),
+  mockingboard: context.t("retroControl.card.mockingboard"),
+  mouse: context.t("retroControl.card.mouse"),
+  vera: context.t("retroControl.card.vera"),
+  passport: context.t("retroControl.card.passport"),
+  disk2: context.t("retroControl.card.disk2"),
+  smartport: context.t("retroControl.card.smartport"),
+})
+
+const selectRetroSlotCard = (context: RetroMenuContext, slot: SlotNumber, card: SLOT_CARD_ID) => {
+  const currentConfig = handleGetSlotConfig()
+  const nextConfig = { ...currentConfig }
+  if (card !== "none" && card !== "mockingboard") {
+    SLOT_NUMBERS.forEach(otherSlot => {
+      if (otherSlot !== slot && nextConfig[otherSlot] === card) nextConfig[otherSlot] = "none"
+    })
+  }
+  if (card === "vera") {
+    setPreferenceVeraSlot(slot as VERA_SLOT)
+  } else if (currentConfig[slot] === "vera") {
+    setPreferenceVeraSlot(0)
+  }
+  nextConfig[slot] = card
+  setPreferenceSlotConfig(nextConfig)
+  context.displayProps.updateDisplay()
+}
+
+const mouseSlots = [0, 4, 5] as const
+
+export const retroMachineControls: RetroControlMetadata[] = [
+  {
+    id: "machine",
+    parentId: null,
+    order: 0,
+    label: context => context.t("retroControl.machine"),
+    actionLabel: context => context.t("retroControl.select"),
+  },
+  {
+    id: "machine.boot",
+    parentId: "machine",
+    order: 0,
+    label: context => context.t("controls.boot"),
+    action: context => {
+      handleSetCPUState(RUN_MODE.NEED_BOOT)
+      context.close()
+    },
+  },
+  {
+    id: "machine.reset",
+    parentId: "machine",
+    order: 1,
+    label: context => context.t("controls.reset"),
+    action: context => {
+      handleSetCPUState(RUN_MODE.NEED_RESET)
+      context.close()
+    },
+  },
+  choiceMetadata({
+    id: "machine.fullscreen",
+    parentId: "machine",
+    order: 2,
+    label: context => context.t("retroControl.fullscreen"),
+    labels: context => [context.t("messages.off"), context.t("messages.on")],
+    currentIndex: () => isCanvasFullscreen() ? 1 : 0,
+    select: () => undefined,
+    preview: (_context, index) => setCanvasFullscreen(index === 1),
+    defaultIndex: 0,
+  }),
+  choiceMetadata({
+    id: "options.clock",
+    order: 1,
+    label: context => context.t("retroControl.clock"),
+    labels: context => [context.t("retroControl.hostSystemClock")],
+    currentIndex: () => 0,
+    select: () => undefined,
+    defaultIndex: 0,
+  }),
+  choiceMetadata({
+    id: "options.mouse",
+    order: 2,
+    label: context => context.t("retroControl.mouse"),
+    labels: context => [
+      context.t("messages.off"),
+      context.t("retroControl.slot", { slot: "4" }),
+      context.t("retroControl.slot", { slot: "5" }),
+    ],
+    currentIndex: () => {
+      const config = handleGetSlotConfig()
+      return mouseSlots.indexOf(config[4] === "mouse" ? 4 : config[5] === "mouse" ? 5 : 0)
+    },
+    select: (context, index) => {
+      const slot = mouseSlots[index]
+      if (slot === 0) {
+        const nextConfig = { ...handleGetSlotConfig() }
+        if (nextConfig[4] === "mouse") nextConfig[4] = "none"
+        if (nextConfig[5] === "mouse") nextConfig[5] = "none"
+        setPreferenceSlotConfig(nextConfig)
+        context.displayProps.updateDisplay()
+      } else {
+        selectRetroSlotCard(context, slot, "mouse")
+      }
+    },
+    defaultIndex: mouseSlots.indexOf(
+      DEFAULT_SLOT_CONFIG[4] === "mouse" ? 4 : DEFAULT_SLOT_CONFIG[5] === "mouse" ? 5 : 0,
+    ),
+  }),
+  choiceMetadata({
+    id: "options.ramDisk",
+    order: 3,
+    label: context => context.t("retroControl.ramDisk"),
+    labels: () => RAM_OPTIONS.map(size => size >= 1024 ? `${size / 1024} MB` : `${size} KB`),
+    currentIndex: () => RAM_OPTIONS.indexOf(handleGetMemSize() as typeof RAM_OPTIONS[number]),
+    select: (context, index) => {
+      setPreferenceRamWorks(RAM_OPTIONS[index])
+      context.displayProps.updateDisplay()
+    },
+    defaultIndex: RAM_OPTIONS.indexOf(64),
+  }),
+  {
+    id: "slots",
+    parentId: null,
+    order: 7,
+    label: context => context.t("retroControl.slots"),
+    value: context => context.t("retroControl.configured", {
+      count: String(SLOT_NUMBERS.filter(slot => handleGetSlotConfig()[slot] !== "none").length),
+    }),
+  },
+  ...SLOT_NUMBERS.map((slot, index) => choiceMetadata({
+    id: `slots.${slot}`,
+    parentId: "slots",
+    order: index,
+    label: context => context.t("retroControl.slot", { slot: String(slot) }),
+    labels: context => retroSlotOptions(slot, handleGetMachineName()).map(card => retroCardLabels(context)[card]),
+    currentIndex: () => retroSlotOptions(slot, handleGetMachineName()).indexOf(handleGetSlotConfig()[slot]),
+    select: (context, optionIndex) => {
+      selectRetroSlotCard(context, slot, retroSlotOptions(slot, handleGetMachineName())[optionIndex])
+    },
+    defaultIndex: retroSlotOptions(slot, handleGetMachineName()).indexOf(
+      slot === 3 && handleGetMachineName() === "APPLE2P" ? "videoterm" : DEFAULT_SLOT_CONFIG[slot],
+    ),
+  })),
+]
+
+const machineControlRegistry = new ControlRegistry(retroMachineControls)
+
+export const MachineConfig = (props: DisplayProps) => {
+  const { t, language, changeLanguage } = useTranslation()
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
@@ -19,6 +195,10 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
   const extraMemSize = handleGetMemSize()
   const machineName = handleGetMachineName()
   const slotConfig = handleGetSlotConfig()
+  const sharedSlotControls = machineControlRegistry.resolve(
+    createControlContext(props, t, language, changeLanguage),
+    "slots",
+  )
 
   const getAuxCardLabel = (sizeKb = extraMemSize): string => {
     if (sizeKb <= 64) {
@@ -90,13 +270,10 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
       }
 
       // Apple IIe options
-      const auxOptions: { label: string; sizeKb: number; isDefault?: boolean }[] = [
-        { label: "*Apple 699-0221 (64KB / 80-Col / dHGR)", sizeKb: 64, isDefault: true },
-        { label: "AE RamWorks III (512KB / 80-Col / dHGR)", sizeKb: 512 },
-        { label: "AE RamWorks III (1MB / 80-Col / dHGR)", sizeKb: 1024 },
-        { label: "AE RamWorks III (4MB / 80-Col / dHGR)", sizeKb: 4096 },
-        { label: "AE RamWorks III (8MB / 80-Col / dHGR)", sizeKb: 8192 },
-      ]
+      const auxOptions = RAM_OPTIONS.map(sizeKb => ({
+        label: `${sizeKb === 64 ? "*" : ""}${getAuxCardLabel(sizeKb)}`,
+        sizeKb,
+      }))
 
       return [
         {
@@ -111,30 +288,8 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
         })),
       ]
     }
-
-    let options: SLOT_CARD_ID[] = []
-    if (slot === 1) options = ["none", "ssc"]
-    else if (slot === 2) options = ["none", "vera", "passport", "softcard"]
-    else if (slot === 4) options = ["none", "mouse", "mockingboard", "vera", "softcard"]
-    else if (slot === 5) options = ["none", "mouse", "mockingboard", "softcard"]
-    else if (slot === 6) options = ["none", "disk2"]
-    else if (slot === 7) options = ["none", "smartport"]
-
-    return options.map((cardId) => {
-      const isDefault =
-        (slot === 1 && cardId === "ssc") ||
-        (slot === 2 && cardId === "softcard") ||
-        (slot === 4 && cardId === "mockingboard") ||
-        (slot === 5 && cardId === "mouse") ||
-        (slot === 6 && cardId === "disk2") ||
-        (slot === 7 && cardId === "smartport")
-
-      return {
-        label: `${isDefault ? "*" : ""}${cardLabels[cardId]}`,
-        isSelected: () => slotConfig[slot] === cardId,
-        onClick: () => handleSelectSlotCard(slot, cardId),
-      }
-    })
+    const control = sharedSlotControls.find(item => item.id === `slots.${slot}`)
+    return control ? controlOptionsToPopupItems(control) : []
   }
 
   return (

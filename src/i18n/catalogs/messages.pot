@@ -2307,6 +2307,10 @@ msgctxt "retroControl.systemSpeed"
 msgid "System Speed"
 msgstr ""
 
+msgctxt "retroControl.other"
+msgid "Other"
+msgstr ""
+
 msgctxt "retroControl.clock"
 msgid "Clock"
 msgstr ""

@@ -28,7 +28,7 @@ import { messagelistener } from "./api/messagelistener"
 import { CRTStartup } from "./graphics"
 import { startRemoteControlBridge } from "./api/remotecontrol"
 import { useTranslation } from "../i18n/useTranslation"
-import RetroControlPanel from "./retro/retrocontrolpanel"
+import RetroMenuRenderer from "./retro/retromenurenderer"
 
 const DisplayApple2 = () => {
   const { t } = useTranslation()
@@ -201,7 +201,7 @@ const DisplayApple2 = () => {
   }
   if (theme === UI_THEME.RETRO && !isGameMode()) {
     return <>
-      <RetroControlPanel displayProps={props} />
+      <RetroMenuRenderer displayProps={props} />
       <FileInput {...props} />
     </>
   }

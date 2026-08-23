@@ -17,9 +17,39 @@ const MinimumSpeedMode = -2
 export const MaximumSpeedMode = 4
 
 import { useTranslation } from "../../i18n/useTranslation"
+import { choiceMetadata } from "../retro/retromenuhelpers"
+import type { RetroControlMetadata } from "../retro/retromenucontext"
+import { createControlContext } from "../retro/retromenucontext"
+import { ControlRegistry } from "./controlregistry"
 
-export const SpeedDropdown = (props: { updateDisplay: UpdateDisplay }) => {
-  const { t } = useTranslation()
+export const SPEED_MODES = [-2, -1, 0, 1, 2, 3, 4] as const
+const SPEED_LABEL_KEYS = [
+  "retroControl.snail",
+  "retroControl.slow",
+  "retroControl.normal",
+  "retroControl.twoMhz",
+  "retroControl.threeMhz",
+  "retroControl.fast",
+  "retroControl.warp",
+] as const
+
+export const retroSpeedControl: RetroControlMetadata = choiceMetadata({
+  id: "options.speed",
+  order: 0,
+  label: context => context.t("retroControl.systemSpeed"),
+  labels: context => SPEED_LABEL_KEYS.map(key => context.t(key)),
+  currentIndex: () => SPEED_MODES.indexOf(handleGetSpeedMode() as typeof SPEED_MODES[number]),
+  select: (context, index) => {
+    setPreferenceSpeedMode(SPEED_MODES[index])
+    context.displayProps.updateDisplay()
+  },
+  defaultIndex: SPEED_MODES.indexOf(0),
+})
+
+const speedControlRegistry = new ControlRegistry([retroSpeedControl])
+
+export const SpeedDropdown = (props: DisplayProps) => {
+  const { t, language, changeLanguage } = useTranslation()
   const speedMode = handleGetSpeedMode()
   const iconSize = 22
   const icons = [
@@ -33,21 +63,16 @@ export const SpeedDropdown = (props: { updateDisplay: UpdateDisplay }) => {
   ]
   const speedIndex = speedMode - MinimumSpeedMode
   const icon = icons[speedIndex]
-  const speedLabels = [
-    t("speed.snail"),
-    t("speed.slow"),
-    t("speed.normal"),
-    t("speed.two"),
-    t("speed.three"),
-    t("speed.fast"),
-    t("speed.warp"),
-  ]
+  const control = speedControlRegistry.resolve(
+    createControlContext(props, t, language, changeLanguage),
+    "options",
+  )[0]
 
   return (
     <DropdownButton
-      currentIndex={speedIndex}
-      itemNames={speedLabels}
-      closeCallback={(index: number) => { setPreferenceSpeedMode(index + MinimumSpeedMode); props.updateDisplay() }}
+      currentIndex={control.optionIndex ?? speedIndex}
+      itemNames={control.options?.map(option => option.label) ?? []}
+      closeCallback={(index: number) => { control.options?.[index]?.action?.() }}
       icon={icon}
       icons={icons}
       tooltip={t("config.speed")}

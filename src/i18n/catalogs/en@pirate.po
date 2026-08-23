@@ -2470,11 +2470,15 @@ msgstr ""
 
 msgctxt "retroControl.systemSpeed"
 msgid "System Speed"
-msgstr ""
+msgstr "Ship's Gait"
+
+msgctxt "retroControl.other"
+msgid "Other"
+msgstr "Other Booty"
 
 msgctxt "retroControl.clock"
 msgid "Clock"
-msgstr ""
+msgstr "Ship's Clock"
 
 msgctxt "retroControl.hostSystemClock"
 msgid "Host system clock"
@@ -2482,7 +2486,7 @@ msgstr ""
 
 msgctxt "retroControl.mouse"
 msgid "Mouse"
-msgstr ""
+msgstr "Deck Mouse"
 
 msgctxt "retroControl.ramDisk"
 msgid "RAM Disk"

@@ -2627,11 +2627,15 @@ msgstr ""
 
 msgctxt "retroControl.systemSpeed"
 msgid "System Speed"
-msgstr ""
+msgstr "Systeemsnelheid"
+
+msgctxt "retroControl.other"
+msgid "Other"
+msgstr "Overig"
 
 msgctxt "retroControl.clock"
 msgid "Clock"
-msgstr ""
+msgstr "Klok"
 
 msgctxt "retroControl.hostSystemClock"
 msgid "Host system clock"
@@ -2639,7 +2643,7 @@ msgstr ""
 
 msgctxt "retroControl.mouse"
 msgid "Mouse"
-msgstr ""
+msgstr "Muis"
 
 msgctxt "retroControl.ramDisk"
 msgid "RAM Disk"

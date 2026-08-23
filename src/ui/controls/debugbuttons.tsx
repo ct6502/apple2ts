@@ -20,56 +20,121 @@ import { getHotReload, isGameMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
 import { setPreferenceBoolean } from "../localstorage"
 import { isFileSystemApiSupported } from "../ui_utilities"
+import { toggleMetadata } from "../retro/retromenuhelpers"
+import type { RetroControlMetadata } from "../retro/retromenucontext"
+import { createControlContext } from "../retro/retromenucontext"
+import { ControlRegistry } from "./controlregistry"
+
+const emulatorStarted = () => {
+  const runMode = handleGetRunMode()
+  return runMode !== RUN_MODE.IDLE && runMode !== RUN_MODE.NEED_BOOT
+}
+
+export const retroDebugControls: RetroControlMetadata[] = [
+  {
+    id: "snapshot.back",
+    label: context => context.t("debugControls.goBackInTime"),
+    action: passGoBackInTime,
+    selectable: () => emulatorStarted() && handleCanGoBackward(),
+  },
+  {
+    id: "snapshot.take",
+    label: context => context.t("debugControls.takeSnapshot"),
+    action: passTimeTravelSnapshot,
+    selectable: emulatorStarted,
+  },
+  {
+    id: "snapshot.forward",
+    label: context => context.t("debugControls.goForwardInTime"),
+    action: passGoForwardInTime,
+    selectable: () => emulatorStarted() && handleCanGoForward(),
+  },
+  {
+    id: "snapshot.saveState",
+    label: context => context.t("debugControls.saveStateWithSnapshots"),
+    action: () => handleFileSave(true),
+    selectable: emulatorStarted,
+  },
+  {
+    id: "emulator.pause",
+    label: context => context.t(handleGetRunMode() === RUN_MODE.PAUSED
+      ? "debugControls.resume"
+      : "debugControls.pause"),
+    action: context => {
+      handleSetCPUState(handleGetRunMode() === RUN_MODE.PAUSED ? RUN_MODE.RUNNING : RUN_MODE.PAUSED)
+      context.displayProps.updateDisplay()
+    },
+    selectable: () => handleGetRunMode() !== RUN_MODE.IDLE,
+  },
+  toggleMetadata({
+    id: "options.hotReload",
+    label: context => context.t(getHotReload()
+      ? "debugControls.hotReloadEnabled"
+      : "debugControls.hotReloadDisabled"),
+    enabled: getHotReload,
+    setEnabled: (context, enabled) => {
+      setPreferenceBoolean("hotReload", enabled)
+      context.displayProps.updateDisplay()
+    },
+    isVisible: isFileSystemApiSupported,
+  }),
+]
+
+const debugControlRegistry = new ControlRegistry(retroDebugControls)
 
 const DebugButtons = (props: DisplayProps) => {
-  const { t } = useTranslation()
+  const { t, language, changeLanguage } = useTranslation()
   const runMode = handleGetRunMode()
-  const notStarted = runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT
+  const controls = debugControlRegistry.resolve(
+    createControlContext(props, t, language, changeLanguage),
+    "options",
+  )
+  const control = (id: string) => controls.find(item => item.id === id)!
+  const back = control("snapshot.back")
+  const take = control("snapshot.take")
+  const forward = control("snapshot.forward")
+  const save = control("snapshot.saveState")
+  const pause = control("emulator.pause")
+  const hotReload = controls.find(item => item.id === "options.hotReload")
   return <span className="flex-row">
     <div className="flex-row" id="tour-snapshot">
       <button className="push-button"
-        title={t("debugControls.goBackInTime")}
-        onClick={passGoBackInTime}
-        disabled={notStarted || !handleCanGoBackward()}>
+        title={back.label}
+        onClick={back.action}
+        disabled={back.selectable === false}>
         <FontAwesomeIcon icon={faFastBackward} />
       </button>
       <button className="push-button"
-        title={t("debugControls.takeSnapshot")}
-        onClick={passTimeTravelSnapshot}
-        disabled={notStarted}>
+        title={take.label}
+        onClick={take.action}
+        disabled={take.selectable === false}>
         <FontAwesomeIcon icon={faClock} />
       </button>
       <button className="push-button"
-        title={t("debugControls.goForwardInTime")}
-        onClick={passGoForwardInTime}
-        disabled={notStarted || !handleCanGoForward()}>
+        title={forward.label}
+        onClick={forward.action}
+        disabled={forward.selectable === false}>
         <FontAwesomeIcon icon={faFastForward} />
       </button>
       {!isGameMode() && <button className="push-button"
-        title={t("debugControls.saveStateWithSnapshots")}
-        onClick={() => handleFileSave(true)}
-        disabled={notStarted}>
+        title={save.label}
+        onClick={save.action}
+        disabled={save.selectable === false}>
         <FontAwesomeIcon icon={faLayerGroup} />
       </button>}
     </div>
     <button className="push-button" id="tour-pause-button"
-      title={runMode === RUN_MODE.PAUSED ? t("debugControls.resume") : t("debugControls.pause")}
-      onClick={() => {
-        handleSetCPUState(runMode === RUN_MODE.PAUSED ?
-          RUN_MODE.RUNNING : RUN_MODE.PAUSED)
-      }}
-      disabled={runMode === RUN_MODE.IDLE}>
+      title={pause.label}
+      onClick={pause.action}
+      disabled={pause.selectable === false}>
       {runMode === RUN_MODE.PAUSED ?
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
-    {isFileSystemApiSupported() && !isGameMode() &&
+    {hotReload && !isGameMode() &&
       <button className="push-button"
-        title={getHotReload() ? t("debugControls.hotReloadEnabled") : t("debugControls.hotReloadDisabled")}
-        onClick={() => {
-          setPreferenceBoolean("hotReload", !getHotReload())
-          props.updateDisplay()
-        }}>
+        title={hotReload.label}
+        onClick={hotReload.options?.[hotReload.optionIndex === 1 ? 0 : 1]?.action}>
         <FontAwesomeIcon icon={getHotReload() ? faEye : faEyeSlash} />
       </button>}
   </span>

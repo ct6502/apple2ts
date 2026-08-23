@@ -1,0 +1,50 @@
+import { ControlRegistry } from "../controls/controlregistry"
+import { retroConfigControls } from "../controls/configbuttons"
+import { retroStateControls } from "../controls/controlbuttons"
+import { retroDebugControls } from "../controls/debugbuttons"
+import { createRetroLanguageControls } from "../controls/languageswitch"
+import { retroSpeedControl } from "../controls/speeddropdown"
+import { retroAudioControls } from "../devices/audio/audioconfig"
+import { retroDiskControls } from "../devices/disk/diskinterface"
+import { retroDisplayControls } from "../devices/displayconfig"
+import { retroMachineControls } from "../devices/machineconfig"
+import { retroSerialControls } from "../devices/serial/serialselect"
+import type { RetroControlMetadata, RetroMenuContext } from "./retromenucontext"
+import { retroSkinControl } from "./retroskincontrol"
+
+const menuControls: RetroControlMetadata[] = [
+  ...retroMachineControls,
+  ...retroDiskControls,
+  ...retroDisplayControls,
+  ...retroAudioControls,
+  {
+    id: "options",
+    parentId: null,
+    order: 5,
+    label: context => context.t("retroControl.options"),
+  },
+  retroSpeedControl,
+  ...retroConfigControls,
+  retroSkinControl,
+  ...createRetroLanguageControls(),
+  {
+    id: "options.other",
+    parentId: "options",
+    order: 1000,
+    label: context => context.t("retroControl.other"),
+    separator: true,
+    selectable: false,
+  },
+  ...retroStateControls,
+  ...retroDebugControls,
+  ...retroSerialControls,
+  {
+    id: "quit",
+    parentId: null,
+    order: 10,
+    label: context => context.t("retroControl.quit"),
+    action: context => context.close(),
+  },
+]
+
+export const retroMenuRegistry = new ControlRegistry<RetroMenuContext>(menuControls)

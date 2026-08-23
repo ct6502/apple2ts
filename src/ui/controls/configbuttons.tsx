@@ -28,23 +28,94 @@ import { AudioConfig } from "../devices/audio/audioconfig"
 import { GamepadConfig } from "../devices/gamepadconfig"
 import LinkBuilder from "./linkbuilder"
 import { ControlAvailabilityIcon } from "./controlavailabilityicon"
+import { choiceMetadata, toggleMetadata } from "../retro/retromenuhelpers"
+import type { RetroControlMetadata } from "../retro/retromenucontext"
+import { createControlContext } from "../retro/retromenucontext"
+import { ControlRegistry } from "./controlregistry"
+
+const themeLabels = (t: (key: string) => string) => [
+  t("themes.classic"),
+  t("themes.dark"),
+  t("themes.minimal"),
+  t("retroControl.retroTheme"),
+]
+
+export const retroConfigControls: RetroControlMetadata[] = [
+  choiceMetadata({
+    id: "options.theme",
+    order: 4,
+    label: context => context.t("config.theme"),
+    labels: context => themeLabels(context.t),
+    currentIndex: () => UI_THEMES.findIndex(theme => theme.value === getTheme()),
+    select: (_context, index) => {
+      setPreferenceTheme(UI_THEMES[index].value)
+      const url = new URL(window.location.href)
+      url.searchParams.delete("theme")
+      url.searchParams.set("cache", Date.now().toString())
+      window.location.href = url.toString()
+    },
+    defaultIndex: UI_THEMES.findIndex(theme => theme.value === UI_THEME.CLASSIC),
+  }),
+  {
+    id: "keyboard",
+    parentId: null,
+    order: 6,
+    label: context => context.t("retroControl.keyboard"),
+    value: context => context.t(getLowercaseMode() ? "retroControl.lowercase" : "keyboard.capsLock"),
+  },
+  toggleMetadata({
+    id: "keyboard.lowercase",
+    parentId: "keyboard",
+    order: 0,
+    label: context => context.t("retroControl.lowercaseInput"),
+    enabled: getLowercaseMode,
+    setEnabled: (context, enabled) => {
+      setPreferenceBoolean("lowercaseMode", enabled)
+      context.displayProps.updateDisplay()
+    },
+  }),
+  toggleMetadata({
+    id: "keyboard.openApple",
+    parentId: "keyboard",
+    order: 1,
+    label: context => context.t("retroControl.openAppleKey"),
+    enabled: getUseOpenAppleKey,
+    setEnabled: (context, enabled) => {
+      setPreferenceBoolean("useOpenAppleKey", enabled)
+      context.displayProps.updateDisplay()
+    },
+  }),
+  {
+    id: "settings.reset",
+    label: context => context.t("config.resetSettings"),
+    action: context => {
+      resetPreferences()
+      context.displayProps.updateDisplay()
+    },
+  },
+]
+
+const configControlRegistry = new ControlRegistry(retroConfigControls)
 
 const isTouchDevice = "ontouchstart" in document.documentElement
 const isMac = navigator.platform.startsWith("Mac")
 
 const ConfigButtons = (props: DisplayProps) => {
-  const { t } = useTranslation()
+  const { t, language, changeLanguage } = useTranslation()
   const lowercaseMode = getLowercaseMode()
   const useOpenAppleKey = getUseOpenAppleKey()
   const modKey = (isMac ? "Cmd" : "Alt")
   const modKeyDisplay = isMac ? "⌘" : "alt"
-  const themeNames: Record<UI_THEME, string> = {
-    [UI_THEME.CLASSIC]: t("themes.classic"),
-    [UI_THEME.DARK]: t("themes.dark"),
-    [UI_THEME.MINIMAL]: t("themes.minimal"),
-    [UI_THEME.RETRO]: "Retro",
-  }
-  const getThemeName = (theme: UI_THEME) => themeNames[theme]
+  const context = createControlContext(props, t, language, changeLanguage)
+  const optionControls = configControlRegistry.resolve(context, "options")
+  const keyboardControls = configControlRegistry.resolve(context, "keyboard")
+  const themeControl = optionControls.find(control => control.id === "options.theme")!
+  const resetControl = optionControls.find(control => control.id === "settings.reset")!
+  const lowercaseControl = keyboardControls.find(control => control.id === "keyboard.lowercase")!
+  const openAppleControl = keyboardControls.find(control => control.id === "keyboard.openApple")!
+  const getThemeName = (theme: UI_THEME) => themeControl.options?.[
+    UI_THEMES.findIndex(option => option.value === theme)
+  ]?.label ?? theme
   const audioStatus = useSyncExternalStore(subscribeAudioStatus, getAudioStatus)
   const audioUnavailable = audioStatus === "unavailable"
   const audioTitle = audioUnavailable
@@ -62,9 +133,9 @@ const ConfigButtons = (props: DisplayProps) => {
   return <div className="flex-row">
     <div className="flex-row" id="tour-configbuttons">
 
-      <SpeedDropdown updateDisplay={props.updateDisplay} />
+      <SpeedDropdown {...props} />
 
-      <DisplayConfig updateDisplay={props.updateDisplay} />
+      <DisplayConfig {...props} />
 
       <button className="push-button"
         title={audioTitle}
@@ -89,14 +160,14 @@ const ConfigButtons = (props: DisplayProps) => {
       {!isTouchDevice && <>
         <button className={lockedKeyStyle(lowercaseMode ? 0 : 2)}
           title={`${t("config.capsLock")} (${lowercaseMode ? t("messages.off") : t("messages.on")})`}
-          onClick={() => { setPreferenceBoolean("lowercaseMode", !lowercaseMode); props.updateDisplay() }}>
+          onClick={lowercaseControl.options?.[lowercaseControl.optionIndex === 1 ? 0 : 1]?.action}>
           <span translate="no" className="text-key" style={{ fontSize: "18pt" }}>
             {lowercaseMode ? "a" : "A"}
           </span>
         </button>
         <button className="push-button"
           title={cmdKeyTitle}
-          onClick={() => { setPreferenceBoolean("useOpenAppleKey", !useOpenAppleKey); props.updateDisplay() }}>
+          onClick={openAppleControl.options?.[openAppleControl.optionIndex === 1 ? 0 : 1]?.action}>
           {useOpenAppleKey ?
             <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
             <span className={(modKey === "Alt") ? "text-key" : ""}>{modKeyDisplay}</span>}
@@ -107,11 +178,11 @@ const ConfigButtons = (props: DisplayProps) => {
       {!isTouchDevice && <GamepadConfig />}
     </div>
 
-    {!isGameMode() && <AudioConfig />}
+    {!isGameMode() && <AudioConfig {...props} />}
 
-    {!isGameMode() && <SerialPortSelect />}
+    {!isGameMode() && <SerialPortSelect {...props} />}
 
-    {!isGameMode() && <MachineConfig updateDisplay={props.updateDisplay} />}
+    {!isGameMode() && <MachineConfig {...props} />}
 
     <button className="push-button"
       id="tour-theme-button"
@@ -123,27 +194,19 @@ const ConfigButtons = (props: DisplayProps) => {
     <PopupMenu
       location={popupLocation}
       onClose={() => { setPopupLocation(undefined) }}
-      menuItems={[UI_THEMES.map(({ value }) => {
+      menuItems={[UI_THEMES.map(({ value }, index) => {
         return {
-          label: themeNames[value],
+          label: themeControl.options?.[index]?.label ?? String(value),
           isVisible: () => { return !isGameMode() || (value != UI_THEME.MINIMAL && value != UI_THEME.RETRO) },
           isSelected: () => { return value == getTheme() },
-          onClick: () => {
-            if (value != getTheme()) {
-              setPreferenceTheme(value)
-              const url = new URL(window.location.href)
-              url.searchParams.delete("theme")
-              url.searchParams.set("cache", new Date().getTime().toString())
-              window.location.href = url.toString()
-            }
-          }
+          onClick: themeControl.options?.[index]?.action,
         }
       })]}
     />
 
     {!isGameMode() && <button className="push-button" id="tour-clearcookies"
-      title={t("config.resetSettings")}
-      onClick={() => { resetPreferences(); props.updateDisplay() }}>
+      title={resetControl.label}
+      onClick={resetControl.action}>
       <FontAwesomeIcon icon={faSync} />
     </button>}
 
