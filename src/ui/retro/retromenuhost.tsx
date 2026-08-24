@@ -3,8 +3,11 @@ import { useTranslation } from "../../i18n/useTranslation"
 import DemoZooDialog from "../devices/disk/demozoodialog"
 import InternetArchivePopup from "../devices/disk/internetarchivedialog"
 import {
+  getPreferenceRetroIIGSColor,
   getPreferenceRetroSkin,
+  type RETRO_IIGS_COLOR_PREFERENCE,
   RETRO_SKIN,
+  setPreferenceRetroIIGSColor,
   setPreferenceRetroSkin,
 } from "../localstorage"
 import { getColorMode, getCrtDistortion, getGhosting } from "../ui_settings"
@@ -13,6 +16,7 @@ import { UI_THEME } from "../../common/utility"
 import { retroMenuRegistry } from "./retromenucomposition"
 import type { DiskLoadDialog, RetroMenuContext } from "./retromenucontext"
 import { useGlobalContext } from "../globalcontext"
+import { RETRO_IIGS_COLORS } from "./retroskincontrol"
 
 const colorModeClasses = ["color", "color", "green", "amber", "white", "inverse"]
 const retroSkinClasses = ["apple-iie", "apple-iigs", "apple-iiplus"]
@@ -30,12 +34,21 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
   } = useGlobalContext()
   const [diskLoadDialog, setDiskLoadDialog] = useState<DiskLoadDialog | null>(null)
   const [retroSkin, setRetroSkin] = useState(getPreferenceRetroSkin)
+  const [retroIIGSColors, setRetroIIGSColors] = useState(() => ({
+    text: getPreferenceRetroIIGSColor("text"),
+    background: getPreferenceRetroIIGSColor("background"),
+    border: getPreferenceRetroIIGSColor("border"),
+  }))
   const openDiskDialog = (dialog: DiskLoadDialog) => {
     setDiskLoadDialog(dialog)
   }
   const changeRetroSkin = (skin: RETRO_SKIN) => {
     setPreferenceRetroSkin(skin)
     setRetroSkin(skin)
+  }
+  const changeRetroIIGSColor = (preference: RETRO_IIGS_COLOR_PREFERENCE, color: number) => {
+    setPreferenceRetroIIGSColor(preference, color)
+    setRetroIIGSColors(colors => ({ ...colors, [preference]: color }))
   }
   const context: RetroMenuContext = {
     displayProps,
@@ -45,6 +58,9 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     language,
     changeLanguage,
     changeRetroSkin,
+    changeRetroIIGSColor,
+    retroSkin,
+    retroIIGSColors,
     startTour: tour => {
       setReturnToTourHelp(false)
       setTourSourceTheme(UI_THEME.RETRO)
@@ -60,6 +76,13 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     getGhosting() ? "retro-effect-ghosting" : "",
     getCrtDistortion() ? "retro-effect-crt" : "",
   ].filter(Boolean).join(" ")
+  const iigsStyle = retroSkin === RETRO_SKIN.APPLE_IIGS
+    ? {
+      "--retro-background": RETRO_IIGS_COLORS[retroIIGSColors.background].css,
+      "--retro-foreground": RETRO_IIGS_COLORS[retroIIGSColors.text].css,
+      "--retro-surround": RETRO_IIGS_COLORS[retroIIGSColors.border].css,
+    } as React.CSSProperties
+    : undefined
   const dialogs = <>
     <InternetArchivePopup
       driveIndex={diskLoadDialog?.driveIndex ?? 0}
@@ -78,7 +101,10 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     dialogs,
     effects,
     hasOpenDialog: diskLoadDialog !== null,
+    iigsStyle,
     language,
+    retroSkin,
+    retroIIGSColors,
     returnToTourHelp,
     rootMenu,
     runTour,

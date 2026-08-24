@@ -15,6 +15,16 @@ export const selectHintWidth = (label: string, locale: string) => {
 export const actionHintWidth = (label: string, locale: string) =>
   controlTextWidth(label, locale) + 3
 
+export const formatClockTime = (date: Date, locale: string) => {
+  const formatter = new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+  const hour = formatter.formatToParts(date).find(part => part.type === "hour")?.value ?? ""
+  return `${hour.length === 1 ? "\u2007" : ""}${formatter.format(date)}`
+}
+
 export const controlTextWidth = (text: string, locale: string) =>
   graphemes(text, locale).reduce((width, grapheme) => width + (wideCharacter.test(grapheme) ? 2 : 1), 0)
 

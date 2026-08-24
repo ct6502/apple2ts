@@ -2523,6 +2523,22 @@ msgctxt "retroControl.skin"
 msgid "Skin"
 msgstr "スキン"
 
+msgctxt "retroControl.retroSkin"
+msgid "Retro"
+msgstr ""
+
+msgctxt "retroControl.text"
+msgid "Text"
+msgstr ""
+
+msgctxt "retroControl.background"
+msgid "Background"
+msgstr ""
+
+msgctxt "retroControl.border"
+msgid "Border"
+msgstr ""
+
 msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr "キーボード"

@@ -12,7 +12,8 @@ import { retroFontSupports } from "../retro/retrotext"
 const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMetadata => {
   const control = choiceMetadata({
     id: "options.language",
-    order: 6,
+    parentId: "display",
+    order: 100,
     label: context => context.t("retroControl.language"),
     labels: () => AllLanguages.map(language => LanguageNames[language]),
     currentIndex: context => selectedLanguageIndex ?? AllLanguages.indexOf(context.language),
@@ -27,7 +28,7 @@ const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMeta
     useBrowserFont: !retroFontSupports(LanguageNames[language]),
   }))
   control.refreshParentOnOption = true
-  control.refreshTitle = context => context.t("retroControl.options")
+  control.refreshTitle = context => context.t("retroControl.display")
   return control
 }
 
@@ -40,7 +41,7 @@ const LanguageSwitch: React.FC = () => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const control = new ControlRegistry(createRetroLanguageControls()).resolve(
     createControlContext(undefined, t, language, changeLanguage),
-    "options",
+    "display",
   )[0]
 
   const handleClick = (event: React.MouseEvent) => {

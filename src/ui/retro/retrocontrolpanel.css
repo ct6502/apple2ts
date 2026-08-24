@@ -10,7 +10,8 @@
 
 .retro-shell {
   align-items: center;
-  background: #000;
+  --retro-surround: #000;
+  background: var(--retro-surround);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -44,7 +45,7 @@
   --scanlines-left: 0;
   --scanlines-top: 0;
   --scanlines-width: 100%;
-  background: var(--retro-background);
+  background: var(--retro-surround);
   color: var(--retro-foreground);
   display: grid;
   font-size: var(--retro-cell-height);
@@ -76,7 +77,9 @@
 }
 
 .retro-panel.retro-skin-apple-iigs {
-  --retro-background: #2022ff;
+  --retro-background: rgb(34, 34, 255);
+  --retro-foreground: rgb(255, 255, 255);
+  --retro-surround: rgb(34, 34, 255);
 }
 
 .retro-panel.retro-skin-apple-iiplus {
@@ -93,6 +96,7 @@
 
 .retro-window {
   align-self: center;
+  background: var(--retro-background);
   box-sizing: border-box;
   display: grid;
   grid-template-columns: repeat(46, 1fr);
@@ -147,6 +151,74 @@
   right: 0;
 }
 
+.retro-border-glyph {
+  display: none;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border::before,
+.retro-panel.retro-skin-apple-iiplus .retro-border::after {
+  display: none;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph {
+  color: var(--retro-foreground);
+  display: block;
+  font: inherit;
+  overflow: hidden;
+  position: absolute;
+  white-space: pre;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-top,
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-bottom {
+  height: var(--retro-cell-height);
+  left: 1ch;
+  line-height: 1;
+  right: 1ch;
+  white-space: nowrap;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-top {
+  top: calc(-1 * var(--retro-cell-height) + var(--retro-border-width));
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-bottom {
+  bottom: 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-left,
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-right {
+  bottom: 0;
+  line-height: 1;
+  top: 0;
+  width: 1ch;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-left {
+  left: 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-right {
+  right: 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-separator {
+  background: transparent;
+  height: var(--retro-cell-height);
+  left: 1ch;
+  overflow: hidden;
+  right: 1ch;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-separator::before {
+  content: " ______________________________________________________________________________ ";
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: calc(-1 * var(--retro-cell-height) + var(--retro-border-width));
+  white-space: nowrap;
+}
+
 .retro-outer-border {
   grid-column: 4 / 44;
   grid-row: 4 / 27;
@@ -171,6 +243,30 @@
 
 .retro-title.submenu-open {
   background: transparent;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-title {
+  background: transparent;
+  height: var(--retro-row-height);
+  top: var(--retro-border-width);
+  z-index: 1;
+}
+
+.retro-title-fill {
+  display: none;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-title span {
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-background);
+  top: 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-title-fill {
+  background: var(--retro-foreground);
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-foreground);
+  color: var(--retro-background);
+  display: inline-block;
+  white-space: pre;
 }
 
 .retro-title.submenu-open::after {
@@ -215,13 +311,32 @@
   white-space: nowrap;
 }
 
-.retro-submenu-title span {
+.retro-submenu-title>.retro-submenu-title-text {
   background: var(--retro-background);
   box-sizing: border-box;
   color: var(--retro-foreground);
   display: inline-block;
   height: var(--retro-row-height);
   padding: 2px 1ch 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title>.retro-submenu-title-text {
+  background: var(--retro-background);
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-background);
+  color: var(--retro-foreground);
+  margin-left: 1ch;
+  padding-left: 0;
+  padding-right: 0;
+  position: relative;
+  top: var(--retro-border-width);
+  z-index: 1;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title>.retro-title-fill {
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-foreground);
+  position: relative;
+  top: var(--retro-border-width);
+  z-index: 1;
 }
 
 .retro-clock {
@@ -336,6 +451,16 @@
   position: relative;
 }
 
+.retro-panel.retro-skin-apple-iiplus .retro-footer-text {
+  background: var(--retro-background);
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-background);
+  display: inline-block;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-window footer {
+  z-index: 1;
+}
+
 .retro-footer-select {
   justify-self: start;
 }
@@ -355,4 +480,20 @@
 
 .retro-shell .modal-overlay {
   z-index: 10001;
+}
+
+.retro-submenu-title-border {
+  display: none;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title {
+  background: transparent;
+  border: 0;
+  overflow: visible;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title-border {
+  display: block;
+  inset: 0;
+  position: absolute;
 }

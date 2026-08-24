@@ -66,8 +66,11 @@ describe("Retro menu metadata structure", () => {
       "options.mouse",
       "options.ramDisk",
       "options.theme",
+      "options.retroSkinSeparator",
       "options.retroSkin",
-      "options.language",
+      "options.retroSkin.text",
+      "options.retroSkin.background",
+      "options.retroSkin.border",
       "options.other",
       "options.hotReload",
       "settings.reset",
@@ -78,6 +81,7 @@ describe("Retro menu metadata structure", () => {
       "display.ghosting",
       "display.crtDistortion",
       "machine.fullscreen",
+      "options.language",
     ])
     expect(retroMenuRegistry.getIds("sound")).toEqual([
       "sound.enabled",

@@ -14,6 +14,41 @@ export enum RETRO_SKIN {
   APPLE_IIPLUS,
 }
 
+export type RETRO_IIGS_COLOR_PREFERENCE = "text" | "background" | "border"
+
+export const RETRO_IIGS_COLOR_DEFAULTS: Record<RETRO_IIGS_COLOR_PREFERENCE, number> = {
+  text: 15,
+  background: 6,
+  border: 6,
+}
+
+export const getPreferenceRetroIIGSColor = (preference: RETRO_IIGS_COLOR_PREFERENCE) => {
+  const key = `retroIIGS.${preference}`
+  const item = localStorage.getItem(key)
+  if (item) {
+    try {
+      const color = JSON.parse(item)
+      if (Number.isInteger(color) && color >= 0 && color <= 15) return color
+    } catch {
+      // Invalid data is cleared below.
+    }
+    localStorage.removeItem(key)
+  }
+  return RETRO_IIGS_COLOR_DEFAULTS[preference]
+}
+
+export const setPreferenceRetroIIGSColor = (
+  preference: RETRO_IIGS_COLOR_PREFERENCE,
+  color: number = RETRO_IIGS_COLOR_DEFAULTS[preference],
+) => {
+  const key = `retroIIGS.${preference}`
+  if (color === RETRO_IIGS_COLOR_DEFAULTS[preference]) {
+    localStorage.removeItem(key)
+  } else {
+    localStorage.setItem(key, JSON.stringify(color))
+  }
+}
+
 export const getPreferenceRetroSkin = (): RETRO_SKIN => {
   const item = localStorage.getItem("retroSkin")
   if (item) {
@@ -495,6 +530,9 @@ export const resetPreferences = () => {
   setPreferenceColorMode()
   setPreferenceTheme()
   setPreferenceRetroSkin()
+  setPreferenceRetroIIGSColor("text")
+  setPreferenceRetroIIGSColor("background")
+  setPreferenceRetroIIGSColor("border")
   setPreferenceMockingboardMode()
   setPreferenceMachineName()
   setPreferenceRamWorks()

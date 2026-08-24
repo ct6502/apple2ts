@@ -1,5 +1,5 @@
 import type { Language } from "../../i18n"
-import type { RETRO_SKIN } from "../localstorage"
+import type { RETRO_IIGS_COLOR_PREFERENCE, RETRO_SKIN } from "../localstorage"
 import type { ControlMetadata, ResolvedControl } from "../controls/controlregistry"
 
 export type Translate = (key: string, params?: Record<string, string>) => string
@@ -17,6 +17,9 @@ export type RetroMenuContext = {
   language: Language
   changeLanguage: (language: Language) => void
   changeRetroSkin: (skin: RETRO_SKIN) => void
+  changeRetroIIGSColor: (preference: RETRO_IIGS_COLOR_PREFERENCE, color: number) => void
+  retroSkin: RETRO_SKIN
+  retroIIGSColors: Record<RETRO_IIGS_COLOR_PREFERENCE, number>
   startTour: (tour: string) => void
 }
 
@@ -33,6 +36,9 @@ export const createControlContext = (
   close: () => undefined,
   openDiskDialog: () => undefined,
   changeRetroSkin: () => undefined,
+  changeRetroIIGSColor: () => undefined,
+  retroSkin: 0 as RETRO_SKIN,
+  retroIIGSColors: { text: 15, background: 6, border: 6 },
   startTour: () => undefined,
 })
 

@@ -10,7 +10,7 @@ import { retroDisplayControls } from "../devices/displayconfig"
 import { retroMachineControls } from "../devices/machineconfig"
 import { retroSerialControls } from "../devices/serial/serialselect"
 import type { RetroControlMetadata, RetroMenuContext } from "./retromenucontext"
-import { retroSkinControl } from "./retroskincontrol"
+import { retroSkinColorControls, retroSkinControl, retroSkinSeparator } from "./retroskincontrol"
 import { retroTourControls } from "../tours/runtour"
 import { retroGamepadControls } from "../devices/gamepadconfig"
 
@@ -29,7 +29,9 @@ const menuControls: RetroControlMetadata[] = [
   retroSpeedControl,
   ...retroConfigControls,
   ...retroGamepadControls,
+  retroSkinSeparator,
   retroSkinControl,
+  ...retroSkinColorControls,
   ...createRetroLanguageControls(),
   {
     id: "options.other",
