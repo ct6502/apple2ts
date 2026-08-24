@@ -64,14 +64,10 @@ msgstr "Info Chart"
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Report Scurvy Trouble"
+
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Privacy Code"
-
-#, fuzzy
-msgctxt "controls.privacyPolicy"
-msgid "Privacy Policy"
-msgstr "Privacy Articles"
 
 msgctxt "config.speed"
 msgid "Emulator Speed"

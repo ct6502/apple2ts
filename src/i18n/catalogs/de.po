@@ -81,11 +81,6 @@ msgid "Privacy Policy"
 msgstr "Datenschutzrichtlinie"
 
 #, fuzzy
-msgctxt "controls.privacyPolicy"
-msgid "Privacy Policy"
-msgstr "Datenschutzrichtlinie"
-
-#, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "Geschwindigkeit"
