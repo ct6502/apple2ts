@@ -28,6 +28,10 @@ export type ControlMetadata<Context, Payload = unknown> = {
   defaultIndex?: ControlValue<Context, number | undefined>
   isVisible?: ControlValue<Context, boolean>
   selectable?: ControlValue<Context, boolean>
+  selectableWhen?: {
+    controlId: string
+    optionIndexes: readonly number[]
+  }
   valueOnly?: boolean
   actionLabel?: ControlValue<Context, string | undefined>
   contextualActionLabel?: ControlValue<Context, string | undefined>
@@ -63,6 +67,10 @@ export type ResolvedControl<Payload = unknown> = {
   optionIndex?: number
   defaultIndex?: number
   selectable?: boolean
+  selectableWhen?: {
+    controlId: string
+    optionIndexes: readonly number[]
+  }
   valueOnly?: boolean
   actionLabel?: string
   contextualActionLabel?: string
@@ -179,6 +187,7 @@ export class ControlRegistry<Context, Payload = unknown> {
       optionIndex: metadata.optionIndex === undefined ? undefined : valueOf(metadata.optionIndex, context),
       defaultIndex: metadata.defaultIndex === undefined ? undefined : valueOf(metadata.defaultIndex, context),
       selectable: metadata.selectable === undefined ? undefined : valueOf(metadata.selectable, context),
+      selectableWhen: metadata.selectableWhen,
       valueOnly: metadata.valueOnly,
       actionLabel: metadata.actionLabel === undefined ? undefined : valueOf(metadata.actionLabel, context),
       contextualActionLabel: metadata.contextualActionLabel === undefined

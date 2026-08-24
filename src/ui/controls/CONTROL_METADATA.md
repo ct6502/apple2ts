@@ -21,6 +21,7 @@
 | `defaultIndex` | `number` or context function | Default option used for the checkmark. |
 | `isVisible` | `boolean` or context function | Includes or omits the control at resolution time. |
 | `selectable` | `boolean` or context function | Enables keyboard selection. |
+| `selectableWhen` | control ID and option indexes | Enables selection when a sibling's staged option matches. |
 | `valueOnly` | `boolean` | Displays the selected option instead of the control label. |
 | `actionLabel` | `string` or context function | Footer action text for a submenu. |
 | `contextualActionLabel` | `string` or context function | Item-specific footer action text. |

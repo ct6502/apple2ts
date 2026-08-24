@@ -96,6 +96,15 @@ const createMenuFrame = (
   }
 }
 
+const isMenuItemSelectable = (item: RetroMenuItem, frame?: RetroMenuFrame) => {
+  if (item.selectableWhen && frame) {
+    const controlIndex = frame.items.findIndex(control => control.id === item.selectableWhen?.controlId)
+    return item.selectable !== false && controlIndex >= 0 &&
+      item.selectableWhen.optionIndexes.includes(frame.values[controlIndex])
+  }
+  return item.selectable !== false
+}
+
 const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
   const previousStack = stack.slice(0, -1)
   const previousFrame = previousStack[previousStack.length - 1]
@@ -318,7 +327,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           let nextIndex = index
           for (let offset = 0; offset < currentMenu.length; offset += 1) {
             nextIndex = (nextIndex + direction + currentMenu.length) % currentMenu.length
-            if (currentMenu[nextIndex].selectable !== false) return nextIndex
+            if (isMenuItemSelectable(currentMenu[nextIndex], currentFrame)) return nextIndex
           }
           return index
         })
@@ -362,7 +371,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               selectedIndex,
             ),
           ])
-          setSelectedIndex(Math.max(0, children.findIndex(child => child.selectable !== false)))
+          setSelectedIndex(Math.max(0, children.findIndex(child => isMenuItemSelectable(child))))
         } else if (currentFrame && item.options) {
           if (currentFrame.submit) {
             if (currentFrame.isSubmitVisible?.(currentFrame.items, currentFrame.values)) {
@@ -399,7 +408,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         const nextIndex = Array.from(
           { length: currentMenu.length },
           (_, offset) => (selectedIndex + offset + 1) % currentMenu.length,
-        ).find(index => currentMenu[index].selectable !== false &&
+        ).find(index => isMenuItemSelectable(currentMenu[index], currentFrame) &&
           currentMenu[index].label.toLocaleLowerCase().startsWith(shortcut))
         if (nextIndex !== undefined) {
           event.preventDefault()
@@ -507,7 +516,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                     key={item.id}
                     role="menuitem"
                     aria-current={selectedIndex === index ? "true" : undefined}
-                    aria-disabled={item.selectable === false ? "true" : undefined}
+                    aria-disabled={!isMenuItemSelectable(item, currentFrame) ? "true" : undefined}
                   >
                     {currentFrame && <span className="retro-menu-check">
                       {isChecked ? (isAppleIIPlus ? "*" : checkmark) : " "}

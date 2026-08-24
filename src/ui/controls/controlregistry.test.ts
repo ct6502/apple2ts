@@ -90,6 +90,19 @@ describe("ControlRegistry", () => {
     })
   })
 
+  test("preserves staged sibling selectability metadata", () => {
+    const registry = new ControlRegistry<Context>([{
+      id: "dependent",
+      label: "Dependent",
+      selectableWhen: { controlId: "theme", optionIndexes: [3] },
+    }])
+
+    expect(registry.resolve({ enabled: false }, "options")[0].selectableWhen).toEqual({
+      controlId: "theme",
+      optionIndexes: [3],
+    })
+  })
+
   test("resolves contextual visibility and selectability", () => {
     const registry = new ControlRegistry<Context>([
       { id: "visible", label: "Visible", isVisible: context => context.enabled },

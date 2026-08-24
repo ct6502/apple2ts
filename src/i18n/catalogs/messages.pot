@@ -2227,8 +2227,8 @@ msgctxt "retroControl.skin"
 msgid "Skin"
 msgstr ""
 
-msgctxt "retroControl.retroSkin"
-msgid "Retro"
+msgctxt "retroControl.personalization"
+msgid "Personalization"
 msgstr ""
 
 msgctxt "retroControl.text"

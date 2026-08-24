@@ -4,11 +4,11 @@ msgstr ""
 "PO-Revision-Date: 2026-08-15 04:19+0000\n"
 "Last-Translator: reducedradius "
 "<137701630+flytothehighest@users.noreply.github.com>\n"
-"Language-Team: Chinese (Simplified Han script) "
-"<https://hosted.weblate.org/projects/apple2ts/browser-emulator/zh_Hans/>\n"
+"Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
+"projects/apple2ts/browser-emulator/zh_Hans/>\n"
 "Language: zh-CN\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 2026.9.dev0\n"
@@ -209,7 +209,6 @@ msgstr "快速 (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-#| msgid "Ludicrous/Warp Speed"
 msgid "Ludicrous Speed"
 msgstr "极速"
 
@@ -535,7 +534,8 @@ msgid "Select auxiliary memory for writes"
 msgstr ""
 
 msgctxt "disassembly.auxMemory.selectExpansionBank"
-msgid "Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
+msgid ""
+"Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
 msgstr ""
 
 msgctxt "disassembly.auxMemory.altzpMain"
@@ -720,14 +720,14 @@ msgstr ""
 
 msgctxt "disassembly.laser128ex.disableDiskSlowdown"
 msgid ""
-"Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access "
-"(write-once bit 5)"
+"Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access (write-"
+"once bit 5)"
 msgstr ""
 
 msgctxt "disassembly.laser128ex.enableDiskSlowdown"
 msgid ""
-"Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access "
-"(write-once bit 5)"
+"Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access (write-"
+"once bit 5)"
 msgstr ""
 
 msgctxt "disassembly.gameIO.pulseStrobe"
@@ -785,10 +785,19 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr "按这里启动模拟器。"
 
+msgctxt "tour.retroBootButton"
+msgid "Select this option to start the emulator."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
 msgstr "按这里重置 Apple II，并重新启动或进入 BASIC。"
+
+msgctxt "tour.retroResetButton"
+msgid ""
+"Select this option to reset the Apple II and either reboot or enter BASIC."
+msgstr ""
 
 #, fuzzy
 msgctxt "tour.diskImages"
@@ -800,6 +809,10 @@ msgctxt "tour.floppyDisks"
 msgid "Or click one of the floppy disk icons to load a disk image."
 msgstr "或按一下软盘图标来加载磁盘映像文件。"
 
+msgctxt "tour.retroFloppyDisks"
+msgid "Or select a disk drive to load a disk image."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.saveRestore"
 msgid ""
@@ -807,15 +820,27 @@ msgid ""
 "buttons."
 msgstr "您可以使用这些按钮保存和恢复模拟器的完整状态。"
 
+msgctxt "tour.retroSaveRestore"
+msgid ""
+"You can save and restore the complete state of the emulator using these "
+"options."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.themeButton"
 msgid "Click here to change the emulator UI theme."
 msgstr "按这里更改模拟器 UI 主题。"
 
+msgctxt "tour.retroThemeButton"
+msgid "Use the arrow keys to change the emulator UI theme."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.endTour"
 msgid "You have reached the end of the tour."
-msgstr "您已到达导览的结尾。按一下地球仪导览按钮来试试其他导览，或按完成开始使用模拟器。"
+msgstr ""
+"您已到达导览的结尾。按一下地球仪导览按钮来试试其他导览，或按完成开始使用模拟"
+"器。"
 
 #, fuzzy
 msgctxt "tour.tourSelectorHint"
@@ -824,39 +849,56 @@ msgid ""
 "Finish to start using the emulator."
 msgstr "点击地球仪导览按钮来试试其他导览，或按完成开始使用模拟器。"
 
+msgctxt "tour.retroTourSelectorHint"
+msgid ""
+"Select a menu item to try one of the other tours, or press Finish to start "
+"using the emulator."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.settingsWelcome"
-msgid "Apple2TS has a full set of controls for both the emulator and the Apple II."
-msgstr "Apple2TS 拥有一套完整的控制项，用于模拟器和 Apple II。若要了解更多，请按下一步按钮。"
+msgid ""
+"Apple2TS has a full set of controls for both the emulator and the Apple II."
+msgstr ""
+"Apple2TS 拥有一套完整的控制项，用于模拟器和 Apple II。若要了解更多，请按下一"
+"步按钮。"
 
 #, fuzzy
 msgctxt "tour.mainControls"
 msgid ""
 "Here, you can boot and reset the Apple II, restore and save the state, copy "
 "the screen, or paste text into the emulator."
-msgstr "在这里，您可以启动和重置 Apple II，恢复和保存状态，复制屏幕，或粘贴文本到模拟器。"
+msgstr ""
+"在这里，您可以启动和重置 Apple II，恢复和保存状态，复制屏幕，或粘贴文本到模拟"
+"器。"
 
 #, fuzzy
 msgctxt "tour.snapshot"
 msgid ""
-"At any point, you can take a snapshot of the current emulator state, then "
-"go back in time to an earlier state, or fast forward again. You can also "
-"save the emulator state with all of the current snapshots."
-msgstr "在任何时候，您都可以截取当前模拟器状态的快照，然后回到早期状态，或再次快进。您也可以将模拟器状态与所有当前的快照一起保存。"
+"At any point, you can take a snapshot of the current emulator state, then go "
+"back in time to an earlier state, or fast forward again. You can also save "
+"the emulator state with all of the current snapshots."
+msgstr ""
+"在任何时候，您都可以截取当前模拟器状态的快照，然后回到早期状态，或再次快进。"
+"您也可以将模拟器状态与所有当前的快照一起保存。"
 
 #, fuzzy
 msgctxt "tour.pauseButton"
 msgid ""
-"You can pause the emulator at any time, freezing the 6502 processor. This "
-"is useful for pausing the action in a game, or entering the debugger."
-msgstr "您可以随时暂停模拟器，冻结 6502 处理器。这对于暂停游戏中的动作或进入调试器很有用。"
+"You can pause the emulator at any time, freezing the 6502 processor. This is "
+"useful for pausing the action in a game, or entering the debugger."
+msgstr ""
+"您可以随时暂停模拟器，冻结 6502 处理器。这对于暂停游戏中的动作或进入调试器很"
+"有用。"
 
 #, fuzzy
 msgctxt "tour.debugButton"
 msgid ""
 "Click on the bug to enter debug mode, where you can see the internal state "
 "of the 6502 processor. Click again to go back to normal mode."
-msgstr "按一下调试器图标进入调试模式，您可以查看 6502 处理器的内部状态。再次按一下即可回到正常模式。"
+msgstr ""
+"按一下调试器图标进入调试模式，您可以查看 6502 处理器的内部状态。再次按一下即"
+"可回到正常模式。"
 
 #, fuzzy
 msgctxt "tour.configButtons"
@@ -865,9 +907,16 @@ msgid ""
 "the emulator speed, the screen color, and muting the sound."
 msgstr "底部一排按钮控制 Apple II 的状态，从模拟器速度、屏幕颜色和静音开始。"
 
+msgctxt "tour.retroConfigButtons"
+msgid ""
+"The Options menu controls the state of the Apple II, starting with the "
+"emulator speed, the screen color, and muting the sound."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.keyboardButtons"
-msgid "If the caps lock key is turned on, then all typed characters are UPPERCASE."
+msgid ""
+"If the caps lock key is turned on, then all typed characters are UPPERCASE."
 msgstr "如果开启了大写锁定键，然后所有输入的字符都是大写的。"
 
 #, fuzzy
@@ -877,20 +926,31 @@ msgid ""
 "shortcuts or the Apple II Open Apple key. The final key determines whether "
 "the arrow keys can be used as the Apple II joystick."
 msgstr ""
-"下一个按钮决定 {{modKey}} 键是用于键盘快捷键还是 Apple II Open Apple 键。最后一个按钮决定是否可以使用方向键作为 "
-"Apple II 的摇杆。"
+"下一个按钮决定 {{modKey}} 键是用于键盘快捷键还是 Apple II Open Apple 键。最后"
+"一个按钮决定是否可以使用方向键作为 Apple II 的摇杆。"
 
 #, fuzzy
 msgctxt "tour.clearCookies"
 msgid ""
 "Apple2TS automatically saves the current emulator settings as browser "
 "cookies. Press this button to reset these settings and delete the cookies."
-msgstr "Apple2TS 会自动将当前的模拟器设置保存为浏览器 cookie。按下此按钮可重置这些设置并删除 cookie。"
+msgstr ""
+"Apple2TS 会自动将当前的模拟器设置保存为浏览器 cookie。按下此按钮可重置这些设"
+"置并删除 cookie。"
+
+msgctxt "tour.retroClearCookies"
+msgid ""
+"Apple2TS automatically saves the current emulator settings as browser "
+"cookies. Select this option to reset these settings and delete the cookies."
+msgstr ""
 
 #, fuzzy
 msgctxt "tour.debugWelcome"
-msgid "Apple2TS has a rich set of tools to analyze and debug 6502 assembly code."
-msgstr "Apple2TS 拥有一套丰富的工具来分析和调试 6502 汇编代码。若要了解更多，请按下一步按钮。"
+msgid ""
+"Apple2TS has a rich set of tools to analyze and debug 6502 assembly code."
+msgstr ""
+"Apple2TS 拥有一套丰富的工具来分析和调试 6502 汇编代码。若要了解更多，请按下一"
+"步按钮。"
 
 #, fuzzy
 msgctxt "tour.debugIcon"
@@ -905,10 +965,12 @@ msgstr "按下暂停按钮以暂停或恢复模拟器的执行。"
 #, fuzzy
 msgctxt "tour.debugControls"
 msgid ""
-"Now that we have paused, we can step through the disassembled code using "
-"the Step Over, Into, and Out buttons. We can also quickly jump to the "
-"current address of the Program Counter (PC)."
-msgstr "现在我们已经暂停了，我们可以使用「跳越执行」、「进入」和「跳出执行」按钮逐步执行反汇编代码。我们也可以快速跳转到程序计数器 (PC) 的当前地址。"
+"Now that we have paused, we can step through the disassembled code using the "
+"Step Over, Into, and Out buttons. We can also quickly jump to the current "
+"address of the Program Counter (PC)."
+msgstr ""
+"现在我们已经暂停了，我们可以使用「跳越执行」、「进入」和「跳出执行」按钮逐步"
+"执行反汇编代码。我们也可以快速跳转到程序计数器 (PC) 的当前地址。"
 
 #, fuzzy
 msgctxt "tour.debugDisassembly"
@@ -919,7 +981,8 @@ msgid ""
 "blue address will scroll to that location. You can also click in the left "
 "gutter to add or remove breakpoints."
 msgstr ""
-"在这里我们可以看到反汇编代码，包括十六进制地址、三个字母的指令，以及任何数值或地址。如果您将鼠标移动到绿色数值上，将会出现一个工具提示，显示当前的数值。"
+"在这里我们可以看到反汇编代码，包括十六进制地址、三个字母的指令，以及任何数值"
+"或地址。如果您将鼠标移动到绿色数值上，将会出现一个工具提示，显示当前的数值。"
 "按一下蓝色地址将滚动到该位置。您也可以按一下左侧的栏位来添加或移除断点。"
 
 #, fuzzy
@@ -927,19 +990,22 @@ msgctxt "tour.debugInfo"
 msgid ""
 "In the middle we have the Stack Dump and a Memory Map. The Memory Map "
 "updates in real time and shows you which memory banks are currently active."
-msgstr "在中间我们有堆栈转储和内存映射。内存映射会实时更新，并显示当前使用中的内存组块。"
+msgstr ""
+"在中间我们有堆栈转储和内存映射。内存映射会实时更新，并显示当前使用中的内存组"
+"块。"
 
 #, fuzzy
 msgctxt "tour.debugMemory"
 msgid ""
 "The last section displays the Apple II memory. You can use the droplist to "
-"examine different portions of memory. If you switch to one of the HGR "
-"pages, you will get a magnified view of the hires screen, tied to the "
-"memory locations. You can also search for hex values or ASCII strings, and "
-"save the memory to a file."
+"examine different portions of memory. If you switch to one of the HGR pages, "
+"you will get a magnified view of the hires screen, tied to the memory "
+"locations. You can also search for hex values or ASCII strings, and save the "
+"memory to a file."
 msgstr ""
-"最后一部分显示 Apple II 的内存。您可以使用下拉列表来检查内存的不同部分。如果您切换到其中一个 HGR "
-"页面，您将得到放大的高分辨率屏幕视图，与内存位置连接。您也可以搜索十六进制数值或 ASCII 字符串，并将内存保存到文件中。"
+"最后一部分显示 Apple II 的内存。您可以使用下拉列表来检查内存的不同部分。如果"
+"您切换到其中一个 HGR 页面，您将得到放大的高分辨率屏幕视图，与内存位置连接。您"
+"也可以搜索十六进制数值或 ASCII 字符串，并将内存保存到文件中。"
 
 #, fuzzy
 msgctxt "tour.back"
@@ -990,55 +1056,6 @@ msgstr "引导式导览：设置"
 msgctxt "tour.debugLabel"
 msgid "Guided Tours: Debug"
 msgstr "引导式导览：调试"
-
-#, fuzzy
-msgctxt "tour.retroSaveRestore"
-msgid ""
-"You can save and restore the complete state of the emulator using these "
-"options."
-msgstr ""
-
-msgctxt "retroControl.input"
-msgid "Input"
-msgstr ""
-
-msgctxt "retroControl.joystick"
-msgid "Joystick"
-msgstr "操纵杆"
-
-msgctxt "tour.retroBootButton"
-msgid "Select this option to start the emulator."
-msgstr ""
-
-msgctxt "tour.retroResetButton"
-msgid "Select this option to reset the Apple II and either reboot or enter BASIC."
-msgstr ""
-
-msgctxt "tour.retroFloppyDisks"
-msgid "Or select a disk drive to load a disk image."
-msgstr ""
-
-msgctxt "tour.retroThemeButton"
-msgid "Use the arrow keys to change the emulator UI theme."
-msgstr ""
-
-msgctxt "tour.retroTourSelectorHint"
-msgid ""
-"Select a menu item to try one of the other tours, or press Finish to start "
-"using the emulator."
-msgstr ""
-
-msgctxt "tour.retroConfigButtons"
-msgid ""
-"The Options menu controls the state of the Apple II, starting with the "
-"emulator speed, the screen color, and muting the sound."
-msgstr ""
-
-msgctxt "tour.retroClearCookies"
-msgid ""
-"Apple2TS automatically saves the current emulator settings as browser "
-"cookies. Select this option to reset these settings and delete the cookies."
-msgstr ""
 
 msgctxt "disk.drive1"
 msgid "Drive 1"
@@ -1289,7 +1306,9 @@ msgctxt "help.shortcutsUnavailable"
 msgid ""
 "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to "
 "Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
-msgstr "当 {{keyMod}} 键被指定为 Open Apple 时，使用该键的模拟器快捷键不可用。Ctrl+0 到 Ctrl+5 仍可选择模拟器速度。"
+msgstr ""
+"当 {{keyMod}} 键被指定为 Open Apple 时，使用该键的模拟器快捷键不可用。Ctrl+0 "
+"到 Ctrl+5 仍可选择模拟器速度。"
 
 #, fuzzy
 msgctxt "help.diskImages"
@@ -1319,17 +1338,18 @@ msgstr "点击屏幕以显示键盘。"
 #, fuzzy
 msgctxt "help.arrowKeys"
 msgid ""
-"Press the arrow keys, esc, or tab buttons to send those keys to the "
-"emulator."
+"Press the arrow keys, esc, or tab buttons to send those keys to the emulator."
 msgstr "按方向键、ESC 或 Tab 按钮将这些按键发送到模拟器。"
 
 #, fuzzy
 msgctxt "help.ctrlKey"
 msgid ""
-"To send a control character, press the ctrl button once. Then tap the "
-"screen to show the keyboard and press the desired key. The ctrl button will "
+"To send a control character, press the ctrl button once. Then tap the screen "
+"to show the keyboard and press the desired key. The ctrl button will "
 "automatically be released."
-msgstr "要发送控制字符，请按一次 Ctrl 按钮。然后点击屏幕显示键盘并按所需的按键。Ctrl 按钮将自动释放。"
+msgstr ""
+"要发送控制字符，请按一次 Ctrl 按钮。然后点击屏幕显示键盘并按所需的按键。Ctrl "
+"按钮将自动释放。"
 
 #, fuzzy
 msgctxt "help.ctrlLock"
@@ -1337,7 +1357,9 @@ msgid ""
 "To send multiple control characters, press the ctrl button twice to lock it "
 "on (indicated by a green dot). Then tap the screen to show the keyboard and "
 "press the desired keys. Press the ctrl button again to release it."
-msgstr "要发送多个控制字符，请按两次 Ctrl 按钮以锁定（以绿点表示）。然后点击屏幕显示键盘并按所需的按键。再次按 Ctrl 按钮以释放。"
+msgstr ""
+"要发送多个控制字符，请按两次 Ctrl 按钮以锁定（以绿点表示）。然后点击屏幕显示"
+"键盘并按所需的按键。再次按 Ctrl 按钮以释放。"
 
 #, fuzzy
 msgctxt "help.appleKeys"
@@ -1372,9 +1394,11 @@ msgstr ""
 msgctxt "help.urlParametersBody"
 msgid ""
 "For optional URL parameters, append them to the URL after a question mark "
-"(?) and separate multiple parameters with an ampersand (&). Use # to "
-"specify the disk image. See the Link Builder dialog for examples."
-msgstr "对于可选的URL参数，在URL后面加上问号(?)并附加参数，多个参数之间用(&)符号分隔。使用#指定磁盘镜像。有关示例，请参阅链接生成器对话框。"
+"(?) and separate multiple parameters with an ampersand (&). Use # to specify "
+"the disk image. See the Link Builder dialog for examples."
+msgstr ""
+"对于可选的URL参数，在URL后面加上问号(?)并附加参数，多个参数之间用(&)符号分"
+"隔。使用#指定磁盘镜像。有关示例，请参阅链接生成器对话框。"
 
 #, fuzzy
 msgctxt "help.exampleLinks.totalReplayDebugging"
@@ -2011,7 +2035,9 @@ msgctxt "basic.rebuildWarning"
 msgid ""
 "This will replace the current program with a version rebuilt from the Apple "
 "II memory. You will lose any unsaved changes. Are you sure?"
-msgstr "此操作将会用从 Apple II 内存中重建的版本替换当前的程序。您将会丢失所有未保存的更改。是否确定要继续？"
+msgstr ""
+"此操作将会用从 Apple II 内存中重建的版本替换当前的程序。您将会丢失所有未保存"
+"的更改。是否确定要继续？"
 
 #, fuzzy
 msgctxt "basic.variable"
@@ -2446,7 +2472,8 @@ msgctxt "agent.inputPlaceholder"
 msgid ""
 "Ask me anything about the Apple II emulator... (Press Enter to send, "
 "Shift+Enter for new line)"
-msgstr "向我询问关于 Apple II 模拟器的任何问题... (按 Enter 发送，Shift+Enter 换行)"
+msgstr ""
+"向我询问关于 Apple II 模拟器的任何问题... (按 Enter 发送，Shift+Enter 换行)"
 
 #, fuzzy
 msgctxt "agent.stop"
@@ -2512,12 +2539,14 @@ msgctxt "agent.storageWarning"
 msgid ""
 "Your API key is stored locally in your browser and never sent to "
 "apple2ts.com. Get your {{provider}} API key at"
-msgstr "您的 API 密钥会保存在本地浏览器中，绝不会发送至 apple2ts.com。获取您的 {{provider}} API 密钥："
+msgstr ""
+"您的 API 密钥会保存在本地浏览器中，绝不会发送至 apple2ts.com。获取您的 "
+"{{provider}} API 密钥："
 
 msgctxt "agent.ollamaWarning"
 msgid ""
-"Ollama runs locally on your machine. Make sure you have Ollama installed "
-"and running. Download from"
+"Ollama runs locally on your machine. Make sure you have Ollama installed and "
+"running. Download from"
 msgstr ""
 
 #, fuzzy
@@ -2598,9 +2627,9 @@ msgctxt "retroControl.skin"
 msgid "Skin"
 msgstr "皮肤"
 
-msgctxt "retroControl.retroSkin"
-msgid "Retro"
-msgstr "复古"
+msgctxt "retroControl.personalization"
+msgid "Personalization"
+msgstr "个性化"
 
 msgctxt "retroControl.text"
 msgid "Text"
@@ -2681,6 +2710,14 @@ msgstr "白色"
 msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr "键盘"
+
+msgctxt "retroControl.input"
+msgid "Input"
+msgstr ""
+
+msgctxt "retroControl.joystick"
+msgid "Joystick"
+msgstr "操纵杆"
 
 msgctxt "retroControl.slots"
 msgid "Slots"
@@ -2842,6 +2879,22 @@ msgctxt "retroControl.port"
 msgid "Port"
 msgstr ""
 
+msgctxt "retroControl.builtinImageWriter"
+msgid "Builtin ImageWriter"
+msgstr ""
+
+msgctxt "retroControl.selectExternalPort"
+msgid "Select External Port"
+msgstr ""
+
+msgctxt "retroControl.externalPort"
+msgid "External Port"
+msgstr ""
+
+msgctxt "retroControl.retroTheme"
+msgid "Retro"
+msgstr "复古"
+
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
 msgstr "小写输入"
@@ -2929,19 +2982,3 @@ msgstr ""
 msgctxt "retroControl.exportFailed"
 msgid "Export to HDV failed: {{message}}"
 msgstr ""
-
-msgctxt "retroControl.builtinImageWriter"
-msgid "Builtin ImageWriter"
-msgstr ""
-
-msgctxt "retroControl.selectExternalPort"
-msgid "Select External Port"
-msgstr ""
-
-msgctxt "retroControl.externalPort"
-msgid "External Port"
-msgstr ""
-
-msgctxt "retroControl.retroTheme"
-msgid "Retro"
-msgstr "复古"

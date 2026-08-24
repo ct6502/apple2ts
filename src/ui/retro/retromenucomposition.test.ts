@@ -62,6 +62,24 @@ describe("Retro menu metadata structure", () => {
     expect(infoPanel?.tourTargets).toContain("#tour-debug-button")
   })
 
+  test("requires the Retro theme for all skin controls", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const controls = retroMenuRegistry.resolve(context, "options")
+    const dependentIds = [
+      "options.retroSkin",
+      "options.retroSkin.text",
+      "options.retroSkin.background",
+      "options.retroSkin.border",
+    ]
+
+    dependentIds.forEach(id => {
+      expect(controls.find(control => control.id === id)?.selectableWhen).toEqual({
+        controlId: "options.theme",
+        optionIndexes: [3],
+      })
+    })
+  })
+
   test("preserves exact root ordering", () => {
     expect(retroMenuRegistry.getIds(null)).toEqual([
       "machine",
@@ -111,8 +129,8 @@ describe("Retro menu metadata structure", () => {
       "options.clock",
       "options.mouse",
       "options.ramDisk",
-      "options.theme",
       "options.retroSkinSeparator",
+      "options.theme",
       "options.retroSkin",
       "options.retroSkin.text",
       "options.retroSkin.background",

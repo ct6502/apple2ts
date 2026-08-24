@@ -40,23 +40,26 @@ const themeLabels = (t: (key: string) => string) => [
   t("retroControl.retroTheme"),
 ]
 
+const retroThemeControl: RetroControlMetadata = choiceMetadata({
+  id: "options.theme",
+  order: 4,
+  tourTargets: ["#tour-theme-button"],
+  label: context => context.t("config.theme"),
+  labels: context => themeLabels(context.t),
+  currentIndex: () => UI_THEMES.findIndex(theme => theme.value === getTheme()),
+  select: (_context, index) => {
+    setPreferenceTheme(UI_THEMES[index].value)
+    const url = new URL(window.location.href)
+    url.searchParams.delete("theme")
+    url.searchParams.set("cache", Date.now().toString())
+    window.location.href = url.toString()
+  },
+  defaultIndex: UI_THEMES.findIndex(theme => theme.value === UI_THEME.CLASSIC),
+})
+retroThemeControl.refreshParentOnOption = true
+
 export const retroConfigControls: RetroControlMetadata[] = [
-  choiceMetadata({
-    id: "options.theme",
-    order: 4,
-    tourTargets: ["#tour-theme-button"],
-    label: context => context.t("config.theme"),
-    labels: context => themeLabels(context.t),
-    currentIndex: () => UI_THEMES.findIndex(theme => theme.value === getTheme()),
-    select: (_context, index) => {
-      setPreferenceTheme(UI_THEMES[index].value)
-      const url = new URL(window.location.href)
-      url.searchParams.delete("theme")
-      url.searchParams.set("cache", Date.now().toString())
-      window.location.href = url.toString()
-    },
-    defaultIndex: UI_THEMES.findIndex(theme => theme.value === UI_THEME.CLASSIC),
-  }),
+  retroThemeControl,
   {
     id: "keyboard",
     parentId: null,

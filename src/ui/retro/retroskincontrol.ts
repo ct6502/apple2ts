@@ -5,10 +5,16 @@ import {
   RETRO_IIGS_COLOR_DEFAULTS,
   RETRO_SKIN,
 } from "../localstorage"
+import { UI_THEME, UI_THEMES } from "../../common/utility"
 import { choiceMetadata } from "./retromenuhelpers"
 import type { RetroControlMetadata } from "./retromenucontext"
 
 export const RETRO_SKINS = [RETRO_SKIN.APPLE_IIE, RETRO_SKIN.APPLE_IIGS, RETRO_SKIN.APPLE_IIPLUS] as const
+
+const selectableWithRetroTheme = {
+  controlId: "options.theme",
+  optionIndexes: [UI_THEMES.findIndex(theme => theme.value === UI_THEME.RETRO)],
+}
 
 export const RETRO_IIGS_COLORS = [
   { name: "Black", key: "retroControl.iigsColor.black", css: "rgb(0, 0, 0)" },
@@ -31,8 +37,8 @@ export const RETRO_IIGS_COLORS = [
 
 export const retroSkinSeparator: RetroControlMetadata = {
   id: "options.retroSkinSeparator",
-  order: 4.9,
-  label: context => context.t("retroControl.retroSkin"),
+  order: 3.9,
+  label: context => context.t("retroControl.personalization"),
   separator: true,
   selectable: false,
 }
@@ -46,6 +52,7 @@ export const retroSkinControl: RetroControlMetadata = choiceMetadata({
   select: (context, index) => context.changeRetroSkin(RETRO_SKINS[index]),
   preview: (context, index) => context.changeRetroSkin(RETRO_SKINS[index]),
   defaultIndex: RETRO_SKIN.APPLE_IIE,
+  selectableWhen: selectableWithRetroTheme,
 })
 
 retroSkinControl.refreshParentOnOption = true
@@ -64,6 +71,7 @@ const colorControl = (
   preview: (context, index) => context.changeRetroIIGSColor(preference, index),
   defaultIndex: RETRO_IIGS_COLOR_DEFAULTS[preference],
   selectable: () => getPreferenceRetroSkin() === RETRO_SKIN.APPLE_IIGS,
+  selectableWhen: selectableWithRetroTheme,
 })
 
 export const retroSkinColorControls: RetroControlMetadata[] = [
