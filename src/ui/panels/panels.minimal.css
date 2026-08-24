@@ -1,28 +1,40 @@
-.debug-section {
+.debug-section.minimal-presentation {
   max-height: 92cqh;
   overflow-x: auto;
   overflow-y: auto;
   margin-bottom: 10px;
 }
 
-.dbg-tab-row {
+.debug-section.minimal-presentation .dbg-tab-row {
   padding: 12px;
   padding-top: 8px;
   padding-bottom: 0px;
-  margin-left: -2px;
-  margin-right: -6px;
-  border-bottom: 1px solid black;
+  margin-left: 0;
+  margin-right: 0;
 }
 
-.dbg-tab {
-  border-bottom: none;
+.debug-section.minimal-presentation .dbg-tab {
+  flex-shrink: 0;
   background-color: unset;
 }
 
-.dbg-tab:hover {
+.debug-section.minimal-presentation .dbg-tab-row-horizontal {
+  border-bottom: 1px solid black;
+}
+
+.debug-section.minimal-presentation .dbg-tab-row-vertical {
+  padding-right: 0;
+}
+
+.debug-section.minimal-presentation .dbg-tab-vertical.dbg-tab-active {
+  border-bottom: 1px solid black;
+  border-right-color: gray;
+}
+
+.debug-section.minimal-presentation .dbg-tab:hover {
   background-color: gray;
 }
 
-.dbg-tab-active {
+.debug-section.minimal-presentation .dbg-tab-active {
   background-color: gray;
 }

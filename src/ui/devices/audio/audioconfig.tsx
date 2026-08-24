@@ -31,6 +31,7 @@ export const retroAudioControls: RetroControlMetadata[] = [
     label: context => context.t("retroControl.sound"),
     labels: context => [context.t("messages.off"), context.t("messages.on")],
     currentIndex: () => getAudioStatus() === "enabled" ? 1 : 0,
+    defaultIndex: 1,
     select: (context, index) => {
       audioEnable(index === 1)
       context.displayProps.updateDisplay()

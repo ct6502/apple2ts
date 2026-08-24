@@ -3,7 +3,7 @@ import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
-import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
+import { getTheme, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
   "showScanlines", "hotReload", "tiltSensorJoystick", "useOpenAppleKey", "debugMode"]
@@ -115,6 +115,9 @@ export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
 }
 
 export const setPreferenceTheme = (theme: UI_THEME = UI_THEME.CLASSIC) => {
+  if (theme !== getTheme()) {
+    setUIStateBoolean("infoPanel", false)
+  }
   if (theme === UI_THEME.CLASSIC) {
     localStorage.removeItem("theme")
   } else {

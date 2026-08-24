@@ -402,6 +402,20 @@ body.dark-mode .centered-title {
   z-index: 9990;
 }
 
+.printer-dialog-host {
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 10002;
+}
+
+.printer-dialog-host .floating-dialog {
+  pointer-events: auto;
+}
+
 body.dark-mode .floating-dialog {
   background-color: var(--panel-background-dark);
   border-color: var(--text-color-dark);

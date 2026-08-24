@@ -1,4 +1,5 @@
 import { navigateToTourStep, tourTargetForStep } from "./tourutils"
+import { getTourSettings } from "./toursettings"
 
 describe("guided tour menu integration", () => {
   test("navigates to a tagged menu target before changing steps", () => {
@@ -15,5 +16,11 @@ describe("guided tour menu integration", () => {
       1,
       "#tour-help-menu",
     )).toBe("#tour-help-menu")
+  })
+
+  test("does not open the Info Panel during the Settings tour", () => {
+    const steps = getTourSettings((key: string) => key)
+
+    expect(steps.find(step => step.target === "#tour-debug-button")?.data).toBeUndefined()
   })
 })

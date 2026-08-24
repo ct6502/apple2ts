@@ -114,6 +114,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
 
   return (
     <div
+      className="printer-dialog-host"
       tabIndex={0} // Make the div focusable
       onMouseMove={(e) => handleMouseMove(e)}
       onMouseUp={handleMouseUp}

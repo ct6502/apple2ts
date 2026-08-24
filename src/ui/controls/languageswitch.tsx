@@ -13,7 +13,7 @@ const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMeta
   const control = choiceMetadata({
     id: "options.language",
     parentId: "display",
-    order: 100,
+    order: 101,
     label: context => context.t("retroControl.language"),
     labels: () => AllLanguages.map(language => LanguageNames[language]),
     currentIndex: context => selectedLanguageIndex ?? AllLanguages.indexOf(context.language),

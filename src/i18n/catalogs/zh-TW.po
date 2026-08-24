@@ -61,9 +61,17 @@ msgid "Debug Panel"
 msgstr "除錯面板"
 
 #, fuzzy
+msgctxt "controls.infoPanel"
+msgid "Info Panel"
+msgstr "資訊面板"
+
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "回報問題"
+
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr "隱私權政策"
 
 #, fuzzy
 msgctxt "config.speed"
@@ -992,7 +1000,7 @@ msgstr ""
 
 msgctxt "retroControl.joystick"
 msgid "Joystick"
-msgstr ""
+msgstr "搖桿"
 
 msgctxt "tour.retroBootButton"
 msgid "Select this option to start the emulator."
@@ -1542,7 +1550,7 @@ msgstr "喇叭"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -2611,19 +2619,83 @@ msgstr "外觀"
 
 msgctxt "retroControl.retroSkin"
 msgid "Retro"
-msgstr ""
+msgstr "復古"
 
 msgctxt "retroControl.text"
 msgid "Text"
-msgstr ""
+msgstr "文字"
 
 msgctxt "retroControl.background"
 msgid "Background"
-msgstr ""
+msgstr "背景"
 
 msgctxt "retroControl.border"
 msgid "Border"
-msgstr ""
+msgstr "邊框"
+
+msgctxt "retroControl.iigsColor.black"
+msgid "Black"
+msgstr "黑色"
+
+msgctxt "retroControl.iigsColor.red"
+msgid "Red"
+msgstr "紅色"
+
+msgctxt "retroControl.iigsColor.darkBlue"
+msgid "Dark Blue"
+msgstr "深藍色"
+
+msgctxt "retroControl.iigsColor.purple"
+msgid "Purple"
+msgstr "紫色"
+
+msgctxt "retroControl.iigsColor.darkGreen"
+msgid "Dark Green"
+msgstr "深綠色"
+
+msgctxt "retroControl.iigsColor.darkGray"
+msgid "Dark Gray"
+msgstr "深灰色"
+
+msgctxt "retroControl.iigsColor.mediumBlue"
+msgid "Medium Blue"
+msgstr "中藍色"
+
+msgctxt "retroControl.iigsColor.lightBlue"
+msgid "Light Blue"
+msgstr "淺藍色"
+
+msgctxt "retroControl.iigsColor.brown"
+msgid "Brown"
+msgstr "棕色"
+
+msgctxt "retroControl.iigsColor.orange"
+msgid "Orange"
+msgstr "橙色"
+
+msgctxt "retroControl.iigsColor.lightGray"
+msgid "Light Gray"
+msgstr "淺灰色"
+
+msgctxt "retroControl.iigsColor.pink"
+msgid "Pink"
+msgstr "粉紅色"
+
+msgctxt "retroControl.iigsColor.lightGreen"
+msgid "Light Green"
+msgstr "淺綠色"
+
+msgctxt "retroControl.iigsColor.yellow"
+msgid "Yellow"
+msgstr "黃色"
+
+msgctxt "retroControl.iigsColor.aquamarine"
+msgid "Aquamarine"
+msgstr "海藍色"
+
+msgctxt "retroControl.iigsColor.white"
+msgid "White"
+msgstr "白色"
 
 msgctxt "retroControl.keyboard"
 msgid "Keyboard"
@@ -2632,6 +2704,10 @@ msgstr "鍵盤"
 msgctxt "retroControl.slots"
 msgid "Slots"
 msgstr "插槽"
+
+msgctxt "retroControl.devices"
+msgid "Devices"
+msgstr "裝置"
 
 msgctxt "retroControl.printerPort"
 msgid "Printer Port"
@@ -2687,7 +2763,7 @@ msgstr "儲存"
 
 msgctxt "retroControl.clipboard"
 msgid "Clipboard"
-msgstr ""
+msgstr "剪貼簿"
 
 msgctxt "retroControl.cancelEsc"
 msgid "Cancel:Esc"
@@ -2695,7 +2771,7 @@ msgstr "取消:Esc"
 
 msgctxt "retroControl.color"
 msgid "Color"
-msgstr ""
+msgstr "色彩"
 
 msgctxt "retroControl.colorNoFringe"
 msgid "Color (no fringe)"
@@ -2787,7 +2863,7 @@ msgstr ""
 
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
-msgstr ""
+msgstr "小寫輸入"
 
 msgctxt "retroControl.lowercase"
 msgid "Lowercase"
@@ -2795,7 +2871,7 @@ msgstr ""
 
 msgctxt "retroControl.openAppleKey"
 msgid "Open Apple key"
-msgstr ""
+msgstr "開放蘋果鍵"
 
 msgctxt "retroControl.sortOrder"
 msgid "Sort"
@@ -2819,7 +2895,7 @@ msgstr ""
 
 msgctxt "retroControl.card.empty"
 msgid "Empty"
-msgstr ""
+msgstr "空白"
 
 msgctxt "retroControl.card.ssc"
 msgid "Super Serial Card"
@@ -2839,7 +2915,7 @@ msgstr ""
 
 msgctxt "retroControl.card.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
 msgctxt "retroControl.card.mouse"
 msgid "Mouse card"

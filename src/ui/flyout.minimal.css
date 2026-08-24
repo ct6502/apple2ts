@@ -1,8 +1,8 @@
-.flyout-button {
+.flyout.flyout-minimal .flyout-button {
   display: none;
 }
 
-.flyout-button-highlight {
+.flyout.flyout-minimal.flyout-button-highlight {
   animation: fadeInOut 3s 5;
 }
 
@@ -18,7 +18,7 @@
   }
 }
 
-.flyout {
+.flyout.flyout-minimal {
   position: fixed;
   background-color: #aba7a2;
   padding-left: 2px;
@@ -26,7 +26,7 @@
   user-select: none;
 }
 
-.flyout-top-left {
+.flyout.flyout-minimal.flyout-top-left {
   height: auto;
   top: 0px;
   left: 48px;
@@ -40,7 +40,7 @@
   z-index: 4;
 }
 
-.flyout-top-center {
+.flyout.flyout-minimal.flyout-top-center {
   height: auto;
   top: 0px;
   left: calc((100vw/2));
@@ -54,7 +54,7 @@
   z-index: 4;
 }
 
-.flyout-top-right {
+.flyout.flyout-minimal.flyout-top-right {
   height: auto;
   top: 0px;
   right: 14px;
@@ -68,7 +68,7 @@
   z-index: 3;
 }
 
-.flyout-bottom-left {
+.flyout.flyout-minimal.flyout-bottom-left {
   height: auto;
   bottom: 0px;
   left: 48px;
@@ -81,7 +81,7 @@
   z-index: 2;
 }
 
-.flyout-bottom-right {
+.flyout.flyout-minimal.flyout-bottom-right {
   bottom: 0px;
   right: 14px;
   border-top-left-radius: 10px;
@@ -93,7 +93,7 @@
   z-index: 1;
 }
 
-.flyout-button {
+.flyout.flyout-minimal .flyout-button {
   display: block;
   color: #000000;
   padding-top: 2px;

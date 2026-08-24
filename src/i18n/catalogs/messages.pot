@@ -49,8 +49,16 @@ msgctxt "controls.debugPanel"
 msgid "Debug Panel"
 msgstr ""
 
+msgctxt "controls.infoPanel"
+msgid "Info Panel"
+msgstr ""
+
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
+msgstr ""
+
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
 msgstr ""
 
 msgctxt "config.speed"
@@ -2243,6 +2251,70 @@ msgctxt "retroControl.border"
 msgid "Border"
 msgstr ""
 
+msgctxt "retroControl.iigsColor.black"
+msgid "Black"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.red"
+msgid "Red"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.darkBlue"
+msgid "Dark Blue"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.purple"
+msgid "Purple"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.darkGreen"
+msgid "Dark Green"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.darkGray"
+msgid "Dark Gray"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.mediumBlue"
+msgid "Medium Blue"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.lightBlue"
+msgid "Light Blue"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.brown"
+msgid "Brown"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.orange"
+msgid "Orange"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.lightGray"
+msgid "Light Gray"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.pink"
+msgid "Pink"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.lightGreen"
+msgid "Light Green"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.yellow"
+msgid "Yellow"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.aquamarine"
+msgid "Aquamarine"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.white"
+msgid "White"
+msgstr ""
+
 msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr ""
@@ -2257,6 +2329,10 @@ msgstr ""
 
 msgctxt "retroControl.slots"
 msgid "Slots"
+msgstr ""
+
+msgctxt "retroControl.devices"
+msgid "Devices"
 msgstr ""
 
 msgctxt "retroControl.printerPort"

@@ -1,4 +1,4 @@
-import { ACTIONS, EventData, EVENTS, Joyride, Step } from "react-joyride"
+import { ACTIONS, EventData, EVENTS, Joyride, Step, TooltipRenderProps } from "react-joyride"
 import { useGlobalContext } from "../globalcontext"
 import { getTourMain } from "./tourmain"
 import { getTourSettings } from "./toursettings"
@@ -9,10 +9,45 @@ import { DropdownButton } from "../controls/dropdownbutton"
 import { useTranslation } from "../../i18n/useTranslation"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { navigateToTourStep } from "./tourutils"
-import { getTheme, setTheme } from "../ui_settings"
+import { getTheme, setTheme, setUIStateBoolean } from "../ui_settings"
 import { UI_THEME } from "../../common/utility"
 
 const tourName = (index: number) => ["main", "settings", "debug"][index] ?? ""
+
+const openLink = (url: string) => window.open(url, "_blank", "noopener,noreferrer")
+
+const TourTooltip = ({ backProps, closeProps, index, primaryProps, step, tooltipProps }: TooltipRenderProps) => {
+  const { color, height, width, ...closeButtonStyle } = step.styles.buttonClose
+
+  return (
+    <div className="react-joyride__tooltip" style={step.styles.tooltip} {...tooltipProps}>
+      <button style={closeButtonStyle} type="button" {...closeProps}>
+        <svg
+          aria-hidden="true"
+          height={typeof height === "number" ? `${height}px` : height}
+          preserveAspectRatio="xMidYMid"
+          viewBox="0 0 18 18"
+          width={typeof width === "number" ? `${width}px` : width}
+          xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M8.139 9.003.172 17.026a.572.572 0 0 0 .801.807L9 9.749l8.028 8.084a.56.56 0 0 0 .8 0 .575.575 0 0 0 0-.807L9.861 9.003 17.834.974a.575.575 0 0 0 0-.807.56.56 0 0 0-.801 0L9 8.256.967.167a.56.56 0 0 0-.801 0 .575.575 0 0 0 0 .807l7.973 8.029Z"
+            fill={color}
+          />
+        </svg>
+      </button>
+      <div style={step.styles.tooltipContainer}>
+        {step.title && <h4 style={step.styles.tooltipTitle}>{step.title}</h4>}
+        <div style={step.styles.tooltipContent}>{step.content}</div>
+      </div>
+      <div style={step.styles.tooltipFooter}>
+        <button style={step.styles.buttonSkip} type="button" {...closeProps}>{step.locale.close}</button>
+        <div style={step.styles.tooltipFooterSpacer} />
+        {index > 0 && <button style={step.styles.buttonBack} type="button" {...backProps} />}
+        <button style={step.styles.buttonPrimary} type="button" {...primaryProps} />
+      </div>
+    </div>
+  )
+}
 
 export const retroTourControls: RetroControlMetadata[] = [
   {
@@ -33,6 +68,32 @@ export const retroTourControls: RetroControlMetadata[] = [
     keepMenuOpen: true,
     tourTargets: index === 0 ? ["#tour-help-menu"] : undefined,
   })),
+  {
+    id: "guidedTours.links",
+    parentId: "guidedTours",
+    order: 3,
+    label: context => context.t("help.links"),
+    separator: true,
+    selectable: false,
+  },
+  {
+    id: "guidedTours.reportIssue",
+    parentId: "guidedTours",
+    order: 4,
+    label: context => context.t("controls.reportIssue"),
+    contextualActionLabel: context => context.t("retroControl.open"),
+    keepMenuOpen: true,
+    action: () => openLink("https://github.com/ct6502/apple2ts/issues"),
+  },
+  {
+    id: "guidedTours.privacyPolicy",
+    parentId: "guidedTours",
+    order: 5,
+    label: context => context.t("controls.privacyPolicy"),
+    contextualActionLabel: context => context.t("retroControl.open"),
+    keepMenuOpen: true,
+    action: () => openLink("https://ct6502.org/privacy/"),
+  },
 ]
 
 export const getTour = (name: string, t: ReturnType<typeof useTranslation>["t"], retro = false): Step[] => {
@@ -51,9 +112,14 @@ const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
     tourSourceTheme, setTourSourceTheme, setReturnToTourHelp } = useGlobalContext()
   const isRetroTour = tourSourceTheme === UI_THEME.RETRO
 
+  const restoreRetroTheme = () => {
+    setUIStateBoolean("infoPanel", false)
+    setTheme(UI_THEME.RETRO)
+  }
+
   const goToTourIndex = (index: number) => {
     if (isRetroTour && runTour.toLowerCase() === "debug" && index === getTourDebug(t, true).length - 1) {
-      setTheme(UI_THEME.RETRO)
+      restoreRetroTheme()
     }
     navigateToTourStep(
       getTour(runTour, t, isRetroTour),
@@ -83,7 +149,7 @@ const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
 
     if (data.type === EVENTS.TOUR_END || data.action === ACTIONS.SKIP || data.action === ACTIONS.CLOSE || data.status === "finished" || data.status === "skipped") {
       if (isRetroTour) {
-        setTheme(UI_THEME.RETRO)
+        restoreRetroTheme()
         setReturnToTourHelp(true)
       }
       setRunTour("")
@@ -129,6 +195,7 @@ const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
         <Joyride
           onEvent={handleJoyrideCallback}
           steps={tour}
+          tooltipComponent={TourTooltip}
           locale={locale}
           options={{
             showProgress: true,
@@ -137,6 +204,7 @@ const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
             closeButtonAction: "skip",
             dismissKeyAction: false,
             overlayClickAction: false,
+            zIndex: 10003,
           }}
           run={tour.length > 0}
           continuous={true}
@@ -144,9 +212,6 @@ const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
           styles={{
             tooltipContent: {
               textAlign: "left",
-            },
-            floater: {
-              zIndex: 10000,
             },
           }}
         />

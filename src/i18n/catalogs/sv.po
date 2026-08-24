@@ -60,9 +60,17 @@ msgid "Debug Panel"
 msgstr ""
 
 #, fuzzy
+msgctxt "controls.infoPanel"
+msgid "Info Panel"
+msgstr "Informationspanel"
+
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Rapportera ett problem"
+
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr "Integritetspolicy"
 
 #, fuzzy
 msgctxt "config.speed"
@@ -1028,7 +1036,7 @@ msgstr ""
 
 msgctxt "retroControl.joystick"
 msgid "Joystick"
-msgstr ""
+msgstr "Styrspak"
 
 msgctxt "tour.retroBootButton"
 msgid "Select this option to start the emulator."
@@ -1590,7 +1598,7 @@ msgstr "Högtalare"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -2570,19 +2578,83 @@ msgstr "Utseende"
 
 msgctxt "retroControl.retroSkin"
 msgid "Retro"
-msgstr ""
+msgstr "Retro"
 
 msgctxt "retroControl.text"
 msgid "Text"
-msgstr ""
+msgstr "Text"
 
 msgctxt "retroControl.background"
 msgid "Background"
-msgstr ""
+msgstr "Bakgrund"
 
 msgctxt "retroControl.border"
 msgid "Border"
-msgstr ""
+msgstr "Kant"
+
+msgctxt "retroControl.iigsColor.black"
+msgid "Black"
+msgstr "Svart"
+
+msgctxt "retroControl.iigsColor.red"
+msgid "Red"
+msgstr "Röd"
+
+msgctxt "retroControl.iigsColor.darkBlue"
+msgid "Dark Blue"
+msgstr "Mörkblå"
+
+msgctxt "retroControl.iigsColor.purple"
+msgid "Purple"
+msgstr "Lila"
+
+msgctxt "retroControl.iigsColor.darkGreen"
+msgid "Dark Green"
+msgstr "Mörkgrön"
+
+msgctxt "retroControl.iigsColor.darkGray"
+msgid "Dark Gray"
+msgstr "Mörkgrå"
+
+msgctxt "retroControl.iigsColor.mediumBlue"
+msgid "Medium Blue"
+msgstr "Mellanblå"
+
+msgctxt "retroControl.iigsColor.lightBlue"
+msgid "Light Blue"
+msgstr "Ljusblå"
+
+msgctxt "retroControl.iigsColor.brown"
+msgid "Brown"
+msgstr "Brun"
+
+msgctxt "retroControl.iigsColor.orange"
+msgid "Orange"
+msgstr "Orange"
+
+msgctxt "retroControl.iigsColor.lightGray"
+msgid "Light Gray"
+msgstr "Ljusgrå"
+
+msgctxt "retroControl.iigsColor.pink"
+msgid "Pink"
+msgstr "Rosa"
+
+msgctxt "retroControl.iigsColor.lightGreen"
+msgid "Light Green"
+msgstr "Ljusgrön"
+
+msgctxt "retroControl.iigsColor.yellow"
+msgid "Yellow"
+msgstr "Gul"
+
+msgctxt "retroControl.iigsColor.aquamarine"
+msgid "Aquamarine"
+msgstr "Akvamarin"
+
+msgctxt "retroControl.iigsColor.white"
+msgid "White"
+msgstr "Vit"
 
 msgctxt "retroControl.keyboard"
 msgid "Keyboard"
@@ -2591,6 +2663,10 @@ msgstr "Tangentbord"
 msgctxt "retroControl.slots"
 msgid "Slots"
 msgstr "Kortplatser"
+
+msgctxt "retroControl.devices"
+msgid "Devices"
+msgstr "Enheter"
 
 msgctxt "retroControl.printerPort"
 msgid "Printer Port"
@@ -2646,7 +2722,7 @@ msgstr "Spara"
 
 msgctxt "retroControl.clipboard"
 msgid "Clipboard"
-msgstr ""
+msgstr "Urklipp"
 
 msgctxt "retroControl.cancelEsc"
 msgid "Cancel:Esc"
@@ -2654,7 +2730,7 @@ msgstr "Avbryt:Esc"
 
 msgctxt "retroControl.color"
 msgid "Color"
-msgstr ""
+msgstr "Färg"
 
 msgctxt "retroControl.colorNoFringe"
 msgid "Color (no fringe)"
@@ -2746,7 +2822,7 @@ msgstr ""
 
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
-msgstr ""
+msgstr "Inmatning med gemener"
 
 msgctxt "retroControl.lowercase"
 msgid "Lowercase"
@@ -2754,7 +2830,7 @@ msgstr ""
 
 msgctxt "retroControl.openAppleKey"
 msgid "Open Apple key"
-msgstr ""
+msgstr "Open Apple-tangent"
 
 msgctxt "retroControl.sortOrder"
 msgid "Sort"
@@ -2778,7 +2854,7 @@ msgstr ""
 
 msgctxt "retroControl.card.empty"
 msgid "Empty"
-msgstr ""
+msgstr "Tom"
 
 msgctxt "retroControl.card.ssc"
 msgid "Super Serial Card"
@@ -2798,7 +2874,7 @@ msgstr ""
 
 msgctxt "retroControl.card.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
 msgctxt "retroControl.card.mouse"
 msgid "Mouse card"

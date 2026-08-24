@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
 import Apple2Canvas from "../canvas"
 import FileInput from "../fileinput"
 import type { RetroResolvedControl } from "./retromenucontext"
@@ -18,8 +18,16 @@ import "./retrocontrolpanel.css"
 import RunTour, { getTour } from "../tours/runtour"
 import { tourTargetForStep } from "../tours/tourutils"
 import { RETRO_SKIN } from "../localstorage"
+import { INFO_PANEL_COLLAPSED_EVENT } from "../ui_settings"
 
 type RetroMenuItem = RetroResolvedControl
+
+type CanvasBounds = {
+  left: number
+  top: number
+  width: number
+  height: number
+}
 
 type RetroMenuFrame = {
   title: string
@@ -155,6 +163,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [manualMenuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
   const [manualSelectedIndex, setSelectedIndex] = useState(0)
   const [now, setNow] = useState(() => new Date())
+  const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
   const close = () => setIsOpen(false)
   const {
     dialogs,
@@ -194,6 +203,37 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const selectedItem = currentMenu[selectedIndex]
   const selectLabel = t("retroControl.select")
   const isAppleIIPlus = retroSkin === RETRO_SKIN.APPLE_IIPLUS
+  const isAppleIIGS = retroSkin === RETRO_SKIN.APPLE_IIGS
+
+  useLayoutEffect(() => {
+    if (!isOpen || !isAppleIIGS) return
+    const canvas = document.getElementById("apple2canvas")
+    if (!canvas) return
+    const updateCanvasBounds = () => {
+      const bounds = canvas.getBoundingClientRect()
+      setCanvasBounds({
+        left: bounds.left,
+        top: bounds.top,
+        width: bounds.width,
+        height: bounds.height,
+      })
+    }
+    let updateTimer = 0
+    const scheduleCanvasBoundsUpdate = () => {
+      window.clearTimeout(updateTimer)
+      updateTimer = window.setTimeout(updateCanvasBounds, 0)
+    }
+    updateCanvasBounds()
+    const observer = new ResizeObserver(scheduleCanvasBoundsUpdate)
+    observer.observe(canvas)
+    window.addEventListener("resize", scheduleCanvasBoundsUpdate)
+    return () => {
+      window.clearTimeout(updateTimer)
+      observer.disconnect()
+      window.removeEventListener("resize", scheduleCanvasBoundsUpdate)
+    }
+  }, [isAppleIIGS, isOpen])
+
   const arrowSpacing = selectArrowSpacing(selectLabel, language)
   const selectHintHalfCells = Math.ceil(selectHintWidth(selectLabel, language) * 2)
   const saveActionLabel = t("retroControl.save")
@@ -216,7 +256,25 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   }, [isOpen])
 
   useEffect(() => {
+    const handleInfoPanelCollapsed = () => {
+      setMenuStack(stack => stack.map((frame, frameIndex) => {
+        if (frameIndex !== stack.length - 1) return frame
+        const itemIndex = frame.items.findIndex(item => item.id === "display.infoPanel")
+        if (itemIndex < 0) return frame
+        const values = [...frame.values]
+        const originalValues = [...frame.originalValues]
+        values[itemIndex] = 0
+        originalValues[itemIndex] = 0
+        return { ...frame, values, originalValues }
+      }))
+    }
+    window.addEventListener(INFO_PANEL_COLLAPSED_EVENT, handleInfoPanelCollapsed)
+    return () => window.removeEventListener(INFO_PANEL_COLLAPSED_EVENT, handleInfoPanelCollapsed)
+  }, [])
+
+  useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (runTour) return
       if (hasOpenDialog) return
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
         event.preventDefault()
@@ -360,6 +418,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     isOpen,
     menuStack,
     returnToTourHelp,
+    runTour,
     saveActionLabel,
     selectedIndex,
     setReturnToTourHelp,
@@ -367,7 +426,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
 
   return (
     <main
-      className={`retro-shell${isOpen ? " menu-open" : ""}`}
+      className={`retro-shell${isAppleIIGS ? ` scanline-gradient ${effects}` : ""}${isOpen ? " menu-open" : ""}`}
       style={iigsStyle}
       onContextMenu={isOpen ? event => event.preventDefault() : undefined}
     >
@@ -379,25 +438,36 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           role="dialog"
           aria-label={t("retroControl.ariaLabel")}
         >
+          {isAppleIIGS && canvasBounds && <div
+            className="retro-canvas-background"
+            style={{
+              left: canvasBounds.left,
+              top: canvasBounds.top,
+              width: canvasBounds.width,
+              height: canvasBounds.height,
+            }}
+            aria-hidden="true"
+          />}
           <div className="retro-window">
             <RetroBorder className="retro-outer-border" separatorRow={2} />
             <header className={`retro-title${currentFrame ? " submenu-open" : ""}`}>
               {isAppleIIPlus
                 ? <>
-                  <span className="retro-title-text">Apple2TS{fixedWidthSpace}</span>
+                  <span className="retro-title-text">Apple2TS</span>
+                  <span className="retro-title-spacer" aria-hidden="true">{fixedWidthSpace}</span>
                   {!currentFrame &&
-                    <span className="retro-title-fill" aria-hidden="true">{" ".repeat(30)}</span>}
+                    <span className="retro-title-fill" aria-hidden="true">{" ".repeat(29)}</span>}
                 </>
                 : <span>{"Apple2TS "}&#8198;</span>}
             </header>
             {currentFrame && <div className="retro-submenu-title">
               <RetroBorder className="retro-submenu-title-border" />
               <span className={`retro-submenu-title-text${retroFontSupports(currentFrame.title) ? "" : " retro-browser-font"}`}>
-                {truncateControlText(currentFrame.title, 38, language)}{isAppleIIPlus ? fixedWidthSpace : ""}
+                {truncateControlText(currentFrame.title, 38, language)}
               </span>
               {isAppleIIPlus &&
                 <span className="retro-title-fill" aria-hidden="true">
-                  {" ".repeat(Math.max(0, 37 - controlTextWidth(currentFrame.title, language)))}
+                  {" ".repeat(Math.max(0, 38 - controlTextWidth(currentFrame.title, language)))}
                 </span>}
             </div>}
             {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString(language)} ${now.toLocaleDateString(language)}`}>
@@ -440,7 +510,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                     aria-disabled={item.selectable === false ? "true" : undefined}
                   >
                     {currentFrame && <span className="retro-menu-check">
-                      {isChecked ? checkmark : " "}
+                      {isChecked ? (isAppleIIPlus ? "*" : checkmark) : " "}
                     </span>}
                     <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
                       {visibleLabel}

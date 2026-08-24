@@ -306,7 +306,9 @@ const diskDriveControls = diskDrives.map(({ index, slot }, order): RetroControlM
       dynamicChildren: () => handleGetDriveProps(index).filename
         ? insertedDiskItems(index)
         : diskLoadItems(index),
-      actionLabel: context => context.t("retroControl.load"),
+      actionLabel: context => context.t(handleGetDriveProps(index).filename
+        ? "retroControl.select"
+        : "retroControl.load"),
       contextualActionLabel: context => handleGetDriveProps(index).filename
         ? context.t("retroControl.options")
         : context.t("retroControl.load"),

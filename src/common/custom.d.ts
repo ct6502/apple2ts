@@ -175,6 +175,7 @@ type UIState = {
   ghosting: boolean,
   helpText: string,
   hotReload: boolean,
+  infoPanel: boolean,
   reverseYAxis: boolean,
   showScanlines: boolean,
   siriusJoyport: boolean,

@@ -17,6 +17,7 @@ import { retroMenuRegistry } from "./retromenucomposition"
 import type { DiskLoadDialog, RetroMenuContext } from "./retromenucontext"
 import { useGlobalContext } from "../globalcontext"
 import { RETRO_IIGS_COLORS } from "./retroskincontrol"
+import ImageWriter from "../devices/printer/imagewriter"
 
 const colorModeClasses = ["color", "color", "green", "amber", "white", "inverse"]
 const retroSkinClasses = ["apple-iie", "apple-iigs", "apple-iiplus"]
@@ -84,6 +85,7 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     } as React.CSSProperties
     : undefined
   const dialogs = <>
+    <ImageWriter showLauncher={false} />
     <InternetArchivePopup
       driveIndex={diskLoadDialog?.driveIndex ?? 0}
       open={diskLoadDialog?.type === "internetArchive"}
