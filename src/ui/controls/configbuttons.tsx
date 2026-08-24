@@ -89,8 +89,8 @@ export const retroConfigControls: RetroControlMetadata[] = [
   }),
   {
     id: "settings.reset",
-    parentId: "machine",
-    order: 3.05,
+    parentId: "options",
+    order: 1002,
     tourTargets: ["#tour-clearcookies"],
     label: context => context.t("config.resetSettings"),
     action: context => {
@@ -113,10 +113,9 @@ const ConfigButtons = (props: DisplayProps) => {
   const modKeyDisplay = isMac ? "⌘" : "alt"
   const context = createControlContext(props, t, language, changeLanguage)
   const optionControls = configControlRegistry.resolve(context, "options")
-  const machineControls = configControlRegistry.resolve(context, "machine")
   const keyboardControls = configControlRegistry.resolve(context, "keyboard")
   const themeControl = optionControls.find(control => control.id === "options.theme")!
-  const resetControl = machineControls.find(control => control.id === "settings.reset")!
+  const resetControl = optionControls.find(control => control.id === "settings.reset")!
   const lowercaseControl = keyboardControls.find(control => control.id === "keyboard.lowercase")!
   const openAppleControl = keyboardControls.find(control => control.id === "keyboard.openApple")!
   const getThemeName = (theme: UI_THEME) => themeControl.options?.[

@@ -35,7 +35,7 @@ type RetroMenuFrame = {
   parentSelectedIndex: number
   originalValues: number[]
   values: number[]
-  actionLabel: string
+  actionLabel?: string
   refresh?: () => RetroMenuItem[]
   submit?: (items: readonly RetroMenuItem[], values: number[]) => void
   isSubmitVisible?: (items: readonly RetroMenuItem[], values: number[]) => boolean
@@ -77,7 +77,7 @@ const createMenuFrame = (
   title: string,
   items: RetroMenuItem[],
   refresh?: () => RetroMenuItem[],
-  actionLabel: string = "",
+  actionLabel?: string,
   submit?: (items: readonly RetroMenuItem[], values: number[]) => void,
   isSubmitVisible?: (items: readonly RetroMenuItem[], values: number[]) => boolean,
   parentSelectedIndex = 0,
@@ -140,7 +140,7 @@ const findTourPath = (
   }
 }
 
-const createTourFrames = (path: RetroMenuItem[], saveActionLabel: string) => {
+const createTourFrames = (path: RetroMenuItem[]) => {
   const frames: RetroMenuFrame[] = []
   for (const parent of path.slice(0, -1)) {
     const children = controlChildren(parent)
@@ -150,7 +150,7 @@ const createTourFrames = (path: RetroMenuItem[], saveActionLabel: string) => {
       parent.label,
       children,
       refresh,
-      parent.actionLabel ?? saveActionLabel,
+      parent.actionLabel,
       parent.submit,
       parent.isSubmitVisible,
     ))
@@ -184,7 +184,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     ? "#tour-help-menu"
     : tourTargetForStep(tour, tourIndex, "#tour-help-menu")
   const tourPath = typeof activeTourTarget === "string" ? findTourPath(rootMenu, activeTourTarget) : undefined
-  const tourMenuStack = tourPath ? createTourFrames(tourPath, t("retroControl.save")) : undefined
+  const tourMenuStack = tourPath ? createTourFrames(tourPath) : undefined
   const menuStack = tourMenuStack ?? manualMenuStack
   const currentFrame = menuStack[menuStack.length - 1]
   const currentMenu = currentFrame?.items ?? rootMenu
@@ -239,7 +239,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const saveActionLabel = t("retroControl.save")
   const footerActionLabel = selectedItem?.contextualActionLabel
     ?? currentFrame?.actionLabel
-    ?? t("retroControl.open")
+    ?? (currentFrame ? saveActionLabel : t("retroControl.open"))
   const actionHintHalfCells = Math.ceil(actionHintWidth(footerActionLabel, language) * 2)
   const actionStartLine = 81 - actionHintHalfCells
   const showHorizontalSelectionHint = (selectedItem?.options?.length ?? 0) > 1
@@ -356,7 +356,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               item.label,
               children,
               refresh,
-              item.actionLabel ?? saveActionLabel,
+              item.actionLabel,
               item.submit,
               item.isSubmitVisible,
               selectedIndex,

@@ -84,7 +84,6 @@ describe("Retro menu metadata structure", () => {
       "machine.reset",
       "state.restore",
       "state.save",
-      "settings.reset",
       "machine.clipboard",
       "clipboard.copyText",
       "clipboard.pasteText",
@@ -120,6 +119,7 @@ describe("Retro menu metadata structure", () => {
       "options.retroSkin.border",
       "options.other",
       "options.hotReload",
+      "settings.reset",
     ])
     expect(retroMenuRegistry.getIds("display")).toEqual([
       "display.color",
