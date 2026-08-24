@@ -1,4 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server"
+import { act } from "react"
+import { createRoot } from "react-dom/client"
 import { DefaultHelpContent } from "./defaulthelpcontent"
 
 describe("DefaultHelpContent", () => {
@@ -23,6 +25,30 @@ describe("DefaultHelpContent", () => {
 
     expect(t).toHaveBeenCalledWith("help.shortcutsUnavailable", { keyMod: "Alt" })
     expect(t).not.toHaveBeenCalledWith("help.shortcutsTable", expect.anything())
+  })
+
+  it("replaces shortcut guidance when the Open Apple modifier changes", () => {
+    const t = jest.fn((key: string) => key)
+    const container = document.createElement("div")
+    const root = createRoot(container)
+
+    act(() => {
+      root.render(<DefaultHelpContent t={t} useOpenAppleKey isTouchDevice={false} />)
+    })
+    const unavailableGuidance = container.querySelector(".help-shortcuts-unavailable")
+    expect(unavailableGuidance).not.toBeNull()
+    expect(container.querySelector(".help-shortcuts-available")).toBeNull()
+
+    act(() => {
+      root.render(<DefaultHelpContent t={t} useOpenAppleKey={false} isTouchDevice={false} />)
+    })
+    const availableGuidance = container.querySelector(".help-shortcuts-available")
+    expect(container.querySelector(".help-shortcuts-unavailable")).toBeNull()
+    expect(availableGuidance).not.toBeNull()
+    expect(availableGuidance).not.toBe(unavailableGuidance)
+    expect(container.contains(unavailableGuidance)).toBe(false)
+
+    act(() => root.unmount())
   })
 
   it("renders shortcut keys and translated labels in aligned table cells", () => {

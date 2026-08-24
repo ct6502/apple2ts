@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./touchjoystick.css"
 import { clearCustomGamepad, setCustomGamepad } from "../devices/gamepad"
-import { getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity } from "../ui_settings"
+import { getTouchJoyStickMode, getTouchJoystickSensitivity, getUIStateBoolean } from "../ui_settings"
 
 
 let oldBeta = 0
@@ -32,7 +32,7 @@ export const TouchJoystick = () => {
 
   const deviceOrientationEvent = (event: DeviceOrientationEvent) => {
     if (event.beta === null || event.gamma === null) return
-    const useTiltSensor = getTiltSensorJoystick()
+    const useTiltSensor = getUIStateBoolean("tiltSensorJoystick")
     if (!useTiltSensor) return
 
     if (Math.abs(oldBeta - event.beta) < 1 || Math.abs(oldGamma - event.gamma) < 1) {

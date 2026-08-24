@@ -74,6 +74,11 @@ msgid "Privacy Policy"
 msgstr "隱私權政策"
 
 #, fuzzy
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr "隱私權政策"
+
+#, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "模擬器速度"
@@ -135,10 +140,18 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "搖桿設定"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 #, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr "機器配置"
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
+msgstr ""
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -202,8 +215,9 @@ msgstr "快速 (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "極速/曲速"
+#| msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
+msgstr "極速"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -1271,9 +1285,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr "TypeScript Apple IIe 模擬器"
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence 與 Apple2TS 貢獻者"
 
 #, fuzzy
 msgctxt "help.keyboardShortcuts"
@@ -2152,26 +2167,6 @@ msgid "User Interface Theme:"
 msgstr "介面主題："
 
 #, fuzzy
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr "CRT 失真效果"
-
-#, fuzzy
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr "CRT 磷光殘影"
-
-#, fuzzy
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr "CRT 掃描線"
-
-#, fuzzy
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
-msgstr "大寫鎖定"
-
-#, fuzzy
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr "顯示除錯分頁"
@@ -2344,9 +2339,10 @@ msgid "4 MHz"
 msgstr ""
 
 #, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr "極速/曲速"
+msgid "Ludicrous"
+msgstr "極速"
 
 #, fuzzy
 msgctxt "linkBuilder.machines.enhanced"

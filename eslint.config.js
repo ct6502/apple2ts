@@ -54,7 +54,7 @@ export default [
       "no-restricted-imports": [ "error",
         {
           patterns: [{
-            group: ["../worker/**"],
+            group: ["**/worker/**"],
             message: "'ui' code should not import 'worker' code"
           }]
         }
@@ -67,7 +67,7 @@ export default [
       "no-restricted-imports": [ "error",
         {
           patterns: [{
-            group: ["../ui/**"],
+            group: ["**/ui/**"],
             message: "'worker' code should not import 'ui' code"
           }]
         }
@@ -82,7 +82,7 @@ export default [
       "no-restricted-imports": [ "error",
         {
           patterns: [{
-            group: ["../ui/**", "../worker/**"],
+            group: ["**/ui/**", "**/worker/**"],
             message: "'common' code should not import 'ui' or 'worker' code"
           }]
         }

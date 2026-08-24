@@ -31,7 +31,7 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   const showDefaultHelp = isDefaultHelp(props.helptext)
 
   return (
-    <div className="help-parent"
+    <div className="help-parent" translate="no"
       style={{
         width: narrow || useMinimalPresentation ? "687px" : 500,
         height: narrow || useMinimalPresentation ? "" : paperheight,

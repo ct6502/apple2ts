@@ -1,8 +1,8 @@
 import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGear } from "@fortawesome/free-solid-svg-icons"
-import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../main2worker"
-import { setPreferenceMachineName, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
+import { handleGetMachineName, handleGetMemSize, handleGetProdosFloppy, handleGetSlotConfig, passSetProdosFloppy } from "../main2worker"
+import { setPreferenceBoolean, setPreferenceMachineName, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
 import PopupMenu from "../controls/popupmenu"
 import { useTranslation } from "../../i18n/useTranslation"
 import { DEFAULT_SLOT_CONFIG, RUN_MODE } from "../../common/utility"
@@ -320,8 +320,16 @@ export const MachineConfig = (props: DisplayProps) => {
               }
             }
           )),
-          ...[{ label: "-" }],
-          ...[{ label: "Slot Manager", isHeading: true }],
+          { label: "-" },
+          {label: t("config.prodosFloppy"),
+            isSelected: () => { return handleGetProdosFloppy() },
+            onClick: () => {
+              const newValue = !handleGetProdosFloppy()
+              passSetProdosFloppy(newValue)
+              setPreferenceBoolean("prodosFloppy", newValue)
+            }},
+          { label: "-" },
+          ...[{ label: t("machine.slotManager"), isHeading: true }],
           ...([1, 2, 3, 4, 5, 6, 7] as const).map((slot) => {
             const currentCard = slotConfig[slot]
             return {

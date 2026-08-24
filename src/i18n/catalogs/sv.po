@@ -73,6 +73,11 @@ msgid "Privacy Policy"
 msgstr "Integritetspolicy"
 
 #, fuzzy
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr "Integritetspolicy"
+
+#, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "Hastighet"
@@ -133,8 +138,16 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "Joystickkonfiguration"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
+msgstr ""
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
 msgstr ""
 
 msgctxt "machine.models.apple2p"
@@ -199,8 +212,9 @@ msgstr "Snabb (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "Löjlig/Warp Hastighet"
+#| msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
+msgstr "Löjlig hastighet"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -1305,9 +1319,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr ""
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence och Apple2TS-bidragsgivarna"
 
 #, fuzzy
 msgctxt "help.keyboardShortcuts"
@@ -2183,22 +2198,6 @@ msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
 msgstr ""
 
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr ""
-
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr ""
-
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr ""
-
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
-msgstr ""
-
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr ""
@@ -2339,9 +2338,11 @@ msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr ""
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr ""
+msgid "Ludicrous"
+msgstr "Löjlig"
 
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"

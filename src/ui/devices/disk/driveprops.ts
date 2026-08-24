@@ -5,7 +5,7 @@ import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { isHardDriveImage, RUN_MODE, MAX_DRIVES, FILE_SUFFIXES_DISK } from "../../../common/utility"
 
-import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
+import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode, handleGetProdosFloppy } from "../../main2worker"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
 import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
@@ -212,7 +212,7 @@ export const handleSetDiskOrFileFromBuffer = (
     }
   } else {
     // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)
-    if (isHardDriveImage(fname, buffer?.byteLength)) {
+    if (isHardDriveImage(fname, buffer?.byteLength, handleGetProdosFloppy())) {
       if (index < 0 || index > 1) newIndex = 0
     } else {
       if (index < 2) newIndex = 2
@@ -915,7 +915,7 @@ export const handleSetDiskFromFile = async (disk: string,
     
     if (needsBoot) {
       resetAllDiskDrives()
-      driveIndex = isHardDriveImage(disk, data.byteLength) ? 0 : 2
+      driveIndex = isHardDriveImage(disk, data.byteLength, handleGetProdosFloppy()) ? 0 : 2
     }
 
     handleSetDiskData(

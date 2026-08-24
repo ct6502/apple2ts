@@ -21,12 +21,12 @@ msgstr "Starten"
 #, fuzzy
 msgctxt "controls.reset"
 msgid "Reset"
-msgstr "Zurücksetzen"
+msgstr "Reset"
 
 #, fuzzy
 msgctxt "controls.copyScreen"
 msgid "Copy Screen"
-msgstr "Bildschirm Kopieren"
+msgstr "Bildkopie"
 
 #, fuzzy
 msgctxt "controls.copyText"
@@ -36,17 +36,17 @@ msgstr "Text Kopieren"
 #, fuzzy
 msgctxt "controls.pasteText"
 msgid "Paste Text"
-msgstr "Text Einfügen"
+msgstr "Einfügen"
 
 #, fuzzy
 msgctxt "controls.saveState"
 msgid "Save State"
-msgstr "Zustand Speichern"
+msgstr "Speichern"
 
 #, fuzzy
 msgctxt "controls.restoreState"
 msgid "Restore State"
-msgstr "Zustand Wiederherstellen"
+msgstr "Laden"
 
 #, fuzzy
 msgctxt "controls.toggleSound"
@@ -76,6 +76,11 @@ msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Ein Problem melden"
 
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr "Datenschutzrichtlinie"
+
+#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Datenschutzrichtlinie"
@@ -142,10 +147,18 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "Joystick-Konfiguration"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 #, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr "Maschinenkonfiguration"
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
+msgstr ""
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -209,8 +222,9 @@ msgstr "Schnell (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "Lächerlich/Warp-Geschwindigkeit"
+#| msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
+msgstr "Wahnsinnige Geschwindigkeit"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -1330,9 +1344,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr "Apple IIe Emulator in TypeScript"
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence und die Mitwirkenden von Apple2TS"
 
 #, fuzzy
 msgctxt "help.keyboardShortcuts"
@@ -1863,7 +1878,7 @@ msgstr "Exportproblem melden"
 #, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
-msgstr "In der Zeit zurückgehen"
+msgstr "Zurückspulen"
 
 #, fuzzy
 msgctxt "debugControls.takeSnapshot"
@@ -1873,7 +1888,7 @@ msgstr "Schnappschuss erstellen"
 #, fuzzy
 msgctxt "debugControls.goForwardInTime"
 msgid "Go Forward in Time"
-msgstr "In der Zeit vorwärts gehen"
+msgstr "Vorspulen"
 
 #, fuzzy
 msgctxt "debugControls.saveStateWithSnapshots"
@@ -2209,22 +2224,6 @@ msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
 msgstr ""
 
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr ""
-
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr ""
-
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr ""
-
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
-msgstr ""
-
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr ""
@@ -2365,9 +2364,11 @@ msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr ""
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr ""
+msgid "Ludicrous"
+msgstr "Wahnsinnig"
 
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"

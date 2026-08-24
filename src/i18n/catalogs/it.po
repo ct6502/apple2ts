@@ -74,6 +74,11 @@ msgid "Privacy Policy"
 msgstr "Informativa sulla privacy"
 
 #, fuzzy
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr "Informativa sulla privacy"
+
+#, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "Velocità"
@@ -135,8 +140,16 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "Configurazione joystick"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
+msgstr ""
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
 msgstr ""
 
 msgctxt "machine.models.apple2p"
@@ -174,7 +187,7 @@ msgstr ""
 #, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
-msgstr "Velocità Lumaca (0.1 MHz)"
+msgstr "Lumaca (0.1 MHz)"
 
 #, fuzzy
 msgctxt "speed.slow"
@@ -201,8 +214,9 @@ msgstr "Veloce (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "Velocità Ridicola/Warp"
+#| msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
+msgstr "Velocità ridicola"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -1313,9 +1327,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr "Emulatore Apple IIe in TypeScript"
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence e i collaboratori di Apple2TS"
 
 #, fuzzy
 msgctxt "help.keyboardShortcuts"
@@ -1844,7 +1859,7 @@ msgstr "Segnala un problema di esportazione"
 #, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
-msgstr "Torna Indietro nel Tempo"
+msgstr "Riavvolgi"
 
 #, fuzzy
 msgctxt "debugControls.takeSnapshot"
@@ -2189,22 +2204,6 @@ msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
 msgstr ""
 
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr ""
-
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr ""
-
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr ""
-
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
-msgstr ""
-
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr ""
@@ -2345,9 +2344,11 @@ msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr ""
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr ""
+msgid "Ludicrous"
+msgstr "Ridicola"
 
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"

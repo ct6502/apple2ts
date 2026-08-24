@@ -137,10 +137,18 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "摇杆设置"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 #, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr "机器配置"
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
+msgstr ""
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -201,8 +209,9 @@ msgstr "快速 (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "极速/曲速"
+#| msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
+msgstr "极速"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -1265,9 +1274,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr "TypeScript Apple IIe 模拟器"
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence 和 Apple2TS 贡献者"
 
 #, fuzzy
 msgctxt "help.keyboardShortcuts"
@@ -2144,26 +2154,6 @@ msgid "User Interface Theme:"
 msgstr "界面主题："
 
 #, fuzzy
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr "CRT 失真效果"
-
-#, fuzzy
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr "CRT 磷光残影"
-
-#, fuzzy
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr "CRT 扫描线"
-
-#, fuzzy
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
-msgstr "大写锁定"
-
-#, fuzzy
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr "显示调试分页"
@@ -2336,9 +2326,10 @@ msgid "4 MHz"
 msgstr ""
 
 #, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr "极速/曲速"
+msgid "Ludicrous"
+msgstr "极速"
 
 #, fuzzy
 msgctxt "linkBuilder.machines.enhanced"

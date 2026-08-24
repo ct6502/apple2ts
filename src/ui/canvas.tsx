@@ -24,7 +24,7 @@ import { handleCopyToClipboard } from "./copycanvas"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getUseOpenAppleKey, getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, getTheme, getArrowKeysAsJoystick, isEmbedMode, isRetroTheme } from "./ui_settings"
+import { getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, getTheme, getArrowKeysAsJoystick, isEmbedMode, isRetroTheme, getUIStateBoolean } from "./ui_settings"
 import { KeyboardControl } from "./controls/keyboardcontrol"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
@@ -171,22 +171,22 @@ const Apple2Canvas = (props: DisplayProps) => {
   const isMac = navigator.platform.startsWith("Mac")
 
   const isOpenAppleDown = (e: keyEvent) => {
-    const useOpenAppleKey = getUseOpenAppleKey()
+    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
     return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft") || e.code === "Numpad0" || e.code === "Numpad5"
   }
 
   const isOpenAppleUp = (e: keyEvent) => {
-    const useOpenAppleKey = getUseOpenAppleKey()
+    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
     return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft") || e.code === "Numpad0" || e.code === "Numpad5"
   }
 
   const isClosedAppleDown = (e: keyEvent) => {
-    const useOpenAppleKey = getUseOpenAppleKey()
+    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
     return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight") || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
   }
 
   const isClosedAppleUp = (e: keyEvent) => {
-    const useOpenAppleKey = getUseOpenAppleKey()
+    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
     return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight") || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
   }
 
@@ -199,7 +199,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (e.key >= "0" && e.key <= "9" && e.ctrlKey) {
       return true
     }
-    if (getUseOpenAppleKey()) {
+    if (getUIStateBoolean("useOpenAppleKey")) {
       return false
     }
     if (isMac) {

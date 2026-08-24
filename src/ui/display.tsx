@@ -187,12 +187,12 @@ const DisplayApple2 = () => {
   const hasAuxCard = !isApple2Plus && slotConfig[3] === "aux"
   const mem = isApple2Plus ? 64 : (hasAuxCard ? (handleGetMemSize() + 64) : 64)
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
-  const status = <div className="default-font footer-item">
+  const status = <div className="default-font footer-item" translate="no">
   <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
   <br />
-  <span>©{new Date().getFullYear()}&nbsp;Chris Torrence and the Apple2TS contributors<br/>
+  <span>{t("help.credit", { year: String(new Date().getFullYear()) })}<br/>
   <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">{t("controls.reportIssue")}</a>&nbsp;&nbsp;
-  <a href="https://ct6502.org/privacy/">Privacy Policy</a>
+  <a href="https://ct6502.org/privacy/">{t("controls.privacyPolicy")}</a>
   </span>
   </div>
 

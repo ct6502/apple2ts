@@ -279,6 +279,18 @@ body.dark-mode .droplist-edit:disabled {
   user-select: none;
 }
 
+.popup-item-main {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.popup-selection-marker {
+  display: inline-flex;
+  flex: 0 0 1.25em;
+  justify-content: center;
+}
+
 body.dark-mode .droplist-option {
   background-color: var(--input-background-dark);
   color: var(--text-color-dark);
@@ -381,7 +393,7 @@ body.dark-mode .disassembly-immediate {
 .disassembly-address {
   color: var(--address);
   font-weight: bold;
-  cursor: default;
+  cursor: crosshair;
 }
 
 body.dark-mode .disassembly-address {

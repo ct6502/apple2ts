@@ -141,8 +141,16 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "Configuración de joystick"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
+msgstr ""
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
 msgstr ""
 
 msgctxt "machine.models.apple2p"
@@ -201,8 +209,10 @@ msgctxt "speed.fast"
 msgid "Fast Speed (4 MHz)"
 msgstr "Velocidad rápida (4 MHz)"
 
+#, fuzzy
+#| msgid "Ludicrous/Warp Speed"
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
 msgstr "Velocidad absurda"
 
 msgctxt "colors.color"
@@ -1315,9 +1325,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr "Emulador de Apple IIe en TypeScript"
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence y los colaboradores de Apple2TS"
 
 #, fuzzy
 msgctxt "help.keyboardShortcuts"
@@ -2192,22 +2203,6 @@ msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
 msgstr ""
 
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr ""
-
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr ""
-
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr ""
-
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
-msgstr ""
-
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr ""
@@ -2348,9 +2343,11 @@ msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr ""
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr ""
+msgid "Ludicrous"
+msgstr "Absurda"
 
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"

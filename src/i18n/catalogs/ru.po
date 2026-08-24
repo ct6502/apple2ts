@@ -74,6 +74,11 @@ msgid "Privacy Policy"
 msgstr "Политика конфиденциальности"
 
 #, fuzzy
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr "Политика конфиденциальности"
+
+#, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "Скорость"
@@ -134,8 +139,16 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "Конфигурация джойстика"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
+msgstr ""
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
 msgstr ""
 
 msgctxt "machine.models.apple2p"
@@ -202,8 +215,9 @@ msgstr "Быстрая (4 МГц)"
 
 #, fuzzy
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
-msgstr "Безумная/Варп скорость"
+#| msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
+msgstr "Безумная скорость"
 
 #, fuzzy
 msgctxt "colors.color"
@@ -1316,9 +1330,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr "Эмулятор Apple IIe на TypeScript"
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence и участники проекта Apple2TS"
 
 #, fuzzy
 msgctxt "help.keyboardShortcuts"
@@ -2192,22 +2207,6 @@ msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
 msgstr ""
 
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr ""
-
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr ""
-
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr ""
-
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
-msgstr ""
-
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr ""
@@ -2336,21 +2335,25 @@ msgctxt "linkBuilder.speedNames.normal"
 msgid "1 MHz (default)"
 msgstr ""
 
+#, fuzzy
 msgctxt "linkBuilder.speedNames.two"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 МГц"
 
+#, fuzzy
 msgctxt "linkBuilder.speedNames.three"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 МГц"
 
 msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr ""
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
-msgstr ""
+msgid "Ludicrous"
+msgstr "Безумная"
 
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"

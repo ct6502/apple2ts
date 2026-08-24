@@ -68,6 +68,11 @@ msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Privacy Code"
 
+#, fuzzy
+msgctxt "controls.privacyPolicy"
+msgid "Privacy Policy"
+msgstr "Privacy Articles"
+
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "Ship's Gait"
@@ -116,9 +121,17 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "Joystick Rigging"
 
+msgctxt "config.prodosFloppy"
+msgid "Load ProDOS disks in floppy drive"
+msgstr ""
+
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr "Machine Rigging"
+
+msgctxt "machine.slotManager"
+msgid "Slot Manager"
+msgstr ""
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -176,8 +189,10 @@ msgctxt "speed.fast"
 msgid "Fast Speed (4 MHz)"
 msgstr "Full Sail (4 MHz)"
 
+#, fuzzy
+#| msgid "Ludicrous/Warp Speed"
 msgctxt "speed.warp"
-msgid "Ludicrous/Warp Speed"
+msgid "Ludicrous Speed"
 msgstr "Kraken Speed"
 
 msgctxt "colors.color"
@@ -1235,9 +1250,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr ""
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence and the Apple2TS crew"
 
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
@@ -2005,22 +2021,6 @@ msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
 msgstr "Theme:"
 
-msgctxt "linkBuilder.crtDistortion"
-msgid "CRT Distortion"
-msgstr "Curvy Glass"
-
-msgctxt "linkBuilder.crtGhosting"
-msgid "CRT Ghosting"
-msgstr "LeChuck's Glow"
-
-msgctxt "linkBuilder.crtScanlines"
-msgid "CRT Scanlines"
-msgstr "Ghostly Scan Lines"
-
-msgctxt "linkBuilder.capsLock"
-msgid "Capslock"
-msgstr ""
-
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr "Show debuggin' deck"
@@ -2162,8 +2162,10 @@ msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr "4 MHz (Full sail)"
 
+#, fuzzy
+#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
-msgid "Warp"
+msgid "Ludicrous"
 msgstr "Kraken!"
 
 msgctxt "linkBuilder.machines.enhanced"

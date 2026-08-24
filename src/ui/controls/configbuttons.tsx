@@ -22,7 +22,7 @@ import {
 } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
-import { getLowercaseMode, getUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
+import { getLowercaseMode, getTheme, getUIStateBoolean, isGameMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
 import { AudioConfig } from "../devices/audio/audioconfig"
 import { GamepadConfig } from "../devices/gamepadconfig"
@@ -81,7 +81,7 @@ export const retroConfigControls: RetroControlMetadata[] = [
     parentId: "keyboard",
     order: 1,
     label: context => context.t("retroControl.openAppleKey"),
-    enabled: getUseOpenAppleKey,
+    enabled: () => getUIStateBoolean("useOpenAppleKey"),
     setEnabled: (context, enabled) => {
       setPreferenceBoolean("useOpenAppleKey", enabled)
       context.displayProps.updateDisplay()
@@ -108,7 +108,7 @@ const isMac = navigator.platform.startsWith("Mac")
 const ConfigButtons = (props: DisplayProps) => {
   const { t, language, changeLanguage } = useTranslation()
   const lowercaseMode = getLowercaseMode()
-  const useOpenAppleKey = getUseOpenAppleKey()
+  const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
   const modKey = (isMac ? "Cmd" : "Alt")
   const modKeyDisplay = isMac ? "⌘" : "alt"
   const context = createControlContext(props, t, language, changeLanguage)

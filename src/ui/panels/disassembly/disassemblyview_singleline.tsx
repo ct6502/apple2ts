@@ -172,6 +172,7 @@ const getOperand = (
   operand: string,
   instructionAddress: number,
   onJumpClick: (addr: number) => void,
+  onMemoryClick: (addr: number) => void,
   translate: TooltipTranslator,
 ) => {
   if (["BPL", "BMI", "BVC", "BVS", "BCC",
@@ -204,15 +205,19 @@ const getOperand = (
       if (symbol) {
         operand = ops[0] + symbol + (ops[2] || "")
       }
+      operand = (operand + "         ").slice(0, 10)
+      return <span title={title} onClick={() => {onMemoryClick(addr)}} className={className}>{operand}</span>
     }
   }
-  return <span title={title} className={className}>{(operand + "         ").slice(0, 10)}</span>
+  operand = (operand + "         ").slice(0, 10)
+  return <span title={title} className={className}>{operand}</span>
 }
 
 export const getChromacodedLine = (
   line: string,
-  onJumpClick: (addr: number) => void,
   width: number,
+  onJumpClick: (addr: number) => void,
+  onMemoryClick: (addr: number) => void,
   translate: TooltipTranslator,
 ) => {
   const opcode = line.slice(16, 19)
@@ -225,5 +230,5 @@ export const getChromacodedLine = (
   symbol = " ".repeat(Math.max(2, maxSymLengthWithoutShift - symbol.length)) + symbol + " "
   return <span className={borderStyle(opcode)}>{hexcodes}{symbol}
     <span className="disassembly-opcode">{opcode} </span>
-    {getOperand(opcode, line.slice(20), addr, onJumpClick, translate)}</span>
+    {getOperand(opcode, line.slice(20), addr, onJumpClick, onMemoryClick, translate)}</span>
 }

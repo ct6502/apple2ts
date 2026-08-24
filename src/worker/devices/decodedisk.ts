@@ -72,11 +72,11 @@ const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   return newData
 }
 
-export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Uint8Array => {
+export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array, isProdosFloppy: boolean): Uint8Array => {
   driveState.diskHasChanges = false
   const fname = driveState.filename.toLowerCase()
   if (diskData.length > 10000) {
-    if (isHardDriveImage(fname, diskData?.length)) {
+    if (isHardDriveImage(fname, diskData?.length, isProdosFloppy)) {
       driveState.hardDrive = true
       driveState.status = ""
       return diskData

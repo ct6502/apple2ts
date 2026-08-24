@@ -17,6 +17,8 @@ type GlobalProps = {
   setLockHgrMagnifier: (lock: boolean) => void
   updateBreakpoint: number
   setUpdateBreakpoint: (updateBreakpoint: number) => void
+  memdumpAddress: number
+  setMemdumpAddress: (addr: number) => void
 }
 export const GlobalContext = createContext<GlobalProps>({
   runTour: "",
@@ -35,6 +37,8 @@ export const GlobalContext = createContext<GlobalProps>({
   setLockHgrMagnifier: () => {},
   updateBreakpoint: 0,
   setUpdateBreakpoint: () => {},
+  memdumpAddress: 0,
+  setMemdumpAddress: () => {},
 })
 
 export const useGlobalContext = () => useContext(GlobalContext)

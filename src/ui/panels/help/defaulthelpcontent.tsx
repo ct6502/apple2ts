@@ -116,14 +116,16 @@ export const DefaultHelpContent = ({
     </> : <>
       <b>{t("help.keyboardShortcuts")}</b>{"\n"}
       {useOpenAppleKey
-        ? t("help.shortcutsUnavailable", { keyMod: shortcutKeyName })
-        : <>
+        ? <span key="shortcuts-unavailable" className="help-shortcuts-unavailable">
+          {t("help.shortcutsUnavailable", { keyMod: shortcutKeyName })}
+        </span>
+        : <span key="shortcuts-available" className="help-shortcuts-available">
           <ShortcutTable rows={shortcutRows} />
           {"\n"}{t("help.openAppleKey")}
           {"\n"}{t("help.closedAppleKey")}
           {"\n"}{t("help.joystickKeys")}
           {"\n\n"}{t("help.onScreenKeyboard")}
-        </>}{"\n"}
+        </span>}{"\n"}
     </>}
     {"\n"}<b>{t("help.diskImages")}</b>{" "}hdv, 2mg, dsk, woz, po, do, bin, bas
     {"\n\n"}<b>{t("help.urlParameters")}</b>{"\n"}

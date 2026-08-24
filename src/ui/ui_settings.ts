@@ -16,6 +16,7 @@ const uiState: UIState = {
   helpText: "",
   hotReload: false,
   infoPanel: false,
+  prodosFloppy: false,
   reverseYAxis: false,
   showScanlines: false,
   siriusJoyport: false,
@@ -53,12 +54,12 @@ export type BooleanKeyOf<T> = {
   [K in keyof T]: T[K] extends boolean ? K : never
 }[keyof T]
 
-export const setArrowKeysAsJoystick = (joystick: boolean) => {
-  uiState.arrowKeysAsJoystick = joystick
-}
-
 export const setUIStateBoolean = (key: BooleanKeyOf<UIState>, value: boolean) => {
   uiState[key] = value
+}
+
+export const getUIStateBoolean = (key: BooleanKeyOf<UIState>) => {
+  return uiState[key]
 }
 
 export const setAppMode = (mode: string) => {
@@ -165,15 +166,6 @@ export const isCanvasOnlyTheme = () => {
   return isMinimalTheme() || isRetroTheme()
 }
 
-export const getTiltSensorJoystick = () => {
-  return uiState.tiltSensorJoystick
-}
-
 export const getTouchJoystickSensitivity = () => {
   return uiState.touchJoystickSensitivity
 }
-
-export const getUseOpenAppleKey = () => {
-  return uiState.useOpenAppleKey
-}
-

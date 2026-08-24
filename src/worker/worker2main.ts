@@ -13,7 +13,7 @@ import { doSetRunMode, doSetSpeedMode,
   doExecuteBasicCommand,
   doSetCyclesToRun,
   startCaptureBootState} from "./motherboard"
-import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
+import { doSetEmuDriveNewData, doSetEmuDriveProps, doSetProdosFloppy } from "./devices/drivestate"
 import { apple2KeyRelease, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
@@ -315,6 +315,9 @@ if (typeof self !== "undefined") {
         })
         break
       }
+      case MSG_MAIN.PRODOS_FLOPPY:
+        doSetProdosFloppy(e.data.payload as boolean)
+        break
       default:
         console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)
         break

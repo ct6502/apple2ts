@@ -45,6 +45,11 @@ const initializeDriveState = () => {
 const driveState: DriveState[] = []
 const driveData: Array<Uint8Array> = []
 const largeDiskSnapshotThreshold = 32_000_000
+let isProdosFloppy = false
+export const doSetProdosFloppy: (value: boolean) => void = (value: boolean) => {
+  isProdosFloppy = value
+}
+export const getProdosFloppy: () => boolean = () => isProdosFloppy
 
 initializeDriveState()
 
@@ -187,7 +192,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   let isHardDrive = props.hardDrive
   if (!forceIndex) {
     if (props.filename !== "") {
-      if (isHardDriveImage(props.filename, props.diskData?.length)) {
+      if (isHardDriveImage(props.filename, props.diskData?.length, isProdosFloppy)) {
         isHardDrive = true
         index = (props.drive <= 1) ? 0 : 1
         drive = index + 1
@@ -206,7 +211,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   }
   driveState[index] = initDriveState(index, drive, isHardDrive)
   driveState[index].filename = props.filename
-  driveData[index] = decodeDiskData(driveState[index], props.diskData)
+  driveData[index] = decodeDiskData(driveState[index], props.diskData, isProdosFloppy)
   if (driveData[index].length === 0) {
     driveState[index].filename = ""
     passDriveData()
