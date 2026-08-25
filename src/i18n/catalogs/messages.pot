@@ -1180,6 +1180,10 @@ msgctxt "help.appleKeys"
 msgid "The open apple and closed apple keys behave the same as the ctrl key."
 msgstr ""
 
+msgctxt "help.controlPanelShortcut"
+msgid "SHIFT-ESC: display the Apple2TS control panel"
+msgstr ""
+
 msgctxt "help.openAppleKey"
 msgid "Open Apple: press Left Alt/Option"
 msgstr ""
@@ -2187,7 +2191,7 @@ msgstr ""
 
 msgctxt "startup.retroControlPanel"
 msgid ""
-"Press SHIFT-ESC to display\n"
+"Press SHIFT-ESC to display the\n"
 "Apple2TS control panel."
 msgstr ""
 

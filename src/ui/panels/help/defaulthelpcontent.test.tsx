@@ -77,14 +77,17 @@ describe("DefaultHelpContent", () => {
 
     expect(html).toContain("class=\"help-shortcuts\"")
     expect(html).toContain(
+      "[help.controlPanelShortcut]\n\n[help.openAppleKey]"
+    )
+    expect(html).toContain(
       "<kbd class=\"help-shortcut-key\">Alt+B</kbd>"
-        + "<span class=\"help-shortcut-separator\">: </span>"
-        + "<span class=\"help-shortcut-label\">[controls.boot]</span>"
-        + "<span class=\"help-shortcut-separator\">; </span>"
-        + "<kbd class=\"help-shortcut-key\">Ctrl+0</kbd>"
-        + "<span class=\"help-shortcut-separator\">: </span>"
-        + "<span class=\"help-shortcut-label\">[speed.snail]</span>"
-        + "<span class=\"help-shortcut-separator\">. </span>"
+      + "<span class=\"help-shortcut-separator\">: </span>"
+      + "<span class=\"help-shortcut-label\">[controls.boot]</span>"
+      + "<span class=\"help-shortcut-separator\">; </span>"
+      + "<kbd class=\"help-shortcut-key\">Ctrl+0</kbd>"
+      + "<span class=\"help-shortcut-separator\">: </span>"
+      + "<span class=\"help-shortcut-label\">[speed.snail]</span>"
+      + "<span class=\"help-shortcut-separator\">. </span>"
     )
     for (const [shortcut, translationKey] of shortcuts) {
       const label = translationKey === "speed.normal"
@@ -92,8 +95,8 @@ describe("DefaultHelpContent", () => {
         : `[${translationKey}]`
       expect(html).toContain(
         `<kbd class="help-shortcut-key">${shortcut}</kbd>`
-          + "<span class=\"help-shortcut-separator\">: </span>"
-          + `<span class="help-shortcut-label">${label}</span>`
+        + "<span class=\"help-shortcut-separator\">: </span>"
+        + `<span class="help-shortcut-label">${label}</span>`
       )
     }
     expect(t).not.toHaveBeenCalledWith("help.shortcutsTable", expect.anything())
