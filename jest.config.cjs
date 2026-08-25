@@ -3,7 +3,7 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "jsdom",
-  testPathIgnorePatterns: ["/node_modules/", "/tools/"],
+  testPathIgnorePatterns: ["/node_modules/", "/tools/", "<rootDir>/\\.worktrees/"],
   moduleNameMapper: {
     "\\.(css)$": "<rootDir>/src/test/stylemock.cjs",
   },

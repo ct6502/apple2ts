@@ -45,7 +45,7 @@ export default [
   },
   {
     // this needs to be outside of the curly braces above, so it acts as "global" ignores
-    ignores: ["**/dist", "**/.eslintrc.cjs", "**/public", "src/i18n/**/*.cjs"],
+    ignores: ["**/dist", "**/.eslintrc.cjs", "**/public", ".worktrees/**", "src/i18n/**/*.cjs"],
   },
   // Custom rules for src/ui and src/worker, to prevent imports between them
   {
