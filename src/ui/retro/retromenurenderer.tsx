@@ -219,6 +219,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         panelBounds.height * (1 - 2 * ymargin) / 24,
         panelBounds.width * (1 - 2 * xmargin) / 40.25,
       )}px`,
+      "--retro-row-height": `${panelBounds.height * (1 - 2 * ymargin) / 24}px`,
       ...(hasClassicMonitorFrame
         ? {
           WebkitMaskImage: `url(${window.assetRegistry.monitorOpeningMask})`,
