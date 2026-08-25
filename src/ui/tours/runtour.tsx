@@ -104,7 +104,13 @@ export const getTour = (name: string, t: ReturnType<typeof useTranslation>["t"])
   }
 }
 
-const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
+const RunTour = ({
+  showSelector = true,
+  showTour = true,
+}: {
+  showSelector?: boolean
+  showTour?: boolean
+}) => {
   const { t } = useTranslation()
   const { runTour: runTour, setRunTour: setRunTour,
     tourIndex: tourIndex, setTourIndex: setTourIndex,
@@ -174,33 +180,33 @@ const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
 
   return (
     <span>
-      {(tour.length > 0) &&
+      {showTour && (tour.length > 0) &&
         <div className="modal-overlay"
-          style={{backgroundColor: "inherit", pointerEvents: "none"}}
+          style={{ backgroundColor: "inherit", pointerEvents: "none" }}
         >
-        <Joyride
-          onEvent={handleJoyrideCallback}
-          steps={tour}
-          tooltipComponent={TourTooltip}
-          locale={locale}
-          options={{
-            showProgress: true,
-            buttons: ["back", "close", "primary"],
-            blockTargetInteraction: false,
-            closeButtonAction: "skip",
-            dismissKeyAction: false,
-            overlayClickAction: false,
-            zIndex: 10003,
-          }}
-          run={tour.length > 0}
-          continuous={true}
-          stepIndex={tourIndex}
-          styles={{
-            tooltipContent: {
-              textAlign: "left",
-            },
-          }}
-        />
+          <Joyride
+            onEvent={handleJoyrideCallback}
+            steps={tour}
+            tooltipComponent={TourTooltip}
+            locale={locale}
+            options={{
+              showProgress: true,
+              buttons: ["back", "close", "primary"],
+              blockTargetInteraction: false,
+              closeButtonAction: "skip",
+              dismissKeyAction: false,
+              overlayClickAction: false,
+              zIndex: 10003,
+            }}
+            run={tour.length > 0}
+            continuous={true}
+            stepIndex={tourIndex}
+            styles={{
+              tooltipContent: {
+                textAlign: "left",
+              },
+            }}
+          />
         </div>
       }
       {showSelector && <DropdownButton

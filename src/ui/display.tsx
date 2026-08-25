@@ -9,7 +9,8 @@ import {
   handleGetMachineName,
   handleGetSlotConfig,
   passSetRunMode,
-  setBootCallback} from "./main2worker"
+  setBootCallback
+} from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import { useEffect, useState } from "react"
@@ -47,7 +48,7 @@ const DisplayApple2 = () => {
   // those, we would have no way of setting them here and re-rendering.
   if (!worker) {
     const newWorker = new Worker(new URL("../worker/worker2main", import.meta.url),
-    { type: "module" })
+      { type: "module" })
     newWorker.onmessage = (e: MessageEvent) => {
       const result = doOnMessage(e)
       if (result) {
@@ -188,12 +189,12 @@ const DisplayApple2 = () => {
   const mem = isApple2Plus ? 64 : (hasAuxCard ? (handleGetMemSize() + 64) : 64)
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = <div className="default-font footer-item" translate="no">
-  <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
-  <br />
-  <span>{t("help.credit", { year: String(new Date().getFullYear()) })}<br/>
-  <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">{t("controls.reportIssue")}</a>&nbsp;&nbsp;
-  <a href="https://ct6502.org/privacy/">{t("controls.privacyPolicy")}</a>
-  </span>
+    <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
+    <br />
+    <span>{t("help.credit", { year: String(new Date().getFullYear()) })}<br />
+      <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">{t("controls.reportIssue")}</a>&nbsp;&nbsp;
+      <a href="https://ct6502.org/privacy/">{t("controls.privacyPolicy")}</a>
+    </span>
   </div>
 
   if (isEmbedMode()) {
@@ -201,23 +202,23 @@ const DisplayApple2 = () => {
   }
   return (
     <>
-    <div className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
-    <div className={isLandscape ? "flex-row" : "flex-column"}>
-    <Apple2Canvas {...props} />
-    <div className={"flex-row-gap" + " flexwrap"}  style={{ paddingLeft: "2px" }}>
-      <ControlPanel {...props} />
-      {!isGameMode() && <DiskInterface {...props} />}
-    </div>
-    {!isLandscape && !isGameMode() && status}
-    </div>
-    {isLandscape && !isGameMode() && status}
-    {narrow && !isMinimalTheme() && !isGameMode() && <div className="divider"></div>}
-    {!isGameMode() && <DebugSection updateDisplay={updateDisplay} narrow={narrow}/>}
-    </div>
-    {isMinimalTheme() && <DiskCollectionPanel {...props} />}
-    {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
-    <FileInput {...props} />
-    <RetroMenuRenderer displayProps={props} />
+      <div className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
+        <div className={isLandscape ? "flex-row" : "flex-column"}>
+          <Apple2Canvas {...props} />
+          <div className={"flex-row-gap" + " flexwrap"} style={{ paddingLeft: "2px" }}>
+            <ControlPanel {...props} />
+            {!isGameMode() && <DiskInterface {...props} />}
+          </div>
+          {!isLandscape && !isGameMode() && status}
+        </div>
+        {isLandscape && !isGameMode() && status}
+        {narrow && !isMinimalTheme() && !isGameMode() && <div className="divider"></div>}
+        {!isGameMode() && <DebugSection updateDisplay={updateDisplay} narrow={narrow} />}
+      </div>
+      {isMinimalTheme() && <DiskCollectionPanel {...props} />}
+      {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
+      <FileInput {...props} />
+      <RetroMenuRenderer displayProps={props} />
     </>
   )
 }

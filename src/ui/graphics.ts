@@ -6,8 +6,11 @@ import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddr
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { i18n } from "../i18n"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getCrtDistortion, getGhosting, isCanvasOnlyTheme, isEmbedMode, isGameMode } from "./ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isCanvasOnlyTheme, isEmbedMode, isGameMode } from "./ui_settings"
 import { doCRTStartup } from "./crtstartup"
+import { getPreferenceRetroIIGSColor, getPreferenceRetroSkin, RETRO_SKIN } from "./localstorage"
+import { RETRO_IIGS_COLORS } from "./retro/retroskincolors"
+import { UI_THEME } from "../common/utility"
 let frameCount = 0
 
 export const nRowsHgrMagnifier = 16
@@ -59,7 +62,8 @@ export const screenBytesToCanvasPixels = (current: HTMLCanvasElement, dx: number
 // if it's drawn directly onto the on-screen canvas.
 const processTextPage = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
-  colorMode: COLOR_MODE, width: number, height: number, crtDistortion: boolean) => {
+  colorMode: COLOR_MODE, width: number, height: number, crtDistortion: boolean,
+  skinForeground: string | null, skinBackground: string | null) => {
   const textPage = handleGetTextPage()
   if (textPage.length === 0) return false
 
@@ -67,7 +71,8 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   if (textPage instanceof Uint16Array) {
     const xmarginPx = xmargin * width
     const ymarginPx = ymargin * height
-    const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
+    const colorFill = skinForeground ??
+      ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
     const useSilverFont = ["ru", "zh-TW", "zh-CN", "ja", "ko"].includes(i18n.getLanguage())
     const isCyrillic = i18n.getLanguage() === "ru"
     const cwidth = width * (1 - 2 * xmargin) / 40
@@ -127,7 +132,8 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const doFlashCycle = (Math.trunc(frameCount / 15) % 2) === 0
   const machineName = handleGetMachineName()
   const isAltCharSet = machineName === "APPLE2P" ? false : handleGetAltCharSet()
-  const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
+  const colorFill = skinForeground ??
+    ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
   const hasMouseText = machineName === "APPLE2EE"
   const hasLowerCase = (nchars === 80) || (machineName !== "APPLE2P")
   const useApple2PlusMap = (nchars !== 80) && (machineName === "APPLE2P")
@@ -195,7 +201,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
       } else {
         if (doInverse || colorMode == COLOR_MODE.INVERSEBLACKANDWHITE ||
           (value < 128 && !isAltCharSet && doFlashCycle)) {
-          cfill = "#000000"
+          cfill = skinBackground ?? "#000000"
         }
       }
       ctx.fillStyle = cfill
@@ -475,12 +481,6 @@ const drawImage = (ctx: CanvasRenderingContext2D,
 
 // For the ghosting effect
 let ghostFrame: ImageData | null = null
-let ghostBackground: string | null = null
-
-const getIIGSCanvasBackground = (ctx: CanvasRenderingContext2D) => {
-  const shell = ctx.canvas.closest<HTMLElement>(".retro-shell.retro-skin-apple-iigs")
-  return shell?.style.getPropertyValue("--retro-background").trim() || null
-}
 
 const replaceBlackPixels = (image: ImageData, background: string | null) => {
   if (!background) return
@@ -495,82 +495,171 @@ const replaceBlackPixels = (image: ImageData, background: string | null) => {
   }
 }
 
+let monitorOpeningMask: HTMLImageElement | null = null
+let monitorOpeningMaskLoading = false
+let surroundLayerCache: { key: string, canvas: HTMLCanvasElement } | null = null
+const crtCombinedCanvas = document.createElement("canvas")
+const crtDistortedCanvas = document.createElement("canvas")
+const crtClippedCanvas = document.createElement("canvas")
+const scanlineCanvas = document.createElement("canvas")
+
+const resizeWorkCanvas = (canvas: HTMLCanvasElement, width: number, height: number) => {
+  if (canvas.width !== width) canvas.width = width
+  if (canvas.height !== height) canvas.height = height
+}
+
+const loadMonitorOpeningMask = () => {
+  if (monitorOpeningMask || monitorOpeningMaskLoading) return
+  monitorOpeningMaskLoading = true
+  const image = new Image()
+  image.onload = () => {
+    monitorOpeningMask = image
+    surroundLayerCache = null
+  }
+  image.src = window.assetRegistry.monitorOpeningMask
+}
+
+const distortLayer = (source: HTMLCanvasElement) => {
+  const sourceContext = source.getContext("2d", { willReadFrequently: true })!
+  const sourceData = sourceContext.getImageData(0, 0, source.width, source.height)
+  const distortedData = sourceContext.createImageData(source.width, source.height)
+  const centerX = source.width / 2
+  const centerY = source.height / 2
+  for (let y = 0; y < source.height; y++) {
+    for (let x = 0; x < source.width; x++) {
+      const normalizedX = (x - centerX) / centerX
+      const normalizedY = (y - centerY) / centerY
+      const distance = normalizedX * normalizedX + normalizedY * normalizedY
+      const sourceX = Math.max(0, Math.min(source.width - 1,
+        Math.round(centerX + normalizedX * centerX * (1 + 0.015 * distance))))
+      const sourceY = Math.max(0, Math.min(source.height - 1,
+        Math.round(centerY + normalizedY * centerY * (1 + 0.04 * distance))))
+      const sourceOffset = 4 * (sourceY * source.width + sourceX)
+      const destinationOffset = 4 * (y * source.width + x)
+      distortedData.data[destinationOffset] = sourceData.data[sourceOffset]
+      distortedData.data[destinationOffset + 1] = sourceData.data[sourceOffset + 1]
+      distortedData.data[destinationOffset + 2] = sourceData.data[sourceOffset + 2]
+      distortedData.data[destinationOffset + 3] = sourceData.data[sourceOffset + 3]
+    }
+  }
+  resizeWorkCanvas(crtDistortedCanvas, source.width, source.height)
+  crtDistortedCanvas.getContext("2d")!.putImageData(distortedData, 0, 0)
+  return crtDistortedCanvas
+}
+
+const getScreenSurroundLayer = (
+  width: number,
+  height: number,
+  color: string,
+) => {
+  const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC &&
+    document.fullscreenElement === null && !isCanvasOnlyTheme()
+  if (hasClassicMonitorFrame && !monitorOpeningMask) {
+    loadMonitorOpeningMask()
+    return null
+  }
+  const key = [width, height, color, hasClassicMonitorFrame].join(":")
+  if (surroundLayerCache?.key === key) return surroundLayerCache.canvas
+
+  const layer = document.createElement("canvas")
+  layer.width = width
+  layer.height = height
+  const layerContext = layer.getContext("2d")!
+  layerContext.fillStyle = color
+  if (hasClassicMonitorFrame) {
+    layerContext.drawImage(monitorOpeningMask!, 0, 0, width, height)
+    layerContext.globalCompositeOperation = "source-in"
+  }
+  layerContext.fillRect(0, 0, width, height)
+  layerContext.globalCompositeOperation = "source-over"
+
+  surroundLayerCache = { key, canvas: layer }
+  return layer
+}
+
+const paintScreenSurround = (
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  color: string,
+  ghosting: boolean,
+) => {
+  const layer = getScreenSurroundLayer(width, height, color)
+  if (!layer) return
+
+  ctx.save()
+  ctx.globalAlpha = ghosting ? 0.3 : 1
+  ctx.drawImage(layer, 0, 0)
+  ctx.restore()
+}
+
+const paintIIGSScanlines = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  resizeWorkCanvas(scanlineCanvas, width, height)
+  const scanlineContext = scanlineCanvas.getContext("2d")!
+  scanlineContext.clearRect(0, 0, width, height)
+  scanlineContext.fillStyle = "rgba(0, 0, 0, 0.3)"
+  for (let y = 2; y < height; y += 4) scanlineContext.fillRect(0, y, width, 2)
+  const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC &&
+    document.fullscreenElement === null && !isCanvasOnlyTheme()
+  if (hasClassicMonitorFrame && monitorOpeningMask) {
+    scanlineContext.globalCompositeOperation = "destination-in"
+    scanlineContext.drawImage(monitorOpeningMask, 0, 0, width, height)
+    scanlineContext.globalCompositeOperation = "source-over"
+  }
+  ctx.drawImage(scanlineCanvas, 0, 0)
+}
+
 const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
-  colorMode: COLOR_MODE, width: number, height: number, background: string | null) => {
+  colorMode: COLOR_MODE, width: number, height: number,
+  foreground: string | null, background: string | null, borderColor: string | null) => {
   // Draw text before distortion
-  processTextPage(ctx, hiddenContext, colorMode, width, height, true)
+  processTextPage(ctx, hiddenContext, colorMode, width, height, true, foreground, background)
 
-  // Apply CRT barrel distortion effect (curved edges like a CRT monitor)
+  // Build one framebuffer so screen and surround share the same distortion.
   const nx = 560
   const ny = 384
   const hiddenData = hiddenContext.getImageData(0, 0, nx, ny)
   replaceBlackPixels(hiddenData, background)
-  const distortedData = new ImageData(nx * 2, ny * 2)
-  
-  // Barrel distortion parameters
-  const distortionStrengthX = 0.015  // Horizontal distortion (left/right edges)
-  const distortionStrengthY = 0.04  // Vertical distortion (top/bottom edges)
-  const centerX = nx / 2
-  const centerY = ny / 2
-  
-  // Apply barrel distortion by warping coordinates based on distance from center
-  for (let j = 0; j < ny * 2; j++) {
-    for (let i = 0; i < nx * 2; i++) {
-      // Map destination coordinates back to original coordinate space
-      const origX = i / 2
-      const origY = j / 2
-      
-      // Normalize coordinates to range [-1, 1] from center
-      const normX = (origX - centerX) / centerX
-      const normY = (origY - centerY) / centerY
-      
-      // Calculate distance from center with separate strengths per axis
-      const distanceX = normX * normX
-      const distanceY = normY * normY
-      
-      // Apply barrel distortion (quadratic function) with different strengths per axis
-      // Multiply to push edges outward (CRT bulge effect)
-      const distortionX = 1 + distortionStrengthX * (distanceX + distanceY)
-      const distortionY = 1 + distortionStrengthY * (distanceX + distanceY)
-      
-      // Calculate source coordinates (sample from farther out for barrel distortion)
-      const srcX = centerX + normX * centerX * distortionX
-      const srcY = centerY + normY * centerY * distortionY
-      
-      // Nearest neighbor sampling for sharper image
-      const x0 = Math.round(srcX)
-      const y0 = Math.round(srcY)
-      
-      // Only sample if within bounds of original image
-      if (x0 >= 0 && x0 < nx && y0 >= 0 && y0 < ny) {
-        const srcIndex = 4 * (y0 * nx + x0)
-        const dstIndex = 4 * (j * nx * 2 + i)
-        
-        // Nearest neighbor - copy pixel directly
-        distortedData.data[dstIndex] = hiddenData.data[srcIndex]
-        distortedData.data[dstIndex + 1] = hiddenData.data[srcIndex + 1]
-        distortedData.data[dstIndex + 2] = hiddenData.data[srcIndex + 2]
-        distortedData.data[dstIndex + 3] = hiddenData.data[srcIndex + 3]
-      }
-    }
+  hiddenContext.putImageData(hiddenData, 0, 0)
+
+  resizeWorkCanvas(crtCombinedCanvas, width, height)
+  const combinedContext = crtCombinedCanvas.getContext("2d")!
+  combinedContext.clearRect(0, 0, width, height)
+  if (borderColor) {
+    combinedContext.fillStyle = borderColor
+    combinedContext.fillRect(0, 0, width, height)
   }
-  
-  // Create a temporary canvas for the distorted image
-  const tempCanvas = document.createElement("canvas")
-  tempCanvas.width = nx * 2
-  tempCanvas.height = ny * 2
-  const tempCtx = tempCanvas.getContext("2d")!
-  tempCtx.putImageData(distortedData, 0, 0)
-  
-  // Draw the distorted image scaled and positioned with margins
-  const fudge = 1.25
-  const xmarginPx = xmargin * width / fudge
-  const ymarginPx = ymargin * height / fudge
-  const imgHeight = Math.floor(height * (1 - 2 * ymargin / fudge))
-  const imgWidth = Math.floor(width * (1 - 2 * xmargin / fudge))
-  ctx.drawImage(tempCanvas, 0, 0, nx * 2, ny * 2,
-    xmarginPx, ymarginPx, imgWidth, imgHeight)
+  combinedContext.imageSmoothingEnabled = false
+  combinedContext.drawImage(hiddenContext.canvas, 0, 0, nx, ny,
+    xmargin * width, ymargin * height,
+    width * (1 - 2 * xmargin), height * (1 - 2 * ymargin))
+  if (getShowScanlines()) {
+    combinedContext.fillStyle = "rgba(0, 0, 0, 0.3)"
+    for (let y = 2; y < height; y += 4) combinedContext.fillRect(0, y, width, 2)
+  }
+
+  const distorted = distortLayer(crtCombinedCanvas)
+  const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC &&
+    document.fullscreenElement === null && !isCanvasOnlyTheme()
+  if (hasClassicMonitorFrame && borderColor && !monitorOpeningMask) {
+    loadMonitorOpeningMask()
+    return
+  }
+  ctx.save()
+  if (hasClassicMonitorFrame && monitorOpeningMask) {
+    resizeWorkCanvas(crtClippedCanvas, width, height)
+    const clippedContext = crtClippedCanvas.getContext("2d")!
+    clippedContext.clearRect(0, 0, width, height)
+    clippedContext.drawImage(distorted, 0, 0)
+    clippedContext.globalCompositeOperation = "destination-in"
+    clippedContext.drawImage(monitorOpeningMask, 0, 0, width, height)
+    clippedContext.globalCompositeOperation = "source-over"
+    ctx.drawImage(crtClippedCanvas, 0, 0)
+  } else {
+    ctx.drawImage(distorted, 0, 0)
+  }
+  ctx.restore()
 }
 
 export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
@@ -578,29 +667,48 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   width: number, height: number) => {
   frameCount++
   ctx.imageSmoothingEnabled = false
-  const effectBackground = getIIGSCanvasBackground(ctx)
-  if (getGhosting()) {
+  const iigsSkin = getPreferenceRetroSkin() === RETRO_SKIN.APPLE_IIGS
+  const foreground = iigsSkin
+    ? RETRO_IIGS_COLORS[getPreferenceRetroIIGSColor("text")].css
+    : null
+  const effectBackground = iigsSkin
+    ? RETRO_IIGS_COLORS[getPreferenceRetroIIGSColor("background")].css
+    : null
+  const borderColor = iigsSkin
+    ? RETRO_IIGS_COLORS[getPreferenceRetroIIGSColor("border")].css
+    : null
+  const ghosting = getGhosting()
+  const crtDistortion = getCrtDistortion()
+  if (ghosting) {
     ctx.imageSmoothingEnabled = true
-    if (effectBackground !== ghostBackground) {
-      ctx.clearRect(0, 0, width, height)
-      ghostBackground = effectBackground
-    }
     // Make a copy of the current canvas contents.
     const dx = xmargin * width
     const dy = ymargin * height
-    ghostFrame = ctx.getImageData(dx, dy, width - 2 * dx, height - 2 * dy)
+    ghostFrame = ctx.getImageData(0, 0, width, height)
     ctx.clearRect(0, 0, width, height)
     // Draw the single previous frame with transparency
-    ctx.putImageData(ghostFrame, dx, dy)
+    ctx.putImageData(ghostFrame, 0, 0)
     const alpha = 0.3
     ctx.globalAlpha = alpha
     ctx.fillStyle = effectBackground ?? "#000000"
     ctx.fillRect(dx, dy, width - 2 * dx, height - 2 * dy)
     ctx.globalAlpha = 1
   } else {
-    ghostBackground = null
     // Clear all our drawing and let the background show through again.
     ctx.clearRect(0, 0, width, height)
+  }
+
+  if (borderColor) {
+    if (!crtDistortion) paintScreenSurround(ctx, width, height, borderColor, ghosting)
+  }
+  if (effectBackground && !ghosting) {
+    ctx.fillStyle = effectBackground
+    ctx.fillRect(
+      xmargin * width,
+      ymargin * height,
+      width * (1 - 2 * xmargin),
+      height * (1 - 2 * ymargin),
+    )
   }
 
   hiddenContext.imageSmoothingEnabled = false
@@ -609,15 +717,23 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   const colorMode = getColorMode()
   let didDraw = processLoRes(hiddenContext, colorMode)
   didDraw = processHiRes(hiddenContext, colorMode) || didDraw
-  if (getCrtDistortion()) {
-    applyCrtDistortion(ctx, hiddenContext, colorMode, width, height, effectBackground)
+  if (effectBackground) {
+    const hiddenData = hiddenContext.getImageData(0, 0, 560, 384)
+    replaceBlackPixels(hiddenData, effectBackground)
+    hiddenContext.putImageData(hiddenData, 0, 0)
+  }
+  if (crtDistortion) {
+    applyCrtDistortion(ctx, hiddenContext, colorMode, width, height, foreground, effectBackground, borderColor)
   } else {
     if (didDraw) {
       drawImage(ctx, hiddenContext, width, height)
     }
     // The hidden canvas was causing overlay issues with the text page.
     // So instead, draw the graphics first and then overlay the text chars.
-    processTextPage(ctx, hiddenContext, colorMode, width, height, false)
+    processTextPage(ctx, hiddenContext, colorMode, width, height, false, foreground, effectBackground)
+  }
+  if (iigsSkin && !crtDistortion && getShowScanlines()) {
+    paintIIGSScanlines(ctx, width, height)
   }
   // if (TEST_GRAPHICS) {
   //   const tile = [

@@ -5,6 +5,7 @@ declare global {
       // Images
       bgImage: string;
       bgImgApple2Plus: string;
+      monitorOpeningMask: string;
       disk2off: string;
       disk2on: string;
       disk2offEmpty: string;

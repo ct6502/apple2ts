@@ -38,7 +38,7 @@ let recallIndex = 99
 
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
 type ArrowKeyCode = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown" | "Numpad4" | "Numpad6" | "Numpad8" | "Numpad2"
-let mainCanvas : HTMLCanvasElement | null = null
+let mainCanvas: HTMLCanvasElement | null = null
 
 const Apple2Canvas = (props: DisplayProps) => {
   // const { updateHgr: updateHgr, setUpdateHgr: setUpdateHgr,
@@ -448,7 +448,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     // https://github.com/badvision/a2-pseudocolor/raw/refs/heads/main/disks/flicker.po
     const targetFrameRate = (handleGetSpeedMode() <= 0) ? 75 : 45 // Hz
     const targetInterval = 1000 / targetFrameRate
-    
+
     if (elapsed >= targetInterval) {
       if (mainCanvas && hiddenCanvas.current) {
         const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d")
@@ -468,10 +468,10 @@ const Apple2Canvas = (props: DisplayProps) => {
         lastFPSLogRef.current = 0
         startTimeForMaxFramesRef.current = timestamp
       }
-      
+
       lastFrameTimeRef.current = timestamp
     }
-    
+
     // Changing this refresh interval to be less often has no effect on the "fast" speed.
     window.requestAnimationFrame(RenderCanvas)
   }
@@ -599,7 +599,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     document.body.style.setProperty("--scanlines-display", getShowScanlines() ? "block" : "none")
 
     RenderCanvas(0)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const setFocus = () => {
@@ -659,7 +659,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         width={560} height={384} />
       {handleGetOverrideHires() && <HgrMagnifier mainCanvas={mainCanvas}
         mouseLoc={magnifierMouseLoc} lockHgrMagnifier={lockHgrMagnifier} />}
-      { !isEmbedMode() && <KeyboardControl/> }
+      {!isEmbedMode() && <KeyboardControl />}
     </span>
   )
 }

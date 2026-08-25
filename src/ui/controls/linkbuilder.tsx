@@ -30,7 +30,7 @@ const LinkBuilder = () => {
     t("linkBuilder.colorNames.inverse")
   ]
   const colorModes = ["color", "nofringe", "green", "amber", "white", "inverse"]
-  
+
   const speedNames = [
     t("linkBuilder.speedNames.snail"),
     t("linkBuilder.speedNames.slow"),
@@ -128,8 +128,8 @@ const LinkBuilder = () => {
       params.push("ghosting=on")
     }
     if (hexBlock) {
-        const txt = encodeURIComponent(hexBlock.replace(/\s+/g, ""))
-        params.push(`hex=${txt}`)
+      const txt = encodeURIComponent(hexBlock.replace(/\s+/g, ""))
+      params.push(`hex=${txt}`)
     }
     if (loadBlock && tabSection === TAB.DISK) {
       const txt = encodeURIComponent(loadBlock)
@@ -248,28 +248,28 @@ const LinkBuilder = () => {
     setTextBlock("")
     setHexBlock("")
     setHexAddress("")
-    
+
     const machineName = handleGetMachineName()
     setMachine(machineName === "APPLE2P" ? machineValues[2] :
       machineName === "APPLE2EU" ? machineValues[1] : machineValues[0])
-    
+
     const mem = handleGetMemSize()
     const memIndex = mem > 8000 ? 4 : mem > 4000 ? 3 : mem > 1000 ? 2 : mem > 500 ? 1 : 0
     setRamdisk(ramdiskValues[memIndex])
-    
+
     const currentSpeed = handleGetSpeedMode()
     if (currentSpeed >= -2 && currentSpeed <= 4) {
       setSpeed(speedNames[currentSpeed + 2])
     } else {
       setSpeed("")
     }
-    
+
     setSelectedDisk("")
-    
+
     const mytheme = getTheme()
     const themeIndex = UI_THEMES.findIndex(option => option.value === mytheme)
     setTheme(themeValues[Math.max(themeIndex, 0)])
-    
+
     if (isEmbedMode()) {
       setAppmode(gameModes[2])
     } else if (isGameMode()) {
@@ -280,228 +280,228 @@ const LinkBuilder = () => {
   }
 
   return (
-  <div>
-    {showBuilder &&
-    <div className="modal-overlay"
-        tabIndex={0} // Make the div focusable
-        onKeyDown={(event) => {
-          if (event.key === "Escape") setShowBuilder(false)
-        }}>
-      <div className="floating-dialog flex-column"
-          style={{ left: "35%", top: "10%", width: "70%", maxWidth: "600px" }}>
-        <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
-          <div className="dialog-title" style={{padding: 0, paddingTop: "6px"}}>{t("linkBuilder.title")}</div>
-          <button className="push-button"
-            type="button"
-            onClick={() => setShowBuilder(false)}>
-            <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
-          </button>
-        </div>
-        <div className="horiz-rule"></div>
+    <div>
+      {showBuilder &&
+        <div className="modal-overlay"
+          tabIndex={0} // Make the div focusable
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setShowBuilder(false)
+          }}>
+          <div className="floating-dialog flex-column"
+            style={{ left: "35%", top: "10%", width: "70%", maxWidth: "600px" }}>
+            <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
+              <div className="dialog-title" style={{ padding: 0, paddingTop: "6px" }}>{t("linkBuilder.title")}</div>
+              <button className="push-button"
+                type="button"
+                onClick={() => setShowBuilder(false)}>
+                <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
+              </button>
+            </div>
+            <div className="horiz-rule"></div>
 
-        <div className="flex-row">
-          <div className="flex-column">
-            <Droplist name={t("linkBuilder.userInterface")}
-              value={appmode}
-              values={gameModes}
-              setValue={setAppmode} />
+            <div className="flex-row">
+              <div className="flex-column">
+                <Droplist name={t("linkBuilder.userInterface")}
+                  value={appmode}
+                  values={gameModes}
+                  setValue={setAppmode} />
 
-            <Droplist name={t("linkBuilder.machine")}
-              value={machine}
-              values={machineValues}
-              setValue={setMachine} />
+                <Droplist name={t("linkBuilder.machine")}
+                  value={machine}
+                  values={machineValues}
+                  setValue={setMachine} />
 
-            <Droplist name={t("linkBuilder.colorMode")}
-              value={colormode}
-              values={colorNames}
-              setValue={setColormode} />
+                <Droplist name={t("linkBuilder.colorMode")}
+                  value={colormode}
+                  values={colorNames}
+                  setValue={setColormode} />
 
-            <Droplist name={t("linkBuilder.ramDiskSize")}
-              value={ramdisk}
-              values={ramdiskValues}
-              setValue={setRamdisk} />
+                <Droplist name={t("linkBuilder.ramDiskSize")}
+                  value={ramdisk}
+                  values={ramdiskValues}
+                  setValue={setRamdisk} />
 
-            <Droplist name={t("linkBuilder.emulatorSpeed")}
-              value={speed !== "" ? speed : speedNames[2]}
-              values={speedNames}
-              setValue={setSpeed} />
+                <Droplist name={t("linkBuilder.emulatorSpeed")}
+                  value={speed !== "" ? speed : speedNames[2]}
+                  values={speedNames}
+                  setValue={setSpeed} />
 
-            <Droplist name={t("linkBuilder.uiTheme")}
-              value={theme !== "" ? theme : themeValues[0]}
-              values={themeValues}
-              setValue={setTheme} />
-          </div>
-          <div className="flex-column" style={{marginLeft: "20px"}}>
-            <CheckBox name={t("config.crtDistortion")}
-              checked={crtdistort}
-              setChecked={setCrtdistort} />
-            <CheckBox name={t("config.ghosting")}
-              checked={ghosting}
-              setChecked={setGhosting} />
-            <CheckBox name={t("config.scanlines")}
-              checked={scanlines}
-              setChecked={setScanlines} />
-            <CheckBox name={t("config.capsLock")}
-              checked={!lowercaseMode}
-              setChecked={(on: boolean) => {setLowercaseMode(!on)}} />
-            <CheckBox name={t("linkBuilder.showDebugTab")}
-              checked={debug}
-              setChecked={setDebug} />
-            <CheckBox name={t("config.prodosFloppy")}
-              checked={prodosFloppy}
-              setChecked={setProdosFloppy} />
-            <CheckBox name={t("linkBuilder.sound")}
-              checked={!soundoff}
-              setChecked={(on: boolean) => {setSoundoff(!on)}} />
-          </div>
-        </div>
-
-        <div className="horiz-rule" style={{marginTop: "15px"}}></div>
-
-        <div className="flex-row" style={{marginBottom: "15px"}}>
-          <div className="dialog-title">{t("linkBuilder.onStartup")}</div>
-          <input type="radio"
-            id="Address"
-            name="breakAt"
-            value="address"
-            autoComplete="off"
-            className="check-radio-box"
-            checked={tabSection === TAB.DISK}
-            onChange={() => { setTabSection(TAB.DISK) }} />
-          <label htmlFor="Address" className="dialog-title flush-left">{t("linkBuilder.loadDiskImage")}</label>
-          <input type="radio"
-            id="Watchpoint"
-            name="watch"
-            value="watchpoint"
-            autoComplete="off"
-            className="check-radio-box"
-            checked={tabSection === TAB.TEXT}
-            onChange={() => { setTabSection(TAB.TEXT) }} />
-          <label htmlFor="Watchpoint" className="dialog-title flush-left">{t("linkBuilder.loadBasicProgram")}</label>
-          <input type="radio"
-            id="Instruction"
-            name="instruction"
-            value="instruction"
-            autoComplete="off"
-            className="check-radio-box"
-            checked={tabSection === TAB.HEX}
-            onChange={() => { setTabSection(TAB.HEX) }} />
-          <label htmlFor="Instruction" className="dialog-title flush-left">{t("linkBuilder.loadHexCode")}</label>
-        </div>
-
-        {tabSection === TAB.DISK &&
-          <div style={{minHeight: "150px"}}>
-            <Droplist name={t("linkBuilder.diskImageToLoad")}
-              value={selectedDisk}
-              values={diskNames}
-              setValue={setSelectedDisk} />
-
-            <div className="dialog-title">{t("linkBuilder.customDiskUrl")}</div>
-
-            <div style={{marginLeft: "10px", marginRight: "10px"}}>
-            <EditField
-              value={fragmentURL}
-              setValue={setFragmentURL}
-              disabled={!isCustomURL}
-              placeholder="http://example.com/disk.dsk" />
+                <Droplist name={t("linkBuilder.uiTheme")}
+                  value={theme !== "" ? theme : themeValues[0]}
+                  values={themeValues}
+                  setValue={setTheme} />
+              </div>
+              <div className="flex-column" style={{ marginLeft: "20px" }}>
+                <CheckBox name={t("config.crtDistortion")}
+                  checked={crtdistort}
+                  setChecked={setCrtdistort} />
+                <CheckBox name={t("config.ghosting")}
+                  checked={ghosting}
+                  setChecked={setGhosting} />
+                <CheckBox name={t("config.scanlines")}
+                  checked={scanlines}
+                  setChecked={setScanlines} />
+                <CheckBox name={t("config.capsLock")}
+                  checked={!lowercaseMode}
+                  setChecked={(on: boolean) => { setLowercaseMode(!on) }} />
+                <CheckBox name={t("linkBuilder.showDebugTab")}
+                  checked={debug}
+                  setChecked={setDebug} />
+                <CheckBox name={t("config.prodosFloppy")}
+                  checked={prodosFloppy}
+                  setChecked={setProdosFloppy} />
+                <CheckBox name={t("linkBuilder.sound")}
+                  checked={!soundoff}
+                  setChecked={(on: boolean) => { setSoundoff(!on) }} />
+              </div>
             </div>
 
-            <EditField name={t("linkBuilder.textToType")}
-              value={loadBlock}
-              setValue={setLoadBlock}
-              placeholder="CHOP"
-              width="15em" />
+            <div className="horiz-rule" style={{ marginTop: "15px" }}></div>
 
-          </div>
-        }
+            <div className="flex-row" style={{ marginBottom: "15px" }}>
+              <div className="dialog-title">{t("linkBuilder.onStartup")}</div>
+              <input type="radio"
+                id="Address"
+                name="breakAt"
+                value="address"
+                autoComplete="off"
+                className="check-radio-box"
+                checked={tabSection === TAB.DISK}
+                onChange={() => { setTabSection(TAB.DISK) }} />
+              <label htmlFor="Address" className="dialog-title flush-left">{t("linkBuilder.loadDiskImage")}</label>
+              <input type="radio"
+                id="Watchpoint"
+                name="watch"
+                value="watchpoint"
+                autoComplete="off"
+                className="check-radio-box"
+                checked={tabSection === TAB.TEXT}
+                onChange={() => { setTabSection(TAB.TEXT) }} />
+              <label htmlFor="Watchpoint" className="dialog-title flush-left">{t("linkBuilder.loadBasicProgram")}</label>
+              <input type="radio"
+                id="Instruction"
+                name="instruction"
+                value="instruction"
+                autoComplete="off"
+                className="check-radio-box"
+                checked={tabSection === TAB.HEX}
+                onChange={() => { setTabSection(TAB.HEX) }} />
+              <label htmlFor="Instruction" className="dialog-title flush-left">{t("linkBuilder.loadHexCode")}</label>
+            </div>
 
-        {tabSection === TAB.TEXT &&
-          <div style={{minHeight: "150px"}}>
+            {tabSection === TAB.DISK &&
+              <div style={{ minHeight: "150px" }}>
+                <Droplist name={t("linkBuilder.diskImageToLoad")}
+                  value={selectedDisk}
+                  values={diskNames}
+                  setValue={setSelectedDisk} />
+
+                <div className="dialog-title">{t("linkBuilder.customDiskUrl")}</div>
+
+                <div style={{ marginLeft: "10px", marginRight: "10px" }}>
+                  <EditField
+                    value={fragmentURL}
+                    setValue={setFragmentURL}
+                    disabled={!isCustomURL}
+                    placeholder="http://example.com/disk.dsk" />
+                </div>
+
+                <EditField name={t("linkBuilder.textToType")}
+                  value={loadBlock}
+                  setValue={setLoadBlock}
+                  placeholder="CHOP"
+                  width="15em" />
+
+              </div>
+            }
+
+            {tabSection === TAB.TEXT &&
+              <div style={{ minHeight: "150px" }}>
+                <textarea
+                  className="link-builder-textarea"
+                  value={textBlock}
+                  rows={5}
+                  onChange={(e) => setTextBlock(e.target.value)}
+                  placeholder={t("linkBuilder.enterTextPlaceholder")}
+                />
+                <CheckBox name={t("linkBuilder.runBasicAfterLoading")}
+                  checked={!runprogoff}
+                  setChecked={(on: boolean) => { setRunprogoff(!on) }} />
+              </div>
+            }
+
+            {tabSection === TAB.HEX &&
+              <div style={{ minHeight: "150px" }}>
+                <textarea
+                  className="link-builder-textarea"
+                  value={hexBlock}
+                  rows={4}
+                  onChange={(e) => setHexBlock(e.target.value)}
+                  onKeyDown={testKey}
+                  placeholder={t("linkBuilder.enterHexPlaceholder")}
+                />
+                <EditField name={t("linkBuilder.hexLoadAddress")}
+                  value={hexAddress}
+                  setValue={setHexAddress}
+                  isHex={true}
+                  placeholder="0300"
+                  width="5em" />
+                <CheckBox name={t("linkBuilder.runHexAfterLoading")}
+                  checked={!runprogoff}
+                  setChecked={(on: boolean) => { setRunprogoff(!on) }} />
+              </div>
+            }
+
+
+            <div className="horiz-rule" style={{ marginTop: "20px" }}></div>
+
+            {/* Show final link, readonly textarea for now */}
+            <div className="flex-row-space-between" style={{ marginRight: "10px" }}>
+              <div className="dialog-title">{t("linkBuilder.finalUrl")}</div>
+              <button className="push-button"
+                title={t("linkBuilder.copyToClipboard")}
+                onClick={() => { navigator.clipboard.writeText(link) }}>
+                <FontAwesomeIcon icon={faClipboard} />
+              </button>
+            </div>
             <textarea
               className="link-builder-textarea"
-              value={textBlock}
+              style={{ backgroundColor: "var(--input-bg-color)" }}
               rows={5}
-              onChange={(e) => setTextBlock(e.target.value)}
-              placeholder={t("linkBuilder.enterTextPlaceholder")}
+              value={link}
+              readOnly
             />
-            <CheckBox name={t("linkBuilder.runBasicAfterLoading")}
-              checked={!runprogoff}
-              setChecked={(on: boolean) => {setRunprogoff(!on)}} />
+
+            {/* Add text buttons for "Try it", "Clear", and "Close" */}
+            <div className="flex-row-space-between" style={{ margin: "10px" }}>
+              <button className="push-button text-button"
+                onClick={() => { window.open(link, "_blank") }}>
+                <span className="centered-title">{t("linkBuilder.tryIt")}</span>
+              </button>
+              <button className="push-button text-button"
+                onClick={resetAllSettings}>
+                <span className="centered-title">{t("linkBuilder.reset")}</span>
+              </button>
+              <button className="push-button text-button"
+                onClick={() => { setShowBuilder(false) }}>
+                <span className="centered-title">{t("linkBuilder.close")}</span>
+              </button>
+            </div>
+
           </div>
-        }
-
-        {tabSection === TAB.HEX &&
-          <div style={{minHeight: "150px"}}>
-            <textarea
-              className="link-builder-textarea"
-              value={hexBlock}
-              rows={4}
-              onChange={(e) => setHexBlock(e.target.value)}
-              onKeyDown={testKey}
-              placeholder={t("linkBuilder.enterHexPlaceholder")}
-            />
-            <EditField name={t("linkBuilder.hexLoadAddress")}
-              value={hexAddress}
-              setValue={setHexAddress}
-              isHex={true}
-              placeholder="0300"
-              width="5em" />
-            <CheckBox name={t("linkBuilder.runHexAfterLoading")}
-              checked={!runprogoff}
-              setChecked={(on: boolean) => {setRunprogoff(!on)}} />
-          </div>
-        }
-
-
-        <div className="horiz-rule" style={{marginTop: "20px"}}></div>
-
-        {/* Show final link, readonly textarea for now */}
-        <div className="flex-row-space-between" style={{ marginRight: "10px" }}>
-          <div className="dialog-title">{t("linkBuilder.finalUrl")}</div>
-          <button className="push-button"
-            title={t("linkBuilder.copyToClipboard")}
-            onClick={() => { navigator.clipboard.writeText(link) }}>
-            <FontAwesomeIcon icon={faClipboard} />
-          </button>
         </div>
-        <textarea
-          className="link-builder-textarea"
-          style={{backgroundColor: "var(--input-bg-color)"}}
-          rows={5}
-          value={link}
-          readOnly
-        />
+      }
 
-        {/* Add text buttons for "Try it", "Clear", and "Close" */}
-        <div className="flex-row-space-between" style={{ margin: "10px" }}>
-          <button className="push-button text-button"
-            onClick={() => { window.open(link, "_blank") }}>
-            <span className="centered-title">{t("linkBuilder.tryIt")}</span>
-          </button>
-          <button className="push-button text-button"
-            onClick={resetAllSettings}>
-            <span className="centered-title">{t("linkBuilder.reset")}</span>
-          </button>
-          <button className="push-button text-button"
-            onClick={() => { setShowBuilder(false) }}>
-            <span className="centered-title">{t("linkBuilder.close")}</span>
-          </button>
-        </div>
-
-      </div>
+      <button className="push-button"
+        title={t("linkBuilder.buttonTitle")}
+        onClick={() => {
+          retrieveFromEmulatorSettings()
+          setShowBuilder(true)
+        }}>
+        <FontAwesomeIcon icon={faLink} />
+      </button>
     </div>
-    }
-
-    <button className="push-button"
-      title={t("linkBuilder.buttonTitle")}
-      onClick={() => {
-        retrieveFromEmulatorSettings()
-        setShowBuilder(true)
-      }}>
-      <FontAwesomeIcon icon={faLink} />
-    </button>
-  </div>
-)
+  )
 }
 
 export default LinkBuilder

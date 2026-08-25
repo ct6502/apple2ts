@@ -217,7 +217,7 @@ const ConfigButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faSync} />
     </button>}
 
-    {!isGameMode() && <RunTour />}
+    {!isGameMode() && <RunTour showTour={false} />}
 
     <LinkBuilder />
 

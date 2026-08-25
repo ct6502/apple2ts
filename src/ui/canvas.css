@@ -10,7 +10,7 @@
   grid-row: 1;
   border-color: #583927;
   border-style: solid;
-  background-color: black;
+  background-color: var(--canvas-surround, black);
   background-size: 100% 100%;
   outline: none;
   z-index: 0;
@@ -67,4 +67,8 @@ body.dark-mode .hgr-view-text {
       rgba(0, 0, 0, 0.3) 51%);
   background-size: 100% 4px;
   z-index: 1;
+}
+
+body.iigs-skin-active .canvas-text.scanline-gradient::after {
+  display: none;
 }

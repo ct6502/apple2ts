@@ -24,6 +24,7 @@
   padding-left: 2px;
   padding-right: 7px;
   user-select: none;
+  z-index: 10002;
 }
 
 .flyout.flyout-minimal.flyout-top-left {
@@ -37,7 +38,6 @@
   border-style: solid;
   border-top-style: none;
   padding-bottom: 0px;
-  z-index: 4;
 }
 
 .flyout.flyout-minimal.flyout-top-center {
@@ -51,7 +51,6 @@
   border-style: solid;
   border-top-style: none;
   padding-bottom: 0px;
-  z-index: 4;
 }
 
 .flyout.flyout-minimal.flyout-top-right {
@@ -65,7 +64,6 @@
   border-style: solid;
   border-top-style: none;
   padding-bottom: 0px;
-  z-index: 3;
 }
 
 .flyout.flyout-minimal.flyout-bottom-left {
@@ -78,7 +76,6 @@
   border-style: solid;
   border-bottom-style: none;
   padding-top: 0px;
-  z-index: 2;
 }
 
 .flyout.flyout-minimal.flyout-bottom-right {
@@ -90,7 +87,6 @@
   border-style: solid;
   border-bottom-style: none;
   padding-top: 0px;
-  z-index: 1;
 }
 
 .flyout.flyout-minimal .flyout-button {

@@ -12,6 +12,8 @@ const booleanUIKeys: BooleanKeyOf<UIState>[] = ["arrowKeysAsJoystick",
   "reverseYAxis", "showScanlines", "siriusJoyport",
   "tiltSensorJoystick", "useOpenAppleKey"]
 
+export const PREFERENCES_RESET_EVENT = "apple2ts-preferences-reset"
+
 export enum RETRO_SKIN {
   APPLE_IIE,
   APPLE_IIGS,
@@ -538,6 +540,8 @@ export const resetPreferences = () => {
   setPreferenceTouchJoystickMode()
   setPreferenceTouchJoystickSensitivity()
   setPreferenceNewReleasesChecked()
+  document.body.style.setProperty("--scanlines-display", "none")
+  window.dispatchEvent(new CustomEvent(PREFERENCES_RESET_EVENT))
   localStorage.removeItem("binaryRunAddress")
   setPreferenceTraceSettings()
   setPreferenceDebugTabLeftWidth(-1)
