@@ -151,9 +151,9 @@ export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
   const slotConfig = getPreferenceSlotConfig()
   let newSlot3 = slotConfig[3]
   if (name === "APPLE2P") {
-    if (newSlot3 !== "none" && newSlot3 !== "videoterm") newSlot3 = "videoterm"
+    if (newSlot3 !== "none" && newSlot3 !== "videoterm" && newSlot3 !== "vidhd") newSlot3 = "videoterm"
   } else {
-    if (newSlot3 !== "none" && newSlot3 !== "aux") newSlot3 = "aux"
+    if (newSlot3 !== "none" && newSlot3 !== "aux" && newSlot3 !== "vidhd") newSlot3 = "aux"
   }
   if (slotConfig[3] !== newSlot3) {
     slotConfig[3] = newSlot3

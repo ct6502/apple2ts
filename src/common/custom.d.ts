@@ -115,7 +115,7 @@ type Video7Override = {
 
 type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 
-type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "videoterm" | "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "smartport"
+type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "videoterm" | "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "smartport" | "vidhd"
 
 type SlotConfig = {
   1: SLOT_CARD_ID,
@@ -153,6 +153,7 @@ type MachineState = {
   runMode: number,
   s6502: STATE6502,
   showDebugTab: boolean,
+  shr?: Uint8Array,
   slotConfig: SlotConfig,
   softSwitches: {[name: string]: boolean},
   speedMode: number,
@@ -161,6 +162,7 @@ type MachineState = {
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
   tracelog: Array<string>,
   veraSlot: VERA_SLOT,
+  vidhdActive?: boolean,
   zeroPage: Uint8Array
 }
 

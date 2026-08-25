@@ -10,6 +10,7 @@ import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineTo
 import { isWatchpoint, setWatchpointBreak } from "./cpu6502"
 import { noSlotClock } from "./nsc"
 import { videoTerm } from "./devices/videoterm"
+import { vidhd } from "./devices/vidhd"
 
 // 0x00000: main memory
 // 0x10000...13FFF: ROM (including page $C0 soft switches)
@@ -423,6 +424,12 @@ export const readWriteAuxMem = (addr: number, write = false) => {
 }
 
 const memGetSoftSwitch = (addr: number): number => {
+  if (addr === 0xC029 && vidhd.enabled) {
+    return vidhd.readSoftSwitch()
+  }
+  if (vidhd.enabled && ((addr >> 4) === (0xC08 + vidhd.slot))) {
+    return vidhd.readIO(addr)
+  }
   if (addr === 0xC058 && videoTerm.enabled) {
     // Videx Soft Video Switch: AN0 off -> switch to 40-col display
     videoTerm.active = false
@@ -476,6 +483,16 @@ export const memGet = (addr: number, checkWatchpoints = true): number => {
         // Also support No Slot Clock (NSC) serial bit-stream read at $C3xx for NS.CLOCK.SYSTEM.
         const nscVal = noSlotClock.read(addr)
         value = (nscVal >= 0) ? nscVal : videoTerm.readMemory(addr)
+      } else if (page === 0xC3 && vidhd.enabled) {
+        if (SWITCHES.SLOTC3ROM.isSet && !SWITCHES.INTCXROM.isSet) {
+          // SLOTC3ROM is ON ($C00B): return VidHD slot ROM bytes ($24, $EA, $4C...)
+          value = vidhd.readMemory(addr)
+        } else {
+          // SLOTC3ROM is OFF ($C00A) or INTCXROM is ON: return internal Apple IIe 80-col ROM or NSC
+          const nscVal = noSlotClock.read(addr)
+          value = (nscVal >= 0) ? nscVal : -1
+          checkSlotIO(addr)
+        }
       } else if (page == 0xC3 && (SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet)) {
         // NSC answers in slot C3 memory to be compatible with standard ProDOS driver and A2osX
         value = noSlotClock.read(addr)
@@ -515,6 +532,11 @@ export const memGetRaw = (addr: number): number => {
 }
 
 const memSetSoftSwitch = (addr: number, value: number) => {
+  if (addr === 0xC029 && vidhd.enabled) {
+    vidhd.writeSoftSwitch(value)
+    SWITCHES.NEWVIDEO.isSet = (value & 0x80) !== 0
+    return
+  }
   if (addr === 0xC058 && videoTerm.enabled) {
     // Videx Soft Video Switch: AN0 off -> switch to 40-col display
     videoTerm.active = false
@@ -762,4 +784,11 @@ export const getMemoryDump = () => {
     dump.set(memory.slice(offset, offset + 256), page * 256)
   }
   return dump
+}
+
+export const getShr = (): Uint8Array => {
+  if (!vidhd.enabled || !vidhd.active) {
+    return new Uint8Array()
+  }
+  return vidhd.extractShrBuffer(memory, RamWorksMemoryStart)
 }

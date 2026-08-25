@@ -19,9 +19,11 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   doSetRom,
   getZeroPage,
   getMemoryDump as getCpuMemoryDump,
+  getShr,
   memSet,
   exportMemoryToHiresLine,
   getDataBlock,
+  setSlotDriver,
   clearSlot} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
@@ -31,6 +33,7 @@ import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
 import { enableVera, resetVera } from "./devices/vera/vera"
 import { videoTerm, enableVideoTerm, disableVideoTerm } from "./devices/videoterm"
+import { vidhd } from "./devices/vidhd"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
@@ -166,13 +169,13 @@ export const configureMachine = () => {
     clearSlot(s)
   }
 
-  // Ensure Slot 3 is configured properly: on IIe default to 'aux' or 'none', on II+ allow 'videoterm' or 'none'
+  // Ensure Slot 3 is configured properly: on IIe default to 'aux', 'vidhd' or 'none', on II+ allow 'videoterm', 'vidhd' or 'none'
   if (machineName === "APPLE2P") {
-    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "videoterm") {
+    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "videoterm" && currentSlotConfig[3] !== "vidhd") {
       currentSlotConfig[3] = "videoterm"
     }
   } else {
-    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "aux") {
+    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "aux" && currentSlotConfig[3] !== "vidhd") {
       currentSlotConfig[3] = "aux"
     }
   }
@@ -217,7 +220,12 @@ export const configureMachine = () => {
   } else {
     disableVideoTerm()
   }
-  setAuxCardEnabled(currentSlotConfig[3] === "aux")
+  if (currentSlotConfig[3] === "vidhd") {
+    enableVidHD(3)
+  } else {
+    disableVidHD()
+  }
+  setAuxCardEnabled(currentSlotConfig[3] === "aux" || currentSlotConfig[3] === "vidhd")
 
   // Slot 4
   if (currentSlotConfig[4] === "mockingboard") {
@@ -255,9 +263,24 @@ export const configureMachine = () => {
   get6502Instructions()
 }
 
+export const enableVidHD = (slot = 3) => {
+  vidhd.enabled = true
+  vidhd.slot = slot
+  vidhd.reset()
+  setSlotDriver(slot, vidhd.rom)
+}
+
+export const disableVidHD = () => {
+  vidhd.enabled = false
+  vidhd.reset()
+}
+
 const resetMachine = () => {
   softCard.reset()
   videoTerm.reset()
+  if (vidhd.enabled) {
+    vidhd.reset()
+  }
   resetFloppyDrives()
   setButtonState()
   resetMouse()
@@ -518,11 +541,11 @@ export const doSetMemory = (addr: number, value: number) => {
 export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
   machineName = name
   if (name === "APPLE2P") {
-    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "videoterm") {
+    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "videoterm" && currentSlotConfig[3] !== "vidhd") {
       currentSlotConfig[3] = "videoterm"
     }
   } else {
-    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "aux") {
+    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "aux" && currentSlotConfig[3] !== "vidhd") {
       currentSlotConfig[3] = "aux"
     }
   }
@@ -828,6 +851,7 @@ export const getExternalMachineState = () => {
     runMode: cpuRunMode,
     s6502: s6502,
     showDebugTab: showDebugTab,
+    shr: getShr(),
     slotConfig: currentSlotConfig,
     softSwitches: getSoftSwitches(),
     speedMode: speedMode,
@@ -836,6 +860,7 @@ export const getExternalMachineState = () => {
     timeTravelThumbnails: getTimeTravelThumbnails(),
     tracelog: cpuRunMode === RUN_MODE.PAUSED ? getTracelog() : [],
     veraSlot: veraSlot,
+    vidhdActive: vidhd.active,
     zeroPage: getZeroPage(),
   }
   return state
