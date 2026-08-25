@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-08-20 04:41+0000\n"
+"PO-Revision-Date: 2026-08-25 03:05+0000\n"
 "Last-Translator: Warren James "
 "<19525653+3amcinnamonroll@users.noreply.github.com>\n"
 "Language-Team: English (Pirate) <https://hosted.weblate.org/projects/"
@@ -1511,7 +1511,7 @@ msgstr "Squawker"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr "Mockin'board"
+msgstr "Music Box"
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -2357,11 +2357,14 @@ msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
 msgstr "(c) {{year}} Cap'n Torrence & scallawags"
 
+#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
+"Click on the Disk Hoards icon\n"
+"to load a disk or game, matey!"
 
 msgctxt "startup.retroControlPanel"
 msgid ""
