@@ -843,14 +843,13 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     }
     // The hidden canvas was causing overlay issues with the text page.
     // So instead, draw the graphics first and then overlay the text chars.
-
-    if (iigsSkin && !crtDistortion && getShowScanlines()) {
-      paintIIGSScanlines(ctx, width, height)
-      if (!isVidhdActive) {
-        processTextPage(ctx, hiddenContext, colorMode, width, height, false, foreground, effectBackground)
-        if (iigsSkin && !crtDistortion && getShowScanlines()) {
-          paintIIGSScanlines(ctx, width, height)
-        }
+    if (!isVidhdActive) {
+      if (iigsSkin && !crtDistortion && getShowScanlines()) {
+        paintIIGSScanlines(ctx, width, height)
+      }
+      processTextPage(ctx, hiddenContext, colorMode, width, height, false, foreground, effectBackground)
+      if (iigsSkin && !crtDistortion && getShowScanlines()) {
+        paintIIGSScanlines(ctx, width, height)
       }
     }
   }
