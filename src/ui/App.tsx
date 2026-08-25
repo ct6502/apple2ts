@@ -3,6 +3,7 @@ import "./App.css"
 import DisplayApple2 from "./display"
 import { GlobalContext } from "./globalcontext"
 import { getTheme, isMinimalTheme } from "./ui_settings"
+import RunTour from "./tours/runtour"
 
 const App = () => {
   const [updateHgrMagnifier, setUpdateHgrMagnifier] = useState(false)
@@ -44,6 +45,7 @@ const App = () => {
         setMemdumpAddress: setMemdumpAddress
       }}>
       <DisplayApple2 />
+      <RunTour showSelector={false} />
       <div className="global-progress-modal-overlay">
         <img src={window.assetRegistry.runningGuy} alt="Loading..." className="global-progress-spinner2" />
         <div className="global-progress-message" />

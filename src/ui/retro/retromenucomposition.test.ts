@@ -54,15 +54,15 @@ describe("Retro menu metadata structure", () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  test("exposes the Settings tour Debug target in the Display menu", () => {
+  test("omits non-display controls from the Display menu", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
-    const infoPanel = retroMenuRegistry.resolve(context, "display")
-      .find(control => control.id === "display.infoPanel")
+    const ids = retroMenuRegistry.resolve(context, "display").map(control => control.id)
 
-    expect(infoPanel?.tourTargets).toContain("#tour-debug-button")
+    expect(ids).not.toContain("display.other")
+    expect(ids).not.toContain("display.infoPanel")
   })
 
-  test("requires the Retro theme for all skin controls", () => {
+  test("makes skin controls available without a separate Retro theme", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
     const controls = retroMenuRegistry.resolve(context, "options")
     const dependentIds = [
@@ -73,10 +73,7 @@ describe("Retro menu metadata structure", () => {
     ]
 
     dependentIds.forEach(id => {
-      expect(controls.find(control => control.id === id)?.selectableWhen).toEqual({
-        controlId: "options.theme",
-        optionIndexes: [3],
-      })
+      expect(controls.find(control => control.id === id)?.selectableWhen).toBeUndefined()
     })
   })
 
@@ -145,8 +142,6 @@ describe("Retro menu metadata structure", () => {
       "display.ghosting",
       "display.crtDistortion",
       "machine.fullscreen",
-      "display.other",
-      "display.infoPanel",
       "options.language",
     ])
     expect(retroMenuRegistry.getIds("sound")).toEqual([

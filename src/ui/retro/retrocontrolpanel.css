@@ -8,54 +8,13 @@
   src: url(../fonts/PrintChar21-2020.ttf) format("truetype");
 }
 
-.retro-shell {
-  align-items: center;
-  --retro-surround: #000;
-  background: var(--retro-surround);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  min-height: 100vh;
-  overflow: hidden;
-  position: fixed;
-  width: 100vw;
-}
-
-.retro-shell .canvas-text {
-  padding: 0;
-}
-
-.retro-shell.retro-skin-apple-iigs .main-canvas {
-  background-color: var(--retro-background);
-}
-
-.retro-shell.retro-skin-apple-iigs>.canvas-text.scanline-gradient::after {
-  display: none;
-}
-
-.retro-shell.retro-skin-apple-iigs::after {
-  height: 100%;
-  left: 0;
-  top: 0;
-  width: 100%;
-}
-
-.retro-shell.menu-open {
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.retro-shell.menu-open .canvas-text {
-  pointer-events: none;
-  visibility: hidden;
-}
-
 .retro-panel {
   --retro-cell-height: min(calc(100vh / 30), calc(100vw / 40.25));
   --retro-row-height: var(--retro-cell-height);
   --retro-border-width: max(1px, calc(var(--retro-cell-height) / 8));
   --retro-background: #000;
   --retro-foreground: #fff;
+  --retro-surround: #000;
   --scanlines-height: 100%;
   --scanlines-left: 0;
   --scanlines-top: 0;
@@ -64,10 +23,12 @@
   color: var(--retro-foreground);
   display: grid;
   font-size: var(--retro-cell-height);
-  inset: 0;
   line-height: 1;
   letter-spacing: 0;
+  overflow: hidden;
   position: fixed;
+  -webkit-user-select: none;
+  user-select: none;
   z-index: 10000;
 }
 
@@ -97,12 +58,6 @@
   --retro-surround: rgb(34, 34, 255);
 }
 
-.retro-canvas-background {
-  background: var(--retro-background);
-  pointer-events: none;
-  position: absolute;
-}
-
 .retro-panel.retro-skin-apple-iiplus {
   text-transform: uppercase;
 }
@@ -121,14 +76,10 @@
   box-sizing: border-box;
   display: grid;
   grid-template-columns: repeat(46, 1fr);
-  grid-template-rows: repeat(30, var(--retro-row-height));
-  height: calc(30 * var(--retro-row-height));
+  grid-template-rows: repeat(24, var(--retro-row-height));
+  height: calc(24 * var(--retro-row-height));
   justify-self: center;
-  width: min(100vw, calc(40.25 * var(--retro-cell-height)));
-}
-
-.retro-panel.retro-skin-apple-iigs .retro-window {
-  background: transparent;
+  width: calc(40.25 * var(--retro-cell-height));
 }
 
 .retro-mousetext {
@@ -245,8 +196,8 @@
 }
 
 .retro-outer-border {
-  grid-column: 4 / 44;
-  grid-row: 4 / 27;
+  grid-column: 2 / 46;
+  grid-row: 2 / 24;
 }
 
 .retro-title {
@@ -255,8 +206,8 @@
   color: var(--retro-background);
   font-size: inherit;
   font-weight: normal;
-  grid-column: 5 / 44;
-  grid-row: 4;
+  grid-column: 3 / 46;
+  grid-row: 2;
   height: calc(var(--retro-row-height) + var(--retro-border-width));
   line-height: 1;
   margin: 0;
@@ -331,8 +282,8 @@
   border-left: var(--retro-border-width) solid var(--retro-foreground);
   border-top: var(--retro-border-width) solid var(--retro-foreground);
   box-sizing: border-box;
-  grid-column: 4 / 44;
-  grid-row: 6;
+  grid-column: 2 / 46;
+  grid-row: 4;
   height: calc(var(--retro-row-height) + var(--retro-border-width) + var(--retro-border-width));
   line-height: 1;
   overflow: hidden;
@@ -370,8 +321,8 @@
 
 .retro-clock {
   display: grid;
-  grid-column: 29 / 42;
-  grid-row: 9 / 11;
+  grid-column: 31 / 44;
+  grid-row: 7 / 9;
   grid-template-columns: subgrid;
   grid-template-rows: subgrid;
   text-align: center;
@@ -408,16 +359,16 @@
   align-self: start;
   box-sizing: border-box;
   font-size: inherit;
-  grid-column: 6 / 42;
-  grid-row: 7 / span 13;
+  grid-column: 4 / 44;
+  grid-row: 5 / span 13;
   margin: 0;
   min-width: 0;
   padding: var(--retro-cell-height) 1ch;
 }
 
 .retro-submenu-menu {
-  grid-column: 4 / 42;
-  grid-row: 8 / span 11;
+  grid-column: 2 / 44;
+  grid-row: 6 / span 11;
   padding-top: 0;
 }
 
@@ -465,8 +416,8 @@
   box-sizing: border-box;
   display: grid;
   font-size: inherit;
-  grid-column: 4 / 44;
-  grid-row: 26;
+  grid-column: 2 / 46;
+  grid-row: 23;
   grid-template-columns: repeat(80, 1fr);
   line-height: calc(var(--retro-cell-height) - 2px);
   overflow: visible;
@@ -505,10 +456,6 @@
 
 .retro-footer-action.hidden {
   visibility: hidden;
-}
-
-.retro-shell .modal-overlay {
-  z-index: 10001;
 }
 
 .retro-submenu-title-border {

@@ -18,7 +18,8 @@ import { retroImageWriterControls } from "../devices/printer/imagewriter"
 const menuControls: RetroControlMetadata[] = [
   ...retroMachineControls,
   ...retroDiskControls,
-  ...retroDisplayControls,
+  ...retroDisplayControls.filter(control =>
+    control.id !== "display.other" && control.id !== "display.infoPanel"),
   ...retroAudioControls,
   {
     id: "options",

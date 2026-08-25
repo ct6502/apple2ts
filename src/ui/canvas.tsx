@@ -24,12 +24,13 @@ import { handleCopyToClipboard } from "./copycanvas"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, getTheme, getArrowKeysAsJoystick, isEmbedMode, isRetroTheme, getUIStateBoolean } from "./ui_settings"
+import { getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, getTheme, getArrowKeysAsJoystick, isEmbedMode, getUIStateBoolean } from "./ui_settings"
 import { KeyboardControl } from "./controls/keyboardcontrol"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
 
-let resizeTimeout = 0
+let resizeTimer = 0
+let resizeFrame = 0
 const maxFrameSamples = 60
 
 let currentCommand = ""
@@ -38,7 +39,7 @@ let recallIndex = 99
 
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
 type ArrowKeyCode = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown" | "Numpad4" | "Numpad6" | "Numpad8" | "Numpad2"
-let mainCanvas : HTMLCanvasElement | null = null
+let mainCanvas: HTMLCanvasElement | null = null
 
 const Apple2Canvas = (props: DisplayProps) => {
   // const { updateHgr: updateHgr, setUpdateHgr: setUpdateHgr,
@@ -448,7 +449,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     // https://github.com/badvision/a2-pseudocolor/raw/refs/heads/main/disks/flicker.po
     const targetFrameRate = (handleGetSpeedMode() <= 0) ? 75 : 45 // Hz
     const targetInterval = 1000 / targetFrameRate
-    
+
     if (elapsed >= targetInterval) {
       if (mainCanvas && hiddenCanvas.current) {
         const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d")
@@ -468,10 +469,10 @@ const Apple2Canvas = (props: DisplayProps) => {
         lastFPSLogRef.current = 0
         startTimeForMaxFramesRef.current = timestamp
       }
-      
+
       lastFrameTimeRef.current = timestamp
     }
-    
+
     // Changing this refresh interval to be less often has no effect on the "fast" speed.
     window.requestAnimationFrame(RenderCanvas)
   }
@@ -520,11 +521,14 @@ const Apple2Canvas = (props: DisplayProps) => {
     passMouseEvent(evt)
   }
 
-  const handleCanvasResize = (canvas: HTMLCanvasElement) => {
+  const handleCanvasResize = (canvas: HTMLCanvasElement | null) => {
     if (!canvas) return "0px"
 
-    // Give React some time to deal resize events
-    window.setTimeout(() => {
+    window.clearTimeout(resizeTimer)
+    window.cancelAnimationFrame(resizeFrame)
+    resizeTimer = window.setTimeout(() => {
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = window.requestAnimationFrame(() => {
       const width = canvas.offsetWidth
       const height = canvas.offsetHeight
 
@@ -569,8 +573,9 @@ const Apple2Canvas = (props: DisplayProps) => {
       document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
       document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
       document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
-      resizeTimeout = 200
-    }, resizeTimeout)
+        })
+      })
+    }, 0)
 
     return canvas.style.marginLeft
   }
@@ -586,6 +591,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     document.addEventListener("visibilitychange", handleVisibilityChange)
     const handleFullscreenChange = () => {
       setIsCanvasFullScreen(document.fullscreenElement === mainCanvas?.parentElement)
+      handleResize()
+      handleCanvasResize(mainCanvas)
     }
     document.addEventListener("fullscreenchange", handleFullscreenChange)
     ensureGamepadEventListeners()
@@ -599,7 +606,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     document.body.style.setProperty("--scanlines-display", getShowScanlines() ? "block" : "none")
 
     RenderCanvas(0)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const setFocus = () => {
@@ -659,7 +666,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         width={560} height={384} />
       {handleGetOverrideHires() && <HgrMagnifier mainCanvas={mainCanvas}
         mouseLoc={magnifierMouseLoc} lockHgrMagnifier={lockHgrMagnifier} />}
-      { !isEmbedMode() && !isRetroTheme() && <KeyboardControl/> }
+      {!isEmbedMode() && <KeyboardControl />}
     </span>
   )
 }

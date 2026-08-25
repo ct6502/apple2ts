@@ -1,6 +1,4 @@
 import { useEffect, useLayoutEffect, useState } from "react"
-import Apple2Canvas from "../canvas"
-import FileInput from "../fileinput"
 import type { RetroResolvedControl } from "./retromenucontext"
 import { formatControlLabel } from "../controls/controlregistry"
 import { useRetroMenuHost } from "./retromenuhost"
@@ -15,10 +13,10 @@ import {
   truncateControlText,
 } from "./retrotext"
 import "./retrocontrolpanel.css"
-import RunTour, { getTour } from "../tours/runtour"
-import { tourTargetForStep } from "../tours/tourutils"
 import { RETRO_SKIN } from "../localstorage"
-import { INFO_PANEL_COLLAPSED_EVENT } from "../ui_settings"
+import { DISK_LOAD_SUCCESS_EVENT, getTheme } from "../ui_settings"
+import { xmargin, ymargin } from "../graphics"
+import { UI_THEME } from "../../common/utility"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -130,43 +128,6 @@ const restoreMenuFramePreview = (frame: RetroMenuFrame) => {
   })
 }
 
-const controlChildren = (item: RetroMenuItem) =>
-  typeof item.children === "function" ? item.children() : item.children
-
-const findTourPath = (
-  items: RetroMenuItem[],
-  target: string,
-  ancestors: RetroMenuItem[] = [],
-): RetroMenuItem[] | undefined => {
-  for (const item of items) {
-    const path = [...ancestors, item]
-    if (item.tourTargets?.includes(target)) return path
-    const children = controlChildren(item)
-    if (children) {
-      const result = findTourPath(children, target, path)
-      if (result) return result
-    }
-  }
-}
-
-const createTourFrames = (path: RetroMenuItem[]) => {
-  const frames: RetroMenuFrame[] = []
-  for (const parent of path.slice(0, -1)) {
-    const children = controlChildren(parent)
-    if (!children) break
-    const refresh = typeof parent.children === "function" ? parent.children : undefined
-    frames.push(createMenuFrame(
-      parent.label,
-      children,
-      refresh,
-      parent.actionLabel,
-      parent.submit,
-      parent.isSubmitVisible,
-    ))
-  }
-  return frames
-}
-
 const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => {
   const [manualIsOpen, setIsOpen] = useState(false)
   const [manualMenuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
@@ -181,26 +142,15 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     iigsStyle,
     language,
     retroSkin,
-    returnToTourHelp,
     rootMenu,
     runTour,
-    setReturnToTourHelp,
     t,
-    tourIndex,
   } = useRetroMenuHost(displayProps, close)
-  const tour = getTour(runTour, t, true)
-  const activeTourTarget = returnToTourHelp
-    ? "#tour-help-menu"
-    : tourTargetForStep(tour, tourIndex, "#tour-help-menu")
-  const tourPath = typeof activeTourTarget === "string" ? findTourPath(rootMenu, activeTourTarget) : undefined
-  const tourMenuStack = tourPath ? createTourFrames(tourPath) : undefined
-  const menuStack = tourMenuStack ?? manualMenuStack
+  const menuStack = manualMenuStack
   const currentFrame = menuStack[menuStack.length - 1]
   const currentMenu = currentFrame?.items ?? rootMenu
-  const selectedIndex = tourPath
-    ? Math.max(0, currentMenu.findIndex(item => item.id === tourPath.at(-1)?.id))
-    : manualSelectedIndex
-  const isOpen = manualIsOpen || Boolean(tourPath)
+  const selectedIndex = manualSelectedIndex
+  const isOpen = manualIsOpen
   const maxVisibleMenuItems = 16
   const visibleMenuStart = currentFrame
     ? Math.min(
@@ -212,22 +162,22 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const selectedItem = currentMenu[selectedIndex]
   const selectLabel = t("retroControl.select")
   const isAppleIIPlus = retroSkin === RETRO_SKIN.APPLE_IIPLUS
-  const isAppleIIGS = retroSkin === RETRO_SKIN.APPLE_IIGS
 
   useLayoutEffect(() => {
-    if (!isOpen || !isAppleIIGS) return
+    if (!isOpen) return
     const canvas = document.getElementById("apple2canvas")
     if (!canvas) return
     const updateCanvasBounds = () => {
       const bounds = canvas.getBoundingClientRect()
       setCanvasBounds({
-        left: bounds.left,
-        top: bounds.top,
-        width: bounds.width,
-        height: bounds.height,
+        left: bounds.left + canvas.clientLeft,
+        top: bounds.top + canvas.clientTop,
+        width: canvas.clientWidth,
+        height: canvas.clientHeight,
       })
     }
     let updateTimer = 0
+    let fullscreenTimer = 0
     const scheduleCanvasBoundsUpdate = () => {
       window.clearTimeout(updateTimer)
       updateTimer = window.setTimeout(updateCanvasBounds, 0)
@@ -235,13 +185,52 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     updateCanvasBounds()
     const observer = new ResizeObserver(scheduleCanvasBoundsUpdate)
     observer.observe(canvas)
+    if (canvas.parentElement) observer.observe(canvas.parentElement)
     window.addEventListener("resize", scheduleCanvasBoundsUpdate)
+    const handleFullscreenChange = () => {
+      setCanvasBounds(null)
+      scheduleCanvasBoundsUpdate()
+      window.clearTimeout(fullscreenTimer)
+      fullscreenTimer = window.setTimeout(scheduleCanvasBoundsUpdate, 100)
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
     return () => {
       window.clearTimeout(updateTimer)
+      window.clearTimeout(fullscreenTimer)
       observer.disconnect()
       window.removeEventListener("resize", scheduleCanvasBoundsUpdate)
+      document.removeEventListener("fullscreenchange", handleFullscreenChange)
     }
-  }, [isAppleIIGS, isOpen])
+  }, [isOpen])
+
+  const panelBounds = canvasBounds
+    ? {
+      height: canvasBounds.height,
+      left: canvasBounds.left,
+      top: canvasBounds.top,
+      width: canvasBounds.width,
+    }
+    : undefined
+  const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC && document.fullscreenElement === null
+  const panelStyle = panelBounds
+    ? {
+      ...iigsStyle,
+      "--retro-cell-height": `${Math.min(
+        panelBounds.height * (1 - 2 * ymargin) / 24,
+        panelBounds.width * (1 - 2 * xmargin) / 40.25,
+      )}px`,
+      "--retro-row-height": `${panelBounds.height * (1 - 2 * ymargin) / 24}px`,
+      ...(hasClassicMonitorFrame
+        ? {
+          WebkitMaskImage: `url(${window.assetRegistry.monitorOpeningMask})`,
+          WebkitMaskSize: "100% 100%",
+          maskImage: `url(${window.assetRegistry.monitorOpeningMask})`,
+          maskSize: "100% 100%",
+        }
+        : {}),
+      ...panelBounds,
+    } as React.CSSProperties
+    : undefined
 
   const arrowSpacing = selectArrowSpacing(selectLabel, language)
   const selectHintHalfCells = Math.ceil(selectHintWidth(selectLabel, language) * 2)
@@ -265,20 +254,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   }, [isOpen])
 
   useEffect(() => {
-    const handleInfoPanelCollapsed = () => {
-      setMenuStack(stack => stack.map((frame, frameIndex) => {
-        if (frameIndex !== stack.length - 1) return frame
-        const itemIndex = frame.items.findIndex(item => item.id === "display.infoPanel")
-        if (itemIndex < 0) return frame
-        const values = [...frame.values]
-        const originalValues = [...frame.originalValues]
-        values[itemIndex] = 0
-        originalValues[itemIndex] = 0
-        return { ...frame, values, originalValues }
-      }))
-    }
-    window.addEventListener(INFO_PANEL_COLLAPSED_EVENT, handleInfoPanelCollapsed)
-    return () => window.removeEventListener(INFO_PANEL_COLLAPSED_EVENT, handleInfoPanelCollapsed)
+    const handleDiskLoadSuccess = () => setIsOpen(false)
+    window.addEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
+    return () => window.removeEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
   }, [])
 
   useEffect(() => {
@@ -288,21 +266,16 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
         event.preventDefault()
         event.stopPropagation()
-        menuStack.toReversed().forEach(restoreMenuFramePreview)
-        setReturnToTourHelp(false)
-        setNow(new Date())
-        setIsOpen(open => returnToTourHelp ? false : !open)
-        setMenuStack([])
-        setSelectedIndex(0)
+        if (!isOpen) {
+          menuStack.toReversed().forEach(restoreMenuFramePreview)
+          setNow(new Date())
+          setIsOpen(true)
+          setMenuStack([])
+          setSelectedIndex(0)
+        }
         return
       }
       if (!isOpen) return
-      if (returnToTourHelp) {
-        setIsOpen(true)
-        setMenuStack(menuStack)
-        setSelectedIndex(selectedIndex)
-        setReturnToTourHelp(false)
-      }
 
       const isSubmitFrame = Boolean(currentFrame?.submit) && currentMenu.length > 0 &&
         currentMenu.every(item => item.checkmarkIndex !== undefined)
@@ -402,6 +375,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           restoreMenuFramePreview(currentFrame)
           setMenuStack(refreshPreviousMenu)
           setSelectedIndex(currentFrame.parentSelectedIndex)
+        } else {
+          const quitIndex = currentMenu.findIndex(item => item.id === "quit")
+          if (quitIndex >= 0) setSelectedIndex(quitIndex)
         }
       } else if (!event.ctrlKey && !event.altKey && !event.metaKey && /^[a-z]$/i.test(event.key)) {
         const shortcut = event.key.toLocaleLowerCase()
@@ -426,146 +402,125 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     hasOpenDialog,
     isOpen,
     menuStack,
-    returnToTourHelp,
     runTour,
     saveActionLabel,
     selectedIndex,
-    setReturnToTourHelp,
   ])
 
   return (
-    <main
-      className={`retro-shell${isAppleIIGS ? ` scanline-gradient ${effects}` : ""}${isOpen ? " menu-open" : ""}`}
-      style={iigsStyle}
-      onContextMenu={isOpen ? event => event.preventDefault() : undefined}
-    >
-      <Apple2Canvas {...displayProps} />
-      {isOpen && (
-        <section
-          className={`retro-panel scanline-gradient ${effects}`}
-          style={iigsStyle}
-          role="dialog"
-          aria-label={t("retroControl.ariaLabel")}
-        >
-          {isAppleIIGS && canvasBounds && <div
-            className="retro-canvas-background"
-            style={{
-              left: canvasBounds.left,
-              top: canvasBounds.top,
-              width: canvasBounds.width,
-              height: canvasBounds.height,
-            }}
-            aria-hidden="true"
-          />}
-          <div className="retro-window">
-            <RetroBorder className="retro-outer-border" separatorRow={2} />
-            <header className={`retro-title${currentFrame ? " submenu-open" : ""}`}>
-              {isAppleIIPlus
-                ? <>
-                  <span className="retro-title-text">Apple2TS</span>
-                  <span className="retro-title-spacer" aria-hidden="true">{fixedWidthSpace}</span>
-                  {!currentFrame &&
-                    <span className="retro-title-fill" aria-hidden="true">{" ".repeat(29)}</span>}
-                </>
-                : <span>{"Apple2TS "}&#8198;</span>}
-            </header>
-            {currentFrame && <div className="retro-submenu-title">
-              <RetroBorder className="retro-submenu-title-border" />
-              <span className={`retro-submenu-title-text${retroFontSupports(currentFrame.title) ? "" : " retro-browser-font"}`}>
-                {truncateControlText(currentFrame.title, 38, language)}
-              </span>
-              {isAppleIIPlus &&
-                <span className="retro-title-fill" aria-hidden="true">
-                  {" ".repeat(Math.max(0, 38 - controlTextWidth(currentFrame.title, language)))}
-                </span>}
-            </div>}
-            {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString(language)} ${now.toLocaleDateString(language)}`}>
-              <RetroBorder className="retro-clock-border" />
-              <time>{formatClockTime(now, language)}</time>
-              <time>{now.toLocaleDateString(language, {
-                month: "numeric",
-                day: "numeric",
-                year: "2-digit",
-              })}</time>
-            </div>}
-            <div className={`retro-menu${currentFrame ? " retro-submenu-menu" : " retro-root-menu"}`} role="menu">
-              {visibleMenu.map((item, visibleIndex) => {
-                const index = visibleMenuStart + visibleIndex
-                const valueIndex = currentFrame?.values[index] ?? item.optionIndex ?? -1
-                const option = item.options?.[valueIndex]
-                const baseLabel = item.valueOnly && option ? option.label : item.label
-                const itemLabel = formatControlLabel(baseLabel, item.separator)
-                const hasOptionValue = option && !item.valueOnly && item.checkmarkIndex === undefined
-                const availableWidth = (currentFrame ? submenuContentWidth : rootMenuContentWidth) -
-                  (currentFrame ? 2 : 0)
-                const fittedText = fitControlText(
-                  itemLabel,
-                  hasOptionValue ? option.label : undefined,
-                  availableWidth,
-                  language,
-                )
-                const visibleOption = fittedText.option
-                const visibleLabel = fittedText.label
-                const isChecked = item.checkmarkIndex !== undefined
-                  ? valueIndex === item.checkmarkIndex
-                  : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
-                return (
-                  <div
-                    id={item.tourTargets?.find(target => target === activeTourTarget)?.replace(/^#/, "")}
-                    className={`retro-menu-item${item.separator ? " separator" : ""}${selectedIndex === index ? " selected" : ""}`}
-                    key={item.id}
-                    role="menuitem"
-                    aria-current={selectedIndex === index ? "true" : undefined}
-                    aria-disabled={!isMenuItemSelectable(item, currentFrame) ? "true" : undefined}
-                  >
-                    {currentFrame && <span className="retro-menu-check">
-                      {isChecked ? (isAppleIIPlus ? "*" : checkmark) : " "}
-                    </span>}
-                    <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
-                      {visibleLabel}
-                      {visibleOption ? ":" : ""}
-                    </span>
-                    {visibleOption &&
-                      <>{" "}<span className={`retro-menu-value${option?.useBrowserFont || !retroFontSupports(visibleOption) ? " retro-browser-font" : ""}`}>
-                        {visibleOption}
-                      </span></>}
-                  </div>
-                )
-              })}
-            </div>
-            <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
-              <span
-                className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}
-                style={{ gridColumn: `1 / ${selectHintHalfCells + 1}` }}
-              >{fixedWidthSpace}<span className="retro-footer-text">{`${selectLabel}:`}<i className="retro-mousetext">
-                {showHorizontalSelectionHint && <>{mouseTextLeft}{arrowSpacing}{mouseTextRight}{arrowSpacing}</>}
-                {currentFrame
-                  ? <>{mouseTextUp}{arrowSpacing}{mouseTextDown}</>
-                  : <>{mouseTextDown}{arrowSpacing}{mouseTextUp}</>}
-              </i></span></span>
-              {currentFrame && <span
-                className={`retro-footer-cancel${retroFontSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}
-                style={{
-                  gridColumn: `${selectHintHalfCells + 1} / ${actionStartLine}`,
-                }}
-              ><span className="retro-footer-text">{t("retroControl.cancelEsc")}</span></span>}
-              <span
-                aria-hidden={!showFooterAction}
-                className={`retro-footer-action${showFooterAction ? "" : " hidden"}${retroFontSupports(footerActionLabel) ? "" : " retro-browser-font"}`}
-                style={{ gridColumn: `${actionStartLine} / 81` }}
-              >
-                <span className="retro-footer-text">{`${footerActionLabel}:`}
-                  <i className="retro-mousetext">{mouseTextReturn}</i>
-                </span>{fixedWidthSpace}
-              </span>
-            </footer>
+    <>
+      {isOpen && canvasBounds && <section
+        className={`retro-panel menu-open scanline-gradient ${effects}`}
+        style={panelStyle}
+        role="dialog"
+        aria-label={t("retroControl.ariaLabel")}
+        onContextMenu={event => event.preventDefault()}
+      >
+        <div className="retro-window">
+          <RetroBorder className="retro-outer-border" separatorRow={2} />
+          <header className={`retro-title${currentFrame ? " submenu-open" : ""}`}>
+            {isAppleIIPlus
+              ? <>
+                <span className="retro-title-text">Apple2TS Control Panel</span>
+                <span className="retro-title-spacer" aria-hidden="true">{fixedWidthSpace}</span>
+                {!currentFrame &&
+                  <span className="retro-title-fill" aria-hidden="true">{" ".repeat(15)}</span>}
+              </>
+              : <span>{"Apple2TS Control Panel "}&#8198;</span>}
+          </header>
+          {currentFrame && <div className="retro-submenu-title">
+            <RetroBorder className="retro-submenu-title-border" />
+            <span className={`retro-submenu-title-text${retroFontSupports(currentFrame.title) ? "" : " retro-browser-font"}`}>
+              {truncateControlText(currentFrame.title, 38, language)}
+            </span>
+            {isAppleIIPlus &&
+              <span className="retro-title-fill" aria-hidden="true">
+                {" ".repeat(Math.max(0, 38 - controlTextWidth(currentFrame.title, language)))}
+              </span>}
+          </div>}
+          {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString(language)} ${now.toLocaleDateString(language)}`}>
+            <RetroBorder className="retro-clock-border" />
+            <time>{formatClockTime(now, language)}</time>
+            <time>{now.toLocaleDateString(language, {
+              month: "numeric",
+              day: "numeric",
+              year: "2-digit",
+            })}</time>
+          </div>}
+          <div className={`retro-menu${currentFrame ? " retro-submenu-menu" : " retro-root-menu"}`} role="menu">
+            {visibleMenu.map((item, visibleIndex) => {
+              const index = visibleMenuStart + visibleIndex
+              const valueIndex = currentFrame?.values[index] ?? item.optionIndex ?? -1
+              const option = item.options?.[valueIndex]
+              const baseLabel = item.valueOnly && option ? option.label : item.label
+              const itemLabel = formatControlLabel(baseLabel, item.separator)
+              const hasOptionValue = option && !item.valueOnly && item.checkmarkIndex === undefined
+              const availableWidth = (currentFrame ? submenuContentWidth : rootMenuContentWidth) -
+                (currentFrame ? 2 : 0)
+              const fittedText = fitControlText(
+                itemLabel,
+                hasOptionValue ? option.label : undefined,
+                availableWidth,
+                language,
+              )
+              const visibleOption = fittedText.option
+              const visibleLabel = fittedText.label
+              const isChecked = item.checkmarkIndex !== undefined
+                ? valueIndex === item.checkmarkIndex
+                : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
+              return (
+                <div
+                  className={`retro-menu-item${item.separator ? " separator" : ""}${selectedIndex === index ? " selected" : ""}`}
+                  key={item.id}
+                  role="menuitem"
+                  aria-current={selectedIndex === index ? "true" : undefined}
+                  aria-disabled={!isMenuItemSelectable(item, currentFrame) ? "true" : undefined}
+                >
+                  {currentFrame && <span className="retro-menu-check">
+                    {isChecked ? (isAppleIIPlus ? "*" : checkmark) : " "}
+                  </span>}
+                  <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
+                    {visibleLabel}
+                    {visibleOption ? ":" : ""}
+                  </span>
+                  {visibleOption &&
+                    <>{" "}<span className={`retro-menu-value${option?.useBrowserFont || !retroFontSupports(visibleOption) ? " retro-browser-font" : ""}`}>
+                      {visibleOption}
+                    </span></>}
+                </div>
+              )
+            })}
           </div>
-        </section>
-      )}
+          <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
+            <span
+              className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}
+              style={{ gridColumn: `1 / ${selectHintHalfCells + 1}` }}
+            >{fixedWidthSpace}<span className="retro-footer-text">{`${selectLabel}:`}<i className="retro-mousetext">
+              {showHorizontalSelectionHint && <>{mouseTextLeft}{arrowSpacing}{mouseTextRight}{arrowSpacing}</>}
+              {currentFrame
+                ? <>{mouseTextUp}{arrowSpacing}{mouseTextDown}</>
+                : <>{mouseTextDown}{arrowSpacing}{mouseTextUp}</>}
+            </i></span></span>
+            {currentFrame && <span
+              className={`retro-footer-cancel${retroFontSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}
+              style={{
+                gridColumn: `${selectHintHalfCells + 1} / ${actionStartLine}`,
+              }}
+            ><span className="retro-footer-text">{t("retroControl.cancelEsc")}</span></span>}
+            <span
+              aria-hidden={!showFooterAction}
+              className={`retro-footer-action${showFooterAction ? "" : " hidden"}${retroFontSupports(footerActionLabel) ? "" : " retro-browser-font"}`}
+              style={{ gridColumn: `${actionStartLine} / 81` }}
+            >
+              <span className="retro-footer-text">{`${footerActionLabel}:`}
+                <i className="retro-mousetext">{mouseTextReturn}</i>
+              </span>{fixedWidthSpace}
+            </span>
+          </footer>
+        </div>
+      </section>}
       {dialogs}
-      <FileInput {...displayProps} onLoadSuccess={close} />
-      <RunTour showSelector={false} />
-    </main>
+    </>
   )
 }
 
