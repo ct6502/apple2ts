@@ -96,7 +96,6 @@ describe("Retro menu metadata structure", () => {
       "slots",
       "ports",
       "options",
-      "guidedTours",
       "quit",
     ])
   })
@@ -171,14 +170,6 @@ describe("Retro menu metadata structure", () => {
       "keyboard.joystick.reverseYAxis",
       "keyboard.joystick.siriusJoyport",
     ])
-    expect(retroMenuRegistry.getIds("guidedTours")).toEqual([
-      "guidedTours.main",
-      "guidedTours.settings",
-      "guidedTours.debug",
-      "guidedTours.links",
-      "guidedTours.reportIssue",
-      "guidedTours.privacyPolicy",
-    ])
     expect(retroMenuRegistry.getIds("printerPort")).toEqual([])
     expect(retroMenuRegistry.getIds("modemPort")).toEqual([])
   })
@@ -186,31 +177,9 @@ describe("Retro menu metadata structure", () => {
   test("uses contextual labels for direct actions", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
     const slots = retroMenuRegistry.resolve(context, "slots")
-    const help = retroMenuRegistry.resolve(context, "guidedTours")
     const sound = retroMenuRegistry.resolve(context, "sound")
 
     expect(slots.find(item => item.id === "slots.imageWriterII")?.contextualActionLabel).toBe("Open")
     expect(sound.find(item => item.id === "sound.enabled")?.defaultIndex).toBe(1)
-    expect(help.find(item => item.id === "guidedTours.reportIssue")?.contextualActionLabel)
-      .toBe("retroControl.open")
-    expect(help.find(item => item.id === "guidedTours.privacyPolicy")?.contextualActionLabel)
-      .toBe("retroControl.open")
-
-    const open = jest.spyOn(window, "open").mockImplementation(() => null)
-    help.find(item => item.id === "guidedTours.reportIssue")?.action?.()
-    help.find(item => item.id === "guidedTours.privacyPolicy")?.action?.()
-    expect(open).toHaveBeenNthCalledWith(
-      1,
-      "https://github.com/ct6502/apple2ts/issues",
-      "_blank",
-      "noopener,noreferrer",
-    )
-    expect(open).toHaveBeenNthCalledWith(
-      2,
-      "https://ct6502.org/privacy/",
-      "_blank",
-      "noopener,noreferrer",
-    )
-    open.mockRestore()
   })
 })
