@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-08-12 21:53+0000\n"
+"PO-Revision-Date: 2026-08-25 03:04+0000\n"
 "Last-Translator: Warren James "
 "<19525653+3amcinnamonroll@users.noreply.github.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/apple2ts/browser-"
@@ -73,10 +73,12 @@ msgctxt "controls.infoPanel"
 msgid "Info Panel"
 msgstr "Panneau d'informations"
 
+#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Signaler un problème"
 
+#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Politique de confidentialité"
@@ -1098,6 +1100,7 @@ msgctxt "tour.debugLabel"
 msgid "Guided Tours: Debug"
 msgstr "Visite Guidée : Débogage"
 
+#, fuzzy
 msgctxt "disk.drive1"
 msgid "Drive 1"
 msgstr "Lecteur 1"
@@ -1632,7 +1635,7 @@ msgstr "Haut-parleur"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr "Mockingboard"
+msgstr ""
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -1928,8 +1931,7 @@ msgstr "Plein Écran"
 #, fuzzy
 msgctxt "internetArchive.searchPlaceholder"
 msgid "Type the name of a software title or click one of the categories above"
-msgstr ""
-"Entrez le nom d'un logiciel ou cliquez sur une des catégories ci-dessus"
+msgstr "Entrez le nom d'un logiciel ou cliquez sur une des catégories ci-dessus"
 
 msgctxt "internetArchive.go"
 msgid "GO"
@@ -2544,11 +2546,16 @@ msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
 msgstr "(c) {{year}} C.Torrence + collaborateurs"
 
+#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
+"Cliquez sur l'icône\n"
+"Collections de Disques\n"
+"pour charger un disque\n"
+"ou un jeu intégré."
 
 msgctxt "startup.retroControlPanel"
 msgid ""
