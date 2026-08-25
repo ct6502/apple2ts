@@ -782,6 +782,16 @@ export const getCanvasSize = () => {
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
+  if (isCanvasFullScreen) {
+    const screenWidth = height * (1 - 2 * ymargin) * screenRatio
+    if (screenWidth <= width) {
+      xmargin = (width - screenWidth) / (2 * width)
+    } else {
+      const screenHeight = width * (1 - 2 * xmargin) / screenRatio
+      ymargin = (height - screenHeight) / (2 * height)
+    }
+    return [Math.floor(width), Math.floor(height)]
+  }
   const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
   if (isEmbedMode()) {
     height -= noBackgroundImage ? 60 : 25
