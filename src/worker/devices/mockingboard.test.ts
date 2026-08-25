@@ -1,7 +1,9 @@
 import { runAssemblyTest } from "../instructions.test"
+import { interruptRequest } from "../cpu6502"
+import { s6502 } from "../instructions"
 import { memory } from "../memory"
 import { ROMmemoryStart } from "../../common/utility"
-import { disablePassRegisters } from "./mockingboard"
+import { disablePassRegisters, resetMockingboard } from "./mockingboard"
 
 test("temp", () => {})
 
@@ -11,7 +13,7 @@ const N = 0b10000000
 // const V = 0b01000000
 // const B = 0b00010000
 // const D = 0b00001000
-// const I = 0b00000100
+const I = 0b00000100
 const Z = 0b00000010
 const C = 0b00000001
 
@@ -158,6 +160,59 @@ for (let chip = 0; chip <= 1; chip++) {
     test(`lda04c-${chip}-T${timer + 1}`, () => runAssemblyTest(lda04c(chip, timer), 5, 0))
   }
 }
+
+const pollTimerWithInterruptDisabled = (timer: number) => {
+  const L = timer ? "8" : "4"
+  const H = timer ? "9" : "5"
+  return `
+      LDA #$7F
+      STA $C${slot}0E   ; disable all VIA interrupts
+      STA $C${slot}0D   ; clear all pending interrupt flags
+      LDA #$00
+      STA $C${slot}0B   ; use timed Timer 2 mode and one-shot Timer 1 mode
+      LDA #$08
+      STA $C${slot}0${L}
+      STZ $C${slot}0${H}   ; load and start the timer
+      LDY #$04
+LOOP  DEY
+      BNE LOOP
+      LDA $C${slot}0D   ; poll IFR before a counter read can clear the flag
+  `.split("\n")
+}
+
+test.each([
+  ["Timer 1", 0, 0x40],
+  ["Timer 2", 1, 0x20],
+])("%s sets its IFR flag while its interrupt is disabled", (_name, timer, flag) => {
+  runAssemblyTest(pollTimerWithInterruptDisabled(timer), flag, 0)
+})
+
+test("a disabled timer does not clear the other VIA's interrupt", () => {
+  resetMockingboard(slot)
+  interruptRequest(slot, false)
+  runAssemblyTest(`
+      SEI
+      LDA #$7F
+      STA $C40E       ; disable all chip 0 interrupts
+      STA $C48E       ; disable all chip 1 interrupts
+      LDA #$C0
+      STA $C48E       ; enable chip 1 Timer 1 interrupts
+      LDA #$20
+      STA $C404
+      STZ $C405       ; start chip 0 Timer 1 without enabling its interrupt
+      LDA #$08
+      STA $C484
+      STZ $C485       ; start chip 1 Timer 1
+      LDY #$20
+LOOP  DEY
+      BNE LOOP
+      LDA $C48D       ; confirm chip 1 still asserts its interrupt
+  `.split("\n"), 0xC0, N | I)
+
+  const irqActive = s6502.flagIRQ & (1 << slot)
+  interruptRequest(slot, false)
+  expect(irqActive).not.toBe(0)
+})
 
 const interrupt = (chip: number, timer: number) => {
   const X = chip ? "8" : "0"

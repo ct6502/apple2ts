@@ -31,6 +31,7 @@ const IER = [0xE, 0x8E]
 const T2LL = [0x10, 0x91]
 const REG_LATCH = [0x11, 0x91]
 const TIMER_FIRED = [0x12, 0x92]
+const TIMER_STARTED = [0x13, 0x93]
 const REG = [0x20, 0xA0]   // $C420...C42F and $C4A0...$C4AF
 
 const TIMER1 = 64
@@ -50,6 +51,7 @@ export const resetMockingboard = (slot = 4) => {
 
 const T1enabled = (slot: number, chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER1) !== 0
 const T1fired = (slot: number, chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER1) !== 0
+const T1started = (slot: number, chip: number) => (memGetSlotROM(slot, TIMER_STARTED[chip]) & TIMER1) !== 0
 const T1continuous = (slot: number, chip: number) => (memGetSlotROM(slot, ACR[chip]) & TIMER1) !== 0
 
 const handleTimerT1 = (slot: number, chip: number, cycleDelta: number) => {
@@ -64,15 +66,14 @@ const handleTimerT1 = (slot: number, chip: number, cycleDelta: number) => {
     if (t1high < 0) {
       t1high += 256
       memSetSlotROM(slot, T1CH[chip], t1high)
-      // if (T1enabled(chip)) {
-      //   console.log(`T1: ${T1enabled(chip)} ${T1fired(chip)} ${T1continuous(chip)}`)
-      // }
-      if (T1enabled(slot, chip) && (!T1fired(slot, chip) || T1continuous(slot, chip))) {
+      if (T1started(slot, chip) && (!T1fired(slot, chip) || T1continuous(slot, chip))) {
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired | TIMER1)
         const ifr = memGetSlotROM(slot, IFR[chip])
         memSetSlotROM(slot, IFR[chip], ifr | TIMER1)
-        handleInterruptFlag(slot, chip, -1)
+        if (T1enabled(slot, chip)) {
+          handleInterruptFlag(slot, chip, -1)
+        }
         if (T1continuous(slot, chip)) {
           const t1NewHigh = memGetSlotROM(slot, T1LH[chip])
           const t1NewLow = memGetSlotROM(slot, T1LL[chip])
@@ -86,6 +87,7 @@ const handleTimerT1 = (slot: number, chip: number, cycleDelta: number) => {
 
 const T2enabled = (slot: number, chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER2) !== 0
 const T2fired = (slot: number, chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER2) !== 0
+const T2started = (slot: number, chip: number) => (memGetSlotROM(slot, TIMER_STARTED[chip]) & TIMER2) !== 0
 
 const handleTimerT2 = (slot: number, chip: number, cycleDelta: number) => {
   // If Timer2 is in pulse-counting mode just bail
@@ -101,15 +103,14 @@ const handleTimerT2 = (slot: number, chip: number, cycleDelta: number) => {
     if (t2high < 0) {
       t2high += 256
       memSetSlotROM(slot, T2CH[chip], t2high)
-//      if (T2enabled(chip)) {
-//        console.log(`T2: ${T2enabled(chip)} ${T2_DIDFIRE[chip]}`)
-//      }
-      if (T2enabled(slot, chip) && !T2fired(slot, chip)) {
+      if (T2started(slot, chip) && !T2fired(slot, chip)) {
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired | TIMER2)
         const ifr = memGetSlotROM(slot, IFR[chip])
         memSetSlotROM(slot, IFR[chip], ifr | TIMER2)
-        handleInterruptFlag(slot, chip, -1)
+        if (T2enabled(slot, chip)) {
+          handleInterruptFlag(slot, chip, -1)
+        }
       }
     }
   }
@@ -268,6 +269,8 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
         // Reset T1 interrupt flag
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired & ~TIMER1)
+        const started = memGetSlotROM(slot, TIMER_STARTED[chip])
+        memSetSlotROM(slot, TIMER_STARTED[chip], started | TIMER1)
         handleInterruptFlag(slot, chip, TIMER1)
       }
       break
@@ -300,6 +303,8 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
         // Reset T2 interrupt flag
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired & ~TIMER2)
+        const started = memGetSlotROM(slot, TIMER_STARTED[chip])
+        memSetSlotROM(slot, TIMER_STARTED[chip], started | TIMER2)
         handleInterruptFlag(slot, chip, TIMER2)
       }
       break
