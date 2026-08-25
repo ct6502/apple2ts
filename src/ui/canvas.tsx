@@ -29,7 +29,8 @@ import { KeyboardControl } from "./controls/keyboardcontrol"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
 
-let resizeTimeout = 0
+let resizeTimer = 0
+let resizeFrame = 0
 const maxFrameSamples = 60
 
 let currentCommand = ""
@@ -520,11 +521,14 @@ const Apple2Canvas = (props: DisplayProps) => {
     passMouseEvent(evt)
   }
 
-  const handleCanvasResize = (canvas: HTMLCanvasElement) => {
+  const handleCanvasResize = (canvas: HTMLCanvasElement | null) => {
     if (!canvas) return "0px"
 
-    // Give React some time to deal resize events
-    window.setTimeout(() => {
+    window.clearTimeout(resizeTimer)
+    window.cancelAnimationFrame(resizeFrame)
+    resizeTimer = window.setTimeout(() => {
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = window.requestAnimationFrame(() => {
       const width = canvas.offsetWidth
       const height = canvas.offsetHeight
 
@@ -569,8 +573,9 @@ const Apple2Canvas = (props: DisplayProps) => {
       document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
       document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
       document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
-      resizeTimeout = 200
-    }, resizeTimeout)
+        })
+      })
+    }, 0)
 
     return canvas.style.marginLeft
   }
@@ -586,6 +591,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     document.addEventListener("visibilitychange", handleVisibilityChange)
     const handleFullscreenChange = () => {
       setIsCanvasFullScreen(document.fullscreenElement === mainCanvas?.parentElement)
+      handleResize()
+      handleCanvasResize(mainCanvas)
     }
     document.addEventListener("fullscreenchange", handleFullscreenChange)
     ensureGamepadEventListeners()
