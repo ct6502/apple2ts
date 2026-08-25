@@ -526,6 +526,14 @@ export const handleGetHires = () => {
   return machineState.hires
 }
 
+export const handleGetShr = () => {
+  return machineState.shr || new Uint8Array()
+}
+
+export const handleGetVidhdActive = () => {
+  return !!machineState.vidhdActive
+}
+
 export const handleGetNoDelayMode = () => {
   return machineState.noDelayMode
 }

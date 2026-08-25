@@ -6,6 +6,7 @@ import { s6502, getStackDump, setState6502, setStackDump } from "./instructions"
 import { memory, memoryReset, RamWorksMaxBank, setRamWorks, updateAddressTables } from "./memory"
 import { configureMachine, doReset, doSetMachineName, doSetRunMode, getMachineName, getSoftSwitches, updateExternalMachineState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
+import { vidhd } from "./devices/vidhd"
 import { passRequestThumbnail } from "./worker2main"
 
 let iTempState = 0
@@ -83,6 +84,9 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
     } catch {
       // do nothing
     }
+  }
+  if (vidhd.enabled && SWITCHES.NEWVIDEO) {
+    vidhd.writeSoftSwitch(SWITCHES.NEWVIDEO.isSet ? 0x80 : 0)
   }
   // If we have an old save file, we need to set the BSR_WRITE switch
   // based upon the old bank-switched RAM switches.

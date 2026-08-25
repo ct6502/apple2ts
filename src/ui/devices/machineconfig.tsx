@@ -23,7 +23,7 @@ const retroSlotOptions = (slot: SlotNumber, machine: MACHINE_NAME): SLOT_CARD_ID
   const options: Record<SlotNumber, SLOT_CARD_ID[]> = {
     1: ["none", "ssc"],
     2: ["none", "vera", "passport", "softcard"],
-    3: machine === "APPLE2P" ? ["none", "videoterm"] : ["none", "aux"],
+    3: machine === "APPLE2P" ? ["none", "videoterm", "vidhd"] : ["none", "aux", "vidhd"],
     4: ["none", "mouse", "mockingboard", "vera", "softcard"],
     5: ["none", "mouse", "mockingboard", "softcard"],
     6: ["none", "disk2"],
@@ -38,6 +38,7 @@ const retroCardLabels = (context: RetroMenuContext): Record<SLOT_CARD_ID, string
   softcard: context.t("retroControl.card.softcard"),
   aux: context.t("retroControl.card.aux"),
   videoterm: context.t("retroControl.card.videoterm"),
+  vidhd: "VidHD (64KB / 80-Col / SHR)",
   mockingboard: context.t("retroControl.card.mockingboard"),
   mouse: context.t("retroControl.card.mouse"),
   vera: context.t("retroControl.card.vera"),
@@ -217,6 +218,7 @@ export const MachineConfig = (props: DisplayProps) => {
     softcard: "Microsoft Z-80 SoftCard",
     aux: getAuxCardLabel(extraMemSize),
     videoterm: "Videx VideoTerm 80-Col Card",
+    vidhd: "VidHD (64KB / 80-Col / SHR)",
     mockingboard: "Mockingboard Sound Card",
     mouse: "Apple II Mouse Card",
     vera: "VERA Graphics Card",
@@ -269,6 +271,11 @@ export const MachineConfig = (props: DisplayProps) => {
             isSelected: () => slotConfig[3] === "videoterm",
             onClick: () => handleSelectSlotCard(3, "videoterm"),
           },
+          {
+            label: "VidHD (64KB / 80-Col / SHR)",
+            isSelected: () => slotConfig[3] === "vidhd",
+            onClick: () => handleSelectSlotCard(3, "vidhd"),
+          },
         ]
       }
 
@@ -289,6 +296,11 @@ export const MachineConfig = (props: DisplayProps) => {
           isSelected: () => slotConfig[3] === "aux" && (opt.sizeKb === 64 ? extraMemSize <= 64 : extraMemSize === opt.sizeKb),
           onClick: () => handleSelectSlotCard(3, "aux", opt.sizeKb),
         })),
+        {
+          label: "VidHD (64KB / 80-Col / SHR)",
+          isSelected: () => slotConfig[3] === "vidhd",
+          onClick: () => handleSelectSlotCard(3, "vidhd"),
+        },
       ]
     }
     const control = sharedSlotControls.find(item => item.id === `slots.${slot}`)
@@ -329,7 +341,7 @@ export const MachineConfig = (props: DisplayProps) => {
               setPreferenceBoolean("prodosFloppy", newValue)
             }},
           { label: "-" },
-          ...[{ label: t("machine.slotManager"), isHeading: true }],
+          ...[{ label: t("machine.slotConfigurator"), isHeading: true }],
           ...([1, 2, 3, 4, 5, 6, 7] as const).map((slot) => {
             const currentCard = slotConfig[slot]
             return {
