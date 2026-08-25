@@ -604,7 +604,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const setFocus = () => {
     if (mainCanvas) {
-      (mainCanvas as HTMLCanvasElement).focus()
+      (mainCanvas as HTMLCanvasElement).focus({ preventScroll: true })
     }
   }
 
