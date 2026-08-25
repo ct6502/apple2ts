@@ -62,7 +62,7 @@ describe("Retro menu metadata structure", () => {
     expect(infoPanel?.tourTargets).toContain("#tour-debug-button")
   })
 
-  test("requires the Retro theme for all skin controls", () => {
+  test("makes skin controls available without a separate Retro theme", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
     const controls = retroMenuRegistry.resolve(context, "options")
     const dependentIds = [
@@ -73,10 +73,7 @@ describe("Retro menu metadata structure", () => {
     ]
 
     dependentIds.forEach(id => {
-      expect(controls.find(control => control.id === id)?.selectableWhen).toEqual({
-        controlId: "options.theme",
-        optionIndexes: [3],
-      })
+      expect(controls.find(control => control.id === id)?.selectableWhen).toBeUndefined()
     })
   })
 

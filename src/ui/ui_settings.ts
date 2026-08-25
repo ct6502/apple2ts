@@ -159,11 +159,8 @@ export const getTheme = () => {
 export const isMinimalTheme = () => {
   return (uiState.theme == UI_THEME.MINIMAL && !isGameMode()) || isEmbedMode()
 }
-export const isRetroTheme = () => {
-  return uiState.theme === UI_THEME.RETRO && !isGameMode() && !isEmbedMode()
-}
 export const isCanvasOnlyTheme = () => {
-  return isMinimalTheme() || isRetroTheme()
+  return isMinimalTheme()
 }
 
 export const getTouchJoystickSensitivity = () => {

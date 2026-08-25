@@ -1,5 +1,5 @@
 import { i18n } from "../../../i18n"
-import { isGameMode, isRetroTheme } from "../../ui_settings"
+import { isGameMode } from "../../ui_settings"
 
 
 
@@ -39,10 +39,8 @@ ${i18n.t("startup.copyright", { year })}`
   emulatorStartText += `\n\nApple ${mode} mode`
 
   if (!isGameMode()) {
-    const startupHint = isRetroTheme()
-      ? i18n.t("startup.retroControlPanel")
-      : i18n.t("startup.diskCollections")
-    emulatorStartText += `\n\n${startupHint}\n`
+    emulatorStartText += `\n\n${i18n.t("startup.diskCollections")}`
+    emulatorStartText += `\n\n${i18n.t("startup.retroControlPanel")}\n`
   }
 
   if (machineName === "APPLE2P") {

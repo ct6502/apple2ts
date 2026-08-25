@@ -1,6 +1,4 @@
 import { useEffect, useLayoutEffect, useState } from "react"
-import Apple2Canvas from "../canvas"
-import FileInput from "../fileinput"
 import type { RetroResolvedControl } from "./retromenucontext"
 import { formatControlLabel } from "../controls/controlregistry"
 import { useRetroMenuHost } from "./retromenuhost"
@@ -15,8 +13,6 @@ import {
   truncateControlText,
 } from "./retrotext"
 import "./retrocontrolpanel.css"
-import RunTour, { getTour } from "../tours/runtour"
-import { tourTargetForStep } from "../tours/tourutils"
 import { RETRO_SKIN } from "../localstorage"
 import { INFO_PANEL_COLLAPSED_EVENT } from "../ui_settings"
 
@@ -130,43 +126,6 @@ const restoreMenuFramePreview = (frame: RetroMenuFrame) => {
   })
 }
 
-const controlChildren = (item: RetroMenuItem) =>
-  typeof item.children === "function" ? item.children() : item.children
-
-const findTourPath = (
-  items: RetroMenuItem[],
-  target: string,
-  ancestors: RetroMenuItem[] = [],
-): RetroMenuItem[] | undefined => {
-  for (const item of items) {
-    const path = [...ancestors, item]
-    if (item.tourTargets?.includes(target)) return path
-    const children = controlChildren(item)
-    if (children) {
-      const result = findTourPath(children, target, path)
-      if (result) return result
-    }
-  }
-}
-
-const createTourFrames = (path: RetroMenuItem[]) => {
-  const frames: RetroMenuFrame[] = []
-  for (const parent of path.slice(0, -1)) {
-    const children = controlChildren(parent)
-    if (!children) break
-    const refresh = typeof parent.children === "function" ? parent.children : undefined
-    frames.push(createMenuFrame(
-      parent.label,
-      children,
-      refresh,
-      parent.actionLabel,
-      parent.submit,
-      parent.isSubmitVisible,
-    ))
-  }
-  return frames
-}
-
 const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => {
   const [manualIsOpen, setIsOpen] = useState(false)
   const [manualMenuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
@@ -181,26 +140,15 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     iigsStyle,
     language,
     retroSkin,
-    returnToTourHelp,
     rootMenu,
     runTour,
-    setReturnToTourHelp,
     t,
-    tourIndex,
   } = useRetroMenuHost(displayProps, close)
-  const tour = getTour(runTour, t, true)
-  const activeTourTarget = returnToTourHelp
-    ? "#tour-help-menu"
-    : tourTargetForStep(tour, tourIndex, "#tour-help-menu")
-  const tourPath = typeof activeTourTarget === "string" ? findTourPath(rootMenu, activeTourTarget) : undefined
-  const tourMenuStack = tourPath ? createTourFrames(tourPath) : undefined
-  const menuStack = tourMenuStack ?? manualMenuStack
+  const menuStack = manualMenuStack
   const currentFrame = menuStack[menuStack.length - 1]
   const currentMenu = currentFrame?.items ?? rootMenu
-  const selectedIndex = tourPath
-    ? Math.max(0, currentMenu.findIndex(item => item.id === tourPath.at(-1)?.id))
-    : manualSelectedIndex
-  const isOpen = manualIsOpen || Boolean(tourPath)
+  const selectedIndex = manualSelectedIndex
+  const isOpen = manualIsOpen
   const maxVisibleMenuItems = 16
   const visibleMenuStart = currentFrame
     ? Math.min(
@@ -289,20 +237,13 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         event.preventDefault()
         event.stopPropagation()
         menuStack.toReversed().forEach(restoreMenuFramePreview)
-        setReturnToTourHelp(false)
         setNow(new Date())
-        setIsOpen(open => returnToTourHelp ? false : !open)
+        setIsOpen(open => !open)
         setMenuStack([])
         setSelectedIndex(0)
         return
       }
       if (!isOpen) return
-      if (returnToTourHelp) {
-        setIsOpen(true)
-        setMenuStack(menuStack)
-        setSelectedIndex(selectedIndex)
-        setReturnToTourHelp(false)
-      }
 
       const isSubmitFrame = Boolean(currentFrame?.submit) && currentMenu.length > 0 &&
         currentMenu.every(item => item.checkmarkIndex !== undefined)
@@ -426,22 +367,19 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     hasOpenDialog,
     isOpen,
     menuStack,
-    returnToTourHelp,
     runTour,
     saveActionLabel,
     selectedIndex,
-    setReturnToTourHelp,
   ])
 
   return (
-    <main
+    <>
+    {isOpen && <main
       className={`retro-shell${isAppleIIGS ? ` scanline-gradient ${effects}` : ""}${isOpen ? " menu-open" : ""}`}
       style={iigsStyle}
       onContextMenu={isOpen ? event => event.preventDefault() : undefined}
     >
-      <Apple2Canvas {...displayProps} />
-      {isOpen && (
-        <section
+      <section
           className={`retro-panel scanline-gradient ${effects}`}
           style={iigsStyle}
           role="dialog"
@@ -462,12 +400,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             <header className={`retro-title${currentFrame ? " submenu-open" : ""}`}>
               {isAppleIIPlus
                 ? <>
-                  <span className="retro-title-text">Apple2TS</span>
+                  <span className="retro-title-text">Apple2TS Control Panel</span>
                   <span className="retro-title-spacer" aria-hidden="true">{fixedWidthSpace}</span>
                   {!currentFrame &&
-                    <span className="retro-title-fill" aria-hidden="true">{" ".repeat(29)}</span>}
+                    <span className="retro-title-fill" aria-hidden="true">{" ".repeat(15)}</span>}
                 </>
-                : <span>{"Apple2TS "}&#8198;</span>}
+                : <span>{"Apple2TS Control Panel "}&#8198;</span>}
             </header>
             {currentFrame && <div className="retro-submenu-title">
               <RetroBorder className="retro-submenu-title-border" />
@@ -511,7 +449,6 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
                 return (
                   <div
-                    id={item.tourTargets?.find(target => target === activeTourTarget)?.replace(/^#/, "")}
                     className={`retro-menu-item${item.separator ? " separator" : ""}${selectedIndex === index ? " selected" : ""}`}
                     key={item.id}
                     role="menuitem"
@@ -560,12 +497,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               </span>
             </footer>
           </div>
-        </section>
-      )}
-      {dialogs}
-      <FileInput {...displayProps} onLoadSuccess={close} />
-      <RunTour showSelector={false} />
-    </main>
+      </section>
+    </main>}
+    {dialogs}
+    </>
   )
 }
 

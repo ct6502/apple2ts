@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Step } from "react-joyride"
 
-export const getTourMain = (t: any, retro = false): Step[] => [
+export const getTourMain = (t: any): Step[] => [
   {
     target: "body",
     placement: "center",
@@ -9,11 +9,11 @@ export const getTourMain = (t: any, retro = false): Step[] => [
   },
   {
     target: "#tour-boot-button",
-    content: retro ? t("tour.retroBootButton") : t("tour.bootButton"),
+    content: t("tour.bootButton"),
   },
   {
     target: "#tour-reset-button",
-    content: retro ? t("tour.retroResetButton") : t("tour.resetButton"),
+    content: t("tour.resetButton"),
   },
   {
     target: "#tour-disk-images",
@@ -21,21 +21,19 @@ export const getTourMain = (t: any, retro = false): Step[] => [
   },
   {
     target: "#tour-floppy-disks",
-    content: retro ? t("tour.retroFloppyDisks") : t("tour.floppyDisks"),
+    content: t("tour.floppyDisks"),
   },
   {
     target: "#tour-saverestore",
-    content: retro ? t("tour.retroSaveRestore") : t("tour.saveRestore"),
+    content: t("tour.saveRestore"),
   },
   {
     target: "#tour-theme-button",
-    content: retro ? t("tour.retroThemeButton") : t("tour.themeButton")
+    content: t("tour.themeButton")
   },
   {
     target: "body",
     placement: "center",
-    content: t("tour.endTour") + " " + (retro
-      ? t("tour.retroTourSelectorHint")
-      : t("tour.tourSelectorHint"))
+    content: t("tour.endTour") + " " + t("tour.tourSelectorHint")
   },
 ]

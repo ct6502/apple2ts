@@ -5,7 +5,7 @@ const isTouchDevice = "ontouchstart" in document.documentElement
 const isMac = navigator.platform.startsWith("Mac")
 const modKey = isMac ? "⌘" : "Alt"
 
-export const getTourSettings = (t: any, retro = false): Step[] => {
+export const getTourSettings = (t: any): Step[] => {
   const altArrowKeys = (
     <div>
       {t("tour.altArrowKeys", { modKey })}
@@ -36,7 +36,7 @@ export const getTourSettings = (t: any, retro = false): Step[] => {
     },
     {
       target: "#tour-configbuttons",
-      content: retro ? t("tour.retroConfigButtons") : t("tour.configButtons"),
+      content: t("tour.configButtons"),
     },
     {
       target: "#tour-keyboardbuttons",
@@ -46,14 +46,12 @@ export const getTourSettings = (t: any, retro = false): Step[] => {
     },
     {
       target: "#tour-clearcookies",
-      content: retro ? t("tour.retroClearCookies") : t("tour.clearCookies"),
+      content: t("tour.clearCookies"),
     },
     {
       target: "body",
       placement: "center",
-      content: t("tour.endTour") + " " + (retro
-        ? t("tour.retroTourSelectorHint")
-        : t("tour.tourSelectorHint"))
+      content: t("tour.endTour") + " " + t("tour.tourSelectorHint")
     },
   ]
 }

@@ -37,7 +37,6 @@ const themeLabels = (t: (key: string) => string) => [
   t("themes.classic"),
   t("themes.dark"),
   t("themes.minimal"),
-  t("retroControl.retroTheme"),
 ]
 
 const retroThemeControl: RetroControlMetadata = choiceMetadata({
@@ -205,7 +204,7 @@ const ConfigButtons = (props: DisplayProps) => {
       menuItems={[UI_THEMES.map(({ value }, index) => {
         return {
           label: themeControl.options?.[index]?.label ?? String(value),
-          isVisible: () => { return !isGameMode() || (value != UI_THEME.MINIMAL && value != UI_THEME.RETRO) },
+          isVisible: () => { return !isGameMode() || value != UI_THEME.MINIMAL },
           isSelected: () => { return value == getTheme() },
           onClick: themeControl.options?.[index]?.action,
         }

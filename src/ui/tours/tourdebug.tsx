@@ -39,7 +39,7 @@ const callbackDebugControls: StepCallbackFunction = () => {
   return false
 }
 
-export const getTourDebug = (t: any, retro = false): Step[] => [
+export const getTourDebug = (t: any): Step[] => [
   {
     target: "body",
     placement: "center",
@@ -78,8 +78,6 @@ export const getTourDebug = (t: any, retro = false): Step[] => [
   {
     target: "body",
     placement: "center",
-    content: t("tour.endTour") + " " + (retro
-      ? t("tour.retroTourSelectorHint")
-      : t("tour.tourSelectorHint"))
+    content: t("tour.endTour") + " " + t("tour.tourSelectorHint")
   },
 ]

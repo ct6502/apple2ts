@@ -1,6 +1,6 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
-import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME } from "../common/utility"
+import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME, UI_THEMES } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetProdosFloppy, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
 import { getTheme, getUIState, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
@@ -440,7 +440,13 @@ export const loadPreferences = () => {
   const theme = localStorage.getItem("theme")
   if (theme) {
     try {
-      setTheme(JSON.parse(theme))
+      const parsedTheme = JSON.parse(theme)
+      if (UI_THEMES.some(option => option.value === parsedTheme)) {
+        setTheme(parsedTheme)
+      } else {
+        localStorage.removeItem("theme")
+        setTheme(UI_THEME.CLASSIC)
+      }
     } catch {
       localStorage.removeItem("theme")
     }

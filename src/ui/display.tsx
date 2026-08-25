@@ -18,7 +18,7 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
+import { RUN_MODE, TEST_DEBUG } from "../common/utility"
 import DiskCollectionPanel from "./diskdialog/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
@@ -199,12 +199,6 @@ const DisplayApple2 = () => {
   if (isEmbedMode()) {
     return <Apple2Canvas {...props} />
   }
-  if (theme === UI_THEME.RETRO && !isGameMode()) {
-    return <>
-      <RetroMenuRenderer displayProps={props} />
-      <DebugSection updateDisplay={updateDisplay} narrow={narrow} minimalPresentation />
-    </>
-  }
   return (
     <>
     <div className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
@@ -223,6 +217,7 @@ const DisplayApple2 = () => {
     {isMinimalTheme() && <DiskCollectionPanel {...props} />}
     {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
     <FileInput {...props} />
+    <RetroMenuRenderer displayProps={props} />
     </>
   )
 }

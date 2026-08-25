@@ -46,7 +46,7 @@ describe("theme preferences", () => {
   beforeEach(() => jest.clearAllMocks())
 
   test("collapses the Info Panel when changing themes", () => {
-    jest.mocked(getTheme).mockReturnValue(UI_THEME.RETRO)
+    jest.mocked(getTheme).mockReturnValue(UI_THEME.DARK)
 
     setPreferenceTheme(UI_THEME.CLASSIC)
 

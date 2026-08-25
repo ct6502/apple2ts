@@ -134,14 +134,12 @@ export enum UI_THEME {
   CLASSIC,
   DARK,
   MINIMAL,
-  RETRO,
 }
 
 export const UI_THEMES = [
   { value: UI_THEME.CLASSIC, name: "Classic", queryValue: "classic" },
   { value: UI_THEME.DARK, name: "Dark", queryValue: "dark" },
   { value: UI_THEME.MINIMAL, name: "Minimal", queryValue: "minimal" },
-  { value: UI_THEME.RETRO, name: "Retro", queryValue: "retro" },
 ] as const
 
 export const themeToName = (theme: UI_THEME) => {

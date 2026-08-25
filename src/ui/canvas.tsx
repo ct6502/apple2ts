@@ -24,7 +24,7 @@ import { handleCopyToClipboard } from "./copycanvas"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, getTheme, getArrowKeysAsJoystick, isEmbedMode, isRetroTheme, getUIStateBoolean } from "./ui_settings"
+import { getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, getTheme, getArrowKeysAsJoystick, isEmbedMode, getUIStateBoolean } from "./ui_settings"
 import { KeyboardControl } from "./controls/keyboardcontrol"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
@@ -659,7 +659,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         width={560} height={384} />
       {handleGetOverrideHires() && <HgrMagnifier mainCanvas={mainCanvas}
         mouseLoc={magnifierMouseLoc} lockHgrMagnifier={lockHgrMagnifier} />}
-      { !isEmbedMode() && !isRetroTheme() && <KeyboardControl/> }
+      { !isEmbedMode() && <KeyboardControl/> }
     </span>
   )
 }

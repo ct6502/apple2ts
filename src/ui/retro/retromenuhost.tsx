@@ -10,9 +10,7 @@ import {
   setPreferenceRetroIIGSColor,
   setPreferenceRetroSkin,
 } from "../localstorage"
-import { getColorMode, getCrtDistortion, getGhosting } from "../ui_settings"
-import { setTheme } from "../ui_settings"
-import { UI_THEME } from "../../common/utility"
+import { getColorMode, getCrtDistortion, getGhosting, getTheme } from "../ui_settings"
 import { retroMenuRegistry } from "./retromenucomposition"
 import type { DiskLoadDialog, RetroMenuContext } from "./retromenucontext"
 import { useGlobalContext } from "../globalcontext"
@@ -64,8 +62,8 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     retroIIGSColors,
     startTour: tour => {
       setReturnToTourHelp(false)
-      setTourSourceTheme(UI_THEME.RETRO)
-      if (tour === "debug") setTheme(UI_THEME.CLASSIC)
+      setTourSourceTheme(getTheme())
+      close()
       setRunTour(tour)
       setTourIndex(0)
     },

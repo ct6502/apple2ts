@@ -9,8 +9,7 @@ import { DropdownButton } from "../controls/dropdownbutton"
 import { useTranslation } from "../../i18n/useTranslation"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { navigateToTourStep } from "./tourutils"
-import { getTheme, setTheme, setUIStateBoolean } from "../ui_settings"
-import { UI_THEME } from "../../common/utility"
+import { getTheme } from "../ui_settings"
 
 const tourName = (index: number) => ["main", "settings", "debug"][index] ?? ""
 
@@ -62,7 +61,7 @@ export const retroTourControls: RetroControlMetadata[] = [
     order: index,
     label: context => context.t(`tour.${labelKey}`),
     action: context => {
-      if (tourName(index) === "debug") context.close()
+      context.close()
       context.startTour(tourName(index))
     },
     keepMenuOpen: true,
@@ -96,11 +95,11 @@ export const retroTourControls: RetroControlMetadata[] = [
   },
 ]
 
-export const getTour = (name: string, t: ReturnType<typeof useTranslation>["t"], retro = false): Step[] => {
+export const getTour = (name: string, t: ReturnType<typeof useTranslation>["t"]): Step[] => {
   switch (name.toLowerCase()) {
-    case "main": return getTourMain(t, retro)
-    case "debug": return getTourDebug(t, retro)
-    case "settings": return getTourSettings(t, retro)
+    case "main": return getTourMain(t)
+    case "debug": return getTourDebug(t)
+    case "settings": return getTourSettings(t)
     default: return []
   }
 }
@@ -109,20 +108,11 @@ const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
   const { t } = useTranslation()
   const { runTour: runTour, setRunTour: setRunTour,
     tourIndex: tourIndex, setTourIndex: setTourIndex,
-    tourSourceTheme, setTourSourceTheme, setReturnToTourHelp } = useGlobalContext()
-  const isRetroTour = tourSourceTheme === UI_THEME.RETRO
-
-  const restoreRetroTheme = () => {
-    setUIStateBoolean("infoPanel", false)
-    setTheme(UI_THEME.RETRO)
-  }
+    setTourSourceTheme, setReturnToTourHelp } = useGlobalContext()
 
   const goToTourIndex = (index: number) => {
-    if (isRetroTour && runTour.toLowerCase() === "debug" && index === getTourDebug(t, true).length - 1) {
-      restoreRetroTheme()
-    }
     navigateToTourStep(
-      getTour(runTour, t, isRetroTour),
+      getTour(runTour, t),
       index,
       setTourIndex,
     )
@@ -148,10 +138,6 @@ const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
     }
 
     if (data.type === EVENTS.TOUR_END || data.action === ACTIONS.SKIP || data.action === ACTIONS.CLOSE || data.status === "finished" || data.status === "skipped") {
-      if (isRetroTour) {
-        restoreRetroTheme()
-        setReturnToTourHelp(true)
-      }
       setRunTour("")
       setTourIndex(0)
       // If our URL contains the "tour" parameter, be sure to turn it off
@@ -168,7 +154,7 @@ const RunTour = ({ showSelector = true }: { showSelector?: boolean }) => {
     }
   }
 
-  const tour = getTour(runTour, t, isRetroTour)
+  const tour = getTour(runTour, t)
 
   const selectGuidedTour = (index: number) => {
     setReturnToTourHelp(false)
