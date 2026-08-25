@@ -159,6 +159,46 @@ for (let chip = 0; chip <= 1; chip++) {
   }
 }
 
+test("Timer 1 IRQ is visible between adjacent stores", () => {
+  // mb-audit uses this boundary to distinguish a real 6522 from MegaAudio.
+  // A real 6522 interrupts after STA $00 and before STX $00, so the handler
+  // observes $02 rather than $01.
+  memory[ROMmemoryStart + 0x3FFE] = 0x03
+  memory[ROMmemoryStart + 0x3FFF] = 0x20
+  runAssemblyTest(`
+      JMP START
+IRQ   LDA $00
+      STA $10
+      BIT $C404
+      RTI
+START SEI
+      LDA #$00
+      STA $FE
+      LDA #$C4
+      STA $FF
+      STA $10
+      LDA #$01
+      STA $00
+      LDA #$00
+      STA $C40B
+      LDA #$C0
+      STA $C40E
+      LDA #$06
+      LDY #$04
+      STA ($FE),Y
+      LDA #$00
+      LDY #$05
+      STA ($FE),Y
+      LDA #$02
+      LDX #$01
+      CLI
+      STA $00
+      STX $00
+      SEI
+      LDA $10
+  `.split("\n"), 2, 0x04)
+})
+
 const interrupt = (chip: number, timer: number) => {
   const X = chip ? "8" : "0"
   const L = timer ? "8" : "4"

@@ -333,6 +333,10 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
   const PC1 = s6502.PC
   // Do not trigger watchpoints. Those should only trigger on true read/writes.
   const instr = memGet(s6502.PC, false)
+  // The 6502 samples the interrupt-disable flag before CLI clears it, so a
+  // pending IRQ is not serviced until the following instruction completes.
+  const cliDefersIRQ =
+    instr === 0x58 && (s6502.PStatus & 0x04) !== 0
   const code =  pcodes[instr]
   // Make sure we only get these instruction bytes if necessary.
   // Do not trigger watchpoints. Those should only trigger on true read/writes.
@@ -398,7 +402,7 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
     cycles = doNonMaskableInterrupt()
     setCycleCount(s6502.cycleCount + cycles)
   }
-  if (s6502.flagIRQ) {
+  if (s6502.flagIRQ && !cliDefersIRQ) {
     const intcycles = doInterruptRequest()
     if (intcycles > 0) {
       setCycleCount(s6502.cycleCount + intcycles)
