@@ -1,5 +1,5 @@
 import { COLOR_MODE, toHex } from "../common/utility"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useGlobalContext } from "./globalcontext"
 import { nColsHgrMagnifier, nRowsHgrMagnifier, getOverrideHiresPixels, screenBytesToCanvasPixels, screenCoordToCanvasCoord, canvasCoordToNormScreenCoord } from "./graphics"
 import { drawHiresTile } from "./graphicshgr"
@@ -14,6 +14,7 @@ const HgrMagnifier = (props: MagnifyProps) => {
   const { updateHgrMagnifier: updateHgrMagnifier, setUpdateHgrMagnifier: setUpdateHgrMagnifier,
     hgrMagnifierLoc: hgrMagnifierLoc, setHgrMagnifierLoc: setHgrMagnifierLoc,
     setLockHgrMagnifier } = useGlobalContext()
+  const wasLockedRef = useRef(props.lockHgrMagnifier)
 
   let x = 0, y = 0
   if (props.mainCanvas) {
@@ -29,14 +30,17 @@ const HgrMagnifier = (props: MagnifyProps) => {
   }
 
   useEffect(() => {
-    if (props.lockHgrMagnifier && props.mainCanvas) {
+    if (props.lockHgrMagnifier && !wasLockedRef.current && props.mainCanvas) {
       setHgrMagnifierLoc([x, y])
     }
+    wasLockedRef.current = props.lockHgrMagnifier
   }, [x, y, props.lockHgrMagnifier, props.mainCanvas, setHgrMagnifierLoc])
 
   useEffect(() => {
     if (updateHgrMagnifier) {
       setUpdateHgrMagnifier(false)
+      // The memory table has already supplied the location for this lock.
+      wasLockedRef.current = true
       setLockHgrMagnifier(true)
     }
   }, [updateHgrMagnifier, setUpdateHgrMagnifier, setLockHgrMagnifier])
