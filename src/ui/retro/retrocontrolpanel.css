@@ -321,7 +321,7 @@
 
 .retro-clock {
   display: grid;
-  grid-column: 27 / 44;
+  grid-column: 31 / 44;
   grid-row: 7 / 9;
   grid-template-columns: subgrid;
   grid-template-rows: subgrid;
