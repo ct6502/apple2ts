@@ -366,6 +366,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           restoreMenuFramePreview(currentFrame)
           setMenuStack(refreshPreviousMenu)
           setSelectedIndex(currentFrame.parentSelectedIndex)
+        } else {
+          const quitIndex = currentMenu.findIndex(item => item.id === "quit")
+          if (quitIndex >= 0) setSelectedIndex(quitIndex)
         }
       } else if (!event.ctrlKey && !event.altKey && !event.metaKey && /^[a-z]$/i.test(event.key)) {
         const shortcut = event.key.toLocaleLowerCase()
