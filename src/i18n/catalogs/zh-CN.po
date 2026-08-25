@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
 "PO-Revision-Date: 2026-08-25 03:05+0000\n"
-"Last-Translator: GitHub webhook <noreply-webhook-github-"
-"integration@weblate.org>\n"
+"Last-Translator: reducedradius "
+"<137701630+flytothehighest@users.noreply.github.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/apple2ts/browser-emulator/zh_Hans/>\n"
 "Language: zh-CN\n"
@@ -53,9 +53,10 @@ msgctxt "controls.toggleSound"
 msgid "Toggle Sound"
 msgstr "切换音效"
 
+#, fuzzy
 msgctxt "controls.retrySound"
 msgid "Sound unavailable. Retry sound."
-msgstr ""
+msgstr "声音不可用。请重试声音。"
 
 #, fuzzy
 msgctxt "controls.settings"
