@@ -265,11 +265,13 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
         event.preventDefault()
         event.stopPropagation()
-        menuStack.toReversed().forEach(restoreMenuFramePreview)
-        setNow(new Date())
-        setIsOpen(open => !open)
-        setMenuStack([])
-        setSelectedIndex(0)
+        if (!isOpen) {
+          menuStack.toReversed().forEach(restoreMenuFramePreview)
+          setNow(new Date())
+          setIsOpen(true)
+          setMenuStack([])
+          setSelectedIndex(0)
+        }
         return
       }
       if (!isOpen) return
