@@ -8,6 +8,7 @@ import { isDefaultHelp } from "./helpselection"
 
 type HelpPanelProps = {
   helptext: string,
+  minimalPresentation?: boolean,
   theme: UI_THEME,
   useOpenAppleKey: boolean,
 }
@@ -16,8 +17,9 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   const { t } = useTranslation()
   const paperheight = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const isDarkMode = props.theme == UI_THEME.DARK
+  const useMinimalPresentation = props.minimalPresentation || isMinimalTheme()
 
-  if (isMinimalTheme()) {
+  if (useMinimalPresentation) {
     import("./helppanel.minimal.css")
   }
 
@@ -31,8 +33,8 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   return (
     <div className="help-parent" translate="no"
       style={{
-        width: narrow || isMinimalTheme() ? "687px" : 500,
-        height: narrow || isMinimalTheme() ? "" : paperheight,
+        width: narrow || useMinimalPresentation ? "687px" : 500,
+        height: narrow || useMinimalPresentation ? "" : paperheight,
         overflow: (narrow ? "visible" : "auto")
       }}>
       <div className={isDarkMode ? "" : "help-paper"}>
@@ -50,6 +52,7 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   )
 }, (prevProps, nextProps) => {
   return prevProps.helptext === nextProps.helptext
+    && prevProps.minimalPresentation === nextProps.minimalPresentation
     && prevProps.theme === nextProps.theme
     && prevProps.useOpenAppleKey === nextProps.useOpenAppleKey
 })

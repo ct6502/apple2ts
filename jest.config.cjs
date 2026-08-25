@@ -4,4 +4,7 @@ module.exports = {
   preset: "ts-jest",
   testEnvironment: "jsdom",
   testPathIgnorePatterns: ["/node_modules/", "/tools/"],
+  moduleNameMapper: {
+    "\\.(css)$": "<rootDir>/src/test/stylemock.cjs",
+  },
 }

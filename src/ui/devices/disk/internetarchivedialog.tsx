@@ -86,7 +86,7 @@ function formatNumber(num: number, precision = 1) {
 }
 
 interface InternetDialogResultProps {
-  closeParent: () => void,
+  onLoadSuccess: () => void,
   diskBookmarks: DiskBookmarks,
   driveIndex: number,
   lastResult: boolean,
@@ -114,8 +114,8 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       fileSize: -1
     }
 
-    props.closeParent()
-    handleSetDiskFromURL(cloudData.downloadUrl, undefined, props.driveIndex, cloudData)
+    const loaded = await handleSetDiskFromURL(cloudData.downloadUrl, undefined, props.driveIndex, cloudData)
+    if (loaded) props.onLoadSuccess()
   }
 
   const handleStatsClick = () => {
@@ -211,9 +211,11 @@ export interface InternetArchiveDialogProps {
   driveIndex: number
   open: boolean
   onClose: () => void
+  onLoadSuccess?: () => void
 }
 
 const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
+  const { onClose, open } = props
   const { t } = useTranslation()
   const [results, setResults] = useState<InternetDialogResultProps[]>([])
   const [diskBookmarks, setDiskbookmarks] = useState<DiskBookmarks>(new DiskBookmarks())
@@ -296,8 +298,6 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     if (event.key === "Enter") {
       const searchBox = document.getElementsByClassName("iad-search-box")[0] as HTMLInputElement
       getResults(searchBox.value, collection)
-    } else if (event.key == "Escape") {
-      handleClose()
     }
   }
 
@@ -308,6 +308,20 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   const handleSearchButtonClick = () => {
     getResults(query, collection)
   }
+
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      event.preventDefault()
+      event.stopPropagation()
+      onClose()
+      setQuery("")
+      setResults([])
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [onClose, open])
 
   if (!props.open) return (<></>)
 
@@ -359,7 +373,10 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                   <InternetArchiveResult
                     key={`result-${result.identifier}`}
                     {...result}
-                    closeParent={handleClose}
+                    onLoadSuccess={() => {
+                      handleClose()
+                      props.onLoadSuccess?.()
+                    }}
                     diskBookmarks={diskBookmarks}
                     driveIndex={props.driveIndex}
                     lastResult={resultsCount > results.length && index == results.length - 1} />

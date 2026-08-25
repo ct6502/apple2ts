@@ -176,6 +176,7 @@ type UIState = {
   ghosting: boolean,
   helpText: string,
   hotReload: boolean,
+  infoPanel: boolean,
   prodosFloppy: boolean,
   reverseYAxis: boolean,
   showScanlines: boolean,

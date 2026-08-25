@@ -3,7 +3,7 @@ import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetProdosFloppy, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
-import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf, getUIState } from "./ui_settings"
+import { getTheme, getUIState, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["arrowKeysAsJoystick",
   "capitalizeBasic", "crtDistortion",
@@ -11,6 +11,69 @@ const booleanUIKeys: BooleanKeyOf<UIState>[] = ["arrowKeysAsJoystick",
   "manualNumbering", "prodosFloppy",
   "reverseYAxis", "showScanlines", "siriusJoyport",
   "tiltSensorJoystick", "useOpenAppleKey"]
+
+export enum RETRO_SKIN {
+  APPLE_IIE,
+  APPLE_IIGS,
+  APPLE_IIPLUS,
+}
+
+export type RETRO_IIGS_COLOR_PREFERENCE = "text" | "background" | "border"
+
+export const RETRO_IIGS_COLOR_DEFAULTS: Record<RETRO_IIGS_COLOR_PREFERENCE, number> = {
+  text: 15,
+  background: 6,
+  border: 6,
+}
+
+export const getPreferenceRetroIIGSColor = (preference: RETRO_IIGS_COLOR_PREFERENCE) => {
+  const key = `retroIIGS.${preference}`
+  const item = localStorage.getItem(key)
+  if (item) {
+    try {
+      const color = JSON.parse(item)
+      if (Number.isInteger(color) && color >= 0 && color <= 15) return color
+    } catch {
+      // Invalid data is cleared below.
+    }
+    localStorage.removeItem(key)
+  }
+  return RETRO_IIGS_COLOR_DEFAULTS[preference]
+}
+
+export const setPreferenceRetroIIGSColor = (
+  preference: RETRO_IIGS_COLOR_PREFERENCE,
+  color: number = RETRO_IIGS_COLOR_DEFAULTS[preference],
+) => {
+  const key = `retroIIGS.${preference}`
+  if (color === RETRO_IIGS_COLOR_DEFAULTS[preference]) {
+    localStorage.removeItem(key)
+  } else {
+    localStorage.setItem(key, JSON.stringify(color))
+  }
+}
+
+export const getPreferenceRetroSkin = (): RETRO_SKIN => {
+  const item = localStorage.getItem("retroSkin")
+  if (item) {
+    try {
+      const skin = JSON.parse(item)
+      if (skin === RETRO_SKIN.APPLE_IIGS || skin === RETRO_SKIN.APPLE_IIPLUS) return skin
+    } catch {
+      // Invalid data is cleared below.
+    }
+    localStorage.removeItem("retroSkin")
+  }
+  return RETRO_SKIN.APPLE_IIE
+}
+
+export const setPreferenceRetroSkin = (skin: RETRO_SKIN = RETRO_SKIN.APPLE_IIE) => {
+  if (skin === RETRO_SKIN.APPLE_IIE) {
+    localStorage.removeItem("retroSkin")
+  } else {
+    localStorage.setItem("retroSkin", JSON.stringify(skin))
+  }
+}
 
 type BooleanKeys = typeof booleanUIKeys[number]
 
@@ -57,6 +120,9 @@ export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
 }
 
 export const setPreferenceTheme = (theme: UI_THEME = UI_THEME.CLASSIC) => {
+  if (theme !== getTheme()) {
+    setUIStateBoolean("infoPanel", false)
+  }
   if (theme === UI_THEME.CLASSIC) {
     localStorage.removeItem("theme")
   } else {
@@ -456,6 +522,10 @@ export const resetPreferences = () => {
   setPreferenceSpeedMode()
   setPreferenceColorMode()
   setPreferenceTheme()
+  setPreferenceRetroSkin()
+  setPreferenceRetroIIGSColor("text")
+  setPreferenceRetroIIGSColor("background")
+  setPreferenceRetroIIGSColor("border")
   setPreferenceMockingboardMode()
   setPreferenceMachineName()
   setPreferenceRamWorks()

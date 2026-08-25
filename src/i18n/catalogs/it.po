@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Apple2TS\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #, fuzzy
@@ -61,11 +61,14 @@ msgid "Debug Panel"
 msgstr "Pannello di Debug"
 
 #, fuzzy
+msgctxt "controls.infoPanel"
+msgid "Info Panel"
+msgstr "Pannello informazioni"
+
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Segnala un problema"
 
-#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Informativa sulla privacy"
@@ -206,7 +209,6 @@ msgstr "Veloce (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-#| msgid "Ludicrous/Warp Speed"
 msgid "Ludicrous Speed"
 msgstr "Velocità ridicola"
 
@@ -534,7 +536,8 @@ msgid "Select auxiliary memory for writes"
 msgstr ""
 
 msgctxt "disassembly.auxMemory.selectExpansionBank"
-msgid "Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
+msgid ""
+"Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
 msgstr ""
 
 msgctxt "disassembly.auxMemory.altzpMain"
@@ -719,14 +722,14 @@ msgstr ""
 
 msgctxt "disassembly.laser128ex.disableDiskSlowdown"
 msgid ""
-"Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access "
-"(write-once bit 5)"
+"Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access (write-"
+"once bit 5)"
 msgstr ""
 
 msgctxt "disassembly.laser128ex.enableDiskSlowdown"
 msgid ""
-"Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access "
-"(write-once bit 5)"
+"Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access (write-"
+"once bit 5)"
 msgstr ""
 
 msgctxt "disassembly.gameIO.pulseStrobe"
@@ -784,10 +787,19 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr "Clicca qui per avviare l'emulatore."
 
+msgctxt "tour.retroBootButton"
+msgid "Select this option to start the emulator."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
 msgstr "Clicca qui per ripristinare l'Apple II e riavviare o entrare in BASIC."
+
+msgctxt "tour.retroResetButton"
+msgid ""
+"Select this option to reset the Apple II and either reboot or enter BASIC."
+msgstr ""
 
 #, fuzzy
 msgctxt "tour.diskImages"
@@ -797,7 +809,12 @@ msgstr "Scegli una delle immagini disco installate."
 #, fuzzy
 msgctxt "tour.floppyDisks"
 msgid "Or click one of the floppy disk icons to load a disk image."
-msgstr "Oppure clicca su una delle icone floppy per caricare un'immagine disco."
+msgstr ""
+"Oppure clicca su una delle icone floppy per caricare un'immagine disco."
+
+msgctxt "tour.retroFloppyDisks"
+msgid "Or select a disk drive to load a disk image."
+msgstr ""
 
 #, fuzzy
 msgctxt "tour.saveRestore"
@@ -808,10 +825,20 @@ msgstr ""
 "Puoi salvare e ripristinare lo stato completo dell'emulatore usando questi "
 "pulsanti."
 
+msgctxt "tour.retroSaveRestore"
+msgid ""
+"You can save and restore the complete state of the emulator using these "
+"options."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.themeButton"
 msgid "Click here to change the emulator UI theme."
 msgstr "Clicca qui per cambiare il tema dell'interfaccia dell'emulatore."
+
+msgctxt "tour.retroThemeButton"
+msgid "Use the arrow keys to change the emulator UI theme."
+msgstr ""
 
 #, fuzzy
 msgctxt "tour.endTour"
@@ -829,12 +856,19 @@ msgstr ""
 "Fai clic sul pulsante del tour del globo per provare uno degli altri tour o "
 "premi Fine per iniziare a utilizzare l'emulatore."
 
+msgctxt "tour.retroTourSelectorHint"
+msgid ""
+"Select a menu item to try one of the other tours, or press Finish to start "
+"using the emulator."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.settingsWelcome"
-msgid "Apple2TS has a full set of controls for both the emulator and the Apple II."
+msgid ""
+"Apple2TS has a full set of controls for both the emulator and the Apple II."
 msgstr ""
-"Apple2TS ha un set completo di controlli sia per l'emulatore che per "
-"l'Apple II. Per saperne di più, premi il pulsante Avanti."
+"Apple2TS ha un set completo di controlli sia per l'emulatore che per l'Apple "
+"II. Per saperne di più, premi il pulsante Avanti."
 
 #, fuzzy
 msgctxt "tour.mainControls"
@@ -848,9 +882,9 @@ msgstr ""
 #, fuzzy
 msgctxt "tour.snapshot"
 msgid ""
-"At any point, you can take a snapshot of the current emulator state, then "
-"go back in time to an earlier state, or fast forward again. You can also "
-"save the emulator state with all of the current snapshots."
+"At any point, you can take a snapshot of the current emulator state, then go "
+"back in time to an earlier state, or fast forward again. You can also save "
+"the emulator state with all of the current snapshots."
 msgstr ""
 "In qualsiasi momento, puoi scattare un'istantanea dello stato attuale "
 "dell'emulatore, poi tornare indietro nel tempo a uno stato precedente, o "
@@ -860,12 +894,12 @@ msgstr ""
 #, fuzzy
 msgctxt "tour.pauseButton"
 msgid ""
-"You can pause the emulator at any time, freezing the 6502 processor. This "
-"is useful for pausing the action in a game, or entering the debugger."
+"You can pause the emulator at any time, freezing the 6502 processor. This is "
+"useful for pausing the action in a game, or entering the debugger."
 msgstr ""
 "Puoi mettere in pausa l'emulatore in qualsiasi momento, congelando il "
-"processore 6502. Questo è utile per mettere in pausa l'azione in un gioco, "
-"o entrare nel debugger."
+"processore 6502. Questo è utile per mettere in pausa l'azione in un gioco, o "
+"entrare nel debugger."
 
 #, fuzzy
 msgctxt "tour.debugButton"
@@ -887,9 +921,16 @@ msgstr ""
 "con la velocità dell'emulatore, il colore dello schermo, e il silenziamento "
 "dell'audio."
 
+msgctxt "tour.retroConfigButtons"
+msgid ""
+"The Options menu controls the state of the Apple II, starting with the "
+"emulator speed, the screen color, and muting the sound."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.keyboardButtons"
-msgid "If the caps lock key is turned on, then all typed characters are UPPERCASE."
+msgid ""
+"If the caps lock key is turned on, then all typed characters are UPPERCASE."
 msgstr ""
 "Se il tasto di blocco maiuscole è attivato, allora tutti i caratteri "
 "digitati sono MAIUSCOLI."
@@ -916,9 +957,16 @@ msgstr ""
 "cookie del browser. Premi questo pulsante per ripristinare queste "
 "impostazioni ed eliminare i cookie."
 
+msgctxt "tour.retroClearCookies"
+msgid ""
+"Apple2TS automatically saves the current emulator settings as browser "
+"cookies. Select this option to reset these settings and delete the cookies."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.debugWelcome"
-msgid "Apple2TS has a rich set of tools to analyze and debug 6502 assembly code."
+msgid ""
+"Apple2TS has a rich set of tools to analyze and debug 6502 assembly code."
 msgstr ""
 "Apple2TS ha un ricco set di strumenti per analizzare e debuggare codice "
 "assembly 6502. Per saperne di più, premi il pulsante Avanti."
@@ -926,7 +974,8 @@ msgstr ""
 #, fuzzy
 msgctxt "tour.debugIcon"
 msgid "Click on the Bug icon on the Info tabs to view the Debug panel."
-msgstr "Clicca sull'icona Bug nelle schede Info per visualizzare il pannello Debug."
+msgstr ""
+"Clicca sull'icona Bug nelle schede Info per visualizzare il pannello Debug."
 
 #, fuzzy
 msgctxt "tour.debugPause"
@@ -938,13 +987,13 @@ msgstr ""
 #, fuzzy
 msgctxt "tour.debugControls"
 msgid ""
-"Now that we have paused, we can step through the disassembled code using "
-"the Step Over, Into, and Out buttons. We can also quickly jump to the "
-"current address of the Program Counter (PC)."
+"Now that we have paused, we can step through the disassembled code using the "
+"Step Over, Into, and Out buttons. We can also quickly jump to the current "
+"address of the Program Counter (PC)."
 msgstr ""
 "Ora che abbiamo messo in pausa, possiamo attraversare il codice "
-"disassemblato usando i pulsanti Passo Oltre, Dentro, e Fuori. Possiamo "
-"anche saltare velocemente all'indirizzo corrente del Program Counter (PC)."
+"disassemblato usando i pulsanti Passo Oltre, Dentro, e Fuori. Possiamo anche "
+"saltare velocemente all'indirizzo corrente del Program Counter (PC)."
 
 #, fuzzy
 msgctxt "tour.debugDisassembly"
@@ -968,23 +1017,23 @@ msgid ""
 "updates in real time and shows you which memory banks are currently active."
 msgstr ""
 "Nel mezzo abbiamo il Dump Stack e una Mappa Memoria. La Mappa Memoria si "
-"aggiorna in tempo reale e ti mostra quali banchi di memoria sono "
-"attualmente attivi."
+"aggiorna in tempo reale e ti mostra quali banchi di memoria sono attualmente "
+"attivi."
 
 #, fuzzy
 msgctxt "tour.debugMemory"
 msgid ""
 "The last section displays the Apple II memory. You can use the droplist to "
-"examine different portions of memory. If you switch to one of the HGR "
-"pages, you will get a magnified view of the hires screen, tied to the "
-"memory locations. You can also search for hex values or ASCII strings, and "
-"save the memory to a file."
+"examine different portions of memory. If you switch to one of the HGR pages, "
+"you will get a magnified view of the hires screen, tied to the memory "
+"locations. You can also search for hex values or ASCII strings, and save the "
+"memory to a file."
 msgstr ""
 "L'ultima sezione mostra la memoria dell'Apple II. Puoi usare la lista a "
 "discesa per esaminare diverse porzioni di memoria. Se passi a una delle "
-"pagine HGR, otterrai una vista ingrandita dello schermo ad alta "
-"risoluzione, collegata alle posizioni di memoria. Puoi anche cercare valori "
-"esadecimali o stringhe ASCII, e salvare la memoria in un file."
+"pagine HGR, otterrai una vista ingrandita dello schermo ad alta risoluzione, "
+"collegata alle posizioni di memoria. Puoi anche cercare valori esadecimali o "
+"stringhe ASCII, e salvare la memoria in un file."
 
 #, fuzzy
 msgctxt "tour.back"
@@ -1018,25 +1067,24 @@ msgstr "Chiudi"
 
 #, fuzzy
 msgctxt "tour.guidedTour"
-msgid "Guided Tour"
+msgid "Tours"
 msgstr "Tour Guidato"
 
 #, fuzzy
 msgctxt "tour.mainLabel"
-msgid "Guided Tour: Main"
+msgid "Guided Tours: Main"
 msgstr "Tour Guidato: Principale"
 
 #, fuzzy
 msgctxt "tour.settingsLabel"
-msgid "Guided Tour: Settings"
+msgid "Guided Tours: Settings"
 msgstr "Tour Guidato: Impostazioni"
 
 #, fuzzy
 msgctxt "tour.debugLabel"
-msgid "Guided Tour: Debug"
+msgid "Guided Tours: Debug"
 msgstr "Tour Guidato: Debug"
 
-#, fuzzy
 msgctxt "disk.drive1"
 msgid "Drive 1"
 msgstr "Unità 1"
@@ -1319,20 +1367,20 @@ msgstr "Tocca lo schermo per mostrare la tastiera."
 #, fuzzy
 msgctxt "help.arrowKeys"
 msgid ""
-"Press the arrow keys, esc, or tab buttons to send those keys to the "
-"emulator."
-msgstr "Premi i tasti freccia, esc, o tab per inviare quei tasti all'emulatore."
+"Press the arrow keys, esc, or tab buttons to send those keys to the emulator."
+msgstr ""
+"Premi i tasti freccia, esc, o tab per inviare quei tasti all'emulatore."
 
 #, fuzzy
 msgctxt "help.ctrlKey"
 msgid ""
-"To send a control character, press the ctrl button once. Then tap the "
-"screen to show the keyboard and press the desired key. The ctrl button will "
+"To send a control character, press the ctrl button once. Then tap the screen "
+"to show the keyboard and press the desired key. The ctrl button will "
 "automatically be released."
 msgstr ""
-"Per inviare un carattere di controllo, premi il pulsante ctrl una volta. "
-"Poi tocca lo schermo per mostrare la tastiera e premi il tasto desiderato. "
-"Il pulsante ctrl sarà automaticamente rilasciato."
+"Per inviare un carattere di controllo, premi il pulsante ctrl una volta. Poi "
+"tocca lo schermo per mostrare la tastiera e premi il tasto desiderato. Il "
+"pulsante ctrl sarà automaticamente rilasciato."
 
 #, fuzzy
 msgctxt "help.ctrlLock"
@@ -1341,10 +1389,10 @@ msgid ""
 "on (indicated by a green dot). Then tap the screen to show the keyboard and "
 "press the desired keys. Press the ctrl button again to release it."
 msgstr ""
-"Per inviare più caratteri di controllo, premi il pulsante ctrl due volte "
-"per bloccarlo (indicato da un punto verde). Poi tocca lo schermo per "
-"mostrare la tastiera e premi i tasti desiderati. Premi il pulsante ctrl di "
-"nuovo per rilasciarlo."
+"Per inviare più caratteri di controllo, premi il pulsante ctrl due volte per "
+"bloccarlo (indicato da un punto verde). Poi tocca lo schermo per mostrare la "
+"tastiera e premi i tasti desiderati. Premi il pulsante ctrl di nuovo per "
+"rilasciarlo."
 
 #, fuzzy
 msgctxt "help.appleKeys"
@@ -1379,8 +1427,8 @@ msgstr ""
 msgctxt "help.urlParametersBody"
 msgid ""
 "For optional URL parameters, append them to the URL after a question mark "
-"(?) and separate multiple parameters with an ampersand (&). Use # to "
-"specify the disk image. See the Link Builder dialog for examples."
+"(?) and separate multiple parameters with an ampersand (&). Use # to specify "
+"the disk image. See the Link Builder dialog for examples."
 msgstr ""
 "Per i parametri URL opzionali, aggiungerli all'URL dopo un punto "
 "interrogativo (?) e separare più parametri con una e commerciale (&). Usare "
@@ -1566,7 +1614,7 @@ msgstr "Altoparlante"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -2448,8 +2496,8 @@ msgstr ""
 
 msgctxt "agent.ollamaWarning"
 msgid ""
-"Ollama runs locally on your machine. Make sure you have Ollama installed "
-"and running. Download from"
+"Ollama runs locally on your machine. Make sure you have Ollama installed and "
+"running. Download from"
 msgstr ""
 
 msgctxt "agent.providerNotConfigured"
@@ -2479,11 +2527,406 @@ msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
 msgstr "(c) {{year}} C.Torrence + collaboratori"
 
-#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
-"Clicca su Collezione dischi\n"
-"per caricare un gioco integrato."
+
+msgctxt "startup.retroControlPanel"
+msgid ""
+"Press SHIFT-ESC to display\n"
+"Apple2TS control panel."
+msgstr ""
+
+msgctxt "retroControl.ariaLabel"
+msgid "Apple2TS control panel"
+msgstr ""
+
+msgctxt "retroControl.machine"
+msgid "Machine"
+msgstr "Macchina"
+
+msgctxt "retroControl.fullscreen"
+msgid "Fullscreen"
+msgstr "Schermo intero"
+
+msgctxt "retroControl.diskCollection"
+msgid "Disks"
+msgstr "Dischi"
+
+msgctxt "retroControl.diskDrives"
+msgid "Drives"
+msgstr "Unità disco"
+
+msgctxt "retroControl.display"
+msgid "Display"
+msgstr "Schermo"
+
+msgctxt "retroControl.sound"
+msgid "Sound"
+msgstr "Audio"
+
+msgctxt "retroControl.options"
+msgid "Options"
+msgstr "Opzioni"
+
+msgctxt "retroControl.skin"
+msgid "Skin"
+msgstr "Aspetto"
+
+msgctxt "retroControl.personalization"
+msgid "Personalization"
+msgstr "Personalizzazione"
+
+msgctxt "retroControl.text"
+msgid "Text"
+msgstr "Testo"
+
+msgctxt "retroControl.background"
+msgid "Background"
+msgstr "Sfondo"
+
+msgctxt "retroControl.border"
+msgid "Border"
+msgstr "Bordo"
+
+msgctxt "retroControl.iigsColor.black"
+msgid "Black"
+msgstr "Nero"
+
+msgctxt "retroControl.iigsColor.red"
+msgid "Red"
+msgstr "Rosso"
+
+msgctxt "retroControl.iigsColor.darkBlue"
+msgid "Dark Blue"
+msgstr "Blu scuro"
+
+msgctxt "retroControl.iigsColor.purple"
+msgid "Purple"
+msgstr "Viola"
+
+msgctxt "retroControl.iigsColor.darkGreen"
+msgid "Dark Green"
+msgstr "Verde scuro"
+
+msgctxt "retroControl.iigsColor.darkGray"
+msgid "Dark Gray"
+msgstr "Grigio scuro"
+
+msgctxt "retroControl.iigsColor.mediumBlue"
+msgid "Medium Blue"
+msgstr "Blu medio"
+
+msgctxt "retroControl.iigsColor.lightBlue"
+msgid "Light Blue"
+msgstr "Azzurro"
+
+msgctxt "retroControl.iigsColor.brown"
+msgid "Brown"
+msgstr "Marrone"
+
+msgctxt "retroControl.iigsColor.orange"
+msgid "Orange"
+msgstr "Arancione"
+
+msgctxt "retroControl.iigsColor.lightGray"
+msgid "Light Gray"
+msgstr "Grigio chiaro"
+
+msgctxt "retroControl.iigsColor.pink"
+msgid "Pink"
+msgstr "Rosa"
+
+msgctxt "retroControl.iigsColor.lightGreen"
+msgid "Light Green"
+msgstr "Verde chiaro"
+
+msgctxt "retroControl.iigsColor.yellow"
+msgid "Yellow"
+msgstr "Giallo"
+
+msgctxt "retroControl.iigsColor.aquamarine"
+msgid "Aquamarine"
+msgstr "Acquamarina"
+
+msgctxt "retroControl.iigsColor.white"
+msgid "White"
+msgstr "Bianco"
+
+msgctxt "retroControl.keyboard"
+msgid "Keyboard"
+msgstr "Tastiera"
+
+msgctxt "retroControl.input"
+msgid "Input"
+msgstr ""
+
+msgctxt "retroControl.joystick"
+msgid "Joystick"
+msgstr "Joystick"
+
+msgctxt "retroControl.slots"
+msgid "Slots"
+msgstr "Slot"
+
+msgctxt "retroControl.devices"
+msgid "Devices"
+msgstr "Dispositivi"
+
+msgctxt "retroControl.printerPort"
+msgid "Printer Port"
+msgstr "Porta stampante"
+
+msgctxt "retroControl.modemPort"
+msgid "Modem Port"
+msgstr "Porta modem"
+
+msgctxt "retroControl.quit"
+msgid "Quit"
+msgstr "Esci"
+
+msgctxt "retroControl.apple2tsCollection"
+msgid "Apple2TS Collection"
+msgstr "Raccolta Apple2TS"
+
+msgctxt "retroControl.newReleases"
+msgid "New Releases"
+msgstr "Nuove uscite"
+
+msgctxt "retroControl.favorites"
+msgid "Favorites"
+msgstr "Preferiti"
+
+msgctxt "retroControl.exportDisksToHdv"
+msgid "Export Disks to HDV"
+msgstr "Esporta dischi in HDV"
+
+msgctxt "retroControl.noDiskDrivesAvailable"
+msgid "No disk drives available"
+msgstr "Nessuna unità disco disponibile"
+
+msgctxt "retroControl.select"
+msgid "Select"
+msgstr "Seleziona"
+
+msgctxt "retroControl.open"
+msgid "Open"
+msgstr "Apri"
+
+msgctxt "retroControl.load"
+msgid "Load"
+msgstr "Carica"
+
+msgctxt "retroControl.go"
+msgid "Go"
+msgstr "Vai"
+
+msgctxt "retroControl.save"
+msgid "Save"
+msgstr "Salva"
+
+msgctxt "retroControl.clipboard"
+msgid "Clipboard"
+msgstr "Appunti"
+
+msgctxt "retroControl.cancelEsc"
+msgid "Cancel:Esc"
+msgstr "Annulla:Esc"
+
+msgctxt "retroControl.color"
+msgid "Color"
+msgstr "Colore"
+
+msgctxt "retroControl.colorNoFringe"
+msgid "Color (no fringe)"
+msgstr ""
+
+msgctxt "retroControl.green"
+msgid "Green"
+msgstr ""
+
+msgctxt "retroControl.amber"
+msgid "Amber"
+msgstr ""
+
+msgctxt "retroControl.white"
+msgid "White"
+msgstr ""
+
+msgctxt "retroControl.inverse"
+msgid "Inverse"
+msgstr ""
+
+msgctxt "retroControl.snail"
+msgid "Snail"
+msgstr ""
+
+msgctxt "retroControl.slow"
+msgid "Slow"
+msgstr ""
+
+msgctxt "retroControl.normal"
+msgid "Normal"
+msgstr ""
+
+msgctxt "retroControl.twoMhz"
+msgid "2 MHz"
+msgstr ""
+
+msgctxt "retroControl.threeMhz"
+msgid "3 MHz"
+msgstr ""
+
+msgctxt "retroControl.fast"
+msgid "Fast"
+msgstr ""
+
+msgctxt "retroControl.warp"
+msgid "Warp"
+msgstr ""
+
+msgctxt "retroControl.systemSpeed"
+msgid "System Speed"
+msgstr "Velocità del sistema"
+
+msgctxt "retroControl.other"
+msgid "Other"
+msgstr "Altro"
+
+msgctxt "retroControl.timeMachine"
+msgid "Snapshots"
+msgstr "Istantanee"
+
+msgctxt "retroControl.ports"
+msgid "Ports"
+msgstr "Porte"
+
+msgctxt "retroControl.clock"
+msgid "Clock"
+msgstr "Orologio"
+
+msgctxt "retroControl.hostSystemClock"
+msgid "Host system clock"
+msgstr ""
+
+msgctxt "retroControl.mouse"
+msgid "Mouse"
+msgstr "Mouse"
+
+msgctxt "retroControl.ramDisk"
+msgid "RAM Disk"
+msgstr "Disco RAM"
+
+msgctxt "retroControl.language"
+msgid "Language"
+msgstr "Lingua"
+
+msgctxt "retroControl.port"
+msgid "Port"
+msgstr ""
+
+msgctxt "retroControl.builtinImageWriter"
+msgid "Builtin ImageWriter"
+msgstr ""
+
+msgctxt "retroControl.selectExternalPort"
+msgid "Select External Port"
+msgstr ""
+
+msgctxt "retroControl.externalPort"
+msgid "External Port"
+msgstr ""
+
+msgctxt "retroControl.retroTheme"
+msgid "Retro"
+msgstr "Retrò"
+
+msgctxt "retroControl.lowercaseInput"
+msgid "Lowercase input"
+msgstr "Inserimento minuscolo"
+
+msgctxt "retroControl.lowercase"
+msgid "Lowercase"
+msgstr ""
+
+msgctxt "retroControl.openAppleKey"
+msgid "Open Apple key"
+msgstr "Tasto Mela aperta"
+
+msgctxt "retroControl.sortOrder"
+msgid "Sort"
+msgstr "Ordina"
+
+msgctxt "retroControl.slot"
+msgid "Slot {{slot}}"
+msgstr ""
+
+msgctxt "retroControl.drive"
+msgid "{{drive}}: {{disk}}"
+msgstr ""
+
+msgctxt "retroControl.configured"
+msgid "{{count}} configured"
+msgstr ""
+
+msgctxt "retroControl.saveDisk"
+msgid "Save Disk"
+msgstr ""
+
+msgctxt "retroControl.card.empty"
+msgid "Empty"
+msgstr "Vuoto"
+
+msgctxt "retroControl.card.ssc"
+msgid "Super Serial Card"
+msgstr ""
+
+msgctxt "retroControl.card.softcard"
+msgid "Z-80 SoftCard"
+msgstr ""
+
+msgctxt "retroControl.card.aux"
+msgid "Auxiliary memory"
+msgstr ""
+
+msgctxt "retroControl.card.videoterm"
+msgid "Videx VideoTerm"
+msgstr ""
+
+msgctxt "retroControl.card.mockingboard"
+msgid "Mockingboard"
+msgstr "Mockingboard"
+
+msgctxt "retroControl.card.mouse"
+msgid "Mouse card"
+msgstr ""
+
+msgctxt "retroControl.card.vera"
+msgid "VERA graphics"
+msgstr ""
+
+msgctxt "retroControl.card.passport"
+msgid "Passport MIDI"
+msgstr ""
+
+msgctxt "retroControl.card.disk2"
+msgid "Disk II controller"
+msgstr ""
+
+msgctxt "retroControl.card.smartport"
+msgid "SmartPort drive"
+msgstr ""
+
+msgctxt "retroControl.fetchingDisk"
+msgid "Fetching disk {{current}}/{{total}}"
+msgstr ""
+
+msgctxt "retroControl.downloadFailed"
+msgid "Unable to download {{title}}"
+msgstr ""
+
+msgctxt "retroControl.exportFailed"
+msgid "Export to HDV failed: {{message}}"
+msgstr ""

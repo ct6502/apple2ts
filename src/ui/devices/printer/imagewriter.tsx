@@ -8,6 +8,32 @@ import { isAudioEnabled, registerAudioContext } from "../audio/speaker"
 import { handleGetSlotConfig, setSerialConfigCallback } from "../../main2worker"
 import { getSerialMode } from "../serial/serialhub"
 import { useTranslation } from "../../../i18n/useTranslation"
+import type { RetroControlMetadata } from "../../retro/retromenucontext"
+
+const OPEN_IMAGEWRITER_EVENT = "apple2ts:open-imagewriter"
+
+export const openImageWriterDialog = () => window.dispatchEvent(new Event(OPEN_IMAGEWRITER_EVENT))
+
+export const retroImageWriterControls: RetroControlMetadata[] = [
+  {
+    id: "slots.devices",
+    parentId: "slots",
+    order: 7,
+    label: context => context.t("retroControl.devices"),
+    separator: true,
+    selectable: false,
+  },
+  {
+    id: "slots.imageWriterII",
+    parentId: "slots",
+    order: 8,
+    label: context => context.t("print.imageWriterII"),
+    selectable: () => handleGetSlotConfig()[1] !== "none",
+    contextualActionLabel: context => context.t("retroControl.open"),
+    keepMenuOpen: true,
+    action: openImageWriterDialog,
+  },
+]
 
 enum AUDIO {
   TURN_ON = 0,
@@ -17,7 +43,7 @@ enum AUDIO {
 const PRINTER_DURATIONS = [0.7083, 1.292, 2.459, 3.625, 4.125, 5.375, 6.5, 7.625, 8.792, 9.75] // seconds
 const CLIP_LENGTH = PRINTER_DURATIONS[PRINTER_DURATIONS.length - 1]
 
-const ImageWriter = () => {
+const ImageWriter = ({ showLauncher = true }: { showLauncher?: boolean }) => {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [canvas] = useState(document.createElement("canvas"))
@@ -132,25 +158,31 @@ const ImageWriter = () => {
     registerSetPrinting(setPrinting)
   })
 
+  useEffect(() => {
+    const openDialog = () => setOpen(true)
+    window.addEventListener(OPEN_IMAGEWRITER_EVENT, openDialog)
+    return () => window.removeEventListener(OPEN_IMAGEWRITER_EVENT, openDialog)
+  }, [])
+
   const img1 = isPrinting ? iwiion : iwiioff
   const isTouchDevice = "ontouchstart" in document.documentElement
 
-  return (
-    <span className="flex-column" style={{ opacity: isPrinterDisabled ? 0.4 : 1, filter: isPrinterDisabled ? "grayscale(100%)" : "none", pointerEvents: isPrinterDisabled ? "none" : "auto" }}>
+  return <>
+    {showLauncher && <span className="flex-column" style={{ opacity: isPrinterDisabled ? 0.4 : 1, filter: isPrinterDisabled ? "grayscale(100%)" : "none", pointerEvents: isPrinterDisabled ? "none" : "auto" }}>
       <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
         style={{ borderWidth: 0, cursor: isPrinterDisabled ? "not-allowed" : "pointer" }}
         src={img1} alt="iwii"
         title={t("print.imageWriterII")}
         height="57px"
         onClick={() => { if (!isPrinterDisabled) setOpen(true) }} />
+    </span>}
       <PrinterDialog
         open={open}
         onClose={() => { setOpen(false) }}
         canvas={canvas}
         printer={ImageWriterII}
       />
-    </span>
-  )
+  </>
 }
 
 export default ImageWriter

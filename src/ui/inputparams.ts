@@ -1,4 +1,4 @@
-import { COLOR_MODE, RUN_MODE, UI_THEME } from "../common/utility"
+import { COLOR_MODE, RUN_MODE, UI_THEMES } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug, passSetProdosFloppy } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
@@ -123,19 +123,8 @@ export const handleInputParams = (paramString = "") => {
 
   const theme = params.get("theme")
   if (theme) {
-    switch (theme.toLocaleLowerCase()) {
-      case "classic":
-        setTheme(UI_THEME.CLASSIC)
-        break
-
-      case "dark":
-        setTheme(UI_THEME.DARK)
-        break
-
-      case "minimal":
-        setTheme(UI_THEME.MINIMAL)
-        break
-    }
+    const option = UI_THEMES.find(candidate => candidate.queryValue === theme.toLocaleLowerCase())
+    if (option) setTheme(option.value)
   }
 
   const address = params.get("address")

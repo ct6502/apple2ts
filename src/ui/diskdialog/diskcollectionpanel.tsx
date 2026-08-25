@@ -11,7 +11,6 @@ import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import {
   DiskCollectionSortMode,
-  getPreferenceDiskCollectionSort,
   setPreferenceDiskCollectionSort,
   setPreferenceNewReleasesChecked,
 } from "../localstorage"
@@ -22,7 +21,7 @@ import { showGlobalProgressModal } from "../ui_utilities"
 import { useTranslation } from "../../i18n/useTranslation"
 import { OneDriveCloudDrive } from "../devices/disk/onedriveclouddrive"
 import { GoogleDrive } from "../devices/disk/googledrive"
-import { sortDisks, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, createHdv, diskItemKey } from "./diskpanel_utils"
+import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, createHdv, diskItemKey } from "./diskpanel_utils"
 import { DiskItemTitle } from "./diskitemtitle"
 import { DiskPanelVtoc } from "./diskpanel_vtoc"
 
@@ -39,24 +38,6 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "numeric",
   day: "numeric"
 })
-
-const diskCollectionSortOptions: Array<{ value: DiskCollectionSortMode; label: string }> = [
-  { value: "name-asc", label: "A-Z" },
-  { value: "name-desc", label: "Z-A" },
-  { value: "date-newest", label: "New" },
-  { value: "date-oldest", label: "Old" },
-]
-
-const defaultSortModeByTab: Record<number, DiskCollectionSortMode> = {
-  [TAB_INDEX.BUILT_IN]: "name-asc",
-  [TAB_INDEX.NEW_RELEASES]: "date-newest",
-  [TAB_INDEX.FAVORITES]: "date-newest",
-  [TAB_INDEX.EXPORT]: "name-asc",
-}
-
-const getSortModeForTab = (tabIndex: number): DiskCollectionSortMode => {
-  return getPreferenceDiskCollectionSort(tabIndex) || defaultSortModeByTab[tabIndex] || "name-asc"
-}
 
 const createCloudProviderByName = (providerName: string): CloudProvider | null => {
   switch (providerName) {
@@ -123,10 +104,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [popupItem, setPopupItem] = useState<DiskCollectionItem>()
   const [activeTab, setActiveTab] = useState<number>(0)
   const [sortModeByTab, setSortModeByTab] = useState<Record<number, DiskCollectionSortMode>>(() => ({
-    [TAB_INDEX.BUILT_IN]: getSortModeForTab(TAB_INDEX.BUILT_IN),
-    [TAB_INDEX.NEW_RELEASES]: getSortModeForTab(TAB_INDEX.NEW_RELEASES),
-    [TAB_INDEX.FAVORITES]: getSortModeForTab(TAB_INDEX.FAVORITES),
-    [TAB_INDEX.EXPORT]: getSortModeForTab(TAB_INDEX.EXPORT),
+    [TAB_INDEX.BUILT_IN]: getDiskCollectionSortMode(TAB_INDEX.BUILT_IN),
+    [TAB_INDEX.NEW_RELEASES]: getDiskCollectionSortMode(TAB_INDEX.NEW_RELEASES),
+    [TAB_INDEX.FAVORITES]: getDiskCollectionSortMode(TAB_INDEX.FAVORITES),
+    [TAB_INDEX.EXPORT]: getDiskCollectionSortMode(TAB_INDEX.EXPORT),
   }))
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
   const [selectedDisks, setSelectedDisks] = useState<DiskCollectionItem[]>([])
@@ -587,444 +568,444 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       highlight={hasNewRelease}
       position="bottom-right">
       <div onContextMenuCapture={(e) => e.preventDefault()}>
-      <div className="flex-row dcp-tab-row"
-        onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
-        {tabs.map((tab, i) => (
+        <div className="flex-row dcp-tab-row"
+          onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
+          {tabs.map((tab, i) => (
+            <div
+              key={`tab-${i}`}
+              className={`dcp-tab ${i == activeTab ? " dcp-tab-active" : ""} ${tab.isHighlighted ? " dcp-tab-highlighted" : ""}`}
+              title={tab.label}
+              onClick={handleTabClick(i)}>
+              <FontAwesomeIcon icon={tab.icon} size="lg" />
+            </div>
+          ))}
+        </div>
+        {cloudProvidersNeedingAuth.length > 0 && cloudProvidersNeedingAuth.map((providerName) => (
           <div
-            key={`tab-${i}`}
-            className={`dcp-tab ${i == activeTab ? " dcp-tab-active" : ""} ${tab.isHighlighted ? " dcp-tab-highlighted" : ""}`}
-            title={tab.label}
-            onClick={handleTabClick(i)}>
-            <FontAwesomeIcon icon={tab.icon} size="lg" />
+            key={`dcp-auth-bar-${providerName}`}
+            className="dcp-auth-bar"
+            onClick={(e) => e.stopPropagation()}>
+            <span className="dcp-auth-bar-text">{`${cloudProviderDisplayName(providerName)} ${t("collection.cloudAuthRequired") || "auth required"}`}</span>
+            <button
+              className="dcp-auth-bar-button"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleCloudSignIn(providerName)
+              }}>{t("collection.signIn") || "Sign in"}</button>
           </div>
         ))}
-      </div>
-      {cloudProvidersNeedingAuth.length > 0 && cloudProvidersNeedingAuth.map((providerName) => (
-        <div
-          key={`dcp-auth-bar-${providerName}`}
-          className="dcp-auth-bar"
-          onClick={(e) => e.stopPropagation()}>
-          <span className="dcp-auth-bar-text">{`${cloudProviderDisplayName(providerName)} ${t("collection.cloudAuthRequired") || "auth required"}`}</span>
-          <button
-            className="dcp-auth-bar-button"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleCloudSignIn(providerName)
-            }}>{t("collection.signIn") || "Sign in"}</button>
-        </div>
-      ))}
-      <div className="disk-collection-panel"
-        style={cloudProvidersNeedingAuth.length > 0
-          ? { height: `calc(65vh - ${cloudProvidersNeedingAuth.length * AUTH_BAR_HEIGHT}px)` }
-          : undefined}
-        onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
-        {tabs[activeTab].disks.map((diskCollectionItem, index) => {
-          const isExportTab = activeTab == TAB_INDEX.EXPORT
-          const isDisabledForExport = isExportTab && !isDiskExportable(diskCollectionItem)
-          const isBookmarkPendingRemoval = !!diskCollectionItem.bookmarkId && pendingBookmarkRemovals.has(diskCollectionItem.bookmarkId)
+        <div className="disk-collection-panel"
+          style={cloudProvidersNeedingAuth.length > 0
+            ? { height: `calc(65vh - ${cloudProvidersNeedingAuth.length * AUTH_BAR_HEIGHT}px)` }
+            : undefined}
+          onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
+          {tabs[activeTab].disks.map((diskCollectionItem, index) => {
+            const isExportTab = activeTab == TAB_INDEX.EXPORT
+            const isDisabledForExport = isExportTab && !isDiskExportable(diskCollectionItem)
+            const isBookmarkPendingRemoval = !!diskCollectionItem.bookmarkId && pendingBookmarkRemovals.has(diskCollectionItem.bookmarkId)
 
-          return (
-            <div
-              key={`dcp-${tabs[activeTab].label}-${index}`}
-              className={`dcp-item${isDisabledForExport ? " dcp-item-disabled" : ""}`}
-              onContextMenu={handleItemRightClick(diskCollectionItem)}
-              onClickCapture={(e) => {
-                if (Date.now() < suppressClickUntilRef.current) {
-                  e.preventDefault()
-                  e.stopPropagation()
-                }
-              }}
-              onAuxClickCapture={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-              }}
-              onMouseDown={(e) => {
-                beginPrimaryPress(e)
-              }}
-              onMouseUp={(e) => {
-                if (!primaryPressRef.current) {
-                  e.stopPropagation()
-                  return
-                }
-                primaryPressRef.current = false
-                if (popupOpenRef.current) {
-                  e.stopPropagation()
-                  return
-                }
-                if (Date.now() < suppressClickUntilRef.current) {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  return
-                }
-                if (e.button !== 0 || e.ctrlKey) {
-                  return
-                }
-                if (activeTab == TAB_INDEX.EXPORT && !isDisabledForExport) {
-                  toggleSelectedItem(diskCollectionItem)
-                  e.stopPropagation()
-                }
-              }}>
-              <div className="dcp-item-title-box">
-                <DiskItemTitle
-                  text={diskCollectionItem.title}
-                  className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
-                  title={diskCollectionItem.detailsUrl ? `${t("collection.clickToShowDetails")} "${diskCollectionItem.title}"` : diskCollectionItem.title}
-                  onMouseDown={(e) => {
-                    beginPrimaryPress(e as unknown as React.MouseEvent<HTMLElement>)
-                  }}
-                  onMouseUp={(e) => {
-                    if (!primaryPressRef.current) {
-                      e.stopPropagation()
-                      return
-                    }
-                    primaryPressRef.current = false
-                    if (popupOpenRef.current) {
-                      e.stopPropagation()
-                      return
-                    }
-                    if (Date.now() < suppressClickUntilRef.current) {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      return
-                    }
-                    if (e.button !== 0 || e.ctrlKey) return
-                    if (activeTab != TAB_INDEX.EXPORT && diskCollectionItem.detailsUrl) {
-                      handleHelpClick(diskCollectionItem)(e as unknown as React.MouseEvent<HTMLElement>)
-                    }
-                  }} />
-              </div>
-              {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
+            return (
               <div
-                className="dcp-item-image-box"
-                title={activeTab == TAB_INDEX.EXPORT
-                  ? (selectedDisks.includes(diskCollectionItem)
-                    ? t("collection.clickToRemoveFromSelected") || "Click to remove from selected disks"
-                    : t("collection.clickToAddToSelected") || "Click to add to selected disks")
-                  : `${t("collection.clickToLoadDisk")} "${diskCollectionItem.title}"`}
-                onMouseDown={(event) => {
-                  beginPrimaryPress(event as unknown as React.MouseEvent<HTMLElement>)
+                key={`dcp-${tabs[activeTab].label}-${index}`}
+                className={`dcp-item${isDisabledForExport ? " dcp-item-disabled" : ""}`}
+                onContextMenu={handleItemRightClick(diskCollectionItem)}
+                onClickCapture={(e) => {
+                  if (Date.now() < suppressClickUntilRef.current) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                  }
                 }}
-                onMouseUp={(event) => {
+                onAuxClickCapture={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
+                onMouseDown={(e) => {
+                  beginPrimaryPress(e)
+                }}
+                onMouseUp={(e) => {
                   if (!primaryPressRef.current) {
-                    event.stopPropagation()
+                    e.stopPropagation()
                     return
                   }
                   primaryPressRef.current = false
                   if (popupOpenRef.current) {
-                    event.stopPropagation()
+                    e.stopPropagation()
                     return
                   }
                   if (Date.now() < suppressClickUntilRef.current) {
-                    event.preventDefault()
-                    event.stopPropagation()
+                    e.preventDefault()
+                    e.stopPropagation()
                     return
                   }
-                  if (event.button !== 0 || event.ctrlKey) return
-                  if (activeTab == TAB_INDEX.EXPORT) {
-                    if (!isDisabledForExport) {
-                      toggleSelectedItem(diskCollectionItem)
+                  if (e.button !== 0 || e.ctrlKey) {
+                    return
+                  }
+                  if (activeTab == TAB_INDEX.EXPORT && !isDisabledForExport) {
+                    toggleSelectedItem(diskCollectionItem)
+                    e.stopPropagation()
+                  }
+                }}>
+                <div className="dcp-item-title-box">
+                  <DiskItemTitle
+                    text={diskCollectionItem.title}
+                    className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
+                    title={diskCollectionItem.detailsUrl ? `${t("collection.clickToShowDetails")} "${diskCollectionItem.title}"` : diskCollectionItem.title}
+                    onMouseDown={(e) => {
+                      beginPrimaryPress(e as unknown as React.MouseEvent<HTMLElement>)
+                    }}
+                    onMouseUp={(e) => {
+                      if (!primaryPressRef.current) {
+                        e.stopPropagation()
+                        return
+                      }
+                      primaryPressRef.current = false
+                      if (popupOpenRef.current) {
+                        e.stopPropagation()
+                        return
+                      }
+                      if (Date.now() < suppressClickUntilRef.current) {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        return
+                      }
+                      if (e.button !== 0 || e.ctrlKey) return
+                      if (activeTab != TAB_INDEX.EXPORT && diskCollectionItem.detailsUrl) {
+                        handleHelpClick(diskCollectionItem)(e as unknown as React.MouseEvent<HTMLElement>)
+                      }
+                    }} />
+                </div>
+                {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
+                <div
+                  className="dcp-item-image-box"
+                  title={activeTab == TAB_INDEX.EXPORT
+                    ? (selectedDisks.includes(diskCollectionItem)
+                      ? t("collection.clickToRemoveFromSelected") || "Click to remove from selected disks"
+                      : t("collection.clickToAddToSelected") || "Click to add to selected disks")
+                    : `${t("collection.clickToLoadDisk")} "${diskCollectionItem.title}"`}
+                  onMouseDown={(event) => {
+                    beginPrimaryPress(event as unknown as React.MouseEvent<HTMLElement>)
+                  }}
+                  onMouseUp={(event) => {
+                    if (!primaryPressRef.current) {
                       event.stopPropagation()
+                      return
                     }
-                  } else {
-                    loadDisk(-1, diskCollectionItem, props.updateDisplay)
-                    dismissDiskCollection()
-                  }
-                }}
-                onContextMenu={(event) => {
-                  handleItemRightClick(diskCollectionItem)(event as unknown as React.MouseEvent<HTMLElement>)
-                }}
-                onAuxClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                }}
-              >
-                <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
-                <div className="dcp-item-icon-top-right">
-                  {activeTab == 2 && diskCollectionItem.bookmarkId &&
-                    <div
-                      className="dcp-item-bookmark"
-                      title={isBookmarkPendingRemoval
-                        ? t("collection.clickToKeepInCollection") || "Click to keep in disk collection"
-                        : t("collection.clickToRemoveFromCollection") || "Click to mark for removal from disk collection"}
-                      onMouseDown={(event) => {
-                        beginPrimaryPress(event as unknown as React.MouseEvent<HTMLElement>)
-                      }}
-                      onMouseUp={handleBookmarkMouseUp(diskCollectionItem)}
-                      onContextMenu={(event) => {
-                        handleBookmarkRightClick(diskCollectionItem)(event as unknown as React.MouseEvent<HTMLElement>)
-                      }}
-                      onAuxClick={(event) => {
-                        event.preventDefault()
+                    primaryPressRef.current = false
+                    if (popupOpenRef.current) {
+                      event.stopPropagation()
+                      return
+                    }
+                    if (Date.now() < suppressClickUntilRef.current) {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      return
+                    }
+                    if (event.button !== 0 || event.ctrlKey) return
+                    if (activeTab == TAB_INDEX.EXPORT) {
+                      if (!isDisabledForExport) {
+                        toggleSelectedItem(diskCollectionItem)
                         event.stopPropagation()
-                      }}>
-                      <FontAwesomeIcon icon={isBookmarkPendingRemoval ? faStarOutline : faStar} size="lg" className="dcp-item-bookmark-icon" />
-                    </div>}
-                  {activeTab == TAB_INDEX.EXPORT && isDiskExportable(diskCollectionItem) &&
-                    <div
-                      className="dcp-item-select"
-                      title={selectedDisks.includes(diskCollectionItem) ? t("collection.clickToRemoveFromSelected") || "Click to remove from selected disks" : t("collection.clickToAddToSelected") || "Click to add to selected disks"}
-                      onMouseDown={(event) => {
-                        beginPrimaryPress(event as unknown as React.MouseEvent<HTMLElement>)
-                      }}
-                      onMouseUp={isDisabledForExport ? undefined : handleSelectedMouseUp(diskCollectionItem)}
-                      onContextMenu={(event) => {
-                        handleItemRightClick(diskCollectionItem)(event as unknown as React.MouseEvent<HTMLElement>)
-                      }}
-                      onAuxClick={(event) => {
-                        event.preventDefault()
-                        event.stopPropagation()
-                      }}>
-                      <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} size="lg" className="dcp-item-select-icon" />
-                      {selectedDisks.includes(diskCollectionItem) && <div className="dcp-item-select-icon-bg">&nbsp;</div>}
-                    </div>}
-                </div>
-                <div className="dcp-item-icon-row">
-                  <div className="dcp-item-icon-left-group">
-                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
-                      <div className="dcp-item-new" title={t("collection.diskIsNewRelease")}>
-                        <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => {
-                          if (activeTab != TAB_INDEX.EXPORT) {
-                            event.stopPropagation()
-                          }
-                        }} />
-                        <div className="dcp-item-new-icon-bg">&nbsp;</div>
-                      </div>}
-                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
-                      <div className="dcp-item-a2ts" title={t("collection.diskIsApple2TSCollection")}>
-                        <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => {
-                          if (activeTab != TAB_INDEX.EXPORT) {
-                            event.stopPropagation()
-                          }
-                        }} />
-                        <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
-                      </div>}
-                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
-                      <div className="dcp-item-ia" title={t("collection.diskIsInternetArchive")}>
-                        <svg
-                          className="dcp-item-ia-icon"
-                          onClick={(event) => {
-                            if (activeTab != TAB_INDEX.EXPORT) {
-                              event.stopPropagation()
-                            }
-                          }}
-                          fill="#ffffff"
-                          viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
-                        <div className="dcp-item-ia-icon-bg">&nbsp;</div>
-                      </div>}
-                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.DEMOZOO &&
-                      <div className="dcp-item-ia" title={t("collection.diskIsDemoZoo")}>
-                        <span
-                          className="dcp-item-ia-icon"
-                          onClick={(event) => {
-                            if (activeTab != TAB_INDEX.EXPORT) {
-                              event.stopPropagation()
-                            }
-                          }}>
-                          {svgDemoZooLogo}
-                        </span>
-                        <div className="dcp-item-ia-icon-bg">&nbsp;</div>
-                      </div>}
-                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
-                      <div className="dcp-item-cloud" title={`${t("collection.diskIsSyncedVia")} ${diskCollectionItem.cloudData?.providerName}`}>
-                        <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => {
-                          if (activeTab != TAB_INDEX.EXPORT) {
-                            event.stopPropagation()
-                          }
-                        }} />
-                      </div>}
-                    {(() => {
-                      const exportBadge = getExportBadgeInfo(diskCollectionItem)
-                      const badgeStateClass = exportBadge.state === "blocked"
-                        ? " dcp-item-export-badge-disabled"
-                        : exportBadge.state === "pending"
-                          ? (activeVtocCheckKey === diskItemKey(diskCollectionItem)
-                            ? " dcp-item-export-badge-checking"
-                            : " dcp-item-export-badge-pending")
-                          : ""
-                      return (
-                        <div
-                          className={`dcp-item-export-badge${badgeStateClass}`}
-                          title={exportBadge.title}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onMouseUp={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            forceVtocCheck?.(diskCollectionItem)
-                          }}>
-                          <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" />
-                          <div className="dcp-item-export-badge-icon-bg">&nbsp;</div>
-                        </div>
-                      )
-                    })()}
-                  </div>
-                  <div className="dcp-item-icon-right-group">
-                    {activeTab == TAB_INDEX.EXPORT &&
+                      }
+                    } else {
+                      loadDisk(-1, diskCollectionItem, props.updateDisplay)
+                      dismissDiskCollection()
+                    }
+                  }}
+                  onContextMenu={(event) => {
+                    handleItemRightClick(diskCollectionItem)(event as unknown as React.MouseEvent<HTMLElement>)
+                  }}
+                  onAuxClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                  }}
+                >
+                  <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
+                  <div className="dcp-item-icon-top-right">
+                    {activeTab == 2 && diskCollectionItem.bookmarkId &&
                       <div
-                        className="dcp-item-report"
-                        title={t("collection.reportExportIssue") || "Report an export issue"}
-                        onClick={(event) => {
+                        className="dcp-item-bookmark"
+                        title={isBookmarkPendingRemoval
+                          ? t("collection.clickToKeepInCollection") || "Click to keep in disk collection"
+                          : t("collection.clickToRemoveFromCollection") || "Click to mark for removal from disk collection"}
+                        onMouseDown={(event) => {
+                          beginPrimaryPress(event as unknown as React.MouseEvent<HTMLElement>)
+                        }}
+                        onMouseUp={handleBookmarkMouseUp(diskCollectionItem)}
+                        onContextMenu={(event) => {
+                          handleBookmarkRightClick(diskCollectionItem)(event as unknown as React.MouseEvent<HTMLElement>)
+                        }}
+                        onAuxClick={(event) => {
+                          event.preventDefault()
                           event.stopPropagation()
-                          const reportUrl = `https://github.com/ct6502/apple2ts/issues/new?assignees=boredsenseless&labels=bug&title=%5BExport+to+HDV%5D+${encodeURIComponent(diskCollectionItem.title)}`
-                          window.open(reportUrl, "_blank", "noopener,noreferrer")
                         }}>
-                        <FontAwesomeIcon icon={faCommentDots} size="lg" className="dcp-item-report-icon" />
-                        <div className="dcp-item-report-icon-bg">&nbsp;</div>
+                        <FontAwesomeIcon icon={isBookmarkPendingRemoval ? faStarOutline : faStar} size="lg" className="dcp-item-bookmark-icon" />
+                      </div>}
+                    {activeTab == TAB_INDEX.EXPORT && isDiskExportable(diskCollectionItem) &&
+                      <div
+                        className="dcp-item-select"
+                        title={selectedDisks.includes(diskCollectionItem) ? t("collection.clickToRemoveFromSelected") || "Click to remove from selected disks" : t("collection.clickToAddToSelected") || "Click to add to selected disks"}
+                        onMouseDown={(event) => {
+                          beginPrimaryPress(event as unknown as React.MouseEvent<HTMLElement>)
+                        }}
+                        onMouseUp={isDisabledForExport ? undefined : handleSelectedMouseUp(diskCollectionItem)}
+                        onContextMenu={(event) => {
+                          handleItemRightClick(diskCollectionItem)(event as unknown as React.MouseEvent<HTMLElement>)
+                        }}
+                        onAuxClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                        }}>
+                        <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} size="lg" className="dcp-item-select-icon" />
+                        {selectedDisks.includes(diskCollectionItem) && <div className="dcp-item-select-icon-bg">&nbsp;</div>}
                       </div>}
                   </div>
+                  <div className="dcp-item-icon-row">
+                    <div className="dcp-item-icon-left-group">
+                      {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
+                        <div className="dcp-item-new" title={t("collection.diskIsNewRelease")}>
+                          <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => {
+                            if (activeTab != TAB_INDEX.EXPORT) {
+                              event.stopPropagation()
+                            }
+                          }} />
+                          <div className="dcp-item-new-icon-bg">&nbsp;</div>
+                        </div>}
+                      {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
+                        <div className="dcp-item-a2ts" title={t("collection.diskIsApple2TSCollection")}>
+                          <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => {
+                            if (activeTab != TAB_INDEX.EXPORT) {
+                              event.stopPropagation()
+                            }
+                          }} />
+                          <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
+                        </div>}
+                      {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
+                        <div className="dcp-item-ia" title={t("collection.diskIsInternetArchive")}>
+                          <svg
+                            className="dcp-item-ia-icon"
+                            onClick={(event) => {
+                              if (activeTab != TAB_INDEX.EXPORT) {
+                                event.stopPropagation()
+                              }
+                            }}
+                            fill="#ffffff"
+                            viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
+                          <div className="dcp-item-ia-icon-bg">&nbsp;</div>
+                        </div>}
+                      {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.DEMOZOO &&
+                        <div className="dcp-item-ia" title={t("collection.diskIsDemoZoo")}>
+                          <span
+                            className="dcp-item-ia-icon"
+                            onClick={(event) => {
+                              if (activeTab != TAB_INDEX.EXPORT) {
+                                event.stopPropagation()
+                              }
+                            }}>
+                            {svgDemoZooLogo}
+                          </span>
+                          <div className="dcp-item-ia-icon-bg">&nbsp;</div>
+                        </div>}
+                      {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
+                        <div className="dcp-item-cloud" title={`${t("collection.diskIsSyncedVia")} ${diskCollectionItem.cloudData?.providerName}`}>
+                          <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => {
+                            if (activeTab != TAB_INDEX.EXPORT) {
+                              event.stopPropagation()
+                            }
+                          }} />
+                        </div>}
+                      {(() => {
+                        const exportBadge = getExportBadgeInfo(diskCollectionItem)
+                        const badgeStateClass = exportBadge.state === "blocked"
+                          ? " dcp-item-export-badge-disabled"
+                          : exportBadge.state === "pending"
+                            ? (activeVtocCheckKey === diskItemKey(diskCollectionItem)
+                              ? " dcp-item-export-badge-checking"
+                              : " dcp-item-export-badge-pending")
+                            : ""
+                        return (
+                          <div
+                            className={`dcp-item-export-badge${badgeStateClass}`}
+                            title={exportBadge.title}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              forceVtocCheck?.(diskCollectionItem)
+                            }}>
+                            <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" />
+                            <div className="dcp-item-export-badge-icon-bg">&nbsp;</div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                    <div className="dcp-item-icon-right-group">
+                      {activeTab == TAB_INDEX.EXPORT &&
+                        <div
+                          className="dcp-item-report"
+                          title={t("collection.reportExportIssue") || "Report an export issue"}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            const reportUrl = `https://github.com/ct6502/apple2ts/issues/new?assignees=boredsenseless&labels=bug&title=%5BExport+to+HDV%5D+${encodeURIComponent(diskCollectionItem.title)}`
+                            window.open(reportUrl, "_blank", "noopener,noreferrer")
+                          }}>
+                          <FontAwesomeIcon icon={faCommentDots} size="lg" className="dcp-item-report-icon" />
+                          <div className="dcp-item-report-icon-bg">&nbsp;</div>
+                        </div>}
+                    </div>
+                  </div>
                 </div>
+                <img className="dcp-item-disk" src="assets/floppy.png" />
               </div>
-              <img className="dcp-item-disk" src="assets/floppy.png" />
-            </div>
-          )
-        })}
-      </div>
-      <div
-        className="dcp-export-row"
-        onClick={(e) => e.stopPropagation()}>
-        <div className="dcp-sort-controls">
-          <select
-            id="dcp-sort-select"
-            className="dcp-sort-select"
-            value={sortModeByTab[activeTab]}
-            onChange={handleSortModeChange}
-            onClick={(e) => e.stopPropagation()}>
-            {diskCollectionSortOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
+            )
+          })}
         </div>
-        <div className="dcp-export-size-cell">
-          {activeTab == TAB_INDEX.EXPORT &&
-            <div className="dcp-export-size"><span className={`${estimateHdvSize() > maxHdvBytes ? "dcp-export-size-exceeded" : ""}`}>{formatBytes(estimateHdvSize())}</span> / {formatBytes(maxHdvBytes)}</div>
-          }
-        </div>
-        <div className={`dcp-export-controls${activeTab == TAB_INDEX.EXPORT ? "" : " dcp-export-row-inactive"}`}>
-          <button
-            className="dcp-export-button"
-            disabled={activeTab != TAB_INDEX.EXPORT || isExportButtonDisabled()}
-            onClick={(e) => {
-              e.stopPropagation()
-              if (activeTab == TAB_INDEX.EXPORT) {
-                handleExportClick()
-              }
-            }}>{t("collection.export") || "Export"}</button>
-        </div>
-      </div>
-      <PopupMenu
-        key="drive-popup"
-        location={drivePopupLocation}
-        style={{
-          padding: "5px",
-          paddingLeft: "10px",
-          paddingRight: "10px"
-        }}
-        onClose={() => {
-          popupOpenRef.current = false
-          setDrivePopupLocation(undefined)
-        }}
-        menuItems={[[
-          ...[0, 1].map((i) => (
-            {
-              label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
-              icon: faHardDrive,
-              isSelected: () => { return false },
-              onClick: () => {
-                setDrivePopupLocation(undefined)
-                loadDisk(i, popupItem, props.updateDisplay)
-                dismissDiskCollection()
-              }
+        <div
+          className="dcp-export-row"
+          onClick={(e) => e.stopPropagation()}>
+          <div className="dcp-sort-controls">
+            <select
+              id="dcp-sort-select"
+              className="dcp-sort-select"
+              value={sortModeByTab[activeTab]}
+              onChange={handleSortModeChange}
+              onClick={(e) => e.stopPropagation()}>
+              {diskCollectionSortOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="dcp-export-size-cell">
+            {activeTab == TAB_INDEX.EXPORT &&
+              <div className="dcp-export-size"><span className={`${estimateHdvSize() > maxHdvBytes ? "dcp-export-size-exceeded" : ""}`}>{formatBytes(estimateHdvSize())}</span> / {formatBytes(maxHdvBytes)}</div>
             }
-          )),
-          ...[{ label: "-" }],
-          ...[2, 3].map((i) => (
-            {
-              label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
-              icon: faFloppyDisk,
-              isSelected: () => { return false },
-              onClick: () => {
-                setDrivePopupLocation(undefined)
-                loadDisk(i, popupItem, props.updateDisplay)
-                dismissDiskCollection()
-              }
-            }
-          ))
-        ]]}
-      />
-      <PopupMenu
-        key="select-popup"
-        location={selectPopupLocation}
-        style={{
-          padding: "5px",
-          paddingLeft: "10px",
-          paddingRight: "10px"
-        }}
-        onClose={() => {
-          popupOpenRef.current = false
-          setSelectPopupLocation(undefined)
-        }}
-        menuItems={[[
-          ...(activeTab == TAB_INDEX.EXPORT
-            ? [
+          </div>
+          <div className={`dcp-export-controls${activeTab == TAB_INDEX.EXPORT ? "" : " dcp-export-row-inactive"}`}>
+            <button
+              className="dcp-export-button"
+              disabled={activeTab != TAB_INDEX.EXPORT || isExportButtonDisabled()}
+              onClick={(e) => {
+                e.stopPropagation()
+                if (activeTab == TAB_INDEX.EXPORT) {
+                  handleExportClick()
+                }
+              }}>{t("collection.export") || "Export"}</button>
+          </div>
+        </div>
+        <PopupMenu
+          key="drive-popup"
+          location={drivePopupLocation}
+          style={{
+            padding: "5px",
+            paddingLeft: "10px",
+            paddingRight: "10px"
+          }}
+          onClose={() => {
+            popupOpenRef.current = false
+            setDrivePopupLocation(undefined)
+          }}
+          menuItems={[[
+            ...[0, 1].map((i) => (
               {
-                label: "Select all disks",
-                icon: faCheckCircle,
+                label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
+                icon: faHardDrive,
+                isSelected: () => { return false },
                 onClick: () => {
-                  const newSelectedDisks = [...selectedDisks]
-                  for (const diskCollectionItem of tabs[TAB_INDEX.EXPORT].disks) {
-                    if (isDiskExportable(diskCollectionItem) && diskCollectionItem.vtocType !== undefined && !newSelectedDisks.includes(diskCollectionItem)) {
-                      newSelectedDisks.push(diskCollectionItem)
+                  setDrivePopupLocation(undefined)
+                  loadDisk(i, popupItem, props.updateDisplay)
+                  dismissDiskCollection()
+                }
+              }
+            )),
+            ...[{ label: "-" }],
+            ...[2, 3].map((i) => (
+              {
+                label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
+                icon: faFloppyDisk,
+                isSelected: () => { return false },
+                onClick: () => {
+                  setDrivePopupLocation(undefined)
+                  loadDisk(i, popupItem, props.updateDisplay)
+                  dismissDiskCollection()
+                }
+              }
+            ))
+          ]]}
+        />
+        <PopupMenu
+          key="select-popup"
+          location={selectPopupLocation}
+          style={{
+            padding: "5px",
+            paddingLeft: "10px",
+            paddingRight: "10px"
+          }}
+          onClose={() => {
+            popupOpenRef.current = false
+            setSelectPopupLocation(undefined)
+          }}
+          menuItems={[[
+            ...(activeTab == TAB_INDEX.EXPORT
+              ? [
+                {
+                  label: "Select all disks",
+                  icon: faCheckCircle,
+                  onClick: () => {
+                    const newSelectedDisks = [...selectedDisks]
+                    for (const diskCollectionItem of tabs[TAB_INDEX.EXPORT].disks) {
+                      if (isDiskExportable(diskCollectionItem) && diskCollectionItem.vtocType !== undefined && !newSelectedDisks.includes(diskCollectionItem)) {
+                        newSelectedDisks.push(diskCollectionItem)
+                      }
                     }
+                    setSelectedDisks(newSelectedDisks)
                   }
-                  setSelectedDisks(newSelectedDisks)
+                },
+                {
+                  label: "Unselect all disks",
+                  icon: faCircle,
+                  onClick: () => {
+                    setSelectedDisks([])
+                  }
                 }
-              },
-              {
-                label: "Unselect all disks",
-                icon: faCircle,
-                onClick: () => {
-                  setSelectedDisks([])
-                }
-              }
-            ]
-            : [
-              {
-                label: "Delete all bookmarks",
-                icon: faStarOutline,
-                onClick: () => {
-                  const allBookmarkIds = new Set<string>()
-                  for (const diskCollectionItem of tabs[TAB_INDEX.FAVORITES].disks) {
-                    if (diskCollectionItem.bookmarkId) {
-                      allBookmarkIds.add(diskCollectionItem.bookmarkId)
+              ]
+              : [
+                {
+                  label: "Delete all bookmarks",
+                  icon: faStarOutline,
+                  onClick: () => {
+                    const allBookmarkIds = new Set<string>()
+                    for (const diskCollectionItem of tabs[TAB_INDEX.FAVORITES].disks) {
+                      if (diskCollectionItem.bookmarkId) {
+                        allBookmarkIds.add(diskCollectionItem.bookmarkId)
+                      }
                     }
+                    setPendingBookmarkRemovals(allBookmarkIds)
                   }
-                  setPendingBookmarkRemovals(allBookmarkIds)
+                },
+                {
+                  label: "Restore all bookmarks",
+                  icon: faStar,
+                  onClick: () => {
+                    setPendingBookmarkRemovals(new Set())
+                  }
                 }
-              },
-              {
-                label: "Restore all bookmarks",
-                icon: faStar,
-                onClick: () => {
-                  setPendingBookmarkRemovals(new Set())
-                }
-              }
-            ])
-        ]]}
-      />
-      <DiskPanelVtoc
-        activeTab={activeTab}
-        isFlyoutOpen={isFlyoutOpen}
-        diskBookmarks={diskBookmarks}
-        setDiskCollection={setDiskCollection}
-        exportQueue={exportQueue}
-        downloadedDisks={downloadedDisks}
-        visibleCandidates={activeTab === TAB_INDEX.EXPORT
-          ? diskCollection.filter(isDiskExportable)
-          : tabs[activeTab].disks.filter(isDiskExportable)}
-        authRefresh={authRefresh}
-        cloudProviderHasAuthToken={cloudProviderHasAuthToken}
-        setForceVtocCheck={setForceVtocCheck}
-        setActiveVtocCheckKey={setActiveVtocCheckKey}
-      />
+              ])
+          ]]}
+        />
+        <DiskPanelVtoc
+          activeTab={activeTab}
+          isFlyoutOpen={isFlyoutOpen}
+          diskBookmarks={diskBookmarks}
+          setDiskCollection={setDiskCollection}
+          exportQueue={exportQueue}
+          downloadedDisks={downloadedDisks}
+          visibleCandidates={activeTab === TAB_INDEX.EXPORT
+            ? diskCollection.filter(isDiskExportable)
+            : tabs[activeTab].disks.filter(isDiskExportable)}
+          authRefresh={authRefresh}
+          cloudProviderHasAuthToken={cloudProviderHasAuthToken}
+          setForceVtocCheck={setForceVtocCheck}
+          setActiveVtocCheckKey={setActiveVtocCheckKey}
+        />
       </div>
     </Flyout >
   )

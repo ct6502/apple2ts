@@ -2,10 +2,47 @@ import React, { useState } from "react"
 import { useTranslation } from "../../i18n/useTranslation"
 import { AllLanguages, LanguageFlags, LanguageNames } from "../../i18n"
 import PopupMenu from "./popupmenu"
+import type { RetroControlMetadata } from "../retro/retromenucontext"
+import { choiceMetadata } from "../retro/retromenuhelpers"
+import { createControlContext } from "../retro/retromenucontext"
+import { ControlRegistry } from "./controlregistry"
+import { controlOptionsToPopupItems } from "./controlpopup"
+import { retroFontSupports } from "../retro/retrotext"
+
+const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMetadata => {
+  const control = choiceMetadata({
+    id: "options.language",
+    parentId: "display",
+    order: 101,
+    label: context => context.t("retroControl.language"),
+    labels: () => AllLanguages.map(language => LanguageNames[language]),
+    currentIndex: context => selectedLanguageIndex ?? AllLanguages.indexOf(context.language),
+    select: (context, index) => context.changeLanguage(AllLanguages[index]),
+    preview: (context, index) => context.changeLanguage(AllLanguages[index]),
+  })
+  control.options = () => AllLanguages.map(language => ({
+    label: LanguageNames[language],
+    popupLabel: `${LanguageFlags[language]} ${LanguageNames[language]}`,
+    action: runtime => runtime.changeLanguage(language),
+    preview: runtime => runtime.changeLanguage(language),
+    useBrowserFont: !retroFontSupports(LanguageNames[language]),
+  }))
+  control.refreshParentOnOption = true
+  control.refreshTitle = context => context.t("retroControl.display")
+  return control
+}
+
+export const createRetroLanguageControls = (selectedLanguageIndex?: number): RetroControlMetadata[] => [
+  createLanguageControl(selectedLanguageIndex),
+]
 
 const LanguageSwitch: React.FC = () => {
-  const { language, changeLanguage } = useTranslation()
+  const { t, language, changeLanguage } = useTranslation()
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
+  const control = new ControlRegistry(createRetroLanguageControls()).resolve(
+    createControlContext(undefined, t, language, changeLanguage),
+    "display",
+  )[0]
 
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
@@ -34,15 +71,7 @@ const LanguageSwitch: React.FC = () => {
       <PopupMenu
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
-        menuItems={[AllLanguages.map((lang) => {
-          return {
-            label: `${LanguageFlags[lang]} ${LanguageNames[lang]}`,
-            isSelected: () => { return lang === language },
-            onClick: () => {
-              changeLanguage(lang)
-            }
-          }
-        })]}
+        menuItems={[controlOptionsToPopupItems(control)]}
       />
     </span>
   )

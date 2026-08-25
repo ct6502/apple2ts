@@ -11,6 +11,8 @@ const Flyout = (props: {
   position: string,
   title: string,
   highlight?: boolean,
+  hideButtonWhenClosed?: boolean,
+  minimalPresentation?: boolean,
   width?: string,
   isOpen: () => boolean | undefined,
   onClick: () => void | undefined,
@@ -19,9 +21,14 @@ const Flyout = (props: {
 }) => {
   const className = `flyout-${props.position}`
   const isFlyoutOpen = props.isOpen && props.isOpen()
+  const useMinimalPresentation = props.minimalPresentation || isMinimalTheme()
 
-  if (isMinimalTheme()) {
+  if (useMinimalPresentation) {
     import("./flyout.minimal.css")
+  }
+
+  if (!isFlyoutOpen && props.hideButtonWhenClosed) {
+    return null
   }
 
   const isTopPosition = () => {
@@ -38,7 +45,7 @@ const Flyout = (props: {
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   let left = "auto"
-  if (isMinimalTheme()) {
+  if (useMinimalPresentation) {
     if (props.position.indexOf("left") >= 0) {
       left = !isFlyoutOpen || !isTouchDevice ? "14px" : "48px"
     } else if (props.position.indexOf("center") >= 0) {
@@ -48,13 +55,14 @@ const Flyout = (props: {
 
   return (
     <div
-      className={`flyout ${className} ${props.highlight && !isFlyoutOpen ? "flyout-button-highlight" : ""}`}
+      className={`flyout ${className} ${useMinimalPresentation ? "flyout-minimal" : ""} ${props.highlight && !isFlyoutOpen ? "flyout-button-highlight" : ""}`}
       style={{
         left: left,
-        width: isMinimalTheme() && !isFlyoutOpen ? flyoutButtonWidth : props.width,
-        opacity: isMinimalTheme() && !isFlyoutOpen ? "33%" : "100%"
+        width: useMinimalPresentation && !isFlyoutOpen ? flyoutButtonWidth : props.width,
+        opacity: useMinimalPresentation && !isFlyoutOpen ? "33%" : "100%",
+        zIndex: props.minimalPresentation ? 10001 : undefined,
       }}>
-      {isTopPosition() && (isFlyoutOpen || !isMinimalTheme()) ? props.children : ""}
+      {isTopPosition() && (isFlyoutOpen || !useMinimalPresentation) ? props.children : ""}
       <div
         id={props.buttonId ?? ""}
         className="flyout-button"
@@ -66,7 +74,7 @@ const Flyout = (props: {
         }}>
         <FontAwesomeIcon icon={getArrowIcon()}></FontAwesomeIcon>
       </div>
-      {!isTopPosition() && (isFlyoutOpen || !isMinimalTheme()) ? props.children : ""}
+      {!isTopPosition() && (isFlyoutOpen || !useMinimalPresentation) ? props.children : ""}
     </div>
   )
 }

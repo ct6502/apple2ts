@@ -1,0 +1,528 @@
+.retro-panel {
+  font-family: PrintChar21Retro, monospace;
+}
+
+@font-face {
+  font-display: block;
+  font-family: PrintChar21Retro;
+  src: url(../fonts/PrintChar21-2020.ttf) format("truetype");
+}
+
+.retro-shell {
+  align-items: center;
+  --retro-surround: #000;
+  background: var(--retro-surround);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+  position: fixed;
+  width: 100vw;
+}
+
+.retro-shell .canvas-text {
+  padding: 0;
+}
+
+.retro-shell.retro-skin-apple-iigs .main-canvas {
+  background-color: var(--retro-background);
+}
+
+.retro-shell.retro-skin-apple-iigs>.canvas-text.scanline-gradient::after {
+  display: none;
+}
+
+.retro-shell.retro-skin-apple-iigs::after {
+  height: 100%;
+  left: 0;
+  top: 0;
+  width: 100%;
+}
+
+.retro-shell.menu-open {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.retro-shell.menu-open .canvas-text {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.retro-panel {
+  --retro-cell-height: min(calc(100vh / 30), calc(100vw / 40.25));
+  --retro-row-height: var(--retro-cell-height);
+  --retro-border-width: max(1px, calc(var(--retro-cell-height) / 8));
+  --retro-background: #000;
+  --retro-foreground: #fff;
+  --scanlines-height: 100%;
+  --scanlines-left: 0;
+  --scanlines-top: 0;
+  --scanlines-width: 100%;
+  background: var(--retro-surround);
+  color: var(--retro-foreground);
+  display: grid;
+  font-size: var(--retro-cell-height);
+  inset: 0;
+  line-height: 1;
+  letter-spacing: 0;
+  position: fixed;
+  z-index: 10000;
+}
+
+.retro-panel.retro-color-green {
+  --retro-background: #000;
+  --retro-foreground: #39ff14;
+}
+
+.retro-panel.retro-color-amber {
+  --retro-background: #000;
+  --retro-foreground: #ffa500;
+}
+
+.retro-panel.retro-color-white {
+  --retro-background: #000;
+  --retro-foreground: #f0f0f0;
+}
+
+.retro-panel.retro-color-inverse {
+  --retro-background: #f0f0f0;
+  --retro-foreground: #000;
+}
+
+.retro-panel.retro-skin-apple-iigs {
+  --retro-background: rgb(34, 34, 255);
+  --retro-foreground: rgb(255, 255, 255);
+  --retro-surround: rgb(34, 34, 255);
+}
+
+.retro-canvas-background {
+  background: var(--retro-background);
+  pointer-events: none;
+  position: absolute;
+}
+
+.retro-panel.retro-skin-apple-iiplus {
+  text-transform: uppercase;
+}
+
+.retro-panel.retro-effect-ghosting .retro-window {
+  text-shadow: 0.08em 0 color-mix(in srgb, var(--retro-foreground) 45%, transparent);
+}
+
+.retro-panel.retro-effect-crt .retro-window {
+  transform: perspective(100vh) rotateX(0.4deg) scale(0.985, 0.97);
+}
+
+.retro-window {
+  align-self: center;
+  background: var(--retro-background);
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(46, 1fr);
+  grid-template-rows: repeat(30, var(--retro-row-height));
+  height: calc(30 * var(--retro-row-height));
+  justify-self: center;
+  width: min(100vw, calc(40.25 * var(--retro-cell-height)));
+}
+
+.retro-panel.retro-skin-apple-iigs .retro-window {
+  background: transparent;
+}
+
+.retro-mousetext {
+  font-family: PrintChar21Retro, monospace;
+  font-size: var(--retro-cell-height);
+  font-style: normal;
+  line-height: 1;
+}
+
+.retro-border {
+  box-sizing: border-box;
+  pointer-events: none;
+  position: relative;
+}
+
+.retro-border::before,
+.retro-border::after {
+  content: "";
+  position: absolute;
+}
+
+.retro-border::before {
+  bottom: 0;
+  border-bottom: var(--retro-border-width) solid var(--retro-foreground);
+  border-top: var(--retro-border-width) solid var(--retro-foreground);
+  left: var(--retro-border-width);
+  right: var(--retro-border-width);
+  top: 0;
+}
+
+.retro-border::after {
+  bottom: var(--retro-border-width);
+  border-left: var(--retro-border-width) solid var(--retro-foreground);
+  border-right: var(--retro-border-width) solid var(--retro-foreground);
+  left: 0;
+  right: 0;
+  top: var(--retro-border-width);
+}
+
+.retro-border-separator {
+  background: var(--retro-foreground);
+  height: var(--retro-border-width);
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.retro-border-glyph {
+  display: none;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border::before,
+.retro-panel.retro-skin-apple-iiplus .retro-border::after {
+  display: none;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph {
+  color: var(--retro-foreground);
+  display: block;
+  font: inherit;
+  overflow: hidden;
+  position: absolute;
+  white-space: pre;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-top,
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-bottom {
+  height: var(--retro-cell-height);
+  left: 1ch;
+  line-height: 1;
+  right: 1ch;
+  white-space: nowrap;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-top {
+  top: calc(-1 * var(--retro-cell-height) + var(--retro-border-width));
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-bottom {
+  bottom: 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-left,
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-right {
+  bottom: 0;
+  line-height: 1;
+  top: 0;
+  width: 1ch;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-left {
+  left: 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-glyph-right {
+  right: 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-separator {
+  background: transparent;
+  height: var(--retro-cell-height);
+  left: 1ch;
+  overflow: hidden;
+  right: 1ch;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-border-separator::before {
+  content: " ______________________________________________________________________________ ";
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: calc(-1 * var(--retro-cell-height) + var(--retro-border-width));
+  white-space: nowrap;
+}
+
+.retro-outer-border {
+  grid-column: 4 / 44;
+  grid-row: 4 / 27;
+}
+
+.retro-title {
+  background: var(--retro-foreground);
+  box-sizing: border-box;
+  color: var(--retro-background);
+  font-size: inherit;
+  font-weight: normal;
+  grid-column: 5 / 44;
+  grid-row: 4;
+  height: calc(var(--retro-row-height) + var(--retro-border-width));
+  line-height: 1;
+  margin: 0;
+  overflow: visible;
+  padding: 0;
+  position: relative;
+  white-space: nowrap;
+}
+
+.retro-title.submenu-open {
+  background: transparent;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-title {
+  background: transparent;
+  height: var(--retro-row-height);
+  top: var(--retro-border-width);
+  z-index: 1;
+}
+
+.retro-title-fill {
+  display: none;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-title span {
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-background);
+  top: 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-title>.retro-title-spacer {
+  background: var(--retro-background);
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-title-fill {
+  background: var(--retro-foreground);
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-foreground);
+  color: var(--retro-background);
+  display: inline-block;
+  white-space: pre;
+}
+
+.retro-title.submenu-open::after {
+  display: none;
+}
+
+.retro-title span {
+  background: var(--retro-background);
+  box-sizing: border-box;
+  color: var(--retro-foreground);
+  display: inline-block;
+  height: var(--retro-row-height);
+  line-height: 1;
+  padding-top: 2px;
+  position: relative;
+  top: var(--retro-border-width);
+  z-index: 1;
+}
+
+.retro-title::after {
+  background: var(--retro-background);
+  content: "";
+  height: var(--retro-border-width);
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: var(--retro-border-width);
+}
+
+.retro-submenu-title {
+  background: var(--retro-foreground);
+  border-bottom: var(--retro-border-width) solid var(--retro-foreground);
+  border-left: var(--retro-border-width) solid var(--retro-foreground);
+  border-top: var(--retro-border-width) solid var(--retro-foreground);
+  box-sizing: border-box;
+  grid-column: 4 / 44;
+  grid-row: 6;
+  height: calc(var(--retro-row-height) + var(--retro-border-width) + var(--retro-border-width));
+  line-height: 1;
+  overflow: hidden;
+  position: relative;
+  white-space: nowrap;
+}
+
+.retro-submenu-title>.retro-submenu-title-text {
+  background: var(--retro-background);
+  box-sizing: border-box;
+  color: var(--retro-foreground);
+  display: inline-block;
+  height: var(--retro-row-height);
+  padding: 2px 1ch 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title>.retro-submenu-title-text {
+  background: var(--retro-background);
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-background);
+  color: var(--retro-foreground);
+  margin-left: 1ch;
+  padding-left: 0;
+  padding-right: 0;
+  position: relative;
+  top: var(--retro-border-width);
+  z-index: 1;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title>.retro-title-fill {
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-foreground);
+  position: relative;
+  top: var(--retro-border-width);
+  z-index: 1;
+}
+
+.retro-clock {
+  display: grid;
+  grid-column: 29 / 42;
+  grid-row: 9 / 11;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+  text-align: center;
+}
+
+.retro-clock-border {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+}
+
+.retro-clock time {
+  box-sizing: border-box;
+  grid-column: 2 / -2;
+  line-height: 1;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.retro-clock time:nth-of-type(1) {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  position: relative;
+  text-align: center;
+  top: var(--retro-border-width);
+}
+
+.retro-clock time:nth-of-type(2) {
+  bottom: 1px;
+  grid-row: 2;
+  position: relative;
+}
+
+.retro-menu {
+  align-self: start;
+  box-sizing: border-box;
+  font-size: inherit;
+  grid-column: 6 / 42;
+  grid-row: 7 / span 13;
+  margin: 0;
+  min-width: 0;
+  padding: var(--retro-cell-height) 1ch;
+}
+
+.retro-submenu-menu {
+  grid-column: 4 / 42;
+  grid-row: 8 / span 11;
+  padding-top: 0;
+}
+
+.retro-menu-item {
+  display: block;
+  height: var(--retro-cell-height);
+  line-height: 1;
+  overflow: visible;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.retro-root-menu .retro-menu-item:last-child {
+  margin-top: var(--retro-cell-height);
+}
+
+.retro-menu-item.selected {
+  background: transparent;
+  color: inherit;
+}
+
+.retro-menu-item[aria-disabled="true"]:not(.separator) {
+  opacity: 0.5;
+}
+
+.retro-menu-item>span {
+  display: inline-block;
+  position: relative;
+}
+
+.retro-menu-item.selected .retro-menu-name {
+  background: var(--retro-foreground);
+  color: var(--retro-background);
+}
+
+.retro-menu-check {
+  width: 2ch;
+}
+
+.retro-browser-font {
+  font-family: sans-serif;
+}
+
+.retro-window footer {
+  box-sizing: border-box;
+  display: grid;
+  font-size: inherit;
+  grid-column: 4 / 44;
+  grid-row: 26;
+  grid-template-columns: repeat(80, 1fr);
+  line-height: calc(var(--retro-cell-height) - 2px);
+  overflow: visible;
+  padding: 0 0 2px;
+  white-space: pre;
+}
+
+.retro-window footer>span {
+  bottom: var(--retro-border-width);
+  grid-row: 1;
+  position: relative;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-footer-text {
+  background: var(--retro-background);
+  box-shadow: 0 calc(2 * var(--retro-border-width)) 0 var(--retro-background);
+  display: inline-block;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-window footer {
+  z-index: 1;
+}
+
+.retro-footer-select {
+  justify-self: start;
+}
+
+.retro-footer-cancel {
+  justify-self: center;
+}
+
+.retro-footer-action {
+  justify-self: end;
+  text-align: right;
+}
+
+.retro-footer-action.hidden {
+  visibility: hidden;
+}
+
+.retro-shell .modal-overlay {
+  z-index: 10001;
+}
+
+.retro-submenu-title-border {
+  display: none;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title {
+  background: transparent;
+  border: 0;
+  overflow: visible;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title-border {
+  display: block;
+  inset: 0;
+  position: absolute;
+}

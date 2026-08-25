@@ -1,24 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Step } from "react-joyride"
-import { passSetDebug, passSetShowDebugTab } from "../main2worker"
 
 const isTouchDevice = "ontouchstart" in document.documentElement
 const isMac = navigator.platform.startsWith("Mac")
 const modKey = isMac ? "⌘" : "Alt"
 
-export const getTourSettings = (t: any): Step[] => {
+export const getTourSettings = (t: any, retro = false): Step[] => {
   const altArrowKeys = (
     <div>
       {t("tour.altArrowKeys", { modKey })}
     </div>
   )
-
-  const callbackInDebugMode: StepCallbackFunction = () => {
-    passSetDebug(true)
-    passSetShowDebugTab(true)
-    // Continue processing tour commands
-    return false
-  }
 
   return [
     {
@@ -41,11 +33,10 @@ export const getTourSettings = (t: any): Step[] => {
     {
       target: "#tour-debug-button",
       content: t("tour.debugButton"),
-      data: callbackInDebugMode
     },
     {
       target: "#tour-configbuttons",
-      content: t("tour.configButtons"),
+      content: retro ? t("tour.retroConfigButtons") : t("tour.configButtons"),
     },
     {
       target: "#tour-keyboardbuttons",
@@ -55,12 +46,14 @@ export const getTourSettings = (t: any): Step[] => {
     },
     {
       target: "#tour-clearcookies",
-      content: t("tour.clearCookies"),
+      content: retro ? t("tour.retroClearCookies") : t("tour.clearCookies"),
     },
     {
       target: "body",
       placement: "center",
-      content: t("tour.endTour") + " " + t("tour.tourSelectorHint")
+      content: t("tour.endTour") + " " + (retro
+        ? t("tour.retroTourSelectorHint")
+        : t("tour.tourSelectorHint"))
     },
   ]
 }

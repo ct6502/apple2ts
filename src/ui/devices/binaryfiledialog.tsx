@@ -11,7 +11,8 @@ const BinaryFileDialog = (props:
   {
     displayDialog: boolean,
     displayClose: () => void,
-    binaryBuffer: Uint8Array
+    binaryBuffer: Uint8Array,
+    onLoadSuccess?: () => void
   }) => {
   const [runCode, setRunCode] = useState(false)
   const [runAddress, setRunAddress] = useState(() => {
@@ -38,6 +39,7 @@ const BinaryFileDialog = (props:
     if (props.binaryBuffer.length > 0) {
       const addr = parseInt("0x" + runAddress)
       passSetBinaryBlock(addr, props.binaryBuffer, runCode)
+      props.onLoadSuccess?.()
     }
   }
 

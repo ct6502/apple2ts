@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Apple2TS\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #, fuzzy
@@ -60,11 +60,14 @@ msgid "Debug Panel"
 msgstr ""
 
 #, fuzzy
+msgctxt "controls.infoPanel"
+msgid "Info Panel"
+msgstr "Informationspanel"
+
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Rapportera ett problem"
 
-#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Integritetspolicy"
@@ -204,7 +207,6 @@ msgstr "Snabb (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
-#| msgid "Ludicrous/Warp Speed"
 msgid "Ludicrous Speed"
 msgstr "Löjlig hastighet"
 
@@ -531,7 +533,8 @@ msgid "Select auxiliary memory for writes"
 msgstr ""
 
 msgctxt "disassembly.auxMemory.selectExpansionBank"
-msgid "Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
+msgid ""
+"Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
 msgstr ""
 
 msgctxt "disassembly.auxMemory.altzpMain"
@@ -716,14 +719,14 @@ msgstr ""
 
 msgctxt "disassembly.laser128ex.disableDiskSlowdown"
 msgid ""
-"Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access "
-"(write-once bit 5)"
+"Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access (write-"
+"once bit 5)"
 msgstr ""
 
 msgctxt "disassembly.laser128ex.enableDiskSlowdown"
 msgid ""
-"Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access "
-"(write-once bit 5)"
+"Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access (write-"
+"once bit 5)"
 msgstr ""
 
 msgctxt "disassembly.gameIO.pulseStrobe"
@@ -781,12 +784,21 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr "Klicka här för att starta emulatorn."
 
+msgctxt "tour.retroBootButton"
+msgid "Select this option to start the emulator."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
 msgstr ""
 "Klicka här för att återställa Apple II och antingen starta om eller gå in i "
 "BASIC."
+
+msgctxt "tour.retroResetButton"
+msgid ""
+"Select this option to reset the Apple II and either reboot or enter BASIC."
+msgstr ""
 
 #, fuzzy
 msgctxt "tour.diskImages"
@@ -798,19 +810,32 @@ msgctxt "tour.floppyDisks"
 msgid "Or click one of the floppy disk icons to load a disk image."
 msgstr "Eller klicka på en av diskettikonerna för att ladda en diskavbildning."
 
+msgctxt "tour.retroFloppyDisks"
+msgid "Or select a disk drive to load a disk image."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.saveRestore"
 msgid ""
 "You can save and restore the complete state of the emulator using these "
 "buttons."
 msgstr ""
-"Du kan spara och återställa emulatorns kompletta tillstånd med dessa "
-"knappar."
+"Du kan spara och återställa emulatorns kompletta tillstånd med dessa knappar."
+
+msgctxt "tour.retroSaveRestore"
+msgid ""
+"You can save and restore the complete state of the emulator using these "
+"options."
+msgstr ""
 
 #, fuzzy
 msgctxt "tour.themeButton"
 msgid "Click here to change the emulator UI theme."
 msgstr "Klicka här för att ändra emulatorns UI-tema."
+
+msgctxt "tour.retroThemeButton"
+msgid "Use the arrow keys to change the emulator UI theme."
+msgstr ""
 
 #, fuzzy
 msgctxt "tour.endTour"
@@ -828,12 +853,19 @@ msgstr ""
 "Klicka på jordglobsturknappen för att prova en av de andra turerna, eller "
 "tryck på Slutför för att börja använda emulatorn."
 
+msgctxt "tour.retroTourSelectorHint"
+msgid ""
+"Select a menu item to try one of the other tours, or press Finish to start "
+"using the emulator."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.settingsWelcome"
-msgid "Apple2TS has a full set of controls for both the emulator and the Apple II."
+msgid ""
+"Apple2TS has a full set of controls for both the emulator and the Apple II."
 msgstr ""
-"Apple2TS har en komplett uppsättning kontroller för både emulatorn och "
-"Apple II. För att lära dig mer, tryck på Nästa knappen."
+"Apple2TS har en komplett uppsättning kontroller för både emulatorn och Apple "
+"II. För att lära dig mer, tryck på Nästa knappen."
 
 #, fuzzy
 msgctxt "tour.mainControls"
@@ -847,9 +879,9 @@ msgstr ""
 #, fuzzy
 msgctxt "tour.snapshot"
 msgid ""
-"At any point, you can take a snapshot of the current emulator state, then "
-"go back in time to an earlier state, or fast forward again. You can also "
-"save the emulator state with all of the current snapshots."
+"At any point, you can take a snapshot of the current emulator state, then go "
+"back in time to an earlier state, or fast forward again. You can also save "
+"the emulator state with all of the current snapshots."
 msgstr ""
 "När som helst kan du ta en ögonblicksbild av det aktuella "
 "emulatortillståndet, sedan gå tillbaka i tiden till ett tidigare tillstånd, "
@@ -859,8 +891,8 @@ msgstr ""
 #, fuzzy
 msgctxt "tour.pauseButton"
 msgid ""
-"You can pause the emulator at any time, freezing the 6502 processor. This "
-"is useful for pausing the action in a game, or entering the debugger."
+"You can pause the emulator at any time, freezing the 6502 processor. This is "
+"useful for pausing the action in a game, or entering the debugger."
 msgstr ""
 "Du kan pausa emulatorn när som helst, vilket fryser 6502-processorn. Detta "
 "är användbart för att pausa aktionen i ett spel, eller för att gå in i "
@@ -872,9 +904,9 @@ msgid ""
 "Click on the bug to enter debug mode, where you can see the internal state "
 "of the 6502 processor. Click again to go back to normal mode."
 msgstr ""
-"Klicka på insekten för att gå in i debug-läge, där du kan se "
-"6502-processorns interna tillstånd. Klicka igen för att gå tillbaka till "
-"normalt läge."
+"Klicka på insekten för att gå in i debug-läge, där du kan se 6502-"
+"processorns interna tillstånd. Klicka igen för att gå tillbaka till normalt "
+"läge."
 
 #, fuzzy
 msgctxt "tour.configButtons"
@@ -885,9 +917,16 @@ msgstr ""
 "Den nedre raden knappar kontrollerar Apple II:s tillstånd, började med "
 "emulatorhastighet, skärmfärg och ljuddämpning."
 
+msgctxt "tour.retroConfigButtons"
+msgid ""
+"The Options menu controls the state of the Apple II, starting with the "
+"emulator speed, the screen color, and muting the sound."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.keyboardButtons"
-msgid "If the caps lock key is turned on, then all typed characters are UPPERCASE."
+msgid ""
+"If the caps lock key is turned on, then all typed characters are UPPERCASE."
 msgstr "Om caps lock-tangenten är på, då är alla skrivna tecken VERSALER."
 
 #, fuzzy
@@ -911,9 +950,16 @@ msgstr ""
 "webbläsarcookies. Tryck på denna knapp för att återställa dessa "
 "inställningar och radera cookies."
 
+msgctxt "tour.retroClearCookies"
+msgid ""
+"Apple2TS automatically saves the current emulator settings as browser "
+"cookies. Select this option to reset these settings and delete the cookies."
+msgstr ""
+
 #, fuzzy
 msgctxt "tour.debugWelcome"
-msgid "Apple2TS has a rich set of tools to analyze and debug 6502 assembly code."
+msgid ""
+"Apple2TS has a rich set of tools to analyze and debug 6502 assembly code."
 msgstr ""
 "Apple2TS har en rik uppsättning verktyg för att analysera och debugga 6502 "
 "assemblykod. För att lära dig mer, tryck på Nästa knappen."
@@ -926,14 +972,15 @@ msgstr "Klicka på Insektikonen i Info-flikarna för att visa Debug-panelen."
 #, fuzzy
 msgctxt "tour.debugPause"
 msgid "Press the Pause button to pause or resume execution of the emulator."
-msgstr "Tryck på Paus-knappen för att pausa eller återuppta emulatorns exekvering."
+msgstr ""
+"Tryck på Paus-knappen för att pausa eller återuppta emulatorns exekvering."
 
 #, fuzzy
 msgctxt "tour.debugControls"
 msgid ""
-"Now that we have paused, we can step through the disassembled code using "
-"the Step Over, Into, and Out buttons. We can also quickly jump to the "
-"current address of the Program Counter (PC)."
+"Now that we have paused, we can step through the disassembled code using the "
+"Step Over, Into, and Out buttons. We can also quickly jump to the current "
+"address of the Program Counter (PC)."
 msgstr ""
 "Nu när vi har pausat kan vi stega genom den disassemblerade koden med "
 "knapparna Steg Över, In och Ut. Vi kan också snabbt hoppa till den aktuella "
@@ -948,12 +995,11 @@ msgid ""
 "blue address will scroll to that location. You can also click in the left "
 "gutter to add or remove breakpoints."
 msgstr ""
-"Här ser vi den disassemblerade koden, med hex-adresserna, "
-"tre-bokstavsinstruktionen och alla värden eller adresser. Om du för musen "
-"över ett grönt värde kommer en tooltip att visas med det aktuella värdet. "
-"Att klicka på en blå adress kommer att scrolla till den platsen. Du kan "
-"också klicka i den vänstra marginalen för att lägga till eller ta bort "
-"brytpunkter."
+"Här ser vi den disassemblerade koden, med hex-adresserna, tre-"
+"bokstavsinstruktionen och alla värden eller adresser. Om du för musen över "
+"ett grönt värde kommer en tooltip att visas med det aktuella värdet. Att "
+"klicka på en blå adress kommer att scrolla till den platsen. Du kan också "
+"klicka i den vänstra marginalen för att lägga till eller ta bort brytpunkter."
 
 #, fuzzy
 msgctxt "tour.debugInfo"
@@ -968,10 +1014,10 @@ msgstr ""
 msgctxt "tour.debugMemory"
 msgid ""
 "The last section displays the Apple II memory. You can use the droplist to "
-"examine different portions of memory. If you switch to one of the HGR "
-"pages, you will get a magnified view of the hires screen, tied to the "
-"memory locations. You can also search for hex values or ASCII strings, and "
-"save the memory to a file."
+"examine different portions of memory. If you switch to one of the HGR pages, "
+"you will get a magnified view of the hires screen, tied to the memory "
+"locations. You can also search for hex values or ASCII strings, and save the "
+"memory to a file."
 msgstr ""
 "Den sista sektionen visar Apple II-minnet. Du kan använda rullgardinsmenyn "
 "för att undersöka olika delar av minnet. Om du byter till en av HGR-sidorna "
@@ -1011,25 +1057,24 @@ msgstr "Stäng"
 
 #, fuzzy
 msgctxt "tour.guidedTour"
-msgid "Guided Tour"
+msgid "Tours"
 msgstr "Guidad Tur"
 
 #, fuzzy
 msgctxt "tour.mainLabel"
-msgid "Guided Tour: Main"
+msgid "Guided Tours: Main"
 msgstr "Guidad tur: Huvudmeny"
 
 #, fuzzy
 msgctxt "tour.settingsLabel"
-msgid "Guided Tour: Settings"
+msgid "Guided Tours: Settings"
 msgstr "Guidad tur: Inställningar"
 
 #, fuzzy
 msgctxt "tour.debugLabel"
-msgid "Guided Tour: Debug"
+msgid "Guided Tours: Debug"
 msgstr "Guidad tur: Felsökning"
 
-#, fuzzy
 msgctxt "disk.drive1"
 msgid "Drive 1"
 msgstr "Enhet 1"
@@ -1311,8 +1356,7 @@ msgstr "Tryck på skärmen för att visa tangentbordet."
 #, fuzzy
 msgctxt "help.arrowKeys"
 msgid ""
-"Press the arrow keys, esc, or tab buttons to send those keys to the "
-"emulator."
+"Press the arrow keys, esc, or tab buttons to send those keys to the emulator."
 msgstr ""
 "Tryck på piltangenterna, esc eller tab-knapparna för att skicka dessa "
 "tangenter till emulatorn."
@@ -1320,8 +1364,8 @@ msgstr ""
 #, fuzzy
 msgctxt "help.ctrlKey"
 msgid ""
-"To send a control character, press the ctrl button once. Then tap the "
-"screen to show the keyboard and press the desired key. The ctrl button will "
+"To send a control character, press the ctrl button once. Then tap the screen "
+"to show the keyboard and press the desired key. The ctrl button will "
 "automatically be released."
 msgstr ""
 "För att skicka ett kontrolltecken, tryck på ctrl-knappen en gång. Tryck "
@@ -1337,15 +1381,15 @@ msgid ""
 msgstr ""
 "För att skicka flera kontrolltecken, tryck på ctrl-knappen två gånger för "
 "att låsa den (visas med en grön prick). Tryck sedan på skärmen för att visa "
-"tangentbordet och tryck på önskade tangenter. Tryck på ctrl-knappen igen "
-"för att släppa den."
+"tangentbordet och tryck på önskade tangenter. Tryck på ctrl-knappen igen för "
+"att släppa den."
 
 #, fuzzy
 msgctxt "help.appleKeys"
 msgid "The open apple and closed apple keys behave the same as the ctrl key."
 msgstr ""
-"Open apple och closed apple tangenterna beter sig på samma sätt som "
-"ctrl-tangenten."
+"Open apple och closed apple tangenterna beter sig på samma sätt som ctrl-"
+"tangenten."
 
 #, fuzzy
 msgctxt "help.openAppleKey"
@@ -1375,12 +1419,12 @@ msgstr ""
 msgctxt "help.urlParametersBody"
 msgid ""
 "For optional URL parameters, append them to the URL after a question mark "
-"(?) and separate multiple parameters with an ampersand (&). Use # to "
-"specify the disk image. See the Link Builder dialog for examples."
+"(?) and separate multiple parameters with an ampersand (&). Use # to specify "
+"the disk image. See the Link Builder dialog for examples."
 msgstr ""
-"För valfria URL-parametrar, lägg till dem i URL:en efter ett frågetecken "
-"(?) och separera flera parametrar med ett et-tecken (&). Använd # för att "
-"ange skivavbildningen. Se dialogrutan Länkbyggaren för exempel."
+"För valfria URL-parametrar, lägg till dem i URL:en efter ett frågetecken (?) "
+"och separera flera parametrar med ett et-tecken (&). Använd # för att ange "
+"skivavbildningen. Se dialogrutan Länkbyggaren för exempel."
 
 #, fuzzy
 msgctxt "help.exampleLinks.totalReplayDebugging"
@@ -1557,7 +1601,7 @@ msgstr "Högtalare"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -2442,8 +2486,8 @@ msgstr ""
 
 msgctxt "agent.ollamaWarning"
 msgid ""
-"Ollama runs locally on your machine. Make sure you have Ollama installed "
-"and running. Download from"
+"Ollama runs locally on your machine. Make sure you have Ollama installed and "
+"running. Download from"
 msgstr ""
 
 msgctxt "agent.providerNotConfigured"
@@ -2473,11 +2517,406 @@ msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
 msgstr "(c) {{year}} C.Torrence + medarbetare"
 
-#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
-"Klicka på ikonen Disksamling\n"
-"för att ladda ett inbyggt spel."
+
+msgctxt "startup.retroControlPanel"
+msgid ""
+"Press SHIFT-ESC to display\n"
+"Apple2TS control panel."
+msgstr ""
+
+msgctxt "retroControl.ariaLabel"
+msgid "Apple2TS control panel"
+msgstr ""
+
+msgctxt "retroControl.machine"
+msgid "Machine"
+msgstr "Maskin"
+
+msgctxt "retroControl.fullscreen"
+msgid "Fullscreen"
+msgstr "Helskärm"
+
+msgctxt "retroControl.diskCollection"
+msgid "Disks"
+msgstr "Diskar"
+
+msgctxt "retroControl.diskDrives"
+msgid "Drives"
+msgstr "Diskenheter"
+
+msgctxt "retroControl.display"
+msgid "Display"
+msgstr "Bildskärm"
+
+msgctxt "retroControl.sound"
+msgid "Sound"
+msgstr "Ljud"
+
+msgctxt "retroControl.options"
+msgid "Options"
+msgstr "Alternativ"
+
+msgctxt "retroControl.skin"
+msgid "Skin"
+msgstr "Utseende"
+
+msgctxt "retroControl.personalization"
+msgid "Personalization"
+msgstr "Anpassning"
+
+msgctxt "retroControl.text"
+msgid "Text"
+msgstr "Text"
+
+msgctxt "retroControl.background"
+msgid "Background"
+msgstr "Bakgrund"
+
+msgctxt "retroControl.border"
+msgid "Border"
+msgstr "Kant"
+
+msgctxt "retroControl.iigsColor.black"
+msgid "Black"
+msgstr "Svart"
+
+msgctxt "retroControl.iigsColor.red"
+msgid "Red"
+msgstr "Röd"
+
+msgctxt "retroControl.iigsColor.darkBlue"
+msgid "Dark Blue"
+msgstr "Mörkblå"
+
+msgctxt "retroControl.iigsColor.purple"
+msgid "Purple"
+msgstr "Lila"
+
+msgctxt "retroControl.iigsColor.darkGreen"
+msgid "Dark Green"
+msgstr "Mörkgrön"
+
+msgctxt "retroControl.iigsColor.darkGray"
+msgid "Dark Gray"
+msgstr "Mörkgrå"
+
+msgctxt "retroControl.iigsColor.mediumBlue"
+msgid "Medium Blue"
+msgstr "Mellanblå"
+
+msgctxt "retroControl.iigsColor.lightBlue"
+msgid "Light Blue"
+msgstr "Ljusblå"
+
+msgctxt "retroControl.iigsColor.brown"
+msgid "Brown"
+msgstr "Brun"
+
+msgctxt "retroControl.iigsColor.orange"
+msgid "Orange"
+msgstr "Orange"
+
+msgctxt "retroControl.iigsColor.lightGray"
+msgid "Light Gray"
+msgstr "Ljusgrå"
+
+msgctxt "retroControl.iigsColor.pink"
+msgid "Pink"
+msgstr "Rosa"
+
+msgctxt "retroControl.iigsColor.lightGreen"
+msgid "Light Green"
+msgstr "Ljusgrön"
+
+msgctxt "retroControl.iigsColor.yellow"
+msgid "Yellow"
+msgstr "Gul"
+
+msgctxt "retroControl.iigsColor.aquamarine"
+msgid "Aquamarine"
+msgstr "Akvamarin"
+
+msgctxt "retroControl.iigsColor.white"
+msgid "White"
+msgstr "Vit"
+
+msgctxt "retroControl.keyboard"
+msgid "Keyboard"
+msgstr "Tangentbord"
+
+msgctxt "retroControl.input"
+msgid "Input"
+msgstr ""
+
+msgctxt "retroControl.joystick"
+msgid "Joystick"
+msgstr "Styrspak"
+
+msgctxt "retroControl.slots"
+msgid "Slots"
+msgstr "Kortplatser"
+
+msgctxt "retroControl.devices"
+msgid "Devices"
+msgstr "Enheter"
+
+msgctxt "retroControl.printerPort"
+msgid "Printer Port"
+msgstr "Skrivarport"
+
+msgctxt "retroControl.modemPort"
+msgid "Modem Port"
+msgstr "Modemport"
+
+msgctxt "retroControl.quit"
+msgid "Quit"
+msgstr "Avsluta"
+
+msgctxt "retroControl.apple2tsCollection"
+msgid "Apple2TS Collection"
+msgstr "Apple2TS-samling"
+
+msgctxt "retroControl.newReleases"
+msgid "New Releases"
+msgstr "Nya utgåvor"
+
+msgctxt "retroControl.favorites"
+msgid "Favorites"
+msgstr "Favoriter"
+
+msgctxt "retroControl.exportDisksToHdv"
+msgid "Export Disks to HDV"
+msgstr "Exportera diskar till HDV"
+
+msgctxt "retroControl.noDiskDrivesAvailable"
+msgid "No disk drives available"
+msgstr "Inga diskenheter tillgängliga"
+
+msgctxt "retroControl.select"
+msgid "Select"
+msgstr "Välj"
+
+msgctxt "retroControl.open"
+msgid "Open"
+msgstr "Öppna"
+
+msgctxt "retroControl.load"
+msgid "Load"
+msgstr "Ladda"
+
+msgctxt "retroControl.go"
+msgid "Go"
+msgstr "Kör"
+
+msgctxt "retroControl.save"
+msgid "Save"
+msgstr "Spara"
+
+msgctxt "retroControl.clipboard"
+msgid "Clipboard"
+msgstr "Urklipp"
+
+msgctxt "retroControl.cancelEsc"
+msgid "Cancel:Esc"
+msgstr "Avbryt:Esc"
+
+msgctxt "retroControl.color"
+msgid "Color"
+msgstr "Färg"
+
+msgctxt "retroControl.colorNoFringe"
+msgid "Color (no fringe)"
+msgstr ""
+
+msgctxt "retroControl.green"
+msgid "Green"
+msgstr ""
+
+msgctxt "retroControl.amber"
+msgid "Amber"
+msgstr ""
+
+msgctxt "retroControl.white"
+msgid "White"
+msgstr ""
+
+msgctxt "retroControl.inverse"
+msgid "Inverse"
+msgstr ""
+
+msgctxt "retroControl.snail"
+msgid "Snail"
+msgstr ""
+
+msgctxt "retroControl.slow"
+msgid "Slow"
+msgstr ""
+
+msgctxt "retroControl.normal"
+msgid "Normal"
+msgstr ""
+
+msgctxt "retroControl.twoMhz"
+msgid "2 MHz"
+msgstr ""
+
+msgctxt "retroControl.threeMhz"
+msgid "3 MHz"
+msgstr ""
+
+msgctxt "retroControl.fast"
+msgid "Fast"
+msgstr ""
+
+msgctxt "retroControl.warp"
+msgid "Warp"
+msgstr ""
+
+msgctxt "retroControl.systemSpeed"
+msgid "System Speed"
+msgstr "Systemhastighet"
+
+msgctxt "retroControl.other"
+msgid "Other"
+msgstr "Övrigt"
+
+msgctxt "retroControl.timeMachine"
+msgid "Snapshots"
+msgstr "Ögonblicksbilder"
+
+msgctxt "retroControl.ports"
+msgid "Ports"
+msgstr "Portar"
+
+msgctxt "retroControl.clock"
+msgid "Clock"
+msgstr "Klocka"
+
+msgctxt "retroControl.hostSystemClock"
+msgid "Host system clock"
+msgstr ""
+
+msgctxt "retroControl.mouse"
+msgid "Mouse"
+msgstr "Mus"
+
+msgctxt "retroControl.ramDisk"
+msgid "RAM Disk"
+msgstr "RAM-disk"
+
+msgctxt "retroControl.language"
+msgid "Language"
+msgstr "Språk"
+
+msgctxt "retroControl.port"
+msgid "Port"
+msgstr ""
+
+msgctxt "retroControl.builtinImageWriter"
+msgid "Builtin ImageWriter"
+msgstr ""
+
+msgctxt "retroControl.selectExternalPort"
+msgid "Select External Port"
+msgstr ""
+
+msgctxt "retroControl.externalPort"
+msgid "External Port"
+msgstr ""
+
+msgctxt "retroControl.retroTheme"
+msgid "Retro"
+msgstr "Retro"
+
+msgctxt "retroControl.lowercaseInput"
+msgid "Lowercase input"
+msgstr "Inmatning med gemener"
+
+msgctxt "retroControl.lowercase"
+msgid "Lowercase"
+msgstr ""
+
+msgctxt "retroControl.openAppleKey"
+msgid "Open Apple key"
+msgstr "Open Apple-tangent"
+
+msgctxt "retroControl.sortOrder"
+msgid "Sort"
+msgstr "Sortera"
+
+msgctxt "retroControl.slot"
+msgid "Slot {{slot}}"
+msgstr ""
+
+msgctxt "retroControl.drive"
+msgid "{{drive}}: {{disk}}"
+msgstr ""
+
+msgctxt "retroControl.configured"
+msgid "{{count}} configured"
+msgstr ""
+
+msgctxt "retroControl.saveDisk"
+msgid "Save Disk"
+msgstr ""
+
+msgctxt "retroControl.card.empty"
+msgid "Empty"
+msgstr "Tom"
+
+msgctxt "retroControl.card.ssc"
+msgid "Super Serial Card"
+msgstr ""
+
+msgctxt "retroControl.card.softcard"
+msgid "Z-80 SoftCard"
+msgstr ""
+
+msgctxt "retroControl.card.aux"
+msgid "Auxiliary memory"
+msgstr ""
+
+msgctxt "retroControl.card.videoterm"
+msgid "Videx VideoTerm"
+msgstr ""
+
+msgctxt "retroControl.card.mockingboard"
+msgid "Mockingboard"
+msgstr "Mockingboard"
+
+msgctxt "retroControl.card.mouse"
+msgid "Mouse card"
+msgstr ""
+
+msgctxt "retroControl.card.vera"
+msgid "VERA graphics"
+msgstr ""
+
+msgctxt "retroControl.card.passport"
+msgid "Passport MIDI"
+msgstr ""
+
+msgctxt "retroControl.card.disk2"
+msgid "Disk II controller"
+msgstr ""
+
+msgctxt "retroControl.card.smartport"
+msgid "SmartPort drive"
+msgstr ""
+
+msgctxt "retroControl.fetchingDisk"
+msgid "Fetching disk {{current}}/{{total}}"
+msgstr ""
+
+msgctxt "retroControl.downloadFailed"
+msgid "Unable to download {{title}}"
+msgstr ""
+
+msgctxt "retroControl.exportFailed"
+msgid "Export to HDV failed: {{message}}"
+msgstr ""

@@ -8,23 +8,115 @@ import {
 import { setPreferenceBoolean, setPreferenceColorMode } from "../localstorage"
 import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions"
 import PopupMenu from "../controls/popupmenu"
-import { getColorMode, getCrtDistortion, getGhosting, getShowScanlines } from "../ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, getInfoPanel, getShowScanlines } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
+import { choiceMetadata, toggleMetadata } from "../retro/retromenuhelpers"
+import type { RetroControlMetadata } from "../retro/retromenucontext"
+import { setColorMode, setUIStateBoolean } from "../ui_settings"
+import { ControlRegistry } from "../controls/controlregistry"
+import { controlOptionsToPopupItems, controlsToPopupItems } from "../controls/controlpopup"
+import { createControlContext } from "../retro/retromenucontext"
 
-export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
-  const { t } = useTranslation()
+export const COLOR_MODES = Object.values(COLOR_MODE).filter(
+  (value): value is COLOR_MODE => typeof value === "number",
+)
+
+const colorLabels = (t: (key: string) => string) => [
+  t("retroControl.color"),
+  t("retroControl.colorNoFringe"),
+  t("retroControl.green"),
+  t("retroControl.amber"),
+  t("retroControl.white"),
+  t("retroControl.inverse"),
+]
+
+export const retroDisplayControls: RetroControlMetadata[] = [
+  {
+    id: "display",
+    parentId: null,
+    order: 3,
+    label: context => context.t("retroControl.display"),
+    value: context => colorLabels(context.t)[getColorMode()],
+  },
+  choiceMetadata({
+    id: "display.color",
+    parentId: "display",
+    order: 0,
+    label: context => context.t("retroControl.color"),
+    labels: context => colorLabels(context.t),
+    currentIndex: getColorMode,
+    select: (context, index) => {
+      setPreferenceColorMode(COLOR_MODES[index])
+      context.displayProps.updateDisplay()
+    },
+    preview: (context, index) => {
+      setColorMode(COLOR_MODES[index])
+      context.displayProps.updateDisplay()
+    },
+    defaultIndex: COLOR_MODE.COLOR,
+  }),
+  ...([
+    ["display.scanlines", "config.scanlines", "showScanlines", getShowScanlines],
+    ["display.ghosting", "config.ghosting", "ghosting", getGhosting],
+    ["display.crtDistortion", "config.crtDistortion", "crtDistortion", getCrtDistortion],
+  ] as const).map(([id, labelKey, preference, getter], index) => toggleMetadata({
+    id,
+    parentId: "display",
+    order: index + 1,
+    label: context => context.t(labelKey),
+    enabled: getter,
+    setEnabled: (context, enabled) => {
+      setPreferenceBoolean(preference, enabled)
+      if (preference === "showScanlines") {
+        document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
+      }
+      context.displayProps.updateDisplay()
+    },
+    preview: (context, enabled) => {
+      setUIStateBoolean(preference, enabled)
+      if (preference === "showScanlines") {
+        document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
+      }
+      context.displayProps.updateDisplay()
+    },
+  })),
+  {
+    id: "display.other",
+    parentId: "display",
+    order: 4.5,
+    label: context => context.t("retroControl.other"),
+    separator: true,
+    selectable: false,
+  },
+  toggleMetadata({
+    id: "display.infoPanel",
+    parentId: "display",
+    order: 100,
+    tourTargets: ["#tour-debug-button"],
+    label: context => context.t("controls.infoPanel"),
+    enabled: getInfoPanel,
+    setEnabled: (context, enabled) => {
+      setUIStateBoolean("infoPanel", enabled)
+      context.displayProps.updateDisplay()
+    },
+    preview: (context, enabled) => {
+      setUIStateBoolean("infoPanel", enabled)
+      context.displayProps.updateDisplay()
+    },
+  }),
+]
+
+const displayControlRegistry = new ControlRegistry(retroDisplayControls)
+
+export const DisplayConfig = (props: DisplayProps) => {
+  const { t, language, changeLanguage } = useTranslation()
   const colorMode = getColorMode()
   const showScanlines = getShowScanlines()
-  const ghosting = getGhosting()
-  const crtDistortion = getCrtDistortion()
-  const colorNames = [
-    t("colors.color"),
-    t("colors.nofringe"),
-    t("colors.green"),
-    t("colors.amber"),
-    t("colors.white"),
-    t("colors.inverse"),
-  ]
+  const controls = displayControlRegistry.resolve(
+    createControlContext(props, t, language, changeLanguage),
+    "display",
+  )
+  const [colorControl, ...effectControls] = controls
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const handleClick = (event: React.MouseEvent) => {
@@ -52,42 +144,9 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
-          ...Object.values(COLOR_MODE).filter(value => typeof value === "number").map((i) => (
-            {
-              label: colorNames[i],
-              isSelected: () => { return i == colorMode },
-              onClick: () => {
-                setPreferenceColorMode(i)
-                props.updateDisplay()
-              }
-            }
-          )),
+          ...controlOptionsToPopupItems(colorControl),
           { label: "-" },
-          {
-            label: t("config.scanlines"),
-            isSelected: () => { return showScanlines },
-            onClick: () => {
-              document.body.style.setProperty("--scanlines-display", showScanlines ? "none" : "block")
-              setPreferenceBoolean("showScanlines", !showScanlines)
-              props.updateDisplay()
-            }
-          },
-          {
-            label: t("config.ghosting"),
-            isSelected: () => { return ghosting },
-            onClick: () => {
-              setPreferenceBoolean("ghosting", !ghosting)
-              props.updateDisplay()
-            }
-          },
-          {
-            label: t("config.crtDistortion"),
-            isSelected: () => { return crtDistortion },
-            onClick: () => {
-              setPreferenceBoolean("crtDistortion", !crtDistortion)
-              props.updateDisplay()
-            }
-          },
+          ...controlsToPopupItems(effectControls),
         ]]}
       />
     </span>

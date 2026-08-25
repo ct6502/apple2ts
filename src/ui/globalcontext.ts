@@ -1,9 +1,14 @@
 import { createContext, useContext } from "react"
+import type { UI_THEME } from "../common/utility"
 type GlobalProps = {
   runTour: string
   setRunTour: (tour: string) => void
   tourIndex: number
   setTourIndex: (index: number) => void
+  tourSourceTheme: UI_THEME
+  setTourSourceTheme: (theme: UI_THEME) => void
+  returnToTourHelp: boolean
+  setReturnToTourHelp: (show: boolean) => void
   updateHgrMagnifier: boolean
   setUpdateHgrMagnifier: (updateHgrMagnifier: boolean) => void
   hgrMagnifierLoc: number[]
@@ -20,6 +25,10 @@ export const GlobalContext = createContext<GlobalProps>({
   setRunTour: () => {},
   tourIndex: 0,
   setTourIndex: () => {},
+  tourSourceTheme: 0,
+  setTourSourceTheme: () => {},
+  returnToTourHelp: false,
+  setReturnToTourHelp: () => {},
   updateHgrMagnifier: false,
   setUpdateHgrMagnifier: () => {},
   hgrMagnifierLoc: [-1, -1],

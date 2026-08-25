@@ -18,7 +18,7 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
 import DiskCollectionPanel from "./diskdialog/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
@@ -28,6 +28,7 @@ import { messagelistener } from "./api/messagelistener"
 import { CRTStartup } from "./graphics"
 import { startRemoteControlBridge } from "./api/remotecontrol"
 import { useTranslation } from "../i18n/useTranslation"
+import RetroMenuRenderer from "./retro/retromenurenderer"
 
 const DisplayApple2 = () => {
   const { t } = useTranslation()
@@ -197,6 +198,12 @@ const DisplayApple2 = () => {
 
   if (isEmbedMode()) {
     return <Apple2Canvas {...props} />
+  }
+  if (theme === UI_THEME.RETRO && !isGameMode()) {
+    return <>
+      <RetroMenuRenderer displayProps={props} />
+      <DebugSection updateDisplay={updateDisplay} narrow={narrow} minimalPresentation />
+    </>
   }
   return (
     <>

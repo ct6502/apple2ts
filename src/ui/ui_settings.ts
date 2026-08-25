@@ -1,6 +1,8 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { handleGetMachineName } from "./main2worker"
 
+export const INFO_PANEL_COLLAPSED_EVENT = "apple2ts-info-panel-collapsed"
+
 const uiState: UIState = {
   appMode: "",
   arrowKeysAsJoystick: true,
@@ -13,6 +15,7 @@ const uiState: UIState = {
   ghosting: false,
   helpText: "",
   hotReload: false,
+  infoPanel: false,
   prodosFloppy: false,
   reverseYAxis: false,
   showScanlines: false,
@@ -37,6 +40,7 @@ export const setUIState = (state: UIState) => {
   uiState.crtDistortion = state?.crtDistortion ?? false
   uiState.helpText = state?.helpText ?? ""
   uiState.hotReload = state?.hotReload ?? false
+  uiState.infoPanel = state?.infoPanel ?? false
   uiState.showScanlines = state?.showScanlines ?? false
   uiState.theme = state?.theme ?? UI_THEME.CLASSIC
   uiState.touchJoystickMode = state?.touchJoystickMode ?? "off"
@@ -132,6 +136,10 @@ export const getHotReload = () => {
   return uiState.hotReload || isGameMode()
 }
 
+export const getInfoPanel = () => {
+  return uiState.infoPanel
+}
+
 export const getShowScanlines = () => {
   return uiState.showScanlines
 }
@@ -150,6 +158,12 @@ export const getTheme = () => {
 
 export const isMinimalTheme = () => {
   return (uiState.theme == UI_THEME.MINIMAL && !isGameMode()) || isEmbedMode()
+}
+export const isRetroTheme = () => {
+  return uiState.theme === UI_THEME.RETRO && !isGameMode() && !isEmbedMode()
+}
+export const isCanvasOnlyTheme = () => {
+  return isMinimalTheme() || isRetroTheme()
 }
 
 export const getTouchJoystickSensitivity = () => {

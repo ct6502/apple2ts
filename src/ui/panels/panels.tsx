@@ -3,7 +3,7 @@ import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faCode, faRobot, faDesktop } from "@fortawesome/free-solid-svg-icons"
 import { faApple } from "@fortawesome/free-brands-svg-icons"
 import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
-import { getHelpText, getTabView, getTheme, getUIStateBoolean, isMinimalTheme } from "../ui_settings"
+import { getHelpText, getInfoPanel, getTabView, getTheme, getUIStateBoolean, INFO_PANEL_COLLAPSED_EVENT, isMinimalTheme, setUIStateBoolean } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import DebugTab from "./debugtab"
@@ -16,12 +16,13 @@ import VeraTab from "./vera/veratab"
 import { setPreferenceBoolean } from "../localstorage"
 import { isDefaultHelp } from "./help/helpselection"
 
-const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) => {
+const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, minimalPresentation?: boolean }) => {
 
   const [activeTab, setActiveTab] = useState<number>(getTabView())
-  const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
+  const isFlyoutOpen = getInfoPanel()
+  const useMinimalPresentation = props.minimalPresentation || isMinimalTheme()
 
-  if (isMinimalTheme()) {
+  if (useMinimalPresentation) {
     import("./panels.minimal.css")
   }
 
@@ -52,10 +53,10 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
   }
 
   // Do not allow debug panels to be shown in minimal theme on small devices
-  const isSmall = isMinimalTheme() && window.innerWidth < 800
+  const isSmall = useMinimalPresentation && window.innerWidth < 800
 
   if (handleGetShowDebugTab()) {
-    setIsFlyoutOpen(true)
+    setUIStateBoolean("infoPanel", true)
     setActiveTab(1)
     passSetShowDebugTab(false)
   }
@@ -64,21 +65,28 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
     forceRefresh()
   }, [isFlyoutOpen])
 
-  const tabClass = props.narrow ? "dbg-tab-horizontal" : "dbg-tab-vertical"
+  const tabOrientation = props.narrow ? "horizontal" : "vertical"
+  const tabClass = `dbg-tab-${tabOrientation}`
 
   return (
     <Flyout
       icon={faInfoCircle}
       position="top-right"
       title={t("controls.debugPanel")}
+      hideButtonWhenClosed={props.minimalPresentation}
+      minimalPresentation={props.minimalPresentation}
       highlight={showHighlight}
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => {
-        setIsFlyoutOpen(!isFlyoutOpen)
+        const nextIsOpen = !isFlyoutOpen
+        setUIStateBoolean("infoPanel", nextIsOpen)
+        if (!nextIsOpen) {
+          window.dispatchEvent(new Event(INFO_PANEL_COLLAPSED_EVENT))
+        }
         props.updateDisplay()
       }}>
-      <div id="debug-section" className={`${props.narrow ? "flex-column" : "flex-row"}`}>
-        {!isSmall && <div className={`${props.narrow ? "flex-row" : "flex-column"} dbg-tab-row`}>
+      <div id="debug-section" className={`${props.narrow ? "flex-column" : "flex-row"}${useMinimalPresentation ? " minimal-presentation" : ""}`}>
+        {!isSmall && <div className={`${props.narrow ? "flex-row" : "flex-column"} dbg-tab-row dbg-tab-row-${tabOrientation}`}>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 0 ? " dbg-tab-active" : ""}`}
             title={t("debug.helpTab")}
@@ -121,6 +129,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
         {(activeTab == 0 || isSmall) &&
           <HelpTab
             helptext={getHelpText()}
+            minimalPresentation={props.minimalPresentation}
             theme={getTheme()}
             useOpenAppleKey={getUIStateBoolean("useOpenAppleKey")}
           />

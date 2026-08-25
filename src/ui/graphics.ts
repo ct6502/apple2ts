@@ -6,7 +6,7 @@ import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddr
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { i18n } from "../i18n"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getCrtDistortion, getGhosting, isEmbedMode, isGameMode, isMinimalTheme } from "./ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, isCanvasOnlyTheme, isEmbedMode, isGameMode } from "./ui_settings"
 import { doCRTStartup } from "./crtstartup"
 let frameCount = 0
 
@@ -475,10 +475,29 @@ const drawImage = (ctx: CanvasRenderingContext2D,
 
 // For the ghosting effect
 let ghostFrame: ImageData | null = null
+let ghostBackground: string | null = null
+
+const getIIGSCanvasBackground = (ctx: CanvasRenderingContext2D) => {
+  const shell = ctx.canvas.closest<HTMLElement>(".retro-shell.retro-skin-apple-iigs")
+  return shell?.style.getPropertyValue("--retro-background").trim() || null
+}
+
+const replaceBlackPixels = (image: ImageData, background: string | null) => {
+  if (!background) return
+  const [red, green, blue] = background.match(/\d+/g)?.map(Number) ?? []
+  if (red === undefined || green === undefined || blue === undefined) return
+  for (let index = 0; index < image.data.length; index += 4) {
+    if (image.data[index] === 0 && image.data[index + 1] === 0 && image.data[index + 2] === 0) {
+      image.data[index] = red
+      image.data[index + 1] = green
+      image.data[index + 2] = blue
+    }
+  }
+}
 
 const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
-  colorMode: COLOR_MODE, width: number, height: number) => {
+  colorMode: COLOR_MODE, width: number, height: number, background: string | null) => {
   // Draw text before distortion
   processTextPage(ctx, hiddenContext, colorMode, width, height, true)
 
@@ -486,6 +505,7 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   const nx = 560
   const ny = 384
   const hiddenData = hiddenContext.getImageData(0, 0, nx, ny)
+  replaceBlackPixels(hiddenData, background)
   const distortedData = new ImageData(nx * 2, ny * 2)
   
   // Barrel distortion parameters
@@ -558,8 +578,13 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   width: number, height: number) => {
   frameCount++
   ctx.imageSmoothingEnabled = false
+  const effectBackground = getIIGSCanvasBackground(ctx)
   if (getGhosting()) {
     ctx.imageSmoothingEnabled = true
+    if (effectBackground !== ghostBackground) {
+      ctx.clearRect(0, 0, width, height)
+      ghostBackground = effectBackground
+    }
     // Make a copy of the current canvas contents.
     const dx = xmargin * width
     const dy = ymargin * height
@@ -568,21 +593,24 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     // Draw the single previous frame with transparency
     ctx.putImageData(ghostFrame, dx, dy)
     const alpha = 0.3
-    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`
+    ctx.globalAlpha = alpha
+    ctx.fillStyle = effectBackground ?? "#000000"
     ctx.fillRect(dx, dy, width - 2 * dx, height - 2 * dy)
+    ctx.globalAlpha = 1
   } else {
+    ghostBackground = null
     // Clear all our drawing and let the background show through again.
     ctx.clearRect(0, 0, width, height)
   }
 
   hiddenContext.imageSmoothingEnabled = false
-  hiddenContext.fillStyle = "#000000"
+  hiddenContext.fillStyle = effectBackground ?? "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
   const colorMode = getColorMode()
   let didDraw = processLoRes(hiddenContext, colorMode)
   didDraw = processHiRes(hiddenContext, colorMode) || didDraw
   if (getCrtDistortion()) {
-    applyCrtDistortion(ctx, hiddenContext, colorMode, width, height)
+    applyCrtDistortion(ctx, hiddenContext, colorMode, width, height, effectBackground)
   } else {
     if (didDraw) {
       drawImage(ctx, hiddenContext, width, height)
@@ -628,7 +656,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
 export const getCanvasSize = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
-  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme()
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isCanvasOnlyTheme()
   const margin = (handleGetMachineName() === "APPLE2P" && !isCanvasFullScreen) ? 0.12 : 0.075
   xmargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
   ymargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
@@ -642,7 +670,7 @@ export const getCanvasSize = () => {
   if (isEmbedMode()) {
     height -= noBackgroundImage ? 60 : 25
     width -= noBackgroundImage ? 60 : 25
-  } else if (isMinimalTheme()) {
+  } else if (isCanvasOnlyTheme()) {
     if (isLandscape) {
       height -= 150
     } else {

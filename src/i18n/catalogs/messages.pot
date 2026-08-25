@@ -49,6 +49,10 @@ msgctxt "controls.debugPanel"
 msgid "Debug Panel"
 msgstr ""
 
+msgctxt "controls.infoPanel"
+msgid "Info Panel"
+msgstr ""
+
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr ""
@@ -721,8 +725,16 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr ""
 
+msgctxt "tour.retroBootButton"
+msgid "Select this option to start the emulator."
+msgstr ""
+
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
+msgstr ""
+
+msgctxt "tour.retroResetButton"
+msgid "Select this option to reset the Apple II and either reboot or enter BASIC."
 msgstr ""
 
 msgctxt "tour.diskImages"
@@ -733,14 +745,28 @@ msgctxt "tour.floppyDisks"
 msgid "Or click one of the floppy disk icons to load a disk image."
 msgstr ""
 
+msgctxt "tour.retroFloppyDisks"
+msgid "Or select a disk drive to load a disk image."
+msgstr ""
+
 msgctxt "tour.saveRestore"
 msgid ""
 "You can save and restore the complete state of the emulator using these "
 "buttons."
 msgstr ""
 
+msgctxt "tour.retroSaveRestore"
+msgid ""
+"You can save and restore the complete state of the emulator using these "
+"options."
+msgstr ""
+
 msgctxt "tour.themeButton"
 msgid "Click here to change the emulator UI theme."
+msgstr ""
+
+msgctxt "tour.retroThemeButton"
+msgid "Use the arrow keys to change the emulator UI theme."
 msgstr ""
 
 msgctxt "tour.endTour"
@@ -751,6 +777,12 @@ msgctxt "tour.tourSelectorHint"
 msgid ""
 "Click on the globe tour button to try one of the other tours, or press "
 "Finish to start using the emulator."
+msgstr ""
+
+msgctxt "tour.retroTourSelectorHint"
+msgid ""
+"Select a menu item to try one of the other tours, or press Finish to start "
+"using the emulator."
 msgstr ""
 
 msgctxt "tour.settingsWelcome"
@@ -788,6 +820,12 @@ msgid ""
 "the emulator speed, the screen color, and muting the sound."
 msgstr ""
 
+msgctxt "tour.retroConfigButtons"
+msgid ""
+"The Options menu controls the state of the Apple II, starting with the "
+"emulator speed, the screen color, and muting the sound."
+msgstr ""
+
 msgctxt "tour.keyboardButtons"
 msgid "If the caps lock key is turned on, then all typed characters are UPPERCASE."
 msgstr ""
@@ -803,6 +841,12 @@ msgctxt "tour.clearCookies"
 msgid ""
 "Apple2TS automatically saves the current emulator settings as browser "
 "cookies. Press this button to reset these settings and delete the cookies."
+msgstr ""
+
+msgctxt "tour.retroClearCookies"
+msgid ""
+"Apple2TS automatically saves the current emulator settings as browser "
+"cookies. Select this option to reset these settings and delete the cookies."
 msgstr ""
 
 msgctxt "tour.debugWelcome"
@@ -873,19 +917,19 @@ msgid "Close"
 msgstr ""
 
 msgctxt "tour.guidedTour"
-msgid "Guided Tour"
+msgid "Tours"
 msgstr ""
 
 msgctxt "tour.mainLabel"
-msgid "Guided Tour: Main"
+msgid "Guided Tours: Main"
 msgstr ""
 
 msgctxt "tour.settingsLabel"
-msgid "Guided Tour: Settings"
+msgid "Guided Tours: Settings"
 msgstr ""
 
 msgctxt "tour.debugLabel"
-msgid "Guided Tour: Debug"
+msgid "Guided Tours: Debug"
 msgstr ""
 
 msgctxt "disk.drive1"
@@ -2139,4 +2183,402 @@ msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
+msgstr ""
+
+msgctxt "startup.retroControlPanel"
+msgid ""
+"Press SHIFT-ESC to display\n"
+"Apple2TS control panel."
+msgstr ""
+
+msgctxt "retroControl.ariaLabel"
+msgid "Apple2TS control panel"
+msgstr ""
+
+msgctxt "retroControl.machine"
+msgid "Machine"
+msgstr ""
+
+msgctxt "retroControl.fullscreen"
+msgid "Fullscreen"
+msgstr ""
+
+msgctxt "retroControl.diskCollection"
+msgid "Disks"
+msgstr ""
+
+msgctxt "retroControl.diskDrives"
+msgid "Drives"
+msgstr ""
+
+msgctxt "retroControl.display"
+msgid "Display"
+msgstr ""
+
+msgctxt "retroControl.sound"
+msgid "Sound"
+msgstr ""
+
+msgctxt "retroControl.options"
+msgid "Options"
+msgstr ""
+
+msgctxt "retroControl.skin"
+msgid "Skin"
+msgstr ""
+
+msgctxt "retroControl.personalization"
+msgid "Personalization"
+msgstr ""
+
+msgctxt "retroControl.text"
+msgid "Text"
+msgstr ""
+
+msgctxt "retroControl.background"
+msgid "Background"
+msgstr ""
+
+msgctxt "retroControl.border"
+msgid "Border"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.black"
+msgid "Black"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.red"
+msgid "Red"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.darkBlue"
+msgid "Dark Blue"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.purple"
+msgid "Purple"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.darkGreen"
+msgid "Dark Green"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.darkGray"
+msgid "Dark Gray"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.mediumBlue"
+msgid "Medium Blue"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.lightBlue"
+msgid "Light Blue"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.brown"
+msgid "Brown"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.orange"
+msgid "Orange"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.lightGray"
+msgid "Light Gray"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.pink"
+msgid "Pink"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.lightGreen"
+msgid "Light Green"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.yellow"
+msgid "Yellow"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.aquamarine"
+msgid "Aquamarine"
+msgstr ""
+
+msgctxt "retroControl.iigsColor.white"
+msgid "White"
+msgstr ""
+
+msgctxt "retroControl.keyboard"
+msgid "Keyboard"
+msgstr ""
+
+msgctxt "retroControl.input"
+msgid "Input"
+msgstr ""
+
+msgctxt "retroControl.joystick"
+msgid "Joystick"
+msgstr ""
+
+msgctxt "retroControl.slots"
+msgid "Slots"
+msgstr ""
+
+msgctxt "retroControl.devices"
+msgid "Devices"
+msgstr ""
+
+msgctxt "retroControl.printerPort"
+msgid "Printer Port"
+msgstr ""
+
+msgctxt "retroControl.modemPort"
+msgid "Modem Port"
+msgstr ""
+
+msgctxt "retroControl.quit"
+msgid "Quit"
+msgstr ""
+
+msgctxt "retroControl.apple2tsCollection"
+msgid "Apple2TS Collection"
+msgstr ""
+
+msgctxt "retroControl.newReleases"
+msgid "New Releases"
+msgstr ""
+
+msgctxt "retroControl.favorites"
+msgid "Favorites"
+msgstr ""
+
+msgctxt "retroControl.exportDisksToHdv"
+msgid "Export Disks to HDV"
+msgstr ""
+
+msgctxt "retroControl.noDiskDrivesAvailable"
+msgid "No disk drives available"
+msgstr ""
+
+msgctxt "retroControl.select"
+msgid "Select"
+msgstr ""
+
+msgctxt "retroControl.open"
+msgid "Open"
+msgstr ""
+
+msgctxt "retroControl.load"
+msgid "Load"
+msgstr ""
+
+msgctxt "retroControl.go"
+msgid "Go"
+msgstr ""
+
+msgctxt "retroControl.save"
+msgid "Save"
+msgstr ""
+
+msgctxt "retroControl.clipboard"
+msgid "Clipboard"
+msgstr ""
+
+msgctxt "retroControl.cancelEsc"
+msgid "Cancel:Esc"
+msgstr ""
+
+msgctxt "retroControl.color"
+msgid "Color"
+msgstr ""
+
+msgctxt "retroControl.colorNoFringe"
+msgid "Color (no fringe)"
+msgstr ""
+
+msgctxt "retroControl.green"
+msgid "Green"
+msgstr ""
+
+msgctxt "retroControl.amber"
+msgid "Amber"
+msgstr ""
+
+msgctxt "retroControl.white"
+msgid "White"
+msgstr ""
+
+msgctxt "retroControl.inverse"
+msgid "Inverse"
+msgstr ""
+
+msgctxt "retroControl.snail"
+msgid "Snail"
+msgstr ""
+
+msgctxt "retroControl.slow"
+msgid "Slow"
+msgstr ""
+
+msgctxt "retroControl.normal"
+msgid "Normal"
+msgstr ""
+
+msgctxt "retroControl.twoMhz"
+msgid "2 MHz"
+msgstr ""
+
+msgctxt "retroControl.threeMhz"
+msgid "3 MHz"
+msgstr ""
+
+msgctxt "retroControl.fast"
+msgid "Fast"
+msgstr ""
+
+msgctxt "retroControl.warp"
+msgid "Warp"
+msgstr ""
+
+msgctxt "retroControl.systemSpeed"
+msgid "System Speed"
+msgstr ""
+
+msgctxt "retroControl.other"
+msgid "Other"
+msgstr ""
+
+msgctxt "retroControl.timeMachine"
+msgid "Snapshots"
+msgstr ""
+
+msgctxt "retroControl.ports"
+msgid "Ports"
+msgstr ""
+
+msgctxt "retroControl.clock"
+msgid "Clock"
+msgstr ""
+
+msgctxt "retroControl.hostSystemClock"
+msgid "Host system clock"
+msgstr ""
+
+msgctxt "retroControl.mouse"
+msgid "Mouse"
+msgstr ""
+
+msgctxt "retroControl.ramDisk"
+msgid "RAM Disk"
+msgstr ""
+
+msgctxt "retroControl.language"
+msgid "Language"
+msgstr ""
+
+msgctxt "retroControl.port"
+msgid "Port"
+msgstr ""
+
+msgctxt "retroControl.builtinImageWriter"
+msgid "Builtin ImageWriter"
+msgstr ""
+
+msgctxt "retroControl.selectExternalPort"
+msgid "Select External Port"
+msgstr ""
+
+msgctxt "retroControl.externalPort"
+msgid "External Port"
+msgstr ""
+
+msgctxt "retroControl.retroTheme"
+msgid "Retro"
+msgstr ""
+
+msgctxt "retroControl.lowercaseInput"
+msgid "Lowercase input"
+msgstr ""
+
+msgctxt "retroControl.lowercase"
+msgid "Lowercase"
+msgstr ""
+
+msgctxt "retroControl.openAppleKey"
+msgid "Open Apple key"
+msgstr ""
+
+msgctxt "retroControl.sortOrder"
+msgid "Sort"
+msgstr ""
+
+msgctxt "retroControl.slot"
+msgid "Slot {{slot}}"
+msgstr ""
+
+msgctxt "retroControl.drive"
+msgid "{{drive}}: {{disk}}"
+msgstr ""
+
+msgctxt "retroControl.configured"
+msgid "{{count}} configured"
+msgstr ""
+
+msgctxt "retroControl.saveDisk"
+msgid "Save Disk"
+msgstr ""
+
+msgctxt "retroControl.card.empty"
+msgid "Empty"
+msgstr ""
+
+msgctxt "retroControl.card.ssc"
+msgid "Super Serial Card"
+msgstr ""
+
+msgctxt "retroControl.card.softcard"
+msgid "Z-80 SoftCard"
+msgstr ""
+
+msgctxt "retroControl.card.aux"
+msgid "Auxiliary memory"
+msgstr ""
+
+msgctxt "retroControl.card.videoterm"
+msgid "Videx VideoTerm"
+msgstr ""
+
+msgctxt "retroControl.card.mockingboard"
+msgid "Mockingboard"
+msgstr ""
+
+msgctxt "retroControl.card.mouse"
+msgid "Mouse card"
+msgstr ""
+
+msgctxt "retroControl.card.vera"
+msgid "VERA graphics"
+msgstr ""
+
+msgctxt "retroControl.card.passport"
+msgid "Passport MIDI"
+msgstr ""
+
+msgctxt "retroControl.card.disk2"
+msgid "Disk II controller"
+msgstr ""
+
+msgctxt "retroControl.card.smartport"
+msgid "SmartPort drive"
+msgstr ""
+
+msgctxt "retroControl.fetchingDisk"
+msgid "Fetching disk {{current}}/{{total}}"
+msgstr ""
+
+msgctxt "retroControl.downloadFailed"
+msgid "Unable to download {{title}}"
+msgstr ""
+
+msgctxt "retroControl.exportFailed"
+msgid "Export to HDV failed: {{message}}"
 msgstr ""
