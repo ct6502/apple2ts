@@ -170,10 +170,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     const updateCanvasBounds = () => {
       const bounds = canvas.getBoundingClientRect()
       setCanvasBounds({
-        left: bounds.left,
-        top: bounds.top,
-        width: bounds.width,
-        height: bounds.height,
+        left: bounds.left + canvas.clientLeft,
+        top: bounds.top + canvas.clientTop,
+        width: canvas.clientWidth,
+        height: canvas.clientHeight,
       })
     }
     let updateTimer = 0
