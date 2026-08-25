@@ -5,6 +5,14 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2026-08-25 03:05+0000\n"
+"Last-Translator: GitHub webhook <noreply-webhook-github-"
+"integration@weblate.org>\n"
+"Language-Team: Russian <https://hosted.weblate.org/projects/apple2ts/browser-"
+"emulator/ru/>\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 2026.9.dev0\n"
 
 #, fuzzy
 msgctxt "controls.boot"
@@ -65,10 +73,12 @@ msgctxt "controls.infoPanel"
 msgid "Info Panel"
 msgstr "Панель информации"
 
+#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Сообщить о проблеме"
 
+#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Политика конфиденциальности"
@@ -142,9 +152,9 @@ msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr ""
 
-msgctxt "machine.slotManager"
-msgid "Slot Manager"
-msgstr ""
+msgctxt "machine.slotConfigurator"
+msgid "Slot Configurator"
+msgstr "Конфигуратор слотов"
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -857,8 +867,8 @@ msgid ""
 "Click on the globe tour button to try one of the other tours, or press "
 "Finish to start using the emulator."
 msgstr ""
-"Нажмите на кнопку тура с глоусом, чтобы попробовать другой тур, или нажмите "
-"«Завершить», чтобы начать работу с эмулятором."
+"Нажмите на кнопку тура с глоусом, чтобы попробовать другой тур, или нажмите «"
+"Завершить», чтобы начать работу с эмулятором."
 
 msgctxt "tour.retroTourSelectorHint"
 msgid ""
@@ -933,8 +943,7 @@ msgstr ""
 msgctxt "tour.keyboardButtons"
 msgid ""
 "If the caps lock key is turned on, then all typed characters are UPPERCASE."
-msgstr ""
-"Если клавиша caps lock включена, то все печатаемые символы - ЗАГЛАВНЫЕ."
+msgstr "Если клавиша caps lock включена, то все печатаемые символы - ЗАГЛАВНЫЕ."
 
 #, fuzzy
 msgctxt "tour.altArrowKeys"
@@ -1085,6 +1094,7 @@ msgctxt "tour.debugLabel"
 msgid "Guided Tours: Debug"
 msgstr "Управляемый тур: Отладка"
 
+#, fuzzy
 msgctxt "disk.drive1"
 msgid "Drive 1"
 msgstr "Привод 1"
@@ -1611,7 +1621,7 @@ msgstr "Динамик"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr "Mockingboard"
+msgstr ""
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -2527,11 +2537,14 @@ msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
 msgstr "(c) {{year}} C.Torrence + соавторы"
 
+#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
+"Нажмите значок Коллекций дисков\n"
+"для загрузки диска или игры."
 
 msgctxt "startup.retroControlPanel"
 msgid ""

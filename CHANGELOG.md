@@ -4,6 +4,9 @@
 
 **Implemented enhancements:**
 
+- Add VidHD video expansion card emulation in Slot 3 for Apple IIe and Apple II+, providing Apple IIGS-compatible Super Hi-Res (SHR) 320x200 (16 colors per line from 16 12-bit RGB palettes / 4096 colors) and 640x200 dithered graphics modes.
+- Support `$C029` (`NEWVIDEO`) softswitch control, enabling seamless SHR activation and automatic Super Hi-Res box art rendering in modern software such as Total Replay.
+- Implement accurate Slot 3 ROM signature routing with `SLOTC3ROM` softswitch support, allowing VidHD hardware detection while preserving full compatibility with Apple IIe internal 80-column firmware and applications.
 - Add Applied Engineering (AE) RamWorks III auxiliary memory expansion card emulation on Apple IIe, supporting 512KB, 1MB, 4MB, and up to 8MB RAM bank switching with auxiliary 80-column and dHGR support.
 - Add Videx VideoTerm 80-Column Display Card emulation in Slot 3 for Apple II/II+ (MC6845 CRTC, 2KB static VRAM, bank switching, and official Videx 2.4 firmware ROM).
 - Implement Videx Soft Video Switch auto-switching: automatic display handover between 80-column text, 40-column text, and Apple II graphics (`GR`, `HGR`, `HGR2`). Note: In accordance with authentic Videx hardware behavior, `PR#0` resets character vectors to 40-column without resetting the display; returning the display to 40-column can be done via `Ctrl-Reset`.

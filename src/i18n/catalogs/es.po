@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-08-22 00:11+0000\n"
+"PO-Revision-Date: 2026-08-25 03:04+0000\n"
 "Last-Translator: Warren James "
 "<19525653+3amcinnamonroll@users.noreply.github.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/apple2ts/browser-"
@@ -72,10 +72,12 @@ msgctxt "controls.infoPanel"
 msgid "Info Panel"
 msgstr "Panel de información"
 
+#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Reportar un problema"
 
+#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Política de privacidad"
@@ -149,9 +151,9 @@ msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr ""
 
-msgctxt "machine.slotManager"
-msgid "Slot Manager"
-msgstr ""
+msgctxt "machine.slotConfigurator"
+msgid "Slot Configurator"
+msgstr "Configurador de ranuras"
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -1089,6 +1091,7 @@ msgctxt "tour.debugLabel"
 msgid "Guided Tours: Debug"
 msgstr "Tour Guiado: Depuración"
 
+#, fuzzy
 msgctxt "disk.drive1"
 msgid "Drive 1"
 msgstr "Unidad 1"
@@ -1617,7 +1620,7 @@ msgstr "Altavoz"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr "Mockingboard"
+msgstr ""
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -2532,11 +2535,14 @@ msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
 msgstr "(c) {{year}} C.Torrence y colaboradores"
 
+#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
+"Clic en Colección de discos\n"
+"para cargar un juego integrado."
 
 msgctxt "startup.retroControlPanel"
 msgid ""

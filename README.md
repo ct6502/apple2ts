@@ -12,13 +12,13 @@ This project was originally create using [Create React App](https://github.com/f
 
 Note: The integrated server and CLI were moved out of this repository into `apple2ts-server`.
 
-## Dynamic Slot Manager
+## Dynamic Slot Configurator
 
-Apple2TS features a flexible **Slot Manager** system allowing real-time configuration of expansion cards across Slots 1 through 7 via the Machine Settings menu:
+Apple2TS features a flexible **Slot Configurator** system allowing real-time configuration of expansion cards across Slots 1 through 7 via the Machine Settings menu:
 
 - **Slot 1**: *Super Serial Card (Printer / Serial Communications)
 - **Slot 2**: *Microsoft Z-80 SoftCard (CP/M), VERA Graphics Card, Passport MIDI Card
-- **Slot 3**: *Aux Card (Apple 64KB Extended 80-Col Card or Applied Engineering RamWorks III 512KB–8MB RAM / 80-Col / dHGR) on Apple IIe; *Videx VideoTerm 80-Col Card on Apple II+
+- **Slot 3**: *Aux Card (Apple 64KB Extended 80-Col Card or Applied Engineering RamWorks III 512KB–8MB RAM / 80-Col / dHGR) on Apple IIe; VidHD Video Card (Super Hi-Res 320/640x200 4096-color graphics, supports Total Replay SHR artwork); *Videx VideoTerm 80-Col Card on Apple II+
 - **Slot 4**: *Mockingboard Sound Card, Apple II Mouse Card, VERA Graphics Card, Microsoft Z-80 SoftCard
 - **Slot 5**: *Apple II Mouse Card, Microsoft Z-80 SoftCard, Mockingboard Sound Card (Dual Mockingboards supported for Ultima V!)
 - **Slot 6**: *Disk II Floppy Controller (140KB 5.25" floppies)

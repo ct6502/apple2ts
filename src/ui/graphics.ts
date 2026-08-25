@@ -1,6 +1,8 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
   handleGetMachineName,
+  handleGetShr,
+  handleGetVidhdActive,
   handleGetSoftSwitches } from "./main2worker"
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
@@ -662,6 +664,107 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   ctx.restore()
 }
 
+const shrRgbaBuffer = new Uint8ClampedArray(560 * 384 * 4)
+
+const processSuperHiRes = (hiddenContext: CanvasRenderingContext2D, colorMode: COLOR_MODE): boolean => {
+  const shrData = handleGetShr()
+  if (shrData.length < 0x8000) return false
+
+  const outWidth = 560
+  const outHeight = 384
+
+  // Decode 16 palettes (each has 16 colors, 2 bytes 0x0RGB)
+  const palR = new Uint8Array(256)
+  const palG = new Uint8Array(256)
+  const palB = new Uint8Array(256)
+
+  const isColor = (colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE)
+  const isGreen = colorMode === COLOR_MODE.GREEN
+  const isAmber = colorMode === COLOR_MODE.AMBER
+
+  for (let p = 0; p < 16; p++) {
+    const pOffset = 0x7E00 + p * 32
+    for (let c = 0; c < 16; c++) {
+      const idx = (p << 4) | c
+      const colorLo = shrData[pOffset + c * 2]
+      const colorHi = shrData[pOffset + c * 2 + 1]
+      const colorWord = colorLo | (colorHi << 8)
+
+      let r = ((colorWord >> 8) & 0x0F) * 17
+      let g = ((colorWord >> 4) & 0x0F) * 17
+      let b = (colorWord & 0x0F) * 17
+
+      if (!isColor) {
+        // Monochrome / Green / Amber / B&W conversion
+        const lum = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
+        if (isGreen) {
+          r = 0
+          g = lum
+          b = 0
+        } else if (isAmber) {
+          r = lum
+          g = Math.round(lum * 0.7)
+          b = 0
+        } else {
+          r = lum
+          g = lum
+          b = lum
+        }
+      }
+
+      palR[idx] = r
+      palG[idx] = g
+      palB[idx] = b
+    }
+  }
+
+    // Destination-driven sampling for 560x384 canvas
+    for (let ty = 0; ty < outHeight; ty++) {
+      const srcY = Math.min(199, Math.floor((ty * 200) / outHeight))
+      const lineOffset = srcY * 160
+      const scb = shrData[0x7D00 + srcY]
+      const palIdx = (scb & 0x0F) << 4
+      const is640 = (scb & 0x80) !== 0
+      const rowOffset = ty * outWidth * 4
+
+      if (!is640) {
+        // 320 mode
+        for (let x = 0; x < outWidth; x++) {
+          const srcX = Math.min(319, Math.floor((x * 320) / outWidth))
+          const byteVal = shrData[lineOffset + (srcX >> 1)]
+          const color4Bit = (srcX & 1) ? (byteVal & 0x0F) : ((byteVal >> 4) & 0x0F)
+          const c = palIdx | color4Bit
+
+          const px = rowOffset + x * 4
+          shrRgbaBuffer[px] = palR[c]
+          shrRgbaBuffer[px + 1] = palG[c]
+          shrRgbaBuffer[px + 2] = palB[c]
+          shrRgbaBuffer[px + 3] = 255
+        }
+      } else {
+        // 640 mode
+        for (let x = 0; x < outWidth; x++) {
+          const srcX = Math.min(639, Math.floor((x * 640) / outWidth))
+          const byteVal = shrData[lineOffset + (srcX >> 2)]
+          const shift = (3 - (srcX & 3)) * 2
+          const color2Bit = (byteVal >> shift) & 0x03
+          const colorIndex = (srcX % 4) * 4 + color2Bit
+          const c = palIdx | colorIndex
+
+          const px = rowOffset + x * 4
+          shrRgbaBuffer[px] = palR[c]
+          shrRgbaBuffer[px + 1] = palG[c]
+          shrRgbaBuffer[px + 2] = palB[c]
+          shrRgbaBuffer[px + 3] = 255
+        }
+      }
+    }
+
+    const imageData = new ImageData(shrRgbaBuffer, outWidth, outHeight)
+    hiddenContext.putImageData(imageData, 0, 0)
+    return true
+}
+
 export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
@@ -715,13 +818,23 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext.fillStyle = effectBackground ?? "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
   const colorMode = getColorMode()
-  let didDraw = processLoRes(hiddenContext, colorMode)
-  didDraw = processHiRes(hiddenContext, colorMode) || didDraw
+
   if (effectBackground) {
     const hiddenData = hiddenContext.getImageData(0, 0, 560, 384)
     replaceBlackPixels(hiddenData, effectBackground)
     hiddenContext.putImageData(hiddenData, 0, 0)
   }
+
+  const isVidhdActive = handleGetVidhdActive()
+  let didDraw = false
+  if (isVidhdActive) {
+    didDraw = processSuperHiRes(hiddenContext, colorMode)
+  }
+  if (!didDraw) {
+    didDraw = processLoRes(hiddenContext, colorMode)
+    didDraw = processHiRes(hiddenContext, colorMode) || didDraw
+  }
+
   if (crtDistortion) {
     applyCrtDistortion(ctx, hiddenContext, colorMode, width, height, foreground, effectBackground, borderColor)
   } else {
@@ -730,10 +843,16 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     }
     // The hidden canvas was causing overlay issues with the text page.
     // So instead, draw the graphics first and then overlay the text chars.
-    processTextPage(ctx, hiddenContext, colorMode, width, height, false, foreground, effectBackground)
-  }
-  if (iigsSkin && !crtDistortion && getShowScanlines()) {
-    paintIIGSScanlines(ctx, width, height)
+
+    if (iigsSkin && !crtDistortion && getShowScanlines()) {
+      paintIIGSScanlines(ctx, width, height)
+      if (!isVidhdActive) {
+        processTextPage(ctx, hiddenContext, colorMode, width, height, false, foreground, effectBackground)
+        if (iigsSkin && !crtDistortion && getShowScanlines()) {
+          paintIIGSScanlines(ctx, width, height)
+        }
+      }
+    }
   }
   // if (TEST_GRAPHICS) {
   //   const tile = [
