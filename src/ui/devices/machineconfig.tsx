@@ -105,8 +105,7 @@ export const retroMachineControls: RetroControlMetadata[] = [
     label: context => context.t("retroControl.fullscreen"),
     labels: context => [context.t("messages.off"), context.t("messages.on")],
     currentIndex: () => isCanvasFullscreen() ? 1 : 0,
-    select: () => undefined,
-    preview: (_context, index) => setCanvasFullscreen(index === 1),
+    select: (_context, index) => setCanvasFullscreen(index === 1),
     defaultIndex: 0,
   }),
   choiceMetadata({
@@ -333,13 +332,15 @@ export const MachineConfig = (props: DisplayProps) => {
             }
           )),
           { label: "-" },
-          {label: t("config.prodosFloppy"),
+          {
+            label: t("config.prodosFloppy"),
             isSelected: () => { return handleGetProdosFloppy() },
             onClick: () => {
               const newValue = !handleGetProdosFloppy()
               passSetProdosFloppy(newValue)
               setPreferenceBoolean("prodosFloppy", newValue)
-            }},
+            }
+          },
           { label: "-" },
           ...[{ label: t("machine.slotConfigurator"), isHeading: true }],
           ...([1, 2, 3, 4, 5, 6, 7] as const).map((slot) => {

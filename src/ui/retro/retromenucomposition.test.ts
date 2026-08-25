@@ -62,6 +62,14 @@ describe("Retro menu metadata structure", () => {
     expect(ids).not.toContain("display.infoPanel")
   })
 
+  test("commits fullscreen through Save without previewing it", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const fullscreen = retroMenuRegistry.resolve(context, "display")
+      .find(control => control.id === "machine.fullscreen")
+
+    expect(fullscreen?.options?.every(option => option.action && !option.preview)).toBe(true)
+  })
+
   test("makes skin controls available without a separate Retro theme", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
     const controls = retroMenuRegistry.resolve(context, "options")

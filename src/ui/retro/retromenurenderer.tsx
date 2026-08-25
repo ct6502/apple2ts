@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import type { RetroResolvedControl } from "./retromenucontext"
 import { formatControlLabel } from "../controls/controlregistry"
 import { useRetroMenuHost } from "./retromenuhost"
@@ -407,9 +408,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     selectedIndex,
   ])
 
+  const canvasHost = document.getElementById("apple2canvas")?.parentElement
+
   return (
     <>
-      {isOpen && canvasBounds && <section
+      {isOpen && canvasBounds && canvasHost && createPortal(<section
         className={`retro-panel menu-open scanline-gradient ${effects}`}
         style={panelStyle}
         role="dialog"
@@ -518,7 +521,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             </span>
           </footer>
         </div>
-      </section>}
+      </section>, canvasHost)}
       {dialogs}
     </>
   )
