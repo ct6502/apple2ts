@@ -14,7 +14,7 @@ import {
 } from "./retrotext"
 import "./retrocontrolpanel.css"
 import { RETRO_SKIN } from "../localstorage"
-import { INFO_PANEL_COLLAPSED_EVENT, getTheme } from "../ui_settings"
+import { getTheme } from "../ui_settings"
 import { xmargin, ymargin } from "../graphics"
 import { UI_THEME } from "../../common/utility"
 
@@ -251,23 +251,6 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     const timer = window.setInterval(() => setNow(new Date()), 1000)
     return () => window.clearInterval(timer)
   }, [isOpen])
-
-  useEffect(() => {
-    const handleInfoPanelCollapsed = () => {
-      setMenuStack(stack => stack.map((frame, frameIndex) => {
-        if (frameIndex !== stack.length - 1) return frame
-        const itemIndex = frame.items.findIndex(item => item.id === "display.infoPanel")
-        if (itemIndex < 0) return frame
-        const values = [...frame.values]
-        const originalValues = [...frame.originalValues]
-        values[itemIndex] = 0
-        originalValues[itemIndex] = 0
-        return { ...frame, values, originalValues }
-      }))
-    }
-    window.addEventListener(INFO_PANEL_COLLAPSED_EVENT, handleInfoPanelCollapsed)
-    return () => window.removeEventListener(INFO_PANEL_COLLAPSED_EVENT, handleInfoPanelCollapsed)
-  }, [])
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
