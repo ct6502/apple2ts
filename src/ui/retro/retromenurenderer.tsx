@@ -14,7 +14,7 @@ import {
 } from "./retrotext"
 import "./retrocontrolpanel.css"
 import { RETRO_SKIN } from "../localstorage"
-import { getTheme } from "../ui_settings"
+import { DISK_LOAD_SUCCESS_EVENT, getTheme } from "../ui_settings"
 import { xmargin, ymargin } from "../graphics"
 import { UI_THEME } from "../../common/utility"
 
@@ -251,6 +251,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     const timer = window.setInterval(() => setNow(new Date()), 1000)
     return () => window.clearInterval(timer)
   }, [isOpen])
+
+  useEffect(() => {
+    const handleDiskLoadSuccess = () => setIsOpen(false)
+    window.addEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
+    return () => window.removeEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {

@@ -4,11 +4,16 @@ import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
 import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
 import { isFileSystemApiSupported } from "./ui_utilities"
+import { DISK_LOAD_SUCCESS_EVENT } from "./ui_settings"
 
 const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
   const [binaryBuffer, setBinaryBuffer] = useState(new Uint8Array())
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
+  const notifyLoadSuccess = () => {
+    props.onLoadSuccess?.()
+    window.dispatchEvent(new CustomEvent(DISK_LOAD_SUCCESS_EVENT))
+  }
 
   const readFile = async (file: File, index: number) => {
     const fname = file.name.toLowerCase()
@@ -17,7 +22,7 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
       fileread.onload = function (ev) {
         if (ev.target) {
           RestoreSaveState(ev.target.result as string)
-          props.onLoadSuccess?.()
+          notifyLoadSuccess()
         }
       }
       fileread.readAsText(file)
@@ -31,7 +36,7 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
         }
       } else {
         handleSetDiskOrFileFromBuffer(index, buffer, file.name, null, null)
-        props.onLoadSuccess?.()
+        notifyLoadSuccess()
       }
     }
   }
@@ -76,7 +81,7 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
       }
       newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
       prepWritableFile(newIndex, writableFileHandle)
-      props.onLoadSuccess?.()
+      notifyLoadSuccess()
     }
   }
 
@@ -138,7 +143,7 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
       <BinaryFileDialog displayDialog={displayBinaryDialog}
         displayClose={() => setDisplayBinaryDialog(false)}
         binaryBuffer={binaryBuffer}
-        onLoadSuccess={props.onLoadSuccess} />
+        onLoadSuccess={notifyLoadSuccess} />
     </>
   )
 }

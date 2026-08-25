@@ -2,6 +2,7 @@ import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { handleGetMachineName } from "./main2worker"
 
 export const INFO_PANEL_COLLAPSED_EVENT = "apple2ts-info-panel-collapsed"
+export const DISK_LOAD_SUCCESS_EVENT = "apple2ts-disk-load-success"
 
 const uiState: UIState = {
   appMode: "",
