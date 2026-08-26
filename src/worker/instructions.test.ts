@@ -200,6 +200,10 @@ test("SED ADC 45,45", () => runAssemblyTest(doSED_ADC(0x45, 0x45), 0x90, N | V |
 test("SED ADC 50,50", () => runAssemblyTest(doSED_ADC(0x50, 0x50), 0x0, V | Z | C | D))
 test("SED ADC 99,99", () => runAssemblyTest(doSED_ADC(0x99, 0x99), 0x98, N | V | C | D))
 test("SED ADC B1,C1", () => runAssemblyTest(doSED_ADC(0xB1, 0xC1), 0xD2, N | V | C | D))
+test("SED ADC invalid low digits", () =>
+  runAssemblyTest([" SED", " SEC", " LDA #$0F", " ADC #$0A"], 0x10, D))
+test("SED ADC invalid low digits carry into high digit", () =>
+  runAssemblyTest([" SED", " SEC", " LDA #$1F", " ADC #$2A"], 0x40, D))
 
 const doSED_SBC = (v1: number, v2 = 0) => {
   const instr = [
