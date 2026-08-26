@@ -2191,8 +2191,8 @@ msgstr ""
 
 msgctxt "startup.retroControlPanel"
 msgid ""
-"Press SHIFT-ESC to display the\n"
-"Apple2TS control panel."
+"Press SHIFT+ESC to display\n"
+"the control panel."
 msgstr ""
 
 msgctxt "retroControl.ariaLabel"
