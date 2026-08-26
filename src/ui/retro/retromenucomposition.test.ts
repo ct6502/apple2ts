@@ -18,9 +18,20 @@ jest.mock("../devices/disk/diskdrive", () => ({
 }))
 const mockHandleGetDriveProps = jest.fn()
 const mockHandleGetFilename = jest.fn()
+const mockHandleGetProdosFloppy = jest.fn(() => true)
+const mockLoadDisk = jest.fn()
+jest.mock("../main2worker", () => ({
+  ...jest.requireActual("../main2worker"),
+  handleGetProdosFloppy: () => mockHandleGetProdosFloppy(),
+}))
 jest.mock("../devices/disk/driveprops", () => ({
   handleGetDriveProps: (...args: unknown[]) => mockHandleGetDriveProps(...args),
   handleGetFilename: (...args: unknown[]) => mockHandleGetFilename(...args),
+}))
+jest.mock("../diskdialog/diskpanel_utils", () => ({
+  ...jest.requireActual("../diskdialog/diskpanel_utils"),
+  loadDisk: (...args: unknown[]) => mockLoadDisk(...args),
+  loadDiskIntoDrive: (...args: unknown[]) => mockLoadDisk(...args),
 }))
 jest.mock("../devices/disk/diskimagechooser", () => ({ DiskImageChooser: () => null }))
 jest.mock("../devices/printer/imagewriter", () => ({
@@ -42,8 +53,10 @@ import { retroMenuRegistry } from "./retromenucomposition"
 import {
   createRetroExportItems,
   createRetroExportScreenItems,
+  getSelectedCollectionDriveIndex,
   getRetroExportHdvSize,
   getRetroVtocIndicator,
+  resetCollectionDriveSelectionSession,
   retroDiskControls,
 } from "../devices/disk/diskinterface"
 import { DISK_COLLECTION_ITEM_TYPE } from "../diskdialog/diskpanel_utils"
@@ -74,6 +87,107 @@ describe("Retro menu metadata structure", () => {
   beforeEach(() => {
     mockGetCloudProvidersNeedingAuth.mockReturnValue([])
     mockSignInToCloudProvider.mockResolvedValue(true)
+    mockLoadDisk.mockClear()
+    mockHandleGetProdosFloppy.mockReturnValue(true)
+    resetCollectionDriveSelectionSession()
+  })
+
+  test("uses each disk format's default without showing it before drive selection", () => {
+    const floppy = collectionDisk()
+    const hardDrive = {
+      ...collectionDisk(),
+      title: "Wizard Replay",
+      diskUrl: "WizardReplay.hdv_.zip",
+      fileSize: 33553920,
+    }
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    context.diskCollection = [floppy, hardDrive]
+    const tab = retroDiskControls.find(control => control.id === "diskCollection.builtIn")
+    const rows = (tab?.dynamicChildren?.(context) ?? []).filter(item => item.id.includes(".disk."))
+    const floppyRow = rows.find(item => item.label === floppy.title)
+    const hardDriveRow = rows.find(item => item.label === hardDrive.title)
+
+    expect(typeof floppyRow?.optionIndex === "function"
+      ? floppyRow.optionIndex(context)
+      : undefined).toBe(2)
+    expect(typeof hardDriveRow?.optionIndex === "function"
+      ? hardDriveRow.optionIndex(context)
+      : undefined).toBe(0)
+    expect(typeof floppyRow?.contextualSubmenuTitleValue === "function"
+      ? floppyRow.contextualSubmenuTitleValue(context)
+      : undefined).toBeUndefined()
+    expect(typeof hardDriveRow?.contextualSubmenuTitleValue === "function"
+      ? hardDriveRow.contextualSubmenuTitleValue(context)
+      : undefined).toBeUndefined()
+  })
+
+  test("resets drive selection per tab and reveals that disk's default first", () => {
+    const builtInDisk = collectionDisk()
+    const newReleaseDisk = {
+      ...collectionDisk(),
+      type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+      title: "New Release",
+    }
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    context.close = jest.fn()
+    context.diskCollection = [builtInDisk, newReleaseDisk]
+    const builtInTab = retroDiskControls.find(control => control.id === "diskCollection.builtIn")
+    const builtInItems = builtInTab?.dynamicChildren?.(context) ?? []
+    const builtInRow = builtInItems.find(item => item.payload !== undefined || item.id.includes(".disk."))
+
+    expect(builtInRow).toMatchObject({
+      kind: "action",
+      hideOptionValue: true,
+      revealOptionOnFirstHorizontalInput: true,
+      optionIndex: expect.any(Function),
+      contextualSubmenuTitleValue: expect.any(Function),
+    })
+    expect((builtInRow?.options as { label: string }[])?.map(option => option.label))
+      .toEqual(["S7,D1", "S7,D2", "S6,D1", "S6,D2"])
+
+    builtInRow?.refreshOptions?.(context, 2)
+    expect(getSelectedCollectionDriveIndex()).toBe(2)
+
+    const refreshedBuiltInItems = builtInTab?.dynamicChildren?.(context) ?? []
+    const refreshedBuiltInRow = refreshedBuiltInItems.find(item => item.id.includes(".disk."))
+    expect(getSelectedCollectionDriveIndex()).toBeUndefined()
+    expect(typeof refreshedBuiltInRow?.contextualSubmenuTitleValue === "function"
+      ? refreshedBuiltInRow.contextualSubmenuTitleValue(context)
+      : refreshedBuiltInRow?.contextualSubmenuTitleValue).toBeUndefined()
+
+    const newReleaseTab = retroDiskControls.find(control => control.id === "diskCollection.newReleases")
+    const newReleaseItems = newReleaseTab?.dynamicChildren?.(context) ?? []
+    const newReleaseRow = newReleaseItems.find(item => item.id.includes(".disk."))
+    expect(getSelectedCollectionDriveIndex()).toBeUndefined()
+    expect(typeof newReleaseRow?.optionIndex === "function"
+      ? newReleaseRow.optionIndex(context)
+      : newReleaseRow?.optionIndex).toBe(2)
+    expect(typeof newReleaseRow?.contextualSubmenuTitleValue === "function"
+      ? newReleaseRow.contextualSubmenuTitleValue(context)
+      : newReleaseRow?.contextualSubmenuTitleValue).toBeUndefined()
+
+    newReleaseRow?.refreshOptions?.(context, 2)
+    expect(typeof newReleaseRow?.contextualSubmenuTitleValue === "function"
+      ? newReleaseRow.contextualSubmenuTitleValue(context)
+      : newReleaseRow?.contextualSubmenuTitleValue).toBe("S6,D1")
+
+    newReleaseRow?.action?.(context)
+    expect(mockLoadDisk).toHaveBeenCalledWith(
+      2,
+      newReleaseDisk,
+      context.displayProps.updateDisplay,
+      context.close,
+    )
+  })
+
+  test("does not add drive selection to Export rows", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const exportRow = createRetroExportItems(context, [collectionDisk("prodos")])
+      .find(item => item.id.includes(".disk."))
+
+    expect(exportRow?.options).toBeDefined()
+    expect(exportRow?.contextualSubmenuTitleValue).toBeUndefined()
+    expect(exportRow?.hideOptionValue).toBeUndefined()
   })
 
   test("uses Select for a loaded Disk Drive menu and Load for an empty drive", () => {

@@ -1,5 +1,6 @@
 import { DiskCollectionSortMode, setPreferenceDiskCollectionSort } from "../../localstorage"
-import { handleGetSlotConfig } from "../../main2worker"
+import { handleGetProdosFloppy, handleGetSlotConfig } from "../../main2worker"
+import { getDefaultDiskDriveIndex } from "../../../common/utility"
 import {
   DISK_COLLECTION_ITEM_TYPE,
   TAB_INDEX,
@@ -13,6 +14,7 @@ import {
   getExportFilename,
   isDiskExportable,
   loadDisk,
+  loadDiskIntoDrive,
   sortDisks,
 } from "../../diskdialog/diskpanel_utils"
 import { isFileSystemApiSupported, showGlobalProgressModal } from "../../ui_utilities"
@@ -63,6 +65,36 @@ const decodeDiskTitle = (title: string) => {
 }
 
 const getCollection = () => getDiskCollection(new DiskBookmarks(), newReleases)
+
+let selectedCollectionDriveIndex: number | undefined
+const revealedCollectionDriveTabs = new Set<TAB_INDEX>()
+
+export const getSelectedCollectionDriveIndex = () => selectedCollectionDriveIndex
+
+const setSelectedCollectionDriveIndex = (index: number | undefined) => {
+  selectedCollectionDriveIndex = index
+}
+
+export const resetSelectedCollectionDriveIndex = () => {
+  selectedCollectionDriveIndex = undefined
+}
+
+const resetCollectionDriveTab = (tabIndex: TAB_INDEX) => {
+  selectedCollectionDriveIndex = undefined
+  revealedCollectionDriveTabs.delete(tabIndex)
+}
+
+export const resetCollectionDriveSelectionSession = () => {
+  selectedCollectionDriveIndex = undefined
+  revealedCollectionDriveTabs.clear()
+}
+
+const getCollectionDriveIndex = (disk: DiskCollectionItem) => {
+  if (selectedCollectionDriveIndex !== undefined) return selectedCollectionDriveIndex
+  const filename = disk.cloudData?.fileName || disk.diskUrl
+  const fileSize = disk.cloudData?.fileSize ?? disk.fileSize
+  return getDefaultDiskDriveIndex(filename, fileSize, handleGetProdosFloppy())
+}
 
 const cloudAuthNotificationControls = (
   tabIndex: TAB_INDEX,
@@ -272,13 +304,32 @@ const collectionItems = (
     disks,
     diskCollectionSortOptions[index].value,
   )
+  const driveOptions = DISK_DRIVE_LABELS.map(label => ({ label }))
   return [
     ...sortDisks(disks, sortMode).map((disk, index): RetroControlMetadata => ({
       id: `diskCollection.${tabIndex}.disk.${index}`,
+      kind: "action",
       label: decodeDiskTitle(disk.title),
+      options: driveOptions,
+      optionIndex: () => getCollectionDriveIndex(disk),
+      hideOptionValue: true,
+      revealOptionOnFirstHorizontalInput: true,
+      contextualSubmenuTitleValue: () => !revealedCollectionDriveTabs.has(tabIndex)
+        ? undefined
+        : DISK_DRIVE_LABELS[getCollectionDriveIndex(disk)],
+      refreshOptions: (runtime, driveIndex) => {
+        setSelectedCollectionDriveIndex(driveIndex)
+        revealedCollectionDriveTabs.add(tabIndex)
+        return collectionItems(runtime, tabIndex, disks, sortMode)
+      },
       keepMenuOpen: true,
       action: runtime => {
-        loadDisk(-1, disk, runtime.displayProps.updateDisplay, undefined, runtime.close)
+        loadDiskIntoDrive(
+          getCollectionDriveIndex(disk),
+          disk,
+          runtime.displayProps.updateDisplay,
+          runtime.close,
+        )
       },
     })),
     {
@@ -332,6 +383,9 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
     : undefined,
   dynamicChildren: (runtime, items, values) => {
     const disks = (runtime.diskCollection ?? getCollection()).filter(tab.filter)
+    if (tab.index !== TAB_INDEX.EXPORT && items === undefined && values === undefined) {
+      resetCollectionDriveTab(tab.index)
+    }
     return tab.index === TAB_INDEX.EXPORT
       ? createRetroExportScreenItems(runtime, disks, items, values)
       : collectionItems(runtime, tab.index, disks)

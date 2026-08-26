@@ -3,7 +3,12 @@ import { diskImages } from "./diskimages"
 import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { isHardDriveImage, RUN_MODE, MAX_DRIVES, FILE_SUFFIXES_DISK } from "../../../common/utility"
+import {
+  FILE_SUFFIXES_DISK,
+  getDefaultDiskDriveIndex,
+  MAX_DRIVES,
+  RUN_MODE,
+} from "../../../common/utility"
 
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode, handleGetProdosFloppy } from "../../main2worker"
 import { showGlobalProgressModal } from "../../ui_utilities"
@@ -118,7 +123,8 @@ export const handleSetDiskData = (
   writableFileHandle: WritableFileHandle | null,
   lastLocalFileWriteTime: number,
   helpFile?: string,
-  applyHelpText: (helpText: string) => void = setHelpText) => {
+  applyHelpText: (helpText: string) => void = setHelpText,
+  forceIndex = false) => {
   if (cloudData) {
     cloudData.fileSize = data.length
   }
@@ -135,7 +141,7 @@ export const handleSetDiskData = (
     ...driveProps[index],
     writableFileHandle: isFileSystemHandle ? writableFileHandle : null
   }
-  passSetDriveNewData(propsForWorker)
+  passSetDriveNewData(propsForWorker, forceIndex)
   if (filename) {
     setTimeout(() => {
       selectHelpText(helpFile, applyHelpText)
@@ -189,7 +195,8 @@ export const handleSetDiskOrFileFromBuffer = (
   filename: string,
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null,
-  helpFile?: string) => {
+  helpFile?: string,
+  preserveDriveIndex = false) => {
 
   // Sanity check for strange downloads with no filename.
   if (buffer.byteLength === 143360 && !filename.includes(".")) {
@@ -211,14 +218,35 @@ export const handleSetDiskOrFileFromBuffer = (
       passPasteText(basic + cmd)
     }
   } else {
-    // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)
-    if (isHardDriveImage(fname, buffer?.byteLength, handleGetProdosFloppy())) {
-      if (index < 0 || index > 1) newIndex = 0
-    } else {
-      if (index < 2) newIndex = 2
+    const defaultDriveIndex = getDefaultDiskDriveIndex(
+      fname,
+      buffer.byteLength,
+      handleGetProdosFloppy(),
+    )
+    const bootsExplicitDrive = preserveDriveIndex && index === defaultDriveIndex
+    if (bootsExplicitDrive) {
+      passSetRunMode(RUN_MODE.IDLE)
+      resetAllDiskDrives()
     }
-    handleSetDiskData(newIndex, new Uint8Array(buffer), filename, cloudData, writableFileHandle, Date.now(), helpFile)
-    if (handleGetRunMode() === RUN_MODE.IDLE) {
+    if (!preserveDriveIndex || index < 0) {
+      if (defaultDriveIndex < 2) {
+        if (index < 0 || index > 1) newIndex = defaultDriveIndex
+      } else if (index < 2) {
+        newIndex = defaultDriveIndex
+      }
+    }
+    handleSetDiskData(
+      newIndex,
+      new Uint8Array(buffer),
+      filename,
+      cloudData,
+      writableFileHandle,
+      Date.now(),
+      helpFile,
+      setHelpText,
+      preserveDriveIndex,
+    )
+    if (bootsExplicitDrive || handleGetRunMode() === RUN_MODE.IDLE) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     } else {
 //      props.updateDisplay()
@@ -232,7 +260,8 @@ export const handleSetDiskFromCloudData = async (
   cloudData: CloudData,
   driveIndex: number = 0,
   callback?: (buffer: ArrayBuffer | null) => void,
-  onLoadSuccess?: () => void) => {
+  onLoadSuccess?: () => void,
+  preserveDriveIndex = false) => {
   let cloudProvider
   switch (cloudData.providerName) {
     case "GoogleDrive":
@@ -283,7 +312,15 @@ export const handleSetDiskFromCloudData = async (
             callback(buffer)
           } else {
             cloudData.lastSyncTime = Date.now()
-            handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+            handleSetDiskOrFileFromBuffer(
+              driveIndex,
+              buffer,
+              cloudData.fileName,
+              cloudData,
+              null,
+              undefined,
+              preserveDriveIndex,
+            )
             onLoadSuccess?.()
           }
         } else {
@@ -529,7 +566,7 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
 
 export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
-  debug?: (message: string) => void): Promise<boolean> => {
+  debug?: (message: string) => void, preserveDriveIndex = false): Promise<boolean> => {
   debug?.(`handleSetDiskFromURL(${url}) drive=${index}`)
   let helpFile = findCatalogHelpFile(url)
   // Check if it's a local file (not http/https URL and not Internet Archive)
@@ -548,7 +585,15 @@ export const handleSetDiskFromURL = async (url: string,
           const buffer = await response.arrayBuffer()
           const fileName = url.split("/").pop() || url        
           resetAllDiskDrives()
-          index = handleSetDiskOrFileFromBuffer(index, buffer, fileName, cloudData || null, null, helpFile)
+          index = handleSetDiskOrFileFromBuffer(
+            index,
+            buffer,
+            fileName,
+            cloudData || null,
+            null,
+            helpFile,
+            preserveDriveIndex,
+          )
           setDiskImageToLocalStorage(index, new Uint8Array(buffer))
         }
         diskImageLocalStorageSync(url, index)
@@ -567,7 +612,7 @@ export const handleSetDiskFromURL = async (url: string,
     url = match.diskUrl
     helpFile ??= match.helpFile
     if (!URL.canParse(url) && updateDisplay) {
-      handleSetDiskFromFile(url, updateDisplay, index)
+      handleSetDiskFromFile(url, updateDisplay, index, undefined, undefined, preserveDriveIndex)
       return true
     }
   }
@@ -791,13 +836,23 @@ export const handleSetDiskFromURL = async (url: string,
       if (callback) {
         callback(buffer)
       } else {
-        // If we are loading from a URL, reset all drives. Fixes issue#186
-        resetAllDiskDrives()
+        if (!preserveDriveIndex) {
+          // If we are loading from a URL, reset all drives. Fixes issue#186
+          resetAllDiskDrives()
+        }
         
-        handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null, helpFile)
+        handleSetDiskOrFileFromBuffer(
+          index,
+          buffer,
+          name,
+          cloudData || null,
+          null,
+          helpFile,
+          preserveDriveIndex,
+        )
         // Loading a disk from a remote URL must boot it even when the
         // emulator was already paused or had previously run a program.
-        passSetRunMode(RUN_MODE.NEED_BOOT)
+        if (!preserveDriveIndex) passSetRunMode(RUN_MODE.NEED_BOOT)
         debug?.(`Disk buffer installed as ${name}; NEED_BOOT sent`)
       }
     } else {
@@ -889,7 +944,8 @@ const selectHelpText = createHelpTextSelector(loadHelpText)
 export const handleSetDiskFromFile = async (disk: string,
   updateDisplay: UpdateDisplay | null, driveIndex: number = -1,
   callback?: (buffer: ArrayBuffer | null) => void,
-  onLoadSuccess?: () => void) => {
+  onLoadSuccess?: () => void,
+  preserveDriveIndex = false) => {
   const configuredHelpFile = findCatalogHelpFile(disk)
   let data: ArrayBuffer
   try {
@@ -907,15 +963,25 @@ export const handleSetDiskFromFile = async (disk: string,
   if (callback) {
     callback(data)
   } else {
-    let needsBoot = handleGetRunMode() === RUN_MODE.IDLE
+    const defaultDriveIndex = getDefaultDiskDriveIndex(
+      disk,
+      data.byteLength,
+      handleGetProdosFloppy(),
+    )
+    let needsBoot = preserveDriveIndex
+      ? driveIndex === defaultDriveIndex
+      : handleGetRunMode() === RUN_MODE.IDLE
     
     if (driveIndex < 0) {
       needsBoot = true
     }
     
     if (needsBoot) {
+      if (preserveDriveIndex) passSetRunMode(RUN_MODE.IDLE)
       resetAllDiskDrives()
-      driveIndex = isHardDriveImage(disk, data.byteLength, handleGetProdosFloppy()) ? 0 : 2
+      if (!preserveDriveIndex || driveIndex < 0) {
+        driveIndex = defaultDriveIndex
+      }
     }
 
     handleSetDiskData(
@@ -929,7 +995,8 @@ export const handleSetDiskFromFile = async (disk: string,
       (helpText) => {
         setHelpText(helpText)
         updateDisplay?.(0, helpText)
-      }
+      },
+      preserveDriveIndex,
     )
 
     if (needsBoot) {

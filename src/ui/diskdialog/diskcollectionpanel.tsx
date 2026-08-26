@@ -24,7 +24,7 @@ import {
   cloudProviderHasAuthToken,
   signInToCloudProvider,
 } from "../devices/disk/cloudauth"
-import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, createHdv, diskItemKey, formatBytes } from "./diskpanel_utils"
+import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, loadDiskIntoDrive, createHdv, diskItemKey, formatBytes } from "./diskpanel_utils"
 import { DiskItemTitle } from "./diskitemtitle"
 import { DiskPanelVtoc } from "./diskpanel_vtoc"
 
@@ -855,7 +855,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 isSelected: () => { return false },
                 onClick: () => {
                   setDrivePopupLocation(undefined)
-                  loadDisk(i, popupItem, props.updateDisplay)
+                  loadDiskIntoDrive(i, popupItem, props.updateDisplay)
                   dismissDiskCollection()
                 }
               }
@@ -868,7 +868,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 isSelected: () => { return false },
                 onClick: () => {
                   setDrivePopupLocation(undefined)
-                  loadDisk(i, popupItem, props.updateDisplay)
+                  loadDiskIntoDrive(i, popupItem, props.updateDisplay)
                   dismissDiskCollection()
                 }
               }

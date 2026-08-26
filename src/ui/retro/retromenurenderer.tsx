@@ -22,7 +22,11 @@ import { UI_THEME } from "../../common/utility"
 import { DiskPanelVtoc } from "../diskdialog/diskpanel_vtoc"
 import { diskItemKey, isDiskExportable, TAB_INDEX } from "../diskdialog/diskpanel_utils"
 import { cloudProviderHasAuthToken } from "../devices/disk/cloudauth"
-import { getRetroVtocIndicator } from "../devices/disk/diskinterface"
+import {
+  getRetroVtocIndicator,
+  resetCollectionDriveSelectionSession,
+  resetSelectedCollectionDriveIndex,
+} from "../devices/disk/diskinterface"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -407,6 +411,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         event.stopPropagation()
         if (!isOpen) {
           menuStack.toReversed().forEach(restoreMenuFramePreview)
+          resetCollectionDriveSelectionSession()
           setNow(new Date())
           setIsOpen(true)
           setMenuStack([])
@@ -443,6 +448,23 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         event.preventDefault()
         event.stopPropagation()
+        if (currentFrame?.menuId.startsWith("diskCollection.") && currentFrame.refresh) {
+          resetSelectedCollectionDriveIndex()
+          const items = currentFrame.refresh(currentFrame.items, currentFrame.values)
+          setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
+            ? createMenuFrame(
+              frame.menuId,
+              frame.title,
+              items,
+              frame.submenuTitleValue,
+              frame.refresh,
+              frame.actionLabel,
+              frame.submit,
+              frame.isSubmitVisible,
+              frame.parentSelectedIndex,
+            )
+            : frame))
+        }
         const direction = event.key === "ArrowUp" ? -1 : 1
         setSelectedIndex(index => {
           let nextIndex = index
@@ -460,7 +482,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           event.preventDefault()
           event.stopPropagation()
           const direction = event.key === "ArrowLeft" ? -1 : 1
-          const nextValue = (currentFrame.values[selectedIndex] + direction + options.length) % options.length
+          const revealCurrentValue = item.revealOptionOnFirstHorizontalInput &&
+            item.contextualSubmenuTitleValue === undefined
+          const nextValue = revealCurrentValue
+            ? currentFrame.values[selectedIndex]
+            : (currentFrame.values[selectedIndex] + direction + options.length) % options.length
           options[nextValue].preview?.()
           const pendingValues = [...currentFrame.values]
           pendingValues[selectedIndex] = nextValue
@@ -501,7 +527,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             ),
           ])
           setSelectedIndex(Math.max(0, children.findIndex(child => isMenuItemSelectable(child))))
-        } else if (currentFrame && item.options) {
+        } else if (currentFrame && item.options && item.kind !== "action") {
           if (currentFrame.submit && !item.valueOnly) {
             if (currentFrame.isSubmitVisible?.(currentFrame.items, currentFrame.values)) {
               currentFrame.submit(currentFrame.items, currentFrame.values)
@@ -583,7 +609,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   ])
 
   const canvasHost = document.getElementById("apple2canvas")?.parentElement
-  const submenuTitleValue = currentFrame?.submenuTitleValue?.(currentFrame.items, currentFrame.values)
+  const submenuTitleValue = selectedItem?.contextualSubmenuTitleValue
+    ?? currentFrame?.submenuTitleValue?.(currentFrame.items, currentFrame.values)
   const submenuTitleValueWidth = submenuTitleValue
     ? controlTextWidth(submenuTitleValue, language)
     : 0
@@ -661,7 +688,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               const option = item.options?.[valueIndex]
               const baseLabel = item.valueOnly && option ? option.label : item.label
               const itemLabel = formatControlLabel(baseLabel, item.separator)
-              const hasOptionValue = option && !item.valueOnly && item.checkmarkIndex === undefined
+              const hasOptionValue = option && !item.valueOnly && !item.hideOptionValue &&
+                item.checkmarkIndex === undefined
               const availableWidth = currentFrame ? submenuTextWidth : rootMenuContentWidth
               const fittedText = fitControlText(
                 itemLabel,
