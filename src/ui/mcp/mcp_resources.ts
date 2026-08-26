@@ -33,7 +33,7 @@ const DISK_CATALOG = [
     description: "Frontend for 8 classic RPG scenarios with integrated character editor and save management. Navigate by typing the first 3-4 characters of a game name and pressing Enter.",
     games: "Classic RPGs: Wizardry: Proving Grounds of the Mad Overlord and other Wizardry series games with WizPlus character editor integration"
   },
-  { name: "Pitch Dark", filename: "https://ct6502.org/wp-content/uploads/2026/01/PitchDark.hdv_.zip", path: "https://ct6502.org/wp-content/uploads/2026/01/PitchDark.hdv_.zip", type: "game", description: "Interactive fiction adventure" },
+  { name: "Pitch Dark", filename: "https://github.com/anomixer/pitch-dark/releases/download/R6/Pitch_Dark.hdv.zip", path: "https://github.com/anomixer/pitch-dark/releases/download/R6/Pitch_Dark.hdv.zip", type: "game", description: "Interactive fiction adventure" },
   { name: "Aztec", filename: "Aztec.po", path: "disks/Aztec.po", type: "game", description: "Adventure game exploring Aztec pyramid" },
   { name: "Eamon", filename: "Eamon%201.po", path: "disks/Eamon%201.po", type: "game", description: "Text adventure RPG system" },
   { name: "MECC Inspector", filename: "MECC-Inspector.woz", path: "disks/MECC-Inspector.woz", type: "educational", description: "Educational detective game" },
