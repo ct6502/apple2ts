@@ -140,7 +140,7 @@ export const retroMachineControls: RetroControlMetadata[] = [
   {
     id: "slots",
     parentId: null,
-    order: 7,
+    order: 8,
     label: context => context.t("retroControl.slots"),
     value: context => context.t("retroControl.configured", {
       count: String(SLOT_NUMBERS.filter(slot => handleGetSlotConfig()[slot] !== "none").length),

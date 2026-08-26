@@ -28,17 +28,9 @@ jest.mock("../devices/printer/imagewriter", () => ({
   default: () => null,
   retroImageWriterControls: [
     {
-      id: "slots.devices",
-      parentId: "slots",
-      order: 7,
-      label: "Devices",
-      separator: true,
-      selectable: false,
-    },
-    {
-      id: "slots.imageWriterII",
-      parentId: "slots",
-      order: 8,
+      id: "printer.imageWriterII",
+      parentId: "ports",
+      order: 1,
       label: "ImageWriter II (Slot 1)",
       contextualActionLabel: "Open",
       action: () => undefined,
@@ -278,8 +270,8 @@ describe("Retro menu metadata structure", () => {
       "sound",
       "keyboard",
       "keyboard.joystick",
-      "slots",
       "ports",
+      "slots",
       "options",
       "quit",
     ])
@@ -340,9 +332,8 @@ describe("Retro menu metadata structure", () => {
     ])
     expect(retroMenuRegistry.getIds("slots")).toEqual([
       "slots.1", "slots.2", "slots.3", "slots.4", "slots.5", "slots.6", "slots.7",
-      "slots.devices", "slots.imageWriterII",
     ])
-    expect(retroMenuRegistry.getIds("ports")).toEqual(["printerPort", "modemPort"])
+    expect(retroMenuRegistry.getIds("ports")).toEqual(["printerPort", "printer.imageWriterII"])
     expect(retroMenuRegistry.getIds("keyboard")).toEqual([
       "keyboard.lowercase",
       "keyboard.openApple",
@@ -353,15 +344,15 @@ describe("Retro menu metadata structure", () => {
       "keyboard.joystick.siriusJoyport",
     ])
     expect(retroMenuRegistry.getIds("printerPort")).toEqual([])
-    expect(retroMenuRegistry.getIds("modemPort")).toEqual([])
+    expect(retroMenuRegistry.getIds("printer.imageWriterII")).toEqual([])
   })
 
   test("uses contextual labels for direct actions", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
-    const slots = retroMenuRegistry.resolve(context, "slots")
+    const printer = retroMenuRegistry.resolve(context, "ports")
     const sound = retroMenuRegistry.resolve(context, "sound")
 
-    expect(slots.find(item => item.id === "slots.imageWriterII")?.contextualActionLabel).toBe("Open")
+    expect(printer.find(item => item.id === "printer.imageWriterII")?.contextualActionLabel).toBe("Open")
     expect(sound.find(item => item.id === "sound.enabled")?.defaultIndex).toBe(1)
   })
 
