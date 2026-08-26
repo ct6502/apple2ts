@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import type { RetroResolvedControl } from "./retromenucontext"
 import { formatControlLabel } from "../controls/controlregistry"
 import { useRetroMenuHost } from "./retromenuhost"
@@ -34,7 +35,7 @@ type RetroMenuFrame = {
   originalValues: number[]
   values: number[]
   actionLabel?: string
-  refresh?: () => RetroMenuItem[]
+  refresh?: (items?: readonly RetroMenuItem[], values?: number[]) => RetroMenuItem[]
   submit?: (items: readonly RetroMenuItem[], values: number[]) => void
   isSubmitVisible?: (items: readonly RetroMenuItem[], values: number[]) => boolean
 }
@@ -74,7 +75,7 @@ const RetroBorder = ({ className, separatorRow }: {
 const createMenuFrame = (
   title: string,
   items: RetroMenuItem[],
-  refresh?: () => RetroMenuItem[],
+  refresh?: (items?: readonly RetroMenuItem[], values?: number[]) => RetroMenuItem[],
   actionLabel?: string,
   submit?: (items: readonly RetroMenuItem[], values: number[]) => void,
   isSubmitVisible?: (items: readonly RetroMenuItem[], values: number[]) => boolean,
@@ -102,6 +103,9 @@ const isMenuItemSelectable = (item: RetroMenuItem, frame?: RetroMenuFrame) => {
   }
   return item.selectable !== false
 }
+
+const isMenuItemBulkSelectable = (item: RetroMenuItem, frame?: RetroMenuFrame) =>
+  item.bulkSelectable !== false && isMenuItemSelectable(item, frame)
 
 const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
   const previousStack = stack.slice(0, -1)
@@ -151,7 +155,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const currentMenu = currentFrame?.items ?? rootMenu
   const selectedIndex = manualSelectedIndex
   const isOpen = manualIsOpen
-  const maxVisibleMenuItems = 16
+  const maxVisibleMenuItems = 18
   const visibleMenuStart = currentFrame
     ? Math.min(
       Math.max(0, selectedIndex - maxVisibleMenuItems + 1),
@@ -277,21 +281,30 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       }
       if (!isOpen) return
 
-      const isSubmitFrame = Boolean(currentFrame?.submit) && currentMenu.length > 0 &&
-        currentMenu.every(item => item.checkmarkIndex !== undefined)
+      const isSubmitFrame = Boolean(currentFrame?.submit) &&
+        currentMenu.some(item => item.checkmarkIndex !== undefined)
       if (event.ctrlKey && !event.altKey && !event.metaKey && event.key.toLocaleLowerCase() === "a" &&
         currentFrame && isSubmitFrame) {
         event.preventDefault()
         event.stopPropagation()
-        const allSelected = currentFrame.items.every(
-          (item, index) => currentFrame.values[index] === item.checkmarkIndex,
-        )
+        const allSelected = currentFrame.items.every((item, index) =>
+          item.checkmarkIndex === undefined ||
+          !isMenuItemBulkSelectable(item, currentFrame) ||
+          currentFrame.values[index] === item.checkmarkIndex)
+        const values = currentFrame.items.map((item, itemIndex) => item.checkmarkIndex !== undefined &&
+          isMenuItemBulkSelectable(item, currentFrame)
+          ? allSelected ? 0 : item.checkmarkIndex ?? 0
+          : currentFrame.values[itemIndex])
+        const items = currentFrame.refresh?.(currentFrame.items, values) ?? currentFrame.items
+        const refreshedValues = currentFrame.refresh
+          ? items.map(item => item.optionIndex ?? -1)
+          : values
+        const selectedId = currentMenu[selectedIndex]?.id
+        const refreshedSelectedIndex = items.findIndex(item => item.id === selectedId)
         setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
-          ? {
-            ...frame,
-            values: frame.items.map(item => allSelected ? 0 : item.checkmarkIndex ?? 0),
-          }
+          ? { ...frame, items, values: refreshedValues }
           : frame))
+        if (refreshedSelectedIndex >= 0) setSelectedIndex(refreshedSelectedIndex)
       } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         event.preventDefault()
         event.stopPropagation()
@@ -314,15 +327,21 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           const direction = event.key === "ArrowLeft" ? -1 : 1
           const nextValue = (currentFrame.values[selectedIndex] + direction + options.length) % options.length
           options[nextValue].preview?.()
+          const pendingValues = [...currentFrame.values]
+          pendingValues[selectedIndex] = nextValue
+          const refreshedItems = item.refreshOptions?.(nextValue, currentFrame.items, pendingValues)
+          const refreshedSelectedIndex = refreshedItems?.findIndex(refreshedItem => refreshedItem.id === item.id)
+            ?? selectedIndex
           setMenuStack(stack => stack.map((frame, index) => {
             if (index !== stack.length - 1) return frame
-            const items = item.refreshOptions?.(nextValue) ?? frame.items
-            const values = item.refreshOptions
-              ? items.map(refreshedItem => refreshedItem.optionIndex ?? -1)
+            const items = refreshedItems ?? frame.items
+            const values = refreshedItems
+              ? refreshedItems.map(refreshedItem => refreshedItem.optionIndex ?? -1)
               : [...frame.values]
-            values[selectedIndex] = nextValue
+            values[refreshedSelectedIndex] = nextValue
             return { ...frame, title: item.refreshTitle?.() ?? frame.title, items, values }
           }))
+          setSelectedIndex(refreshedSelectedIndex)
         }
       } else if (event.key === "Enter") {
         event.preventDefault()
@@ -346,7 +365,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           ])
           setSelectedIndex(Math.max(0, children.findIndex(child => isMenuItemSelectable(child))))
         } else if (currentFrame && item.options) {
-          if (currentFrame.submit) {
+          if (currentFrame.submit && !item.valueOnly) {
             if (currentFrame.isSubmitVisible?.(currentFrame.items, currentFrame.values)) {
               currentFrame.submit(currentFrame.items, currentFrame.values)
               setMenuStack([])
@@ -362,8 +381,25 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           setMenuStack(refreshPreviousMenu)
           setSelectedIndex(currentFrame.parentSelectedIndex)
         } else {
-          item.action?.()
-          if (currentFrame && !item.keepMenuOpen) {
+          const actionResult = item.action?.()
+          if (currentFrame && item.refreshAfterAction && actionResult instanceof Promise) {
+            void actionResult.then(() => {
+              setMenuStack(stack => stack.map((frame, index) => {
+                if (index !== stack.length - 1 || !frame.refresh) return frame
+                const items = frame.refresh(frame.items, frame.values)
+                setSelectedIndex(Math.max(0, items.findIndex(child => isMenuItemSelectable(child))))
+                return createMenuFrame(
+                  frame.title,
+                  items,
+                  frame.refresh,
+                  frame.actionLabel,
+                  frame.submit,
+                  frame.isSubmitVisible,
+                  frame.parentSelectedIndex,
+                )
+              }))
+            })
+          } else if (currentFrame && !item.keepMenuOpen) {
             setMenuStack(refreshPreviousMenu)
             setSelectedIndex(currentFrame.parentSelectedIndex)
           }
@@ -407,9 +443,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     selectedIndex,
   ])
 
+  const canvasHost = document.getElementById("apple2canvas")?.parentElement
+
   return (
     <>
-      {isOpen && canvasBounds && <section
+      {isOpen && canvasBounds && canvasHost && createPortal(<section
         className={`retro-panel menu-open scanline-gradient ${effects}`}
         style={panelStyle}
         role="dialog"
@@ -477,7 +515,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   aria-disabled={!isMenuItemSelectable(item, currentFrame) ? "true" : undefined}
                 >
                   {currentFrame && <span className="retro-menu-check">
-                    {isChecked ? (isAppleIIPlus ? "*" : checkmark) : " "}
+                    {item.indicator ?? (isChecked ? (isAppleIIPlus ? "*" : checkmark) : " ")}
                   </span>}
                   <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
                     {visibleLabel}
@@ -518,7 +556,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             </span>
           </footer>
         </div>
-      </section>}
+      </section>, canvasHost)}
       {dialogs}
     </>
   )

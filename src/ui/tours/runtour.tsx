@@ -7,13 +7,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGlobe } from "@fortawesome/free-solid-svg-icons"
 import { DropdownButton } from "../controls/dropdownbutton"
 import { useTranslation } from "../../i18n/useTranslation"
-import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { navigateToTourStep } from "./tourutils"
 import { getTheme } from "../ui_settings"
 
 const tourName = (index: number) => ["main", "settings", "debug"][index] ?? ""
-
-const openLink = (url: string) => window.open(url, "_blank", "noopener,noreferrer")
 
 const TourTooltip = ({ backProps, closeProps, index, primaryProps, step, tooltipProps }: TooltipRenderProps) => {
   const { color, height, width, ...closeButtonStyle } = step.styles.buttonClose
@@ -47,53 +44,6 @@ const TourTooltip = ({ backProps, closeProps, index, primaryProps, step, tooltip
     </div>
   )
 }
-
-export const retroTourControls: RetroControlMetadata[] = [
-  {
-    id: "guidedTours",
-    parentId: null,
-    order: 9,
-    label: context => context.t("debug.helpTab"),
-  },
-  ...(["mainLabel", "settingsLabel", "debugLabel"] as const).map((labelKey, index): RetroControlMetadata => ({
-    id: `guidedTours.${tourName(index)}`,
-    parentId: "guidedTours",
-    order: index,
-    label: context => context.t(`tour.${labelKey}`),
-    action: context => {
-      context.close()
-      context.startTour(tourName(index))
-    },
-    keepMenuOpen: true,
-    tourTargets: index === 0 ? ["#tour-help-menu"] : undefined,
-  })),
-  {
-    id: "guidedTours.links",
-    parentId: "guidedTours",
-    order: 3,
-    label: context => context.t("help.links"),
-    separator: true,
-    selectable: false,
-  },
-  {
-    id: "guidedTours.reportIssue",
-    parentId: "guidedTours",
-    order: 4,
-    label: context => context.t("controls.reportIssue"),
-    contextualActionLabel: context => context.t("retroControl.open"),
-    keepMenuOpen: true,
-    action: () => openLink("https://github.com/ct6502/apple2ts/issues"),
-  },
-  {
-    id: "guidedTours.privacyPolicy",
-    parentId: "guidedTours",
-    order: 5,
-    label: context => context.t("controls.privacyPolicy"),
-    contextualActionLabel: context => context.t("retroControl.open"),
-    keepMenuOpen: true,
-    action: () => openLink("https://ct6502.org/privacy/"),
-  },
-]
 
 export const getTour = (name: string, t: ReturnType<typeof useTranslation>["t"]): Step[] => {
   switch (name.toLowerCase()) {

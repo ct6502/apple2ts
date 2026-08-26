@@ -11,7 +11,6 @@ import { retroMachineControls } from "../devices/machineconfig"
 import { retroSerialControls } from "../devices/serial/serialselect"
 import type { RetroControlMetadata, RetroMenuContext } from "./retromenucontext"
 import { retroSkinColorControls, retroSkinControl, retroSkinSeparator } from "./retroskincontrol"
-import { retroTourControls } from "../tours/runtour"
 import { retroGamepadControls } from "../devices/gamepadconfig"
 import { retroImageWriterControls } from "../devices/printer/imagewriter"
 
@@ -47,7 +46,6 @@ const menuControls: RetroControlMetadata[] = [
   ...retroStateControls,
   ...retroDebugControls,
   ...retroSerialControls,
-  ...retroTourControls,
   {
     id: "quit",
     parentId: null,

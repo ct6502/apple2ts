@@ -19,8 +19,11 @@ import { faCircle, faStar as faStarOutline } from "@fortawesome/free-regular-svg
 import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_utils"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { useTranslation } from "../../i18n/useTranslation"
-import { OneDriveCloudDrive } from "../devices/disk/onedriveclouddrive"
-import { GoogleDrive } from "../devices/disk/googledrive"
+import {
+  cloudProviderDisplayName,
+  cloudProviderHasAuthToken,
+  signInToCloudProvider,
+} from "../devices/disk/cloudauth"
 import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, createHdv, diskItemKey } from "./diskpanel_utils"
 import { DiskItemTitle } from "./diskitemtitle"
 import { DiskPanelVtoc } from "./diskpanel_vtoc"
@@ -38,57 +41,6 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "numeric",
   day: "numeric"
 })
-
-const createCloudProviderByName = (providerName: string): CloudProvider | null => {
-  switch (providerName) {
-    case "GoogleDrive":
-      return new GoogleDrive()
-    case "OneDrive":
-      return new OneDriveCloudDrive()
-    default:
-      return null
-  }
-}
-
-// Human-readable name for a cloud provider, used in the auth notification bar.
-const CLOUD_PROVIDER_DISPLAY_NAME: Record<string, string> = {
-  GoogleDrive: "Google Drive",
-  OneDrive: "OneDrive",
-}
-
-const cloudProviderDisplayName = (providerName: string): string =>
-  CLOUD_PROVIDER_DISPLAY_NAME[providerName] || providerName
-
-// Whether a cloud provider already has an access token cached in memory. Reading
-// this never triggers an auth popup.
-const cloudProviderHasAuthToken = (providerName: string): boolean => {
-  return createCloudProviderByName(providerName)?.hasAuthToken() ?? false
-}
-
-const requestCloudAuthTokenWithTimeout = (provider: CloudProvider, timeoutMs = 15000): Promise<boolean> => {
-  return new Promise((resolve) => {
-    let settled = false
-    const timeoutId = window.setTimeout(() => {
-      if (settled) return
-      settled = true
-      resolve(false)
-    }, timeoutMs)
-
-    try {
-      provider.requestAuthToken(() => {
-        if (settled) return
-        settled = true
-        clearTimeout(timeoutId)
-        resolve(true)
-      })
-    } catch {
-      if (settled) return
-      settled = true
-      clearTimeout(timeoutId)
-      resolve(false)
-    }
-  })
-}
 
 type DiskCollectionPanelProps = DisplayProps & {
   onDismissDialog?: () => void
@@ -461,15 +413,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   )
 
   const handleCloudSignIn = async (providerName: string) => {
-    const provider = createCloudProviderByName(providerName)
-    if (!provider) return
     // Runs from an explicit "Sign in" click, so the provider popup is allowed.
-    const authReady = await requestCloudAuthTokenWithTimeout(provider)
+    const authReady = await signInToCloudProvider(providerName)
     if (authReady) {
       // The token is now cached in memory; re-render so the bar hides and Export enables.
       setAuthRefresh((n) => n + 1)
-    } else {
-      alert(`${cloudProviderDisplayName(providerName)} sign-in did not complete. Please allow the provider popup and try again.`)
     }
   }
 

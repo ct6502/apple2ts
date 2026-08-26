@@ -2,12 +2,12 @@ import React from "react"
 
 type Translate = (key: string, params?: Record<string, string>) => string
 
-const HelpLink = ({ href, children }: {href: string, children: React.ReactNode}) => (
+const HelpLink = ({ href, children }: { href: string, children: React.ReactNode }) => (
   <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
 )
 
 const LinkList = ({ links }: {
-  links: ReadonlyArray<{label: string, href: string}>,
+  links: ReadonlyArray<{ label: string, href: string }>,
 }) => <>{links.map(({ label, href }, index) => (
   <React.Fragment key={href}>
     {index > 0 && "\n"}
@@ -121,7 +121,8 @@ export const DefaultHelpContent = ({
         </span>
         : <span key="shortcuts-available" className="help-shortcuts-available">
           <ShortcutTable rows={shortcutRows} />
-          {"\n"}{t("help.openAppleKey")}
+          {"\n"}{t("help.controlPanelShortcut")}
+          {"\n\n"}{t("help.openAppleKey")}
           {"\n"}{t("help.closedAppleKey")}
           {"\n"}{t("help.joystickKeys")}
           {"\n\n"}{t("help.onScreenKeyboard")}
