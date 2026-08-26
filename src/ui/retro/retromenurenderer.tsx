@@ -52,7 +52,10 @@ const mouseTextReturn = String.fromCodePoint(0x21B5)
 const checkmark = String.fromCodePoint(0x2713)
 const fixedWidthSpace = String.fromCodePoint(0x2007)
 const horizontalBorderGlyphs = ` ${"_".repeat(78)} `
-const verticalBorderGlyphs = Array(30).fill("!").join("\n")
+const verticalBorderGlyphs = (blankRow?: number) => Array.from(
+  { length: 30 },
+  (_, index) => index + 1 === blankRow ? " " : "!",
+).join("\n")
 const rootMenuContentWidth = 34
 const submenuContentWidth = 36
 
@@ -75,15 +78,63 @@ const RetroVtocIndicator = ({
   return getRetroVtocIndicator(disk, active ? diskItemKey(disk) : null, frames[frameIndex])
 }
 
-const RetroBorder = ({ className, separatorRow }: {
+const AppleIIPlusFooter = ({
+  actionLabel,
+  cancelLabel,
+  language,
+  selectLabel,
+  showAction,
+  showHorizontalSelectionHint,
+}: {
+  actionLabel: string
+  cancelLabel?: string
+  language: string
+  selectLabel: string
+  showAction: boolean
+  showHorizontalSelectionHint: boolean
+}) => {
+  const arrowText = `${showHorizontalSelectionHint ? `${mouseTextLeft}_${mouseTextRight}_` : ""}${cancelLabel
+    ? `${mouseTextUp}_${mouseTextDown}`
+    : `${mouseTextDown}_${mouseTextUp}`}`
+  const selectText = `${selectLabel}:${arrowText}`
+  const actionText = showAction ? `${actionLabel}:${mouseTextReturn}` : ""
+  const rowWidth = 42
+  const placements = [
+    { start: 0, text: selectText },
+    ...(cancelLabel
+      ? [{ start: Math.floor((rowWidth - controlTextWidth(cancelLabel, language)) / 2), text: cancelLabel }]
+      : []),
+    ...(actionText
+      ? [{ start: rowWidth - controlTextWidth(actionText, language), text: actionText }]
+      : []),
+  ].sort((left, right) => left.start - right.start)
+  const runs: { border: boolean, text: string }[] = []
+  let cursor = 0
+  placements.forEach((placement) => {
+    if (placement.start > cursor) runs.push({ border: true, text: "_".repeat(placement.start - cursor) })
+    runs.push({ border: false, text: placement.text })
+    cursor = Math.max(cursor, placement.start + controlTextWidth(placement.text, language))
+  })
+  if (cursor < rowWidth) runs.push({ border: true, text: "_".repeat(rowWidth - cursor) })
+
+  return <footer className="retro-text-footer">
+    {runs.map((run, index) => <span
+      className={run.border || retroFontSupports(run.text) ? undefined : "retro-browser-font"}
+      key={`${index}-${run.text}`}
+    >{run.text}</span>)}
+  </footer>
+}
+
+const RetroBorder = ({ blankVerticalRow, className, separatorRow }: {
+  blankVerticalRow?: number
   className: string
   separatorRow?: number
 }) => (
   <div className={`retro-border ${className}`} aria-hidden="true">
     <span className="retro-border-glyph retro-border-glyph-top">{horizontalBorderGlyphs}</span>
     <span className="retro-border-glyph retro-border-glyph-bottom">{horizontalBorderGlyphs}</span>
-    <span className="retro-border-glyph retro-border-glyph-left">{verticalBorderGlyphs}</span>
-    <span className="retro-border-glyph retro-border-glyph-right">{verticalBorderGlyphs}</span>
+    <span className="retro-border-glyph retro-border-glyph-left">{verticalBorderGlyphs(blankVerticalRow)}</span>
+    <span className="retro-border-glyph retro-border-glyph-right">{verticalBorderGlyphs(blankVerticalRow)}</span>
     {separatorRow && (
       <span
         className="retro-border-separator"
@@ -276,8 +327,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     } as React.CSSProperties
     : undefined
 
-  const arrowSpacing = selectArrowSpacing(selectLabel, language)
-  const selectHintHalfCells = Math.ceil(selectHintWidth(selectLabel, language) * 2)
+  const arrowSpacing = isAppleIIPlus ? "_" : selectArrowSpacing(selectLabel, language)
+  const selectHintHalfCells = Math.ceil((isAppleIIPlus
+    ? controlTextWidth(selectLabel, language) + 9
+    : selectHintWidth(selectLabel, language)) * 2)
   const saveActionLabel = t("retroControl.save")
   const footerActionLabel = selectedItem?.contextualActionLabel
     ?? currentFrame?.actionLabel
@@ -495,35 +548,49 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         onContextMenu={event => event.preventDefault()}
       >
         <div className="retro-window">
-          <RetroBorder className="retro-outer-border" separatorRow={2} />
+          <RetroBorder
+            blankVerticalRow={isAppleIIPlus && currentFrame ? 3 : undefined}
+            className="retro-outer-border"
+            separatorRow={2}
+          />
           <header className={`retro-title${currentFrame ? " submenu-open" : ""}`}>
             {isAppleIIPlus
               ? <>
                 <span className="retro-title-text">Apple2TS Control Panel</span>
                 <span className="retro-title-spacer" aria-hidden="true">{fixedWidthSpace}</span>
                 {!currentFrame &&
-                  <span className="retro-title-fill" aria-hidden="true">{" ".repeat(15)}</span>}
+                  <span className="retro-title-fill" aria-hidden="true">{" ".repeat(19)}</span>}
               </>
               : <span>{"Apple2TS Control Panel "}&#8198;</span>}
           </header>
-          {currentFrame && <div className="retro-submenu-title">
-            <RetroBorder className="retro-submenu-title-border" />
-            <span className={`retro-submenu-title-text${retroFontSupports(currentFrame.title) ? "" : " retro-browser-font"}`}>
-              {truncateControlText(currentFrame.title, 38, language)}
-            </span>
-            {isAppleIIPlus &&
-              <span className="retro-title-fill" aria-hidden="true">
-                {" ".repeat(Math.max(0, 43 - controlTextWidth(currentFrame.title, language)))}
-              </span>}
-          </div>}
+          {currentFrame && (isAppleIIPlus
+            ? <div className="retro-submenu-title retro-text-submenu-title">
+              <span aria-hidden="true">!</span>
+              <span className={retroFontSupports(currentFrame.title) ? undefined : "retro-browser-font"}>
+                {truncateControlText(currentFrame.title, 38, language)}
+              </span>
+              <span aria-hidden="true">{fixedWidthSpace}</span>
+              <span className="retro-inverse-space" aria-hidden="true">
+                {fixedWidthSpace.repeat(Math.max(0, 41 - controlTextWidth(currentFrame.title, language)))}
+              </span>
+              <span aria-hidden="true">!</span>
+            </div>
+            : <div className="retro-submenu-title">
+              <RetroBorder className="retro-submenu-title-border" />
+              <span className={`retro-submenu-title-text${retroFontSupports(currentFrame.title) ? "" : " retro-browser-font"}`}>
+                <span className="retro-submenu-title-content">
+                  {truncateControlText(currentFrame.title, 38, language)}
+                </span>
+              </span>
+            </div>)}
           {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString(language)} ${now.toLocaleDateString(language)}`}>
             <RetroBorder className="retro-clock-border" />
             <time>{formatClockTime(now, language)}</time>
-            <time>{now.toLocaleDateString(language, {
+            <time><span>{now.toLocaleDateString(language, {
               month: "numeric",
               day: "numeric",
               year: "2-digit",
-            })}</time>
+            })}</span></time>
           </div>}
           <div className={`retro-menu${currentFrame ? " retro-submenu-menu" : " retro-root-menu"}`} role="menu">
             {visibleMenu.map((item, visibleIndex) => {
@@ -579,32 +646,43 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               )
             })}
           </div>
-          <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
+          {isAppleIIPlus
+            ? <AppleIIPlusFooter
+              actionLabel={footerActionLabel}
+              cancelLabel={currentFrame ? t("retroControl.cancelEsc") : undefined}
+              language={language}
+              selectLabel={selectLabel}
+              showAction={showFooterAction}
+              showHorizontalSelectionHint={showHorizontalSelectionHint}
+            />
+            : <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
             <span
               className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}
               style={{ gridColumn: `1 / ${selectHintHalfCells + 1}` }}
-            >{fixedWidthSpace}<span className="retro-footer-text">{`${selectLabel}:`}<i className="retro-mousetext">
+            >{fixedWidthSpace}<span className="retro-footer-text"><span className="retro-footer-content">{`${selectLabel}:`}<i className="retro-mousetext">
               {showHorizontalSelectionHint && <>{mouseTextLeft}{arrowSpacing}{mouseTextRight}{arrowSpacing}</>}
               {currentFrame
                 ? <>{mouseTextUp}{arrowSpacing}{mouseTextDown}</>
                 : <>{mouseTextDown}{arrowSpacing}{mouseTextUp}</>}
-            </i></span></span>
+            </i></span></span></span>
             {currentFrame && <span
               className={`retro-footer-cancel${retroFontSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}
               style={{
                 gridColumn: `${selectHintHalfCells + 1} / ${actionStartLine}`,
               }}
-            ><span className="retro-footer-text">{t("retroControl.cancelEsc")}</span></span>}
+            ><span className="retro-footer-text"><span className="retro-footer-content">
+                {t("retroControl.cancelEsc")}
+              </span></span></span>}
             <span
               aria-hidden={!showFooterAction}
               className={`retro-footer-action${showFooterAction ? "" : " hidden"}${retroFontSupports(footerActionLabel) ? "" : " retro-browser-font"}`}
               style={{ gridColumn: `${actionStartLine} / 81` }}
             >
-              <span className="retro-footer-text">{`${footerActionLabel}:`}
+              <span className="retro-footer-text"><span className="retro-footer-content">{`${footerActionLabel}:`}
                 <i className="retro-mousetext">{mouseTextReturn}</i>
-              </span>{fixedWidthSpace}
+              </span></span>{fixedWidthSpace}
             </span>
-          </footer>
+          </footer>}
         </div>
       </section>, canvasHost)}
       <DiskPanelVtoc
