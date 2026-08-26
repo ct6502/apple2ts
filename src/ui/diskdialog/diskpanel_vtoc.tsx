@@ -267,8 +267,8 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     let settled = false
 
     fetchDiskBufferForItem(pending).then((data) => {
-      if (!data) {
       settled = true
+      if (!data) {
         // Download failed (CORS/network). For Internet Archive disks, try
         // title-based matching against the 4cade DB first; fall back to "dos"
         // since the actual disk download often succeeds during export.

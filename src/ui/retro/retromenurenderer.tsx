@@ -14,7 +14,8 @@ import {
   truncateControlText,
 } from "./retrotext"
 import "./retrocontrolpanel.css"
-import { RETRO_SKIN, SETTINGS_CHANGED_EVENT, type SettingsChangedDetail } from "../localstorage"
+import { RETRO_SKIN } from "../localstorage"
+import { SETTINGS_CHANGED_EVENT, type SettingsChangedDetail } from "../settingschange"
 import { DISK_LOAD_SUCCESS_EVENT, getTheme } from "../ui_settings"
 import { xmargin, ymargin } from "../graphics"
 import { UI_THEME } from "../../common/utility"
