@@ -88,7 +88,7 @@ export const retroDebugControls: RetroControlMetadata[] = [
   },
   toggleMetadata({
     id: "options.hotReload",
-    order: 1001,
+    order: 1,
     label: context => context.t(getHotReload()
       ? "debugControls.hotReloadEnabled"
       : "debugControls.hotReloadDisabled"),

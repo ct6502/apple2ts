@@ -55,7 +55,7 @@ const fixedWidthSpace = String.fromCodePoint(0x2007)
 const horizontalBorderGlyphs = ` ${"_".repeat(78)} `
 const verticalBorderGlyphs = Array(30).fill("!").join("\n")
 const rootMenuContentWidth = 34
-const submenuContentWidth = 36
+const submenuTextWidth = 40
 
 const RetroVtocIndicator = ({
   active,
@@ -618,8 +618,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               const baseLabel = item.valueOnly && option ? option.label : item.label
               const itemLabel = formatControlLabel(baseLabel, item.separator)
               const hasOptionValue = option && !item.valueOnly && item.checkmarkIndex === undefined
-              const availableWidth = (currentFrame ? submenuContentWidth : rootMenuContentWidth) -
-                (currentFrame ? 2 : 0)
+              const availableWidth = currentFrame ? submenuTextWidth : rootMenuContentWidth
               const fittedText = fitControlText(
                 itemLabel,
                 hasOptionValue ? option.label : undefined,

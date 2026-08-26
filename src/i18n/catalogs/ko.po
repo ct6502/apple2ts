@@ -2771,22 +2771,6 @@ msgctxt "retroControl.ports"
 msgid "Ports"
 msgstr "포트"
 
-msgctxt "retroControl.clock"
-msgid "Clock"
-msgstr "시계"
-
-msgctxt "retroControl.hostSystemClock"
-msgid "Host system clock"
-msgstr ""
-
-msgctxt "retroControl.mouse"
-msgid "Mouse"
-msgstr "마우스"
-
-msgctxt "retroControl.ramDisk"
-msgid "RAM Disk"
-msgstr "RAM 디스크"
-
 msgctxt "retroControl.language"
 msgid "Language"
 msgstr "언어"

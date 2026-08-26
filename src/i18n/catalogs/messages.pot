@@ -2459,22 +2459,6 @@ msgctxt "retroControl.ports"
 msgid "Ports"
 msgstr ""
 
-msgctxt "retroControl.clock"
-msgid "Clock"
-msgstr ""
-
-msgctxt "retroControl.hostSystemClock"
-msgid "Host system clock"
-msgstr ""
-
-msgctxt "retroControl.mouse"
-msgid "Mouse"
-msgstr ""
-
-msgctxt "retroControl.ramDisk"
-msgid "RAM Disk"
-msgstr ""
-
 msgctxt "retroControl.language"
 msgid "Language"
 msgstr ""

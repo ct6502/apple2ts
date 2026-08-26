@@ -315,9 +315,7 @@ describe("Retro menu metadata structure", () => {
     ])
     expect(retroMenuRegistry.getIds("options")).toEqual([
       "options.speed",
-      "options.clock",
-      "options.mouse",
-      "options.ramDisk",
+      "options.hotReload",
       "options.retroSkinSeparator",
       "options.theme",
       "options.retroSkin",
@@ -325,7 +323,6 @@ describe("Retro menu metadata structure", () => {
       "options.retroSkin.background",
       "options.retroSkin.border",
       "options.other",
-      "options.hotReload",
       "settings.reset",
     ])
     expect(retroMenuRegistry.getIds("display")).toEqual([
@@ -366,5 +363,21 @@ describe("Retro menu metadata structure", () => {
 
     expect(slots.find(item => item.id === "slots.imageWriterII")?.contextualActionLabel).toBe("Open")
     expect(sound.find(item => item.id === "sound.enabled")?.defaultIndex).toBe(1)
+  })
+
+  test("matches the standard Apple IIe Slot 3 memory-card options", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const slot3 = retroMenuRegistry.resolve(context, "slots")
+      .find(item => item.id === "slots.3")
+
+    expect(slot3?.options?.map(option => option.label)).toEqual([
+      "retroControl.card.empty",
+      "Apple 699-0221 (64KB / 80-Col / dHGR)",
+      "AE RamWorks III (512KB / 80-Col / dHGR)",
+      "AE RamWorks III (1MB / 80-Col / dHGR)",
+      "AE RamWorks III (4MB / 80-Col / dHGR)",
+      "AE RamWorks III (8MB / 80-Col / dHGR)",
+      "VidHD (64KB / 80-Col / SHR)",
+    ])
   })
 })

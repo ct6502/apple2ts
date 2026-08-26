@@ -418,7 +418,8 @@
 }
 
 .retro-submenu-menu {
-  grid-column: 2 / 44;
+  grid-column: 2 / 46;
+  padding-right: 0;
 }
 
 .retro-menu-item {
