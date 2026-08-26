@@ -18,8 +18,10 @@ type DiskPanelVtocProps = {
   visibleCandidates: DiskCollectionItem[],
   authRefresh: number,
   cloudProviderHasAuthToken: (providerName: string) => boolean,
-  setForceVtocCheck: React.Dispatch<React.SetStateAction<((disk: DiskCollectionItem) => void) | null>>,
+  setForceVtocCheck?: React.Dispatch<React.SetStateAction<((disk: DiskCollectionItem) => void) | null>>,
   setActiveVtocCheckKey?: (key: string | null) => void,
+  showProgressModal?: boolean,
+  panelVisible?: boolean,
 }
 
 // Downloads a disk's bytes without disturbing the running emulator. Unlike
@@ -59,12 +61,57 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
   // When true, the next single-disk VTOC check skips the progress modal (user
   // clicked the export badge to force a check for one specific disk).
   const suppressProgressRef = useRef(false)
+  const vtocWorkerRef = useRef<Worker | null>(null)
+  const vtocWorkerRequestRef = useRef(0)
+  const vtocWorkerPendingRef = useRef(new Map<number, {
+    resolve: (vtocType: VtocType) => void
+    reject: () => void
+  }>())
 
   const itemKey = diskItemKey
   const { setDiskCollection, setForceVtocCheck } = props
 
+  useEffect(() => () => {
+    vtocWorkerRef.current?.terminate()
+    vtocWorkerPendingRef.current.forEach(request => request.reject())
+    vtocWorkerPendingRef.current.clear()
+  }, [])
+
+  const determineVtocTypeAsync = (
+    filename: string,
+    data: Uint8Array,
+    title?: string,
+  ): Promise<VtocType> => {
+    if (typeof Worker === "undefined") {
+      return Promise.resolve(determineVtocType(filename, data, title))
+    }
+    if (!vtocWorkerRef.current) {
+      const worker = new Worker(new URL("../../worker/vtoc_worker", import.meta.url), { type: "module" })
+      worker.onmessage = (event: MessageEvent<{ id: number, vtocType: VtocType }>) => {
+        const request = vtocWorkerPendingRef.current.get(event.data.id)
+        if (!request) return
+        vtocWorkerPendingRef.current.delete(event.data.id)
+        request.resolve(event.data.vtocType)
+      }
+      worker.onerror = () => {
+        vtocWorkerPendingRef.current.forEach(request => request.reject())
+        vtocWorkerPendingRef.current.clear()
+        worker.terminate()
+        vtocWorkerRef.current = null
+      }
+      vtocWorkerRef.current = worker
+    }
+    const id = vtocWorkerRequestRef.current
+    vtocWorkerRequestRef.current += 1
+    return new Promise((resolve, reject) => {
+      vtocWorkerPendingRef.current.set(id, { resolve, reject })
+      vtocWorkerRef.current?.postMessage({ id, filename, data, title })
+    })
+  }
+
   // Expose a force-check function to the parent without mutating a ref prop.
   useEffect(() => {
+    if (!setForceVtocCheck) return
     const forceVtocCheck = (disk: DiskCollectionItem) => {
       const key = itemKey(disk)
       disk.vtocType = undefined
@@ -140,7 +187,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     // always (classic theme renders it inside a dialog), matching Flyout's own
     // render condition. Gate verification on actual visibility so it runs in
     // both themes, not just when isFlyoutOpen is toggled.
-    const panelVisible = props.isFlyoutOpen || !isMinimalTheme()
+    const panelVisible = props.panelVisible ?? (props.isFlyoutOpen || !isMinimalTheme())
     if (!panelVisible) {
       if (vtocProgressVisibleRef.current) {
         showGlobalProgressModal(false)
@@ -205,7 +252,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     const totalDisks = vtocResolveAttempted.current.size + pendingCandidates.length
     const suppressProgress = suppressProgressRef.current
     suppressProgressRef.current = false
-    if (!suppressProgress && props.activeTab === TAB_INDEX.EXPORT) {
+    if (!suppressProgress && props.activeTab === TAB_INDEX.EXPORT && props.showProgressModal !== false) {
       showGlobalProgressModal(true, `Fetching disk metadata ${currentDisk}/${totalDisks}`)
       vtocProgressVisibleRef.current = true
     }
@@ -220,8 +267,8 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     let settled = false
 
     fetchDiskBufferForItem(pending).then((data) => {
-      settled = true
       if (!data) {
+      settled = true
         // Download failed (CORS/network). For Internet Archive disks, try
         // title-based matching against the 4cade DB first; fall back to "dos"
         // since the actual disk download often succeeds during export.
@@ -240,15 +287,20 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
         return
       }
       if (cancelled) {
+        settled = true
         return
       }
       const filename = getExportFilename(pending, data)
-      // Cache the determined VTOC (and persist it for bookmarks).
-      persistVtocType(pending, determineVtocType(filename, data, pending.title))
-      // Advance to the next pending disk. We no longer rely on the collection
-      // re-render (which changes visibleCandidates identity) to re-run this
-      // effect, so bump the pass counter explicitly.
-      setVtocCheckPass((pass) => pass + 1)
+      return determineVtocTypeAsync(filename, data, pending.title).then((vtocType) => {
+        settled = true
+        if (cancelled) return
+        // Cache the determined VTOC (and persist it for bookmarks).
+        persistVtocType(pending, vtocType)
+        // Advance to the next pending disk. We no longer rely on the collection
+        // re-render (which changes visibleCandidates identity) to re-run this
+        // effect, so bump the pass counter explicitly.
+        setVtocCheckPass((pass) => pass + 1)
+      })
     })
       .catch(() => {
         settled = true

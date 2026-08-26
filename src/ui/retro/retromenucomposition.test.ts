@@ -50,6 +50,7 @@ import { retroMenuRegistry } from "./retromenucomposition"
 import {
   createRetroExportItems,
   createRetroExportScreenItems,
+  getRetroVtocIndicator,
   retroDiskControls,
 } from "../devices/disk/diskinterface"
 import { DISK_COLLECTION_ITEM_TYPE } from "../diskdialog/diskpanel_utils"
@@ -150,6 +151,19 @@ describe("Retro menu metadata structure", () => {
     expect(items.at(-1)?.refreshOptions).toBeDefined()
   })
 
+  test("shows the active VTOC spinner and leaves other unresolved disks as unknown", () => {
+    const activeDisk = collectionDisk()
+    activeDisk.diskUrl = "active.po"
+    const waitingDisk = collectionDisk()
+    waitingDisk.diskUrl = "waiting.po"
+
+    for (const frame of ["/", "-", "\\", "!", "|"]) {
+      expect(getRetroVtocIndicator(activeDisk, "active.po", frame)).toBe(frame)
+    }
+    expect(getRetroVtocIndicator(waitingDisk, "active.po", "/")).toBe("?")
+    expect(getRetroVtocIndicator(collectionDisk("prodos"), "disk.po", "/")).toBeUndefined()
+  })
+
   test("shows Export auth notifications only when relevant and hides Export while pending", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
     const cloudDisk = {
@@ -159,6 +173,10 @@ describe("Retro menu metadata structure", () => {
     }
     mockGetCloudProvidersNeedingAuth.mockImplementation(disks =>
       disks.some(disk => disk.cloudData?.providerName === "OneDrive") ? ["OneDrive"] : [])
+
+    const unresolvedCloudDisk = { ...cloudDisk, vtocType: undefined }
+    const unresolvedItems = createRetroExportScreenItems(context, [unresolvedCloudDisk])
+    expect(unresolvedItems[0].id).toBe("diskCollection.3.notification.OneDrive")
 
     const initialItems = createRetroExportScreenItems(context, [cloudDisk])
     expect(initialItems.some(item => item.id.includes("notification"))).toBe(false)

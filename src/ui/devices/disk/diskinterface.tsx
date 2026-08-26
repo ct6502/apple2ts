@@ -79,7 +79,10 @@ const cloudAuthNotificationControls = (
         refreshAfterAction: true,
         action: async context => {
           const authReady = await signInToCloudProvider(providerName)
-          if (authReady) context.displayProps.updateDisplay()
+          if (authReady) {
+            context.notifyCloudAuthChanged?.()
+            context.displayProps.updateDisplay()
+          }
         },
       }),
     ),
@@ -179,6 +182,14 @@ export const createRetroExportItems = (
     sortControl,
   ]
 }
+
+export const getRetroVtocIndicator = (
+  disk: DiskCollectionItem,
+  activeVtocCheckKey: string | null,
+  spinner: string,
+) => disk.vtocType === undefined
+  ? (diskItemKey(disk) === activeVtocCheckKey ? spinner : "?")
+  : undefined
 
 const selectedExportDiskKeys = (
   items: readonly RetroResolvedControl[] = [],
@@ -294,7 +305,7 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
   tourTargets: tab.index === TAB_INDEX.BUILT_IN ? ["#tour-disk-images"] : undefined,
   label: context => context.t(tab.labelKey),
   dynamicChildren: (runtime, items, values) => {
-    const disks = getCollection().filter(tab.filter)
+    const disks = (runtime.diskCollection ?? getCollection()).filter(tab.filter)
     return tab.index === TAB_INDEX.EXPORT
       ? createRetroExportScreenItems(runtime, disks, items, values)
       : collectionItems(runtime, tab.index, disks)

@@ -18,6 +18,10 @@ import { RETRO_SKIN } from "../localstorage"
 import { DISK_LOAD_SUCCESS_EVENT, getTheme } from "../ui_settings"
 import { xmargin, ymargin } from "../graphics"
 import { UI_THEME } from "../../common/utility"
+import { DiskPanelVtoc } from "../diskdialog/diskpanel_vtoc"
+import { diskItemKey, isDiskExportable, TAB_INDEX } from "../diskdialog/diskpanel_utils"
+import { cloudProviderHasAuthToken } from "../devices/disk/cloudauth"
+import { getRetroVtocIndicator } from "../devices/disk/diskinterface"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -51,6 +55,25 @@ const horizontalBorderGlyphs = ` ${"_".repeat(78)} `
 const verticalBorderGlyphs = Array(30).fill("!").join("\n")
 const rootMenuContentWidth = 34
 const submenuContentWidth = 36
+
+const RetroVtocIndicator = ({
+  active,
+  disk,
+  isAppleIIPlus,
+}: {
+  active: boolean
+  disk: DiskCollectionItem
+  isAppleIIPlus: boolean
+}) => {
+  const [frameIndex, setFrameIndex] = useState(0)
+  useEffect(() => {
+    if (!active) return
+    const timer = window.setInterval(() => setFrameIndex(index => (index + 1) % 4), 125)
+    return () => window.clearInterval(timer)
+  }, [active])
+  const frames = isAppleIIPlus ? ["/", "-", "\\", "!"] : ["/", "-", "\\", "|"]
+  return getRetroVtocIndicator(disk, active ? diskItemKey(disk) : null, frames[frameIndex])
+}
 
 const RetroBorder = ({ className, separatorRow }: {
   className: string
@@ -140,7 +163,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
   const close = () => setIsOpen(false)
   const {
+    activeVtocCheckKey,
+    authRefresh,
     dialogs,
+    diskBookmarks,
+    diskCollection,
     effects,
     hasOpenDialog,
     iigsStyle,
@@ -148,6 +175,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     retroSkin,
     rootMenu,
     runTour,
+    setActiveVtocCheckKey,
+    setDiskCollection,
     t,
   } = useRetroMenuHost(displayProps, close)
   const menuStack = manualMenuStack
@@ -166,6 +195,17 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const selectedItem = currentMenu[selectedIndex]
   const selectLabel = t("retroControl.select")
   const isAppleIIPlus = retroSkin === RETRO_SKIN.APPLE_IIPLUS
+  const isExportScreen = Boolean(currentFrame?.items.some(item =>
+    item.id === "diskCollection.export.sort"))
+  const updateDiskCollection = (update: (prev: DiskCollectionItem[]) => DiskCollectionItem[]) => {
+    setDiskCollection(update)
+    setMenuStack(stack => stack.map((frame, index) => {
+      if (index !== stack.length - 1 || !frame.refresh || !frame.items.some(item =>
+        item.id === "diskCollection.export.sort")) return frame
+      const items = frame.refresh(frame.items, frame.values)
+      return { ...frame, items, values: items.map(item => item.optionIndex ?? -1) }
+    }))
+  }
 
   useLayoutEffect(() => {
     if (!isOpen) return
@@ -473,7 +513,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             </span>
             {isAppleIIPlus &&
               <span className="retro-title-fill" aria-hidden="true">
-                {" ".repeat(Math.max(0, 38 - controlTextWidth(currentFrame.title, language)))}
+                {" ".repeat(Math.max(0, 43 - controlTextWidth(currentFrame.title, language)))}
               </span>}
           </div>}
           {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString(language)} ${now.toLocaleDateString(language)}`}>
@@ -506,6 +546,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               const isChecked = item.checkmarkIndex !== undefined
                 ? valueIndex === item.checkmarkIndex
                 : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
+              const exportDisk = item.id.startsWith("diskCollection.export.disk.") && item.payload
+                ? item.payload as DiskCollectionItem
+                : undefined
+              const unresolvedExportDisk = exportDisk?.vtocType === undefined ? exportDisk : undefined
               return (
                 <div
                   className={`retro-menu-item${item.separator ? " separator" : ""}${selectedIndex === index ? " selected" : ""}`}
@@ -515,7 +559,13 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   aria-disabled={!isMenuItemSelectable(item, currentFrame) ? "true" : undefined}
                 >
                   {currentFrame && <span className="retro-menu-check">
-                    {item.indicator ?? (isChecked ? (isAppleIIPlus ? "*" : checkmark) : " ")}
+                    {unresolvedExportDisk
+                      ? <RetroVtocIndicator
+                        active={diskItemKey(unresolvedExportDisk) === activeVtocCheckKey}
+                        disk={unresolvedExportDisk}
+                        isAppleIIPlus={isAppleIIPlus}
+                      />
+                      : item.indicator ?? (isChecked ? (isAppleIIPlus ? "*" : checkmark) : " ")}
                   </span>}
                   <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
                     {visibleLabel}
@@ -557,6 +607,20 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           </footer>
         </div>
       </section>, canvasHost)}
+      <DiskPanelVtoc
+        activeTab={TAB_INDEX.EXPORT}
+        isFlyoutOpen={isOpen && isExportScreen}
+        diskBookmarks={diskBookmarks}
+        setDiskCollection={updateDiskCollection}
+        exportQueue={[]}
+        downloadedDisks={[]}
+        visibleCandidates={isExportScreen ? diskCollection.filter(isDiskExportable) : []}
+        authRefresh={authRefresh}
+        cloudProviderHasAuthToken={cloudProviderHasAuthToken}
+        setActiveVtocCheckKey={setActiveVtocCheckKey}
+        showProgressModal={false}
+        panelVisible={isOpen && isExportScreen}
+      />
       {dialogs}
     </>
   )

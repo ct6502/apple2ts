@@ -20,6 +20,8 @@ export type RetroMenuContext = {
   changeRetroIIGSColor: (preference: RETRO_IIGS_COLOR_PREFERENCE, color: number) => void
   retroSkin: RETRO_SKIN
   retroIIGSColors: Record<RETRO_IIGS_COLOR_PREFERENCE, number>
+  diskCollection?: DiskCollectionItem[]
+  notifyCloudAuthChanged?: () => void
   startTour: (tour: string) => void
 }
 
@@ -39,6 +41,8 @@ export const createControlContext = (
   changeRetroIIGSColor: () => undefined,
   retroSkin: 0 as RETRO_SKIN,
   retroIIGSColors: { text: 15, background: 6, border: 6 },
+  diskCollection: undefined,
+  notifyCloudAuthChanged: undefined,
   startTour: () => undefined,
 })
 
