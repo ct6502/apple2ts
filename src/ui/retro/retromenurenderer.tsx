@@ -587,7 +587,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   40 - visibleSubmenuTitleWidth - submenuTitleValueWidth,
                 ))}
                 {submenuTitleValue}
-                {submenuTitleValue && fixedWidthSpace}
+                {fixedWidthSpace}
               </span>
             </div>
             : <div className="retro-submenu-title">
