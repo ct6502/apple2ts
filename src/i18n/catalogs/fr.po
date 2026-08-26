@@ -1906,7 +1906,7 @@ msgstr "Rechargement À Chaud Activé"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "Rechargement À Chaud Désactivé"
 
 msgctxt "debugControls.trace"

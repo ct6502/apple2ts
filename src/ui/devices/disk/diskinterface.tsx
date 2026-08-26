@@ -6,6 +6,7 @@ import {
   createHdv,
   diskItemKey,
   diskCollectionSortOptions,
+  formatBytes,
   getDefaultDiskCollectionSortMode,
   getDiskCollection,
   getDiskCollectionSortMode,
@@ -188,8 +189,8 @@ export const getRetroVtocIndicator = (
   activeVtocCheckKey: string | null,
   spinner: string,
 ) => disk.vtocType === undefined
-  ? (diskItemKey(disk) === activeVtocCheckKey ? spinner : "?")
-  : undefined
+    ? (diskItemKey(disk) === activeVtocCheckKey ? spinner : "?")
+    : undefined
 
 const selectedExportDiskKeys = (
   items: readonly RetroResolvedControl[] = [],
@@ -198,6 +199,28 @@ const selectedExportDiskKeys = (
   values[index] === item.checkmarkIndex && item.payload
     ? [diskItemKey(item.payload as DiskCollectionItem)]
     : []))
+
+const maxHdvBytes = 33554432
+
+const selectedExportSize = (
+  items: readonly RetroResolvedControl[] = [],
+  values: number[] = [],
+) => items.reduce((total, item, index) => {
+  if (values[index] !== item.checkmarkIndex || !item.payload) return total
+  const disk = item.payload as DiskCollectionItem
+  if (disk.cloudData) return total + (disk.cloudData.fileSize > 0 ? disk.cloudData.fileSize : 143360)
+  return total + Math.max(0, disk.fileSize)
+}, 0)
+
+export const getRetroExportHdvSize = (
+  items: readonly RetroResolvedControl[] = [],
+  values: number[] = [],
+) => {
+  const selectedBytes = selectedExportSize(items, values)
+  return selectedBytes > 0
+    ? `${formatBytes(selectedBytes)} / ${formatBytes(maxHdvBytes)}`
+    : undefined
+}
 
 const exportNotificationDisks = (
   disks: DiskCollectionItem[],
@@ -304,6 +327,9 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
   order,
   tourTargets: tab.index === TAB_INDEX.BUILT_IN ? ["#tour-disk-images"] : undefined,
   label: context => context.t(tab.labelKey),
+  submenuTitleValue: tab.index === TAB_INDEX.EXPORT
+    ? (_runtime, items, values) => getRetroExportHdvSize(items, values)
+    : undefined,
   dynamicChildren: (runtime, items, values) => {
     const disks = (runtime.diskCollection ?? getCollection()).filter(tab.filter)
     return tab.index === TAB_INDEX.EXPORT

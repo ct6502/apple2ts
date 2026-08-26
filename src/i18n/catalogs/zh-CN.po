@@ -1826,7 +1826,7 @@ msgstr "热重载已启用"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "热重载已停用"
 
 #, fuzzy

@@ -41,6 +41,11 @@ export type ControlMetadata<Context, Payload = unknown> = {
   valueOnly?: boolean
   actionLabel?: ControlValue<Context, string | undefined>
   contextualActionLabel?: ControlValue<Context, string | undefined>
+  submenuTitleValue?: (
+    context: Context,
+    items: readonly ResolvedControl<Payload>[],
+    values: number[],
+  ) => string | undefined
   refreshOptions?: (
     context: Context,
     index: number,
@@ -91,6 +96,7 @@ export type ResolvedControl<Payload = unknown> = {
   valueOnly?: boolean
   actionLabel?: string
   contextualActionLabel?: string
+  submenuTitleValue?: (items: readonly ResolvedControl<Payload>[], values: number[]) => string | undefined
   refreshOptions?: (
     index: number,
     items?: readonly ResolvedControl<Payload>[],
@@ -220,6 +226,9 @@ export class ControlRegistry<Context, Payload = unknown> {
       contextualActionLabel: metadata.contextualActionLabel === undefined
         ? undefined
         : valueOf(metadata.contextualActionLabel, context),
+      submenuTitleValue: metadata.submenuTitleValue
+        ? (items, values) => metadata.submenuTitleValue!(context, items, values)
+        : undefined,
       refreshOptions: metadata.refreshParentOnOption && parentId !== undefined
         ? index => this.resolve(context, parentId).map(item => item.id === metadata.id
           ? { ...item, optionIndex: index }

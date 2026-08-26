@@ -1582,7 +1582,7 @@ msgid "Hot Reload Enabled"
 msgstr ""
 
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr ""
 
 msgctxt "debugControls.trace"

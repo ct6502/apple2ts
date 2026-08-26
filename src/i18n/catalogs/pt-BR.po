@@ -1880,7 +1880,7 @@ msgstr "Recarga Rápida Habilitada"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "Recarga Rápida Desabilitada"
 
 #, fuzzy

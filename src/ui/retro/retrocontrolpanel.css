@@ -315,6 +315,13 @@
   padding: 2px 1ch 0;
 }
 
+.retro-submenu-title-value {
+  color: var(--retro-background);
+  position: absolute;
+  right: 1ch;
+  top: 2px;
+}
+
 .retro-panel.retro-skin-apple-iiplus .retro-submenu-title.retro-text-submenu-title {
   background: var(--retro-background);
   box-sizing: border-box;
@@ -331,6 +338,10 @@
   background: var(--retro-foreground);
   color: var(--retro-background);
   display: inline-block;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title-value {
+  display: none;
 }
 
 .retro-clock {
@@ -408,8 +419,6 @@
 
 .retro-submenu-menu {
   grid-column: 2 / 44;
-  grid-row: 6 / span 12;
-  padding-top: 0;
 }
 
 .retro-menu-item {

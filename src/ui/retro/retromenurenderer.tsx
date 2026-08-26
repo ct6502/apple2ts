@@ -34,6 +34,7 @@ type CanvasBounds = {
 
 type RetroMenuFrame = {
   title: string
+  submenuTitleValue?: (items: readonly RetroMenuItem[], values: number[]) => string | undefined
   items: RetroMenuItem[]
   parentSelectedIndex: number
   originalValues: number[]
@@ -145,6 +146,7 @@ const RetroBorder = ({ className, separatorRow }: {
 const createMenuFrame = (
   title: string,
   items: RetroMenuItem[],
+  submenuTitleValue?: (items: readonly RetroMenuItem[], values: number[]) => string | undefined,
   refresh?: (items?: readonly RetroMenuItem[], values?: number[]) => RetroMenuItem[],
   actionLabel?: string,
   submit?: (items: readonly RetroMenuItem[], values: number[]) => void,
@@ -154,6 +156,7 @@ const createMenuFrame = (
   const values = items.map(item => item.optionIndex ?? -1)
   return {
     title,
+    submenuTitleValue,
     items,
     parentSelectedIndex,
     originalValues: values,
@@ -185,6 +188,7 @@ const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
   previousStack[previousStack.length - 1] = createMenuFrame(
     previousFrame.title,
     previousFrame.refresh(),
+    previousFrame.submenuTitleValue,
     previousFrame.refresh,
     previousFrame.actionLabel,
     previousFrame.submit,
@@ -445,6 +449,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             createMenuFrame(
               item.label,
               children,
+              item.submenuTitleValue,
               refresh,
               item.actionLabel,
               item.submit,
@@ -480,6 +485,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 return createMenuFrame(
                   frame.title,
                   items,
+                  frame.submenuTitleValue,
                   frame.refresh,
                   frame.actionLabel,
                   frame.submit,
@@ -533,6 +539,17 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   ])
 
   const canvasHost = document.getElementById("apple2canvas")?.parentElement
+  const submenuTitleValue = currentFrame?.submenuTitleValue?.(currentFrame.items, currentFrame.values)
+  const submenuTitleValueWidth = submenuTitleValue
+    ? controlTextWidth(submenuTitleValue, language)
+    : 0
+  const submenuTitleWidth = currentFrame
+    ? Math.max(0, 38 - submenuTitleValueWidth - (submenuTitleValue ? 1 : 0))
+    : 38
+  const visibleSubmenuTitle = currentFrame
+    ? truncateControlText(currentFrame.title, submenuTitleWidth, language)
+    : ""
+  const visibleSubmenuTitleWidth = controlTextWidth(visibleSubmenuTitle, language)
 
   return (
     <>
@@ -561,20 +578,28 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           {currentFrame && (isAppleIIPlus
             ? <div className="retro-submenu-title retro-text-submenu-title">
               <span className={retroFontSupports(currentFrame.title) ? undefined : "retro-browser-font"}>
-                {truncateControlText(currentFrame.title, 38, language)}
+                {visibleSubmenuTitle}
               </span>
               <span aria-hidden="true">{fixedWidthSpace}</span>
               <span className="retro-inverse-space" aria-hidden="true">
-                {fixedWidthSpace.repeat(Math.max(0, 41 - controlTextWidth(currentFrame.title, language)))}
+                {fixedWidthSpace.repeat(Math.max(
+                  0,
+                  40 - visibleSubmenuTitleWidth - submenuTitleValueWidth,
+                ))}
+                {submenuTitleValue}
+                {submenuTitleValue && fixedWidthSpace}
               </span>
             </div>
             : <div className="retro-submenu-title">
               <RetroBorder className="retro-submenu-title-border" />
               <span className={`retro-submenu-title-text${retroFontSupports(currentFrame.title) ? "" : " retro-browser-font"}`}>
                 <span className="retro-submenu-title-content">
-                  {truncateControlText(currentFrame.title, 38, language)}
+                  {visibleSubmenuTitle}
                 </span>
               </span>
+              {submenuTitleValue && <span className="retro-submenu-title-value">
+                {submenuTitleValue}
+              </span>}
             </div>)}
           {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString(language)} ${now.toLocaleDateString(language)}`}>
             <RetroBorder className="retro-clock-border" />

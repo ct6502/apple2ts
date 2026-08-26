@@ -1884,7 +1884,7 @@ msgstr "Hot Reload Aktiverad"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "Hot Reload Inaktiverad"
 
 msgctxt "debugControls.trace"

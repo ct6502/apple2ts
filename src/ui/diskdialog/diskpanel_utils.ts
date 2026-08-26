@@ -229,6 +229,10 @@ export const getExportFilename = (diskCollectionItem: DiskCollectionItem, buffer
 
 const maxHdvBytes = 33554432
 
+export const formatBytes = (bytes: number) => bytes < 1024 * 1024
+  ? `${parseFloat((bytes / 1024).toFixed(0))} KB`
+  : `${parseFloat((bytes / (1024 * 1024)).toFixed(2))} MB`
+
 export const isDiskExportable = (disk: DiskCollectionItem) => {
   // A disk explicitly flagged exportDisabled is never exportable (e.g. whole-volume
   // desktop OS boot disks that assume they own the boot volume root and can't run from

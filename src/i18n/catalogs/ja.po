@@ -1843,7 +1843,7 @@ msgstr "ホットリロード有効"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "ホットリロード無効"
 
 #, fuzzy

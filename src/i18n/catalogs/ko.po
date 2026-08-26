@@ -1850,7 +1850,7 @@ msgstr "핫 리로드 활성화됨"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "핫 리로드 비활성화됨"
 
 #, fuzzy

@@ -1896,7 +1896,7 @@ msgstr "Горячая перезагрузка включена"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "Горячая перезагрузка отключена"
 
 #, fuzzy

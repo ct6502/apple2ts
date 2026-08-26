@@ -50,6 +50,7 @@ import { retroMenuRegistry } from "./retromenucomposition"
 import {
   createRetroExportItems,
   createRetroExportScreenItems,
+  getRetroExportHdvSize,
   getRetroVtocIndicator,
   retroDiskControls,
 } from "../devices/disk/diskinterface"
@@ -149,6 +150,27 @@ describe("Retro menu metadata structure", () => {
       valueOnly: true,
     })
     expect(items.at(-1)?.refreshOptions).toBeDefined()
+  })
+
+  test("reports selected HDV export size against the 32 MB limit", () => {
+    const localDisk = collectionDisk("prodos")
+    const cloudDisk = {
+      ...collectionDisk("prodos"),
+      cloudData: { providerName: "OneDrive", itemId: "cloud-disk", fileSize: 1048576 } as CloudData,
+    }
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const items = createRetroExportItems(context, [localDisk, cloudDisk]) as unknown as RetroResolvedControl[]
+    const values = metadataValues(items as unknown as RetroControlMetadata[], context)
+
+    expect(getRetroExportHdvSize(items, values)).toBeUndefined()
+    values[items.findIndex(item => item.payload === localDisk)] = 1
+    expect(getRetroExportHdvSize(items, values)).toBe("140 KB / 32 MB")
+    values[items.findIndex(item => item.payload === cloudDisk)] = 1
+    expect(getRetroExportHdvSize(items, values)).toBe("1.14 MB / 32 MB")
+
+    const exportTab = retroMenuRegistry.resolve(context, "diskCollection")
+      .find(control => control.id === "diskCollection.export")
+    expect(exportTab?.submenuTitleValue?.(items, values)).toBe("1.14 MB / 32 MB")
   })
 
   test("shows the active VTOC spinner and leaves other unresolved disks as unknown", () => {
