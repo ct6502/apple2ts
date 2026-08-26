@@ -170,7 +170,7 @@
 .retro-panel.retro-skin-apple-iiplus .retro-border-glyph-left,
 .retro-panel.retro-skin-apple-iiplus .retro-border-glyph-right {
   bottom: 0;
-  line-height: 1;
+  line-height: var(--retro-row-height);
   top: 0;
   width: 1ch;
 }
@@ -320,6 +320,7 @@
   box-sizing: border-box;
   color: var(--retro-foreground);
   display: block;
+  grid-column: 3 / 45;
   height: var(--retro-row-height);
   line-height: 1;
   overflow: hidden;
