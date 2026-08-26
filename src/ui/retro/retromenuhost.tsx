@@ -98,6 +98,7 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     setRetroIIGSColors(colors => ({ ...colors, [preference]: color }))
   }
   const context: RetroMenuContext = {
+    settingsOrigin: "retro",
     displayProps,
     close,
     openDiskDialog,
@@ -119,6 +120,7 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     },
   }
   const rootMenu = retroMenuRegistry.resolve(context)
+  const resolveMenu = (parentId: string) => retroMenuRegistry.resolve(context, parentId)
   const effects = [
     `retro-color-${colorModeClasses[getColorMode()]}`,
     `retro-skin-${retroSkinClasses[retroSkin]}`,
@@ -159,6 +161,7 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     language,
     retroSkin,
     retroIIGSColors,
+    resolveMenu,
     returnToTourHelp,
     rootMenu,
     runTour,

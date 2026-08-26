@@ -1,5 +1,6 @@
 import type { Language } from "../../i18n"
 import type { RETRO_IIGS_COLOR_PREFERENCE, RETRO_SKIN } from "../localstorage"
+import type { SettingsChangeOrigin } from "../settingschange"
 import type { ControlMetadata, ResolvedControl } from "../controls/controlregistry"
 
 export type Translate = (key: string, params?: Record<string, string>) => string
@@ -10,6 +11,7 @@ export type DiskLoadDialog = {
 }
 
 export type RetroMenuContext = {
+  settingsOrigin: SettingsChangeOrigin
   displayProps: DisplayProps
   close: () => void
   openDiskDialog: (dialog: DiskLoadDialog) => void
@@ -31,6 +33,7 @@ export const createControlContext = (
   language: Language,
   changeLanguage: (language: Language) => void,
 ): RetroMenuContext => ({
+  settingsOrigin: "external",
   displayProps: displayProps ?? { updateDisplay: () => undefined } as DisplayProps,
   t,
   language,

@@ -46,7 +46,7 @@ export const retroDisplayControls: RetroControlMetadata[] = [
     labels: context => colorLabels(context.t),
     currentIndex: getColorMode,
     select: (context, index) => {
-      setPreferenceColorMode(COLOR_MODES[index])
+      setPreferenceColorMode(COLOR_MODES[index], context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
     preview: (context, index) => {
@@ -66,7 +66,7 @@ export const retroDisplayControls: RetroControlMetadata[] = [
     label: context => context.t(labelKey),
     enabled: getter,
     setEnabled: (context, enabled) => {
-      setPreferenceBoolean(preference, enabled)
+      setPreferenceBoolean(preference, enabled, context.settingsOrigin)
       if (preference === "showScanlines") {
         document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
       }

@@ -33,7 +33,8 @@ export const retroGamepadControls: RetroControlMetadata[] = [
     order,
     label: context => context.t(labelKey),
     enabled: getter,
-    setEnabled: (_context, enabled) => setPreferenceBoolean(preference, enabled),
+    setEnabled: (context, enabled) =>
+      setPreferenceBoolean(preference, enabled, context.settingsOrigin),
   })),
 ]
 

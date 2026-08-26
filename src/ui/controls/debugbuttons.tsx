@@ -94,7 +94,7 @@ export const retroDebugControls: RetroControlMetadata[] = [
       : "debugControls.hotReloadDisabled"),
     enabled: getHotReload,
     setEnabled: (context, enabled) => {
-      setPreferenceBoolean("hotReload", enabled)
+      setPreferenceBoolean("hotReload", enabled, context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
     isVisible: isFileSystemApiSupported,

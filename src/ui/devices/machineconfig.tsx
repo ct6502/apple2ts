@@ -89,10 +89,10 @@ const selectRetroSlotCard = (context: RetroMenuContext, slot: SlotNumber, option
     setPreferenceVeraSlot(0)
   }
   if (slot === 3 && card === "aux" && ramSizeKb !== undefined) {
-    setPreferenceRamWorks(ramSizeKb)
+    setPreferenceRamWorks(ramSizeKb, context.settingsOrigin)
   }
   nextConfig[slot] = card
-  setPreferenceSlotConfig(nextConfig)
+  setPreferenceSlotConfig(nextConfig, context.settingsOrigin)
   context.displayProps.updateDisplay()
 }
 
@@ -134,7 +134,7 @@ export const retroMachineControls: RetroControlMetadata[] = [
     label: context => context.t("retroControl.fullscreen"),
     labels: context => [context.t("messages.off"), context.t("messages.on")],
     currentIndex: () => isCanvasFullscreen() ? 1 : 0,
-    select: (_context, index) => setCanvasFullscreen(index === 1),
+    select: (context, index) => setCanvasFullscreen(index === 1, context.settingsOrigin),
     defaultIndex: 0,
   }),
   {

@@ -14,7 +14,7 @@ import {
   truncateControlText,
 } from "./retrotext"
 import "./retrocontrolpanel.css"
-import { RETRO_SKIN } from "../localstorage"
+import { RETRO_SKIN, SETTINGS_CHANGED_EVENT, type SettingsChangedDetail } from "../localstorage"
 import { DISK_LOAD_SUCCESS_EVENT, getTheme } from "../ui_settings"
 import { xmargin, ymargin } from "../graphics"
 import { UI_THEME } from "../../common/utility"
@@ -33,6 +33,7 @@ type CanvasBounds = {
 }
 
 type RetroMenuFrame = {
+  menuId: string
   title: string
   submenuTitleValue?: (items: readonly RetroMenuItem[], values: number[]) => string | undefined
   items: RetroMenuItem[]
@@ -144,6 +145,7 @@ const RetroBorder = ({ className, separatorRow }: {
 )
 
 const createMenuFrame = (
+  menuId: string,
   title: string,
   items: RetroMenuItem[],
   submenuTitleValue?: (items: readonly RetroMenuItem[], values: number[]) => string | undefined,
@@ -155,6 +157,7 @@ const createMenuFrame = (
 ): RetroMenuFrame => {
   const values = items.map(item => item.optionIndex ?? -1)
   return {
+    menuId,
     title,
     submenuTitleValue,
     items,
@@ -186,6 +189,7 @@ const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
   if (!previousFrame?.refresh) return previousStack
 
   previousStack[previousStack.length - 1] = createMenuFrame(
+    previousFrame.menuId,
     previousFrame.title,
     previousFrame.refresh(),
     previousFrame.submenuTitleValue,
@@ -210,6 +214,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [manualIsOpen, setIsOpen] = useState(false)
   const [manualMenuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
   const [manualSelectedIndex, setSelectedIndex] = useState(0)
+  const [, setSettingsRevision] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
   const close = () => setIsOpen(false)
@@ -226,6 +231,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     retroSkin,
     rootMenu,
     runTour,
+    resolveMenu,
     setActiveVtocCheckKey,
     setDiskCollection,
     t,
@@ -351,6 +357,41 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   }, [isOpen])
 
   useEffect(() => {
+    if (!isOpen) return
+    const handleSettingsChanged = (event: Event) => {
+      const { controlIds } = (event as CustomEvent<SettingsChangedDetail>).detail
+      if (currentFrame && !currentFrame.items.some(item => controlIds.includes(item.id))) return
+      setSettingsRevision(revision => revision + 1)
+      if (!currentFrame) return
+
+      const selectedId = currentFrame.items[selectedIndex]?.id
+      const items = resolveMenu(currentFrame.menuId)
+      const nextSelectedIndex = selectedId
+        ? items.findIndex(item => item.id === selectedId)
+        : -1
+      setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
+        && frame.menuId === currentFrame.menuId
+        ? createMenuFrame(
+          frame.menuId,
+          frame.title,
+          items,
+          frame.submenuTitleValue,
+          frame.refresh,
+          frame.actionLabel,
+          frame.submit,
+          frame.isSubmitVisible,
+          frame.parentSelectedIndex,
+        )
+        : frame))
+      setSelectedIndex(nextSelectedIndex >= 0
+        ? nextSelectedIndex
+        : Math.max(0, items.findIndex(item => isMenuItemSelectable(item))))
+    }
+    window.addEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
+    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
+  }, [currentFrame, isOpen, resolveMenu, selectedIndex])
+
+  useEffect(() => {
     const handleDiskLoadSuccess = () => setIsOpen(false)
     window.addEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
     return () => window.removeEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
@@ -447,6 +488,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           setMenuStack(stack => [
             ...stack,
             createMenuFrame(
+              item.id,
               item.label,
               children,
               item.submenuTitleValue,
@@ -483,6 +525,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 const items = frame.refresh(frame.items, frame.values)
                 setSelectedIndex(Math.max(0, items.findIndex(child => isMenuItemSelectable(child))))
                 return createMenuFrame(
+                  frame.menuId,
                   frame.title,
                   items,
                   frame.submenuTitleValue,
