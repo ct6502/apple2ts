@@ -19,15 +19,21 @@ export type ControlMetadata<Context, Payload = unknown> = {
   label: ControlValue<Context, string>
   separator?: boolean
   value?: ControlValue<Context, string | undefined>
-  action?: (context: Context) => void
+  action?: (context: Context) => unknown
   keepMenuOpen?: boolean
+  refreshAfterAction?: boolean
   children?: ControlValue<Context, readonly ControlMetadata<Context, Payload>[]>
-  dynamicChildren?: (context: Context) => readonly ControlMetadata<Context, Payload>[]
+  dynamicChildren?: (
+    context: Context,
+    items?: readonly ResolvedControl<Payload>[],
+    values?: number[],
+  ) => readonly ControlMetadata<Context, Payload>[]
   options?: ControlValue<Context, readonly ControlOptionMetadata<Context>[]>
   optionIndex?: ControlValue<Context, number>
   defaultIndex?: ControlValue<Context, number | undefined>
   isVisible?: ControlValue<Context, boolean>
   selectable?: ControlValue<Context, boolean>
+  bulkSelectable?: ControlValue<Context, boolean>
   selectableWhen?: {
     controlId: string
     optionIndexes: readonly number[]
@@ -35,10 +41,16 @@ export type ControlMetadata<Context, Payload = unknown> = {
   valueOnly?: boolean
   actionLabel?: ControlValue<Context, string | undefined>
   contextualActionLabel?: ControlValue<Context, string | undefined>
-  refreshOptions?: (context: Context, index: number) => readonly ControlMetadata<Context, Payload>[]
+  refreshOptions?: (
+    context: Context,
+    index: number,
+    items?: readonly ResolvedControl<Payload>[],
+    values?: number[],
+  ) => readonly ControlMetadata<Context, Payload>[]
   refreshParentOnOption?: boolean
   refreshTitle?: (context: Context) => string
   checkmarkIndex?: number
+  indicator?: ControlValue<Context, string | undefined>
   payload?: Payload
   submit?: (context: Context, items: readonly ResolvedControl<Payload>[], values: number[]) => void
   isSubmitVisible?: (context: Context, items: readonly ResolvedControl<Payload>[], values: number[]) => boolean
@@ -60,13 +72,18 @@ export type ResolvedControl<Payload = unknown> = {
   label: string
   separator?: boolean
   value?: string
-  action?: () => void
+  action?: () => unknown
   keepMenuOpen?: boolean
-  children?: ResolvedControl<Payload>[] | (() => ResolvedControl<Payload>[])
+  refreshAfterAction?: boolean
+  children?: ResolvedControl<Payload>[] | ((
+    items?: readonly ResolvedControl<Payload>[],
+    values?: number[],
+  ) => ResolvedControl<Payload>[])
   options?: ResolvedControlOption[]
   optionIndex?: number
   defaultIndex?: number
   selectable?: boolean
+  bulkSelectable?: boolean
   selectableWhen?: {
     controlId: string
     optionIndexes: readonly number[]
@@ -74,9 +91,14 @@ export type ResolvedControl<Payload = unknown> = {
   valueOnly?: boolean
   actionLabel?: string
   contextualActionLabel?: string
-  refreshOptions?: (index: number) => ResolvedControl<Payload>[]
+  refreshOptions?: (
+    index: number,
+    items?: readonly ResolvedControl<Payload>[],
+    values?: number[],
+  ) => ResolvedControl<Payload>[]
   refreshTitle?: () => string
   checkmarkIndex?: number
+  indicator?: string
   payload?: Payload
   submit?: (items: readonly ResolvedControl<Payload>[], values: number[]) => void
   isSubmitVisible?: (items: readonly ResolvedControl<Payload>[], values: number[]) => boolean
@@ -156,10 +178,11 @@ export class ControlRegistry<Context, Payload = unknown> {
       ? valueOf(metadata.children, context).map(child => this.resolveControl(child, context))
       : undefined
     const dynamicChildren = metadata.dynamicChildren
-      ? () => metadata.dynamicChildren!(context).map(child => this.resolveControl(child, context))
+      ? (items?: readonly ResolvedControl<Payload>[], values?: number[]) =>
+        metadata.dynamicChildren!(context, items, values).map(child => this.resolveControl(child, context))
       : undefined
     const registeredChildren = this.registrations.some(registration => registration.parentId === metadata.id)
-      ? this.resolve(context, metadata.id)
+      ? () => this.resolve(context, metadata.id)
       : undefined
     const children = dynamicChildren ?? declaredChildren ?? registeredChildren
     const resolvedOptions = metadata.options
@@ -182,11 +205,15 @@ export class ControlRegistry<Context, Payload = unknown> {
       value: metadata.value === undefined ? undefined : valueOf(metadata.value, context),
       action: metadata.action ? () => metadata.action!(context) : undefined,
       keepMenuOpen: metadata.keepMenuOpen,
+      refreshAfterAction: metadata.refreshAfterAction,
       children,
       options: resolvedOptions,
       optionIndex: metadata.optionIndex === undefined ? undefined : valueOf(metadata.optionIndex, context),
       defaultIndex: metadata.defaultIndex === undefined ? undefined : valueOf(metadata.defaultIndex, context),
       selectable: metadata.selectable === undefined ? undefined : valueOf(metadata.selectable, context),
+      bulkSelectable: metadata.bulkSelectable === undefined
+        ? undefined
+        : valueOf(metadata.bulkSelectable, context),
       selectableWhen: metadata.selectableWhen,
       valueOnly: metadata.valueOnly,
       actionLabel: metadata.actionLabel === undefined ? undefined : valueOf(metadata.actionLabel, context),
@@ -198,10 +225,12 @@ export class ControlRegistry<Context, Payload = unknown> {
           ? { ...item, optionIndex: index }
           : item)
         : metadata.refreshOptions
-          ? index => metadata.refreshOptions!(context, index).map(child => this.resolveControl(child, context))
+          ? (index, items, values) => metadata.refreshOptions!(context, index, items, values)
+            .map(child => this.resolveControl(child, context))
           : undefined,
       refreshTitle: metadata.refreshTitle ? () => metadata.refreshTitle!(context) : undefined,
       checkmarkIndex: metadata.checkmarkIndex,
+      indicator: metadata.indicator === undefined ? undefined : valueOf(metadata.indicator, context),
       payload: metadata.payload,
       submit: metadata.submit ? (items, values) => metadata.submit!(context, items, values) : undefined,
       isSubmitVisible: metadata.isSubmitVisible

@@ -4,6 +4,7 @@ import {
   DISK_COLLECTION_ITEM_TYPE,
   TAB_INDEX,
   createHdv,
+  diskItemKey,
   diskCollectionSortOptions,
   getDefaultDiskCollectionSortMode,
   getDiskCollection,
@@ -15,7 +16,7 @@ import {
 } from "../../diskdialog/diskpanel_utils"
 import { isFileSystemApiSupported, showGlobalProgressModal } from "../../ui_utilities"
 import { choiceMetadata, toggleMetadata } from "../../retro/retromenuhelpers"
-import type { RetroControlMetadata, RetroMenuContext } from "../../retro/retromenucontext"
+import type { RetroControlMetadata, RetroMenuContext, RetroResolvedControl } from "../../retro/retromenucontext"
 import { DiskBookmarks } from "./diskbookmarks"
 import { newReleases } from "./newreleases"
 import {
@@ -34,6 +35,12 @@ import {
 } from "./driveprops"
 import { GoogleDrive } from "./googledrive"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
+import {
+  CLOUD_PROVIDER_NAMES,
+  cloudProviderDisplayName,
+  getCloudProvidersNeedingAuth,
+  signInToCloudProvider,
+} from "./cloudauth"
 import "./diskinterface.css"
 import DiskDrive from "./diskdrive"
 import { DiskImageChooser } from "./diskimagechooser"
@@ -55,6 +62,35 @@ const decodeDiskTitle = (title: string) => {
 }
 
 const getCollection = () => getDiskCollection(new DiskBookmarks(), newReleases)
+
+const cloudAuthNotificationControls = (
+  tabIndex: TAB_INDEX,
+  disks: DiskCollectionItem[],
+): RetroControlMetadata[] => {
+  const providersNeedingAuth = getCloudProvidersNeedingAuth(disks)
+  if (providersNeedingAuth.length === 0) return []
+  return [
+    ...CLOUD_PROVIDER_NAMES.filter(providerName => providersNeedingAuth.includes(providerName)).map(
+      (providerName): RetroControlMetadata => ({
+        id: `diskCollection.${tabIndex}.notification.${providerName}`,
+        label: context => `*${cloudProviderDisplayName(providerName)} ${context.t("collection.cloudAuthRequired")}`,
+        contextualActionLabel: context => context.t("messages.confirm"),
+        keepMenuOpen: true,
+        refreshAfterAction: true,
+        action: async context => {
+          const authReady = await signInToCloudProvider(providerName)
+          if (authReady) context.displayProps.updateDisplay()
+        },
+      }),
+    ),
+    {
+      id: `diskCollection.${tabIndex}.notificationsSeparator`,
+      label: context => context.t("retroControl.diskCollection"),
+      separator: true,
+      selectable: false,
+    },
+  ]
+}
 
 const exportDisks = async (context: RetroMenuContext, disks: DiskCollectionItem[]) => {
   context.close()
@@ -85,15 +121,94 @@ const exportDisks = async (context: RetroMenuContext, disks: DiskCollectionItem[
   }
 }
 
-const exportItems = (disks: DiskCollectionItem[]): RetroControlMetadata[] =>
-  sortDisks(disks, getDiskCollectionSortMode(TAB_INDEX.EXPORT)).map((disk, index) => ({
-    id: `diskCollection.export.disk.${index}`,
-    label: decodeDiskTitle(disk.title),
-    options: [{ label: "" }, { label: "" }],
-    optionIndex: 0,
-    payload: disk,
-    checkmarkIndex: 1,
-  }))
+export const createRetroExportItems = (
+  context: RetroMenuContext,
+  disks: DiskCollectionItem[],
+  sortMode: DiskCollectionSortMode = getDiskCollectionSortMode(TAB_INDEX.EXPORT),
+  selectedDiskKeys = new Set<string>(),
+): RetroControlMetadata[] => {
+  const exportableDisks = disks.filter(isDiskExportable)
+  if (exportableDisks.length === 0) return []
+  const sortIndex = diskCollectionSortOptions.findIndex(option => option.value === sortMode)
+  const defaultSortIndex = diskCollectionSortOptions.findIndex(
+    option => option.value === getDefaultDiskCollectionSortMode(TAB_INDEX.EXPORT),
+  )
+  const sortControl = choiceMetadata({
+    id: "diskCollection.export.sort",
+    label: "",
+    labels: () => diskCollectionSortOptions.map(option => option.label),
+    currentIndex: () => sortIndex,
+    select: (_runtime, index) => {
+      setPreferenceDiskCollectionSort(TAB_INDEX.EXPORT, diskCollectionSortOptions[index].value)
+    },
+    defaultIndex: defaultSortIndex,
+    valueOnly: true,
+  })
+  sortControl.refreshOptions = (runtime, index, items, values) => createRetroExportScreenItems(
+    runtime,
+    disks,
+    items,
+    values,
+    diskCollectionSortOptions[index].value,
+  )
+  return [
+    ...sortDisks(exportableDisks, sortMode).map((disk): RetroControlMetadata => ({
+      id: `diskCollection.export.disk.${encodeURIComponent(diskItemKey(disk))}`,
+      label: decodeDiskTitle(disk.title),
+      options: [{ label: "" }, { label: "" }],
+      optionIndex: selectedDiskKeys.has(diskItemKey(disk)) ? 1 : 0,
+      payload: disk,
+      checkmarkIndex: 1,
+      indicator: disk.vtocType === undefined ? "?" : undefined,
+      selectable: disk.vtocType !== undefined,
+      bulkSelectable: disk.vtocType !== undefined,
+      refreshOptions: (runtime, _index, items, values) => createRetroExportScreenItems(
+        runtime,
+        disks,
+        items,
+        values,
+        sortMode,
+      ),
+    })),
+    {
+      id: "diskCollection.export.sortSeparator",
+      label: context.t("retroControl.sortOrder"),
+      separator: true,
+      selectable: false,
+    },
+    sortControl,
+  ]
+}
+
+const selectedExportDiskKeys = (
+  items: readonly RetroResolvedControl[] = [],
+  values: number[] = [],
+) => new Set(items.flatMap((item, index) =>
+  values[index] === item.checkmarkIndex && item.payload
+    ? [diskItemKey(item.payload as DiskCollectionItem)]
+    : []))
+
+const exportNotificationDisks = (
+  disks: DiskCollectionItem[],
+  selectedDiskKeys: ReadonlySet<string>,
+) => disks.filter(disk => disk.vtocType === undefined || selectedDiskKeys.has(diskItemKey(disk)))
+
+export const createRetroExportScreenItems = (
+  context: RetroMenuContext,
+  disks: DiskCollectionItem[],
+  items?: readonly RetroResolvedControl[],
+  values?: number[],
+  sortMode = getDiskCollectionSortMode(TAB_INDEX.EXPORT),
+) => {
+  const selectedDiskKeys = selectedExportDiskKeys(items, values)
+  return [
+    ...cloudAuthNotificationControls(
+      TAB_INDEX.EXPORT,
+      exportNotificationDisks(disks, selectedDiskKeys),
+    ),
+    ...createRetroExportItems(context, disks, sortMode, selectedDiskKeys),
+  ]
+}
 
 const collectionItems = (
   context: RetroMenuContext,
@@ -143,60 +258,66 @@ const collectionItems = (
 }
 
 const collectionTabs = [
-    {
-      id: "diskCollection.builtIn",
-      labelKey: "retroControl.apple2tsCollection",
-      index: TAB_INDEX.BUILT_IN,
-      filter: (disk: DiskCollectionItem) => disk.type === DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
-    },
-    {
-      id: "diskCollection.newReleases",
-      labelKey: "retroControl.newReleases",
-      index: TAB_INDEX.NEW_RELEASES,
-      filter: (disk: DiskCollectionItem) => disk.type === DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
-    },
-    {
-      id: "diskCollection.favorites",
-      labelKey: "retroControl.favorites",
-      index: TAB_INDEX.FAVORITES,
-      filter: (disk: DiskCollectionItem) =>
-        disk.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE ||
-        disk.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE ||
-        disk.type === DISK_COLLECTION_ITEM_TYPE.DEMOZOO,
-    },
-    {
-      id: "diskCollection.export",
-      labelKey: "retroControl.exportDisksToHdv",
-      index: TAB_INDEX.EXPORT,
-      filter: (disk: DiskCollectionItem) => isDiskExportable(disk) && disk.vtocType !== undefined,
-    },
+  {
+    id: "diskCollection.builtIn",
+    labelKey: "retroControl.apple2tsCollection",
+    index: TAB_INDEX.BUILT_IN,
+    filter: (disk: DiskCollectionItem) => disk.type === DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
+  },
+  {
+    id: "diskCollection.newReleases",
+    labelKey: "retroControl.newReleases",
+    index: TAB_INDEX.NEW_RELEASES,
+    filter: (disk: DiskCollectionItem) => disk.type === DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+  },
+  {
+    id: "diskCollection.favorites",
+    labelKey: "retroControl.favorites",
+    index: TAB_INDEX.FAVORITES,
+    filter: (disk: DiskCollectionItem) =>
+      disk.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE ||
+      disk.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE ||
+      disk.type === DISK_COLLECTION_ITEM_TYPE.DEMOZOO,
+  },
+  {
+    id: "diskCollection.export",
+    labelKey: "retroControl.exportDisksToHdv",
+    index: TAB_INDEX.EXPORT,
+    filter: isDiskExportable,
+  },
 ] as const
 
 const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, order) => ({
-    id: tab.id,
-    parentId: "diskCollection",
-    order,
-    tourTargets: tab.index === TAB_INDEX.BUILT_IN ? ["#tour-disk-images"] : undefined,
-    label: context => context.t(tab.labelKey),
-    dynamicChildren: runtime => {
-      const disks = getCollection().filter(tab.filter)
-      return tab.index === TAB_INDEX.EXPORT
-        ? exportItems(disks)
-        : collectionItems(runtime, tab.index, disks)
-    },
-    actionLabel: runtime => runtime.t(tab.index === TAB_INDEX.EXPORT ? "collection.export" : "retroControl.load"),
-    submit: tab.index === TAB_INDEX.EXPORT
-      ? (runtime, items, values) => {
-        const selectedDisks = items
-          .filter((item, index) => values[index] === 1 && item.payload)
-          .map(item => item.payload as DiskCollectionItem)
-        void exportDisks(runtime, selectedDisks)
-      }
-      : undefined,
-    isSubmitVisible: tab.index === TAB_INDEX.EXPORT
-      ? (_runtime, _items, values) => values.some(value => value === 1)
-      : undefined,
-  }))
+  id: tab.id,
+  parentId: "diskCollection",
+  order,
+  tourTargets: tab.index === TAB_INDEX.BUILT_IN ? ["#tour-disk-images"] : undefined,
+  label: context => context.t(tab.labelKey),
+  dynamicChildren: (runtime, items, values) => {
+    const disks = getCollection().filter(tab.filter)
+    return tab.index === TAB_INDEX.EXPORT
+      ? createRetroExportScreenItems(runtime, disks, items, values)
+      : collectionItems(runtime, tab.index, disks)
+  },
+  actionLabel: runtime => runtime.t(tab.index === TAB_INDEX.EXPORT ? "collection.export" : "retroControl.load"),
+  submit: tab.index === TAB_INDEX.EXPORT
+    ? (runtime, items, values) => {
+      const selectedDisks = items
+        .filter((item, index) => values[index] === 1 && item.payload)
+        .map(item => item.payload as DiskCollectionItem)
+      void exportDisks(runtime, selectedDisks)
+    }
+    : undefined,
+  isSubmitVisible: tab.index === TAB_INDEX.EXPORT
+    ? (_runtime, items, values) => {
+      const selectedDiskKeys = selectedExportDiskKeys(items, values)
+      const disks = items.flatMap(item => item.payload ? [item.payload as DiskCollectionItem] : [])
+      return selectedDiskKeys.size > 0 && getCloudProvidersNeedingAuth(
+        exportNotificationDisks(disks, selectedDiskKeys),
+      ).length === 0
+    }
+    : undefined,
+}))
 
 const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
   {
@@ -289,30 +410,30 @@ const diskDrives = [
 ] as const
 
 const diskDriveControls = diskDrives.map(({ index, slot }, order): RetroControlMetadata => ({
-      id: `diskDrives.${index}`,
-      parentId: "diskCollection",
-      order: order + 6,
-      label: context => {
+  id: `diskDrives.${index}`,
+  parentId: "diskCollection",
+  order: order + 6,
+  label: context => {
     const drive = handleGetDriveProps(index)
     const filename = handleGetFilename(index)
-        return context.t("retroControl.drive", {
-        drive: DISK_DRIVE_LABELS[index],
-        disk: filename
-          ? `${drive.diskHasChanges ? "*" : ""}${decodeDiskTitle(filename)}`
-          : context.t("retroControl.card.empty"),
-        })
-      },
-      isVisible: () => handleGetSlotConfig()[slot] !== "none",
-      dynamicChildren: () => handleGetDriveProps(index).filename
-        ? insertedDiskItems(index)
-        : diskLoadItems(index),
-      actionLabel: context => context.t(handleGetDriveProps(index).filename
-        ? "retroControl.select"
-        : "retroControl.load"),
-      contextualActionLabel: context => handleGetDriveProps(index).filename
-        ? context.t("retroControl.options")
-        : context.t("retroControl.load"),
-    }))
+    return context.t("retroControl.drive", {
+      drive: DISK_DRIVE_LABELS[index],
+      disk: filename
+        ? `${drive.diskHasChanges ? "*" : ""}${decodeDiskTitle(filename)}`
+        : context.t("retroControl.card.empty"),
+    })
+  },
+  isVisible: () => handleGetSlotConfig()[slot] !== "none",
+  dynamicChildren: () => handleGetDriveProps(index).filename
+    ? insertedDiskItems(index)
+    : diskLoadItems(index),
+  actionLabel: context => context.t(handleGetDriveProps(index).filename
+    ? "retroControl.select"
+    : "retroControl.load"),
+  contextualActionLabel: context => handleGetDriveProps(index).filename
+    ? context.t("retroControl.options")
+    : context.t("retroControl.load"),
+}))
 
 export const retroDiskControls: RetroControlMetadata[] = [
   {
@@ -361,24 +482,24 @@ const DiskInterface = (props: DisplayProps) => {
         isOpen={() => { return isFlyoutOpen && !allSlotsDisabled }}
         onClick={() => { if (!allSlotsDisabled) setIsFlyoutOpen(!isFlyoutOpen) }}
         position="bottom-left">
-      <div className={`${isMinimalTheme() && isScreenNarrow ? "flex-column" : "flex-row"} flexwrap`}>
-        <span className="flex-row">
-          {!isMinimalTheme() && <DiskImageChooser {...props} />}
-          <DiskDrive key={0} index={0} renderCount={props.renderCount}
-            setShowFileOpenDialog={props.setShowFileOpenDialog} />
-          <DiskDrive key={1} index={1} renderCount={props.renderCount}
-            setShowFileOpenDialog={props.setShowFileOpenDialog} />
-          {(isMinimalTheme() && isScreenNarrow) && <ImageWriter />}
-        </span>
-        <span className="flex-row">
-          <DiskDrive key={2} index={2} renderCount={props.renderCount}
-            setShowFileOpenDialog={props.setShowFileOpenDialog} />
-          <DiskDrive key={3} index={3} renderCount={props.renderCount}
-            setShowFileOpenDialog={props.setShowFileOpenDialog} />
-          {(!isMinimalTheme() || !isScreenNarrow) && <ImageWriter />}
-        </span>
-      </div>
-    </Flyout>
+        <div className={`${isMinimalTheme() && isScreenNarrow ? "flex-column" : "flex-row"} flexwrap`}>
+          <span className="flex-row">
+            {!isMinimalTheme() && <DiskImageChooser {...props} />}
+            <DiskDrive key={0} index={0} renderCount={props.renderCount}
+              setShowFileOpenDialog={props.setShowFileOpenDialog} />
+            <DiskDrive key={1} index={1} renderCount={props.renderCount}
+              setShowFileOpenDialog={props.setShowFileOpenDialog} />
+            {(isMinimalTheme() && isScreenNarrow) && <ImageWriter />}
+          </span>
+          <span className="flex-row">
+            <DiskDrive key={2} index={2} renderCount={props.renderCount}
+              setShowFileOpenDialog={props.setShowFileOpenDialog} />
+            <DiskDrive key={3} index={3} renderCount={props.renderCount}
+              setShowFileOpenDialog={props.setShowFileOpenDialog} />
+            {(!isMinimalTheme() || !isScreenNarrow) && <ImageWriter />}
+          </span>
+        </div>
+      </Flyout>
     </span>
   )
 }

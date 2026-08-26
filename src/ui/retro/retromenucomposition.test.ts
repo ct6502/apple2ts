@@ -1,3 +1,15 @@
+const mockGetCloudProvidersNeedingAuth = jest.fn<string[], [readonly DiskCollectionItem[]]>()
+const mockSignInToCloudProvider = jest.fn<Promise<boolean>, []>()
+jest.mock("../devices/disk/cloudauth", () => ({
+  CLOUD_PROVIDER_NAMES: ["GoogleDrive", "OneDrive"],
+  cloudProviderDisplayName: (providerName: string) => providerName === "GoogleDrive"
+    ? "Google Drive"
+    : providerName,
+  getCloudProvidersNeedingAuth: (disks: readonly DiskCollectionItem[]) =>
+    mockGetCloudProvidersNeedingAuth(disks),
+  signInToCloudProvider: () => mockSignInToCloudProvider(),
+}))
+
 jest.mock("../devices/disk/diskdrive", () => ({
   __esModule: true,
   default: () => null,
@@ -5,8 +17,10 @@ jest.mock("../devices/disk/diskdrive", () => ({
   demoZooEnabled: false,
 }))
 const mockHandleGetDriveProps = jest.fn()
+const mockHandleGetFilename = jest.fn()
 jest.mock("../devices/disk/driveprops", () => ({
   handleGetDriveProps: (...args: unknown[]) => mockHandleGetDriveProps(...args),
+  handleGetFilename: (...args: unknown[]) => mockHandleGetFilename(...args),
 }))
 jest.mock("../devices/disk/diskimagechooser", () => ({ DiskImageChooser: () => null }))
 jest.mock("../devices/printer/imagewriter", () => ({
@@ -33,10 +47,41 @@ jest.mock("../devices/printer/imagewriter", () => ({
 }))
 
 import { retroMenuRegistry } from "./retromenucomposition"
-import { retroDiskControls } from "../devices/disk/diskinterface"
-import { createControlContext, type RetroMenuContext } from "./retromenucontext"
+import {
+  createRetroExportItems,
+  createRetroExportScreenItems,
+  retroDiskControls,
+} from "../devices/disk/diskinterface"
+import { DISK_COLLECTION_ITEM_TYPE } from "../diskdialog/diskpanel_utils"
+import {
+  createControlContext,
+  type RetroControlMetadata,
+  type RetroMenuContext,
+  type RetroResolvedControl,
+} from "./retromenucontext"
+
+const collectionDisk = (vtocType?: VtocType): DiskCollectionItem => ({
+  type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
+  title: vtocType ?? "Unknown",
+  lastUpdated: new Date(0),
+  diskUrl: "disk.po",
+  fileSize: 143360,
+  vtocType,
+})
+
+const metadataValues = (
+  items: RetroControlMetadata[],
+  context: RetroMenuContext,
+) => items.map(item => typeof item.optionIndex === "function"
+  ? item.optionIndex(context)
+  : item.optionIndex ?? -1)
 
 describe("Retro menu metadata structure", () => {
+  beforeEach(() => {
+    mockGetCloudProvidersNeedingAuth.mockReturnValue([])
+    mockSignInToCloudProvider.mockResolvedValue(true)
+  })
+
   test("uses Select for a loaded Disk Drive menu and Load for an empty drive", () => {
     const drive = retroDiskControls.find(control => control.id === "diskDrives.0")
     const actionLabel = drive?.actionLabel as (context: RetroMenuContext) => string
@@ -47,6 +92,106 @@ describe("Retro menu metadata structure", () => {
 
     mockHandleGetDriveProps.mockReturnValue({ filename: "" })
     expect(actionLabel(context)).toBe("retroControl.load")
+  })
+
+  test("refreshes an ejected disk drive label to Empty", () => {
+    const context = createControlContext(undefined, (key, params) =>
+      key === "retroControl.drive" ? params?.disk ?? "" : key, "en", () => undefined)
+    const diskCollection = retroMenuRegistry.resolve(context)
+      .find(control => control.id === "diskCollection")
+    const children = diskCollection?.children as (() => RetroResolvedControl[]) | undefined
+
+    mockHandleGetDriveProps.mockReturnValue({ diskHasChanges: false, filename: "Disk.po" })
+    mockHandleGetFilename.mockReturnValue("Disk.po")
+    expect(children?.().find(item => item.id === "diskDrives.0")?.label).toBe("Disk.po")
+
+    mockHandleGetDriveProps.mockReturnValue({ diskHasChanges: false, filename: "" })
+    mockHandleGetFilename.mockReturnValue("")
+    expect(children?.().find(item => item.id === "diskDrives.0")?.label)
+      .toBe("retroControl.card.empty")
+  })
+
+  test("does not show notifications outside the Export tab", () => {
+    mockGetCloudProvidersNeedingAuth.mockReturnValue(["GoogleDrive"])
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const tab = retroDiskControls.find(control => control.id === "diskCollection.newReleases")
+    const children = tab?.dynamicChildren?.(context) ?? []
+    expect(children.some(item => item.id.includes("notification"))).toBe(false)
+    expect(children.some(item => item.indicator !== undefined)).toBe(false)
+  })
+
+  test("hides blocked disks and disables unknown disks on the Export to HDV screen", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const items = createRetroExportItems(context, [
+      collectionDisk("prodos"),
+      collectionDisk("other"),
+      collectionDisk(),
+    ])
+    const exportable = items.find(item => (item.payload as DiskCollectionItem | undefined)?.vtocType === "prodos")
+    const blocked = items.find(item => (item.payload as DiskCollectionItem | undefined)?.vtocType === "other")
+    const unknown = items.find(item => item.payload &&
+      (item.payload as DiskCollectionItem).vtocType === undefined)
+
+    expect(exportable?.selectable).toBe(true)
+    expect(blocked).toBeUndefined()
+    expect(unknown?.selectable).toBe(false)
+    expect(unknown?.bulkSelectable).toBe(false)
+    expect(unknown?.indicator).toBe("?")
+    expect(items.at(-2)).toMatchObject({
+      id: "diskCollection.export.sortSeparator",
+      label: "retroControl.sortOrder",
+      separator: true,
+      selectable: false,
+    })
+    expect(items.at(-1)).toMatchObject({
+      id: "diskCollection.export.sort",
+      valueOnly: true,
+    })
+    expect(items.at(-1)?.refreshOptions).toBeDefined()
+  })
+
+  test("shows Export auth notifications only when relevant and hides Export while pending", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const cloudDisk = {
+      ...collectionDisk("prodos"),
+      type: DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE,
+      cloudData: { providerName: "OneDrive", itemId: "cloud-disk" } as CloudData,
+    }
+    mockGetCloudProvidersNeedingAuth.mockImplementation(disks =>
+      disks.some(disk => disk.cloudData?.providerName === "OneDrive") ? ["OneDrive"] : [])
+
+    const initialItems = createRetroExportScreenItems(context, [cloudDisk])
+    expect(initialItems.some(item => item.id.includes("notification"))).toBe(false)
+
+    const diskIndex = initialItems.findIndex(item => item.payload === cloudDisk)
+    const selectedValues = metadataValues(initialItems, context)
+    selectedValues[diskIndex] = 1
+    const selectedItems = createRetroExportScreenItems(
+      context,
+      [cloudDisk],
+      initialItems as unknown as RetroResolvedControl[],
+      selectedValues,
+    )
+    expect(selectedItems[0].id).toBe("diskCollection.3.notification.OneDrive")
+    expect(selectedItems[1]).toMatchObject({
+      id: "diskCollection.3.notificationsSeparator",
+      separator: true,
+      selectable: false,
+    })
+
+    const exportTab = retroDiskControls.find(control => control.id === "diskCollection.export")
+    expect(exportTab?.isSubmitVisible?.(
+      context,
+      selectedItems as unknown as RetroResolvedControl[],
+      metadataValues(selectedItems, context),
+    )).toBe(false)
+
+    mockGetCloudProvidersNeedingAuth.mockReturnValue([])
+    expect(exportTab?.isSubmitVisible?.(
+      context,
+      selectedItems as unknown as RetroResolvedControl[],
+      metadataValues(selectedItems, context),
+    )).toBe(true)
   })
 
   test("has unique stable IDs", () => {
