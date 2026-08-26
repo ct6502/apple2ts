@@ -266,7 +266,7 @@ export const MachineConfig = (props: DisplayProps) => {
             onClick: () => handleSelectSlotCard(3, "none"),
           },
           {
-            label: "*Videx VideoTerm 80-Col Card",
+            label: "Videx VideoTerm 80-Col Card",
             isSelected: () => slotConfig[3] === "videoterm",
             onClick: () => handleSelectSlotCard(3, "videoterm"),
           },
@@ -280,7 +280,7 @@ export const MachineConfig = (props: DisplayProps) => {
 
       // Apple IIe options
       const auxOptions = RAM_OPTIONS.map(sizeKb => ({
-        label: `${sizeKb === 64 ? "*" : ""}${getAuxCardLabel(sizeKb)}`,
+        label: `${getAuxCardLabel(sizeKb)}`,
         sizeKb,
       }))
 
