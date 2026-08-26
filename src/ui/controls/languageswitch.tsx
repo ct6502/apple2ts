@@ -8,7 +8,7 @@ import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
 import { controlOptionsToPopupItems } from "./controlpopup"
 import { retroFontSupports } from "../retro/retrotext"
-import { notifySettingsChanged } from "../localstorage"
+import { notifySettingsChanged } from "../settingschange"
 
 const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMetadata => {
   const control = choiceMetadata({
