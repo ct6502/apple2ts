@@ -590,6 +590,23 @@ test("NMI with RTI",   () => {
   runAssemblyTest(nmi_rti.split("\n"), 0x34, 0)
 })
 
+test("BRK followed by NMI stacks source-specific break flags", () => {
+  memory[ROMmemoryStart + 0x3FFE] = 0x00
+  memory[ROMmemoryStart + 0x3FFF] = 0x30
+  memory[ROMmemoryStart + 0x3FFA] = 0x00
+  memory[ROMmemoryStart + 0x3FFB] = 0x40
+  reset6502()
+  updateAddressTables()
+  memory[0x2000] = 0x00
+  setPC(0x2000)
+  s6502.flagNMI = true
+
+  processInstruction()
+
+  expect(memory[0x1FD] & B).toEqual(B)
+  expect(memory[0x1FA] & B).toEqual(0)
+})
+
 const crossPageTest = (start: number, cyclesExpect: number) => {
   reset6502()
   const pcode = parseAssembly(start,
