@@ -13,6 +13,13 @@ jest.mock("../devices/disk/apple2tsproxy", () => ({
   apple2tsProxyPath: (path: string) => path,
   hasApple2tsProxy: false,
 }))
+jest.mock("../devices/disk/demozoodialog", () => ({
+  createDemoZooCloudData: jest.fn(),
+  demoZooTypeFilters: [{ id: "all", labelKey: "demoZoo.all" }],
+  filterDemoZooItems: jest.fn(() => []),
+  loadDemoZooResult: jest.fn(),
+  loadDemoZooSnapshot: jest.fn(() => Promise.resolve([])),
+}))
 
 jest.mock("../devices/disk/diskdrive", () => ({
   __esModule: true,
