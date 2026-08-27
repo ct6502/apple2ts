@@ -240,8 +240,8 @@ export const MachineConfig = (props: DisplayProps) => {
     if (slot === 3) {
       return getSlotOptions(slot, machineName).map(option => ({
         label: option.card === "aux" && option.ramSizeKb !== undefined
-          ? `${option.ramSizeKb === 64 ? "*" : ""}${getAuxCardLabel(option.ramSizeKb)}`
-          : `${option.card === "videoterm" ? "*" : ""}${cardLabels[option.card]}`,
+          ? `${getAuxCardLabel(option.ramSizeKb)}`
+          : `${cardLabels[option.card]}`,
         isSelected: () => slotConfig[3] === option.card
           && (option.card !== "aux" || option.ramSizeKb === extraMemSize),
         onClick: () => handleSelectSlotCard(3, option.card, option.ramSizeKb),
