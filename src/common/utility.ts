@@ -107,7 +107,7 @@ export enum MSG_MAIN {
 
 export const DEFAULT_SLOT_CONFIG: SlotConfig = {
   1: "ssc",
-  2: "softcard",
+  2: "none",
   3: "aux",
   4: "mockingboard",
   5: "mouse",
