@@ -1,6 +1,7 @@
-import { MSG_WORKER, RUN_MODE } from "../common/utility"
+import { MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import {
   doOnMessage,
+  requestLoadBinary,
   requestSetRunMode,
   requestSpeedMode,
   setMain2Worker,
@@ -86,5 +87,18 @@ describe("worker operations", () => {
     } finally {
       jest.useRealTimers()
     }
+  })
+
+  test("sends binary loads as confirmed worker operations", async () => {
+    const data = new Uint8Array([0xA9, 0x42])
+    const operation = requestLoadBinary(0x6000, data)
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    expect(message).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.LOAD_BINARY,
+      payload: {address: 0x6000, data},
+    }))
+
+    sendOperationResult(message.operationId)
+    await expect(operation).resolves.toBeUndefined()
   })
 })

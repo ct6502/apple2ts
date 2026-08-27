@@ -246,6 +246,15 @@ export const passLoadBinary = (address: number, data: Uint8Array) => {
   doPostMessage(MSG_MAIN.LOAD_BINARY, binary)
 }
 
+export const requestLoadBinary = (
+  address: number,
+  data: Uint8Array,
+  timeoutMs = 5000,
+) => {
+  const binary: LoadBinary = {address, data}
+  return requestWorkerOperation(MSG_MAIN.LOAD_BINARY, binary, timeoutMs)
+}
+
 export const passExecuteBasicCommand = (command: string) => {
   doPostMessage(MSG_MAIN.EXECUTE_BASIC_COMMAND, command)
 }

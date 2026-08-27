@@ -39,8 +39,9 @@ import {
   passTimeTravelSnapshot,
   passSetShowDebugTab,
   requestSetRunMode,
+  requestLoadBinary,
 } from "../main2worker"
-import { getBinaryLoadError, loadBinary, runBinary } from "../binaryload"
+import { getBinaryLoadError, runBinary } from "../binaryload"
 import {
   setPreferenceBreakpoints,
   setPreferenceColorMode,
@@ -635,11 +636,12 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       const data = decodeBase64(dataBase64)
       const error = getBinaryLoadError(address, data, null)
       if (error) throw new Error(error)
-      loadBinary(address, data)
+      await requestLoadBinary(address, data)
       return {
         accepted: true,
         address,
         size: data.length,
+        status: collectStatus(),
       }
     }
 

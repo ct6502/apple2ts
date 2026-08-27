@@ -76,17 +76,12 @@ test("load binary changes memory without changing execution or device state", ()
   }
 })
 
-test("load binary follows auxiliary-memory mappings across page boundaries", () => {
+test("load binary writes main RAM independently of auxiliary-memory mappings", () => {
   const previousAltZp = SWITCHES.ALTZP.isSet
   const previousPage2 = SWITCHES.PAGE2.isSet
   const previousRamWrite = SWITCHES.RAMWRT.isSet
   const previousStore80 = SWITCHES.STORE80.isSet
-  const touchedAddresses = [
-    RamWorksMemoryStart + 0x01FF,
-    0x0200,
-    0x03FF,
-    RamWorksMemoryStart + 0x0400,
-  ]
+  const touchedAddresses = [0x01FF, RamWorksMemoryStart + 0x01FF, 0x0200, 0x03FF, RamWorksMemoryStart + 0x0400, 0x0400]
   const previousMemory = touchedAddresses.map((address) => memory[address])
 
   try {
@@ -94,8 +89,9 @@ test("load binary follows auxiliary-memory mappings across page boundaries", () 
     SWITCHES.RAMWRT.isSet = false
     updateAddressTables()
     doLoadBinary(0x01FF, new Uint8Array([0xA1, 0xB2]))
-    expect(memory[RamWorksMemoryStart + 0x01FF]).toEqual(0xA1)
+    expect(memory[0x01FF]).toEqual(0xA1)
     expect(memory[0x0200]).toEqual(0xB2)
+    expect(memory[RamWorksMemoryStart + 0x01FF]).toEqual(previousMemory[1])
 
     SWITCHES.ALTZP.isSet = false
     SWITCHES.STORE80.isSet = true
@@ -103,7 +99,8 @@ test("load binary follows auxiliary-memory mappings across page boundaries", () 
     updateAddressTables()
     doLoadBinary(0x03FF, new Uint8Array([0xC3, 0xD4]))
     expect(memory[0x03FF]).toEqual(0xC3)
-    expect(memory[RamWorksMemoryStart + 0x0400]).toEqual(0xD4)
+    expect(memory[0x0400]).toEqual(0xD4)
+    expect(memory[RamWorksMemoryStart + 0x0400]).toEqual(previousMemory[4])
   } finally {
     SWITCHES.ALTZP.isSet = previousAltZp
     SWITCHES.PAGE2.isSet = previousPage2
@@ -198,6 +195,44 @@ test("run changes complete after publishing their state", () => {
     passMachineState.mockRestore()
     passOperationResult.mockRestore()
     doSetRunMode(previousState.runMode)
+  }
+})
+
+test("memory blocks complete after all bytes are applied", () => {
+  setIsTesting()
+  const address = 0x6000
+  const previousMemory = memory.slice(address, address + 3)
+  const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
+  passOperationResult.mockImplementation((operationId) => {
+    expect(operationId).toEqual(11)
+    expect(memory.slice(address, address + 3)).toEqual(new Uint8Array([0xA9, 0x42, 0x60]))
+  })
+
+  try {
+    doLoadBinary(address, new Uint8Array([0xA9, 0x42, 0x60]), 11)
+    expect(passOperationResult).toHaveBeenCalledTimes(1)
+  } finally {
+    memory.set(previousMemory, address)
+    passOperationResult.mockRestore()
+  }
+})
+
+test("invalid binary loads fail before changing memory", () => {
+  setIsTesting()
+  const previousValue = memory[0xBFFF]
+  memory[0xBFFF] = 0x11
+  const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
+
+  try {
+    doLoadBinary(0xBFFF, new Uint8Array([0x22, 0x33]), 12)
+    expect(memory[0xBFFF]).toEqual(0x11)
+    expect(passOperationResult).toHaveBeenCalledWith(
+      12,
+      "Binary block must fit within main RAM at $0000-$BFFF",
+    )
+  } finally {
+    memory[0xBFFF] = previousValue
+    passOperationResult.mockRestore()
   }
 })
 
