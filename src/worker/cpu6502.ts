@@ -1,4 +1,4 @@
-import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
+import { clearInterruptEntry, doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, isInterruptDisabled, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
 import { doSetRunMode, doTakeSnapshot, runOnlyMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
@@ -366,7 +366,13 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
   }
 
   // *** EXECUTE A SINGLE INSTRUCTION ***
+  // Instructions that mutate the I flag need special handling:
+  // CLI, SEI, and PLP use the pre-instruction value for the next IRQ decision.
+  // RTI uses the value restored from the stack.
+  let interruptDisabled = isInterruptDisabled()
+  clearInterruptEntry()
   cycles = code.execute(vLo, vHi)
+  if (code.pcode === 0x40) interruptDisabled = isInterruptDisabled()
 
   if (updateTrace) {
     // Do not output during the Apple II's WAIT subroutine
@@ -399,7 +405,7 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
     setCycleCount(s6502.cycleCount + cycles)
   }
   if (s6502.flagIRQ) {
-    const intcycles = doInterruptRequest()
+    const intcycles = doInterruptRequest(interruptDisabled)
     if (intcycles > 0) {
       setCycleCount(s6502.cycleCount + intcycles)
       cycles = intcycles
