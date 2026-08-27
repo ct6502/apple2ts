@@ -8,7 +8,7 @@ import {
   generateMenuSourceProgram,
   lookupFourCadeByTitle,
 } from "./prodos_hdv"
-import { parsePrelaunchScript } from "./four_cade_prelaunch_db"
+import { parsePrelaunchScript } from "./four_cade_prelaunch"
 import { processInstruction } from "../worker/cpu6502"
 import { reset6502, s6502, setAccumulator, setCycleCount, setPC } from "../worker/instructions"
 import { memory, updateAddressTables } from "../worker/memory"
