@@ -969,7 +969,7 @@ export const handleSetDiskFromFile = async (disk: string,
       handleGetProdosFloppy(),
     )
     let needsBoot = preserveDriveIndex
-      ? driveIndex === defaultDriveIndex
+      ? (driveIndex === 0 || driveIndex === 2)
       : handleGetRunMode() === RUN_MODE.IDLE
     
     if (driveIndex < 0) {

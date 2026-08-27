@@ -27,6 +27,7 @@ import {
 import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, loadDiskIntoDrive, createHdv, diskItemKey, formatBytes } from "./diskpanel_utils"
 import { DiskItemTitle } from "./diskitemtitle"
 import { DiskPanelVtoc } from "./diskpanel_vtoc"
+import { isHardDriveImage } from "../../common/utility"
 
 const maxHdvBytes = 33554432
 
@@ -491,6 +492,55 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportQueue])
 
+  const getMenuItemsForDiskContextMenu = () => {
+    const filename = popupItem?.diskUrl || "foobar"
+    const filesize = popupItem?.fileSize || 0
+    const hardDriveMenuItems = [0, 1].map((i) => (
+      {
+        label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
+        icon: faHardDrive,
+        isSelected: () => { return false },
+        onClick: () => {
+          setDrivePopupLocation(undefined)
+          loadDiskIntoDrive(i, popupItem, props.updateDisplay)
+          dismissDiskCollection()
+        }
+      }
+      ))
+    const floppyDriveMenuItems = [2, 3].map((i) => (
+      {
+        label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
+        icon: faFloppyDisk,
+        isSelected: () => { return false },
+        onClick: () => {
+          setDrivePopupLocation(undefined)
+          loadDiskIntoDrive(i, popupItem, props.updateDisplay)
+          dismissDiskCollection()
+        }
+      }
+      ))
+    const isHD = isHardDriveImage(filename, filesize, false)
+    const isFD = !isHardDriveImage(filename, filesize, true)
+    if (isHD && isFD) {
+      return [[
+        ...hardDriveMenuItems,
+        { label: "-" },
+        ...floppyDriveMenuItems
+      ]]
+    }
+    if (isHD) {
+      return [[
+        ...hardDriveMenuItems
+      ]]
+    }
+    if (isFD) {
+      return [[
+        ...floppyDriveMenuItems
+      ]]
+    }
+    return [[]]
+  }
+
   return (
     <Flyout
       icon={faFloppyDisk}
@@ -847,33 +897,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
             popupOpenRef.current = false
             setDrivePopupLocation(undefined)
           }}
-          menuItems={[[
-            ...[0, 1].map((i) => (
-              {
-                label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
-                icon: faHardDrive,
-                isSelected: () => { return false },
-                onClick: () => {
-                  setDrivePopupLocation(undefined)
-                  loadDiskIntoDrive(i, popupItem, props.updateDisplay)
-                  dismissDiskCollection()
-                }
-              }
-            )),
-            ...[{ label: "-" }],
-            ...[2, 3].map((i) => (
-              {
-                label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
-                icon: faFloppyDisk,
-                isSelected: () => { return false },
-                onClick: () => {
-                  setDrivePopupLocation(undefined)
-                  loadDiskIntoDrive(i, popupItem, props.updateDisplay)
-                  dismissDiskCollection()
-                }
-              }
-            ))
-          ]]}
+          menuItems={getMenuItemsForDiskContextMenu()}
         />
         <PopupMenu
           key="select-popup"
