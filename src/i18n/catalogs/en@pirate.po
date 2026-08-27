@@ -1731,7 +1731,7 @@ msgid "Hot Reload Enabled"
 msgstr ""
 
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr ""
 
 msgctxt "debugControls.trace"
@@ -2631,22 +2631,6 @@ msgstr "Snapshots"
 msgctxt "retroControl.ports"
 msgid "Ports"
 msgstr "Harbors"
-
-msgctxt "retroControl.clock"
-msgid "Clock"
-msgstr "Ship's Clock"
-
-msgctxt "retroControl.hostSystemClock"
-msgid "Host system clock"
-msgstr ""
-
-msgctxt "retroControl.mouse"
-msgid "Mouse"
-msgstr "Deck Mouse"
-
-msgctxt "retroControl.ramDisk"
-msgid "RAM Disk"
-msgstr "RAM Hold"
 
 msgctxt "retroControl.language"
 msgid "Language"

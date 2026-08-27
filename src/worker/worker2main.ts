@@ -237,8 +237,12 @@ if (typeof self !== "undefined") {
         break
       }
       case MSG_MAIN.DRIVE_NEW_DATA: {
-        const props = e.data.payload as DriveProps
-        doSetEmuDriveNewData(props)
+        const payload = e.data.payload as DriveProps | { props: DriveProps, forceIndex: boolean }
+        if ("props" in payload) {
+          doSetEmuDriveNewData(payload.props, payload.forceIndex)
+        } else {
+          doSetEmuDriveNewData(payload)
+        }
         break
       }
       case MSG_MAIN.GAMEPAD:

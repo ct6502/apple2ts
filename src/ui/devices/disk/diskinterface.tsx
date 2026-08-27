@@ -1,17 +1,20 @@
 import { DiskCollectionSortMode, setPreferenceDiskCollectionSort } from "../../localstorage"
-import { handleGetSlotConfig } from "../../main2worker"
+import { handleGetProdosFloppy, handleGetSlotConfig } from "../../main2worker"
+import { getDefaultDiskDriveIndex } from "../../../common/utility"
 import {
   DISK_COLLECTION_ITEM_TYPE,
   TAB_INDEX,
   createHdv,
   diskItemKey,
   diskCollectionSortOptions,
+  formatBytes,
   getDefaultDiskCollectionSortMode,
   getDiskCollection,
   getDiskCollectionSortMode,
   getExportFilename,
   isDiskExportable,
   loadDisk,
+  loadDiskIntoDrive,
   sortDisks,
 } from "../../diskdialog/diskpanel_utils"
 import { isFileSystemApiSupported, showGlobalProgressModal } from "../../ui_utilities"
@@ -63,6 +66,36 @@ const decodeDiskTitle = (title: string) => {
 
 const getCollection = () => getDiskCollection(new DiskBookmarks(), newReleases)
 
+let selectedCollectionDriveIndex: number | undefined
+const revealedCollectionDriveTabs = new Set<TAB_INDEX>()
+
+export const getSelectedCollectionDriveIndex = () => selectedCollectionDriveIndex
+
+const setSelectedCollectionDriveIndex = (index: number | undefined) => {
+  selectedCollectionDriveIndex = index
+}
+
+export const resetSelectedCollectionDriveIndex = () => {
+  selectedCollectionDriveIndex = undefined
+}
+
+const resetCollectionDriveTab = (tabIndex: TAB_INDEX) => {
+  selectedCollectionDriveIndex = undefined
+  revealedCollectionDriveTabs.delete(tabIndex)
+}
+
+export const resetCollectionDriveSelectionSession = () => {
+  selectedCollectionDriveIndex = undefined
+  revealedCollectionDriveTabs.clear()
+}
+
+const getCollectionDriveIndex = (disk: DiskCollectionItem) => {
+  if (selectedCollectionDriveIndex !== undefined) return selectedCollectionDriveIndex
+  const filename = disk.cloudData?.fileName || disk.diskUrl
+  const fileSize = disk.cloudData?.fileSize ?? disk.fileSize
+  return getDefaultDiskDriveIndex(filename, fileSize, handleGetProdosFloppy())
+}
+
 const cloudAuthNotificationControls = (
   tabIndex: TAB_INDEX,
   disks: DiskCollectionItem[],
@@ -79,7 +112,10 @@ const cloudAuthNotificationControls = (
         refreshAfterAction: true,
         action: async context => {
           const authReady = await signInToCloudProvider(providerName)
-          if (authReady) context.displayProps.updateDisplay()
+          if (authReady) {
+            context.notifyCloudAuthChanged?.()
+            context.displayProps.updateDisplay()
+          }
         },
       }),
     ),
@@ -180,6 +216,14 @@ export const createRetroExportItems = (
   ]
 }
 
+export const getRetroVtocIndicator = (
+  disk: DiskCollectionItem,
+  activeVtocCheckKey: string | null,
+  spinner: string,
+) => disk.vtocType === undefined
+    ? (diskItemKey(disk) === activeVtocCheckKey ? spinner : "?")
+    : undefined
+
 const selectedExportDiskKeys = (
   items: readonly RetroResolvedControl[] = [],
   values: number[] = [],
@@ -187,6 +231,28 @@ const selectedExportDiskKeys = (
   values[index] === item.checkmarkIndex && item.payload
     ? [diskItemKey(item.payload as DiskCollectionItem)]
     : []))
+
+const maxHdvBytes = 33554432
+
+const selectedExportSize = (
+  items: readonly RetroResolvedControl[] = [],
+  values: number[] = [],
+) => items.reduce((total, item, index) => {
+  if (values[index] !== item.checkmarkIndex || !item.payload) return total
+  const disk = item.payload as DiskCollectionItem
+  if (disk.cloudData) return total + (disk.cloudData.fileSize > 0 ? disk.cloudData.fileSize : 143360)
+  return total + Math.max(0, disk.fileSize)
+}, 0)
+
+export const getRetroExportHdvSize = (
+  items: readonly RetroResolvedControl[] = [],
+  values: number[] = [],
+) => {
+  const selectedBytes = selectedExportSize(items, values)
+  return selectedBytes > 0
+    ? `${formatBytes(selectedBytes)} / ${formatBytes(maxHdvBytes)}`
+    : undefined
+}
 
 const exportNotificationDisks = (
   disks: DiskCollectionItem[],
@@ -238,13 +304,32 @@ const collectionItems = (
     disks,
     diskCollectionSortOptions[index].value,
   )
+  const driveOptions = DISK_DRIVE_LABELS.map(label => ({ label }))
   return [
     ...sortDisks(disks, sortMode).map((disk, index): RetroControlMetadata => ({
       id: `diskCollection.${tabIndex}.disk.${index}`,
+      kind: "action",
       label: decodeDiskTitle(disk.title),
+      options: driveOptions,
+      optionIndex: () => getCollectionDriveIndex(disk),
+      hideOptionValue: true,
+      revealOptionOnFirstHorizontalInput: true,
+      contextualSubmenuTitleValue: () => !revealedCollectionDriveTabs.has(tabIndex)
+        ? undefined
+        : DISK_DRIVE_LABELS[getCollectionDriveIndex(disk)],
+      refreshOptions: (runtime, driveIndex) => {
+        setSelectedCollectionDriveIndex(driveIndex)
+        revealedCollectionDriveTabs.add(tabIndex)
+        return collectionItems(runtime, tabIndex, disks, sortMode)
+      },
       keepMenuOpen: true,
       action: runtime => {
-        loadDisk(-1, disk, runtime.displayProps.updateDisplay, undefined, runtime.close)
+        loadDiskIntoDrive(
+          getCollectionDriveIndex(disk),
+          disk,
+          runtime.displayProps.updateDisplay,
+          runtime.close,
+        )
       },
     })),
     {
@@ -293,8 +378,14 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
   order,
   tourTargets: tab.index === TAB_INDEX.BUILT_IN ? ["#tour-disk-images"] : undefined,
   label: context => context.t(tab.labelKey),
+  submenuTitleValue: tab.index === TAB_INDEX.EXPORT
+    ? (_runtime, items, values) => getRetroExportHdvSize(items, values)
+    : undefined,
   dynamicChildren: (runtime, items, values) => {
-    const disks = getCollection().filter(tab.filter)
+    const disks = (runtime.diskCollection ?? getCollection()).filter(tab.filter)
+    if (tab.index !== TAB_INDEX.EXPORT && items === undefined && values === undefined) {
+      resetCollectionDriveTab(tab.index)
+    }
     return tab.index === TAB_INDEX.EXPORT
       ? createRetroExportScreenItems(runtime, disks, items, values)
       : collectionItems(runtime, tab.index, disks)

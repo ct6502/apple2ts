@@ -4,6 +4,13 @@ import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME, UI_THEMES } from "../common/
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetProdosFloppy, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
 import { getTheme, getUIState, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
+import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
+
+export {
+  notifySettingsChanged,
+  SETTINGS_CHANGED_EVENT,
+  type SettingsChangedDetail,
+} from "./settingschange"
 
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["arrowKeysAsJoystick",
   "capitalizeBasic", "crtDistortion",
@@ -13,6 +20,18 @@ const booleanUIKeys: BooleanKeyOf<UIState>[] = ["arrowKeysAsJoystick",
   "tiltSensorJoystick", "useOpenAppleKey"]
 
 export const PREFERENCES_RESET_EVENT = "apple2ts-preferences-reset"
+
+const booleanControlIds: Partial<Record<BooleanKeyOf<UIState>, string>> = {
+  arrowKeysAsJoystick: "keyboard.joystick.arrowKeys",
+  crtDistortion: "display.crtDistortion",
+  ghosting: "display.ghosting",
+  hotReload: "options.hotReload",
+  lowercaseMode: "keyboard.lowercase",
+  reverseYAxis: "keyboard.joystick.reverseYAxis",
+  showScanlines: "display.scanlines",
+  siriusJoyport: "keyboard.joystick.siriusJoyport",
+  useOpenAppleKey: "keyboard.openApple",
+}
 
 export enum RETRO_SKIN {
   APPLE_IIE,
@@ -79,13 +98,19 @@ export const setPreferenceRetroSkin = (skin: RETRO_SKIN = RETRO_SKIN.APPLE_IIE) 
 
 type BooleanKeys = typeof booleanUIKeys[number]
 
-export const setPreferenceBoolean = (key: BooleanKeys, value: boolean) => {
+export const setPreferenceBoolean = (
+  key: BooleanKeys,
+  value: boolean,
+  origin: SettingsChangeOrigin = "external",
+) => {
   if (value) {
     localStorage.setItem(key, JSON.stringify(value))
   } else {
     localStorage.removeItem(key)
   }
   setUIStateBoolean(key as BooleanKeyOf<UIState>, value)
+  const controlId = booleanControlIds[key]
+  if (controlId) notifySettingsChanged([controlId], origin)
 }
 
 export const getPreferenceBoolean = (key: BooleanKeys): boolean => {
@@ -112,13 +137,17 @@ export const getPreferenceBasicProgram = (): string | null => {
   return localStorage.getItem("basicProgram")
 }
 
-export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
+export const setPreferenceColorMode = (
+  mode: COLOR_MODE = COLOR_MODE.COLOR,
+  origin: SettingsChangeOrigin = "external",
+) => {
   if (mode === COLOR_MODE.COLOR) {
     localStorage.removeItem("colorMode")
   } else {
     localStorage.setItem("colorMode", JSON.stringify(mode))
   }
   setColorMode(mode)
+  notifySettingsChanged(["display.color"], origin)
 }
 
 export const setPreferenceTheme = (theme: UI_THEME = UI_THEME.CLASSIC) => {
@@ -142,7 +171,10 @@ export const setPreferenceBreakpoints = (breakpoints: BreakpointMap) => {
   passBreakpoints(breakpoints)
 }
 
-export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
+export const setPreferenceMachineName = (
+  name: MACHINE_NAME = "APPLE2EE",
+  origin: SettingsChangeOrigin = "external",
+) => {
   if (name === "APPLE2EE") {
     localStorage.removeItem("machineName")
   } else {
@@ -159,26 +191,35 @@ export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
   }
   if (slotConfig[3] !== newSlot3) {
     slotConfig[3] = newSlot3
-    setPreferenceSlotConfig(slotConfig)
+    setPreferenceSlotConfig(slotConfig, origin)
   }
+  notifySettingsChanged(["slots.3"], origin)
 }
 
-export const setPreferenceMockingboardMode = (mode = 0) => {
+export const setPreferenceMockingboardMode = (
+  mode = 0,
+  origin: SettingsChangeOrigin = "external",
+) => {
   if (mode === 0) {
     localStorage.removeItem("mockingboardMode")
   } else {
     localStorage.setItem("mockingboardMode", JSON.stringify(mode))
   }
   changeMockingboardMode(mode)
+  notifySettingsChanged(["sound.mockingboard"], origin)
 }
 
-export const setPreferenceRamWorks = (size = 64) => {
+export const setPreferenceRamWorks = (
+  size = 64,
+  origin: SettingsChangeOrigin = "external",
+) => {
   if (size === 64) {
     localStorage.removeItem("ramWorks")
   } else {
     localStorage.setItem("ramWorks", JSON.stringify(size))
   }
   passSetRamWorks(size)
+  notifySettingsChanged(["slots.3"], origin)
 }
 
 const isVeraSlot = (slot: number): slot is VERA_SLOT => {
@@ -224,18 +265,26 @@ export const getPreferenceSlotConfig = (): SlotConfig => {
   return { ...DEFAULT_SLOT_CONFIG }
 }
 
-export const setPreferenceSlotConfig = (config: SlotConfig) => {
+export const setPreferenceSlotConfig = (
+  config: SlotConfig,
+  origin: SettingsChangeOrigin = "external",
+) => {
   localStorage.setItem("slotConfig", JSON.stringify(config))
   passSetSlotConfig(config)
+  notifySettingsChanged([1, 2, 3, 4, 5, 6, 7].map(slot => `slots.${slot}`), origin)
 }
 
-export const setPreferenceSpeedMode = (mode = 0) => {
+export const setPreferenceSpeedMode = (
+  mode = 0,
+  origin: SettingsChangeOrigin = "external",
+) => {
   if (mode === 0) {
     localStorage.removeItem("speedMode")
   } else {
     localStorage.setItem("speedMode", JSON.stringify(mode))
   }
   passSpeedMode(mode)
+  notifySettingsChanged(["options.speed"], origin)
 }
 
 export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
@@ -516,7 +565,7 @@ export const loadPreferences = () => {
   }
 }
 
-export const resetPreferences = () => {
+export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   booleanUIKeys.forEach(key => {
     localStorage.removeItem(key)
     setUIStateBoolean(key, false)
@@ -527,16 +576,16 @@ export const resetPreferences = () => {
   passSiriusJoyport(false)
   passSetShowDebugTab(false)
   
-  setPreferenceSpeedMode()
-  setPreferenceColorMode()
+  setPreferenceSpeedMode(0, origin)
+  setPreferenceColorMode(COLOR_MODE.COLOR, origin)
   setPreferenceTheme()
   setPreferenceRetroSkin()
   setPreferenceRetroIIGSColor("text")
   setPreferenceRetroIIGSColor("background")
   setPreferenceRetroIIGSColor("border")
-  setPreferenceMockingboardMode()
-  setPreferenceMachineName()
-  setPreferenceRamWorks()
+  setPreferenceMockingboardMode(0, origin)
+  setPreferenceMachineName("APPLE2EE", origin)
+  setPreferenceRamWorks(64, origin)
   setPreferenceTouchJoystickMode()
   setPreferenceTouchJoystickSensitivity()
   setPreferenceNewReleasesChecked()

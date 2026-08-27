@@ -39,8 +39,16 @@ export type ControlMetadata<Context, Payload = unknown> = {
     optionIndexes: readonly number[]
   }
   valueOnly?: boolean
+  hideOptionValue?: boolean
+  revealOptionOnFirstHorizontalInput?: boolean
   actionLabel?: ControlValue<Context, string | undefined>
   contextualActionLabel?: ControlValue<Context, string | undefined>
+  contextualSubmenuTitleValue?: ControlValue<Context, string | undefined>
+  submenuTitleValue?: (
+    context: Context,
+    items: readonly ResolvedControl<Payload>[],
+    values: number[],
+  ) => string | undefined
   refreshOptions?: (
     context: Context,
     index: number,
@@ -89,8 +97,12 @@ export type ResolvedControl<Payload = unknown> = {
     optionIndexes: readonly number[]
   }
   valueOnly?: boolean
+  hideOptionValue?: boolean
+  revealOptionOnFirstHorizontalInput?: boolean
   actionLabel?: string
   contextualActionLabel?: string
+  contextualSubmenuTitleValue?: string
+  submenuTitleValue?: (items: readonly ResolvedControl<Payload>[], values: number[]) => string | undefined
   refreshOptions?: (
     index: number,
     items?: readonly ResolvedControl<Payload>[],
@@ -216,10 +228,18 @@ export class ControlRegistry<Context, Payload = unknown> {
         : valueOf(metadata.bulkSelectable, context),
       selectableWhen: metadata.selectableWhen,
       valueOnly: metadata.valueOnly,
+      hideOptionValue: metadata.hideOptionValue,
+      revealOptionOnFirstHorizontalInput: metadata.revealOptionOnFirstHorizontalInput,
       actionLabel: metadata.actionLabel === undefined ? undefined : valueOf(metadata.actionLabel, context),
       contextualActionLabel: metadata.contextualActionLabel === undefined
         ? undefined
         : valueOf(metadata.contextualActionLabel, context),
+      contextualSubmenuTitleValue: metadata.contextualSubmenuTitleValue === undefined
+        ? undefined
+        : valueOf(metadata.contextualSubmenuTitleValue, context),
+      submenuTitleValue: metadata.submenuTitleValue
+        ? (items, values) => metadata.submenuTitleValue!(context, items, values)
+        : undefined,
       refreshOptions: metadata.refreshParentOnOption && parentId !== undefined
         ? index => this.resolve(context, parentId).map(item => item.id === metadata.id
           ? { ...item, optionIndex: index }
