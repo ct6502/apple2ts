@@ -22,6 +22,7 @@ import { choiceMetadata, toggleMetadata } from "../../retro/retromenuhelpers"
 import type { RetroControlMetadata, RetroMenuContext, RetroResolvedControl } from "../../retro/retromenucontext"
 import { DiskBookmarks } from "./diskbookmarks"
 import { newReleases } from "./newreleases"
+import { createRetroDemoZooControl } from "./demozoo_retro"
 import { createRetroInternetArchiveControl } from "./internetarchive_retro"
 import {
   DISK_DRIVE_LABELS,
@@ -423,12 +424,7 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
     },
   },
   createRetroInternetArchiveControl(driveIndex),
-  ...(demoZooEnabled ? [{
-    id: `diskDrives.${driveIndex}.load.demoZoo`,
-    label: (context: RetroMenuContext) => context.t("disk.loadDiskFromDemoZoo"),
-    keepMenuOpen: true,
-    action: (context: RetroMenuContext) => context.openDiskDialog({ driveIndex, type: "demoZoo" }),
-  }] : []),
+  ...(demoZooEnabled ? [createRetroDemoZooControl(driveIndex)] : []),
   ...(!navigator.userAgent.includes("Electron") ? [
     {
       id: `diskDrives.${driveIndex}.load.oneDrive`,
