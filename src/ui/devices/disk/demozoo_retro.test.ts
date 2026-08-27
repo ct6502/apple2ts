@@ -55,14 +55,16 @@ describe("retro DemoZoo screen", () => {
     expect(items.map(item => item.label)).toEqual(["Type", "Title", "Results", "Wizard Demo"])
 
     let favorite = false
+    const setFavorite = jest.fn(() => { favorite = true })
+    const removeFavorite = jest.fn(() => { favorite = false })
     context.diskBookmarks = {
       contains: jest.fn(() => favorite),
-      set: jest.fn(() => { favorite = true }),
-      remove: jest.fn(() => { favorite = false }),
+      set: setFavorite,
+      remove: removeFavorite,
     } as never
     items = children(items as never[])
     items = items.at(-1)?.onHorizontalInput?.(1) ?? []
-    expect(context.diskBookmarks.set).toHaveBeenCalledWith(expect.objectContaining({
+    expect(setFavorite).toHaveBeenCalledWith(expect.objectContaining({
       id: "demozoo_51",
       title: "Wizard Demo",
       type: 2,
