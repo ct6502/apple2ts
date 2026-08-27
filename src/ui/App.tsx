@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import "./App.css"
 import DisplayApple2 from "./display"
 import { GlobalContext } from "./globalcontext"
@@ -15,12 +16,24 @@ const App = () => {
   const [tourSourceTheme, setTourSourceTheme] = useState(getTheme)
   const [returnToTourHelp, setReturnToTourHelp] = useState(false)
   const [memdumpAddress, setMemdumpAddress] = useState(-1)
+  const [fullscreenElement, setFullscreenElement] = useState<Element | null>(document.fullscreenElement)
+
+  useEffect(() => {
+    const handleFullscreenChange = () => setFullscreenElement(document.fullscreenElement)
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
+  }, [])
 
   window.setTimeout(() => {
     if (isMinimalTheme()) {
       import("./App.minimal.css")
     }
   }, 1)
+
+  const progressModal = <div className="global-progress-modal-overlay">
+    <img src={window.assetRegistry.runningGuy} alt="Loading..." className="global-progress-spinner2" />
+    <div className="global-progress-message" />
+  </div>
 
   return (
     <GlobalContext.Provider
@@ -46,10 +59,7 @@ const App = () => {
       }}>
       <DisplayApple2 />
       <RunTour showSelector={false} />
-      <div className="global-progress-modal-overlay">
-        <img src={window.assetRegistry.runningGuy} alt="Loading..." className="global-progress-spinner2" />
-        <div className="global-progress-message" />
-      </div>
+      {fullscreenElement ? createPortal(progressModal, fullscreenElement) : progressModal}
     </GlobalContext.Provider>
   )
 }

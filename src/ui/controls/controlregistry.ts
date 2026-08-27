@@ -23,6 +23,7 @@ export type ControlMetadata<Context, Payload = unknown> = {
   keepMenuOpen?: boolean
   refreshAfterAction?: boolean
   children?: ControlValue<Context, readonly ControlMetadata<Context, Payload>[]>
+  submenuTitle?: ControlValue<Context, string>
   dynamicChildren?: (
     context: Context,
     items?: readonly ResolvedControl<Payload>[],
@@ -41,6 +42,10 @@ export type ControlMetadata<Context, Payload = unknown> = {
   valueOnly?: boolean
   hideOptionValue?: boolean
   revealOptionOnFirstHorizontalInput?: boolean
+  textInput?: boolean
+  textValue?: ControlValue<Context, string>
+  onTextInput?: (context: Context, value: string) => readonly ControlMetadata<Context, Payload>[]
+  loadMoreOnNavigatePastEnd?: (context: Context) => Promise<readonly ControlMetadata<Context, Payload>[]>
   actionLabel?: ControlValue<Context, string | undefined>
   contextualActionLabel?: ControlValue<Context, string | undefined>
   contextualSubmenuTitleValue?: ControlValue<Context, string | undefined>
@@ -87,6 +92,7 @@ export type ResolvedControl<Payload = unknown> = {
     items?: readonly ResolvedControl<Payload>[],
     values?: number[],
   ) => ResolvedControl<Payload>[])
+  submenuTitle?: string
   options?: ResolvedControlOption[]
   optionIndex?: number
   defaultIndex?: number
@@ -99,6 +105,10 @@ export type ResolvedControl<Payload = unknown> = {
   valueOnly?: boolean
   hideOptionValue?: boolean
   revealOptionOnFirstHorizontalInput?: boolean
+  textInput?: boolean
+  textValue?: string
+  onTextInput?: (value: string) => ResolvedControl<Payload>[]
+  loadMoreOnNavigatePastEnd?: () => Promise<ResolvedControl<Payload>[]>
   actionLabel?: string
   contextualActionLabel?: string
   contextualSubmenuTitleValue?: string
@@ -219,6 +229,7 @@ export class ControlRegistry<Context, Payload = unknown> {
       keepMenuOpen: metadata.keepMenuOpen,
       refreshAfterAction: metadata.refreshAfterAction,
       children,
+      submenuTitle: metadata.submenuTitle === undefined ? undefined : valueOf(metadata.submenuTitle, context),
       options: resolvedOptions,
       optionIndex: metadata.optionIndex === undefined ? undefined : valueOf(metadata.optionIndex, context),
       defaultIndex: metadata.defaultIndex === undefined ? undefined : valueOf(metadata.defaultIndex, context),
@@ -230,6 +241,16 @@ export class ControlRegistry<Context, Payload = unknown> {
       valueOnly: metadata.valueOnly,
       hideOptionValue: metadata.hideOptionValue,
       revealOptionOnFirstHorizontalInput: metadata.revealOptionOnFirstHorizontalInput,
+      textInput: metadata.textInput,
+      textValue: metadata.textValue === undefined ? undefined : valueOf(metadata.textValue, context),
+      onTextInput: metadata.onTextInput
+        ? value => metadata.onTextInput!(context, value)
+          .map(item => this.resolveControl(item, context))
+        : undefined,
+      loadMoreOnNavigatePastEnd: metadata.loadMoreOnNavigatePastEnd
+        ? async () => (await metadata.loadMoreOnNavigatePastEnd!(context))
+          .map(item => this.resolveControl(item, context))
+        : undefined,
       actionLabel: metadata.actionLabel === undefined ? undefined : valueOf(metadata.actionLabel, context),
       contextualActionLabel: metadata.contextualActionLabel === undefined
         ? undefined

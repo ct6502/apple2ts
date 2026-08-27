@@ -22,6 +22,7 @@ import { choiceMetadata, toggleMetadata } from "../../retro/retromenuhelpers"
 import type { RetroControlMetadata, RetroMenuContext, RetroResolvedControl } from "../../retro/retromenucontext"
 import { DiskBookmarks } from "./diskbookmarks"
 import { newReleases } from "./newreleases"
+import { createRetroInternetArchiveControl } from "./internetarchive_retro"
 import {
   DISK_DRIVE_LABELS,
   demoZooEnabled,
@@ -419,12 +420,7 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
       context.displayProps.setShowFileOpenDialog(true, driveIndex)
     },
   },
-  {
-    id: `diskDrives.${driveIndex}.load.internetArchive`,
-    label: context => context.t("disk.loadDiskFromInternetArchive"),
-    keepMenuOpen: true,
-    action: context => context.openDiskDialog({ driveIndex, type: "internetArchive" }),
-  },
+  createRetroInternetArchiveControl(driveIndex),
   ...(demoZooEnabled ? [{
     id: `diskDrives.${driveIndex}.load.demoZoo`,
     label: (context: RetroMenuContext) => context.t("disk.loadDiskFromDemoZoo"),

@@ -56,6 +56,7 @@ const mouseTextLeft = String.fromCodePoint(0x2190)
 const mouseTextRight = String.fromCodePoint(0x2192)
 const mouseTextUp = String.fromCodePoint(0x2191)
 const mouseTextReturn = String.fromCodePoint(0x21B5)
+const mouseTextSolidCursor = String.fromCodePoint(0x2589)
 const checkmark = String.fromCodePoint(0x2713)
 const fixedWidthSpace = String.fromCodePoint(0x2007)
 const horizontalBorderGlyphs = ` ${"_".repeat(78)} `
@@ -445,9 +446,25 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           ? { ...frame, items, values: refreshedValues }
           : frame))
         if (refreshedSelectedIndex >= 0) setSelectedIndex(refreshedSelectedIndex)
-      } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      } else if (event.key === "ArrowUp" || event.key === "ArrowDown" ||
+        event.key === "PageUp" || event.key === "PageDown") {
         event.preventDefault()
         event.stopPropagation()
+        const selectedItem = currentMenu[selectedIndex]
+        const isLastSelectable = (event.key === "ArrowDown" || event.key === "PageDown") && !currentMenu
+          .slice(selectedIndex + 1)
+          .some(item => isMenuItemSelectable(item, currentFrame))
+        if (currentFrame && isLastSelectable && selectedItem?.loadMoreOnNavigatePastEnd) {
+          void selectedItem.loadMoreOnNavigatePastEnd().then(items => {
+            const nextIndex = items.findIndex((item, index) =>
+              index > selectedIndex && isMenuItemSelectable(item))
+            setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
+              ? { ...frame, items, values: items.map(item => item.optionIndex ?? -1) }
+              : frame))
+            if (nextIndex >= 0) setSelectedIndex(nextIndex)
+          })
+          return
+        }
         if (currentFrame?.menuId.startsWith("diskCollection.") && currentFrame.refresh) {
           resetSelectedCollectionDriveIndex()
           const items = currentFrame.refresh(currentFrame.items, currentFrame.values)
@@ -465,8 +482,19 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             )
             : frame))
         }
-        const direction = event.key === "ArrowUp" ? -1 : 1
+        const direction = event.key === "ArrowUp" || event.key === "PageUp" ? -1 : 1
         setSelectedIndex(index => {
+          if (event.key === "PageUp" || event.key === "PageDown") {
+            const selectableIndexes = currentMenu
+              .map((item, itemIndex) => isMenuItemSelectable(item, currentFrame) ? itemIndex : -1)
+              .filter(itemIndex => itemIndex >= 0)
+            const selectablePosition = selectableIndexes.indexOf(index)
+            const nextPosition = Math.max(0, Math.min(
+              selectableIndexes.length - 1,
+              selectablePosition + direction * maxVisibleMenuItems,
+            ))
+            return selectableIndexes[nextPosition] ?? index
+          }
           let nextIndex = index
           for (let offset = 0; offset < currentMenu.length; offset += 1) {
             nextIndex = (nextIndex + direction + currentMenu.length) % currentMenu.length
@@ -516,7 +544,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             ...stack,
             createMenuFrame(
               item.id,
-              item.label,
+              item.submenuTitle ?? item.label,
               children,
               item.submenuTitleValue,
               refresh,
@@ -546,11 +574,15 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         } else {
           const actionResult = item.action?.()
           if (currentFrame && item.refreshAfterAction && actionResult instanceof Promise) {
+            const selectedId = item.id
             void actionResult.then(() => {
               setMenuStack(stack => stack.map((frame, index) => {
                 if (index !== stack.length - 1 || !frame.refresh) return frame
                 const items = frame.refresh(frame.items, frame.values)
-                setSelectedIndex(Math.max(0, items.findIndex(child => isMenuItemSelectable(child))))
+                const refreshedSelectedIndex = items.findIndex(child => child.id === selectedId)
+                setSelectedIndex(refreshedSelectedIndex >= 0
+                  ? refreshedSelectedIndex
+                  : Math.max(0, items.findIndex(child => isMenuItemSelectable(child))))
                 return createMenuFrame(
                   frame.menuId,
                   frame.title,
@@ -580,6 +612,22 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           const quitIndex = currentMenu.findIndex(item => item.id === "quit")
           if (quitIndex >= 0) setSelectedIndex(quitIndex)
         }
+      } else if (currentFrame && selectedItem?.textInput && !event.ctrlKey && !event.altKey && !event.metaKey &&
+        (event.key === "Backspace" || event.key.length === 1)) {
+        event.preventDefault()
+        event.stopPropagation()
+        const nextValue = event.key === "Backspace"
+          ? (selectedItem.textValue ?? "").slice(0, -1)
+          : `${selectedItem.textValue ?? ""}${event.key}`
+        const items = selectedItem.onTextInput?.(nextValue)
+        if (items) {
+          const selectedId = selectedItem.id
+          setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
+            ? { ...frame, items, values: items.map(item => item.optionIndex ?? -1) }
+            : frame))
+          const nextIndex = items.findIndex(item => item.id === selectedId)
+          if (nextIndex >= 0) setSelectedIndex(nextIndex)
+        }
       } else if (!event.ctrlKey && !event.altKey && !event.metaKey && /^[a-z]$/i.test(event.key)) {
         const shortcut = event.key.toLocaleLowerCase()
         const nextIndex = Array.from(
@@ -605,6 +653,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     menuStack,
     runTour,
     saveActionLabel,
+    selectedItem,
     selectedIndex,
   ])
 
@@ -688,12 +737,14 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               const option = item.options?.[valueIndex]
               const baseLabel = item.valueOnly && option ? option.label : item.label
               const itemLabel = formatControlLabel(baseLabel, item.separator)
-              const hasOptionValue = option && !item.valueOnly && !item.hideOptionValue &&
+              const textValue = item.textInput ? item.textValue ?? "" : undefined
+              const hasOptionValue = (option && !item.valueOnly && !item.hideOptionValue &&
                 item.checkmarkIndex === undefined
+              ) || item.textInput
               const availableWidth = currentFrame ? submenuTextWidth : rootMenuContentWidth
               const fittedText = fitControlText(
                 itemLabel,
-                hasOptionValue ? option.label : undefined,
+                hasOptionValue ? textValue ?? option?.label : undefined,
                 availableWidth,
                 language,
               )
@@ -725,11 +776,16 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   </span>}
                   <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
                     {visibleLabel}
-                    {visibleOption ? ":" : ""}
+                    {visibleOption || item.textInput ? ":" : ""}
                   </span>
-                  {visibleOption &&
-                    <>{" "}<span className={`retro-menu-value${option?.useBrowserFont || !retroFontSupports(visibleOption) ? " retro-browser-font" : ""}`}>
+                  {(visibleOption || item.textInput) &&
+                    <>{" "}<span className={`retro-menu-value${option?.useBrowserFont || !retroFontSupports(visibleOption ?? "") ? " retro-browser-font" : ""}`}>
                       {visibleOption}
+                      {item.textInput && selectedIndex === index && (isAppleIIPlus
+                        ? <span className="retro-text-cursor retro-mousetext" aria-hidden="true">
+                          {mouseTextSolidCursor}
+                        </span>
+                        : <span className="retro-text-cursor retro-checker-cursor" aria-hidden="true" />)}
                     </span></>}
                 </div>
               )
