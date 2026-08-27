@@ -1843,7 +1843,7 @@ msgstr "ホットリロード有効"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "ホットリロード無効"
 
 #, fuzzy
@@ -2761,22 +2761,6 @@ msgstr "スナップショット"
 msgctxt "retroControl.ports"
 msgid "Ports"
 msgstr "ポート"
-
-msgctxt "retroControl.clock"
-msgid "Clock"
-msgstr "時計"
-
-msgctxt "retroControl.hostSystemClock"
-msgid "Host system clock"
-msgstr ""
-
-msgctxt "retroControl.mouse"
-msgid "Mouse"
-msgstr "マウス"
-
-msgctxt "retroControl.ramDisk"
-msgid "RAM Disk"
-msgstr "RAMディスク"
 
 msgctxt "retroControl.language"
 msgid "Language"

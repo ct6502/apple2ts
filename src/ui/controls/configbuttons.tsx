@@ -7,7 +7,7 @@ import {
   faPalette,
 } from "@fortawesome/free-solid-svg-icons"
 import { MachineConfig } from "../devices/machineconfig"
-import { resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
+import { notifySettingsChanged, resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
@@ -74,7 +74,7 @@ export const retroConfigControls: RetroControlMetadata[] = [
     label: context => context.t("retroControl.lowercaseInput"),
     enabled: getLowercaseMode,
     setEnabled: (context, enabled) => {
-      setPreferenceBoolean("lowercaseMode", enabled)
+      setPreferenceBoolean("lowercaseMode", enabled, context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
   }),
@@ -85,7 +85,7 @@ export const retroConfigControls: RetroControlMetadata[] = [
     label: context => context.t("retroControl.openAppleKey"),
     enabled: () => getUIStateBoolean("useOpenAppleKey"),
     setEnabled: (context, enabled) => {
-      setPreferenceBoolean("useOpenAppleKey", enabled)
+      setPreferenceBoolean("useOpenAppleKey", enabled, context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
   }),
@@ -96,7 +96,7 @@ export const retroConfigControls: RetroControlMetadata[] = [
     tourTargets: ["#tour-clearcookies"],
     label: context => context.t("config.resetSettings"),
     action: context => {
-      resetPreferences()
+      resetPreferences(context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
   },
@@ -155,6 +155,7 @@ const ConfigButtons = (props: DisplayProps) => {
             void retrySpeakerAudio()
           } else {
             audioEnable(audioStatus === "muted")
+            notifySettingsChanged(["sound.enabled"], "external")
           }
         }}>
         <ControlAvailabilityIcon unavailable={audioUnavailable}>

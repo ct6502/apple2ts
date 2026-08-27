@@ -40,7 +40,7 @@ export const retroSpeedControl: RetroControlMetadata = choiceMetadata({
   labels: context => SPEED_LABEL_KEYS.map(key => context.t(key)),
   currentIndex: () => SPEED_MODES.indexOf(handleGetSpeedMode() as typeof SPEED_MODES[number]),
   select: (context, index) => {
-    setPreferenceSpeedMode(SPEED_MODES[index])
+    setPreferenceSpeedMode(SPEED_MODES[index], context.settingsOrigin)
     context.displayProps.updateDisplay()
   },
   defaultIndex: SPEED_MODES.indexOf(0),

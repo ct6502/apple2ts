@@ -24,7 +24,7 @@ import {
   cloudProviderHasAuthToken,
   signInToCloudProvider,
 } from "../devices/disk/cloudauth"
-import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, createHdv, diskItemKey } from "./diskpanel_utils"
+import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, loadDiskIntoDrive, createHdv, diskItemKey, formatBytes } from "./diskpanel_utils"
 import { DiskItemTitle } from "./diskitemtitle"
 import { DiskPanelVtoc } from "./diskpanel_vtoc"
 
@@ -361,10 +361,6 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       showGlobalProgressModal(true, `Fetching disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
       loadDisk(-1, exportQueue[0], props.updateDisplay, processExportQueue)
     }
-  }
-
-  const formatBytes = (bytes: number) => {
-    return bytes < 1024 * 1024 ? `${parseFloat((bytes / 1024).toFixed(0))} KB` : `${parseFloat((bytes / (1024 * 1024)).toFixed(2))} MB`
   }
 
   const estimateHdvSize = () => {
@@ -859,7 +855,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 isSelected: () => { return false },
                 onClick: () => {
                   setDrivePopupLocation(undefined)
-                  loadDisk(i, popupItem, props.updateDisplay)
+                  loadDiskIntoDrive(i, popupItem, props.updateDisplay)
                   dismissDiskCollection()
                 }
               }
@@ -872,7 +868,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 isSelected: () => { return false },
                 onClick: () => {
                   setDrivePopupLocation(undefined)
-                  loadDisk(i, popupItem, props.updateDisplay)
+                  loadDiskIntoDrive(i, popupItem, props.updateDisplay)
                   dismissDiskCollection()
                 }
               }

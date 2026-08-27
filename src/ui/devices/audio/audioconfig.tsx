@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { getMockingboardMode, MockingboardNames } from "./mockingboard_audio"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { setPreferenceMockingboardMode } from "../../localstorage"
+import { notifySettingsChanged, setPreferenceMockingboardMode } from "../../localstorage"
 import {
   faMusic,
 } from "@fortawesome/free-solid-svg-icons"
@@ -34,6 +34,7 @@ export const retroAudioControls: RetroControlMetadata[] = [
     defaultIndex: 1,
     select: (context, index) => {
       audioEnable(index === 1)
+      notifySettingsChanged(["sound.enabled"], context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
   }),
@@ -44,7 +45,7 @@ export const retroAudioControls: RetroControlMetadata[] = [
     label: context => context.t("audio.mockingboard"),
     labels: () => MockingboardNames,
     currentIndex: getMockingboardMode,
-    select: (_context, index) => setPreferenceMockingboardMode(index),
+    select: (context, index) => setPreferenceMockingboardMode(index, context.settingsOrigin),
     defaultIndex: 0,
   }),
   choiceMetadata({
@@ -54,7 +55,11 @@ export const retroAudioControls: RetroControlMetadata[] = [
     label: context => context.t("audio.midi"),
     labels: () => getMidiDeviceOptions().map(option => option.label),
     currentIndex: () => Math.max(0, getMidiDeviceOptions().findIndex(isMidiDeviceSelected)),
-    select: (_context, index) => { void handleMidiDeviceSelect(getMidiDeviceOptions()[index]) },
+    select: (context, index) => {
+      void handleMidiDeviceSelect(getMidiDeviceOptions()[index]).then(() => {
+        notifySettingsChanged(["sound.midi"], context.settingsOrigin)
+      })
+    },
   }),
 ]
 

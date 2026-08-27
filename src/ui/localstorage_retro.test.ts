@@ -10,6 +10,9 @@ import { UI_THEME } from "../common/utility"
 import {
   getPreferenceRetroIIGSColor,
   RETRO_IIGS_COLOR_DEFAULTS,
+  SETTINGS_CHANGED_EVENT,
+  type SettingsChangedDetail,
+  setPreferenceBoolean,
   setPreferenceRetroIIGSColor,
   setPreferenceTheme,
 } from "./localstorage"
@@ -59,5 +62,29 @@ describe("theme preferences", () => {
     setPreferenceTheme(UI_THEME.CLASSIC)
 
     expect(setUIStateBoolean).not.toHaveBeenCalled()
+  })
+})
+
+describe("settings change events", () => {
+  test("identifies the visible control changed by the standard UI", () => {
+    const listener = jest.fn<void, [Event]>()
+    window.addEventListener(SETTINGS_CHANGED_EVENT, listener)
+
+    setPreferenceBoolean("hotReload", true)
+
+    expect(listener).toHaveBeenCalledTimes(1)
+    expect((listener.mock.calls[0][0] as CustomEvent<SettingsChangedDetail>).detail)
+      .toEqual({ controlIds: ["options.hotReload"] })
+    window.removeEventListener(SETTINGS_CHANGED_EVENT, listener)
+  })
+
+  test("does not report Retro-origin writes as external changes", () => {
+    const listener = jest.fn<void, [Event]>()
+    window.addEventListener(SETTINGS_CHANGED_EVENT, listener)
+
+    setPreferenceBoolean("hotReload", true, "retro")
+
+    expect(listener).not.toHaveBeenCalled()
+    window.removeEventListener(SETTINGS_CHANGED_EVENT, listener)
   })
 })

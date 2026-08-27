@@ -4,6 +4,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 
 import { useTranslation } from "../../i18n/useTranslation"
+import { notifySettingsChanged, type SettingsChangeOrigin } from "../settingschange"
 
 type KeyboardLock = {
   lock: (keys: string[]) => Promise<void>
@@ -50,7 +51,10 @@ export const isCanvasFullscreen = () => {
   return document.fullscreenElement === canvas?.parentElement
 }
 
-export const setCanvasFullscreen = async (enabled: boolean) => {
+export const setCanvasFullscreen = async (
+  enabled: boolean,
+  origin: SettingsChangeOrigin = "external",
+) => {
   const canvas = document.getElementById("apple2canvas") as HTMLCanvasElement | null
   if (!canvas || enabled === isCanvasFullscreen()) return
 
@@ -73,6 +77,7 @@ export const setCanvasFullscreen = async (enabled: boolean) => {
       // Ignore browsers that reject an exit while fullscreen is already ending.
     }
   }
+  notifySettingsChanged(["machine.fullscreen"], origin)
 }
 
 const FullScreenButton = () => {

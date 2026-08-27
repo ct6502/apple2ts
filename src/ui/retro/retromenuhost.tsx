@@ -17,6 +17,9 @@ import type { DiskLoadDialog, RetroMenuContext } from "./retromenucontext"
 import { useGlobalContext } from "../globalcontext"
 import { RETRO_IIGS_COLORS } from "./retroskincolors"
 import ImageWriter from "../devices/printer/imagewriter"
+import { getDiskCollection } from "../diskdialog/diskpanel_utils"
+import { DiskBookmarks } from "../devices/disk/diskbookmarks"
+import { newReleases } from "../devices/disk/newreleases"
 
 const colorModeClasses = ["color", "color", "green", "amber", "white", "inverse"]
 const retroSkinClasses = ["apple-iie", "apple-iigs", "apple-iiplus"]
@@ -33,6 +36,10 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     tourIndex,
   } = useGlobalContext()
   const [diskLoadDialog, setDiskLoadDialog] = useState<DiskLoadDialog | null>(null)
+  const [diskBookmarks] = useState(() => new DiskBookmarks())
+  const [diskCollection, setDiskCollection] = useState(() => getDiskCollection(diskBookmarks, newReleases))
+  const [authRefresh, setAuthRefresh] = useState(0)
+  const [activeVtocCheckKey, setActiveVtocCheckKey] = useState<string | null>(null)
   const [retroSkin, setRetroSkin] = useState(getPreferenceRetroSkin)
   const [retroIIGSColors, setRetroIIGSColors] = useState(() => ({
     text: getPreferenceRetroIIGSColor("text"),
@@ -91,6 +98,7 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     setRetroIIGSColors(colors => ({ ...colors, [preference]: color }))
   }
   const context: RetroMenuContext = {
+    settingsOrigin: "retro",
     displayProps,
     close,
     openDiskDialog,
@@ -101,6 +109,8 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     changeRetroIIGSColor,
     retroSkin,
     retroIIGSColors,
+    diskCollection,
+    notifyCloudAuthChanged: () => setAuthRefresh(refresh => refresh + 1),
     startTour: tour => {
       setReturnToTourHelp(false)
       setTourSourceTheme(getTheme())
@@ -110,6 +120,7 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     },
   }
   const rootMenu = retroMenuRegistry.resolve(context)
+  const resolveMenu = (parentId: string) => retroMenuRegistry.resolve(context, parentId)
   const effects = [
     `retro-color-${colorModeClasses[getColorMode()]}`,
     `retro-skin-${retroSkinClasses[retroSkin]}`,
@@ -139,16 +150,23 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     />
   </>
   return {
+    activeVtocCheckKey,
+    authRefresh,
     dialogs,
+    diskBookmarks,
+    diskCollection,
     effects,
     hasOpenDialog: diskLoadDialog !== null,
     iigsStyle,
     language,
     retroSkin,
     retroIIGSColors,
+    resolveMenu,
     returnToTourHelp,
     rootMenu,
     runTour,
+    setActiveVtocCheckKey,
+    setDiskCollection,
     setReturnToTourHelp,
     t,
     tourIndex,

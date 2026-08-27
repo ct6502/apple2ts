@@ -31,11 +31,10 @@ export const retroSerialControls: RetroControlMetadata[] = [
   {
     id: "ports",
     parentId: null,
-    order: 8,
-    label: context => context.t("retroControl.ports"),
+    order: 7,
+    label: context => context.t("print.printer"),
   },
   serialPortControl("printerPort", 0, "retroControl.printerPort"),
-  serialPortControl("modemPort", 1, "retroControl.modemPort"),
 ]
 
 const serialControlRegistry = new ControlRegistry(retroSerialControls)

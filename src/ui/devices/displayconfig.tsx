@@ -8,7 +8,7 @@ import {
 import { setPreferenceBoolean, setPreferenceColorMode } from "../localstorage"
 import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions"
 import PopupMenu from "../controls/popupmenu"
-import { getColorMode, getCrtDistortion, getGhosting, getInfoPanel, getShowScanlines } from "../ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, getShowScanlines } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
 import { choiceMetadata, toggleMetadata } from "../retro/retromenuhelpers"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
@@ -46,7 +46,7 @@ export const retroDisplayControls: RetroControlMetadata[] = [
     labels: context => colorLabels(context.t),
     currentIndex: getColorMode,
     select: (context, index) => {
-      setPreferenceColorMode(COLOR_MODES[index])
+      setPreferenceColorMode(COLOR_MODES[index], context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
     preview: (context, index) => {
@@ -66,7 +66,7 @@ export const retroDisplayControls: RetroControlMetadata[] = [
     label: context => context.t(labelKey),
     enabled: getter,
     setEnabled: (context, enabled) => {
-      setPreferenceBoolean(preference, enabled)
+      setPreferenceBoolean(preference, enabled, context.settingsOrigin)
       if (preference === "showScanlines") {
         document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
       }
@@ -80,30 +80,6 @@ export const retroDisplayControls: RetroControlMetadata[] = [
       context.displayProps.updateDisplay()
     },
   })),
-  {
-    id: "display.other",
-    parentId: "display",
-    order: 4.5,
-    label: context => context.t("retroControl.other"),
-    separator: true,
-    selectable: false,
-  },
-  toggleMetadata({
-    id: "display.infoPanel",
-    parentId: "display",
-    order: 100,
-    tourTargets: ["#tour-debug-button"],
-    label: context => context.t("controls.infoPanel"),
-    enabled: getInfoPanel,
-    setEnabled: (context, enabled) => {
-      setUIStateBoolean("infoPanel", enabled)
-      context.displayProps.updateDisplay()
-    },
-    preview: (context, enabled) => {
-      setUIStateBoolean("infoPanel", enabled)
-      context.displayProps.updateDisplay()
-    },
-  }),
 ]
 
 const displayControlRegistry = new ControlRegistry(retroDisplayControls)

@@ -1880,7 +1880,7 @@ msgstr "Recarga Rápida Habilitada"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "Recarga Rápida Desabilitada"
 
 #, fuzzy
@@ -2801,22 +2801,6 @@ msgstr "Instantâneos"
 msgctxt "retroControl.ports"
 msgid "Ports"
 msgstr "Portas"
-
-msgctxt "retroControl.clock"
-msgid "Clock"
-msgstr "Relógio"
-
-msgctxt "retroControl.hostSystemClock"
-msgid "Host system clock"
-msgstr ""
-
-msgctxt "retroControl.mouse"
-msgid "Mouse"
-msgstr "Mouse"
-
-msgctxt "retroControl.ramDisk"
-msgid "RAM Disk"
-msgstr "Disco RAM"
 
 msgctxt "retroControl.language"
 msgid "Language"

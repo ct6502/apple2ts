@@ -1850,7 +1850,7 @@ msgstr "핫 리로드 활성화됨"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "핫 리로드 비활성화됨"
 
 #, fuzzy
@@ -2770,22 +2770,6 @@ msgstr "스냅샷"
 msgctxt "retroControl.ports"
 msgid "Ports"
 msgstr "포트"
-
-msgctxt "retroControl.clock"
-msgid "Clock"
-msgstr "시계"
-
-msgctxt "retroControl.hostSystemClock"
-msgid "Host system clock"
-msgstr ""
-
-msgctxt "retroControl.mouse"
-msgid "Mouse"
-msgstr "마우스"
-
-msgctxt "retroControl.ramDisk"
-msgid "RAM Disk"
-msgstr "RAM 디스크"
 
 msgctxt "retroControl.language"
 msgid "Language"

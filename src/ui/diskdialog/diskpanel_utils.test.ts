@@ -1,13 +1,16 @@
 const mockHandleSetDiskFromFile = jest.fn()
+const mockPassSetRunMode = jest.fn()
 
 jest.mock("../devices/disk/driveprops", () => ({
   handleSetDiskFromCloudData: jest.fn(),
   handleSetDiskFromFile: (...args: unknown[]) => mockHandleSetDiskFromFile(...args),
   handleSetDiskFromURL: jest.fn(),
 }))
-jest.mock("../main2worker", () => ({ passSetRunMode: jest.fn() }))
+jest.mock("../main2worker", () => ({
+  passSetRunMode: (...args: unknown[]) => mockPassSetRunMode(...args),
+}))
 
-import { DISK_COLLECTION_ITEM_TYPE, loadDisk } from "./diskpanel_utils"
+import { DISK_COLLECTION_ITEM_TYPE, loadDisk, loadDiskIntoDrive } from "./diskpanel_utils"
 
 describe("loadDisk", () => {
   const disk = {
@@ -16,7 +19,10 @@ describe("loadDisk", () => {
     type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
   } as DiskCollectionItem
 
-  beforeEach(() => mockHandleSetDiskFromFile.mockClear())
+  beforeEach(() => {
+    mockHandleSetDiskFromFile.mockClear()
+    mockPassSetRunMode.mockClear()
+  })
 
   test("installs a collection disk before reporting load success", () => {
     const updateDisplay = jest.fn()
@@ -45,5 +51,22 @@ describe("loadDisk", () => {
       callback,
       undefined,
     )
+  })
+
+  test("preserves a context-menu drive selection", () => {
+    const updateDisplay = jest.fn()
+    const onLoadSuccess = jest.fn()
+
+    loadDiskIntoDrive(3, disk, updateDisplay, onLoadSuccess)
+
+    expect(mockHandleSetDiskFromFile).toHaveBeenCalledWith(
+      "Example.po",
+      updateDisplay,
+      3,
+      undefined,
+      onLoadSuccess,
+      true,
+    )
+    expect(mockPassSetRunMode).not.toHaveBeenCalled()
   })
 })
