@@ -327,12 +327,10 @@
 }
 
 .retro-checker-cursor {
-  background-image: conic-gradient(
-    currentColor 25%,
-    transparent 0 50%,
-    currentColor 0 75%,
-    transparent 0
-  );
+  background-image: conic-gradient(currentColor 25%,
+      transparent 0 50%,
+      currentColor 0 75%,
+      transparent 0);
   background-size: 0.25em 0.25em;
   display: inline-block;
   height: 1em;
@@ -341,7 +339,9 @@
 }
 
 @keyframes retro-cursor-blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 .retro-panel.retro-skin-apple-iiplus .retro-submenu-title.retro-text-submenu-title {
