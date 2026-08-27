@@ -1,4 +1,4 @@
-import { ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, classifyImageKind, stripTwoImgHeader, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_TEXT, PRODOS_FILE_TYPE_DOS_MASTER, MenuDiskEntry, buildProDosHdv, VTOC_REFRESH, determineVtocType } from "../../common/prodos_hdv"
+import { ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, classifyImageKind, stripTwoImgHeader, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_TEXT, PRODOS_FILE_TYPE_DOS_MASTER, MenuDiskEntry, buildProDosHdv, VTOC_REFRESH, determineVtocType, FourCadeExportFailure } from "../../common/prodos_hdv"
 import { RUN_MODE } from "../../common/utility"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { diskImages } from "../devices/disk/diskimages"
@@ -343,6 +343,23 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
 
   showGlobalProgressModal(true, "Creating HDV image")
   try {
+    const omittedFourCadeTitles: FourCadeExportFailure[] = []
+    let skipUnavailableTitles = false
+    const handleFourCadeExportFailure = (failure: FourCadeExportFailure): boolean => {
+      omittedFourCadeTitles.push(failure)
+      if (skipUnavailableTitles) return true
+
+      showGlobalProgressModal(false)
+      skipUnavailableTitles = window.confirm(
+        `"${failure.title}" could not be included.\n\n` +
+        "OK to continue creating the HDV, skipping unavailable titles?",
+      )
+      if (skipUnavailableTitles) {
+        showGlobalProgressModal(true, "Creating HDV image")
+      }
+      return skipUnavailableTitles
+    }
+
     const wozExtractedByIndex = new Map<number, ImportedDiskFile[]>()
     // WOZ DOS disks decoded to a flat DOS 3.3 (.dsk) sector image, keyed by disk index.
     // DOS.MASTER runtime volumes must be plain DOS-order sector images, but classifyImageKind
@@ -453,8 +470,23 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       wozExtractedProDosFiles: wozExtractedByIndex.get(index),
     }))
 
-    const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries)
+    const hdvData = await buildProDosHdv(
+      fileEntries,
+      "APPLE2TS",
+      undefined,
+      menuEntries,
+      undefined,
+      handleFourCadeExportFailure,
+    )
     downloadExportHdv(hdvData, "APPLE2TS.HDV")
+    if (omittedFourCadeTitles.length > 0) {
+      showGlobalProgressModal(false)
+      alert(
+        "HDV created without:\n\n" + omittedFourCadeTitles
+          .map(({ title, reason }) => `"${title}": ${reason}`)
+          .join("\n"),
+      )
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     alert(`Failed to build ProDOS HDV: ${message}`)

@@ -28,6 +28,15 @@ export type MenuDiskEntry = {
   wozExtractedProDosFiles?: ImportedDiskFile[]
 }
 
+export type FourCadeExportFailure = {
+  title: string
+  reason: string
+}
+
+export type FourCadeExportFailureHandler = (
+  failure: FourCadeExportFailure,
+) => boolean | Promise<boolean>
+
 export type ImportedDiskFile = {
   name: string
   relativePath?: string
@@ -2315,10 +2324,22 @@ const applyGenericPrefixRewrite = (type: number, data: Uint8Array): Uint8Array =
   return rewriteImportedProgramPath(type, data, "", "")
 }
 
-const preprocessInputFilesForMenu = async (
+class FourCadeExportCanceledError extends Error {}
+
+const fourCadeExportFailure = (title: string | undefined, reason: string): FourCadeExportFailure => ({
+  title: title || "Untitled disk",
+  reason,
+})
+
+const formatFourCadeExportFailure = ({ title, reason }: FourCadeExportFailure): string =>
+  `Could not export "${title}": ${reason}`
+
+/** @internal Exported for focused 4cade export tests. */
+export const preprocessInputFilesForMenu = async (
   files: BuildInputFile[],
   menuEntries?: MenuDiskEntry[],
   reservedNames?: Set<string>,
+  onFourCadeExportFailure?: FourCadeExportFailureHandler,
 ) => {
   const outputFiles: BuildInputFile[] = []
   const directoryPlans: DirectoryImportPlan[] = []
@@ -2354,6 +2375,7 @@ const preprocessInputFilesForMenu = async (
       // Title-based matching against the 4cade game database
       const displayName = menuEntries?.[i]?.displayName
       const fourCadeEntry = displayName ? lookupFourCadeByTitle(displayName) : undefined
+      let failure: FourCadeExportFailure | undefined
 
       if (fourCadeEntry) {
         try {
@@ -2366,7 +2388,7 @@ const preprocessInputFilesForMenu = async (
           // Extract ALL BIN files from the .po disk
           const allFiles = extractAllBinFiles(poData)
           const packed = allFiles.length > 0 ? allFiles[0] : undefined
-          if (packed) {
+          if (packed && packed.data.length > 0) {
             // Parse the prelaunch script to get the operation sequence
             const parsed = parsePrelaunchScript(prelaunchSource)
             if (parsed) {
@@ -2403,20 +2425,28 @@ const preprocessInputFilesForMenu = async (
               menuProDosCommands[i] = undefined
               continue
             } else {
-              console.warn(`[4cade] "${displayName}": prelaunch script parsed but returned no sequence`)
+              failure = fourCadeExportFailure(displayName, "the 4cade prelaunch script is unsupported or invalid")
             }
           } else {
-            console.warn(`[4cade] "${displayName}": no BIN files found in .po disk`)
+            failure = fourCadeExportFailure(displayName, "the downloaded 4cade disk contains no usable binary")
           }
-        } catch (e) {
-          console.warn(`[4cade] "${displayName}": fetch/parse failed:`, e instanceof Error ? e.message : e)
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : String(error)
+          failure = fourCadeExportFailure(displayName, `4cade preparation failed: ${detail}`)
         }
       } else {
-        console.warn(`[4cade] "${displayName}": no match in 4cade database`)
+        failure = fourCadeExportFailure(displayName, "the title is not in the 4cade catalog")
       }
 
-      // No 4cade DB match or fetch failed — skip this disk for direct-load export.
-      // (Only disks with a known 4cade prelaunch can be block-loaded.)
+      if (failure) {
+        console.warn(`[4cade] ${formatFourCadeExportFailure(failure)}`)
+        const shouldContinue = await onFourCadeExportFailure?.(failure) ?? true
+        if (!shouldContinue) {
+          throw new FourCadeExportCanceledError(formatFourCadeExportFailure(failure))
+        }
+      }
+
+      // A failed title is omitted from direct-load export.
       menuProDosPrefixes[i] = undefined
       menuProDosCommands[i] = undefined
       continue
@@ -5362,6 +5392,7 @@ export const buildProDosHdv = async (
   prodos243Base?: Uint8Array,
   menuEntries?: MenuDiskEntry[],
   dosMasterSlot: number = DOSMASTER_SLOT,
+  onFourCadeExportFailure?: FourCadeExportFailureHandler,
 ): Promise<Uint8Array> => {
   let hdv = prodos243Base
   if (!hdv) {
@@ -5423,7 +5454,7 @@ export const buildProDosHdv = async (
   rootScan.existingNames.add(SCREENSHOT_SUBDIR)
   // Reserve helper-program subdirectory name to avoid root-path exhaustion.
   rootScan.existingNames.add(HELPER_SUBDIR)
-  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, fourCadeEntries } = await preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
+  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, fourCadeEntries } = await preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames, onFourCadeExportFailure)
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
@@ -6407,4 +6438,3 @@ export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
 // categories). Cached VTOC results older than this version are re-evaluated so
 // disks previously classified as non-exportable can be reclassified.
 export const VTOC_REFRESH = 11
-
