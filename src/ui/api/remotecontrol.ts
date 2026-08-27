@@ -31,7 +31,6 @@ import {
   passSetBinaryBlock,
   passSetState6502,
   passSetMemory,
-  passSetRunMode,
   passSetSoftSwitches,
   passStepInto,
   passStepOut,
@@ -39,6 +38,7 @@ import {
   passTimeTravelIndex,
   passTimeTravelSnapshot,
   passSetShowDebugTab,
+  requestSetRunMode,
 } from "../main2worker"
 import { getBinaryLoadError, loadBinary, runBinary } from "../binaryload"
 import {
@@ -46,7 +46,7 @@ import {
   setPreferenceColorMode,
   setPreferenceMachineName,
   setPreferenceRamWorks,
-  setPreferenceSpeedMode,
+  requestPreferenceSpeedMode,
 } from "../localstorage"
 import { RestoreSaveState } from "../savestate"
 import { getUIState } from "../ui_settings"
@@ -399,13 +399,17 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
     case "getMemory":
       return collectMemory()
 
-    case "setRunMode":
-      passSetRunMode(Number(payload.runMode))
+    case "setRunMode": {
+      const runMode = Number(payload.runMode) as RUN_MODE
+      await requestSetRunMode(runMode)
       return collectStatus()
+    }
 
-    case "setSpeedMode":
-      setPreferenceSpeedMode(Number(payload.speedMode))
+    case "setSpeedMode": {
+      const speedMode = Number(payload.speedMode)
+      await requestPreferenceSpeedMode(speedMode)
       return collectStatus()
+    }
 
     case "setColorMode":
       setPreferenceColorMode(Number(payload.colorMode))

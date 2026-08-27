@@ -23,6 +23,42 @@ let saveStateCallback: (sState: EmulatorSaveState) => void
 let bootCallback: (() => void) | null = null
 let serialConfigCallback: ((config: SerialConfig) => void) | null = null
 let captureBootStateResolve: ((result: CaptureBootResult | null) => void) | null = null
+let nextWorkerOperationId = 0
+const pendingWorkerOperations = new Map<number, {
+  resolve: () => void,
+  reject: (error: Error) => void,
+  timeout: ReturnType<typeof setTimeout>,
+}>()
+
+const requestWorkerOperation = (
+  msg: MSG_MAIN,
+  payload: MessagePayload,
+  timeoutMs = 5000,
+): Promise<void> => new Promise((resolve, reject) => {
+  const operationId = ++nextWorkerOperationId
+  const operation = {
+    resolve,
+    reject,
+    timeout: setTimeout(() => {
+      pendingWorkerOperations.delete(operationId)
+      reject(new Error("Timed out waiting for worker operation"))
+    }, timeoutMs),
+  }
+  pendingWorkerOperations.set(operationId, operation)
+  doPostMessage(msg, payload, operationId)
+})
+
+const resolveWorkerOperation = ({ operationId, error }: WorkerOperationResult) => {
+  const operation = pendingWorkerOperations.get(operationId)
+  if (!operation) return
+  clearTimeout(operation.timeout)
+  pendingWorkerOperations.delete(operationId)
+  if (error) {
+    operation.reject(new Error(error))
+  } else {
+    operation.resolve()
+  }
+}
 
 export const setMain2Worker = (workerIn: Worker) => {
   worker = workerIn
@@ -36,8 +72,9 @@ export const setSerialConfigCallback = (callback: (config: SerialConfig) => void
   serialConfigCallback = callback
 }
 
-const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
-  if (worker) worker.postMessage({msg, payload})
+const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload, operationId?: number) => {
+  if (!worker) return
+  worker.postMessage(operationId === undefined ? {msg, payload} : {msg, payload, operationId})
 }
 
 export const passSetRunMode = (runMode: RUN_MODE) => {
@@ -46,6 +83,14 @@ export const passSetRunMode = (runMode: RUN_MODE) => {
   }
   doPostMessage(MSG_MAIN.RUN_MODE, runMode)
   machineState.runMode = runMode
+}
+
+export const requestSetRunMode = (runMode: RUN_MODE, timeoutMs = 5000) => {
+  if (runMode === RUN_MODE.NEED_BOOT && bootCallback) {
+    bootCallback()
+  }
+  machineState.runMode = runMode
+  return requestWorkerOperation(MSG_MAIN.RUN_MODE, runMode, timeoutMs)
 }
 
 export const passSetCyclesToRun = (cycles: number) => {
@@ -98,6 +143,11 @@ export const passSpeedMode = (mode: number) => {
   doPostMessage(MSG_MAIN.SPEED, mode)
   // Force the state right away, so the UI can update.
   machineState.speedMode = mode
+}
+
+export const requestSpeedMode = (mode: number, timeoutMs = 5000) => {
+  machineState.speedMode = mode
+  return requestWorkerOperation(MSG_MAIN.SPEED, mode, timeoutMs)
 }
 
 export const passGoForwardInTime = () => {
@@ -358,6 +408,9 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       const helpText = getHelpText()
       return {speed: machineState.cpuSpeed, helptext: helpText}
     }
+    case MSG_WORKER.OPERATION_RESULT:
+      resolveWorkerOperation(e.data.payload as WorkerOperationResult)
+      break
     case MSG_WORKER.SAVE_STATE: {
       const sState = e.data.payload as EmulatorSaveState
       if (saveStateCallback) saveStateCallback(sState)

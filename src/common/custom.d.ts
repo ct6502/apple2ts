@@ -23,6 +23,11 @@ declare module "*.hdv" {
 
 type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
 
+type WorkerOperationResult = {
+  operationId: number,
+  error?: string,
+}
+
 type KeyboardState = {
   key: number,
   isDown: boolean,

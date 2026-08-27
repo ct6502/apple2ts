@@ -49,6 +49,7 @@ export enum MSG_WORKER {
   VERA_FRAME,
   VERA_PCM_WRITE,
   VERA_PSG_WRITE,
+  OPERATION_RESULT,
 }
 
 export enum MSG_MAIN {

@@ -2,7 +2,7 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME, UI_THEMES } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetProdosFloppy, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
+import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetProdosFloppy, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
 import { getTheme, getUIState, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 
@@ -274,17 +274,26 @@ export const setPreferenceSlotConfig = (
   notifySettingsChanged([1, 2, 3, 4, 5, 6, 7].map(slot => `slots.${slot}`), origin)
 }
 
-export const setPreferenceSpeedMode = (
-  mode = 0,
-  origin: SettingsChangeOrigin = "external",
-) => {
+const savePreferenceSpeedMode = (mode: number) => {
   if (mode === 0) {
     localStorage.removeItem("speedMode")
   } else {
     localStorage.setItem("speedMode", JSON.stringify(mode))
   }
+}
+
+export const setPreferenceSpeedMode = (
+  mode = 0,
+  origin: SettingsChangeOrigin = "external",
+) => {
+  savePreferenceSpeedMode(mode)
   passSpeedMode(mode)
   notifySettingsChanged(["options.speed"], origin)
+}
+
+export const requestPreferenceSpeedMode = async (mode: number) => {
+  await requestSpeedMode(mode)
+  savePreferenceSpeedMode(mode)
 }
 
 export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {

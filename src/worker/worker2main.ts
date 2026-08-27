@@ -136,6 +136,10 @@ export const passCaptureBootStateResponse = (result: CaptureBootResult | null) =
   doPostMessage(MSG_WORKER.CAPTURE_BOOT_STATE_RESPONSE, result)
 }
 
+export const passWorkerOperationResult = (operationId: number, error?: string) => {
+  doPostMessage(MSG_WORKER.OPERATION_RESULT, { operationId, error })
+}
+
 // We do this weird check so we can safely run this code from the node.js
 // command line where self will be undefined.
 if (typeof self !== "undefined") {
@@ -147,7 +151,7 @@ if (typeof self !== "undefined") {
     if (!("msg" in e.data)) return
     switch (e.data.msg as MSG_MAIN) {
       case MSG_MAIN.RUN_MODE:
-        doSetRunMode(e.data.payload as RUN_MODE)
+        doSetRunMode(e.data.payload as RUN_MODE, true, e.data.operationId)
         break
       case MSG_MAIN.CYCLES_TO_RUN:
         doSetCyclesToRun(e.data.payload as number)
@@ -180,7 +184,7 @@ if (typeof self !== "undefined") {
         doSetBasicStep()
         break
       case MSG_MAIN.SPEED:
-        doSetSpeedMode(e.data.payload as number)
+        doSetSpeedMode(e.data.payload as number, e.data.operationId)
         break
       case MSG_MAIN.TIME_TRAVEL_STEP:
         if (e.data.payload === "FORWARD") {
