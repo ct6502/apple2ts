@@ -110,11 +110,11 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Pitch Dark",
-    diskUrl: "https://ct6502.org/wp-content/uploads/2026/01/PitchDark.hdv_.zip",
+    diskUrl: "https://github.com/anomixer/pitch-dark/releases/download/R6/Pitch_Dark.hdv.zip",
     helpFile: "PitchDark.txt",
     // diskUrl: "https://archive.org/download/PitchDark/00playable.hdv",
     imageUrl: "disks/Pitch%20Dark.png",
-    detailsUrl: "https://archive.org/details/PitchDark",
+    detailsUrl: "https://github.com/anomixer/pitch-dark/releases",
     type: undefined,
     lastUpdated: new Date(0),
     fileSize: 33553920
