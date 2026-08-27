@@ -178,6 +178,12 @@ Apple2TS uses its built-in software synthesizer by default. Selecting **Enable E
 1. Confirm that the disk label briefly turns red with an asterisk. After a second or less, the label turns white again, with no asterisk.
 1. Refresh browser, click on hard drive 1, choose _Load Disk from Device (Read/Write)_, choose your `Test.po`. After disk boots, verify that your `TEST` file is at the bottom of the file list.
 
+#### Updating the 4cade export catalog
+
+1. Check out [4cade v6.0.1](https://github.com/a2-4am/4cade/releases/tag/v6.0.1).
+1. Run `npm run update-4cade-db -- --source /path/to/4cade` from the Apple2TS repository root.
+1. Review the generated catalog diff, then export and boot representative 4cade disks.
+
 ### Cloud Testing
 
 11. Click on hard drive 1, choose either _Save Disk to OneDrive_ or _Google Drive_ (whichever is easier to test). Choose a folder on your cloud drive, verify that blue spinner spins and then stops.
