@@ -11,8 +11,7 @@ import { doSetRunMode, doSetSpeedMode,
   doSetAppMode,
   setTracing,
   doExecuteBasicCommand,
-  doSetCyclesToRun,
-  startCaptureBootState} from "./motherboard"
+  doSetCyclesToRun} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps, doSetProdosFloppy } from "./devices/drivestate"
 import { apple2KeyRelease, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
@@ -130,10 +129,6 @@ export const pass6502Instructions = (instructions: Array<PCodeInstr1>) => {
 
 export const passSerialConfig = (config: SerialConfig) => {
   doPostMessage(MSG_WORKER.SERIAL_CONFIG_CHANGE, config)
-}
-
-export const passCaptureBootStateResponse = (result: CaptureBootResult | null) => {
-  doPostMessage(MSG_WORKER.CAPTURE_BOOT_STATE_RESPONSE, result)
 }
 
 export const passWorkerOperationResult = (operationId: number, error?: string) => {
@@ -316,13 +311,6 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.TRACE_SETTINGS:
         setTraceSettings(e.data.payload)
         break
-      case MSG_MAIN.CAPTURE_BOOT_STATE: {
-        const req = e.data.payload as CaptureBootStateRequest
-        startCaptureBootState(req, (result) => {
-          passCaptureBootStateResponse(result)
-        })
-        break
-      }
       case MSG_MAIN.PRODOS_FLOPPY:
         doSetProdosFloppy(e.data.payload as boolean)
         break
