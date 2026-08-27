@@ -4,6 +4,9 @@ import { pass6502Instructions } from "./worker2main"
 // var startTime = performance.now()
 
 export const s6502: STATE6502 = default6502State()
+let interruptEntryStarted = false
+
+export const clearInterruptEntry = () => { interruptEntryStarted = false }
 
 export const setAccumulator = (value: number) => {
   s6502.Accum = value
@@ -36,6 +39,7 @@ export const reset6502 = () => {
   setPC(memGet(0xFFFD, false) * 256 + memGet(0xFFFC, false))
   s6502.flagIRQ = 0
   s6502.flagNMI = false
+  clearInterruptEntry()
 }
 
 export const incrementPC = (value: number) => {
@@ -145,7 +149,7 @@ const isZero = () => { return ((s6502.PStatus & 0x02) !== 0) }
 const setZero = (set = true) => s6502.PStatus = set ? s6502.PStatus | 2 :
   s6502.PStatus & 0b11111101
 
-const isInterruptDisabled = () => { return ((s6502.PStatus & 0x04) !== 0) }
+export const isInterruptDisabled = () => { return ((s6502.PStatus & 0x04) !== 0) }
 export const setInterruptDisabled = (set = true) => s6502.PStatus = set ? s6502.PStatus | 4 :
   s6502.PStatus & 0b11111011
 
@@ -345,6 +349,7 @@ PCODE("BIT", ADDR_MODE.ABS_X, 0x3C, 3,
   doBit(memGet(addr)); return 4 + pageBoundary(addr, address(vLo, vHi))}, is65C02)
 
 const doInterrupt = (name: string, addr: number, pcOffset = 0) => {
+  interruptEntryStarted = true
   // I don't think the real Apple IIe switches back to main ROM $C300
   // Comment these out and see if we run into problems
   // memSet(0xC006, 0)  // slot ROM $C100-$CFFF
@@ -369,8 +374,8 @@ const doBrk = () => {
 }
 PCODE("BRK", ADDR_MODE.IMPLIED, 0x00, 1, doBrk)
 
-export const doInterruptRequest = (): number => {
-  if (isInterruptDisabled()) return 0
+export const doInterruptRequest = (interruptDisabled: boolean): number => {
+  if (interruptDisabled || interruptEntryStarted) return 0
   setBreak(false)
   doInterrupt("IRQ", 0xFFFE)
   return 7

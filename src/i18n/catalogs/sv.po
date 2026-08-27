@@ -1884,7 +1884,7 @@ msgstr "Hot Reload Aktiverad"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "Hot Reload Inaktiverad"
 
 msgctxt "debugControls.trace"
@@ -2806,22 +2806,6 @@ msgstr "Ögonblicksbilder"
 msgctxt "retroControl.ports"
 msgid "Ports"
 msgstr "Portar"
-
-msgctxt "retroControl.clock"
-msgid "Clock"
-msgstr "Klocka"
-
-msgctxt "retroControl.hostSystemClock"
-msgid "Host system clock"
-msgstr ""
-
-msgctxt "retroControl.mouse"
-msgid "Mouse"
-msgstr "Mus"
-
-msgctxt "retroControl.ramDisk"
-msgid "RAM Disk"
-msgstr "RAM-disk"
 
 msgctxt "retroControl.language"
 msgid "Language"

@@ -1896,7 +1896,7 @@ msgstr "Горячая перезагрузка включена"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "Горячая перезагрузка отключена"
 
 #, fuzzy
@@ -2818,22 +2818,6 @@ msgstr "Снимки"
 msgctxt "retroControl.ports"
 msgid "Ports"
 msgstr "Порты"
-
-msgctxt "retroControl.clock"
-msgid "Clock"
-msgstr "Часы"
-
-msgctxt "retroControl.hostSystemClock"
-msgid "Host system clock"
-msgstr ""
-
-msgctxt "retroControl.mouse"
-msgid "Mouse"
-msgstr "Мышь"
-
-msgctxt "retroControl.ramDisk"
-msgid "RAM Disk"
-msgstr "RAM-диск"
 
 msgctxt "retroControl.language"
 msgid "Language"

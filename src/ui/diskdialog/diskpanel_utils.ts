@@ -181,27 +181,66 @@ export const loadDisk = (
   diskCollectionItem: DiskCollectionItem | undefined,
   updateDisplay: UpdateDisplay,
   callback?: (buffer: ArrayBuffer | null) => void,
-  onLoadSuccess?: () => void) => {
+  onLoadSuccess?: () => void,
+  preserveDriveIndex = false) => {
   // Only force idle when actually loading into a drive. Background fetches for
   // export/VTOC pass a callback (and often driveIndex -1) and must not disrupt
   // the currently running program/canvas state.
-  if (!callback) {
+  if (!callback && !preserveDriveIndex) {
     passSetRunMode(RUN_MODE.IDLE)
   }
 
   if (diskCollectionItem) {
     if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
-      handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback, onLoadSuccess)
+      if (preserveDriveIndex) {
+        handleSetDiskFromCloudData(
+          diskCollectionItem.cloudData,
+          driveIndex,
+          callback,
+          onLoadSuccess,
+          true,
+        )
+      } else {
+        handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback, onLoadSuccess)
+      }
     } else if (diskCollectionItem.diskUrl && !diskCollectionItem.diskUrl.includes("://")) {
-      handleSetDiskFromFile(diskCollectionItem.diskUrl, updateDisplay, driveIndex, callback, onLoadSuccess)
+      if (preserveDriveIndex) {
+        handleSetDiskFromFile(
+          diskCollectionItem.diskUrl,
+          updateDisplay,
+          driveIndex,
+          callback,
+          onLoadSuccess,
+          true,
+        )
+      } else {
+        handleSetDiskFromFile(
+          diskCollectionItem.diskUrl,
+          updateDisplay,
+          driveIndex,
+          callback,
+          onLoadSuccess,
+        )
+      }
     } else {
-      void handleSetDiskFromURL(
-        diskCollectionItem.diskUrl || "",
-        undefined,
-        driveIndex,
-        diskCollectionItem.cloudData,
-        callback,
-      ).then(loaded => {
+      const load = preserveDriveIndex
+        ? handleSetDiskFromURL(
+          diskCollectionItem.diskUrl || "",
+          undefined,
+          driveIndex,
+          diskCollectionItem.cloudData,
+          callback,
+          undefined,
+          true,
+        )
+        : handleSetDiskFromURL(
+          diskCollectionItem.diskUrl || "",
+          undefined,
+          driveIndex,
+          diskCollectionItem.cloudData,
+          callback,
+        )
+      void load.then(loaded => {
         if (loaded && !callback) onLoadSuccess?.()
       })
     }
@@ -210,6 +249,20 @@ export const loadDisk = (
     }
   }
 }
+
+export const loadDiskIntoDrive = (
+  driveIndex: number,
+  diskCollectionItem: DiskCollectionItem | undefined,
+  updateDisplay: UpdateDisplay,
+  onLoadSuccess?: () => void,
+) => loadDisk(
+  driveIndex,
+  diskCollectionItem,
+  updateDisplay,
+  undefined,
+  onLoadSuccess,
+  true,
+)
 
 export const getExportFilename = (diskCollectionItem: DiskCollectionItem, buffer: Uint8Array) => {
   const fromCloud = diskCollectionItem.cloudData?.fileName?.trim()
@@ -228,6 +281,10 @@ export const getExportFilename = (diskCollectionItem: DiskCollectionItem, buffer
 }
 
 const maxHdvBytes = 33554432
+
+export const formatBytes = (bytes: number) => bytes < 1024 * 1024
+  ? `${parseFloat((bytes / 1024).toFixed(0))} KB`
+  : `${parseFloat((bytes / (1024 * 1024)).toFixed(2))} MB`
 
 export const isDiskExportable = (disk: DiskCollectionItem) => {
   // A disk explicitly flagged exportDisabled is never exportable (e.g. whole-volume

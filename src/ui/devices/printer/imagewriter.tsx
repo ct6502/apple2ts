@@ -16,17 +16,9 @@ export const openImageWriterDialog = () => window.dispatchEvent(new Event(OPEN_I
 
 export const retroImageWriterControls: RetroControlMetadata[] = [
   {
-    id: "slots.devices",
-    parentId: "slots",
-    order: 7,
-    label: context => context.t("retroControl.devices"),
-    separator: true,
-    selectable: false,
-  },
-  {
-    id: "slots.imageWriterII",
-    parentId: "slots",
-    order: 8,
+    id: "printer.imageWriterII",
+    parentId: "ports",
+    order: 1,
     label: context => context.t("print.imageWriterII"),
     selectable: () => handleGetSlotConfig()[1] !== "none",
     contextualActionLabel: context => context.t("retroControl.open"),

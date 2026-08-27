@@ -35,6 +35,11 @@ describe("Retro control-panel text", () => {
       .toEqual({ label: "MIDI", option: "Enable external MIDI with..." })
   })
 
+  test("fills a submenu row while reserving one cell before the right border", () => {
+    expect(fitControlText("Slot 3", "Apple 699-0221 (64KB / 80-Col / dHGR)", 40, "en"))
+      .toEqual({ label: "Slot 3", option: "Apple 699-0221 (64KB / 80-Col..." })
+  })
+
   test("uses narrower arrow spacing for Select labels of nine characters or more", () => {
     expect(selectArrowSpacing("Välj", "sv")).toBe("\u2007")
     expect(selectArrowSpacing("Selecteren", "nl")).toBe("\u2006")

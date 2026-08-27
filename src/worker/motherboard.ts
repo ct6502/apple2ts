@@ -1,5 +1,5 @@
 // Chris Torrence, 2022
-import { passMachineState, passSoftSwitchDescriptions } from "./worker2main"
+import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
 import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState, doSetEmuDriveNewData, getProdosFloppy } from "./devices/drivestate"
@@ -57,6 +57,7 @@ let showDebugTab = false
 let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 let cpuRunMode = RUN_MODE.IDLE
+let pendingRunModeOperation: number | undefined
 let cyclesToRun = 0
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
@@ -370,13 +371,14 @@ export const doReset = () => {
 // Note that making the cyclesPerRefresh too large can cause games to be
 // less responsive to keyboard input, since we're checking the keyboard
 // less often.
-export const doSetSpeedMode = (speedModeIn: number) => {
+export const doSetSpeedMode = (speedModeIn: number, operationId?: number) => {
   speedMode = speedModeIn
   // speedMode = -2 is slowest, but add 2 to it to make the arrays be zero based.
   // speedMode = 0 is still 1 MHz, so no risk of backwards compatibility issues.
   refreshTime = (speedMode === 4) ? 0 : 16.6881
   cpuCyclesPerRefresh = 17030 * ([0.1, 0.5, 1, 2, 3, 4, 24])[speedMode + 2]
   resetRefreshCounter()
+  if (operationId !== undefined) passWorkerOperationResult(operationId)
 }
 
 // Boot a floppy disk image, run at ludicrous speed until the given entry
@@ -661,7 +663,16 @@ const resetRefreshCounter = () => {
   nextFrameTime = performance.now()
 }
 
-export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
+export const doSetRunMode = (
+  cpuRunModeIn: RUN_MODE,
+  doShowDebugTab = true,
+  operationId?: number,
+) => {
+  if (pendingRunModeOperation !== undefined && pendingRunModeOperation !== operationId) {
+    passWorkerOperationResult(pendingRunModeOperation, "Worker operation was superseded")
+  }
+  const isTransitional = cpuRunModeIn === RUN_MODE.NEED_BOOT || cpuRunModeIn === RUN_MODE.NEED_RESET
+  pendingRunModeOperation = isTransitional ? operationId : undefined
   configureMachine()
   if (doShowDebugTab && cpuRunMode === RUN_MODE.RUNNING && cpuRunModeIn === RUN_MODE.PAUSED) {
     showDebugTab = true
@@ -722,6 +733,7 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
     cpuSpeed = 1
     doAdvance6502Timer()
   }
+  if (operationId !== undefined && !isTransitional) passWorkerOperationResult(operationId)
 }
 
 export const doSetCyclesToRun = (cycles: number) => {
@@ -908,11 +920,17 @@ const doAdvance6502 = () => {
     return
   }
   if (cpuRunMode === RUN_MODE.NEED_BOOT) {
+    const operationId = pendingRunModeOperation
+    pendingRunModeOperation = undefined
     doBoot()
     doSetRunMode(RUN_MODE.RUNNING)
+    if (operationId !== undefined) passWorkerOperationResult(operationId)
   } else if (cpuRunMode === RUN_MODE.NEED_RESET) {
+    const operationId = pendingRunModeOperation
+    pendingRunModeOperation = undefined
     doReset()
     doSetRunMode(RUN_MODE.RUNNING)
+    if (operationId !== undefined) passWorkerOperationResult(operationId)
   }
   let cycleTotal = 0
   let currentLine = -1

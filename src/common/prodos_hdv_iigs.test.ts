@@ -3,6 +3,7 @@ import {
   createPackedBinaryRelay,
   createProDosRelayWrapper,
   determineVtocType,
+  generateInteractiveMenuStartup,
   generateMenuLaunchProgram,
   generateMenuSourceProgram,
   lookupFourCadeByTitle,
@@ -30,6 +31,22 @@ const branchTarget = (baseAddress: number, bytes: Uint8Array, offset: number) =>
 }
 
 describe("IIgs 4cade block loading", () => {
+  test("single-disk startup launches immediately without opening MENUSRC", () => {
+    const source = generateInteractiveMenuStartup([
+      { filename: "ALPHA", displayName: "Aztec" },
+    ], "A2TSHLP")
+
+    expect(source).toContain("POKE 1145,1")
+    expect(source).toContain("RUN A2TSHLP/MENULAUNCH")
+    expect(source).not.toContain("MENUSRC")
+
+    const multiDiskSource = generateInteractiveMenuStartup([
+      { filename: "ALPHA", displayName: "Aztec" },
+      { filename: "BETA", displayName: "Blazing Paddles" },
+    ], "A2TSHLP")
+    expect(multiDiskSource).toContain("RUN A2TSHLP/MENUSRC")
+  })
+
   test("menu uses full HGR and cycles adjacent case-insensitive title initials", () => {
     const source = generateMenuSourceProgram([
       { filename: "ALPHA", displayName: "Aztec" },

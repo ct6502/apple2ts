@@ -18,9 +18,20 @@ jest.mock("../devices/disk/diskdrive", () => ({
 }))
 const mockHandleGetDriveProps = jest.fn()
 const mockHandleGetFilename = jest.fn()
+const mockHandleGetProdosFloppy = jest.fn(() => true)
+const mockLoadDisk = jest.fn()
+jest.mock("../main2worker", () => ({
+  ...jest.requireActual("../main2worker"),
+  handleGetProdosFloppy: () => mockHandleGetProdosFloppy(),
+}))
 jest.mock("../devices/disk/driveprops", () => ({
   handleGetDriveProps: (...args: unknown[]) => mockHandleGetDriveProps(...args),
   handleGetFilename: (...args: unknown[]) => mockHandleGetFilename(...args),
+}))
+jest.mock("../diskdialog/diskpanel_utils", () => ({
+  ...jest.requireActual("../diskdialog/diskpanel_utils"),
+  loadDisk: (...args: unknown[]) => mockLoadDisk(...args),
+  loadDiskIntoDrive: (...args: unknown[]) => mockLoadDisk(...args),
 }))
 jest.mock("../devices/disk/diskimagechooser", () => ({ DiskImageChooser: () => null }))
 jest.mock("../devices/printer/imagewriter", () => ({
@@ -28,17 +39,9 @@ jest.mock("../devices/printer/imagewriter", () => ({
   default: () => null,
   retroImageWriterControls: [
     {
-      id: "slots.devices",
-      parentId: "slots",
-      order: 7,
-      label: "Devices",
-      separator: true,
-      selectable: false,
-    },
-    {
-      id: "slots.imageWriterII",
-      parentId: "slots",
-      order: 8,
+      id: "printer.imageWriterII",
+      parentId: "ports",
+      order: 1,
       label: "ImageWriter II (Slot 1)",
       contextualActionLabel: "Open",
       action: () => undefined,
@@ -50,6 +53,10 @@ import { retroMenuRegistry } from "./retromenucomposition"
 import {
   createRetroExportItems,
   createRetroExportScreenItems,
+  getSelectedCollectionDriveIndex,
+  getRetroExportHdvSize,
+  getRetroVtocIndicator,
+  resetCollectionDriveSelectionSession,
   retroDiskControls,
 } from "../devices/disk/diskinterface"
 import { DISK_COLLECTION_ITEM_TYPE } from "../diskdialog/diskpanel_utils"
@@ -80,6 +87,107 @@ describe("Retro menu metadata structure", () => {
   beforeEach(() => {
     mockGetCloudProvidersNeedingAuth.mockReturnValue([])
     mockSignInToCloudProvider.mockResolvedValue(true)
+    mockLoadDisk.mockClear()
+    mockHandleGetProdosFloppy.mockReturnValue(true)
+    resetCollectionDriveSelectionSession()
+  })
+
+  test("uses each disk format's default without showing it before drive selection", () => {
+    const floppy = collectionDisk()
+    const hardDrive = {
+      ...collectionDisk(),
+      title: "Wizard Replay",
+      diskUrl: "WizardReplay.hdv_.zip",
+      fileSize: 33553920,
+    }
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    context.diskCollection = [floppy, hardDrive]
+    const tab = retroDiskControls.find(control => control.id === "diskCollection.builtIn")
+    const rows = (tab?.dynamicChildren?.(context) ?? []).filter(item => item.id.includes(".disk."))
+    const floppyRow = rows.find(item => item.label === floppy.title)
+    const hardDriveRow = rows.find(item => item.label === hardDrive.title)
+
+    expect(typeof floppyRow?.optionIndex === "function"
+      ? floppyRow.optionIndex(context)
+      : undefined).toBe(2)
+    expect(typeof hardDriveRow?.optionIndex === "function"
+      ? hardDriveRow.optionIndex(context)
+      : undefined).toBe(0)
+    expect(typeof floppyRow?.contextualSubmenuTitleValue === "function"
+      ? floppyRow.contextualSubmenuTitleValue(context)
+      : undefined).toBeUndefined()
+    expect(typeof hardDriveRow?.contextualSubmenuTitleValue === "function"
+      ? hardDriveRow.contextualSubmenuTitleValue(context)
+      : undefined).toBeUndefined()
+  })
+
+  test("resets drive selection per tab and reveals that disk's default first", () => {
+    const builtInDisk = collectionDisk()
+    const newReleaseDisk = {
+      ...collectionDisk(),
+      type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+      title: "New Release",
+    }
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    context.close = jest.fn()
+    context.diskCollection = [builtInDisk, newReleaseDisk]
+    const builtInTab = retroDiskControls.find(control => control.id === "diskCollection.builtIn")
+    const builtInItems = builtInTab?.dynamicChildren?.(context) ?? []
+    const builtInRow = builtInItems.find(item => item.payload !== undefined || item.id.includes(".disk."))
+
+    expect(builtInRow).toMatchObject({
+      kind: "action",
+      hideOptionValue: true,
+      revealOptionOnFirstHorizontalInput: true,
+      optionIndex: expect.any(Function),
+      contextualSubmenuTitleValue: expect.any(Function),
+    })
+    expect((builtInRow?.options as { label: string }[])?.map(option => option.label))
+      .toEqual(["S7,D1", "S7,D2", "S6,D1", "S6,D2"])
+
+    builtInRow?.refreshOptions?.(context, 2)
+    expect(getSelectedCollectionDriveIndex()).toBe(2)
+
+    const refreshedBuiltInItems = builtInTab?.dynamicChildren?.(context) ?? []
+    const refreshedBuiltInRow = refreshedBuiltInItems.find(item => item.id.includes(".disk."))
+    expect(getSelectedCollectionDriveIndex()).toBeUndefined()
+    expect(typeof refreshedBuiltInRow?.contextualSubmenuTitleValue === "function"
+      ? refreshedBuiltInRow.contextualSubmenuTitleValue(context)
+      : refreshedBuiltInRow?.contextualSubmenuTitleValue).toBeUndefined()
+
+    const newReleaseTab = retroDiskControls.find(control => control.id === "diskCollection.newReleases")
+    const newReleaseItems = newReleaseTab?.dynamicChildren?.(context) ?? []
+    const newReleaseRow = newReleaseItems.find(item => item.id.includes(".disk."))
+    expect(getSelectedCollectionDriveIndex()).toBeUndefined()
+    expect(typeof newReleaseRow?.optionIndex === "function"
+      ? newReleaseRow.optionIndex(context)
+      : newReleaseRow?.optionIndex).toBe(2)
+    expect(typeof newReleaseRow?.contextualSubmenuTitleValue === "function"
+      ? newReleaseRow.contextualSubmenuTitleValue(context)
+      : newReleaseRow?.contextualSubmenuTitleValue).toBeUndefined()
+
+    newReleaseRow?.refreshOptions?.(context, 2)
+    expect(typeof newReleaseRow?.contextualSubmenuTitleValue === "function"
+      ? newReleaseRow.contextualSubmenuTitleValue(context)
+      : newReleaseRow?.contextualSubmenuTitleValue).toBe("S6,D1")
+
+    newReleaseRow?.action?.(context)
+    expect(mockLoadDisk).toHaveBeenCalledWith(
+      2,
+      newReleaseDisk,
+      context.displayProps.updateDisplay,
+      context.close,
+    )
+  })
+
+  test("does not add drive selection to Export rows", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const exportRow = createRetroExportItems(context, [collectionDisk("prodos")])
+      .find(item => item.id.includes(".disk."))
+
+    expect(exportRow?.options).toBeDefined()
+    expect(exportRow?.contextualSubmenuTitleValue).toBeUndefined()
+    expect(exportRow?.hideOptionValue).toBeUndefined()
   })
 
   test("uses Select for a loaded Disk Drive menu and Load for an empty drive", () => {
@@ -150,6 +258,40 @@ describe("Retro menu metadata structure", () => {
     expect(items.at(-1)?.refreshOptions).toBeDefined()
   })
 
+  test("reports selected HDV export size against the 32 MB limit", () => {
+    const localDisk = collectionDisk("prodos")
+    const cloudDisk = {
+      ...collectionDisk("prodos"),
+      cloudData: { providerName: "OneDrive", itemId: "cloud-disk", fileSize: 1048576 } as CloudData,
+    }
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const items = createRetroExportItems(context, [localDisk, cloudDisk]) as unknown as RetroResolvedControl[]
+    const values = metadataValues(items as unknown as RetroControlMetadata[], context)
+
+    expect(getRetroExportHdvSize(items, values)).toBeUndefined()
+    values[items.findIndex(item => item.payload === localDisk)] = 1
+    expect(getRetroExportHdvSize(items, values)).toBe("140 KB / 32 MB")
+    values[items.findIndex(item => item.payload === cloudDisk)] = 1
+    expect(getRetroExportHdvSize(items, values)).toBe("1.14 MB / 32 MB")
+
+    const exportTab = retroMenuRegistry.resolve(context, "diskCollection")
+      .find(control => control.id === "diskCollection.export")
+    expect(exportTab?.submenuTitleValue?.(items, values)).toBe("1.14 MB / 32 MB")
+  })
+
+  test("shows the active VTOC spinner and leaves other unresolved disks as unknown", () => {
+    const activeDisk = collectionDisk()
+    activeDisk.diskUrl = "active.po"
+    const waitingDisk = collectionDisk()
+    waitingDisk.diskUrl = "waiting.po"
+
+    for (const frame of ["/", "-", "\\", "!", "|"]) {
+      expect(getRetroVtocIndicator(activeDisk, "active.po", frame)).toBe(frame)
+    }
+    expect(getRetroVtocIndicator(waitingDisk, "active.po", "/")).toBe("?")
+    expect(getRetroVtocIndicator(collectionDisk("prodos"), "disk.po", "/")).toBeUndefined()
+  })
+
   test("shows Export auth notifications only when relevant and hides Export while pending", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
     const cloudDisk = {
@@ -159,6 +301,10 @@ describe("Retro menu metadata structure", () => {
     }
     mockGetCloudProvidersNeedingAuth.mockImplementation(disks =>
       disks.some(disk => disk.cloudData?.providerName === "OneDrive") ? ["OneDrive"] : [])
+
+    const unresolvedCloudDisk = { ...cloudDisk, vtocType: undefined }
+    const unresolvedItems = createRetroExportScreenItems(context, [unresolvedCloudDisk])
+    expect(unresolvedItems[0].id).toBe("diskCollection.3.notification.OneDrive")
 
     const initialItems = createRetroExportScreenItems(context, [cloudDisk])
     expect(initialItems.some(item => item.id.includes("notification"))).toBe(false)
@@ -238,8 +384,8 @@ describe("Retro menu metadata structure", () => {
       "sound",
       "keyboard",
       "keyboard.joystick",
-      "slots",
       "ports",
+      "slots",
       "options",
       "quit",
     ])
@@ -275,9 +421,7 @@ describe("Retro menu metadata structure", () => {
     ])
     expect(retroMenuRegistry.getIds("options")).toEqual([
       "options.speed",
-      "options.clock",
-      "options.mouse",
-      "options.ramDisk",
+      "options.hotReload",
       "options.retroSkinSeparator",
       "options.theme",
       "options.retroSkin",
@@ -285,7 +429,6 @@ describe("Retro menu metadata structure", () => {
       "options.retroSkin.background",
       "options.retroSkin.border",
       "options.other",
-      "options.hotReload",
       "settings.reset",
     ])
     expect(retroMenuRegistry.getIds("display")).toEqual([
@@ -303,9 +446,8 @@ describe("Retro menu metadata structure", () => {
     ])
     expect(retroMenuRegistry.getIds("slots")).toEqual([
       "slots.1", "slots.2", "slots.3", "slots.4", "slots.5", "slots.6", "slots.7",
-      "slots.devices", "slots.imageWriterII",
     ])
-    expect(retroMenuRegistry.getIds("ports")).toEqual(["printerPort", "modemPort"])
+    expect(retroMenuRegistry.getIds("ports")).toEqual(["printerPort", "printer.imageWriterII"])
     expect(retroMenuRegistry.getIds("keyboard")).toEqual([
       "keyboard.lowercase",
       "keyboard.openApple",
@@ -316,15 +458,31 @@ describe("Retro menu metadata structure", () => {
       "keyboard.joystick.siriusJoyport",
     ])
     expect(retroMenuRegistry.getIds("printerPort")).toEqual([])
-    expect(retroMenuRegistry.getIds("modemPort")).toEqual([])
+    expect(retroMenuRegistry.getIds("printer.imageWriterII")).toEqual([])
   })
 
   test("uses contextual labels for direct actions", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
-    const slots = retroMenuRegistry.resolve(context, "slots")
+    const printer = retroMenuRegistry.resolve(context, "ports")
     const sound = retroMenuRegistry.resolve(context, "sound")
 
-    expect(slots.find(item => item.id === "slots.imageWriterII")?.contextualActionLabel).toBe("Open")
+    expect(printer.find(item => item.id === "printer.imageWriterII")?.contextualActionLabel).toBe("Open")
     expect(sound.find(item => item.id === "sound.enabled")?.defaultIndex).toBe(1)
+  })
+
+  test("matches the standard Apple IIe Slot 3 memory-card options", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const slot3 = retroMenuRegistry.resolve(context, "slots")
+      .find(item => item.id === "slots.3")
+
+    expect(slot3?.options?.map(option => option.label)).toEqual([
+      "retroControl.card.empty",
+      "Apple 699-0221 (64KB / 80-Col / dHGR)",
+      "AE RamWorks III (512KB / 80-Col / dHGR)",
+      "AE RamWorks III (1MB / 80-Col / dHGR)",
+      "AE RamWorks III (4MB / 80-Col / dHGR)",
+      "AE RamWorks III (8MB / 80-Col / dHGR)",
+      "VidHD (64KB / 80-Col / SHR)",
+    ])
   })
 })

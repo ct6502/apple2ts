@@ -1839,7 +1839,7 @@ msgstr "熱重載已啟用"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload Disabled"
+msgid "Hot Reload"
 msgstr "熱重載已停用"
 
 #, fuzzy
@@ -2842,22 +2842,6 @@ msgstr "快照"
 msgctxt "retroControl.ports"
 msgid "Ports"
 msgstr "連接埠"
-
-msgctxt "retroControl.clock"
-msgid "Clock"
-msgstr "時鐘"
-
-msgctxt "retroControl.hostSystemClock"
-msgid "Host system clock"
-msgstr ""
-
-msgctxt "retroControl.mouse"
-msgid "Mouse"
-msgstr "滑鼠"
-
-msgctxt "retroControl.ramDisk"
-msgid "RAM Disk"
-msgstr "RAM 磁碟"
 
 msgctxt "retroControl.language"
 msgid "Language"

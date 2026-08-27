@@ -8,6 +8,7 @@ import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { getCurrentDriveState } from "./devices/drivestate"
+import * as worker2main from "./worker2main"
 
 // Make sure we don't accidentally leave debug mode on.
 test("debugMode", () => {
@@ -158,6 +159,45 @@ test("slow CPU refresh reaches the bottom HGR scanline", () => {
     SWITCHES.PAGE2.isSet = oldPage2
     jest.clearAllTimers()
     jest.useRealTimers()
+  }
+})
+
+test("speed operations complete after applying their mode", () => {
+  setIsTesting()
+  const previousState = getExternalMachineState()
+  doSetRunMode(RUN_MODE.PAUSED)
+  const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
+
+  try {
+    doSetSpeedMode(4, 7)
+
+    expect(getExternalMachineState().speedMode).toEqual(4)
+    expect(passOperationResult).toHaveBeenCalledWith(7)
+  } finally {
+    passOperationResult.mockRestore()
+    doSetSpeedMode(previousState.speedMode)
+    doSetRunMode(previousState.runMode)
+  }
+})
+
+test("run changes complete after publishing their state", () => {
+  const previousState = getExternalMachineState()
+  const passMachineState = jest.spyOn(worker2main, "passMachineState")
+  const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
+
+  try {
+    doSetRunMode(RUN_MODE.PAUSED, true, 7)
+    expect(passMachineState).toHaveBeenCalledWith(expect.objectContaining({
+      runMode: RUN_MODE.PAUSED,
+    }))
+    expect(passOperationResult).toHaveBeenCalledWith(7)
+    expect(passMachineState.mock.invocationCallOrder[0]).toBeLessThan(
+      passOperationResult.mock.invocationCallOrder[0],
+    )
+  } finally {
+    passMachineState.mockRestore()
+    passOperationResult.mockRestore()
+    doSetRunMode(previousState.runMode)
   }
 })
 

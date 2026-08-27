@@ -15,9 +15,18 @@ import {
 } from "./retrotext"
 import "./retrocontrolpanel.css"
 import { RETRO_SKIN } from "../localstorage"
+import { SETTINGS_CHANGED_EVENT, type SettingsChangedDetail } from "../settingschange"
 import { DISK_LOAD_SUCCESS_EVENT, getTheme } from "../ui_settings"
 import { xmargin, ymargin } from "../graphics"
 import { UI_THEME } from "../../common/utility"
+import { DiskPanelVtoc } from "../diskdialog/diskpanel_vtoc"
+import { diskItemKey, isDiskExportable, TAB_INDEX } from "../diskdialog/diskpanel_utils"
+import { cloudProviderHasAuthToken } from "../devices/disk/cloudauth"
+import {
+  getRetroVtocIndicator,
+  resetCollectionDriveSelectionSession,
+  resetSelectedCollectionDriveIndex,
+} from "../devices/disk/diskinterface"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -29,7 +38,9 @@ type CanvasBounds = {
 }
 
 type RetroMenuFrame = {
+  menuId: string
   title: string
+  submenuTitleValue?: (items: readonly RetroMenuItem[], values: number[]) => string | undefined
   items: RetroMenuItem[]
   parentSelectedIndex: number
   originalValues: number[]
@@ -50,7 +61,73 @@ const fixedWidthSpace = String.fromCodePoint(0x2007)
 const horizontalBorderGlyphs = ` ${"_".repeat(78)} `
 const verticalBorderGlyphs = Array(30).fill("!").join("\n")
 const rootMenuContentWidth = 34
-const submenuContentWidth = 36
+const submenuTextWidth = 40
+
+const RetroVtocIndicator = ({
+  active,
+  disk,
+  isAppleIIPlus,
+}: {
+  active: boolean
+  disk: DiskCollectionItem
+  isAppleIIPlus: boolean
+}) => {
+  const [frameIndex, setFrameIndex] = useState(0)
+  useEffect(() => {
+    if (!active) return
+    const timer = window.setInterval(() => setFrameIndex(index => (index + 1) % 4), 125)
+    return () => window.clearInterval(timer)
+  }, [active])
+  const frames = isAppleIIPlus ? ["/", "-", "\\", "!"] : ["/", "-", "\\", "|"]
+  return getRetroVtocIndicator(disk, active ? diskItemKey(disk) : null, frames[frameIndex])
+}
+
+const AppleIIPlusFooter = ({
+  actionLabel,
+  cancelLabel,
+  language,
+  selectLabel,
+  showAction,
+  showHorizontalSelectionHint,
+}: {
+  actionLabel: string
+  cancelLabel?: string
+  language: string
+  selectLabel: string
+  showAction: boolean
+  showHorizontalSelectionHint: boolean
+}) => {
+  const arrowText = `${showHorizontalSelectionHint ? `${mouseTextLeft}_${mouseTextRight}_` : ""}${cancelLabel
+    ? `${mouseTextUp}_${mouseTextDown}`
+    : `${mouseTextDown}_${mouseTextUp}`}`
+  const selectText = `${selectLabel}:${arrowText}`
+  const actionText = showAction ? `${actionLabel}:${mouseTextReturn}` : ""
+  const rowWidth = 42
+  const placements = [
+    { start: 0, text: selectText },
+    ...(cancelLabel
+      ? [{ start: Math.floor((rowWidth - controlTextWidth(cancelLabel, language)) / 2), text: cancelLabel }]
+      : []),
+    ...(actionText
+      ? [{ start: rowWidth - controlTextWidth(actionText, language), text: actionText }]
+      : []),
+  ].sort((left, right) => left.start - right.start)
+  const runs: { border: boolean, text: string }[] = []
+  let cursor = 0
+  placements.forEach((placement) => {
+    if (placement.start > cursor) runs.push({ border: true, text: "_".repeat(placement.start - cursor) })
+    runs.push({ border: false, text: placement.text })
+    cursor = Math.max(cursor, placement.start + controlTextWidth(placement.text, language))
+  })
+  if (cursor < rowWidth) runs.push({ border: true, text: "_".repeat(rowWidth - cursor) })
+
+  return <footer className="retro-text-footer">
+    {runs.map((run, index) => <span
+      className={run.border || retroFontSupports(run.text) ? undefined : "retro-browser-font"}
+      key={`${index}-${run.text}`}
+    >{run.text}</span>)}
+  </footer>
+}
 
 const RetroBorder = ({ className, separatorRow }: {
   className: string
@@ -73,8 +150,10 @@ const RetroBorder = ({ className, separatorRow }: {
 )
 
 const createMenuFrame = (
+  menuId: string,
   title: string,
   items: RetroMenuItem[],
+  submenuTitleValue?: (items: readonly RetroMenuItem[], values: number[]) => string | undefined,
   refresh?: (items?: readonly RetroMenuItem[], values?: number[]) => RetroMenuItem[],
   actionLabel?: string,
   submit?: (items: readonly RetroMenuItem[], values: number[]) => void,
@@ -83,7 +162,9 @@ const createMenuFrame = (
 ): RetroMenuFrame => {
   const values = items.map(item => item.optionIndex ?? -1)
   return {
+    menuId,
     title,
+    submenuTitleValue,
     items,
     parentSelectedIndex,
     originalValues: values,
@@ -113,8 +194,10 @@ const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
   if (!previousFrame?.refresh) return previousStack
 
   previousStack[previousStack.length - 1] = createMenuFrame(
+    previousFrame.menuId,
     previousFrame.title,
     previousFrame.refresh(),
+    previousFrame.submenuTitleValue,
     previousFrame.refresh,
     previousFrame.actionLabel,
     previousFrame.submit,
@@ -136,11 +219,16 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [manualIsOpen, setIsOpen] = useState(false)
   const [manualMenuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
   const [manualSelectedIndex, setSelectedIndex] = useState(0)
+  const [, setSettingsRevision] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
   const close = () => setIsOpen(false)
   const {
+    activeVtocCheckKey,
+    authRefresh,
     dialogs,
+    diskBookmarks,
+    diskCollection,
     effects,
     hasOpenDialog,
     iigsStyle,
@@ -148,6 +236,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     retroSkin,
     rootMenu,
     runTour,
+    resolveMenu,
+    setActiveVtocCheckKey,
+    setDiskCollection,
     t,
   } = useRetroMenuHost(displayProps, close)
   const menuStack = manualMenuStack
@@ -166,6 +257,17 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const selectedItem = currentMenu[selectedIndex]
   const selectLabel = t("retroControl.select")
   const isAppleIIPlus = retroSkin === RETRO_SKIN.APPLE_IIPLUS
+  const isExportScreen = Boolean(currentFrame?.items.some(item =>
+    item.id === "diskCollection.export.sort"))
+  const updateDiskCollection = (update: (prev: DiskCollectionItem[]) => DiskCollectionItem[]) => {
+    setDiskCollection(update)
+    setMenuStack(stack => stack.map((frame, index) => {
+      if (index !== stack.length - 1 || !frame.refresh || !frame.items.some(item =>
+        item.id === "diskCollection.export.sort")) return frame
+      const items = frame.refresh(frame.items, frame.values)
+      return { ...frame, items, values: items.map(item => item.optionIndex ?? -1) }
+    }))
+  }
 
   useLayoutEffect(() => {
     if (!isOpen) return
@@ -236,8 +338,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     } as React.CSSProperties
     : undefined
 
-  const arrowSpacing = selectArrowSpacing(selectLabel, language)
-  const selectHintHalfCells = Math.ceil(selectHintWidth(selectLabel, language) * 2)
+  const arrowSpacing = isAppleIIPlus ? "_" : selectArrowSpacing(selectLabel, language)
+  const selectHintHalfCells = Math.ceil((isAppleIIPlus
+    ? controlTextWidth(selectLabel, language) + 9
+    : selectHintWidth(selectLabel, language)) * 2)
   const saveActionLabel = t("retroControl.save")
   const footerActionLabel = selectedItem?.contextualActionLabel
     ?? currentFrame?.actionLabel
@@ -258,6 +362,41 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   }, [isOpen])
 
   useEffect(() => {
+    if (!isOpen) return
+    const handleSettingsChanged = (event: Event) => {
+      const { controlIds } = (event as CustomEvent<SettingsChangedDetail>).detail
+      if (currentFrame && !currentFrame.items.some(item => controlIds.includes(item.id))) return
+      setSettingsRevision(revision => revision + 1)
+      if (!currentFrame) return
+
+      const selectedId = currentFrame.items[selectedIndex]?.id
+      const items = resolveMenu(currentFrame.menuId)
+      const nextSelectedIndex = selectedId
+        ? items.findIndex(item => item.id === selectedId)
+        : -1
+      setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
+        && frame.menuId === currentFrame.menuId
+        ? createMenuFrame(
+          frame.menuId,
+          frame.title,
+          items,
+          frame.submenuTitleValue,
+          frame.refresh,
+          frame.actionLabel,
+          frame.submit,
+          frame.isSubmitVisible,
+          frame.parentSelectedIndex,
+        )
+        : frame))
+      setSelectedIndex(nextSelectedIndex >= 0
+        ? nextSelectedIndex
+        : Math.max(0, items.findIndex(item => isMenuItemSelectable(item))))
+    }
+    window.addEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
+    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
+  }, [currentFrame, isOpen, resolveMenu, selectedIndex])
+
+  useEffect(() => {
     const handleDiskLoadSuccess = () => setIsOpen(false)
     window.addEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
     return () => window.removeEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
@@ -272,6 +411,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         event.stopPropagation()
         if (!isOpen) {
           menuStack.toReversed().forEach(restoreMenuFramePreview)
+          resetCollectionDriveSelectionSession()
           setNow(new Date())
           setIsOpen(true)
           setMenuStack([])
@@ -308,6 +448,23 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         event.preventDefault()
         event.stopPropagation()
+        if (currentFrame?.menuId.startsWith("diskCollection.") && currentFrame.refresh) {
+          resetSelectedCollectionDriveIndex()
+          const items = currentFrame.refresh(currentFrame.items, currentFrame.values)
+          setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
+            ? createMenuFrame(
+              frame.menuId,
+              frame.title,
+              items,
+              frame.submenuTitleValue,
+              frame.refresh,
+              frame.actionLabel,
+              frame.submit,
+              frame.isSubmitVisible,
+              frame.parentSelectedIndex,
+            )
+            : frame))
+        }
         const direction = event.key === "ArrowUp" ? -1 : 1
         setSelectedIndex(index => {
           let nextIndex = index
@@ -325,7 +482,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           event.preventDefault()
           event.stopPropagation()
           const direction = event.key === "ArrowLeft" ? -1 : 1
-          const nextValue = (currentFrame.values[selectedIndex] + direction + options.length) % options.length
+          const revealCurrentValue = item.revealOptionOnFirstHorizontalInput &&
+            item.contextualSubmenuTitleValue === undefined
+          const nextValue = revealCurrentValue
+            ? currentFrame.values[selectedIndex]
+            : (currentFrame.values[selectedIndex] + direction + options.length) % options.length
           options[nextValue].preview?.()
           const pendingValues = [...currentFrame.values]
           pendingValues[selectedIndex] = nextValue
@@ -354,8 +515,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           setMenuStack(stack => [
             ...stack,
             createMenuFrame(
+              item.id,
               item.label,
               children,
+              item.submenuTitleValue,
               refresh,
               item.actionLabel,
               item.submit,
@@ -364,7 +527,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             ),
           ])
           setSelectedIndex(Math.max(0, children.findIndex(child => isMenuItemSelectable(child))))
-        } else if (currentFrame && item.options) {
+        } else if (currentFrame && item.options && item.kind !== "action") {
           if (currentFrame.submit && !item.valueOnly) {
             if (currentFrame.isSubmitVisible?.(currentFrame.items, currentFrame.values)) {
               currentFrame.submit(currentFrame.items, currentFrame.values)
@@ -389,8 +552,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 const items = frame.refresh(frame.items, frame.values)
                 setSelectedIndex(Math.max(0, items.findIndex(child => isMenuItemSelectable(child))))
                 return createMenuFrame(
+                  frame.menuId,
                   frame.title,
                   items,
+                  frame.submenuTitleValue,
                   frame.refresh,
                   frame.actionLabel,
                   frame.submit,
@@ -444,6 +609,18 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   ])
 
   const canvasHost = document.getElementById("apple2canvas")?.parentElement
+  const submenuTitleValue = selectedItem?.contextualSubmenuTitleValue
+    ?? currentFrame?.submenuTitleValue?.(currentFrame.items, currentFrame.values)
+  const submenuTitleValueWidth = submenuTitleValue
+    ? controlTextWidth(submenuTitleValue, language)
+    : 0
+  const submenuTitleWidth = currentFrame
+    ? Math.max(0, 38 - submenuTitleValueWidth - (submenuTitleValue ? 1 : 0))
+    : 38
+  const visibleSubmenuTitle = currentFrame
+    ? truncateControlText(currentFrame.title, submenuTitleWidth, language)
+    : ""
+  const visibleSubmenuTitleWidth = controlTextWidth(visibleSubmenuTitle, language)
 
   return (
     <>
@@ -455,35 +632,54 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         onContextMenu={event => event.preventDefault()}
       >
         <div className="retro-window">
-          <RetroBorder className="retro-outer-border" separatorRow={2} />
+          <RetroBorder
+            className="retro-outer-border"
+            separatorRow={2}
+          />
           <header className={`retro-title${currentFrame ? " submenu-open" : ""}`}>
             {isAppleIIPlus
               ? <>
                 <span className="retro-title-text">Apple2TS Control Panel</span>
                 <span className="retro-title-spacer" aria-hidden="true">{fixedWidthSpace}</span>
                 {!currentFrame &&
-                  <span className="retro-title-fill" aria-hidden="true">{" ".repeat(15)}</span>}
+                  <span className="retro-title-fill" aria-hidden="true">{" ".repeat(19)}</span>}
               </>
               : <span>{"Apple2TS Control Panel "}&#8198;</span>}
           </header>
-          {currentFrame && <div className="retro-submenu-title">
-            <RetroBorder className="retro-submenu-title-border" />
-            <span className={`retro-submenu-title-text${retroFontSupports(currentFrame.title) ? "" : " retro-browser-font"}`}>
-              {truncateControlText(currentFrame.title, 38, language)}
-            </span>
-            {isAppleIIPlus &&
-              <span className="retro-title-fill" aria-hidden="true">
-                {" ".repeat(Math.max(0, 38 - controlTextWidth(currentFrame.title, language)))}
+          {currentFrame && (isAppleIIPlus
+            ? <div className="retro-submenu-title retro-text-submenu-title">
+              <span className={retroFontSupports(currentFrame.title) ? undefined : "retro-browser-font"}>
+                {visibleSubmenuTitle}
+              </span>
+              <span aria-hidden="true">{fixedWidthSpace}</span>
+              <span className="retro-inverse-space" aria-hidden="true">
+                {fixedWidthSpace.repeat(Math.max(
+                  0,
+                  40 - visibleSubmenuTitleWidth - submenuTitleValueWidth,
+                ))}
+                {submenuTitleValue}
+                {fixedWidthSpace}
+              </span>
+            </div>
+            : <div className="retro-submenu-title">
+              <RetroBorder className="retro-submenu-title-border" />
+              <span className={`retro-submenu-title-text${retroFontSupports(currentFrame.title) ? "" : " retro-browser-font"}`}>
+                <span className="retro-submenu-title-content">
+                  {visibleSubmenuTitle}
+                </span>
+              </span>
+              {submenuTitleValue && <span className="retro-submenu-title-value">
+                {submenuTitleValue}
               </span>}
-          </div>}
+            </div>)}
           {menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString(language)} ${now.toLocaleDateString(language)}`}>
             <RetroBorder className="retro-clock-border" />
             <time>{formatClockTime(now, language)}</time>
-            <time>{now.toLocaleDateString(language, {
+            <time><span>{now.toLocaleDateString(language, {
               month: "numeric",
               day: "numeric",
               year: "2-digit",
-            })}</time>
+            })}</span></time>
           </div>}
           <div className={`retro-menu${currentFrame ? " retro-submenu-menu" : " retro-root-menu"}`} role="menu">
             {visibleMenu.map((item, visibleIndex) => {
@@ -492,9 +688,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               const option = item.options?.[valueIndex]
               const baseLabel = item.valueOnly && option ? option.label : item.label
               const itemLabel = formatControlLabel(baseLabel, item.separator)
-              const hasOptionValue = option && !item.valueOnly && item.checkmarkIndex === undefined
-              const availableWidth = (currentFrame ? submenuContentWidth : rootMenuContentWidth) -
-                (currentFrame ? 2 : 0)
+              const hasOptionValue = option && !item.valueOnly && !item.hideOptionValue &&
+                item.checkmarkIndex === undefined
+              const availableWidth = currentFrame ? submenuTextWidth : rootMenuContentWidth
               const fittedText = fitControlText(
                 itemLabel,
                 hasOptionValue ? option.label : undefined,
@@ -506,6 +702,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               const isChecked = item.checkmarkIndex !== undefined
                 ? valueIndex === item.checkmarkIndex
                 : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
+              const exportDisk = item.id.startsWith("diskCollection.export.disk.") && item.payload
+                ? item.payload as DiskCollectionItem
+                : undefined
+              const unresolvedExportDisk = exportDisk?.vtocType === undefined ? exportDisk : undefined
               return (
                 <div
                   className={`retro-menu-item${item.separator ? " separator" : ""}${selectedIndex === index ? " selected" : ""}`}
@@ -515,7 +715,13 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   aria-disabled={!isMenuItemSelectable(item, currentFrame) ? "true" : undefined}
                 >
                   {currentFrame && <span className="retro-menu-check">
-                    {item.indicator ?? (isChecked ? (isAppleIIPlus ? "*" : checkmark) : " ")}
+                    {unresolvedExportDisk
+                      ? <RetroVtocIndicator
+                        active={diskItemKey(unresolvedExportDisk) === activeVtocCheckKey}
+                        disk={unresolvedExportDisk}
+                        isAppleIIPlus={isAppleIIPlus}
+                      />
+                      : item.indicator ?? (isChecked ? (isAppleIIPlus ? "*" : checkmark) : " ")}
                   </span>}
                   <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
                     {visibleLabel}
@@ -529,34 +735,59 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               )
             })}
           </div>
-          <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
-            <span
-              className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}
-              style={{ gridColumn: `1 / ${selectHintHalfCells + 1}` }}
-            >{fixedWidthSpace}<span className="retro-footer-text">{`${selectLabel}:`}<i className="retro-mousetext">
-              {showHorizontalSelectionHint && <>{mouseTextLeft}{arrowSpacing}{mouseTextRight}{arrowSpacing}</>}
-              {currentFrame
-                ? <>{mouseTextUp}{arrowSpacing}{mouseTextDown}</>
-                : <>{mouseTextDown}{arrowSpacing}{mouseTextUp}</>}
-            </i></span></span>
-            {currentFrame && <span
-              className={`retro-footer-cancel${retroFontSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}
-              style={{
-                gridColumn: `${selectHintHalfCells + 1} / ${actionStartLine}`,
-              }}
-            ><span className="retro-footer-text">{t("retroControl.cancelEsc")}</span></span>}
-            <span
-              aria-hidden={!showFooterAction}
-              className={`retro-footer-action${showFooterAction ? "" : " hidden"}${retroFontSupports(footerActionLabel) ? "" : " retro-browser-font"}`}
-              style={{ gridColumn: `${actionStartLine} / 81` }}
-            >
-              <span className="retro-footer-text">{`${footerActionLabel}:`}
-                <i className="retro-mousetext">{mouseTextReturn}</i>
-              </span>{fixedWidthSpace}
-            </span>
-          </footer>
+          {isAppleIIPlus
+            ? <AppleIIPlusFooter
+              actionLabel={footerActionLabel}
+              cancelLabel={currentFrame ? t("retroControl.cancelEsc") : undefined}
+              language={language}
+              selectLabel={selectLabel}
+              showAction={showFooterAction}
+              showHorizontalSelectionHint={showHorizontalSelectionHint}
+            />
+            : <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
+              <span
+                className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}
+                style={{ gridColumn: `1 / ${selectHintHalfCells + 1}` }}
+              >{fixedWidthSpace}<span className="retro-footer-text"><span className="retro-footer-content">{`${selectLabel}:`}<i className="retro-mousetext">
+                {showHorizontalSelectionHint && <>{mouseTextLeft}{arrowSpacing}{mouseTextRight}{arrowSpacing}</>}
+                {currentFrame
+                  ? <>{mouseTextUp}{arrowSpacing}{mouseTextDown}</>
+                  : <>{mouseTextDown}{arrowSpacing}{mouseTextUp}</>}
+              </i></span></span></span>
+              {currentFrame && <span
+                className={`retro-footer-cancel${retroFontSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}
+                style={{
+                  gridColumn: `${selectHintHalfCells + 1} / ${actionStartLine}`,
+                }}
+              ><span className="retro-footer-text"><span className="retro-footer-content">
+                {t("retroControl.cancelEsc")}
+              </span></span></span>}
+              <span
+                aria-hidden={!showFooterAction}
+                className={`retro-footer-action${showFooterAction ? "" : " hidden"}${retroFontSupports(footerActionLabel) ? "" : " retro-browser-font"}`}
+                style={{ gridColumn: `${actionStartLine} / 81` }}
+              >
+                <span className="retro-footer-text"><span className="retro-footer-content">{`${footerActionLabel}:`}
+                  <i className="retro-mousetext">{mouseTextReturn}</i>
+                </span></span>{fixedWidthSpace}
+              </span>
+            </footer>}
         </div>
       </section>, canvasHost)}
+      <DiskPanelVtoc
+        activeTab={TAB_INDEX.EXPORT}
+        isFlyoutOpen={isOpen && isExportScreen}
+        diskBookmarks={diskBookmarks}
+        setDiskCollection={updateDiskCollection}
+        exportQueue={[]}
+        downloadedDisks={[]}
+        visibleCandidates={isExportScreen ? diskCollection.filter(isDiskExportable) : []}
+        authRefresh={authRefresh}
+        cloudProviderHasAuthToken={cloudProviderHasAuthToken}
+        setActiveVtocCheckKey={setActiveVtocCheckKey}
+        showProgressModal={false}
+        panelVisible={isOpen && isExportScreen}
+      />
       {dialogs}
     </>
   )

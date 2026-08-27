@@ -8,6 +8,7 @@ import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
 import { controlOptionsToPopupItems } from "./controlpopup"
 import { retroFontSupports } from "../retro/retrotext"
+import { notifySettingsChanged } from "../settingschange"
 
 const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMetadata => {
   const control = choiceMetadata({
@@ -17,13 +18,19 @@ const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMeta
     label: context => context.t("retroControl.language"),
     labels: () => AllLanguages.map(language => LanguageNames[language]),
     currentIndex: context => selectedLanguageIndex ?? AllLanguages.indexOf(context.language),
-    select: (context, index) => context.changeLanguage(AllLanguages[index]),
+    select: (context, index) => {
+      context.changeLanguage(AllLanguages[index])
+      notifySettingsChanged(["options.language"], context.settingsOrigin)
+    },
     preview: (context, index) => context.changeLanguage(AllLanguages[index]),
   })
   control.options = () => AllLanguages.map(language => ({
     label: LanguageNames[language],
     popupLabel: `${LanguageFlags[language]} ${LanguageNames[language]}`,
-    action: runtime => runtime.changeLanguage(language),
+    action: runtime => {
+      runtime.changeLanguage(language)
+      notifySettingsChanged(["options.language"], runtime.settingsOrigin)
+    },
     preview: runtime => runtime.changeLanguage(language),
     useBrowserFont: !retroFontSupports(LanguageNames[language]),
   }))

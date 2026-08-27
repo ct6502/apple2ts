@@ -49,6 +49,7 @@ export enum MSG_WORKER {
   VERA_FRAME,
   VERA_PCM_WRITE,
   VERA_PSG_WRITE,
+  OPERATION_RESULT,
 }
 
 export enum MSG_MAIN {
@@ -504,10 +505,10 @@ export const getSymbolTables = (machineName: string) => {
 
 export const isHardDriveImage = (filename: string, fileSize: number, isProdosFloppy: boolean) => {
   const f = filename.toLowerCase()
-  if (f.endsWith(".hdv") || f.endsWith(".2mg") || f.endsWith(".2meg")) {
+  if (/\.(?:hdv|2mg|2meg)(?:$|[^a-z0-9])/.test(f)) {
     return true
   }
-  if (f.endsWith(".po")) {
+  if (/\.po(?:$|[^a-z0-9])/.test(f)) {
     if (!isProdosFloppy || fileSize === undefined) {
       return true
     }
@@ -518,6 +519,12 @@ export const isHardDriveImage = (filename: string, fileSize: number, isProdosFlo
   }
   return false
 }
+
+export const getDefaultDiskDriveIndex = (
+  filename: string,
+  fileSize: number,
+  isProdosFloppy: boolean,
+) => isHardDriveImage(filename, fileSize, isProdosFloppy) ? 0 : 2
 
 export const constructAudio = (mp3track: string) => {
   const audioDevice: AudioDevice = {

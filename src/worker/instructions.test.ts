@@ -54,8 +54,10 @@ test("doBranch", () => {
   @param accumExpect The expected value for the Accumulator after the run.
   @param pstat The expected value for the Processor Status after the run.
   @param debug (Optional) Print the program counter during execution.
+  @param interruptDisabled (Optional) Initial interrupt-disable state.
 */
-export const runAssemblyTest = (instr: string[], accumExpect: number, pstat: number, debug=false) => {
+export const runAssemblyTest = (instr: string[], accumExpect: number, pstat: number,
+  debug=false, interruptDisabled=false) => {
   const irqClear = 0x1FFF
   const start = 0x2000
   // Make sure reset6502 doesn't stomp on our flags for our interrupt tests.
@@ -67,7 +69,7 @@ export const runAssemblyTest = (instr: string[], accumExpect: number, pstat: num
   enableMockingboard(true, 4)
 //  resetMockingboard(4, true)
   updateAddressTables()
-  setInterruptDisabled(false)
+  setInterruptDisabled(interruptDisabled)
   if (instr.length === 1) {
     instr[0] = " " + instr[0]
   }
@@ -417,9 +419,9 @@ test("IRQ masked",   () => {
   // Force our fake ROM's BRK/IRQ vector to point to our handler
   memory[ROMmemoryStart + 0x3FFE] = 0x06
   memory[ROMmemoryStart + 0x3FFF] = 0x20
-  // This should interrupt right after our first instruction
+  // Start with IRQs masked; SEI should leave the pending request masked.
   interruptRequest()
-  runAssemblyTest(irqmasked.split("\n"), 0x33, I)
+  runAssemblyTest(irqmasked.split("\n"), 0x33, I, false, true)
 })
 
 const irqenabled =
@@ -455,6 +457,96 @@ test("IRQ with RTI",   () => {
   // This should interrupt right after our first instruction
   interruptRequest()
   runAssemblyTest(irq_rti.split("\n"), 0x33, 0)
+})
+
+type IrqBoundary = "current" | "next" | "masked"
+
+const pendingIrqCases: Array<[string, number, boolean, boolean, IrqBoundary]> = [
+  ["CLI with I clear", 0x58, false, false, "current"],
+  ["CLI clearing I", 0x58, true, false, "next"],
+  ["SEI setting I", 0x78, false, true, "current"],
+  ["SEI with I set", 0x78, true, true, "masked"],
+  ["PLP keeping I clear", 0x28, false, false, "current"],
+  ["PLP clearing I", 0x28, true, false, "next"],
+  ["PLP setting I", 0x28, false, true, "current"],
+  ["PLP keeping I set", 0x28, true, true, "masked"],
+  ["RTI keeping I clear", 0x40, false, false, "current"],
+  ["RTI clearing I", 0x40, true, false, "current"],
+  ["RTI setting I", 0x40, false, true, "masked"],
+  ["RTI keeping I set", 0x40, true, true, "masked"],
+]
+
+test.each(pendingIrqCases)("pending IRQ boundary: %s", (_name, opcode,
+  initiallyDisabled, finallyDisabled, boundary) => {
+  const start = 0x2000
+  const irqHandler = 0x3000
+  reset6502()
+  updateAddressTables()
+  memory[start] = opcode
+  memory[start + 1] = 0xEA // NOP at the following instruction boundary
+  memory[ROMmemoryStart + 0x3FFE] = irqHandler & 0xFF
+  memory[ROMmemoryStart + 0x3FFF] = irqHandler >> 8
+  setPC(start)
+  setInterruptDisabled(initiallyDisabled)
+
+  if (opcode === 0x28) {
+    s6502.StackPtr = 0xFE
+    memory[0x1FF] = finallyDisabled ? I : 0
+  } else if (opcode === 0x40) {
+    s6502.StackPtr = 0xFC
+    memory[0x1FD] = finallyDisabled ? I : 0
+    memory[0x1FE] = (start + 1) & 0xFF
+    memory[0x1FF] = (start + 1) >> 8
+  }
+
+  interruptRequest()
+  processInstruction()
+  expect(s6502.PC).toEqual(boundary === "current" ? irqHandler : start + 1)
+
+  if (boundary !== "current") {
+    processInstruction()
+    expect(s6502.PC).toEqual(boundary === "next" ? irqHandler : start + 2)
+  }
+})
+
+test("pending IRQ does not nest after BRK", () => {
+  const start = 0x2000
+  const irqHandler = 0x3000
+  reset6502()
+  updateAddressTables()
+  memory[start] = 0x00
+  memory[ROMmemoryStart + 0x3FFE] = irqHandler & 0xFF
+  memory[ROMmemoryStart + 0x3FFF] = irqHandler >> 8
+  setPC(start)
+  setInterruptDisabled(false)
+  interruptRequest()
+
+  processInstruction()
+
+  expect(s6502.PC).toEqual(irqHandler)
+  expect(s6502.StackPtr).toEqual(0xFC)
+})
+
+test("NMI prevents IRQ entry at the same boundary", () => {
+  const start = 0x2000
+  const nmiHandler = 0x3000
+  const irqHandler = 0x4000
+  reset6502()
+  updateAddressTables()
+  memory[start] = 0xEA
+  memory[ROMmemoryStart + 0x3FFA] = nmiHandler & 0xFF
+  memory[ROMmemoryStart + 0x3FFB] = nmiHandler >> 8
+  memory[ROMmemoryStart + 0x3FFE] = irqHandler & 0xFF
+  memory[ROMmemoryStart + 0x3FFF] = irqHandler >> 8
+  setPC(start)
+  setInterruptDisabled(false)
+  nonMaskableInterrupt()
+  interruptRequest()
+
+  processInstruction()
+
+  expect(s6502.PC).toEqual(nmiHandler)
+  expect(s6502.StackPtr).toEqual(0xFC)
 })
 
 const nmi =

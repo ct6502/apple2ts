@@ -569,12 +569,15 @@ export const generateMenuLaunchProgram = (
  * buffer open — which can cause "NO BUFFERS AVAILABLE" when the game launcher
  * later needs to BLOAD the block-reader stub.
  */
-const generateInteractiveMenuStartup = (
+export const generateInteractiveMenuStartup = (
   menuEntries: MenuDiskEntry[],
   helperSubdir: string
 ): string => {
   if (menuEntries.length === 0) {
     return `10 D$=CHR$(4):PRINT D$;"BRUN ${helperSubdir}/A2TSLAUNCH"\r20 PRINT D$;"CATALOG"\r`
+  }
+  if (menuEntries.length === 1) {
+    return `10 POKE ${MENU_SELECTED_INDEX_ADDRESS},1:D$=CHR$(4):PRINT D$;"RUN ${helperSubdir}/MENULAUNCH"\r`
   }
   return `10 D$=CHR$(4):PRINT D$;"RUN ${helperSubdir}/MENUSRC"\r`
 }
