@@ -323,7 +323,14 @@
 }
 
 .retro-text-cursor {
-  animation: retro-cursor-blink 1s steps(1, end) infinite;
+  animation: retro-cursor-blink 500ms steps(1, end) infinite;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-solid-text-cursor {
+  background: var(--retro-foreground);
+  color: transparent;
+  display: inline-block;
+  width: 1ch;
 }
 
 @keyframes retro-cursor-blink {

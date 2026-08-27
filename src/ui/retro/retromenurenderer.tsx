@@ -826,7 +826,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                     <>{" "}<span className={`retro-menu-value${option?.useBrowserFont || !retroFontSupports(visibleOption ?? "") ? " retro-browser-font" : ""}`}>
                       {visibleOption}
                       {item.textInput && selectedIndex === index && <span
-                        className="retro-text-cursor retro-mousetext"
+                        className={`retro-text-cursor retro-mousetext${
+                          item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")
+                            ? " retro-solid-text-cursor"
+                            : ""
+                        }`}
                         aria-hidden="true"
                       >{mouseTextCursor}</span>}
                     </span></>}
