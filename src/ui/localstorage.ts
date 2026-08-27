@@ -274,10 +274,7 @@ export const setPreferenceSlotConfig = (
   notifySettingsChanged([1, 2, 3, 4, 5, 6, 7].map(slot => `slots.${slot}`), origin)
 }
 
-export const setPreferenceSpeedMode = (
-  mode = 0,
-  origin: SettingsChangeOrigin = "external",
-) => {
+const savePreferenceSpeedMode = (mode: number) => {
   if (mode === 0) {
     localStorage.removeItem("speedMode")
   } else {
@@ -285,7 +282,10 @@ export const setPreferenceSpeedMode = (
   }
 }
 
-export const setPreferenceSpeedMode = (mode = 0) => {
+export const setPreferenceSpeedMode = (
+  mode = 0,
+  origin: SettingsChangeOrigin = "external",
+) => {
   savePreferenceSpeedMode(mode)
   passSpeedMode(mode)
   notifySettingsChanged(["options.speed"], origin)
