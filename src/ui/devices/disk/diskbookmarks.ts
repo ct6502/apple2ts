@@ -1,6 +1,7 @@
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 
 const storageKeyPrefix = "dbm-"
+export const DISK_BOOKMARKS_CHANGED_EVENT = "apple2ts-disk-bookmarks-changed"
 
 export type DiskBookmark = {
   type: DISK_COLLECTION_ITEM_TYPE,
@@ -16,10 +17,14 @@ export type DiskBookmark = {
 }
 
 export class DiskBookmarks {
-  private bookmarks: Map<string, DiskBookmark>
+  private bookmarks = new Map<string, DiskBookmark>()
 
   public constructor() {
-    this.bookmarks = new Map<string, DiskBookmark>()
+    this.reload()
+  }
+
+  public reload() {
+    this.bookmarks.clear()
     Object.keys(localStorage).forEach((storageKey) => {
       if (storageKey.startsWith(storageKeyPrefix)) {
         const storageValue = localStorage.getItem(storageKey)
@@ -58,6 +63,7 @@ export class DiskBookmarks {
     try {
       localStorage.setItem(storageKeyPrefix + bookmark.id, JSON.stringify(bookmark))
       this.bookmarks.set(bookmark.id, bookmark)
+      window.dispatchEvent(new Event(DISK_BOOKMARKS_CHANGED_EVENT))
     } catch (error) {
       console.warn(error)
     }
@@ -67,6 +73,7 @@ export class DiskBookmarks {
     try {
       this.bookmarks.delete(bookmarkId)
       localStorage.removeItem(storageKeyPrefix + bookmarkId)
+      window.dispatchEvent(new Event(DISK_BOOKMARKS_CHANGED_EVENT))
     } catch (error) {
       console.warn(error)
     }

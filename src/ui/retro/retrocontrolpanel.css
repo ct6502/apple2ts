@@ -326,18 +326,6 @@
   animation: retro-cursor-blink 1s steps(1, end) infinite;
 }
 
-.retro-checker-cursor {
-  background-image: conic-gradient(currentColor 25%,
-      transparent 0 50%,
-      currentColor 0 75%,
-      transparent 0);
-  background-size: 0.25em 0.25em;
-  display: inline-block;
-  height: 1em;
-  vertical-align: text-bottom;
-  width: 0.875em;
-}
-
 @keyframes retro-cursor-blink {
   50% {
     opacity: 0;

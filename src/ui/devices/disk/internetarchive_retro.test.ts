@@ -1,5 +1,13 @@
 const mockSearchInternetArchive = jest.fn()
 const mockLoadInternetArchiveResult = jest.fn()
+const mockCreateInternetArchiveCloudData = jest.fn(result => ({ itemId: result.identifier }))
+
+jest.mock("../../diskdialog/diskpanel_utils", () => ({
+  DISK_COLLECTION_ITEM_TYPE: { INTERNET_ARCHIVE: 1 },
+}))
+jest.mock("./internetarchive_utils", () => ({
+  generateUrlFromInternetArchiveId: (identifier: string) => new URL(`https://archive.org/${identifier}`),
+}))
 
 jest.mock("./internetarchive", () => ({
   internetArchiveCollections: [
@@ -8,6 +16,7 @@ jest.mock("./internetarchive", () => ({
   ],
   searchInternetArchive: (...args: unknown[]) => mockSearchInternetArchive(...args),
   loadInternetArchiveResult: (...args: unknown[]) => mockLoadInternetArchiveResult(...args),
+  createInternetArchiveCloudData: (result: { identifier: string }) => mockCreateInternetArchiveCloudData(result),
 }))
 jest.mock("../../ui_utilities", () => ({ showGlobalProgressModal: jest.fn() }))
 
@@ -52,6 +61,26 @@ describe("retro Internet Archive screen", () => {
     expect(mockSearchInternetArchive).toHaveBeenCalledWith("wizard", "collection-one", 1)
     expect(items.map(item => item.label)).toEqual(["Collection", "Title", "Results", "Wizard One"])
     expect(items.at(-1)?.contextualActionLabel).toBe("Load")
+
+    let favorite = false
+    const setFavorite = jest.fn(() => { favorite = true })
+    const removeFavorite = jest.fn(() => { favorite = false })
+    context.diskBookmarks = {
+      contains: jest.fn(() => favorite),
+      set: setFavorite,
+      remove: removeFavorite,
+    } as never
+    items = children(items as never[])
+    items = items.at(-1)?.onHorizontalInput?.(1) ?? []
+    expect(setFavorite).toHaveBeenCalledWith(expect.objectContaining({
+      id: "one",
+      title: "Wizard One",
+      type: 1,
+    }))
+    expect(items.at(-1)?.indicator).toBe("*")
+    items = items.at(-1)?.onHorizontalInput?.(-1) ?? []
+    expect(removeFavorite).toHaveBeenCalledWith("one")
+    expect(items.at(-1)?.indicator).toBeUndefined()
 
     mockSearchInternetArchive.mockResolvedValueOnce({
       results: [{ identifier: "two", title: "Wizard Two" }],

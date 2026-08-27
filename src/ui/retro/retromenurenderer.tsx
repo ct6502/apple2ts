@@ -22,6 +22,7 @@ import { UI_THEME } from "../../common/utility"
 import { DiskPanelVtoc } from "../diskdialog/diskpanel_vtoc"
 import { diskItemKey, isDiskExportable, TAB_INDEX } from "../diskdialog/diskpanel_utils"
 import { cloudProviderHasAuthToken } from "../devices/disk/cloudauth"
+import { DISK_BOOKMARKS_CHANGED_EVENT } from "../devices/disk/diskbookmarks"
 import {
   getRetroVtocIndicator,
   resetCollectionDriveSelectionSession,
@@ -56,7 +57,7 @@ const mouseTextLeft = String.fromCodePoint(0x2190)
 const mouseTextRight = String.fromCodePoint(0x2192)
 const mouseTextUp = String.fromCodePoint(0x2191)
 const mouseTextReturn = String.fromCodePoint(0x21B5)
-const mouseTextSolidCursor = String.fromCodePoint(0x2589)
+const mouseTextCursor = String.fromCodePoint(0xE07F)
 const checkmark = String.fromCodePoint(0x2713)
 const fixedWidthSpace = String.fromCodePoint(0x2007)
 const horizontalBorderGlyphs = ` ${"_".repeat(78)} `
@@ -349,7 +350,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     ?? (currentFrame ? saveActionLabel : t("retroControl.open"))
   const actionHintHalfCells = Math.ceil(actionHintWidth(footerActionLabel, language) * 2)
   const actionStartLine = 81 - actionHintHalfCells
-  const showHorizontalSelectionHint = (selectedItem?.options?.length ?? 0) > 1
+  const showHorizontalSelectionHint = (selectedItem?.options?.length ?? 0) > 1 ||
+    selectedItem?.onHorizontalInput !== undefined
   const showFooterAction = selectedItem?.contextualActionLabel !== undefined
     ? Boolean(selectedItem.contextualActionLabel)
     : !currentFrame || (currentFrame.isSubmitVisible
@@ -402,6 +404,36 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     window.addEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
     return () => window.removeEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
   }, [])
+
+  useEffect(() => {
+    const handleBookmarksChanged = () => {
+      if (!isOpen || !currentFrame?.refresh ||
+        (currentFrame.menuId !== "diskCollection.favorites" &&
+          !currentFrame.menuId.includes(".internetArchive"))) return
+
+      const selectedId = currentFrame.items[selectedIndex]?.id
+      const items = currentFrame.refresh(currentFrame.items, currentFrame.values)
+      const nextSelectedIndex = items.findIndex(item => item.id === selectedId)
+      setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
+        ? createMenuFrame(
+          frame.menuId,
+          frame.title,
+          items,
+          frame.submenuTitleValue,
+          frame.refresh,
+          frame.actionLabel,
+          frame.submit,
+          frame.isSubmitVisible,
+          frame.parentSelectedIndex,
+        )
+        : frame))
+      setSelectedIndex(nextSelectedIndex >= 0
+        ? nextSelectedIndex
+        : Math.max(0, items.findIndex(item => isMenuItemSelectable(item))))
+    }
+    window.addEventListener(DISK_BOOKMARKS_CHANGED_EVENT, handleBookmarksChanged)
+    return () => window.removeEventListener(DISK_BOOKMARKS_CHANGED_EVENT, handleBookmarksChanged)
+  }, [currentFrame, isOpen, selectedIndex])
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -505,11 +537,23 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
         const item = currentMenu[selectedIndex]
         if (!item) return
+        const direction = event.key === "ArrowLeft" ? -1 : 1
+        if (currentFrame && item.onHorizontalInput) {
+          event.preventDefault()
+          event.stopPropagation()
+          const items = item.onHorizontalInput(direction)
+          if (!items) return
+          const refreshedSelectedIndex = items.findIndex(refreshedItem => refreshedItem.id === item.id)
+          setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1
+            ? { ...frame, items, values: items.map(refreshedItem => refreshedItem.optionIndex ?? -1) }
+            : frame))
+          if (refreshedSelectedIndex >= 0) setSelectedIndex(refreshedSelectedIndex)
+          return
+        }
         const options = item.options
         if (currentFrame && options && options.length > 1) {
           event.preventDefault()
           event.stopPropagation()
-          const direction = event.key === "ArrowLeft" ? -1 : 1
           const revealCurrentValue = item.revealOptionOnFirstHorizontalInput &&
             item.contextualSubmenuTitleValue === undefined
           const nextValue = revealCurrentValue
@@ -781,11 +825,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   {(visibleOption || item.textInput) &&
                     <>{" "}<span className={`retro-menu-value${option?.useBrowserFont || !retroFontSupports(visibleOption ?? "") ? " retro-browser-font" : ""}`}>
                       {visibleOption}
-                      {item.textInput && selectedIndex === index && (isAppleIIPlus
-                        ? <span className="retro-text-cursor retro-mousetext" aria-hidden="true">
-                          {mouseTextSolidCursor}
-                        </span>
-                        : <span className="retro-text-cursor retro-checker-cursor" aria-hidden="true" />)}
+                      {item.textInput && selectedIndex === index && <span
+                        className="retro-text-cursor retro-mousetext"
+                        aria-hidden="true"
+                      >{mouseTextCursor}</span>}
                     </span></>}
                 </div>
               )

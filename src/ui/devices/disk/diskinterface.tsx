@@ -383,7 +383,9 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
     ? (_runtime, items, values) => getRetroExportHdvSize(items, values)
     : undefined,
   dynamicChildren: (runtime, items, values) => {
-    const disks = (runtime.diskCollection ?? getCollection()).filter(tab.filter)
+    const disks = (tab.index === TAB_INDEX.FAVORITES
+      ? getCollection()
+      : runtime.diskCollection ?? getCollection()).filter(tab.filter)
     if (tab.index !== TAB_INDEX.EXPORT && items === undefined && values === undefined) {
       resetCollectionDriveTab(tab.index)
     }

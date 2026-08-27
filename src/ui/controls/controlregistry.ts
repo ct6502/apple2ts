@@ -45,6 +45,10 @@ export type ControlMetadata<Context, Payload = unknown> = {
   textInput?: boolean
   textValue?: ControlValue<Context, string>
   onTextInput?: (context: Context, value: string) => readonly ControlMetadata<Context, Payload>[]
+  onHorizontalInput?: (
+    context: Context,
+    direction: -1 | 1,
+  ) => readonly ControlMetadata<Context, Payload>[] | undefined
   loadMoreOnNavigatePastEnd?: (context: Context) => Promise<readonly ControlMetadata<Context, Payload>[]>
   actionLabel?: ControlValue<Context, string | undefined>
   contextualActionLabel?: ControlValue<Context, string | undefined>
@@ -108,6 +112,7 @@ export type ResolvedControl<Payload = unknown> = {
   textInput?: boolean
   textValue?: string
   onTextInput?: (value: string) => ResolvedControl<Payload>[]
+  onHorizontalInput?: (direction: -1 | 1) => ResolvedControl<Payload>[] | undefined
   loadMoreOnNavigatePastEnd?: () => Promise<ResolvedControl<Payload>[]>
   actionLabel?: string
   contextualActionLabel?: string
@@ -246,6 +251,10 @@ export class ControlRegistry<Context, Payload = unknown> {
       onTextInput: metadata.onTextInput
         ? value => metadata.onTextInput!(context, value)
           .map(item => this.resolveControl(item, context))
+        : undefined,
+      onHorizontalInput: metadata.onHorizontalInput
+        ? direction => metadata.onHorizontalInput!(context, direction)
+          ?.map(item => this.resolveControl(item, context))
         : undefined,
       loadMoreOnNavigatePastEnd: metadata.loadMoreOnNavigatePastEnd
         ? async () => (await metadata.loadMoreOnNavigatePastEnd!(context))

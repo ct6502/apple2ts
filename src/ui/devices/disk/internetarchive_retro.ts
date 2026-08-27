@@ -1,11 +1,14 @@
 import { showGlobalProgressModal } from "../../ui_utilities"
+import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import type { RetroControlMetadata, RetroMenuContext } from "../../retro/retromenucontext"
 import {
   internetArchiveCollections,
   loadInternetArchiveResult,
   searchInternetArchive,
+  createInternetArchiveCloudData,
   type InternetArchiveResult,
 } from "./internetarchive"
+import { generateUrlFromInternetArchiveId } from "./internetarchive_utils"
 
 type InternetArchiveRetroState = {
   collectionIndex: number
@@ -101,11 +104,31 @@ const buildItems = (
   })
   state.results.forEach((result, index) => {
     const isLast = index === state.results.length - 1
+    const isFavorite = context.diskBookmarks?.contains(result.identifier) ?? false
     items.push({
       id: `diskDrives.${driveIndex}.internetArchive.result.${result.identifier}`,
       label: result.title,
+      indicator: isFavorite ? "*" : undefined,
       contextualActionLabel: "Load",
       keepMenuOpen: true,
+      onHorizontalInput: (runtime, direction) => {
+        if (!runtime.diskBookmarks) return
+        if (direction < 0) {
+          runtime.diskBookmarks.remove(result.identifier)
+        } else if (!runtime.diskBookmarks.contains(result.identifier)) {
+          runtime.diskBookmarks.set({
+            type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+            id: result.identifier,
+            title: result.title,
+            screenshotUrl: new URL(`https://archive.org/services/img/${result.identifier}`),
+            diskUrl: generateUrlFromInternetArchiveId(result.identifier).toString(),
+            detailsUrl: new URL(`https://archive.org/details/${result.identifier}`),
+            lastUpdated: new Date(),
+            cloudData: createInternetArchiveCloudData(result),
+          })
+        }
+        return buildItems(runtime, driveIndex, state)
+      },
       action: async runtime => {
         if (await loadInternetArchiveResult(result, driveIndex)) runtime.close()
       },
