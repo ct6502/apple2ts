@@ -2446,7 +2446,7 @@ export const preprocessInputFilesForMenu = async (
         }
       }
 
-      // A failed title is omitted from direct-load export.
+      // Skip the unavailable game data but retain its menu entry and error screen.
       menuProDosPrefixes[i] = undefined
       menuProDosCommands[i] = undefined
       continue

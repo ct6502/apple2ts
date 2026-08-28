@@ -11,7 +11,12 @@ jest.mock("./four_cade_prelaunch_db", () => ({
   parsePrelaunchScript: (...args: unknown[]) => mockParsePrelaunch(...args),
 }))
 
-import { preprocessInputFilesForMenu } from "./prodos_hdv"
+import fs from "fs"
+import path from "path"
+import { TextEncoder } from "util"
+import { buildProDosHdv, preprocessInputFilesForMenu } from "./prodos_hdv"
+
+Object.defineProperty(global, "TextEncoder", { configurable: true, value: TextEncoder })
 
 const inputFiles = [{ name: "AZTEC", type: 0xE0, data: new Uint8Array() }]
 const menuEntry = { filename: "AZTEC", displayName: "Aztec", imageKind: "4cade" as const }
@@ -62,12 +67,25 @@ describe("4cade HDV export failures", () => {
       .rejects.toThrow("Could not export \"Aztec\": the 4cade prelaunch script is unsupported or invalid")
   })
 
-  test("omits a failed title when the caller continues", async () => {
+  test("continues after the caller accepts a skipped game", async () => {
     const continueExport = jest.fn(() => true)
 
     await expect(preprocessInputFilesForMenu(inputFiles, [
       { ...menuEntry, displayName: "Missing 4cade title" },
     ], undefined, continueExport)).resolves.toBeDefined()
     expect(continueExport).toHaveBeenCalledTimes(1)
+  })
+
+  test("retains a failed title in the generated HDV menu", async () => {
+    mockFetchDisk.mockRejectedValue(new Error("HTTP 503"))
+    const base = new Uint8Array(fs.readFileSync(
+      path.resolve(__dirname, "../../public/disks/dosmaster18.po"),
+    ))
+
+    const hdv = await buildProDosHdv(inputFiles, "APPLE2TS", base, [
+      { ...menuEntry, filename: "FAILED", screenshotData: new Uint8Array([1]) },
+    ], undefined, () => true)
+
+    expect(Buffer.from(hdv).includes(Buffer.from("FAILED"))).toBe(true)
   })
 })
