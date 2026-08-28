@@ -1,5 +1,5 @@
 import { toHex, ADDR_MODE, default6502State } from "../common/utility"
-import { getDataBlock, memGet, memSet } from "./memory"
+import { getCurrentMachineName, getDataBlock, memGet, memSet } from "./memory"
 import { pass6502Instructions } from "./worker2main"
 // var startTime = performance.now()
 
@@ -365,7 +365,7 @@ const doInterrupt = (name: string, addr: number, pcOffset = 0) => {
   pushStack(name, PCreturn % 256)
   setBreak(name === "BRK")
   pushStack("P", s6502.PStatus)
-  setDecimal(false)  // 65c02 only
+  if (getCurrentMachineName() === "APPLE2EE") setDecimal(false)
   setInterruptDisabled()
   // Since we're in the middle of the BRK, set our new program counter to
   // be one less than our vector address. Don't do this for IRQ and NMI.
