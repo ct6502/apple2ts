@@ -163,14 +163,29 @@ test("speed operations complete after applying their mode", () => {
   setIsTesting()
   const previousState = getExternalMachineState()
   doSetRunMode(RUN_MODE.PAUSED)
+  const passMachineState = jest.spyOn(worker2main, "passMachineState")
   const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
 
   try {
+    doSetSpeedMode(3)
+    expect(passMachineState).toHaveBeenLastCalledWith(expect.objectContaining({
+      speedMode: 3,
+    }))
+    expect(passOperationResult).not.toHaveBeenCalled()
+    passMachineState.mockClear()
+
     doSetSpeedMode(4, 7)
 
     expect(getExternalMachineState().speedMode).toEqual(4)
+    expect(passMachineState).toHaveBeenCalledWith(expect.objectContaining({
+      speedMode: 4,
+    }))
     expect(passOperationResult).toHaveBeenCalledWith(7)
+    expect(passMachineState.mock.invocationCallOrder[0]).toBeLessThan(
+      passOperationResult.mock.invocationCallOrder[0],
+    )
   } finally {
+    passMachineState.mockRestore()
     passOperationResult.mockRestore()
     doSetSpeedMode(previousState.speedMode)
     doSetRunMode(previousState.runMode)
