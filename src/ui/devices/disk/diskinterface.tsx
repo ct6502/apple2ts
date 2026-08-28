@@ -102,7 +102,8 @@ const cloudAuthNotificationControls = (
   tabIndex: TAB_INDEX,
   disks: DiskCollectionItem[],
 ): RetroControlMetadata[] => {
-  const providersNeedingAuth = getCloudProvidersNeedingAuth(disks)
+  const cloudDisks = disks.filter(disk => disk.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE)
+  const providersNeedingAuth = getCloudProvidersNeedingAuth(cloudDisks)
   if (providersNeedingAuth.length === 0) return []
   return [
     ...CLOUD_PROVIDER_NAMES.filter(providerName => providersNeedingAuth.includes(providerName)).map(
@@ -408,7 +409,8 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
       const selectedDiskKeys = selectedExportDiskKeys(items, values)
       const disks = items.flatMap(item => item.payload ? [item.payload as DiskCollectionItem] : [])
       return selectedDiskKeys.size > 0 && getCloudProvidersNeedingAuth(
-        exportNotificationDisks(disks, selectedDiskKeys),
+        exportNotificationDisks(disks, selectedDiskKeys)
+          .filter(disk => disk.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE),
       ).length === 0
     }
     : undefined,

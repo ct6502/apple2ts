@@ -239,6 +239,21 @@ describe("Retro menu metadata structure", () => {
     expect(children.some(item => item.indicator !== undefined)).toBe(false)
   })
 
+  test("does not request cloud auth for Internet Archive disks with provider metadata", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const internetArchiveDisk = {
+      ...collectionDisk("prodos"),
+      type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+      title: "Cause and Effect: What Makes It Happen",
+      cloudData: { providerName: "GoogleDrive" } as CloudData,
+    }
+
+    const items = createRetroExportScreenItems(context, [internetArchiveDisk])
+
+    expect(mockGetCloudProvidersNeedingAuth).toHaveBeenCalledWith([])
+    expect(items.some(item => item.id.includes("notification"))).toBe(false)
+  })
+
   test("hides blocked disks and disables unknown disks on the Export to HDV screen", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
     const items = createRetroExportItems(context, [
