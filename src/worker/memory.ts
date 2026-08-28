@@ -748,6 +748,13 @@ export const setMemoryBlock = (addr: number, data: Uint8Array) => {
   memory.set(data, offset)
 }
 
+export const loadMainMemoryBlock = (addr: number, data: Uint8Array) => {
+  if (!Number.isInteger(addr) || addr < 0 || addr + data.length > 0xC000) {
+    throw new Error("Binary block must fit within main RAM at $0000-$BFFF")
+  }
+  memory.set(data, addr)
+}
+
 export const setMappedMemoryBlock = (addr: number, data: Uint8Array) => {
   let dataOffset = 0
   while (dataOffset < data.length) {

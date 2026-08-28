@@ -10,6 +10,7 @@ import {
   doSetRom,
   setRamWorks,
   setSlotDriver,
+  loadMainMemoryBlock,
 } from "./memory"
 import { hiresLineToAddress, RamWorksMemoryStart } from "../common/utility"
 import { setIsTesting } from "./worker2main"
@@ -447,6 +448,16 @@ test("test RamWorks Save/Restore", () => {
 
 const LOC1 = 0xD17B   // $53 in Apple II/plus/e/enhanced
 const LOC2 = 0xFE1F		// $60 in Apple II/plus/e/enhanced
+
+test("main-memory binary blocks reject non-RAM ranges before writing", () => {
+  const previous = memory[0xBFFF]
+  memory[0xBFFF] = 0x11
+
+  expect(() => loadMainMemoryBlock(0xBFFF, new Uint8Array([0x22, 0x33])))
+    .toThrow("main RAM at $0000-$BFFF")
+  expect(memory[0xBFFF]).toEqual(0x11)
+  memory[0xBFFF] = previous
+})
 
 const setupBSR = () => {
   memGet(0xC089)  // enable R/W RAM, bank 1

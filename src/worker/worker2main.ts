@@ -259,7 +259,7 @@ if (typeof self !== "undefined") {
       }
       case MSG_MAIN.LOAD_BINARY: {
         const binary = e.data.payload as LoadBinary
-        doLoadBinary(binary.address, binary.data)
+        doLoadBinary(binary.address, binary.data, e.data.operationId)
         break
       }
       case MSG_MAIN.SET_CYCLECOUNT:

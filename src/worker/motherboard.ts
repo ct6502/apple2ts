@@ -9,7 +9,7 @@ import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
   syncSoftSwitchStatusFlags} from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable,
-  setMappedMemoryBlock,
+  loadMainMemoryBlock,
   getBasePlusAuxMemory,
   setRamWorks,
   setAuxCardEnabled,
@@ -390,6 +390,36 @@ export const doSetMemory = (addr: number, value: number) => {
   updateExternalMachineState()
 }
 
+const refreshMemoryBlock = (addr: number, length: number) => {
+  if (cpuRunMode === RUN_MODE.PAUSED) {
+    const hiresLines = new Set<number>()
+    for (let offset = 0; offset < length; offset++) {
+      const address = addr + offset
+      if (address >= 0x2000 && address <= 0x5FFF) {
+        hiresLines.add(hiresAddressToLine(address))
+      }
+    }
+    hiresLines.forEach(exportMemoryToHiresLine)
+  }
+  updateExternalMachineState()
+}
+
+export const doLoadBinary = (
+  addr: number,
+  data: Uint8Array,
+  operationId?: number,
+) => {
+  try {
+    configureMachine()
+    loadMainMemoryBlock(addr, data)
+    refreshMemoryBlock(addr, data.length)
+    if (operationId !== undefined) passWorkerOperationResult(operationId)
+  } catch (error) {
+    if (operationId === undefined) throw error
+    passWorkerOperationResult(operationId, error instanceof Error ? error.message : String(error))
+  }
+}
+
 export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
   machineName = name
   if (name === "APPLE2P") {
@@ -595,13 +625,6 @@ export const doRunBinary = (addr: number, data: Uint8Array, entryAddress = addr)
   setMemoryBlock(addr, data)
   setPC(entryAddress)
   doSetRunMode(RUN_MODE.RUNNING, false)
-}
-
-export const doLoadBinary = (addr: number, data: Uint8Array) => {
-  // A direct load changes memory without changing CPU or device state.
-  configureMachine()
-  updateAddressTables()
-  setMappedMemoryBlock(addr, data)
 }
 
 export const doSetPastedText = (text: string) => {
