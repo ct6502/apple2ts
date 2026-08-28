@@ -34,7 +34,8 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
     diskUrl: "https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip",
     detailsUrl: "https://www.kickstarter.com/projects/8-bit-shack/undead-a-new-apple-role-player-game?utm_source=a2central",
-    fileSize: 819200
+    fileSize: 819200,
+    exportDisabled: true
   },
   {
     type: -1,
