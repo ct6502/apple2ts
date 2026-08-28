@@ -79,6 +79,10 @@ const handleTimerT1 = (slot: number, chip: number, cycleDelta: number) => {
           const t1NewLow = memGetSlotROM(slot, T1LL[chip])
           memSetSlotROM(slot, T1CL[chip], t1NewLow)
           memSetSlotROM(slot, T1CH[chip], t1NewHigh)
+          // The reloaded interval can still fire once if software switches
+          // the timer to one-shot mode before its next underflow.
+          const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
+          memSetSlotROM(slot, TIMER_FIRED[chip], fired & ~TIMER1)
         }
       }
     }
