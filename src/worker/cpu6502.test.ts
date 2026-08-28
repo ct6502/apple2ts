@@ -2,26 +2,31 @@ import { processInstruction } from "./cpu6502"
 import { memory, updateAddressTables } from "./memory"
 import { reset6502, s6502, setCycleCount, setPC } from "./instructions"
 import fs from "fs"
+import { IncomingMessage } from "http"
 import https from "https"
 import path from "path"
+import { pipeline } from "stream/promises"
 import { checkSoftSwitches } from "./softswitches"
 
-const downloadFile = (url: string, dest: string): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(dest)
-    https.get(url, (response) => {
-      if (response.statusCode !== 200) {
-        return reject(new Error(`Failed to get '${url}' (${response.statusCode})`))
-      }
-      response.pipe(file)
-      file.on("finish", () => {
-        file.close()
-        resolve()
-      })
-    }).on("error", (err) => {
-      fs.unlink(dest, () => reject(err))
+const downloadFile = async (url: string, dest: string, expectedSize: number) => {
+  const partial = `${dest}.${process.pid}.partial`
+  try {
+    const response = await new Promise<IncomingMessage>((resolve, reject) => {
+      https.get(url, resolve).on("error", reject)
     })
-  })
+    if (response.statusCode !== 200) {
+      response.resume()
+      throw new Error(`Failed to get '${url}' (${response.statusCode})`)
+    }
+    await pipeline(response, fs.createWriteStream(partial))
+    if ((await fs.promises.stat(partial)).size !== expectedSize) {
+      throw new Error(`Downloaded '${url}' has the wrong size`)
+    }
+    await fs.promises.rename(partial, dest)
+  } catch (error) {
+    await fs.promises.rm(partial, {force: true})
+    throw error
+  }
 }
 
 // See https://github.com/ct6502/apple2ts/issues/43
@@ -35,10 +40,10 @@ const runKlaus6502Test = async (testname: string) => {
   // incompatible with our license. So we do not want to include it in our repo.
   const url = "https://raw.githubusercontent.com/Klaus2m5/6502_65C02_functional_tests/refs/heads/master/bin_files/" + testname
   const dest = path.join(__dirname, "roms", testname)
+  const expectedSize = 0x10000
 
-  // Download the file if it doesn't exist
-  if (!fs.existsSync(dest)) {
-    await downloadFile(url, dest)
+  if (!fs.existsSync(dest) || fs.statSync(dest).size !== expectedSize) {
+    await downloadFile(url, dest, expectedSize)
   }
 
   const pcode = fs.readFileSync(dest)
@@ -104,7 +109,6 @@ const runKlaus6502Test = async (testname: string) => {
   expect(s6502.cycleCount).toEqual(cycleExpect)
 }
 
-test("Klaus 6502", () => {runKlaus6502Test("6502_functional_test.bin")}, 20000)
+test("Klaus 6502", async () => {await runKlaus6502Test("6502_functional_test.bin")}, 20000)
 
-test("Klaus 65C02 extended opcodes", () => {runKlaus6502Test("65C02_extended_opcodes_test.bin")}, 20000)
-
+test("Klaus 65C02 extended opcodes", async () => {await runKlaus6502Test("65C02_extended_opcodes_test.bin")}, 20000)
