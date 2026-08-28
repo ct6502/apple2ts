@@ -3,6 +3,9 @@ import { act } from "react"
 import { createRoot } from "react-dom/client"
 import { DefaultHelpContent } from "./defaulthelpcontent"
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+
 describe("DefaultHelpContent", () => {
   it("renders translated messages as text and keeps link destinations in code", () => {
     const maliciousTranslation = "<a href=\"javascript:alert(1)\">owned</a>"

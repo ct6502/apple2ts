@@ -1,6 +1,7 @@
 import { VidHD } from "./vidhd"
 import { memGet, memSet } from "../memory"
 import { doBoot, enableVidHD, disableVidHD } from "../motherboard"
+import { setIsTesting } from "../worker2main"
 
 describe("VidHD Expansion Card Emulation", () => {
   let card: VidHD
@@ -89,6 +90,7 @@ describe("VidHD Expansion Card Emulation", () => {
   })
 
   test("Memory read and write integration with slot 3", () => {
+    setIsTesting()
     doBoot()
     enableVidHD(3)
 

@@ -40,7 +40,7 @@ export const setIsTesting = () => {
 const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
   if (!isTesting) {
     try {
-      self.postMessage({msg, payload})    
+      self.postMessage({msg, payload})
     } catch (error) {
       console.error(`worker2main: doPostMessage error: ${error}`)
     }
