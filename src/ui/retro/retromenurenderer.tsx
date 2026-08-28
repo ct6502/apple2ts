@@ -409,6 +409,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     const handleBookmarksChanged = () => {
       if (!isOpen || !currentFrame?.refresh ||
         (currentFrame.menuId !== "diskCollection.favorites" &&
+          currentFrame.menuId !== "diskCollection.export" &&
           !currentFrame.menuId.includes(".internetArchive"))) return
 
       const selectedId = currentFrame.items[selectedIndex]?.id

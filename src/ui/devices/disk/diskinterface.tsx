@@ -385,7 +385,7 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
     ? (_runtime, items, values) => getRetroExportHdvSize(items, values)
     : undefined,
   dynamicChildren: (runtime, items, values) => {
-    const disks = (tab.index === TAB_INDEX.FAVORITES
+    const disks = (tab.index === TAB_INDEX.FAVORITES || tab.index === TAB_INDEX.EXPORT
       ? getCollection()
       : runtime.diskCollection ?? getCollection()).filter(tab.filter)
     if (tab.index !== TAB_INDEX.EXPORT && items === undefined && values === undefined) {

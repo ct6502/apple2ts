@@ -254,6 +254,23 @@ describe("Retro menu metadata structure", () => {
     expect(items.some(item => item.id.includes("notification"))).toBe(false)
   })
 
+  test("does not retain deleted favorites in Export from a stale host collection", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const deletedFavorite = {
+      ...collectionDisk("prodos"),
+      type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+      title: "Cause and Effect: What Makes It Happen",
+      bookmarkId: "deleted-favorite",
+    }
+    context.diskCollection = [deletedFavorite]
+    localStorage.removeItem("dbm-deleted-favorite")
+    const exportTab = retroDiskControls.find(control => control.id === "diskCollection.export")
+
+    const items = exportTab?.dynamicChildren?.(context) ?? []
+
+    expect(items.some(item => item.label === deletedFavorite.title)).toBe(false)
+  })
+
   test("hides blocked disks and disables unknown disks on the Export to HDV screen", () => {
     const context = createControlContext(undefined, key => key, "en", () => undefined)
     const items = createRetroExportItems(context, [
