@@ -78,7 +78,8 @@ type FourCadeDiskMetadata = {
   }>  // companion files used by multi-file games and runtime loaders
 }
 
-import { FOUR_CADE_PRELAUNCH_DB, PrelaunchOp, FourCadeEntry, fetchFourCadeDisk, fetchFourCadePrelaunch, parsePrelaunchScript, extractAllBinFiles } from "./four_cade_prelaunch_db"
+import { FOUR_CADE_PRELAUNCH_DB, FourCadeEntry } from "./four_cade_prelaunch_db"
+import { PrelaunchOp, fetchFourCadeDisk, fetchFourCadePrelaunch, parsePrelaunchScript, extractAllBinFiles } from "./four_cade_prelaunch"
 import { depack6502, run6502OnMem } from "./depack6502"
 // The HDV builder needs the immutable IIe ROM image when preparing offline relays.
 // eslint-disable-next-line no-restricted-imports
@@ -6407,4 +6408,3 @@ export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
 // categories). Cached VTOC results older than this version are re-evaluated so
 // disks previously classified as non-exportable can be reclassified.
 export const VTOC_REFRESH = 11
-

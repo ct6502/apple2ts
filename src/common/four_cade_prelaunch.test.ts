@@ -1,4 +1,4 @@
-import { parsePrelaunchScript } from "./four_cade_prelaunch_db"
+import { parsePrelaunchScript } from "./four_cade_prelaunch"
 
 describe("4cade prelaunch parsing", () => {
   test("uses the extracted BIN load address for standard.a", () => {

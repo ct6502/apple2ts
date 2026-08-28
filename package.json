@@ -33,7 +33,7 @@
     "prelint-fix": "npm run generate-i18n-catalogs",
     "lint-fix": "eslint . --fix --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "pretest": "npm run check-qr-hgr-assembly && npm run test-po-catalog",
+    "pretest": "npm run check-qr-hgr-assembly && npm run test-po-catalog && npm run test-4cade-db-tool",
     "test": "jest",
     "generate-qr-hgr-assembly": "node tools/generate-qr-hgr-assembly.mjs",
     "check-qr-hgr-assembly": "node tools/generate-qr-hgr-assembly.mjs --check",
@@ -47,6 +47,8 @@
     "test-disassembly-tooltip-review": "node --test tools/render-disassembly-tooltip-review.test.mjs",
     "pretest-po-catalog": "npm run generate-i18n-catalogs",
     "test-po-catalog": "node --test tools/i18n/*.test.mjs",
+    "test-4cade-db-tool": "node --test tools/regen_4cade_db.test.mjs",
+    "update-4cade-db": "node tools/regen_4cade_db.ts",
     "update-i18n-catalogs": "node tools/i18n/update-catalogs.mjs",
     "generate-i18n-catalogs": "node tools/i18n/generate-catalogs.mjs",
     "check-i18n-catalogs": "node tools/i18n/generate-catalogs.mjs --check"
