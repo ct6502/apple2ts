@@ -360,6 +360,7 @@ export const doSetSpeedMode = (speedModeIn: number, operationId?: number) => {
   refreshTime = (speedMode === 4) ? 0 : 16.6881
   cpuCyclesPerRefresh = 17030 * ([0.1, 0.5, 1, 2, 3, 4, 24])[speedMode + 2]
   resetRefreshCounter()
+  updateExternalMachineState()
   if (operationId !== undefined) passWorkerOperationResult(operationId)
 }
 
