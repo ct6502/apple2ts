@@ -11,7 +11,7 @@ import { showGlobalProgressModal } from "../../ui_utilities"
 import { handleSetDiskFromURL } from "./driveprops"
 import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
 import { useTranslation } from "../../../i18n/useTranslation"
-interface DemoZooItem {
+export interface DemoZooItem {
   id: number
   title: string
   subType: string
@@ -31,6 +31,42 @@ interface DemoZooSnapshot {
   pageCount: number
   pages: Array<{ page: number; items: DemoZooItem[] }>
 }
+
+export const demoZooTypeFilters = [
+  { id: "all", labelKey: "demoZoo.all" },
+  { id: "demo", labelKey: "demoZoo.demo" },
+  { id: "intro", labelKey: "demoZoo.intro" },
+  { id: "cracktro", labelKey: "demoZoo.cracktro" },
+  { id: "music", labelKey: "demoZoo.music" },
+]
+
+export const loadDemoZooSnapshot = async (): Promise<DemoZooItem[]> => {
+  const response = await fetch(`${import.meta.env.BASE_URL}data/demozoo_snapshot.json`, { cache: "no-store" })
+  if (!response.ok) throw new Error(`Snapshot request failed: ${response.status}`)
+  const snapshot = await response.json() as DemoZooSnapshot
+  return snapshot.pages.flatMap(page => page.items)
+}
+
+export const filterDemoZooItems = (items: DemoZooItem[], type: string, query: string) => {
+  const normalizedQuery = query.trim().toLowerCase()
+  return items.filter(item =>
+    (type === "all" || item.type.toLowerCase().includes(type.toLowerCase())) &&
+    (!normalizedQuery || item.title.toLowerCase().includes(normalizedQuery) ||
+      item.author.toLowerCase().includes(normalizedQuery)))
+}
+
+export const createDemoZooCloudData = (item: DemoZooItem, downloadUrl = item.demozooUrl): CloudData => ({
+  providerName: "DemoZoo",
+  syncStatus: CLOUD_SYNC.INACTIVE,
+  syncInterval: -1,
+  lastSyncTime: Number.MAX_VALUE,
+  fileName: item.title,
+  itemId: `demozoo_${item.id}`,
+  apiEndpoint: "",
+  downloadUrl,
+  detailsUrl: item.demozooUrl,
+  fileSize: -1,
+})
 
 const DEMOZOO_DIALOG_STATE_KEY = "apple2ts.demozoo.dialogState"
 interface DemoZooDialogState {
@@ -82,18 +118,7 @@ const DemoZooResultCard = (props: DemoZooDialogResultProps) => {
       diskUrl: item.demozooUrl,
       detailsUrl: new URL(item.demozooUrl),
       lastUpdated: new Date(),
-      cloudData: {
-        providerName: "DemoZoo",
-        syncStatus: CLOUD_SYNC.INACTIVE,
-        syncInterval: -1,
-        lastSyncTime: Number.MAX_VALUE,
-        fileName: item.title,
-        itemId: itemId,
-        apiEndpoint: "",
-        downloadUrl: item.demozooUrl,
-        detailsUrl: item.demozooUrl,
-        fileSize: -1
-      }
+      cloudData: createDemoZooCloudData(item)
     })
     setBookmarked(true)
   }
@@ -299,6 +324,33 @@ const fetchDemoZooProduction = async (id: number): Promise<RawDemoZooApiProducti
   } catch (pageError) {
     throw new Error(`DemoZoo API and web page unavailable: ${String(pageError || apiError)}`)
   }
+}
+
+export const loadDemoZooResult = async (item: DemoZooItem, driveIndex: number): Promise<boolean> => {
+  let downloadUrls = item.downloadUrl ? [item.downloadUrl] : []
+  if (downloadUrls.length === 0) {
+    const detail = await fetchDemoZooProduction(item.id)
+    downloadUrls = chooseDemoZooDownloadUrls(detail.download_links)
+  }
+
+  const resolvedDownloadUrls: string[] = []
+  for (const candidateUrl of downloadUrls) {
+    try {
+      const resolvedUrls = await resolveExternalDownloadUrls(candidateUrl)
+      for (const resolvedUrl of resolvedUrls) {
+        if (!resolvedDownloadUrls.includes(resolvedUrl)) resolvedDownloadUrls.push(resolvedUrl)
+      }
+    } catch (error) {
+      console.warn(`Unable to resolve DemoZoo download page: ${candidateUrl}`, error)
+    }
+  }
+
+  for (const downloadUrl of resolvedDownloadUrls) {
+    if (await handleSetDiskFromURL(downloadUrl, undefined, driveIndex, createDemoZooCloudData(item, downloadUrl))) {
+      return true
+    }
+  }
+  return false
 }
 
 const classifyProductionType = (value: string): string => {
@@ -618,7 +670,7 @@ const DemoZooDialog = (props: DemoZooDialogProps) => {
               name="searchButton"
               type="button"
               value={t("internetArchive.go") || "GO"}
-              onClick={() => {}}
+              onClick={() => { }}
             />
           </div>
         </div>

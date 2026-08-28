@@ -22,6 +22,8 @@ import { choiceMetadata, toggleMetadata } from "../../retro/retromenuhelpers"
 import type { RetroControlMetadata, RetroMenuContext, RetroResolvedControl } from "../../retro/retromenucontext"
 import { DiskBookmarks } from "./diskbookmarks"
 import { newReleases } from "./newreleases"
+import { createRetroDemoZooControl } from "./demozoo_retro"
+import { createRetroInternetArchiveControl } from "./internetarchive_retro"
 import {
   DISK_DRIVE_LABELS,
   demoZooEnabled,
@@ -100,7 +102,8 @@ const cloudAuthNotificationControls = (
   tabIndex: TAB_INDEX,
   disks: DiskCollectionItem[],
 ): RetroControlMetadata[] => {
-  const providersNeedingAuth = getCloudProvidersNeedingAuth(disks)
+  const cloudDisks = disks.filter(disk => disk.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE)
+  const providersNeedingAuth = getCloudProvidersNeedingAuth(cloudDisks)
   if (providersNeedingAuth.length === 0) return []
   return [
     ...CLOUD_PROVIDER_NAMES.filter(providerName => providersNeedingAuth.includes(providerName)).map(
@@ -281,6 +284,8 @@ const collectionItems = (
   tabIndex: TAB_INDEX,
   disks: DiskCollectionItem[],
   sortMode: DiskCollectionSortMode = getDiskCollectionSortMode(tabIndex),
+  items?: readonly RetroResolvedControl[],
+  values?: number[],
 ): RetroControlMetadata[] => {
   if (disks.length === 0) return []
   const sortIndex = diskCollectionSortOptions.findIndex(option => option.value === sortMode)
@@ -298,26 +303,38 @@ const collectionItems = (
     defaultIndex: defaultSortIndex,
     valueOnly: true,
   })
-  sortControl.refreshOptions = (runtime, index) => collectionItems(
+  sortControl.refreshOptions = (runtime, index, currentItems, currentValues) => collectionItems(
     runtime,
     tabIndex,
     disks,
     diskCollectionSortOptions[index].value,
+    currentItems,
+    currentValues,
   )
   const driveOptions = DISK_DRIVE_LABELS.map(label => ({ label }))
+  const isFavorites = tabIndex === TAB_INDEX.FAVORITES
+  const markedFavoriteKeys = new Set(items?.flatMap((item, index) =>
+    values?.[index] === item.checkmarkIndex && item.payload
+      ? [diskItemKey(item.payload as DiskCollectionItem)]
+      : []))
   return [
     ...sortDisks(disks, sortMode).map((disk, index): RetroControlMetadata => ({
       id: `diskCollection.${tabIndex}.disk.${index}`,
       kind: "action",
       label: decodeDiskTitle(disk.title),
-      options: driveOptions,
-      optionIndex: () => getCollectionDriveIndex(disk),
+      payload: disk,
+      options: isFavorites ? [{ label: "" }, { label: "" }] : driveOptions,
+      optionIndex: () => isFavorites
+        ? markedFavoriteKeys.has(diskItemKey(disk)) ? 1 : 0
+        : getCollectionDriveIndex(disk),
+      checkmarkIndex: isFavorites ? 1 : undefined,
+      checkedIndicator: isFavorites ? "X" : undefined,
       hideOptionValue: true,
-      revealOptionOnFirstHorizontalInput: true,
-      contextualSubmenuTitleValue: () => !revealedCollectionDriveTabs.has(tabIndex)
+      revealOptionOnFirstHorizontalInput: !isFavorites,
+      contextualSubmenuTitleValue: () => isFavorites || !revealedCollectionDriveTabs.has(tabIndex)
         ? undefined
         : DISK_DRIVE_LABELS[getCollectionDriveIndex(disk)],
-      refreshOptions: (runtime, driveIndex) => {
+      refreshOptions: isFavorites ? undefined : (runtime, driveIndex) => {
         setSelectedCollectionDriveIndex(driveIndex)
         revealedCollectionDriveTabs.add(tabIndex)
         return collectionItems(runtime, tabIndex, disks, sortMode)
@@ -382,13 +399,15 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
     ? (_runtime, items, values) => getRetroExportHdvSize(items, values)
     : undefined,
   dynamicChildren: (runtime, items, values) => {
-    const disks = (runtime.diskCollection ?? getCollection()).filter(tab.filter)
+    const disks = (tab.index === TAB_INDEX.FAVORITES || tab.index === TAB_INDEX.EXPORT
+      ? getCollection()
+      : runtime.diskCollection ?? getCollection()).filter(tab.filter)
     if (tab.index !== TAB_INDEX.EXPORT && items === undefined && values === undefined) {
       resetCollectionDriveTab(tab.index)
     }
     return tab.index === TAB_INDEX.EXPORT
       ? createRetroExportScreenItems(runtime, disks, items, values)
-      : collectionItems(runtime, tab.index, disks)
+      : collectionItems(runtime, tab.index, disks, getDiskCollectionSortMode(tab.index), items, values)
   },
   actionLabel: runtime => runtime.t(tab.index === TAB_INDEX.EXPORT ? "collection.export" : "retroControl.load"),
   submit: tab.index === TAB_INDEX.EXPORT
@@ -399,12 +418,23 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
       void exportDisks(runtime, selectedDisks)
     }
     : undefined,
+  onLeave: tab.index === TAB_INDEX.FAVORITES
+    ? (runtime, items, values) => {
+      items.forEach((item, index) => {
+        const bookmarkId = (item.payload as DiskCollectionItem | undefined)?.bookmarkId
+        if (bookmarkId && values[index] === item.checkmarkIndex) {
+          runtime.diskBookmarks?.remove(bookmarkId)
+        }
+      })
+    }
+    : undefined,
   isSubmitVisible: tab.index === TAB_INDEX.EXPORT
     ? (_runtime, items, values) => {
       const selectedDiskKeys = selectedExportDiskKeys(items, values)
       const disks = items.flatMap(item => item.payload ? [item.payload as DiskCollectionItem] : [])
       return selectedDiskKeys.size > 0 && getCloudProvidersNeedingAuth(
-        exportNotificationDisks(disks, selectedDiskKeys),
+        exportNotificationDisks(disks, selectedDiskKeys)
+          .filter(disk => disk.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE),
       ).length === 0
     }
     : undefined,
@@ -419,18 +449,8 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
       context.displayProps.setShowFileOpenDialog(true, driveIndex)
     },
   },
-  {
-    id: `diskDrives.${driveIndex}.load.internetArchive`,
-    label: context => context.t("disk.loadDiskFromInternetArchive"),
-    keepMenuOpen: true,
-    action: context => context.openDiskDialog({ driveIndex, type: "internetArchive" }),
-  },
-  ...(demoZooEnabled ? [{
-    id: `diskDrives.${driveIndex}.load.demoZoo`,
-    label: (context: RetroMenuContext) => context.t("disk.loadDiskFromDemoZoo"),
-    keepMenuOpen: true,
-    action: (context: RetroMenuContext) => context.openDiskDialog({ driveIndex, type: "demoZoo" }),
-  }] : []),
+  createRetroInternetArchiveControl(driveIndex),
+  ...(demoZooEnabled ? [createRetroDemoZooControl(driveIndex)] : []),
   ...(!navigator.userAgent.includes("Electron") ? [
     {
       id: `diskDrives.${driveIndex}.load.oneDrive`,

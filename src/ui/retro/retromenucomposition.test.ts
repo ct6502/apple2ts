@@ -9,6 +9,17 @@ jest.mock("../devices/disk/cloudauth", () => ({
     mockGetCloudProvidersNeedingAuth(disks),
   signInToCloudProvider: () => mockSignInToCloudProvider(),
 }))
+jest.mock("../devices/disk/apple2tsproxy", () => ({
+  apple2tsProxyPath: (path: string) => path,
+  hasApple2tsProxy: false,
+}))
+jest.mock("../devices/disk/demozoodialog", () => ({
+  createDemoZooCloudData: jest.fn(),
+  demoZooTypeFilters: [{ id: "all", labelKey: "demoZoo.all" }],
+  filterDemoZooItems: jest.fn(() => []),
+  loadDemoZooResult: jest.fn(),
+  loadDemoZooSnapshot: jest.fn(() => Promise.resolve([])),
+}))
 
 jest.mock("../devices/disk/diskdrive", () => ({
   __esModule: true,
@@ -60,6 +71,7 @@ import {
   retroDiskControls,
 } from "../devices/disk/diskinterface"
 import { DISK_COLLECTION_ITEM_TYPE } from "../diskdialog/diskpanel_utils"
+import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import {
   createControlContext,
   type RetroControlMetadata,
@@ -226,6 +238,81 @@ describe("Retro menu metadata structure", () => {
     const children = tab?.dynamicChildren?.(context) ?? []
     expect(children.some(item => item.id.includes("notification"))).toBe(false)
     expect(children.some(item => item.indicator !== undefined)).toBe(false)
+  })
+
+  test("does not request cloud auth for Internet Archive disks with provider metadata", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const internetArchiveDisk = {
+      ...collectionDisk("prodos"),
+      type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+      title: "Cause and Effect: What Makes It Happen",
+      cloudData: { providerName: "GoogleDrive" } as CloudData,
+    }
+
+    const items = createRetroExportScreenItems(context, [internetArchiveDisk])
+
+    expect(mockGetCloudProvidersNeedingAuth).toHaveBeenCalledWith([])
+    expect(items.some(item => item.id.includes("notification"))).toBe(false)
+  })
+
+  test("does not retain deleted favorites in Export from a stale host collection", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const deletedFavorite = {
+      ...collectionDisk("prodos"),
+      type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+      title: "Cause and Effect: What Makes It Happen",
+      bookmarkId: "deleted-favorite",
+    }
+    context.diskCollection = [deletedFavorite]
+    localStorage.removeItem("dbm-deleted-favorite")
+    const exportTab = retroDiskControls.find(control => control.id === "diskCollection.export")
+
+    const items = exportTab?.dynamicChildren?.(context) ?? []
+
+    expect(items.some(item => item.label === deletedFavorite.title)).toBe(false)
+  })
+
+  test("marks favorites with X and deletes them only when leaving the screen", () => {
+    const bookmarkId = "favorite-to-delete"
+    const bookmarks = new DiskBookmarks()
+    bookmarks.set({
+      type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+      id: bookmarkId,
+      title: "Cause and Effect: What Makes It Happen",
+      screenshotUrl: new URL("https://example.com/screenshot.png"),
+      diskUrl: "https://example.com/cause-and-effect.woz",
+      lastUpdated: new Date(0),
+      vtocType: "prodos",
+    })
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    context.diskBookmarks = bookmarks
+    const favorites = retroMenuRegistry.resolve(context, "diskCollection")
+      .find(item => item.id === "diskCollection.favorites")
+    const items = typeof favorites?.children === "function" ? favorites.children() : []
+    const diskIndex = items.findIndex(item => item.payload !== undefined)
+    const disk = items[diskIndex]
+
+    expect(disk).toMatchObject({
+      checkmarkIndex: 1,
+      checkedIndicator: "X",
+      hideOptionValue: true,
+      optionIndex: 0,
+    })
+    expect(disk.options).toHaveLength(2)
+    expect(bookmarks.contains(bookmarkId)).toBe(true)
+
+    const values = items.map(item => item.optionIndex ?? -1)
+    values[diskIndex] = 1
+    const refreshedItems = typeof favorites?.children === "function"
+      ? favorites.children(items, values)
+      : []
+    const refreshedDisk = refreshedItems.find(item => item.payload !== undefined)
+    expect(refreshedDisk?.optionIndex).toBe(1)
+
+    favorites?.onLeave?.(refreshedItems, refreshedItems.map(item => item.optionIndex ?? -1))
+
+    expect(bookmarks.contains(bookmarkId)).toBe(false)
+    expect(localStorage.getItem(`dbm-${bookmarkId}`)).toBeNull()
   })
 
   test("hides blocked disks and disables unknown disks on the Export to HDV screen", () => {

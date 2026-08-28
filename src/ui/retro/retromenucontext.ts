@@ -2,6 +2,7 @@ import type { Language } from "../../i18n"
 import type { RETRO_IIGS_COLOR_PREFERENCE, RETRO_SKIN } from "../localstorage"
 import type { SettingsChangeOrigin } from "../settingschange"
 import type { ControlMetadata, ResolvedControl } from "../controls/controlregistry"
+import type { DiskBookmarks } from "../devices/disk/diskbookmarks"
 
 export type Translate = (key: string, params?: Record<string, string>) => string
 
@@ -23,6 +24,7 @@ export type RetroMenuContext = {
   retroSkin: RETRO_SKIN
   retroIIGSColors: Record<RETRO_IIGS_COLOR_PREFERENCE, number>
   diskCollection?: DiskCollectionItem[]
+  diskBookmarks?: DiskBookmarks
   notifyCloudAuthChanged?: () => void
   startTour: (tour: string) => void
 }
@@ -45,6 +47,7 @@ export const createControlContext = (
   retroSkin: 0 as RETRO_SKIN,
   retroIIGSColors: { text: 15, background: 6, border: 6 },
   diskCollection: undefined,
+  diskBookmarks: undefined,
   notifyCloudAuthChanged: undefined,
   startTour: () => undefined,
 })

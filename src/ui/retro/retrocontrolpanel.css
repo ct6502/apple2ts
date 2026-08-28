@@ -322,6 +322,23 @@
   top: 2px;
 }
 
+.retro-text-cursor {
+  animation: retro-cursor-blink 500ms steps(1, end) infinite;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-solid-text-cursor {
+  background: var(--retro-foreground);
+  color: transparent;
+  display: inline-block;
+  width: 1ch;
+}
+
+@keyframes retro-cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 .retro-panel.retro-skin-apple-iiplus .retro-submenu-title.retro-text-submenu-title {
   background: var(--retro-background);
   box-sizing: border-box;

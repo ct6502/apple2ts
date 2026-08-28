@@ -4,64 +4,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
 import { faStar as faStarSolid } from "@fortawesome/free-solid-svg-icons"
 import { DiskBookmarks } from "./diskbookmarks"
-import { CLOUD_SYNC } from "../../../common/utility"
 import { svgInternetArchiveSoftware, svgInternetArchiveViews, svgInternetArchiveFavorites, svgInternetArchiveReviews, svgInternetArchiveLogo, svgInternetArchiveTitle } from "../../img/icon_internetarchive"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import { showGlobalProgressModal } from "../../ui_utilities"
-import { handleSetDiskFromURL } from "./driveprops"
 import { generateUrlFromInternetArchiveId } from "./internetarchive_utils"
-import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
 import { useTranslation } from "../../../i18n/useTranslation"
-
-const queryMaxRows = 25
-const queryFormat = "https://archive.org/advancedsearch.php?" + [
-  "q=title:({0})+AND+collection:({1})+AND+mediatype:(software)",
-  "fl[]=identifier",
-  "fl[]=title",
-  "fl[]=creator",
-  "fl[]=downloads",
-  "fl[]=month",
-  "fl[]=num_reviews",
-  "sort[]=downloads+desc",
-  "sort[]=stars+desc",
-  `rows=${queryMaxRows}`,
-  "page={2}",
-  "output=json"
-].join("&")
-
-interface SoftwareCollection {
-  id: string,
-  title: string,
-  imageUrl: string
-}
-const softwareCollections: SoftwareCollection[] = [
-  {
-    id: "softwarelibrary_apple",
-    title: "The Software Library: Apple Computer",
-    imageUrl: "collections/softwarelibrary_apple_itemimage.jpg"
-  },
-  {
-    id: "softwarelibrary_apple_games",
-    title: "The Apple II Library: Games",
-    imageUrl: "collections/softwarelibrary_apple_games_itemimage.jpg"
-  },
-  {
-    id: "softwarelibrary_apple_woz_educational",
-    title: "Software Library: Apple Educational",
-    imageUrl: "collections/softwarelibrary_apple_woz_educational_itemimage.jpg"
-  },
-  {
-    id: "apple_ii_library_4am",
-    title: "Apple II Library: The 4am Collection",
-    imageUrl: "collections/apple_ii_library_4am_itemimage.jpg"
-  }
-]
-
-function formatString(template: string, ...args: string[]): string {
-  return template.replace(/{(\d+)}/g, (match, index) => {
-    return typeof args[index] !== "undefined" ? args[index] : match
-  })
-}
+import {
+  createInternetArchiveCloudData,
+  INTERNET_ARCHIVE_PAGE_SIZE,
+  internetArchiveCollections,
+  loadInternetArchiveResult,
+  searchInternetArchive,
+  type InternetArchiveCollection,
+  type InternetArchiveResult,
+} from "./internetarchive"
 
 function formatNumber(num: number, precision = 1) {
   if (num < 1000) {
@@ -85,36 +41,17 @@ function formatNumber(num: number, precision = 1) {
   return num
 }
 
-interface InternetDialogResultProps {
+type InternetDialogResultProps = InternetArchiveResult & {
   onLoadSuccess: () => void,
   diskBookmarks: DiskBookmarks,
   driveIndex: number,
-  lastResult: boolean,
-  identifier: string,
-  title: string,
-  creator: string,
-  downloads: number,
-  month: number,
-  num_reviews: number
+  lastResult: boolean
 }
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
   const { t } = useTranslation()
   const handleTileClick = async () => {
-    const cloudData: CloudData = {
-      providerName: "InternetArchive",
-      syncStatus: CLOUD_SYNC.INACTIVE,
-      syncInterval: -1,
-      lastSyncTime: Number.MAX_VALUE,
-      fileName: "",
-      itemId: props.identifier,
-      apiEndpoint: "",
-      downloadUrl: generateUrlFromInternetArchiveId(props.identifier).toString(),
-      detailsUrl: `https://archive.org/details/${props.identifier}`,
-      fileSize: -1
-    }
-
-    const loaded = await handleSetDiskFromURL(cloudData.downloadUrl, undefined, props.driveIndex, cloudData)
+    const loaded = await loadInternetArchiveResult(props, props.driveIndex)
     if (loaded) props.onLoadSuccess()
   }
 
@@ -133,18 +70,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       diskUrl: url,
       detailsUrl: detailsUrl,
       lastUpdated: new Date(),
-      cloudData: {
-        providerName: "InternetArchive",
-        syncStatus: CLOUD_SYNC.INACTIVE,
-        syncInterval: -1,
-        lastSyncTime: Number.MAX_VALUE,
-        fileName: "",
-        itemId: props.identifier,
-        apiEndpoint: "",
-        downloadUrl: url,
-        detailsUrl: `https://archive.org/details/${props.identifier}`,
-        fileSize: -1
-      }
+      cloudData: createInternetArchiveCloudData(props)
     })
     setBookmarked(true)
   }
@@ -217,11 +143,11 @@ export interface InternetArchiveDialogProps {
 const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   const { onClose, open } = props
   const { t } = useTranslation()
-  const [results, setResults] = useState<InternetDialogResultProps[]>([])
+  const [results, setResults] = useState<InternetArchiveResult[]>([])
   const [diskBookmarks, setDiskbookmarks] = useState<DiskBookmarks>(new DiskBookmarks())
   const [resultsCount, setResultsCount] = useState<number>(0)
   const [query, setQuery] = useState<string>("")
-  const [collection, setCollection] = useState<SoftwareCollection>(softwareCollections[0])
+  const [collection, setCollection] = useState<InternetArchiveCollection>(internetArchiveCollections[0])
   const [isIntersecting, setIsIntersecting] = useState(false)
   const ref = useRef(null)
 
@@ -239,38 +165,27 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     return () => observer.disconnect()
   }, [isIntersecting, results])
 
-  const getResults = async (newQuery: string, newCollection: SoftwareCollection, pagedResults = false) => {
+  const getResults = async (newQuery: string, newCollection: InternetArchiveCollection, pagedResults = false) => {
     if (!pagedResults) {
       setQuery(newQuery)
       setCollection(newCollection)
     }
 
-    const pageNumber = pagedResults ? (results.length / queryMaxRows) + 1 : 1
-    const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
-    const requestUrl = (hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname))
-      ? apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(queryUrl)}`)
-      : queryUrl
+    const pageNumber = pagedResults ? (results.length / INTERNET_ARCHIVE_PAGE_SIZE) + 1 : 1
 
     showGlobalProgressModal(true, "Fetching query results")
-    fetch(requestUrl)
-      .then(async response => {
-        if (response.ok) {
-          const json = await response.json()
-          if (json) {
-            if (pagedResults) {
-              setResults(results.concat(json.response.docs))
-            } else {
-              setDiskbookmarks(new DiskBookmarks())
-              setResults(json.response.docs)
-              setResultsCount(json.response.numFound)
-            }
-
-            const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
-            dialog.style.height = "85%"
-          }
+    searchInternetArchive(newQuery, newCollection.id, pageNumber)
+      .then(page => {
+        if (pagedResults) {
+          setResults(results.concat(page.results))
         } else {
-          // $TODO: add error handling
+          setDiskbookmarks(new DiskBookmarks())
+          setResults(page.results)
+          setResultsCount(page.total)
         }
+
+        const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
+        dialog.style.height = "85%"
       })
       .finally(() => {
         showGlobalProgressModal(false)
@@ -302,7 +217,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   }
 
   const handleCollectionClick = (collectionIndex: number) => () => {
-    getResults(query, softwareCollections[collectionIndex])
+    getResults(query, internetArchiveCollections[collectionIndex])
   }
 
   const handleSearchButtonClick = () => {
@@ -335,7 +250,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
         <div style={{ overflowY: "auto" }}>
           <div className="iad-search">
             <div className="iad-collections">
-              {softwareCollections.map((softwareCollection, index) => (
+              {internetArchiveCollections.map((softwareCollection, index) => (
                 <div key={`divcollect-${index}`}
                   className={`iad-collection-tile ${softwareCollection == collection ? "iad-collection-tile-selected" : ""}`}>
                   <img key={`collection-${index}`}

@@ -18,7 +18,7 @@ import { useGlobalContext } from "../globalcontext"
 import { RETRO_IIGS_COLORS } from "./retroskincolors"
 import ImageWriter from "../devices/printer/imagewriter"
 import { getDiskCollection } from "../diskdialog/diskpanel_utils"
-import { DiskBookmarks } from "../devices/disk/diskbookmarks"
+import { DISK_BOOKMARKS_CHANGED_EVENT, DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { newReleases } from "../devices/disk/newreleases"
 
 const colorModeClasses = ["color", "color", "green", "amber", "white", "inverse"]
@@ -48,6 +48,14 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
   }))
   const showScanlines = getShowScanlines()
   const ghosting = getGhosting()
+  useEffect(() => {
+    const handleBookmarksChanged = () => {
+      diskBookmarks.reload()
+      setDiskCollection(getDiskCollection(diskBookmarks, newReleases))
+    }
+    window.addEventListener(DISK_BOOKMARKS_CHANGED_EVENT, handleBookmarksChanged)
+    return () => window.removeEventListener(DISK_BOOKMARKS_CHANGED_EVENT, handleBookmarksChanged)
+  }, [diskBookmarks])
   useEffect(() => {
     const handlePreferencesReset = () => {
       setRetroSkin(getPreferenceRetroSkin())
@@ -110,6 +118,7 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     retroSkin,
     retroIIGSColors,
     diskCollection,
+    diskBookmarks,
     notifyCloudAuthChanged: () => setAuthRefresh(refresh => refresh + 1),
     startTour: tour => {
       setReturnToTourHelp(false)
