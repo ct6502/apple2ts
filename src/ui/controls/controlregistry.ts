@@ -67,10 +67,12 @@ export type ControlMetadata<Context, Payload = unknown> = {
   refreshParentOnOption?: boolean
   refreshTitle?: (context: Context) => string
   checkmarkIndex?: number
+  checkedIndicator?: string
   indicator?: ControlValue<Context, string | undefined>
   payload?: Payload
   submit?: (context: Context, items: readonly ResolvedControl<Payload>[], values: number[]) => void
   isSubmitVisible?: (context: Context, items: readonly ResolvedControl<Payload>[], values: number[]) => boolean
+  onLeave?: (context: Context, items: readonly ResolvedControl<Payload>[], values: number[]) => void
 }
 
 export type ResolvedControlOption = {
@@ -125,10 +127,12 @@ export type ResolvedControl<Payload = unknown> = {
   ) => ResolvedControl<Payload>[]
   refreshTitle?: () => string
   checkmarkIndex?: number
+  checkedIndicator?: string
   indicator?: string
   payload?: Payload
   submit?: (items: readonly ResolvedControl<Payload>[], values: number[]) => void
   isSubmitVisible?: (items: readonly ResolvedControl<Payload>[], values: number[]) => boolean
+  onLeave?: (items: readonly ResolvedControl<Payload>[], values: number[]) => void
 }
 
 type RegisteredControl<Context, Payload> = {
@@ -280,9 +284,11 @@ export class ControlRegistry<Context, Payload = unknown> {
           : undefined,
       refreshTitle: metadata.refreshTitle ? () => metadata.refreshTitle!(context) : undefined,
       checkmarkIndex: metadata.checkmarkIndex,
+      checkedIndicator: metadata.checkedIndicator,
       indicator: metadata.indicator === undefined ? undefined : valueOf(metadata.indicator, context),
       payload: metadata.payload,
       submit: metadata.submit ? (items, values) => metadata.submit!(context, items, values) : undefined,
+      onLeave: metadata.onLeave ? (items, values) => metadata.onLeave!(context, items, values) : undefined,
       isSubmitVisible: metadata.isSubmitVisible
         ? (items, values) => metadata.isSubmitVisible!(context, items, values)
         : undefined,

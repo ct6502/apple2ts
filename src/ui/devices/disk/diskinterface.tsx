@@ -284,6 +284,8 @@ const collectionItems = (
   tabIndex: TAB_INDEX,
   disks: DiskCollectionItem[],
   sortMode: DiskCollectionSortMode = getDiskCollectionSortMode(tabIndex),
+  items?: readonly RetroResolvedControl[],
+  values?: number[],
 ): RetroControlMetadata[] => {
   if (disks.length === 0) return []
   const sortIndex = diskCollectionSortOptions.findIndex(option => option.value === sortMode)
@@ -301,26 +303,38 @@ const collectionItems = (
     defaultIndex: defaultSortIndex,
     valueOnly: true,
   })
-  sortControl.refreshOptions = (runtime, index) => collectionItems(
+  sortControl.refreshOptions = (runtime, index, currentItems, currentValues) => collectionItems(
     runtime,
     tabIndex,
     disks,
     diskCollectionSortOptions[index].value,
+    currentItems,
+    currentValues,
   )
   const driveOptions = DISK_DRIVE_LABELS.map(label => ({ label }))
+  const isFavorites = tabIndex === TAB_INDEX.FAVORITES
+  const markedFavoriteKeys = new Set(items?.flatMap((item, index) =>
+    values?.[index] === item.checkmarkIndex && item.payload
+      ? [diskItemKey(item.payload as DiskCollectionItem)]
+      : []))
   return [
     ...sortDisks(disks, sortMode).map((disk, index): RetroControlMetadata => ({
       id: `diskCollection.${tabIndex}.disk.${index}`,
       kind: "action",
       label: decodeDiskTitle(disk.title),
-      options: driveOptions,
-      optionIndex: () => getCollectionDriveIndex(disk),
+      payload: disk,
+      options: isFavorites ? [{ label: "" }, { label: "" }] : driveOptions,
+      optionIndex: () => isFavorites
+        ? markedFavoriteKeys.has(diskItemKey(disk)) ? 1 : 0
+        : getCollectionDriveIndex(disk),
+      checkmarkIndex: isFavorites ? 1 : undefined,
+      checkedIndicator: isFavorites ? "X" : undefined,
       hideOptionValue: true,
-      revealOptionOnFirstHorizontalInput: true,
-      contextualSubmenuTitleValue: () => !revealedCollectionDriveTabs.has(tabIndex)
+      revealOptionOnFirstHorizontalInput: !isFavorites,
+      contextualSubmenuTitleValue: () => isFavorites || !revealedCollectionDriveTabs.has(tabIndex)
         ? undefined
         : DISK_DRIVE_LABELS[getCollectionDriveIndex(disk)],
-      refreshOptions: (runtime, driveIndex) => {
+      refreshOptions: isFavorites ? undefined : (runtime, driveIndex) => {
         setSelectedCollectionDriveIndex(driveIndex)
         revealedCollectionDriveTabs.add(tabIndex)
         return collectionItems(runtime, tabIndex, disks, sortMode)
@@ -393,7 +407,7 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
     }
     return tab.index === TAB_INDEX.EXPORT
       ? createRetroExportScreenItems(runtime, disks, items, values)
-      : collectionItems(runtime, tab.index, disks)
+      : collectionItems(runtime, tab.index, disks, getDiskCollectionSortMode(tab.index), items, values)
   },
   actionLabel: runtime => runtime.t(tab.index === TAB_INDEX.EXPORT ? "collection.export" : "retroControl.load"),
   submit: tab.index === TAB_INDEX.EXPORT
@@ -402,6 +416,16 @@ const diskCollectionControls: RetroControlMetadata[] = collectionTabs.map((tab, 
         .filter((item, index) => values[index] === 1 && item.payload)
         .map(item => item.payload as DiskCollectionItem)
       void exportDisks(runtime, selectedDisks)
+    }
+    : undefined,
+  onLeave: tab.index === TAB_INDEX.FAVORITES
+    ? (runtime, items, values) => {
+      items.forEach((item, index) => {
+        const bookmarkId = (item.payload as DiskCollectionItem | undefined)?.bookmarkId
+        if (bookmarkId && values[index] === item.checkmarkIndex) {
+          runtime.diskBookmarks?.remove(bookmarkId)
+        }
+      })
     }
     : undefined,
   isSubmitVisible: tab.index === TAB_INDEX.EXPORT

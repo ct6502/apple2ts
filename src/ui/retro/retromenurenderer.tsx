@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import type { RetroResolvedControl } from "./retromenucontext"
 import { formatControlLabel } from "../controls/controlregistry"
@@ -50,6 +50,7 @@ type RetroMenuFrame = {
   refresh?: (items?: readonly RetroMenuItem[], values?: number[]) => RetroMenuItem[]
   submit?: (items: readonly RetroMenuItem[], values: number[]) => void
   isSubmitVisible?: (items: readonly RetroMenuItem[], values: number[]) => boolean
+  onLeave?: (items: readonly RetroMenuItem[], values: number[]) => void
 }
 
 const mouseTextDown = String.fromCodePoint(0x2193)
@@ -161,6 +162,7 @@ const createMenuFrame = (
   submit?: (items: readonly RetroMenuItem[], values: number[]) => void,
   isSubmitVisible?: (items: readonly RetroMenuItem[], values: number[]) => boolean,
   parentSelectedIndex = 0,
+  onLeave?: (items: readonly RetroMenuItem[], values: number[]) => void,
 ): RetroMenuFrame => {
   const values = items.map(item => item.optionIndex ?? -1)
   return {
@@ -175,8 +177,11 @@ const createMenuFrame = (
     refresh,
     submit,
     isSubmitVisible,
+    onLeave,
   }
 }
+
+const leaveMenuFrame = (frame?: RetroMenuFrame) => frame?.onLeave?.(frame.items, frame.values)
 
 const isMenuItemSelectable = (item: RetroMenuItem, frame?: RetroMenuFrame) => {
   if (item.selectableWhen && frame) {
@@ -205,6 +210,7 @@ const refreshPreviousMenu = (stack: RetroMenuFrame[]) => {
     previousFrame.submit,
     previousFrame.isSubmitVisible,
     previousFrame.parentSelectedIndex,
+    previousFrame.onLeave,
   )
   return previousStack
 }
@@ -224,7 +230,16 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [, setSettingsRevision] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
-  const close = () => setIsOpen(false)
+  const menuStackRef = useRef<RetroMenuFrame[]>([])
+  useLayoutEffect(() => {
+    menuStackRef.current = manualMenuStack
+  }, [manualMenuStack])
+  const close = () => {
+    const frame = menuStackRef.current.at(-1)
+    menuStackRef.current = []
+    leaveMenuFrame(frame)
+    setIsOpen(false)
+  }
   const {
     activeVtocCheckKey,
     authRefresh,
@@ -389,6 +404,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           frame.submit,
           frame.isSubmitVisible,
           frame.parentSelectedIndex,
+          frame.onLeave,
         )
         : frame))
       setSelectedIndex(nextSelectedIndex >= 0
@@ -400,7 +416,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   }, [currentFrame, isOpen, resolveMenu, selectedIndex])
 
   useEffect(() => {
-    const handleDiskLoadSuccess = () => setIsOpen(false)
+    const handleDiskLoadSuccess = () => close()
     window.addEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
     return () => window.removeEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
   }, [])
@@ -426,6 +442,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           frame.submit,
           frame.isSubmitVisible,
           frame.parentSelectedIndex,
+          frame.onLeave,
         )
         : frame))
       setSelectedIndex(nextSelectedIndex >= 0
@@ -512,6 +529,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               frame.submit,
               frame.isSubmitVisible,
               frame.parentSelectedIndex,
+              frame.onLeave,
             )
             : frame))
         }
@@ -597,6 +615,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               item.submit,
               item.isSubmitVisible,
               selectedIndex,
+              item.onLeave,
             ),
           ])
           setSelectedIndex(Math.max(0, children.findIndex(child => isMenuItemSelectable(child))))
@@ -614,6 +633,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               frameItem.options?.[currentFrame.values[index]]?.action?.()
             }
           })
+          leaveMenuFrame(currentFrame)
           setMenuStack(refreshPreviousMenu)
           setSelectedIndex(currentFrame.parentSelectedIndex)
         } else {
@@ -638,6 +658,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   frame.submit,
                   frame.isSubmitVisible,
                   frame.parentSelectedIndex,
+                  frame.onLeave,
                 )
               }))
             })
@@ -650,6 +671,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         event.preventDefault()
         event.stopPropagation()
         if (menuStack.length > 0) {
+          leaveMenuFrame(currentFrame)
           restoreMenuFramePreview(currentFrame)
           setMenuStack(refreshPreviousMenu)
           setSelectedIndex(currentFrame.parentSelectedIndex)
@@ -817,7 +839,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                         disk={unresolvedExportDisk}
                         isAppleIIPlus={isAppleIIPlus}
                       />
-                      : item.indicator ?? (isChecked ? (isAppleIIPlus ? "*" : checkmark) : " ")}
+                      : item.indicator ?? (isChecked
+                        ? item.checkedIndicator ?? (isAppleIIPlus ? "*" : checkmark)
+                        : " ")}
                   </span>}
                   <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
                     {visibleLabel}
