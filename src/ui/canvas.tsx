@@ -651,8 +651,8 @@ const Apple2Canvas = (props: DisplayProps) => {
         }}
         width={width} height={height}
         tabIndex={0}
-        onKeyDown={isTouchDevice ? () => { } : handleKeyDown}
-        onKeyUp={isTouchDevice ? () => { } : handleKeyUp}
+        onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
         onMouseEnter={setFocus}
         onMouseDown={isTouchDevice ? setFocus : (e) => { setFocus(); handleMouseDown(e) }}
         onMouseUp={isTouchDevice ? undefined : handleMouseUp}
