@@ -1,7 +1,8 @@
-import { MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
+import { default6502State, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import {
   doOnMessage,
   requestLoadBinary,
+  requestSetState6502,
   requestSetRunMode,
   requestSpeedMode,
   setMain2Worker,
@@ -96,6 +97,19 @@ describe("worker operations", () => {
     expect(message).toEqual(expect.objectContaining({
       msg: MSG_MAIN.LOAD_BINARY,
       payload: {address: 0x6000, data},
+    }))
+
+    sendOperationResult(message.operationId)
+    await expect(operation).resolves.toBeUndefined()
+  })
+
+  test("sends CPU state changes as confirmed worker operations", async () => {
+    const state = {...default6502State(), PC: 0x6000, Accum: 0x42}
+    const operation = requestSetState6502(state)
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    expect(message).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.STATE6502,
+      payload: state,
     }))
 
     sendOperationResult(message.operationId)

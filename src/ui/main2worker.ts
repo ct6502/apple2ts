@@ -100,6 +100,10 @@ export const passSetState6502 = (state: STATE6502) => {
   doPostMessage(MSG_MAIN.STATE6502, state)
 }
 
+export const requestSetState6502 = (state: STATE6502, timeoutMs = 5000) => {
+  return requestWorkerOperation(MSG_MAIN.STATE6502, state, timeoutMs)
+}
+
 export const passBreakpoints = (breakpoints: BreakpointMap) => {
   doPostMessage(MSG_MAIN.BREAKPOINTS, breakpoints)
   // Force the state right away, so the UI can update.

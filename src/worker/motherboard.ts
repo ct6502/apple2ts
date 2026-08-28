@@ -95,9 +95,10 @@ export const getMachineName = () => {
   return machineName
 }
 
-export const doSetState6502 = (newState: STATE6502) => {
+export const doSetState6502 = (newState: STATE6502, operationId?: number) => {
   setState6502(newState)
   updateExternalMachineState()
+  if (operationId !== undefined) passWorkerOperationResult(operationId)
 }
 
 export const doSetCycleCount = (count: number) => {
