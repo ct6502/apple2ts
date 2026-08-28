@@ -2,6 +2,7 @@ import { default6502State, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/util
 import {
   doOnMessage,
   requestLoadBinary,
+  requestKeyboardState,
   requestSetState6502,
   requestSetRunMode,
   requestSpeedMode,
@@ -110,6 +111,22 @@ describe("worker operations", () => {
     expect(message).toEqual(expect.objectContaining({
       msg: MSG_MAIN.STATE6502,
       payload: state,
+    }))
+
+    sendOperationResult(message.operationId)
+    await expect(operation).resolves.toBeUndefined()
+  })
+
+  test.each([
+    {key: 0x41, isDown: true, repeat: false},
+    {key: 0x41, isDown: true, repeat: true},
+    {key: 0, isDown: false, repeat: false},
+  ])("sends keyboard state as a confirmed worker operation", async (keyboardState) => {
+    const operation = requestKeyboardState(keyboardState)
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    expect(message).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.KEYBOARD_STATE,
+      payload: keyboardState,
     }))
 
     sendOperationResult(message.operationId)

@@ -38,6 +38,7 @@ import {
   passTimeTravelIndex,
   passTimeTravelSnapshot,
   passSetShowDebugTab,
+  requestKeyboardState,
   requestSetRunMode,
   requestLoadBinary,
 } from "../main2worker"
@@ -61,6 +62,7 @@ import {
   handleSetDiskFromURL,
   handleSetDiskWriteProtected,
 } from "../devices/disk/driveprops"
+import { parseRemoteKeyboardState } from "./remotecontrol_input"
 
 const CONNECT_RETRY_MS = 3000
 const HEARTBEAT_MS = 2000
@@ -430,6 +432,10 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
 
     case "setShowDebugTab":
       passSetShowDebugTab(Boolean(payload.enabled))
+      return collectStatus()
+
+    case "setKeyboardState":
+      await requestKeyboardState(parseRemoteKeyboardState(payload))
       return collectStatus()
 
     case "keypress": {
