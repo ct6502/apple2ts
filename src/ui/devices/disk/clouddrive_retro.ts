@@ -16,6 +16,7 @@ export type CloudBrowserItem = {
 export type CloudBrowserProvider = {
   id: string
   displayName: string
+  loadLabelKey: string
   hasAuthToken: () => boolean
   signIn: () => Promise<boolean>
   listFolder: (folderId: string) => Promise<CloudBrowserItem[]>
@@ -55,9 +56,9 @@ export const createRetroCloudDriveControl = (
     loaded: false,
   }
 
-  const loadCurrentFolder = async () => {
+  const loadCurrentFolder = async (context: RetroMenuContext) => {
     const folder = state.folders.at(-1)!
-    showGlobalProgressModal(true, "Fetching cloud data")
+    showGlobalProgressModal(true, context.t("messages.fetchingCloudData"))
     try {
       state.items = await provider.listFolder(folder.id)
       state.loaded = true
@@ -72,12 +73,12 @@ export const createRetroCloudDriveControl = (
       controls.push({
         id: `${provider.id}.parent`,
         label: "..",
-        contextualActionLabel: "Open",
+        contextualActionLabel: context.t("retroControl.open"),
         keepMenuOpen: true,
         refreshAfterAction: true,
-        action: async () => {
+        action: async runtime => {
           state.folders.pop()
-          await loadCurrentFolder()
+          await loadCurrentFolder(runtime)
         },
       })
     }
@@ -91,16 +92,18 @@ export const createRetroCloudDriveControl = (
       id: `${provider.id}.${item.kind}.${item.id}`,
       label: item.kind === "folder" ? folderLabel(context, item.name) : item.name,
       useRetroFont: item.kind === "folder",
-      contextualActionLabel: item.kind === "folder" ? "Open" : "Load",
+      contextualActionLabel: item.kind === "folder"
+        ? context.t("retroControl.open")
+        : context.t("retroControl.load"),
       keepMenuOpen: true,
       refreshAfterAction: item.kind === "folder",
       action: item.kind === "folder"
-        ? async () => {
+        ? async runtime => {
           state.folders.push({ id: item.id, name: item.name })
-          await loadCurrentFolder()
+          await loadCurrentFolder(runtime)
         }
         : async runtime => {
-          showGlobalProgressModal(true, "Fetching cloud data")
+          showGlobalProgressModal(true, runtime.t("messages.fetchingCloudData"))
           try {
             if (await provider.loadFile(item, driveIndex)) runtime.close()
           } finally {
@@ -113,12 +116,12 @@ export const createRetroCloudDriveControl = (
 
   return {
     id: provider.id,
-    label: `Load Disk from ${provider.displayName}`,
+    label: context => context.t(provider.loadLabelKey),
     submenuTitle: provider.displayName,
-    actionLabel: "Open",
-    afterOpen: async () => {
+    actionLabel: context => context.t("retroControl.open"),
+    afterOpen: async context => {
       if (!provider.hasAuthToken() && !await provider.signIn()) return
-      if (!state.loaded) await loadCurrentFolder()
+      if (!state.loaded) await loadCurrentFolder(context)
     },
     dynamicChildren: context => buildItems(context),
   }

@@ -8,12 +8,12 @@ export const createRetroOneDriveControl = (driveIndex: number): RetroControlMeta
   const control = createRetroCloudDriveControl(driveIndex, {
     id: `diskDrives.${driveIndex}.load.oneDrive`,
     displayName: "OneDrive",
+    loadLabelKey: "disk.loadDiskFromOneDrive",
     hasAuthToken: () => oneDrive.hasAuthToken(),
     signIn: () => oneDrive.signIn(),
     listFolder: folderId => oneDrive.listFolder(folderId),
     loadFile: (item, targetDriveIndex) =>
       loadDiskFromCloudDrive(new OneDriveCloudDrive(item), targetDriveIndex),
   })
-  control.label = context => context.t("disk.loadDiskFromOneDrive")
   return control
 }

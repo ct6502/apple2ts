@@ -1249,6 +1249,10 @@ msgctxt "messages.loading"
 msgid "Loading..."
 msgstr ""
 
+msgctxt "messages.fetchingCloudData"
+msgid "Fetching cloud data"
+msgstr ""
+
 msgctxt "messages.error"
 msgid "Error"
 msgstr ""

@@ -8,12 +8,12 @@ export const createRetroGoogleDriveControl = (driveIndex: number): RetroControlM
   const control = createRetroCloudDriveControl(driveIndex, {
     id: `diskDrives.${driveIndex}.load.googleDrive`,
     displayName: "Google Drive",
+    loadLabelKey: "disk.loadDiskFromGoogleDrive",
     hasAuthToken: () => googleDrive.hasAuthToken(),
     signIn: () => googleDrive.signIn(),
     listFolder: folderId => googleDrive.listFolder(folderId),
     loadFile: (item, targetDriveIndex) =>
       loadDiskFromCloudDrive(new GoogleDrive(item), targetDriveIndex),
   })
-  control.label = context => context.t("disk.loadDiskFromGoogleDrive")
   return control
 }
