@@ -232,7 +232,9 @@ const doIndirectInstruction = (vZP: number,
 
 // 300: F8 18 B8 A9 BD 69 00 D8 00
 const doADC_BCD = (value: number) => {
-  let ones = (s6502.Accum & 0x0F) + (value & 0x0F) + (isCarry() ? 1 : 0)
+  const carryIn = isCarry() ? 1 : 0
+  const binarySum = (s6502.Accum + value + carryIn) & 0xFF
+  let ones = (s6502.Accum & 0x0F) + (value & 0x0F) + carryIn
   let onesCarry = 0
   // Handle illegal BCD hex values by wrapping to "tens" digit
   if (ones >= 0xA) {
@@ -242,6 +244,7 @@ const doADC_BCD = (value: number) => {
 
   const tens = (s6502.Accum & 0xF0) + (value & 0xF0) + onesCarry
   let tmp = tens + ones
+  const preHighAdjustSum = tmp
   // Pretend we're doing normal addition to set overflow flag
   const bothPositive = (s6502.Accum <= 127 && value <= 127)
   const bothNegative = (s6502.Accum >= 128 && value >= 128)
@@ -252,9 +255,13 @@ const doADC_BCD = (value: number) => {
     tmp += 0x60
   }
   s6502.Accum = tmp & 0xFF
-  // Assume we're a 65c02 and set the zero flag properly.
-  // This doesn't happen on a 6502 for BCD mode.
-  checkStatus(s6502.Accum)
+  if (getCurrentMachineName() === "APPLE2EE") {
+    checkStatus(s6502.Accum)
+  } else {
+    // NMOS ADC sets Z from the binary sum and N after low-digit correction.
+    setZero(binarySum === 0)
+    setNegative((preHighAdjustSum & 0x80) !== 0)
+  }
 }
 
 const doADC_HEX = (value: number) => {
@@ -650,6 +657,7 @@ const doSBC_BCD = (value: number) => {
   // On 65c02, do normal hex subtraction to set the carry & overflow flags.
   const vtmp = 255 - value
   let tmp = s6502.Accum + vtmp + (isCarry() ? 1 : 0)
+  const binaryResult = tmp & 0xFF
   const newCarry = (tmp >= 256)
   const bothPositive = (s6502.Accum <= 127 && vtmp <= 127)
   const bothNegative = (s6502.Accum >= 128 && vtmp >= 128)
@@ -664,9 +672,8 @@ const doSBC_BCD = (value: number) => {
     tmp -= 0x06
   }
   s6502.Accum = tmp & 0xFF
-  // Assume we're a 65c02 and set the zero flag properly.
-  // This doesn't happen on a 6502 for BCD mode.
-  checkStatus(s6502.Accum)
+  // 65C02 sets N/Z from the decimal result; NMOS uses the binary result.
+  checkStatus(getCurrentMachineName() === "APPLE2EE" ? s6502.Accum : binaryResult)
   setCarry(newCarry)
 }
 
