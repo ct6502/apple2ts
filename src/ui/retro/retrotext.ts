@@ -1,5 +1,6 @@
 const wideCharacter = /[\u1100-\u115F\u2329\u232A\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6]/u
 const retroGlyph = /^[\x20-\x7E\u00A0-\u017F\u2006\u2014\u2026\u2190-\u2193\u21B5\u2713]*$/u
+const latinText = /^[\p{Script=Latin}\p{Number}\p{Punctuation}\p{Separator}\p{Symbol}]*$/u
 
 const graphemes = (text: string, locale: string) =>
   Array.from(new Intl.Segmenter(locale, { granularity: "grapheme" }).segment(text), segment => segment.segment)
@@ -28,6 +29,12 @@ export const formatClockTime = (date: Date, locale: string) => {
 
 export const controlTextWidth = (text: string, locale: string) =>
   graphemes(text, locale).reduce((width, grapheme) => width + (wideCharacter.test(grapheme) ? 2 : 1), 0)
+
+export const shouldUseCompactLatinFooter = (
+  texts: readonly string[],
+  requiredCells: number,
+  availableCells = 36,
+) => requiredCells > availableCells && texts.every(text => latinText.test(text))
 
 export const truncateControlText = (text: string, maxWidth: number, locale: string) => {
   if (controlTextWidth(text, locale) <= maxWidth) return text

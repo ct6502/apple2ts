@@ -11,6 +11,7 @@ import {
   retroFontSupports,
   selectArrowSpacing,
   selectHintWidth,
+  shouldUseCompactLatinFooter,
   truncateControlText,
 } from "./retrotext"
 import "./retrocontrolpanel.css"
@@ -90,7 +91,9 @@ const RetroVtocIndicator = ({
 
 const AppleIIPlusFooter = ({
   actionLabel,
+  adaptiveLayout,
   cancelLabel,
+  compactLatin,
   language,
   maxActionWidth,
   selectLabel,
@@ -98,7 +101,9 @@ const AppleIIPlusFooter = ({
   showHorizontalSelectionHint,
 }: {
   actionLabel: string
+  adaptiveLayout: boolean
   cancelLabel?: string
+  compactLatin: boolean
   language: string
   maxActionWidth: number
   selectLabel: string
@@ -108,6 +113,25 @@ const AppleIIPlusFooter = ({
   const arrowText = `${showHorizontalSelectionHint ? `${mouseTextLeft}_${mouseTextRight}_` : ""}${cancelLabel
     ? `${mouseTextUp}_${mouseTextDown}`
     : `${mouseTextDown}_${mouseTextUp}`}`
+
+  if (adaptiveLayout) {
+    return <footer className={`retro-text-footer retro-compact-apple-footer${compactLatin
+      ? " retro-compact-latin-footer"
+      : ""}`}>
+      <span className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}>
+        {`${selectLabel}:`}<i className="retro-mousetext">{arrowText}</i>
+      </span>
+      <span className={`retro-footer-cancel${retroFontSupports(cancelLabel ?? "") ? "" : " retro-browser-font"}`}>
+        {cancelLabel}
+      </span>
+      <span className={`retro-footer-action${showAction ? "" : " hidden"}${
+        retroFontSupports(actionLabel) ? "" : " retro-browser-font"
+      }`}>
+        {`${actionLabel}:`}<i className="retro-mousetext">{mouseTextReturn}</i>
+      </span>
+    </footer>
+  }
+
   const selectText = `${selectLabel}:${arrowText}`
   const actionText = showAction ? `${actionLabel}:${mouseTextReturn}` : ""
   const rowWidth = 36
@@ -408,6 +432,14 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       ? controlTextWidth(`${item.contextualActionLabel}:${mouseTextReturn}`, language)
       : 0),
   )
+  const cancelLabel = currentFrame ? t("retroControl.cancelEsc") : ""
+  const useCompactLatinFooter = shouldUseCompactLatinFooter(
+    [selectLabel, cancelLabel, footerActionLabel],
+    Math.ceil(selectHintWidth(selectLabel, language)) +
+      controlTextWidth(cancelLabel, language) + maxFooterActionWidth,
+  )
+  const useAdaptiveAppleFooter = useCompactLatinFooter ||
+    [selectLabel, cancelLabel, footerActionLabel].some(text => !retroFontSupports(text))
   const actionHintCells = Math.ceil(actionHintWidth(footerActionLabel, language))
   const actionStartLine = 37 - actionHintCells
   const showHorizontalSelectionHint = (selectedItem?.options?.length ?? 0) > 1 ||
@@ -959,14 +991,18 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           {isAppleIIPlus
             ? <AppleIIPlusFooter
               actionLabel={footerActionLabel}
+              adaptiveLayout={useAdaptiveAppleFooter}
               cancelLabel={currentFrame ? t("retroControl.cancelEsc") : undefined}
+              compactLatin={useCompactLatinFooter}
               language={language}
               maxActionWidth={maxFooterActionWidth}
               selectLabel={selectLabel}
               showAction={showFooterAction}
               showHorizontalSelectionHint={showHorizontalSelectionHint}
             />
-            : <footer className={currentFrame ? "retro-submenu-footer" : "retro-root-footer"}>
+            : <footer className={`${currentFrame ? "retro-submenu-footer" : "retro-root-footer"}${
+              useCompactLatinFooter ? " retro-compact-latin-footer" : ""
+            }`}>
               <span
                 className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}
                 style={{ gridColumn: `1 / ${selectHintCells + 1}` }}
@@ -977,12 +1013,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   : <>{mouseTextDown}{arrowSpacing}{mouseTextUp}</>}
               </i></span></span></span>
               {currentFrame && <span
-                className={`retro-footer-cancel${retroFontSupports(t("retroControl.cancelEsc")) ? "" : " retro-browser-font"}`}
+                className={`retro-footer-cancel${retroFontSupports(cancelLabel) ? "" : " retro-browser-font"}`}
                 style={{
                   gridColumn: `${selectHintCells + 1} / ${actionStartLine}`,
                 }}
               ><span className="retro-footer-text"><span className="retro-footer-content">
-                {t("retroControl.cancelEsc")}
+                {cancelLabel}
               </span></span></span>}
               <span
                 aria-hidden={!showFooterAction}

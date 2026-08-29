@@ -6,6 +6,7 @@ import {
   retroFontSupports,
   selectArrowSpacing,
   selectHintWidth,
+  shouldUseCompactLatinFooter,
   truncateControlText,
 } from "./retrotext"
 
@@ -49,5 +50,11 @@ describe("Retro control-panel text", () => {
     expect(selectHintWidth("Selecteren", "nl")).toBe(17.5)
     expect(selectHintWidth("Sélectionner", "fr")).toBe(19.5)
     expect(actionHintWidth("Save", "en")).toBe(7)
+  })
+
+  test("uses compact footer typography only for overflowing Latin text", () => {
+    expect(shouldUseCompactLatinFooter(["Seleccionar", "Cancelar:Esc", "Guardar"], 39)).toBe(true)
+    expect(shouldUseCompactLatinFooter(["Select", "Cancel:Esc", "Save"], 30)).toBe(false)
+    expect(shouldUseCompactLatinFooter(["選取", "取消:Esc", "儲存"], 39)).toBe(false)
   })
 })

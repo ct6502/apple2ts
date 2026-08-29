@@ -534,6 +534,47 @@
   visibility: hidden;
 }
 
+.retro-window footer.retro-compact-latin-footer {
+  font-family: "Segoe UI", sans-serif;
+  font-size: calc(0.95 * var(--retro-cell-height));
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.retro-window footer.retro-compact-latin-footer .retro-mousetext {
+  font-size: var(--retro-cell-height);
+}
+
+.retro-window footer.retro-compact-latin-footer>span {
+  grid-column: auto !important;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.retro-window footer.retro-compact-latin-footer .retro-browser-font {
+  font-family: inherit;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-window footer.retro-compact-apple-footer {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  isolation: isolate;
+  position: relative;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-window footer.retro-compact-apple-footer::before {
+  content: "____________________________________";
+  font-family: PrintChar21Retro, monospace;
+  inset: 0;
+  position: absolute;
+  z-index: 0;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-compact-apple-footer>span {
+  background: var(--retro-background);
+  position: relative;
+  z-index: 1;
+}
+
 .retro-submenu-title-border {
   display: block;
   inset: 0;
