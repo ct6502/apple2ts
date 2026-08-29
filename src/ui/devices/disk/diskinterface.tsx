@@ -29,7 +29,6 @@ import {
   demoZooEnabled,
   downloadDiskToDevice,
   getBlobFromDiskData,
-  loadDiskFromCloudDrive,
   saveDiskToDevice,
 } from "./diskdrive"
 import {
@@ -41,6 +40,7 @@ import {
   handleSetDiskWriteProtected,
 } from "./driveprops"
 import { GoogleDrive } from "./googledrive"
+import { createRetroGoogleDriveControl } from "./googledrive_retro"
 import { createRetroOneDriveControl } from "./onedrive_retro"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import {
@@ -457,16 +457,7 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
   ...(demoZooEnabled ? [createRetroDemoZooControl(driveIndex)] : []),
   ...(!navigator.userAgent.includes("Electron") ? [
     createRetroOneDriveControl(driveIndex),
-    {
-      id: `diskDrives.${driveIndex}.load.googleDrive`,
-      label: (context: RetroMenuContext) => context.t("disk.loadDiskFromGoogleDrive"),
-      keepMenuOpen: true,
-      action: (context: RetroMenuContext) => {
-        void loadDiskFromCloudDrive(new GoogleDrive(), driveIndex).then(loaded => {
-          if (loaded) context.close()
-        })
-      },
-    },
+    createRetroGoogleDriveControl(driveIndex),
   ] : []),
 ]
 

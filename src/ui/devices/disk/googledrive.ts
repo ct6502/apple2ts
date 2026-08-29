@@ -2,6 +2,7 @@ import { CLOUD_SYNC } from "../../../common/utility"
 import { appID, clientID, pickerKey } from "../../img/iconfunctions"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { loadGoogleDriveScripts } from "./cloudscriptloader"
+import type { CloudBrowserItem } from "./clouddrive_retro"
 
 // const MAX_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
@@ -10,7 +11,25 @@ export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 let g_accessToken: string = ""
 let g_pickerInited = false
 
+const driveScope = "https://www.googleapis.com/auth/drive"
+
+type GoogleDriveFile = {
+  id?: string
+  name?: string
+  mimeType?: string
+  size?: string
+  parents?: string[]
+  webViewLink?: string
+}
+
+type GoogleDriveFilePage = {
+  files?: GoogleDriveFile[]
+  nextPageToken?: string
+}
+
 export class GoogleDrive implements CloudProvider {
+
+  constructor(private readonly selectedItem?: CloudBrowserItem) {}
 
   // The token client can only be created after the Google Identity Services
   // script has loaded, so it is created lazily in ensureScriptsLoaded() rather
@@ -22,7 +41,7 @@ export class GoogleDrive implements CloudProvider {
     if (!this.tokenClient) {
       this.tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: appID() + "-" + clientID() + ".apps.googleusercontent.com",
-        scope: "https://www.googleapis.com/auth/drive.file",
+        scope: driveScope,
         callback: () => {}, // defined later
       })
     }
@@ -143,7 +162,55 @@ export class GoogleDrive implements CloudProvider {
     return g_accessToken !== ""
   }
 
+  async signIn(): Promise<boolean> {
+    await this.ensureScriptsLoaded()
+    if (g_accessToken) return true
+    return new Promise(resolve => {
+      this.tokenClient!.callback = async (response: google.accounts.oauth2.TokenResponse) => {
+        if (response.error !== undefined) {
+          console.error("Google Drive sign-in failed", response.error)
+          resolve(false)
+          return
+        }
+        g_accessToken = response.access_token
+        resolve(true)
+      }
+      this.tokenClient!.requestAccessToken({ prompt: "consent" })
+    })
+  }
+
+  async listFolder(folderId: string): Promise<CloudBrowserItem[]> {
+    if (!await this.signIn()) return []
+    const items: GoogleDriveFile[] = []
+    let pageToken: string | undefined
+    do {
+      const params = new URLSearchParams({
+        q: `'${folderId}' in parents and trashed = false`,
+        fields: "nextPageToken,files(id,name,mimeType,size,parents,webViewLink)",
+        pageSize: "1000",
+      })
+      if (pageToken) params.set("pageToken", pageToken)
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
+        headers: { "Authorization": `Bearer ${g_accessToken}` },
+      })
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      const page = await response.json() as GoogleDriveFilePage
+      items.push(...(page.files ?? []))
+      pageToken = page.nextPageToken
+    } while (pageToken)
+
+    return items.flatMap(item => item.id && item.name ? [{
+      id: item.id,
+      name: item.name,
+      kind: item.mimeType === "application/vnd.google-apps.folder" ? "folder" as const : "file" as const,
+      size: item.size === undefined ? undefined : Number(item.size),
+      parentId: item.parents?.[0],
+      webUrl: item.webViewLink,
+    }] : [])
+  }
+
   async download(filter: string): Promise<[Blob, CloudData]|null> {
+    if (this.selectedItem) return this.downloadSelectedItem(this.selectedItem)
     await this.ensureScriptsLoaded()
     const result = await this.launchPicker("file", filter)
     if (result) {
@@ -182,6 +249,29 @@ export class GoogleDrive implements CloudProvider {
       }
     }
     return null
+  }
+
+  private async downloadSelectedItem(item: CloudBrowserItem): Promise<[Blob, CloudData] | null> {
+    if (!await this.signIn()) return null
+    const downloadUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(item.id)}?alt=media`
+    const response = await fetch(downloadUrl, {
+      headers: { "Authorization": `Bearer ${g_accessToken}` },
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    const blob = await response.blob()
+    return [blob, {
+      providerName: "GoogleDrive",
+      syncStatus: CLOUD_SYNC.ACTIVE,
+      syncInterval: DEFAULT_SYNC_INTERVAL,
+      lastSyncTime: Date.now(),
+      fileName: item.name,
+      itemId: item.id,
+      apiEndpoint: "https://www.googleapis.com/drive/v3/",
+      parentId: item.parentId,
+      downloadUrl,
+      detailsUrl: item.webUrl ?? "",
+      fileSize: item.size ?? blob.size,
+    }]
   }
 
   async upload(filename: string, blob: Blob): Promise<CloudData | null> {
