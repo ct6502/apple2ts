@@ -1,6 +1,7 @@
 import { processInstruction } from "./cpu6502"
 import { memory, updateAddressTables } from "./memory"
 import { reset6502, s6502, setCycleCount, setPC } from "./instructions"
+import { createHash } from "crypto"
 import fs from "fs"
 import { IncomingMessage } from "http"
 import https from "https"
@@ -8,7 +9,9 @@ import path from "path"
 import { pipeline } from "stream/promises"
 import { checkSoftSwitches } from "./softswitches"
 
-const downloadFile = async (url: string, dest: string, expectedSize: number) => {
+const fileChecksum = (filename: string) => createHash("sha256").update(fs.readFileSync(filename)).digest("hex")
+
+const downloadFile = async (url: string, dest: string, expectedSize: number, expectedChecksum: string) => {
   const partial = `${dest}.${process.pid}.partial`
   try {
     const response = await new Promise<IncomingMessage>((resolve, reject) => {
@@ -22,6 +25,10 @@ const downloadFile = async (url: string, dest: string, expectedSize: number) => 
     if ((await fs.promises.stat(partial)).size !== expectedSize) {
       throw new Error(`Downloaded '${url}' has the wrong size`)
     }
+    if (fileChecksum(partial) !== expectedChecksum) {
+      throw new Error(`Downloaded '${url}' has the wrong checksum`)
+    }
+    await fs.promises.rm(dest, {force: true})
     await fs.promises.rename(partial, dest)
   } catch (error) {
     await fs.promises.rm(partial, {force: true})
@@ -29,24 +36,35 @@ const downloadFile = async (url: string, dest: string, expectedSize: number) => 
   }
 }
 
-// See https://github.com/ct6502/apple2ts/issues/43
-// for the original version of this test.
-const runKlaus6502Test = async (testname: string) => {
-  const start = 0x400
-  reset6502()
+const klausRevision = "6bae44e4062722b22fb1de26dd68bea55f80c8e0"
+const klausChecksums = {
+  "6502_functional_test.bin": "fa12bfc761e6f9057e4cc01a665a7b800ff01ae91f598af1e39a1201d01953fd",
+  "65C02_extended_opcodes_test.bin": "10a2a07fa240666fa610c46accebe8d42b1000feef3aae619da15a8d152869b2",
+} as const
 
-  // We automatically download the Klaus test image.
-  // The 6502_65C02_functional_tests repo has a GPL license which is
-  // incompatible with our license. So we do not want to include it in our repo.
-  const url = "https://raw.githubusercontent.com/Klaus2m5/6502_65C02_functional_tests/refs/heads/master/bin_files/" + testname
+type KlausTestName = keyof typeof klausChecksums
+
+const getKlausBinary = async (testname: KlausTestName) => {
+  const expectedChecksum = klausChecksums[testname]
+  const url = `https://raw.githubusercontent.com/3amcinnamonroll/klaus-6502-test-binaries/${klausRevision}/bin/${testname}`
   const dest = path.join(__dirname, "roms", testname)
   const expectedSize = 0x10000
 
-  if (!fs.existsSync(dest) || fs.statSync(dest).size !== expectedSize) {
-    await downloadFile(url, dest, expectedSize)
+  if (!fs.existsSync(dest) || fs.statSync(dest).size !== expectedSize || fileChecksum(dest) !== expectedChecksum) {
+    await downloadFile(url, dest, expectedSize, expectedChecksum)
   }
 
-  const pcode = fs.readFileSync(dest)
+  return fs.readFileSync(dest)
+}
+
+// See https://github.com/ct6502/apple2ts/issues/43
+// for the original version of this test.
+const runKlaus6502Test = async (testname: KlausTestName) => {
+  const start = 0x400
+  reset6502()
+
+  // The Klaus test binaries are GPL-licensed, so download rather than include them.
+  const pcode = await getKlausBinary(testname)
   memory.set(pcode, 0x0)
 
   // Since our test image extends across all 64k of RAM,
