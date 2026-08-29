@@ -176,6 +176,7 @@ const RetroBorder = ({
   appleIIPlusFullHeightSides = false,
   className,
   columns = 40,
+  notchedCorners = false,
   rows = 24,
   separatorRow,
 }: {
@@ -184,23 +185,42 @@ const RetroBorder = ({
   appleIIPlusFullHeightSides?: boolean
   className: string
   columns?: number
+  notchedCorners?: boolean
   rows?: number
   separatorRow?: number
 }) => {
+  const sideRows = appleIIPlusFullHeightSides ? rows : Math.max(0, rows - 2)
+  if (!appleIIPlus) {
+    const bottomBorderGlyphs = bottomBorderGlyph.repeat(columns)
+    return <div className={`retro-border ${className}${appleIIPlusFullHeightSides
+      ? " retro-border-full-height-sides"
+      : ""}`} aria-hidden="true">
+      <span className="retro-border-glyph retro-border-glyph-top">{topBorderGlyph.repeat(columns)}</span>
+      <span className="retro-border-glyph retro-border-glyph-bottom">{bottomBorderGlyphs}</span>
+      <span className="retro-border-glyph retro-border-glyph-left">{Array(sideRows).fill(leftBorderGlyph).join("\n")}</span>
+      <span className="retro-border-glyph retro-border-glyph-right">{Array(sideRows).fill(rightBorderGlyph).join("\n")}</span>
+      {separatorRow && <span
+        className="retro-border-separator"
+        style={{ top: `calc(${separatorRow - 1} * var(--retro-row-height))` }}
+      >{bottomBorderGlyphs}</span>}
+      {notchedCorners && <>
+        <span className="retro-border-notch retro-border-notch-top-left" />
+        <span className="retro-border-notch retro-border-notch-top-right" />
+        <span className="retro-border-notch retro-border-notch-bottom-left" />
+        <span className="retro-border-notch retro-border-notch-bottom-right" />
+      </>}
+    </div>
+  }
+
   const appleIIPlusHorizontalBorder = columns > 1
     ? ` ${"_".repeat(columns - 2)} `
     : " ".repeat(columns)
-  const topBorderGlyphs = appleIIPlus
-    ? appleIIPlusHorizontalBorder
-    : topBorderGlyph.repeat(columns)
-  const bottomBorderGlyphs = appleIIPlus
-    ? appleIIPlusBottomBorder ? appleIIPlusHorizontalBorder : ""
-    : bottomBorderGlyph.repeat(columns)
-  const sideRows = appleIIPlusFullHeightSides ? rows : Math.max(0, rows - 2)
+  const topBorderGlyphs = appleIIPlusHorizontalBorder
+  const bottomBorderGlyphs = appleIIPlusBottomBorder ? appleIIPlusHorizontalBorder : ""
   const leftBorderGlyphs = Array(sideRows)
-    .fill(appleIIPlus ? "!" : leftBorderGlyph).join("\n")
+    .fill("!").join("\n")
   const rightBorderGlyphs = Array(sideRows)
-    .fill(appleIIPlus ? "!" : rightBorderGlyph).join("\n")
+    .fill("!").join("\n")
   const separatorGlyphs = bottomBorderGlyphs
   return <div className={`retro-border ${className}${appleIIPlusFullHeightSides
     ? " retro-border-full-height-sides"
@@ -858,6 +878,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             appleIIPlus={isAppleIIPlus}
             className="retro-outer-border"
             columns={38}
+            notchedCorners
             rows={24}
             separatorRow={isAppleIIPlus ? undefined : 3}
           />
@@ -910,6 +931,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               appleIIPlus={isAppleIIPlus}
               className="retro-clock-border"
               columns={isAppleIIPlus ? 14 : 17}
+              notchedCorners
               rows={4}
             />
             <time>{formatClockTime(now, language)}</time>

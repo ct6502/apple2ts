@@ -125,6 +125,34 @@
   white-space: pre;
 }
 
+.retro-border-notch {
+  background: var(--retro-background);
+  height: calc(var(--retro-row-height) / 5);
+  position: absolute;
+  width: calc(var(--retro-cell-width) / 7);
+  z-index: 1;
+}
+
+.retro-border-notch-top-left,
+.retro-border-notch-top-right {
+  top: calc(var(--retro-row-height) - 3 * var(--retro-row-height) / 16);
+}
+
+.retro-border-notch-bottom-left,
+.retro-border-notch-bottom-right {
+  bottom: calc(var(--retro-row-height) - 3 * var(--retro-row-height) / 16);
+}
+
+.retro-border-notch-top-left,
+.retro-border-notch-bottom-left {
+  left: 0;
+}
+
+.retro-border-notch-top-right,
+.retro-border-notch-bottom-right {
+  right: 0;
+}
+
 .retro-border-glyph-top,
 .retro-border-glyph-bottom {
   height: var(--retro-cell-height);
@@ -356,6 +384,11 @@
 
 .retro-clock-border>.retro-border-glyph-top,
 .retro-clock-border>.retro-border-glyph-bottom {
+  left: calc(3 * var(--retro-cell-width));
+}
+
+.retro-clock-border>.retro-border-notch-top-left,
+.retro-clock-border>.retro-border-notch-bottom-left {
   left: calc(3 * var(--retro-cell-width));
 }
 
