@@ -39,6 +39,7 @@ import {
   passTimeTravelSnapshot,
   passSetShowDebugTab,
   requestKeyboardState,
+  passSetRunMode,
   requestSetRunMode,
   requestLoadBinary,
 } from "../main2worker"
@@ -60,7 +61,7 @@ import {
   handleSetDiskWriteProtected,
   requestEjectDisk,
   requestSetDiskFromURL,
-  requestSetDiskOrFileFromBuffer,
+  requestMountDiskFromBuffer,
 } from "../devices/disk/driveprops"
 import { parseRemoteKeyboardState } from "./remotecontrol_input"
 
@@ -585,10 +586,20 @@ export const executeCommand = async (action: string, payload: Record<string, unk
       const driveIndex = Number(payload.driveIndex || 0)
       const bytes = decodeBase64(dataBase64)
       const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-      const mountedDrive = await requestSetDiskOrFileFromBuffer(driveIndex, arrayBuffer, filename, null, null)
+      const mountedDrive = await requestMountDiskFromBuffer(
+        driveIndex,
+        arrayBuffer,
+        filename,
+        null,
+        null,
+        undefined,
+        true,
+      )
+      const status = collectStatus()
       return {
         mountedDrive,
-        status: collectStatus(),
+        mountedDriveState: status.drives[mountedDrive],
+        status,
       }
     }
 
@@ -598,12 +609,16 @@ export const executeCommand = async (action: string, payload: Record<string, unk
       if (!url) {
         throw new Error("url is required")
       }
-      const mounted = await requestSetDiskFromURL(url, undefined, driveIndex)
-      if (!mounted) {
+      const mountedDrive = await requestSetDiskFromURL(url, undefined, driveIndex)
+      if (mountedDrive === false) {
         throw new Error(`Unable to mount disk from URL: ${url}`)
       }
+      passSetRunMode(RUN_MODE.NEED_BOOT)
+      const status = collectStatus()
       return {
-        status: collectStatus(),
+        mountedDrive,
+        mountedDriveState: status.drives[mountedDrive],
+        status,
       }
     }
 

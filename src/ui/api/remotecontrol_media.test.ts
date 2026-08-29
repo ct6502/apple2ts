@@ -1,9 +1,11 @@
 import { executeCommand } from "./remotecontrol"
+import { RUN_MODE } from "../../common/utility"
+import { passSetRunMode } from "../main2worker"
 import {
   handleGetDriveProps,
   requestEjectDisk,
   requestSetDiskFromURL,
-  requestSetDiskOrFileFromBuffer,
+  requestMountDiskFromBuffer,
 } from "../devices/disk/driveprops"
 
 jest.mock("../main2worker", () => ({
@@ -44,6 +46,7 @@ jest.mock("../main2worker", () => ({
   passTimeTravelIndex: jest.fn(),
   passTimeTravelSnapshot: jest.fn(),
   passSetShowDebugTab: jest.fn(),
+  passSetRunMode: jest.fn(),
   requestSetRunMode: jest.fn(),
   requestLoadBinary: jest.fn(),
 }))
@@ -67,7 +70,7 @@ jest.mock("../devices/disk/driveprops", () => ({
     index,
     drive: index % 2 + 1,
     hardDrive: index < 2,
-    filename: "",
+    filename: index === 0 ? "unrelated.hdv" : "",
     status: "",
     motorRunning: false,
     diskHasChanges: false,
@@ -77,20 +80,21 @@ jest.mock("../devices/disk/driveprops", () => ({
   handleSetDiskWriteProtected: jest.fn(),
   requestEjectDisk: jest.fn(),
   requestSetDiskFromURL: jest.fn(),
-  requestSetDiskOrFileFromBuffer: jest.fn(),
+  requestMountDiskFromBuffer: jest.fn(),
 }))
 
 const mockHandleGetDriveProps = jest.mocked(handleGetDriveProps)
+const mockPassSetRunMode = jest.mocked(passSetRunMode)
 const mockRequestEjectDisk = jest.mocked(requestEjectDisk)
 const mockRequestSetDiskFromURL = jest.mocked(requestSetDiskFromURL)
-const mockRequestSetDiskOrFileFromBuffer = jest.mocked(requestSetDiskOrFileFromBuffer)
+const mockRequestMountDiskFromBuffer = jest.mocked(requestMountDiskFromBuffer)
 
 describe("remote-control media confirmation", () => {
   beforeEach(() => jest.clearAllMocks())
 
   test("collects mount status only after the worker applies the disk", async () => {
     let confirmMount!: (drive: number) => void
-    mockRequestSetDiskOrFileFromBuffer.mockReturnValue(new Promise((resolve) => {
+    mockRequestMountDiskFromBuffer.mockReturnValue(new Promise((resolve) => {
       confirmMount = resolve
     }))
 
@@ -101,10 +105,29 @@ describe("remote-control media confirmation", () => {
     })
     await Promise.resolve()
     expect(mockHandleGetDriveProps).not.toHaveBeenCalled()
+    expect(mockPassSetRunMode).not.toHaveBeenCalled()
 
     confirmMount(2)
-    await expect(command).resolves.toEqual(expect.objectContaining({mountedDrive: 2}))
+    await expect(command).resolves.toEqual(expect.objectContaining({
+      mountedDrive: 2,
+      mountedDriveState: expect.objectContaining({index: 2}),
+      status: expect.objectContaining({
+        drives: expect.arrayContaining([
+          expect.objectContaining({index: 0, filename: "unrelated.hdv"}),
+        ]),
+      }),
+    }))
+    expect(mockRequestMountDiskFromBuffer).toHaveBeenCalledWith(
+      2,
+      expect.any(ArrayBuffer),
+      "remote.woz",
+      null,
+      null,
+      undefined,
+      true,
+    )
     expect(mockHandleGetDriveProps).toHaveBeenCalledTimes(4)
+    expect(mockPassSetRunMode).not.toHaveBeenCalled()
   })
 
   test("treats a false URL loader result as a mount failure", async () => {
@@ -114,6 +137,73 @@ describe("remote-control media confirmation", () => {
       driveIndex: 2,
       url: "https://example.test/bad.woz",
     })).rejects.toThrow("Unable to mount disk from URL")
+    expect(mockHandleGetDriveProps).not.toHaveBeenCalled()
+    expect(mockPassSetRunMode).not.toHaveBeenCalled()
+  })
+
+  test("preserves the requested URL drive and reports its post-ack state", async () => {
+    let confirmMount!: (drive: number | false) => void
+    mockRequestSetDiskFromURL.mockReturnValue(new Promise((resolve) => {
+      confirmMount = resolve
+    }))
+
+    const command = executeCommand("mountDiskFromUrl", {
+      driveIndex: 3,
+      url: "https://example.test/disk.hdv",
+    })
+    await Promise.resolve()
+    expect(mockHandleGetDriveProps).not.toHaveBeenCalled()
+    expect(mockPassSetRunMode).not.toHaveBeenCalled()
+
+    confirmMount(3)
+    await expect(command).resolves.toEqual(expect.objectContaining({
+      mountedDrive: 3,
+      mountedDriveState: expect.objectContaining({index: 3}),
+    }))
+    expect(mockRequestSetDiskFromURL).toHaveBeenCalledWith(
+      "https://example.test/disk.hdv",
+      undefined,
+      3,
+    )
+    expect(mockPassSetRunMode).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+    expect(mockPassSetRunMode).toHaveBeenCalledTimes(1)
+    expect(mockHandleGetDriveProps).toHaveBeenCalledTimes(4)
+  })
+
+  test("does not report an invalid worker-rejected disk as mounted", async () => {
+    mockRequestMountDiskFromBuffer.mockImplementation(async (_index, buffer) => {
+      expect(Array.from(new Uint8Array(buffer))).toEqual([1, 2, 3])
+      throw new Error("Worker rejected disk image")
+    })
+
+    await expect(executeCommand("mountDisk", {
+      driveIndex: 3,
+      filename: "invalid.woz",
+      dataBase64: "AQID",
+    })).rejects.toThrow("Worker rejected disk image")
+    expect(mockHandleGetDriveProps).not.toHaveBeenCalled()
+    expect(mockPassSetRunMode).not.toHaveBeenCalled()
+  })
+
+  test("does not route remote disk mounts through generic binary handling", async () => {
+    mockRequestMountDiskFromBuffer.mockRejectedValue(
+      new Error("Remote disk mount requires disk media"),
+    )
+
+    await expect(executeCommand("mountDisk", {
+      driveIndex: 1,
+      filename: "program.bin",
+      dataBase64: "AQID",
+    })).rejects.toThrow("Remote disk mount requires disk media")
+    expect(mockRequestMountDiskFromBuffer).toHaveBeenCalledWith(
+      1,
+      expect.any(ArrayBuffer),
+      "program.bin",
+      null,
+      null,
+      undefined,
+      true,
+    )
     expect(mockHandleGetDriveProps).not.toHaveBeenCalled()
   })
 

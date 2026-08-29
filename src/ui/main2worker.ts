@@ -433,9 +433,13 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       clickSpeaker(e.data.payload as number)
       break
     case MSG_WORKER.DRIVE_PROPS: {
-      doSetUIDriveProps(e.data.payload as DriveProps)
+      const payload = e.data.payload as DriveProps | {props: DriveProps, replaceDiskData: boolean}
+      if ("props" in payload) {
+        doSetUIDriveProps(payload.props, payload.replaceDiskData)
+      } else {
+        doSetUIDriveProps(payload)
+      }
       return {speed: machineState.cpuSpeed, helptext: ""}
-      break
     }
     case MSG_WORKER.DRIVE_SOUND: {
       const sound = e.data.payload as DRIVE
