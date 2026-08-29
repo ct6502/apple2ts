@@ -18,6 +18,7 @@ export const actionHintWidth = (label: string, locale: string) =>
 export const formatClockTime = (date: Date, locale: string) => {
   const formatter = new Intl.DateTimeFormat(locale, {
     hour: "numeric",
+    hour12: true,
     minute: "2-digit",
     second: "2-digit",
   })

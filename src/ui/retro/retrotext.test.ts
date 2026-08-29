@@ -13,6 +13,7 @@ describe("Retro control-panel text", () => {
   test("reserves the leading hour cell only for single-digit hours", () => {
     expect(formatClockTime(new Date(2020, 0, 1, 6, 7, 8), "en-US")).toMatch(/^\u20076:/)
     expect(formatClockTime(new Date(2020, 0, 1, 12, 7, 8), "en-US")).toMatch(/^12:/)
+    expect(formatClockTime(new Date(2020, 0, 1, 18, 7, 8), "en-US")).toMatch(/ PM$/)
   })
 
   test("truncates at grapheme boundaries with three dots", () => {
