@@ -187,6 +187,49 @@ test.each([
   runAssemblyTest(pollTimerWithInterruptDisabled(timer), flag, 0)
 })
 
+test("Timer 1 continuous reload permits one underflow after switching to one-shot", () => {
+  runAssemblyTest(`
+      SEI
+      LDA #$7F
+      STA $C${slot}0E   ; disable all VIA interrupts
+      LDA #$40
+      STA $C${slot}0D   ; clear any pending Timer 1 flag
+      STA $C${slot}0B   ; continuous Timer 1 mode
+      LDA #$C0
+      STA $C${slot}0E   ; enable Timer 1 IRQ
+      LDA #$40
+      STA $C${slot}04
+      STZ $C${slot}05   ; load and start Timer 1
+FIRST LDA $C${slot}0D
+      AND #$40
+      BEQ FIRST         ; first continuous-mode underflow reloads the counter
+      STZ $C${slot}0B   ; switch the reloaded interval to one-shot mode
+      BIT $C${slot}04   ; acknowledge the first underflow
+      LDY #$40
+NEXT  LDA $C${slot}0D
+      AND #$C0
+      CMP #$C0          ; IFR and IRQ summary must assert on the next underflow
+      BEQ SECOND
+      DEY
+      BNE NEXT
+      LDA #$FF
+      BNE DONE
+SECOND BIT $C${slot}04  ; acknowledge the permitted one-shot underflow
+      LDX #$00
+      LDY #$00
+WAIT  DEY
+      BNE WAIT
+      DEX
+      BNE WAIT          ; wait through multiple subsequent counter wraps
+      LDA $C${slot}0D
+      AND #$C0          ; later one-shot underflows remain inhibited
+DONE  CMP #$00
+      CLV
+      CLC
+      CLI
+  `.split("\n"), 0, Z)
+})
+
 test("a disabled timer does not clear the other VIA's interrupt", () => {
   resetMockingboard(slot)
   interruptRequest(slot, false)

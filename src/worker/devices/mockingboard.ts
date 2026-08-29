@@ -54,6 +54,15 @@ const T1fired = (slot: number, chip: number) => (memGetSlotROM(slot, TIMER_FIRED
 const T1started = (slot: number, chip: number) => (memGetSlotROM(slot, TIMER_STARTED[chip]) & TIMER1) !== 0
 const T1continuous = (slot: number, chip: number) => (memGetSlotROM(slot, ACR[chip]) & TIMER1) !== 0
 
+// Keep the counter transfer and rearming together so every reload creates
+// one complete timer interval.
+const reloadTimer1 = (slot: number, chip: number) => {
+  memSetSlotROM(slot, T1CL[chip], memGetSlotROM(slot, T1LL[chip]))
+  memSetSlotROM(slot, T1CH[chip], memGetSlotROM(slot, T1LH[chip]))
+  const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
+  memSetSlotROM(slot, TIMER_FIRED[chip], fired & ~TIMER1)
+}
+
 const handleTimerT1 = (slot: number, chip: number, cycleDelta: number) => {
   let t1low = memGetSlotROM(slot, T1CL[chip]) - cycleDelta
   memSetSlotROM(slot, T1CL[chip], t1low)
@@ -75,10 +84,7 @@ const handleTimerT1 = (slot: number, chip: number, cycleDelta: number) => {
           handleInterruptFlag(slot, chip, -1)
         }
         if (T1continuous(slot, chip)) {
-          const t1NewHigh = memGetSlotROM(slot, T1LH[chip])
-          const t1NewLow = memGetSlotROM(slot, T1LL[chip])
-          memSetSlotROM(slot, T1CL[chip], t1NewLow)
-          memSetSlotROM(slot, T1CH[chip], t1NewHigh)
+          reloadTimer1(slot, chip)
         }
       }
     }
@@ -264,11 +270,7 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
     case T1CH[chip]: // Timer 1 high-order counter, fall thru
       if (value >= 0) {
         memSetSlotROM(slot, T1LH[chip], value)
-        memSetSlotROM(slot, T1CL[chip], memGetSlotROM(slot, T1LL[chip]))
-        memSetSlotROM(slot, T1CH[chip], value)
-        // Reset T1 interrupt flag
-        const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
-        memSetSlotROM(slot, TIMER_FIRED[chip], fired & ~TIMER1)
+        reloadTimer1(slot, chip)
         const started = memGetSlotROM(slot, TIMER_STARTED[chip])
         memSetSlotROM(slot, TIMER_STARTED[chip], started | TIMER1)
         handleInterruptFlag(slot, chip, TIMER1)
