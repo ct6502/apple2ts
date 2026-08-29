@@ -233,11 +233,15 @@ const doIndirectInstruction = (vZP: number,
 // 300: F8 18 B8 A9 BD 69 00 D8 00
 const doADC_BCD = (value: number) => {
   let ones = (s6502.Accum & 0x0F) + (value & 0x0F) + (isCarry() ? 1 : 0)
+  let onesCarry = 0
   // Handle illegal BCD hex values by wrapping to "tens" digit
   if (ones >= 0xA) {
-    ones += 6
+    ones = (ones + 6) & 0x0F
+    onesCarry = 0x10
   }
-  let tmp = (s6502.Accum & 0xF0) + (value & 0xF0) + ones
+
+  const tens = (s6502.Accum & 0xF0) + (value & 0xF0) + onesCarry
+  let tmp = tens + ones
   // Pretend we're doing normal addition to set overflow flag
   const bothPositive = (s6502.Accum <= 127 && value <= 127)
   const bothNegative = (s6502.Accum >= 128 && value >= 128)
