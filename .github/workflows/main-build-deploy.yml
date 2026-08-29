@@ -28,6 +28,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Setup GitHub Pages
+      if: github.event.repository.has_pages
       uses: actions/configure-pages@v5
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v5
@@ -41,9 +42,11 @@ jobs:
     - run: npm run build
     - run: npm test
     - name: Upload GitHub Pages artifact
+      if: github.event.repository.has_pages
       uses: actions/upload-pages-artifact@v4
       with:
         path: dist
     - name: Deploy GitHub Pages
+      if: github.event.repository.has_pages
       id: deployment
       uses: actions/deploy-pages@v4
