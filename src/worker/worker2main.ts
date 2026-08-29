@@ -202,6 +202,7 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.KEYBOARD_STATE:
         setKeyboardState(e.data.payload as KeyboardState)
+        if (e.data.operationId !== undefined) passWorkerOperationResult(e.data.operationId)
         break
       case MSG_MAIN.KEYPRESS:
         sendTextToEmulator(e.data.payload as number)

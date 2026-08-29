@@ -181,6 +181,10 @@ export const passKeyboardState = (payload: KeyboardState) => {
   doPostMessage(MSG_MAIN.KEYBOARD_STATE, payload)
 }
 
+export const requestKeyboardState = (payload: KeyboardState, timeoutMs = 5000) => {
+  return requestWorkerOperation(MSG_MAIN.KEYBOARD_STATE, payload, timeoutMs)
+}
+
 export const passKeyRelease = () => {
   setTimeout(() => {
     // Delay the key release to give the emulator time to process the keypress
