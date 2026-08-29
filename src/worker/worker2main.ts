@@ -238,10 +238,19 @@ if (typeof self !== "undefined") {
       }
       case MSG_MAIN.DRIVE_NEW_DATA: {
         const payload = e.data.payload as DriveProps | { props: DriveProps, forceIndex: boolean }
-        if ("props" in payload) {
-          doSetEmuDriveNewData(payload.props, payload.forceIndex)
-        } else {
-          doSetEmuDriveNewData(payload)
+        try {
+          if ("props" in payload) {
+            doSetEmuDriveNewData(payload.props, payload.forceIndex)
+          } else {
+            doSetEmuDriveNewData(payload)
+          }
+          if (e.data.operationId !== undefined) passWorkerOperationResult(e.data.operationId)
+        } catch (error) {
+          if (e.data.operationId === undefined) throw error
+          passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
+          )
         }
         break
       }

@@ -335,6 +335,14 @@ export const passSetDriveNewData = (props: DriveProps, forceIndex = false) => {
   doPostMessage(MSG_MAIN.DRIVE_NEW_DATA, forceIndex ? { props, forceIndex } : props)
 }
 
+export const requestSetDriveNewData = (props: DriveProps, forceIndex = false, timeoutMs = 5000) => {
+  return requestWorkerOperation(
+    MSG_MAIN.DRIVE_NEW_DATA,
+    forceIndex ? { props, forceIndex } : props,
+    timeoutMs,
+  )
+}
+
 export const passSetDriveProps = (props: DriveProps) => {
   doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
 }

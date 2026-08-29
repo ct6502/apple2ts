@@ -56,11 +56,11 @@ import { getMockingboardMode } from "../devices/audio/mockingboard_audio"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import {
   handleGetFilename,
-  handleEjectDisk,
   handleGetDriveProps,
-  handleSetDiskOrFileFromBuffer,
-  handleSetDiskFromURL,
   handleSetDiskWriteProtected,
+  requestEjectDisk,
+  requestSetDiskFromURL,
+  requestSetDiskOrFileFromBuffer,
 } from "../devices/disk/driveprops"
 import { parseRemoteKeyboardState } from "./remotecontrol_input"
 
@@ -394,7 +394,7 @@ const connectToRemoteServer = async () => {
   }
 }
 
-const executeCommand = async (action: string, payload: Record<string, unknown>) => {
+export const executeCommand = async (action: string, payload: Record<string, unknown>) => {
   switch (action) {
     case "getStatus":
       return collectStatus()
@@ -585,7 +585,7 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       const driveIndex = Number(payload.driveIndex || 0)
       const bytes = decodeBase64(dataBase64)
       const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-      const mountedDrive = handleSetDiskOrFileFromBuffer(driveIndex, arrayBuffer, filename, null, null)
+      const mountedDrive = await requestSetDiskOrFileFromBuffer(driveIndex, arrayBuffer, filename, null, null)
       return {
         mountedDrive,
         status: collectStatus(),
@@ -598,7 +598,10 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       if (!url) {
         throw new Error("url is required")
       }
-      await handleSetDiskFromURL(url, undefined, driveIndex)
+      const mounted = await requestSetDiskFromURL(url, undefined, driveIndex)
+      if (!mounted) {
+        throw new Error(`Unable to mount disk from URL: ${url}`)
+      }
       return {
         status: collectStatus(),
       }
@@ -689,7 +692,7 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
     }
 
     case "ejectDisk":
-      handleEjectDisk(Number(payload.driveIndex))
+      await requestEjectDisk(Number(payload.driveIndex))
       return {
         status: collectStatus(),
       }
