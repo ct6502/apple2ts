@@ -1,5 +1,6 @@
 import { ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, classifyImageKind, stripTwoImgHeader, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_TEXT, PRODOS_FILE_TYPE_DOS_MASTER, MenuDiskEntry, buildProDosHdv, VTOC_REFRESH, determineVtocType, FourCadeExportFailure } from "../../common/prodos_hdv"
 import { RUN_MODE } from "../../common/utility"
+import { i18n } from "../../i18n"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { diskImages } from "../devices/disk/diskimages"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/disk/driveprops"
@@ -351,8 +352,8 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
 
       showGlobalProgressModal(false)
       skipUnavailableTitles = window.confirm(
-        `"${failure.title}" could not be included.\n\n` +
-        "OK to continue creating the HDV, skipping unavailable titles?",
+        `${i18n.t("collection.hdvExportTitleUnavailable", {title: failure.title})}\n\n` +
+        i18n.t("collection.continueHdvExportWithoutUnavailableTitles"),
       )
       if (skipUnavailableTitles) {
         showGlobalProgressModal(true, "Creating HDV image")
