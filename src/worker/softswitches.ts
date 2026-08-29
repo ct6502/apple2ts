@@ -142,18 +142,17 @@ export const SWITCHES = {
   JOYSTICK3: NewSwitch(0, 0, 0xC067, false,
     (addr, cycleCount) => {checkJoystickValues(cycleCount, rand())}),
   // The high bit of $C068...$C06F mirrors the high bit of $C060...$C067.
-  // Some of these have names but others don't.
   CASSIN2: NewSwitch(0, 0, 0xC068, false, (addr) => {mirrorHighBitPlusRand(addr)}),
-  C069: NewSwitch(0, 0, 0xC069, false, (addr) => {mirrorHighBitPlusRand(addr)}),
-  FASTCHIP_LOCK: NewSwitch(0xC06A, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),   // used by Total Replay
-  FASTCHIP_ENABLE: NewSwitch(0xC06B, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}), // used by Total Replay
-  C06C: NewSwitch(0, 0, 0xC06C, false, (addr) => {mirrorHighBitPlusRand(addr)}),
-  FASTCHIP_SPEED: NewSwitch(0xC06D, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),  // used by Total Replay
-  C06E: NewSwitch(0, 0, 0xC06E, false, (addr) => {mirrorHighBitPlusRand(addr)}),
-  C06F: NewSwitch(0, 0, 0xC06F, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  PB0_MIRROR: NewSwitch(0, 0, 0xC069, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  PB1_MIRROR: NewSwitch(0xC06A, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  PB2_MIRROR: NewSwitch(0xC06B, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  JOYSTICK0_MIRROR: NewSwitch(0, 0, 0xC06C, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  JOYSTICK1_MIRROR: NewSwitch(0xC06D, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  JOYSTICK2_MIRROR: NewSwitch(0, 0, 0xC06E, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  JOYSTICK3_MIRROR: NewSwitch(0, 0, 0xC06F, false, (addr) => {mirrorHighBitPlusRand(addr)}),
   // C070: Joystick reset is handled below since $C070...$C07F triggers it
   BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RamWorks
-  LASER128EX: NewSwitch(0xC074, 0, 0),  // used by Total Replay (ignored)
+  ACCELCTRL: NewSwitch(0xC074, 0, 0),  // Accelerator control used by Total Replay (ignored)
   // Internal display-mode flags. Real Video-7 hardware selects these modes
   // through the AN3/80COL clock sequence handled below.
   VIDEO7_160: NewSwitch(0, 0, 0),
