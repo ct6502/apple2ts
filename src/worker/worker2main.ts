@@ -152,7 +152,7 @@ if (typeof self !== "undefined") {
         doSetCyclesToRun(e.data.payload as number)
         break
       case MSG_MAIN.STATE6502:
-        doSetState6502(e.data.payload as STATE6502)
+        doSetState6502(e.data.payload as STATE6502, e.data.operationId)
         break
       case MSG_MAIN.DEBUG:
         doSetIsDebugging(e.data.payload)

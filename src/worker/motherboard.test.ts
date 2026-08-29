@@ -3,7 +3,7 @@ import { getHires, memGet, memory, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doLoadBinary, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSpeedMode, getExternalMachineState, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doLoadBinary, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSpeedMode, doSetState6502, getExternalMachineState, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
@@ -210,6 +210,28 @@ test("run changes complete after publishing their state", () => {
     passMachineState.mockRestore()
     passOperationResult.mockRestore()
     doSetRunMode(previousState.runMode)
+  }
+})
+
+test("CPU state changes complete after publishing their state", () => {
+  const previousState = {...s6502}
+  const passMachineState = jest.spyOn(worker2main, "passMachineState")
+  const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
+  const nextState = {...previousState, PC: 0x6000, Accum: 0x42}
+
+  try {
+    doSetState6502(nextState, 9)
+    expect(passMachineState).toHaveBeenCalledWith(expect.objectContaining({
+      s6502: expect.objectContaining({PC: 0x6000, Accum: 0x42}),
+    }))
+    expect(passOperationResult).toHaveBeenCalledWith(9)
+    expect(passMachineState.mock.invocationCallOrder[0]).toBeLessThan(
+      passOperationResult.mock.invocationCallOrder[0],
+    )
+  } finally {
+    passMachineState.mockRestore()
+    passOperationResult.mockRestore()
+    doSetState6502(previousState)
   }
 })
 

@@ -29,7 +29,7 @@ import {
   passPasteText,
   passSetDebug,
   passSetBinaryBlock,
-  passSetState6502,
+  requestSetState6502,
   passSetMemory,
   passSetSoftSwitches,
   passStepInto,
@@ -473,7 +473,7 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       return collectStatus()
 
     case "setCpuState":
-      passSetState6502(payload.state as STATE6502)
+      await requestSetState6502(payload.state as STATE6502)
       return collectStatus()
 
     case "getBreakpoints":
