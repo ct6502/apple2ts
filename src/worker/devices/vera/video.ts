@@ -7,8 +7,6 @@
 
 import { vera_spi_read, vera_spi_write } from "./sdcard"
   // @ts-ignore
-import { psg_reset, psg_writereg } from "./psg"
-  // @ts-ignore
 import { pcm_reset, pcm_is_fifo_almost_empty, pcm_read_ctrl, pcm_read_rate, pcm_write_ctrl, pcm_write_rate, pcm_write_fifo, pcm_render } from "./pcm"
 import { s6502 } from "../../instructions"
 import { passVeraFramebuffer, passVeraPcmWrite, passVeraPsgWrite } from "../../worker2main"
@@ -232,7 +230,6 @@ export const video_reset = (): void => {
 	vga_scan_pos_y = 0
 	ntsc_half_cnt = 0
 	ntsc_scan_pos_y = 0
-	psg_reset()
 	pcm_reset()
 	audio_last_cycle = s6502.cycleCount
 	audio_sample_frac = 0
@@ -1232,7 +1229,6 @@ const video_space_read_range = (dest: Uint8Array, address: number, size: number)
 const write_psg = (address: number, value: number): void => {
 	const reg = address & 0x3f
 	audio_render()
-	psg_writereg(reg, value)
 	passVeraPsgWrite({
 		cycle: s6502.cycleCount,
 		reg,
