@@ -335,6 +335,10 @@ export class GoogleDrive implements CloudProvider {
     cloudData.lastSyncTime = Date.now()
 
     try {
+      if (!await this.signIn()) {
+        cloudData.syncStatus = CLOUD_SYNC.FAILED
+        return false
+      }
       // // To update the file, we just need to send the blob using PATCH with no metadata.
       const form = new FormData()
       form.append("file", blob)

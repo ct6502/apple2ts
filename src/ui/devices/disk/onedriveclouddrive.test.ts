@@ -95,4 +95,67 @@ describe("OneDrive Graph provider", () => {
     })
     globalThis.fetch = originalFetch
   })
+
+  test("authenticates before syncing a disk", async () => {
+    const originalFetch = globalThis.fetch
+    const fetchMock = jest.fn()
+    globalThis.fetch = fetchMock
+    const drive = new OneDriveCloudDrive()
+    jest.spyOn(drive, "signIn").mockResolvedValue(false)
+    const cloudData = {
+      providerName: "OneDrive",
+      syncStatus: 0,
+      syncInterval: 60000,
+      lastSyncTime: -1,
+      fileName: "Disk.po",
+      parentId: "root",
+      itemId: "disk",
+      apiEndpoint: "https://graph.microsoft.com/v1.0/",
+      downloadUrl: "",
+      detailsUrl: "",
+      fileSize: 0,
+    }
+
+    await expect(drive.sync(new Blob(["disk"]), cloudData)).resolves.toBe(false)
+
+    expect(drive.signIn).toHaveBeenCalled()
+    expect(fetchMock).not.toHaveBeenCalled()
+    globalThis.fetch = originalFetch
+  })
+
+  test("uploads chunks without authorizing the pre-authenticated session URL", async () => {
+    const originalFetch = globalThis.fetch
+    const originalResponse = globalThis.Response
+    const fetchMock = jest.fn(async () => ({ ok: true } as Response))
+    globalThis.fetch = fetchMock
+    globalThis.Response = jest.fn(() => ({
+      arrayBuffer: async () => new Uint8Array([1, 2, 3, 4]).buffer,
+    })) as unknown as typeof Response
+    const drive = new OneDriveCloudDrive()
+    const cloudData = {
+      providerName: "OneDrive",
+      syncStatus: 0,
+      syncInterval: 60000,
+      lastSyncTime: -1,
+      fileName: "Disk.po",
+      parentId: "root",
+      itemId: "disk",
+      apiEndpoint: "https://graph.microsoft.com/v1.0/",
+      downloadUrl: "",
+      detailsUrl: "",
+      fileSize: 4,
+    }
+
+    await expect(drive.uploadBlob("https://upload.example/session", new Blob(["disk"]), cloudData))
+      .resolves.toBe(true)
+
+    expect(fetchMock).toHaveBeenCalledWith("https://upload.example/session", expect.objectContaining({
+      headers: {
+        "Content-Length": "4",
+        "Content-Range": "bytes 0-3/4",
+      },
+    }))
+    globalThis.fetch = originalFetch
+    globalThis.Response = originalResponse
+  })
 })

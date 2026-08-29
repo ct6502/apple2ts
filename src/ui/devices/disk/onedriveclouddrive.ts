@@ -219,6 +219,12 @@ export class OneDriveCloudDrive implements CloudProvider {
   async sync(blob: Blob, cloudData: CloudData): Promise<boolean> {
     cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
 
+    if (!await this.signIn()) {
+      cloudData.syncStatus = CLOUD_SYNC.FAILED
+      cloudData.lastSyncTime = Date.now()
+      return false
+    }
+
     const sessionUrl = `${cloudData.apiEndpoint}drive/items/${cloudData.parentId}:/${cloudData.fileName}:/createUploadSession`
     let success = false
 
@@ -270,7 +276,6 @@ export class OneDriveCloudDrive implements CloudProvider {
         method: "PUT",
         mode: "cors",
         headers: {
-          "Authorization": `bearer ${g_accessToken}`,
           "Content-Length": `${chunkSize}`,
           "Content-Range": `bytes ${offset}-${offset+chunkSize-1}/${buffer.byteLength}`
         },

@@ -122,4 +122,28 @@ describe("Google Drive REST provider", () => {
       fileSize: 3,
     })
   })
+
+  test("authenticates before syncing a disk", async () => {
+    const fetchMock = jest.fn()
+    globalThis.fetch = fetchMock
+    const drive = new GoogleDrive()
+    jest.spyOn(drive, "signIn").mockResolvedValue(false)
+    const cloudData = {
+      providerName: "GoogleDrive",
+      syncStatus: 0,
+      syncInterval: 60000,
+      lastSyncTime: -1,
+      fileName: "Disk.po",
+      itemId: "disk",
+      apiEndpoint: "",
+      downloadUrl: "",
+      detailsUrl: "",
+      fileSize: 0,
+    }
+
+    await expect(drive.sync(new Blob(["disk"]), cloudData)).resolves.toBe(false)
+
+    expect(drive.signIn).toHaveBeenCalled()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })
