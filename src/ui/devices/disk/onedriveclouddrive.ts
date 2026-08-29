@@ -1,6 +1,9 @@
 import { CLOUD_SYNC } from "../../../common/utility"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { loadOneDriveScript } from "./cloudscriptloader"
+import { BrowserCacheLocation, PublicClientApplication } from "@azure/msal-browser"
+import { Client, ResponseType } from "@microsoft/microsoft-graph-client"
+import type { CloudBrowserItem } from "./clouddrive_retro"
 
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
@@ -14,40 +17,107 @@ const isAnomixerDomain = () => {
 const applicationId = isAnomixerDomain()
   ? "cbd9893a-d674-4a22-b85e-bc258b75aedf"
   : "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
-const readWriteScope = "onedrive.readwrite"
-const authUrl = new URL(`https://login.live.com/oauth20_authorize.srf?client_id=${applicationId}&scope=${readWriteScope}&response_type=token&redirect_uri=`)
+const graphScopes = ["Files.ReadWrite"]
 
 let g_accessToken: string
+let msalClient: PublicClientApplication | undefined
+
+const getRedirectUri = () => {
+  const baseUrl = new URL(window.location.href)
+  const port = baseUrl.port ? `:${baseUrl.port}` : ""
+  return `${baseUrl.protocol}//${baseUrl.hostname}${port}?cloudProvider=OneDrive`
+}
+
+const getMsalClient = async () => {
+  if (!msalClient) {
+    msalClient = new PublicClientApplication({
+      auth: {
+        clientId: applicationId,
+        authority: "https://login.microsoftonline.com/consumers",
+        redirectUri: getRedirectUri(),
+      },
+      cache: { cacheLocation: BrowserCacheLocation.MemoryStorage },
+    })
+    await msalClient.initialize()
+  }
+  return msalClient
+}
+
+const requestGraphAccessToken = async () => {
+  const client = await getMsalClient()
+  const account = client.getAllAccounts()[0]
+  const result = account
+    ? await client.acquireTokenSilent({ account, scopes: graphScopes }).catch(() =>
+      client.acquireTokenPopup({ account, scopes: graphScopes }))
+    : await client.loginPopup({ scopes: graphScopes })
+  g_accessToken = result.accessToken
+  return g_accessToken
+}
+
+const getGraphClient = () => Client.init({
+  authProvider: done => done(null, g_accessToken),
+})
+
+type OneDriveGraphItem = {
+  id?: string
+  name?: string
+  size?: number
+  folder?: object
+  webUrl?: string
+  parentReference?: { id?: string }
+  "@microsoft.graph.downloadUrl"?: string
+}
+
+type OneDriveGraphPage = {
+  value?: OneDriveGraphItem[]
+  "@odata.nextLink"?: string
+}
 
 export class OneDriveCloudDrive implements CloudProvider {
+
+  constructor(private readonly selectedItem?: CloudBrowserItem) {}
 
   async ensureScriptsLoaded() {
     await loadOneDriveScript()
   }
 
   requestAuthToken(callback: (authToken: string) => void) {
-    if (!g_accessToken) {
-      const baseUrl = new URL(window.location.href)
-      const port = baseUrl.port != "" ? `:${baseUrl.port}` : ""
-      const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}${port}?cloudProvider=OneDrive`
+    if (g_accessToken) callback(`bearer ${g_accessToken}`)
+    else void requestGraphAccessToken()
+      .then(accessToken => callback(`bearer ${accessToken}`))
+      .catch(error => console.error("OneDrive sign-in failed", error))
+  }
 
-      // The redirect URI must be percent-encoded, otherwise its own query string
-      // (?cloudProvider=OneDrive) is parsed as part of the login.live.com URL and
-      // is dropped from the redirect, so the popup returns to Apple2TS without the
-      // cloudProvider marker and the access token is never picked up.
-      window.open(`${authUrl}${encodeURIComponent(redirectUri)}`, "_blank")
-      const interval = window.setInterval(async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const accessToken = (window as any).accessToken
-        if (accessToken) {
-          clearInterval(interval)
-          g_accessToken = accessToken
-          callback(`bearer ${accessToken}`)
-        }
-      }, 500)
-    } else {
-      callback(`bearer ${g_accessToken}`)
+  async signIn(): Promise<boolean> {
+    try {
+      await requestGraphAccessToken()
+      return true
+    } catch (error) {
+      console.error("OneDrive sign-in failed", error)
+      return false
     }
+  }
+
+  async listFolder(folderId: string): Promise<CloudBrowserItem[]> {
+    await requestGraphAccessToken()
+    const items: OneDriveGraphItem[] = []
+    let endpoint: string | undefined = folderId === "root"
+      ? "/me/drive/root/children"
+      : `/me/drive/items/${encodeURIComponent(folderId)}/children`
+    while (endpoint) {
+      const page = await getGraphClient().api(endpoint).get() as OneDriveGraphPage
+      items.push(...(page.value ?? []))
+      endpoint = page["@odata.nextLink"]
+    }
+    return items.flatMap(item => item.id && item.name ? [{
+      id: item.id,
+      name: item.name,
+      kind: item.folder ? "folder" as const : "file" as const,
+      size: item.size,
+      parentId: item.parentReference?.id,
+      downloadUrl: item["@microsoft.graph.downloadUrl"],
+      webUrl: item.webUrl,
+    }] : [])
   }
 
   // Whether a OneDrive access token is already cached in memory. Used to decide,
@@ -57,6 +127,7 @@ export class OneDriveCloudDrive implements CloudProvider {
   }
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
+    if (this.selectedItem) return this.downloadSelectedItem(this.selectedItem)
     await this.ensureScriptsLoaded()
     const result = await launchPicker("share", "files", filter)
     const file = result?.value[0]
@@ -92,6 +163,31 @@ export class OneDriveCloudDrive implements CloudProvider {
     }
 
     return null
+  }
+
+  private async downloadSelectedItem(item: CloudBrowserItem): Promise<[Blob, CloudData] | null> {
+    await requestGraphAccessToken()
+    const blob = item.downloadUrl
+      ? await fetch(item.downloadUrl).then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        return response.blob()
+      })
+      : await getGraphClient().api(`/me/drive/items/${encodeURIComponent(item.id)}/content`)
+        .responseType(ResponseType.BLOB)
+        .get() as Blob
+    return [blob, {
+      providerName: "OneDrive",
+      syncStatus: CLOUD_SYNC.ACTIVE,
+      syncInterval: DEFAULT_SYNC_INTERVAL,
+      lastSyncTime: Date.now(),
+      fileName: item.name,
+      parentId: item.parentId,
+      itemId: item.id,
+      apiEndpoint: "https://graph.microsoft.com/v1.0/",
+      downloadUrl: `https://graph.microsoft.com/v1.0/me/drive/items/${item.id}/content`,
+      detailsUrl: item.webUrl ?? "",
+      fileSize: item.size ?? blob.size,
+    }]
   }
 
   async upload(filename: string): Promise<CloudData | null> {

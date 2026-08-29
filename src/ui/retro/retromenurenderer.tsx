@@ -601,24 +601,52 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         const item = currentMenu[selectedIndex]
         if (!item) return
         if (item.children) {
-          const refresh = typeof item.children === "function" ? item.children : undefined
-          const children = typeof item.children === "function" ? item.children() : item.children
-          setMenuStack(stack => [
-            ...stack,
-            createMenuFrame(
-              item.id,
-              item.submenuTitle ?? item.label,
-              children,
-              item.submenuTitleValue,
-              refresh,
-              item.actionLabel,
-              item.submit,
-              item.isSubmitVisible,
-              selectedIndex,
-              item.onLeave,
-            ),
-          ])
-          setSelectedIndex(Math.max(0, children.findIndex(child => isMenuItemSelectable(child))))
+          const openSubmenu = () => {
+            const refresh = typeof item.children === "function" ? item.children : undefined
+            const children = typeof item.children === "function" ? item.children() : item.children!
+            setMenuStack(stack => [
+              ...stack,
+              createMenuFrame(
+                item.id,
+                item.submenuTitle ?? item.label,
+                children,
+                item.submenuTitleValue,
+                refresh,
+                item.actionLabel,
+                item.submit,
+                item.isSubmitVisible,
+                selectedIndex,
+                item.onLeave,
+              ),
+            ])
+            setSelectedIndex(Math.max(0, children.findIndex(child => isMenuItemSelectable(child))))
+            if (item.afterOpen) {
+              void item.afterOpen().then(() => {
+                if (!refresh) return
+                const refreshedChildren = refresh()
+                setMenuStack(stack => stack.map((frame, index) => index === stack.length - 1 &&
+                  frame.menuId === item.id
+                  ? createMenuFrame(
+                    item.id,
+                    item.submenuTitle ?? item.label,
+                    refreshedChildren,
+                    item.submenuTitleValue,
+                    refresh,
+                    item.actionLabel,
+                    item.submit,
+                    item.isSubmitVisible,
+                    selectedIndex,
+                    item.onLeave,
+                  )
+                  : frame))
+                setSelectedIndex(Math.max(
+                  0,
+                  refreshedChildren.findIndex(child => isMenuItemSelectable(child)),
+                ))
+              })
+            }
+          }
+          openSubmenu()
         } else if (currentFrame && item.options && item.kind !== "action") {
           if (currentFrame.submit && !item.valueOnly) {
             if (currentFrame.isSubmitVisible?.(currentFrame.items, currentFrame.values)) {
@@ -843,7 +871,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                         ? item.checkedIndicator ?? (isAppleIIPlus ? "*" : checkmark)
                         : " ")}
                   </span>}
-                  <span className={`retro-menu-name${retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
+                  <span className={`retro-menu-name${item.useRetroFont || retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
                     {visibleLabel}
                     {visibleOption || item.textInput ? ":" : ""}
                   </span>

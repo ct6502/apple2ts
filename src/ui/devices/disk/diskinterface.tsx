@@ -39,7 +39,7 @@ import {
   handleSetDiskWriteProtected,
 } from "./driveprops"
 import { GoogleDrive } from "./googledrive"
-import { OneDriveCloudDrive } from "./onedriveclouddrive"
+import { createRetroOneDriveControl } from "./onedrive_retro"
 import {
   CLOUD_PROVIDER_NAMES,
   cloudProviderDisplayName,
@@ -452,16 +452,7 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
   createRetroInternetArchiveControl(driveIndex),
   ...(demoZooEnabled ? [createRetroDemoZooControl(driveIndex)] : []),
   ...(!navigator.userAgent.includes("Electron") ? [
-    {
-      id: `diskDrives.${driveIndex}.load.oneDrive`,
-      label: (context: RetroMenuContext) => context.t("disk.loadDiskFromOneDrive"),
-      keepMenuOpen: true,
-      action: (context: RetroMenuContext) => {
-        void loadDiskFromCloudDrive(new OneDriveCloudDrive(), driveIndex).then(loaded => {
-          if (loaded) context.close()
-        })
-      },
-    },
+    createRetroOneDriveControl(driveIndex),
     {
       id: `diskDrives.${driveIndex}.load.googleDrive`,
       label: (context: RetroMenuContext) => context.t("disk.loadDiskFromGoogleDrive"),
