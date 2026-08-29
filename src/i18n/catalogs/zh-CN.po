@@ -1789,6 +1789,14 @@ msgctxt "collection.reportExportIssue"
 msgid "Report an export issue"
 msgstr "报告导出问题"
 
+msgctxt "collection.hdvExportTitleUnavailable"
+msgid "Apple2TS could not include \"{{title}}\" in the HDV."
+msgstr ""
+
+msgctxt "collection.continueHdvExportWithoutUnavailableTitles"
+msgid "Continue creating the HDV and skip unavailable titles?"
+msgstr ""
+
 #, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"

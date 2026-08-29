@@ -108,8 +108,8 @@ describe("createHdv", () => {
 
     expect(confirm).toHaveBeenCalledTimes(1)
     expect(confirm).toHaveBeenCalledWith(
-      "\"Aztec\" could not be included.\n\n" +
-      "OK to continue creating the HDV, skipping unavailable titles?",
+      "Apple2TS could not include \"Aztec\" in the HDV.\n\n" +
+      "Continue creating the HDV and skip unavailable titles?",
     )
     expect(alert).toHaveBeenCalledWith(
       "HDV created without:\n\n\"Aztec\": no usable binary\n\"Chivalry\": download failed",
