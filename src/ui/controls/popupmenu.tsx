@@ -28,11 +28,8 @@ const PopupMenu = (props: PopupMenuProps) => {
     }
     const rect = menuRef.current.getBoundingClientRect()
     const [x, y] = props.location
-    // Account for the browser window's position on the physical screen.
-    // window.screenY + chrome height gives the top of the viewport in screen coords.
-    const chromeHeight = window.outerHeight - window.innerHeight
-    const maxRight = Math.min(window.innerWidth, window.screen.availWidth - window.screenX)
-    const maxBottom = Math.min(window.innerHeight, window.screen.availHeight - window.screenY - chromeHeight)
+    const maxRight = window.innerWidth
+    const maxBottom = window.innerHeight
     setPosStyle({
       left: Math.max(0, Math.min(x, maxRight - rect.width)),
       top: Math.max(0, Math.min(y, maxBottom - rect.height)),
