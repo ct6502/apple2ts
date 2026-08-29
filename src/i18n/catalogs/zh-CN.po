@@ -1,11 +1,11 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-08-25 03:05+0000\n"
+"PO-Revision-Date: 2026-08-29 08:51+0000\n"
 "Last-Translator: reducedradius "
 "<137701630+flytothehighest@users.noreply.github.com>\n"
-"Language-Team: Chinese (Simplified Han script) "
-"<https://hosted.weblate.org/projects/apple2ts/browser-emulator/zh_Hans/>\n"
+"Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
+"projects/apple2ts/browser-emulator/zh_Hans/>\n"
 "Language: zh-CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -93,7 +93,6 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "主题"
 
-#, fuzzy
 msgctxt "config.resetSettings"
 msgid "Reset All Settings"
 msgstr "重置所有设置"
@@ -141,7 +140,7 @@ msgstr "摇杆设置"
 
 msgctxt "config.prodosFloppy"
 msgid "Load ProDOS disks in floppy drive"
-msgstr ""
+msgstr "在软盘驱动器中加载ProDOS 盘"
 
 #, fuzzy
 msgctxt "machine.configuration"
@@ -182,7 +181,7 @@ msgstr "4 MB"
 
 msgctxt "machine.ram.8mb"
 msgid "8 MB"
-msgstr ""
+msgstr "8 MB"
 
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
@@ -249,7 +248,6 @@ msgctxt "themes.classic"
 msgid "Classic"
 msgstr "经典"
 
-#, fuzzy
 msgctxt "themes.dark"
 msgid "Dark"
 msgstr "深色"
@@ -348,17 +346,14 @@ msgctxt "debug.pause"
 msgid "Pause"
 msgstr "暂停"
 
-#, fuzzy
 msgctxt "debug.loadSymbolTable"
 msgid "Load Symbol Table"
 msgstr "加载符号表"
 
-#, fuzzy
 msgctxt "debug.agentTab"
 msgid "Agent"
 msgstr "AI 代理"
 
-#, fuzzy
 msgctxt "debug.disassembly"
 msgid "Disassembly"
 msgstr "反汇编"
@@ -429,7 +424,7 @@ msgstr ""
 
 msgctxt "disassembly.notice.noWriteEffect"
 msgid "INFO: This write has no effect on {{machine}}"
-msgstr ""
+msgstr "信息：此写操作对{{machine}}毫无作用"
 
 msgctxt "disassembly.notice.multipleTriggers"
 msgid "WARNING: This instruction triggers the soft switch multiple times"
