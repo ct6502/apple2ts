@@ -1902,6 +1902,9 @@ export const video_write = (reg: number, value: number): void => {
 	}
 }
 
+export const video_get_framebuffer = (): Uint8ClampedArray => framebuffer
+
+
 // These helpers use element counts, not byte counts. The port calls them only
 // with same-width typed arrays or object arrays that model C structs.
 type NumericTypedArray = Uint8Array | Uint8ClampedArray | Uint16Array | Uint32Array | Int16Array | Int32Array

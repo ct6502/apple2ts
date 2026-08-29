@@ -96,4 +96,13 @@ export const newReleases: DiskCollectionItem[] = [
     lastUpdated: new Date(0),
     fileSize: 143360,
   },
+  {
+    type: -1,
+    title: "VERA Graphics & Sound Demo",
+    lastUpdated: new Date("8/28/2026"),
+    imageUrl: "disks/veratest.png",
+    diskUrl: "https://github.com/anomixer/veratest/releases/latest/download/veratest.po",
+    detailsUrl: "https://github.com/anomixer/veratest",
+    fileSize: 143360
+  },
 ]
