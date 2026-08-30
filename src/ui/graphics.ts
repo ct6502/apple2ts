@@ -530,7 +530,6 @@ let surroundLayerCache: { key: string, canvas: HTMLCanvasElement } | null = null
 const crtDistortedCanvas = document.createElement("canvas")
 const crtClippedCanvas = document.createElement("canvas")
 const crtOverrideFrameCanvas = document.createElement("canvas")
-const scanlineCanvas = document.createElement("canvas")
 const crtSourceWidth = 560
 const crtSourceHeight = 384
 const crtOutsideSource = 0xFFFFFFFF
@@ -705,22 +704,6 @@ const paintScreenSurround = (
   ctx.restore()
 }
 
-const paintIIGSScanlines = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  resizeWorkCanvas(scanlineCanvas, width, height)
-  const scanlineContext = scanlineCanvas.getContext("2d")!
-  scanlineContext.clearRect(0, 0, width, height)
-  scanlineContext.fillStyle = "rgba(0, 0, 0, 0.3)"
-  for (let y = 2; y < height; y += 4) scanlineContext.fillRect(0, y, width, 2)
-  const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC &&
-    document.fullscreenElement === null && !isCanvasOnlyTheme()
-  if (hasClassicMonitorFrame && monitorOpeningMask) {
-    scanlineContext.globalCompositeOperation = "destination-in"
-    scanlineContext.drawImage(monitorOpeningMask, 0, 0, width, height)
-    scanlineContext.globalCompositeOperation = "source-over"
-  }
-  ctx.drawImage(scanlineCanvas, 0, 0)
-}
-
 const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE, width: number, height: number,
@@ -736,14 +719,6 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   hiddenContext.putImageData(hiddenData, 0, 0)
 
   const distorted = distortLayer(hiddenContext.canvas, borderColor ?? background)
-  const applyEffectsToSurround = borderColor !== null
-  if (getShowScanlines() && !applyEffectsToSurround) {
-    const distortedContext = distorted.getContext("2d")!
-    distortedContext.fillStyle = "rgba(0, 0, 0, 0.3)"
-    for (let y = 2; y < crtSourceHeight; y += 4) {
-      distortedContext.fillRect(0, y, crtSourceWidth, 2)
-    }
-  }
 
   const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC &&
     document.fullscreenElement === null && !isCanvasOnlyTheme()
@@ -771,9 +746,6 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
     ctx.drawImage(distorted, screenX, screenY, screenWidth, screenHeight)
   }
   ctx.restore()
-  if (getShowScanlines() && applyEffectsToSurround) {
-    paintIIGSScanlines(ctx, width, height)
-  }
   return true
 }
 
@@ -964,7 +936,6 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
         imageWidth,
         imageHeight,
       )
-      if (iigsSkin && getShowScanlines()) paintIIGSScanlines(ctx, width, height)
       return
     }
   }
@@ -997,7 +968,6 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
       }
     } else {
       drawImage(ctx, hiddenContext, width, height)
-      if (iigsSkin && getShowScanlines()) paintIIGSScanlines(ctx, width, height)
     }
     return
   }
@@ -1032,9 +1002,6 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
       // This will cause a subtle smoothing.
       if (colorMode !== COLOR_MODE.NOFRINGE) {
         drawImage(ctx, hiddenContext, width, height)
-      }
-      if (iigsSkin && !crtDistortion && getShowScanlines()) {
-        paintIIGSScanlines(ctx, width, height)
       }
     }
   }

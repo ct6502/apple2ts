@@ -20,6 +20,7 @@ import ImageWriter from "../devices/printer/imagewriter"
 import { getDiskCollection } from "../diskdialog/diskpanel_utils"
 import { DISK_BOOKMARKS_CHANGED_EVENT, DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { newReleases } from "../devices/disk/newreleases"
+import { toggleScanlines } from "../ui_utilities"
 
 const colorModeClasses = ["color", "color", "green", "amber", "white", "inverse"]
 const retroSkinClasses = ["apple-iie", "apple-iigs", "apple-iiplus"]
@@ -46,7 +47,6 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     background: getPreferenceRetroIIGSColor("background"),
     border: getPreferenceRetroIIGSColor("border"),
   }))
-  const showScanlines = getShowScanlines()
   const ghosting = getGhosting()
   useEffect(() => {
     const handleBookmarksChanged = () => {
@@ -73,23 +73,19 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
       ? RETRO_IIGS_COLORS[retroIIGSColors.border].css
       : "#000000"
     document.body.style.setProperty("--canvas-surround", surround)
-    document.body.classList.toggle("iigs-skin-active", retroSkin === RETRO_SKIN.APPLE_IIGS)
     document.body.classList.toggle("iigs-minimal-surround",
       retroSkin === RETRO_SKIN.APPLE_IIGS && isMinimalTheme())
-    document.body.classList.toggle("iigs-minimal-scanlines",
-      retroSkin === RETRO_SKIN.APPLE_IIGS && isMinimalTheme() && showScanlines)
+    toggleScanlines(getShowScanlines())
     document.body.classList.toggle("iigs-minimal-ghosting",
       retroSkin === RETRO_SKIN.APPLE_IIGS && isMinimalTheme() && ghosting)
     return () => {
       document.body.style.removeProperty("--canvas-surround")
       document.body.classList.remove(
-        "iigs-skin-active",
         "iigs-minimal-surround",
-        "iigs-minimal-scanlines",
         "iigs-minimal-ghosting",
       )
     }
-  }, [ghosting, retroIIGSColors.border, retroSkin, showScanlines])
+  }, [ghosting, retroIIGSColors.border, retroSkin])
   const openDiskDialog = (dialog: DiskLoadDialog) => {
     setDiskLoadDialog(dialog)
   }

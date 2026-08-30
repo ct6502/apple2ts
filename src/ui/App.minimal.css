@@ -28,19 +28,28 @@ body.iigs-minimal-surround::before {
   z-index: 0;
 }
 
-body.iigs-minimal-scanlines::before {
-  background-image: linear-gradient(to bottom,
-      transparent 50%,
-      rgba(0, 0, 0, 0.3) 51%);
-  background-size: 100% 4px;
-}
-
 body.iigs-minimal-ghosting::before {
   transition: background-color 120ms ease-out;
 }
 
 body.iigs-minimal-surround .canvas-text {
   position: relative;
+  z-index: 1;
+}
+
+body.iigs-minimal-surround::after {
+  display: var(--iigs-scanlines-display, none);
+  pointer-events: none;
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+  background: linear-gradient(to bottom,
+      transparent 62%,
+      rgba(0, 0, 0, 0.3) 63%);
+  background-size: 100% var(--scanlines-size, 3px);
+  border-radius: 18px;
   z-index: 1;
 }
 

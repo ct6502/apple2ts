@@ -1,4 +1,6 @@
 import { UI_THEME } from "../common/utility"
+import { getPreferenceRetroSkin, RETRO_SKIN } from "./localstorage"
+import { isMinimalTheme } from "./ui_settings"
 
 export const handleSetTheme = (theme: UI_THEME) => {
   if (theme == UI_THEME.DARK) {
@@ -23,5 +25,9 @@ export const showGlobalProgressModal = (show: boolean = true, message: string = 
 }
 
 export const toggleScanlines = (enabled: boolean) => {
-  document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
+  // I wish we didn't have to have two scanline css blocks, but in the minimal theme,
+  // the IIGS skin extends outide of the regular canvas.
+  const useIIGSscanlines = getPreferenceRetroSkin() === RETRO_SKIN.APPLE_IIGS && isMinimalTheme()
+  document.body.style.setProperty("--iigs-scanlines-display", (enabled && useIIGSscanlines) ? "block" : "none")
+  document.body.style.setProperty("--scanlines-display", (enabled && !useIIGSscanlines) ? "block" : "none")
 }
