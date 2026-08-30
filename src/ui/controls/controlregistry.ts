@@ -24,6 +24,7 @@ export type ControlMetadata<Context, Payload = unknown> = {
   refreshAfterAction?: boolean
   children?: ControlValue<Context, readonly ControlMetadata<Context, Payload>[]>
   submenuTitle?: ControlValue<Context, string>
+  afterOpen?: (context: Context) => Promise<void>
   dynamicChildren?: (
     context: Context,
     items?: readonly ResolvedControl<Payload>[],
@@ -41,6 +42,7 @@ export type ControlMetadata<Context, Payload = unknown> = {
   }
   valueOnly?: boolean
   hideOptionValue?: boolean
+  useRetroFont?: boolean
   revealOptionOnFirstHorizontalInput?: boolean
   textInput?: boolean
   textValue?: ControlValue<Context, string>
@@ -99,6 +101,7 @@ export type ResolvedControl<Payload = unknown> = {
     values?: number[],
   ) => ResolvedControl<Payload>[])
   submenuTitle?: string
+  afterOpen?: () => Promise<void>
   options?: ResolvedControlOption[]
   optionIndex?: number
   defaultIndex?: number
@@ -110,6 +113,7 @@ export type ResolvedControl<Payload = unknown> = {
   }
   valueOnly?: boolean
   hideOptionValue?: boolean
+  useRetroFont?: boolean
   revealOptionOnFirstHorizontalInput?: boolean
   textInput?: boolean
   textValue?: string
@@ -239,6 +243,7 @@ export class ControlRegistry<Context, Payload = unknown> {
       refreshAfterAction: metadata.refreshAfterAction,
       children,
       submenuTitle: metadata.submenuTitle === undefined ? undefined : valueOf(metadata.submenuTitle, context),
+      afterOpen: metadata.afterOpen ? () => metadata.afterOpen!(context) : undefined,
       options: resolvedOptions,
       optionIndex: metadata.optionIndex === undefined ? undefined : valueOf(metadata.optionIndex, context),
       defaultIndex: metadata.defaultIndex === undefined ? undefined : valueOf(metadata.defaultIndex, context),
@@ -249,6 +254,7 @@ export class ControlRegistry<Context, Payload = unknown> {
       selectableWhen: metadata.selectableWhen,
       valueOnly: metadata.valueOnly,
       hideOptionValue: metadata.hideOptionValue,
+      useRetroFont: metadata.useRetroFont,
       revealOptionOnFirstHorizontalInput: metadata.revealOptionOnFirstHorizontalInput,
       textInput: metadata.textInput,
       textValue: metadata.textValue === undefined ? undefined : valueOf(metadata.textValue, context),

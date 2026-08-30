@@ -11,7 +11,7 @@ jest.mock("./internetarchive_utils", () => ({
 
 jest.mock("./internetarchive", () => ({
   internetArchiveCollections: [
-    { id: "collection-one", title: "Collection One", imageUrl: "one.jpg" },
+    { id: "collection-one", title: "Apple II Library: Collection One", imageUrl: "one.jpg" },
     { id: "collection-two", title: "Collection Two", imageUrl: "two.jpg" },
   ],
   searchInternetArchive: (...args: unknown[]) => mockSearchInternetArchive(...args),

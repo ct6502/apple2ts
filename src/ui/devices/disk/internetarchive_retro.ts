@@ -28,6 +28,11 @@ const initialState = (): InternetArchiveRetroState => ({
   loading: false,
 })
 
+const collectionTitle = (title: string) => {
+  const separatorIndex = title.indexOf(":")
+  return separatorIndex < 0 ? title : title.slice(separatorIndex + 1).trim()
+}
+
 const runSearch = async (state: InternetArchiveRetroState, append: boolean) => {
   if (state.loading) return
   state.loading = true
@@ -58,7 +63,7 @@ const buildItems = (
       id: `diskDrives.${driveIndex}.internetArchive.collection`,
       kind: "action",
       label: "Collection",
-      options: internetArchiveCollections.map(collection => ({ label: collection.title })),
+      options: internetArchiveCollections.map(collection => ({ label: collectionTitle(collection.title) })),
       optionIndex: state.collectionIndex,
       keepMenuOpen: true,
       refreshAfterAction: true,

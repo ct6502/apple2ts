@@ -3,6 +3,7 @@ import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug, passSetProdosFloppy } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
+import { isOneDriveMsalAuthCallback } from "./devices/disk/onedrive_authredirect"
 import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setColorMode, setMonitorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
@@ -293,6 +294,7 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
       window.location.href = window.location.pathname + "?" + process.env.npm_config_urlparam
     }
   }
+  if (isOneDriveMsalAuthCallback()) return
   // If this page was opened as a OneDrive file-picker auth popup, load
   // onedrive.js so its onAuth() handler can run. The SDK routes its OAuth flow
   // through this page (first ?oauth=<config>, then #access_token=...&state=...),

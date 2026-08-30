@@ -1,6 +1,6 @@
 import { DiskCollectionSortMode, setPreferenceDiskCollectionSort } from "../../localstorage"
-import { handleGetProdosFloppy, handleGetSlotConfig } from "../../main2worker"
-import { getDefaultDiskDriveIndex } from "../../../common/utility"
+import { handleGetProdosFloppy, handleGetSlotConfig, passSetDriveProps } from "../../main2worker"
+import { CLOUD_SYNC, getDefaultDiskDriveIndex } from "../../../common/utility"
 import {
   DISK_COLLECTION_ITEM_TYPE,
   TAB_INDEX,
@@ -28,10 +28,11 @@ import {
   DISK_DRIVE_LABELS,
   demoZooEnabled,
   downloadDiskToDevice,
-  loadDiskFromCloudDrive,
+  getBlobFromDiskData,
   saveDiskToDevice,
 } from "./diskdrive"
 import {
+  doSetUIDriveProps,
   handleEjectDisk,
   handleGetDriveProps,
   handleGetFilename,
@@ -39,6 +40,8 @@ import {
   handleSetDiskWriteProtected,
 } from "./driveprops"
 import { GoogleDrive } from "./googledrive"
+import { createRetroGoogleDriveControl } from "./googledrive_retro"
+import { createRetroOneDriveControl } from "./onedrive_retro"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import {
   CLOUD_PROVIDER_NAMES,
@@ -55,6 +58,7 @@ import Flyout from "../../flyout"
 import ImageWriter from "../printer/imagewriter"
 import { isMinimalTheme } from "../../ui_settings"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { determineVtocType, VTOC_REFRESH } from "../../../common/prodos_hdv"
 
 const decodeDiskTitle = (title: string) => {
   let decodedTitle = title
@@ -452,64 +456,213 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
   createRetroInternetArchiveControl(driveIndex),
   ...(demoZooEnabled ? [createRetroDemoZooControl(driveIndex)] : []),
   ...(!navigator.userAgent.includes("Electron") ? [
-    {
-      id: `diskDrives.${driveIndex}.load.oneDrive`,
-      label: (context: RetroMenuContext) => context.t("disk.loadDiskFromOneDrive"),
-      keepMenuOpen: true,
-      action: (context: RetroMenuContext) => {
-        void loadDiskFromCloudDrive(new OneDriveCloudDrive(), driveIndex).then(loaded => {
-          if (loaded) context.close()
-        })
-      },
-    },
-    {
-      id: `diskDrives.${driveIndex}.load.googleDrive`,
-      label: (context: RetroMenuContext) => context.t("disk.loadDiskFromGoogleDrive"),
-      keepMenuOpen: true,
-      action: (context: RetroMenuContext) => {
-        void loadDiskFromCloudDrive(new GoogleDrive(), driveIndex).then(loaded => {
-          if (loaded) context.close()
-        })
-      },
-    },
+    createRetroOneDriveControl(driveIndex),
+    createRetroGoogleDriveControl(driveIndex),
   ] : []),
 ]
 
-const insertedDiskItems = (driveIndex: number): RetroControlMetadata[] => {
+const diskMenuSeparator = (driveIndex: number, id: string): RetroControlMetadata => ({
+  id: `diskDrives.${driveIndex}.${id}`,
+  label: "",
+  separator: true,
+  selectable: false,
+})
+
+const diskMenuSection = (
+  driveIndex: number,
+  id: string,
+  label: RetroControlMetadata["label"],
+): RetroControlMetadata => ({
+  id: `diskDrives.${driveIndex}.${id}`,
+  label,
+  separator: true,
+  selectable: false,
+})
+
+const getDiskScreenshotUrl = () => {
+  const canvas = document.getElementById("hiddenCanvas") as HTMLCanvasElement | null
+  return new URL(canvas?.toDataURL("image/jpeg", 0.1) ?? "data:image/jpeg,")
+}
+
+const addDiskBookmark = (
+  context: RetroMenuContext,
+  drive: DriveProps,
+  type: DISK_COLLECTION_ITEM_TYPE,
+) => {
+  const cloudData = drive.cloudData
+  if (!cloudData?.itemId) return
+  context.diskBookmarks?.set({
+    type,
+    id: cloudData.itemId,
+    title: cloudData.fileName,
+    screenshotUrl: getDiskScreenshotUrl(),
+    lastUpdated: new Date(type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE
+      ? cloudData.lastSyncTime
+      : Date.now()),
+    diskUrl: type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE
+      ? cloudData.downloadUrl
+      : undefined,
+    cloudData,
+    vtocType: determineVtocType(cloudData.fileName || drive.filename, drive.diskData),
+    vtocVersion: VTOC_REFRESH,
+  })
+}
+
+const saveDiskToCloud = async (driveIndex: number, provider: CloudProvider) => {
   const drive = handleGetDriveProps(driveIndex)
-  return [
-    toggleMetadata({
-      id: `diskDrives.${driveIndex}.writeProtected`,
-      label: context => context.t("disk.writeProtectDisk"),
-      enabled: () => drive.isWriteProtected,
-      setEnabled: (context, enabled) => {
-        handleSetDiskWriteProtected(driveIndex, enabled)
-        context.displayProps.updateDisplay()
+  const cloudData = await provider.upload(
+    drive.filename,
+    getBlobFromDiskData(drive.diskData, drive.filename),
+  )
+  if (!cloudData) return
+  if (drive.writableFileHandle) await handleSaveWritableFile(driveIndex)
+  passSetDriveProps({
+    ...drive,
+    cloudData,
+    writableFileHandle: null,
+    diskHasChanges: false,
+  })
+}
+
+const syncCloudDisk = async (driveIndex: number) => {
+  const drive = handleGetDriveProps(driveIndex)
+  if (!drive.cloudData) return
+  const provider = drive.cloudData.providerName === "OneDrive"
+    ? new OneDriveCloudDrive()
+    : drive.cloudData.providerName === "GoogleDrive"
+      ? new GoogleDrive()
+      : null
+  if (!provider) return
+  const blob = getBlobFromDiskData(drive.diskData, drive.filename)
+  if (!await provider.sync(blob, drive.cloudData)) return
+  passSetDriveProps({
+    ...drive,
+    cloudData: { ...drive.cloudData, fileSize: blob.size },
+    diskHasChanges: false,
+  })
+}
+
+const bookmarkItems = (
+  driveIndex: number,
+  drive: DriveProps,
+  type: DISK_COLLECTION_ITEM_TYPE,
+  context?: RetroMenuContext,
+): RetroControlMetadata[] => {
+  const itemId = drive.cloudData?.itemId
+  if (!itemId) return []
+  const isBookmarked = context?.diskBookmarks?.contains(itemId) ?? false
+  return isBookmarked
+    ? [{
+      id: `diskDrives.${driveIndex}.removeFromCollection`,
+      label: currentContext => currentContext.t("disk.removeDiskFromCollection"),
+      action: currentContext => currentContext.diskBookmarks?.remove(itemId),
+    }, diskMenuSeparator(driveIndex, "collectionRemoveSeparator")]
+    : [{
+      id: `diskDrives.${driveIndex}.addToCollection`,
+      label: currentContext => currentContext.t("disk.addDiskToCollection"),
+      action: currentContext => addDiskBookmark(currentContext, drive, type),
+    },
+    diskMenuSeparator(driveIndex, "collectionSeparator")]
+}
+
+const baseWriteProtectItem = (driveIndex: number, drive: DriveProps) => toggleMetadata({
+  id: `diskDrives.${driveIndex}.writeProtected`,
+  label: context => context.t("disk.writeProtectDisk"),
+  enabled: () => drive.isWriteProtected,
+  setEnabled: (context, enabled) => {
+    handleSetDiskWriteProtected(driveIndex, enabled)
+    context.displayProps.updateDisplay()
+  },
+})
+
+const ejectItem = (driveIndex: number): RetroControlMetadata => ({
+  id: `diskDrives.${driveIndex}.eject`,
+  label: context => context.t("disk.ejectDisk"),
+  action: context => {
+    handleEjectDisk(driveIndex)
+    context.displayProps.updateDisplay()
+  },
+})
+
+export const insertedDiskItems = (
+  driveIndex: number,
+  context?: RetroMenuContext,
+): RetroControlMetadata[] => {
+  const drive = handleGetDriveProps(driveIndex)
+  const activeCloudDisk = Boolean(drive.cloudData && drive.cloudData.syncStatus !== CLOUD_SYNC.INACTIVE)
+  if (activeCloudDisk) {
+    const setSyncInterval = (syncInterval: number) => {
+      const latestDrive = handleGetDriveProps(driveIndex)
+      if (!latestDrive.cloudData) return
+      doSetUIDriveProps({
+        ...latestDrive,
+        cloudData: { ...latestDrive.cloudData, syncInterval },
+      })
+    }
+    return [
+      baseWriteProtectItem(driveIndex, drive),
+      ejectItem(driveIndex),
+      ...bookmarkItems(driveIndex, drive, DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE, context)
+        .filter(item => !item.separator),
+      diskMenuSection(driveIndex, "cloudSection", "Cloud"),
+      ...[
+        { id: "syncEveryMinute", key: "disk.syncEveryMinute", interval: 60000 },
+        { id: "syncEvery5Minutes", key: "disk.syncEvery5Minutes", interval: 300000 },
+        { id: "pauseSyncing", key: "disk.pauseSyncing", interval: Number.MAX_VALUE },
+      ].map(({ id, key, interval }): RetroControlMetadata => ({
+        id: `diskDrives.${driveIndex}.${id}`,
+        label: context => context.t(key),
+        indicator: () => drive.cloudData?.syncInterval === interval ? "*" : undefined,
+        action: () => setSyncInterval(interval),
+      })),
+      {
+        id: `diskDrives.${driveIndex}.syncNow`,
+        label: context => context.t("disk.syncNow"),
+        action: () => { void syncCloudDisk(driveIndex) },
       },
-    }),
-    ...(drive.writableFileHandle ? [{
-      id: `diskDrives.${driveIndex}.save`,
-      label: (context: RetroMenuContext) => context.t("retroControl.saveDisk"),
-      action: () => { void handleSaveWritableFile(driveIndex) },
-    }] : []),
-    ...(isFileSystemApiSupported() ? [{
+    ]
+  }
+
+  const isLocalDisk = !drive.cloudData
+  return [
+    baseWriteProtectItem(driveIndex, drive),
+    ...(!isLocalDisk ? [diskMenuSeparator(driveIndex, "writeProtectSeparator")] : []),
+    ...(isFileSystemApiSupported() && !drive.writableFileHandle ? [{
       id: `diskDrives.${driveIndex}.saveToDevice`,
       label: (context: RetroMenuContext) => context.t("disk.saveDiskToDevice"),
       action: () => { void saveDiskToDevice(driveIndex) },
     }] : []),
+    ...bookmarkItems(driveIndex, drive, DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE, context),
     {
       id: `diskDrives.${driveIndex}.download`,
       label: context => context.t("disk.downloadDisk"),
       action: () => downloadDiskToDevice(driveIndex),
     },
     {
-      id: `diskDrives.${driveIndex}.eject`,
-      label: context => context.t("disk.ejectDisk"),
+      id: `diskDrives.${driveIndex}.downloadAndEject`,
+      label: context => context.t("disk.downloadAndEjectDisk"),
       action: context => {
+        downloadDiskToDevice(driveIndex)
         handleEjectDisk(driveIndex)
         context.displayProps.updateDisplay()
       },
     },
+    ejectItem(driveIndex),
+    isLocalDisk
+      ? diskMenuSection(driveIndex, "cloudSection", "Cloud")
+      : diskMenuSeparator(driveIndex, "cloudSaveSeparator"),
+    ...(!navigator.userAgent.includes("Electron") ? [
+      {
+        id: `diskDrives.${driveIndex}.saveToOneDrive`,
+        label: (context: RetroMenuContext) => context.t("disk.saveDiskToOneDrive"),
+        action: () => { void saveDiskToCloud(driveIndex, new OneDriveCloudDrive()) },
+      },
+      {
+        id: `diskDrives.${driveIndex}.saveToGoogleDrive`,
+        label: (context: RetroMenuContext) => context.t("disk.saveDiskToGoogleDrive"),
+        action: () => { void saveDiskToCloud(driveIndex, new GoogleDrive()) },
+      },
+    ] : []),
   ]
 }
 
@@ -535,8 +688,8 @@ const diskDriveControls = diskDrives.map(({ index, slot }, order): RetroControlM
     })
   },
   isVisible: () => handleGetSlotConfig()[slot] !== "none",
-  dynamicChildren: () => handleGetDriveProps(index).filename
-    ? insertedDiskItems(index)
+  dynamicChildren: context => handleGetDriveProps(index).filename
+    ? insertedDiskItems(index, context)
     : diskLoadItems(index),
   actionLabel: context => context.t(handleGetDriveProps(index).filename
     ? "retroControl.select"

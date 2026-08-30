@@ -67,11 +67,13 @@ import {
   getSelectedCollectionDriveIndex,
   getRetroExportHdvSize,
   getRetroVtocIndicator,
+  insertedDiskItems,
   resetCollectionDriveSelectionSession,
   retroDiskControls,
 } from "../devices/disk/diskinterface"
 import { DISK_COLLECTION_ITEM_TYPE } from "../diskdialog/diskpanel_utils"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
+import { CLOUD_SYNC } from "../../common/utility"
 import {
   createControlContext,
   type RetroControlMetadata,
@@ -212,6 +214,71 @@ describe("Retro menu metadata structure", () => {
 
     mockHandleGetDriveProps.mockReturnValue({ filename: "" })
     expect(actionLabel(context)).toBe("retroControl.load")
+  })
+
+  test("matches popup item order for local and inactive cloud-backed disks", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    context.diskBookmarks = new DiskBookmarks()
+    mockHandleGetDriveProps.mockReturnValue({
+      filename: "Disk.po",
+      diskData: new Uint8Array(),
+      isWriteProtected: false,
+      writableFileHandle: null,
+      cloudData: null,
+    })
+
+    expect(insertedDiskItems(0, context).map(item => item.label instanceof Function
+      ? item.label(context)
+      : item.label)).toEqual([
+      "disk.writeProtectDisk", "disk.downloadDisk", "disk.downloadAndEjectDisk",
+      "disk.ejectDisk", "Cloud", "disk.saveDiskToOneDrive", "disk.saveDiskToGoogleDrive",
+    ])
+    expect(insertedDiskItems(0, context).filter(item => item.separator).map(item => item.label))
+      .toEqual(["Cloud"])
+
+    mockHandleGetDriveProps.mockReturnValue({
+      filename: "Archive.po",
+      diskData: new Uint8Array(),
+      isWriteProtected: false,
+      writableFileHandle: null,
+      cloudData: {
+        itemId: "archive-item",
+        syncStatus: CLOUD_SYNC.INACTIVE,
+      },
+    })
+    expect(insertedDiskItems(0, context).map(item => item.label instanceof Function
+      ? item.label(context)
+      : item.label)).toEqual([
+      "disk.writeProtectDisk", "", "disk.addDiskToCollection", "", "disk.downloadDisk",
+      "disk.downloadAndEjectDisk", "disk.ejectDisk", "", "disk.saveDiskToOneDrive",
+      "disk.saveDiskToGoogleDrive",
+    ])
+  })
+
+  test("matches popup item order for an active cloud disk", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    context.diskBookmarks = new DiskBookmarks()
+    mockHandleGetDriveProps.mockReturnValue({
+      filename: "Cloud.po",
+      diskData: new Uint8Array(),
+      isWriteProtected: false,
+      cloudData: {
+        itemId: "cloud-item",
+        syncStatus: CLOUD_SYNC.ACTIVE,
+        syncInterval: 60000,
+      },
+    })
+
+    const items = insertedDiskItems(0, context)
+    expect(items.map(item => item.label instanceof Function ? item.label(context) : item.label)).toEqual([
+      "disk.writeProtectDisk", "disk.ejectDisk", "disk.addDiskToCollection", "Cloud",
+      "disk.syncEveryMinute", "disk.syncEvery5Minutes", "disk.pauseSyncing", "disk.syncNow",
+    ])
+    expect(items.filter(item => item.separator).map(item => item.label instanceof Function
+      ? item.label(context)
+      : item.label)).toEqual(["Cloud"])
+    expect(typeof items[4].indicator === "function" ? items[4].indicator(context) : items[4].indicator)
+      .toBe("*")
   })
 
   test("refreshes an ejected disk drive label to Empty", () => {
@@ -359,11 +426,11 @@ describe("Retro menu metadata structure", () => {
     values[items.findIndex(item => item.payload === localDisk)] = 1
     expect(getRetroExportHdvSize(items, values)).toBe("140 KB / 32 MB")
     values[items.findIndex(item => item.payload === cloudDisk)] = 1
-    expect(getRetroExportHdvSize(items, values)).toBe("1.14 MB / 32 MB")
+    expect(getRetroExportHdvSize(items, values)).toBe("1.1 MB / 32 MB")
 
     const exportTab = retroMenuRegistry.resolve(context, "diskCollection")
       .find(control => control.id === "diskCollection.export")
-    expect(exportTab?.submenuTitleValue?.(items, values)).toBe("1.14 MB / 32 MB")
+    expect(exportTab?.submenuTitleValue?.(items, values)).toBe("1.1 MB / 32 MB")
   })
 
   test("shows the active VTOC spinner and leaves other unresolved disks as unknown", () => {
