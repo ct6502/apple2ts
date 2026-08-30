@@ -103,6 +103,17 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: "disks/veratest.png",
     diskUrl: "https://github.com/anomixer/veratest/releases/latest/download/veratest.po",
     detailsUrl: "https://github.com/anomixer/veratest",
+    params: "slot2=vera&tab=vera",
     fileSize: 143360
+  },
+  {
+    type: -1,
+    title: "VERA 256-Color Music Slideshow",
+    lastUpdated: new Date("8/30/2026"),
+    imageUrl: "disks/slideshow.png",
+    diskUrl: "https://github.com/anomixer/veratest/releases/latest/download/slideshow.hdv.zip",
+    detailsUrl: "https://github.com/anomixer/veratest",
+    params: "slot2=vera&tab=vera",
+    fileSize: 33553920
   },
 ]

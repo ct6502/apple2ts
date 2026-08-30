@@ -12,9 +12,9 @@ This project was originally create using [Create React App](https://github.com/f
 
 Note: The integrated server and CLI were moved out of this repository into `apple2ts-server`.
 
-## Dynamic Slot Configurator
+## Dynamic Slot Configuration
 
-Apple2TS features a flexible **Slot Configurator** system allowing real-time configuration of expansion cards across Slots 1 through 7 via the Machine Settings menu:
+Apple2TS features a flexible **Slot Configuration** system allowing real-time configuration of expansion cards across Slots 1 through 7 via the Machine Settings menu:
 
 - **Slot 1**: *Super Serial Card (Printer / Serial Communications)
 - **Slot 2**: *Microsoft Z-80 SoftCard (CP/M), VERA Graphics Card, Passport MIDI Card
