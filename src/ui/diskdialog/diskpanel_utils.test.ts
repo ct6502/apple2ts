@@ -2,6 +2,7 @@ const mockHandleSetDiskFromFile = jest.fn()
 const mockPassSetRunMode = jest.fn()
 const mockBuildProDosHdv = jest.fn()
 const mockShowGlobalProgressModal = jest.fn()
+const mockLoadAndConvertImageToHires = jest.fn()
 
 jest.mock("../../common/prodos_hdv", () => ({
   ...jest.requireActual("../../common/prodos_hdv"),
@@ -18,6 +19,9 @@ jest.mock("../main2worker", () => ({
 }))
 jest.mock("../ui_utilities", () => ({
   showGlobalProgressModal: (...args: unknown[]) => mockShowGlobalProgressModal(...args),
+}))
+jest.mock("./screenshot_utils", () => ({
+  loadAndConvertImageToHires: (...args: unknown[]) => mockLoadAndConvertImageToHires(...args),
 }))
 
 import { createHdv, DISK_COLLECTION_ITEM_TYPE, getExportBadgeInfo, loadDisk, loadDiskIntoDrive } from "./diskpanel_utils"
@@ -86,7 +90,45 @@ describe("loadDisk", () => {
 describe("createHdv", () => {
   beforeEach(() => {
     mockBuildProDosHdv.mockReset()
+    mockLoadAndConvertImageToHires.mockReset()
     mockShowGlobalProgressModal.mockClear()
+  })
+
+  test("keeps each exported file paired with its menu metadata", async () => {
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: jest.fn(() => "blob:test") })
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: jest.fn() })
+    mockBuildProDosHdv.mockResolvedValue(new Uint8Array([1]))
+    mockLoadAndConvertImageToHires.mockImplementation(async (_url, _logo, index) => ({
+      plain: new Uint8Array([index]),
+      keyboard: new Uint8Array([index + 10]),
+    }))
+    const disks = ["Alpha", "Bravo", "Charlie"].map((title, index) => ({
+      item: { title, imageUrl: `${title}.png` } as DiskCollectionItem,
+      buffer: new Uint8Array([index + 1]),
+      filename: `${title}.TXT`,
+    }))
+
+    await createHdv(disks)
+
+    const [files, , , menuEntries] = mockBuildProDosHdv.mock.calls[0]
+    expect(files.map((file: { name: string; data: Uint8Array }) => [file.name, ...file.data])).toEqual([
+      ["Alpha", 1],
+      ["Bravo", 2],
+      ["Charlie", 3],
+    ])
+    expect(menuEntries.map((entry: {
+      displayName?: string
+      screenshotData?: Uint8Array
+      keyboardScreenshotData?: Uint8Array
+    }) => [
+      entry.displayName,
+      entry.screenshotData?.[0],
+      entry.keyboardScreenshotData?.[0],
+    ])).toEqual([
+      ["Alpha", 1, 11],
+      ["Bravo", 2, 12],
+      ["Charlie", 3, 13],
+    ])
   })
 
   test("continues after confirmation and summarizes omitted titles", async () => {
