@@ -3,6 +3,9 @@ const nativeHeight = 384
 
 const fontUrlPattern = /url\((['"]?)([^'")]+\.(?:otf|ttf|woff2?)(?:\?[^'")]*)?)\1\)/gi
 const fontDataUrls = new Map<string, Promise<string>>()
+const maxCachedPanelImages = 32
+const panelImages = new Map<string, Promise<HTMLImageElement>>()
+let documentCssCache: { styleSheets: CSSStyleSheet[], value: Promise<string> } | null = null
 
 const blobToDataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader()
@@ -28,18 +31,50 @@ const inlineFontUrl = (url: string) => {
 }
 
 const getDocumentCss = async () => {
-  const css = Array.from(document.styleSheets).flatMap(styleSheet => {
-    try {
-      return Array.from(styleSheet.cssRules, rule => rule.cssText)
-        .filter(rule => /retro-|PrintChar21Retro/i.test(rule))
-    } catch {
-      return []
-    }
-  }).join("\n")
-  const matches = Array.from(css.matchAll(fontUrlPattern))
-  const replacements = await Promise.all(matches.map(match => inlineFontUrl(match[2])))
-  let index = 0
-  return css.replace(fontUrlPattern, () => `url("${replacements[index++]}")`)
+  const styleSheets = Array.from(document.styleSheets)
+  if (documentCssCache && styleSheets.length === documentCssCache.styleSheets.length &&
+    styleSheets.every((styleSheet, index) => styleSheet === documentCssCache?.styleSheets[index])) {
+    return documentCssCache.value
+  }
+  const value = Promise.resolve().then(async () => {
+    const css = styleSheets.flatMap(styleSheet => {
+      try {
+        return Array.from(styleSheet.cssRules, rule => rule.cssText)
+          .filter(rule => /retro-|PrintChar21Retro/i.test(rule))
+      } catch {
+        return []
+      }
+    }).join("\n")
+    const matches = Array.from(css.matchAll(fontUrlPattern))
+    const replacements = await Promise.all(matches.map(match => inlineFontUrl(match[2])))
+    let index = 0
+    return css.replace(fontUrlPattern, () => `url("${replacements[index++]}")`)
+  })
+  documentCssCache = { styleSheets, value }
+  return value
+}
+
+const getPanelImage = (svg: string) => {
+  const cached = panelImages.get(svg)
+  if (cached) {
+    panelImages.delete(svg)
+    panelImages.set(svg, cached)
+    return cached
+  }
+  const image = new Image()
+  const loaded = new Promise<HTMLImageElement>((resolve, reject) => {
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error("Unable to render control panel SVG"))
+    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+  }).catch(error => {
+    panelImages.delete(svg)
+    throw error
+  })
+  panelImages.set(svg, loaded)
+  if (panelImages.size > maxCachedPanelImages) {
+    panelImages.delete(panelImages.keys().next().value!)
+  }
+  return loaded
 }
 
 const serializedStyle = (element: HTMLElement) => {
@@ -84,12 +119,7 @@ export const renderRetroPanelToCanvas = async (
   height = nativeHeight,
 ) => {
   const svg = await createRetroPanelSvg(panel, nativeSurface, width, height)
-  const image = new Image()
-  await new Promise<void>((resolve, reject) => {
-    image.onload = () => resolve()
-    image.onerror = () => reject(new Error("Unable to render control panel SVG"))
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-  })
+  const image = await getPanelImage(svg)
   canvas.width = width
   canvas.height = height
   const context = canvas.getContext("2d")

@@ -1,4 +1,4 @@
-import { createRetroPanelSvg } from "./retrocanvas"
+import { createRetroPanelSvg, renderRetroPanelToCanvas } from "./retrocanvas"
 
 describe("retro canvas SVG", () => {
   test("includes panel styles without external or duplicate effect styles", async () => {
@@ -45,5 +45,41 @@ describe("retro canvas SVG", () => {
 
     expect(svg).toContain("width=\"1120\" height=\"768\" viewBox=\"0 0 560 384\"")
     expect(svg).toContain("<foreignObject width=\"560\" height=\"384\">")
+  })
+
+  test("reuses a decoded image for identical panel frames", async () => {
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    })
+    const originalImage = globalThis.Image
+    const sources: string[] = []
+    class TestImage {
+      onload: (() => void) | null = null
+      onerror: (() => void) | null = null
+
+      set src(value: string) {
+        sources.push(value)
+        queueMicrotask(() => this.onload?.())
+      }
+    }
+    Object.defineProperty(globalThis, "Image", { configurable: true, value: TestImage })
+    const panel = document.createElement("div")
+    panel.className = "retro-panel cached-panel"
+    const nativeSurface = document.createElement("div")
+    nativeSurface.textContent = "Cached frame"
+    const drawImage = jest.fn()
+    const canvas = document.createElement("canvas")
+    canvas.getContext = jest.fn(() => ({ clearRect: jest.fn(), drawImage })) as never
+
+    try {
+      await renderRetroPanelToCanvas(panel, nativeSurface, canvas)
+      await renderRetroPanelToCanvas(panel, nativeSurface, canvas)
+    } finally {
+      Object.defineProperty(globalThis, "Image", { configurable: true, value: originalImage })
+    }
+
+    expect(sources).toHaveLength(1)
+    expect(drawImage).toHaveBeenCalledTimes(2)
   })
 })

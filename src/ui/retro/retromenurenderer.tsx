@@ -318,6 +318,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [now, setNow] = useState(() => new Date())
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
   const panelCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const panelCanvasPoolRef = useRef<HTMLCanvasElement[]>([])
   const panelRenderRevision = useRef(0)
   const menuStackRef = useRef<RetroMenuFrame[]>([])
   useLayoutEffect(() => {
@@ -482,10 +483,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       : currentFrame.actionLabel !== t("retroControl.load") || Boolean(selectedItem?.action))
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || currentFrame) return
     const timer = window.setInterval(() => setNow(new Date()), 1000)
     return () => window.clearInterval(timer)
-  }, [isOpen])
+  }, [currentFrame, isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -864,6 +865,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   useLayoutEffect(() => {
     if (!isOpen || !canvasBounds) {
       panelRenderRevision.current++
+      if (panelCanvasRef.current) panelCanvasPoolRef.current.push(panelCanvasRef.current)
       panelCanvasRef.current = null
       setDisplayOverride(null)
       return
@@ -873,8 +875,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     const nativeSurface = panel?.querySelector<HTMLElement>(".retro-native-surface")
     if (!displayCanvas || !panel || !nativeSurface) return
     const revision = ++panelRenderRevision.current
-    const canvas = panelCanvasRef.current ?? document.createElement("canvas")
-    panelCanvasRef.current = canvas
+    const canvas = panelCanvasPoolRef.current.pop() ?? document.createElement("canvas")
     const renderAtDisplayResolution = getMonitorMode() === MONITOR_MODE.RGB &&
       !getCrtDistortion()
     const rasterWidth = renderAtDisplayResolution
@@ -890,10 +891,16 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       rasterWidth,
       rasterHeight,
     ).then(() => {
-      if (revision !== panelRenderRevision.current) return
+      if (revision !== panelRenderRevision.current) {
+        panelCanvasPoolRef.current.push(canvas)
+        return
+      }
+      if (panelCanvasRef.current) panelCanvasPoolRef.current.push(panelCanvasRef.current)
+      panelCanvasRef.current = canvas
       setDisplayOverride(canvas)
       panel.classList.add("retro-canvas-rendered")
     }).catch(() => {
+      panelCanvasPoolRef.current.push(canvas)
       if (revision !== panelRenderRevision.current) return
       setDisplayOverride(null)
       panel.classList.remove("retro-canvas-rendered")
