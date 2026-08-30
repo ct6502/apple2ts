@@ -77,7 +77,7 @@ describe("Google Drive REST provider", () => {
 
     expect(mockInitTokenClient).toHaveBeenCalledWith(expect.objectContaining({
       client_id: "app-id-client-id.apps.googleusercontent.com",
-      scope: "https://www.googleapis.com/auth/drive",
+      scope: "https://www.googleapis.com/auth/drive.file",
     }))
     expect(mockRequestAccessToken).toHaveBeenCalledWith({ prompt: "consent" })
     const firstUrl = new URL(fetchMock.mock.calls[0][0] as string)

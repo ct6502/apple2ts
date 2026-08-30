@@ -11,7 +11,7 @@ export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 let g_accessToken: string = ""
 let g_pickerInited = false
 
-const driveScope = "https://www.googleapis.com/auth/drive"
+const driveScope = "https://www.googleapis.com/auth/drive.file"
 
 type GoogleDriveFile = {
   id?: string

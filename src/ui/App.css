@@ -455,6 +455,15 @@ body.dark-mode .divider {
   align-items: center;
 }
 
+/* Google Picker defaults to z-index 1000, below the retro control panel. */
+.picker-dialog-bg {
+  z-index: 10030 !important;
+}
+
+.picker-dialog {
+  z-index: 10031 !important;
+}
+
 .global-progress-spinner {
   width: 25%;
   height: 25%;
