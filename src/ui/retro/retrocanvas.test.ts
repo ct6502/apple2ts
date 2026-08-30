@@ -1,6 +1,45 @@
 import { createRetroPanelSvg, renderRetroPanelToCanvas } from "./retrocanvas"
 
 describe("retro canvas SVG", () => {
+  test("resolves font URLs relative to their stylesheet", async () => {
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    })
+    const originalFetch = globalThis.fetch
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      blob: async () => new Blob(["font"], { type: "font/ttf" }),
+    } as Response))
+    Object.defineProperty(globalThis, "fetch", { configurable: true, value: fetchMock })
+    Object.defineProperty(document, "styleSheets", {
+      configurable: true,
+      value: [{
+        href: "https://example.com/app/assets/index.css",
+        cssRules: [{
+          cssText: "@font-face { font-family: PrintChar21Retro; src: url(./PrintChar21-2020.ttf); }",
+        }],
+      }],
+    })
+    const panel = document.createElement("div")
+    panel.className = "retro-panel"
+    const nativeSurface = document.createElement("div")
+
+    try {
+      const svg = await createRetroPanelSvg(panel, nativeSurface)
+
+      expect(fetchMock).toHaveBeenCalledWith("https://example.com/app/assets/PrintChar21-2020.ttf")
+      expect(svg).toContain("data:font/ttf;base64,")
+    } finally {
+      if (originalFetch) {
+        Object.defineProperty(globalThis, "fetch", { configurable: true, value: originalFetch })
+      } else {
+        Reflect.deleteProperty(globalThis, "fetch")
+      }
+      Reflect.deleteProperty(document, "styleSheets")
+    }
+  })
+
   test("includes panel styles without external or duplicate effect styles", async () => {
     Object.defineProperty(document, "fonts", {
       configurable: true,
