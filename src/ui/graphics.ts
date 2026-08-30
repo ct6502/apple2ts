@@ -571,17 +571,23 @@ const getCrtDistortionMap = () => {
   return map
 }
 
-const distortLayer = (source: HTMLCanvasElement) => {
+const distortLayer = (source: HTMLCanvasElement, background: string | null) => {
   const sourceContext = source.getContext("2d", { willReadFrequently: true })!
   const sourceData = sourceContext.getImageData(0, 0, crtSourceWidth, crtSourceHeight)
   const distortedData = sourceContext.createImageData(crtSourceWidth, crtSourceHeight)
   const sourcePixels = new Uint32Array(sourceData.data.buffer)
   const distortedPixels = new Uint32Array(distortedData.data.buffer)
   const map = getCrtDistortionMap()
+  const [backgroundRed, backgroundGreen, backgroundBlue] =
+    background?.match(/\d+/g)?.map(Number) ?? [0, 0, 0]
   for (let index = 0; index < map.length; index++) {
     const sourceIndex = map[index]
     if (sourceIndex === crtOutsideSource) {
-      distortedData.data[index * 4 + 3] = 255
+      const destinationOffset = index * 4
+      distortedData.data[destinationOffset] = backgroundRed
+      distortedData.data[destinationOffset + 1] = backgroundGreen
+      distortedData.data[destinationOffset + 2] = backgroundBlue
+      distortedData.data[destinationOffset + 3] = 255
     } else {
       distortedPixels[index] = sourcePixels[sourceIndex]
     }
@@ -667,8 +673,9 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   replaceBlackPixels(hiddenData, background)
   hiddenContext.putImageData(hiddenData, 0, 0)
 
-  const distorted = distortLayer(hiddenContext.canvas)
-  if (getShowScanlines()) {
+  const distorted = distortLayer(hiddenContext.canvas, background)
+  const applyEffectsToSurround = borderColor !== null
+  if (getShowScanlines() && !applyEffectsToSurround) {
     const distortedContext = distorted.getContext("2d")!
     distortedContext.fillStyle = "rgba(0, 0, 0, 0.3)"
     for (let y = 2; y < crtSourceHeight; y += 4) {
@@ -702,6 +709,9 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
     ctx.drawImage(distorted, screenX, screenY, screenWidth, screenHeight)
   }
   ctx.restore()
+  if (getShowScanlines() && applyEffectsToSurround) {
+    paintIIGSScanlines(ctx, width, height)
+  }
 }
 
 const shrRgbaBuffer = new Uint8ClampedArray(560 * 384 * 4)
@@ -922,9 +932,6 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     // The hidden canvas was causing overlay issues with the text page.
     // So instead, draw the graphics first and then overlay the text chars.
     if (!isVidhdActive) {
-      if (iigsSkin && !crtDistortion && getShowScanlines()) {
-        paintIIGSScanlines(ctx, width, height)
-      }
       processTextPage(ctx, hiddenContext, colorMode, width, height, false, foreground, effectBackground)
       // If we are doing regular NTSC color, then we need to draw the text again.
       // This will cause a subtle smoothing.
