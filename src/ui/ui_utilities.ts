@@ -21,3 +21,7 @@ export const showGlobalProgressModal = (show: boolean = true, message: string = 
 
   document.body.style.setProperty("--global-progress-visibility", show ? "visible" : "hidden")
 }
+
+export const toggleScanlines = (enabled: boolean) => {
+  document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
+}

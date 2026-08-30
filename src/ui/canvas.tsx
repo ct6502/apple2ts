@@ -28,6 +28,7 @@ import { getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, 
 import { KeyboardControl } from "./controls/keyboardcontrol"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
+import { toggleScanlines } from "./ui_utilities"
 
 let resizeTimer = 0
 let resizeFrame = 0
@@ -580,6 +581,7 @@ const Apple2Canvas = (props: DisplayProps) => {
           document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
           document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
           document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
+          document.body.style.setProperty("--scanlines-size", `${scanlinesHeight / 192}px`)
         })
       })
     }, 0)
@@ -610,7 +612,8 @@ const Apple2Canvas = (props: DisplayProps) => {
         handleCanvasResize(entry.target as HTMLCanvasElement)
       }
     }).observe(mainCanvas)
-    document.body.style.setProperty("--scanlines-display", getShowScanlines() ? "block" : "none")
+    // Set initial state here since displayconfig.tsx only updates it on toggle.
+    toggleScanlines(getShowScanlines())
 
     renderCanvasRef.current(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
