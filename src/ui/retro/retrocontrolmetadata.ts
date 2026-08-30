@@ -127,11 +127,18 @@ const resolveJsonControl = (
     ...executable,
     id: control.id,
     label,
-    actionLabel: translatedParamValue(actionLabelKey, actionLabelParams) ?? executable.actionLabel,
+    actionLabel:
+      translatedParamValue(actionLabelKey, actionLabelParams) ??
+      executable.actionLabel ??
+      metadata.actionLabel,
     contextualActionLabel:
       translatedParamValue(contextualActionLabelKey, contextualActionLabelParams) ??
-      executable.contextualActionLabel,
-    submenuTitle: translatedParamValue(submenuTitleKey, submenuTitleParams) ?? executable.submenuTitle,
+      executable.contextualActionLabel ??
+      metadata.contextualActionLabel,
+    submenuTitle:
+      translatedParamValue(submenuTitleKey, submenuTitleParams) ??
+      executable.submenuTitle ??
+      metadata.submenuTitle,
   } as RetroControlMetadata
 }
 

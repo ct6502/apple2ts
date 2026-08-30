@@ -65,4 +65,20 @@ describe("retro control panel metadata", () => {
 
     expect(control.id).toBe("diskDrives.2.load.device")
   })
+
+  it.each([
+    ["internetArchive", "Internet Archive"],
+    ["demoZoo", "DemoZoo"],
+  ])("preserves static metadata for the %s disk template", (source, submenuTitle) => {
+    const control = controlFromJson(
+      "diskTemplates",
+      `diskDrives.{{driveIndex}}.load.${source}`,
+      {},
+      { driveIndex: 2 },
+    )
+
+    expect(control.id).toBe(`diskDrives.2.load.${source}`)
+    expect(control.submenuTitle).toBe(submenuTitle)
+    expect(control.actionLabel).toBe("Search")
+  })
 })

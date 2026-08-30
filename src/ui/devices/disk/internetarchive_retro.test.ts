@@ -31,7 +31,12 @@ describe("retro Internet Archive screen", () => {
   })
 
   test("searches typed titles, appends pages, and launches a selected result", async () => {
-    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const context = createControlContext(
+      undefined,
+      key => key === "retroControl.load" ? "Load" : key,
+      "en",
+      () => undefined,
+    )
     context.close = jest.fn()
     const control = createRetroInternetArchiveControl(2)
     control.parentId = null
