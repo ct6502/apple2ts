@@ -2,7 +2,7 @@
   "layout": {
     "element": "section",
     "id": "panel",
-    "className": "retro-panel menu-open scanline-gradient",
+    "className": "retro-panel menu-open",
     "attributes": {
       "role": "dialog"
     },

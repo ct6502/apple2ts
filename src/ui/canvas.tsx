@@ -54,7 +54,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const lastFPSLogRef = useRef(0)
   // Always points at the newest RenderCanvas closure so the perpetual rAF loop
   // below picks up HMR-updated code instead of running the stale one forever.
-  const renderCanvasRef = useRef<(timestamp: number) => void>(() => {})
+  const renderCanvasRef = useRef<(timestamp: number) => void>(() => { })
 
   const myCanvas = useRef<HTMLCanvasElement>(null)
   const hiddenCanvas = useRef<HTMLCanvasElement>(null)
@@ -455,8 +455,8 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     if (elapsed >= targetInterval) {
       if (mainCanvas && hiddenCanvas.current) {
-        const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d")
-        const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
+        const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d", { willReadFrequently: true })
+        const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d", { willReadFrequently: true })
         if (ctx && hiddenCtx) {
           const [w, h] = getCanvasSize()   // always current
           ProcessDisplay(ctx, hiddenCtx, w, h)
@@ -536,50 +536,50 @@ const Apple2Canvas = (props: DisplayProps) => {
     resizeTimer = window.setTimeout(() => {
       resizeFrame = window.requestAnimationFrame(() => {
         resizeFrame = window.requestAnimationFrame(() => {
-      const width = canvas.offsetWidth
-      const height = canvas.offsetHeight
+          const width = canvas.offsetWidth
+          const height = canvas.offsetHeight
 
-      const scanlinesWidth = width - 2 * width * xmargin + 20
-      const scanlinesHeight = height - 2 * height * ymargin
+          const scanlinesWidth = width - 2 * width * xmargin + 20
+          const scanlinesHeight = height - 2 * height * ymargin
 
-      let scanlinesLeft = canvas.offsetLeft + width * xmargin - 10
-      let scanlinesTop = canvas.offsetTop + height * ymargin
-      const isFullScreen = document.fullscreenElement === canvas.parentElement
+          let scanlinesLeft = canvas.offsetLeft + width * xmargin - 10
+          let scanlinesTop = canvas.offsetTop + height * ymargin
+          const isFullScreen = document.fullscreenElement === canvas.parentElement
 
-      if (!isFullScreen) {
-        let marginLeft = canvas.offsetLeft + width * xmargin
-        let marginTop = canvas.offsetTop + height * ymargin
+          if (!isFullScreen) {
+            let marginLeft = canvas.offsetLeft + width * xmargin
+            let marginTop = canvas.offsetTop + height * ymargin
 
-        if (isMinimalTheme()) {
-          marginLeft = (window.innerWidth - scanlinesWidth) / 2
-          marginTop = ((window.innerHeight - scanlinesHeight) / 2)
+            if (isMinimalTheme()) {
+              marginLeft = (window.innerWidth - scanlinesWidth) / 2
+              marginTop = ((window.innerHeight - scanlinesHeight) / 2)
 
-          const debugSection = document.getElementsByClassName("flyout-top-right")[0] as HTMLElement
-          if (debugSection && debugSection.offsetWidth > 200) {
-            marginLeft = Math.max(Math.min(marginLeft, (debugSection.offsetLeft - scanlinesWidth) / 2), 0)
+              const debugSection = document.getElementsByClassName("flyout-top-right")[0] as HTMLElement
+              if (debugSection && debugSection.offsetWidth > 200) {
+                marginLeft = Math.max(Math.min(marginLeft, (debugSection.offsetLeft - scanlinesWidth) / 2), 0)
+              }
+
+              canvas.style.marginLeft = `${marginLeft - width * xmargin}px`
+              canvas.style.marginTop = `${Math.max(marginTop - height * ymargin - 160, 32)}px`
+            } else {
+              canvas.style.marginLeft = "0px"
+              canvas.style.marginTop = "0px"
+            }
+          } else {
+            const marginLeft = Math.max((window.innerWidth - width) / 2, 0)
+            const marginTop = Math.max((window.innerHeight - height) / 2, 0)
+
+            canvas.style.marginLeft = `${marginLeft}px`
+            canvas.style.marginTop = `${marginTop}px`
+
+            scanlinesLeft = marginLeft + width * xmargin
+            scanlinesTop = marginTop + height * ymargin
           }
 
-          canvas.style.marginLeft = `${marginLeft - width * xmargin}px`
-          canvas.style.marginTop = `${Math.max(marginTop - height * ymargin - 160, 32)}px`
-        } else {
-          canvas.style.marginLeft = "0px"
-          canvas.style.marginTop = "0px"
-        }
-      } else {
-        const marginLeft = Math.max((window.innerWidth - width) / 2, 0)
-        const marginTop = Math.max((window.innerHeight - height) / 2, 0)
-
-        canvas.style.marginLeft = `${marginLeft}px`
-        canvas.style.marginTop = `${marginTop}px`
-
-        scanlinesLeft = marginLeft + width * xmargin
-        scanlinesTop = marginTop + height * ymargin
-      }
-
-      document.body.style.setProperty("--scanlines-left", `${scanlinesLeft}px`)
-      document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
-      document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
-      document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
+          document.body.style.setProperty("--scanlines-left", `${scanlinesLeft}px`)
+          document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
+          document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
+          document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
         })
       })
     }, 0)

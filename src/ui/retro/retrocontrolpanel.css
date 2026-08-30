@@ -18,10 +18,6 @@
   --retro-background: #000;
   --retro-foreground: #fff;
   --retro-surround: #000;
-  --scanlines-height: 100%;
-  --scanlines-left: 0;
-  --scanlines-top: 0;
-  --scanlines-width: 100%;
   background: var(--retro-surround);
   color: var(--retro-foreground);
   display: grid;
@@ -68,20 +64,12 @@
   text-transform: uppercase;
 }
 
-.retro-panel.retro-monitor-ntsc {
-  --retro-ntsc-blur: 0.7px;
+.retro-panel.retro-canvas-rendered {
+  background: transparent;
 }
 
-.retro-panel.retro-monitor-ntsc .retro-viewport {
-  filter: blur(var(--retro-ntsc-blur));
-}
-
-.retro-panel.retro-effect-ghosting .retro-window {
-  text-shadow: 0.08em 0 color-mix(in srgb, var(--retro-foreground) 45%, transparent);
-}
-
-.retro-panel.retro-effect-crt .retro-window {
-  transform: perspective(100vh) rotateX(0.4deg) scale(0.985, 0.97);
+.retro-panel.retro-canvas-rendered .retro-native-surface {
+  opacity: 0;
 }
 
 .retro-viewport {

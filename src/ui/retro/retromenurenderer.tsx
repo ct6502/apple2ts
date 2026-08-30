@@ -17,9 +17,9 @@ import {
 import "./retrocontrolpanel.css"
 import { RETRO_SKIN } from "../localstorage"
 import { SETTINGS_CHANGED_EVENT, type SettingsChangedDetail } from "../settingschange"
-import { DISK_LOAD_SUCCESS_EVENT, getTheme } from "../ui_settings"
-import { xmargin, ymargin } from "../graphics"
-import { UI_THEME } from "../../common/utility"
+import { DISK_LOAD_SUCCESS_EVENT, getCrtDistortion, getMonitorMode, getTheme } from "../ui_settings"
+import { setDisplayOverride, xmargin, ymargin } from "../graphics"
+import { MONITOR_MODE, UI_THEME } from "../../common/utility"
 import { DiskPanelVtoc } from "../diskdialog/diskpanel_vtoc"
 import { diskItemKey, isDiskExportable, TAB_INDEX } from "../diskdialog/diskpanel_utils"
 import { cloudProviderHasAuthToken } from "../devices/disk/cloudauth"
@@ -30,6 +30,7 @@ import {
   resetSelectedCollectionDriveIndex,
 } from "../devices/disk/diskinterface"
 import { renderRetroPanelLayout } from "./retropanellayout"
+import { renderRetroPanelToCanvas } from "./retrocanvas"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -316,10 +317,13 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [, setSettingsRevision] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
+  const panelCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const panelRenderRevision = useRef(0)
   const menuStackRef = useRef<RetroMenuFrame[]>([])
   useLayoutEffect(() => {
     menuStackRef.current = manualMenuStack
   }, [manualMenuStack])
+  useEffect(() => () => setDisplayOverride(null), [])
   const close = () => {
     const frame = menuStackRef.current.at(-1)
     menuStackRef.current = []
@@ -332,7 +336,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     dialogs,
     diskBookmarks,
     diskCollection,
-    effects,
+    panelClasses,
     hasOpenDialog,
     iigsStyle,
     language,
@@ -857,6 +861,58 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   ])
 
   const canvasHost = document.getElementById("apple2canvas")?.parentElement
+  useLayoutEffect(() => {
+    if (!isOpen || !canvasBounds) {
+      panelRenderRevision.current++
+      panelCanvasRef.current = null
+      setDisplayOverride(null)
+      return
+    }
+    const displayCanvas = document.getElementById("apple2canvas") as HTMLCanvasElement | null
+    const panel = document.querySelector<HTMLElement>(".retro-panel")
+    const nativeSurface = panel?.querySelector<HTMLElement>(".retro-native-surface")
+    if (!displayCanvas || !panel || !nativeSurface) return
+    const revision = ++panelRenderRevision.current
+    const canvas = panelCanvasRef.current ?? document.createElement("canvas")
+    panelCanvasRef.current = canvas
+    const renderAtDisplayResolution = getMonitorMode() === MONITOR_MODE.RGB &&
+      !getCrtDistortion()
+    const rasterWidth = renderAtDisplayResolution
+      ? Math.floor(displayCanvas.width * (1 - 2 * xmargin))
+      : retroNativeWidth
+    const rasterHeight = renderAtDisplayResolution
+      ? Math.floor(displayCanvas.height * (1 - 2 * ymargin))
+      : retroNativeHeight
+    void renderRetroPanelToCanvas(
+      panel,
+      nativeSurface,
+      canvas,
+      rasterWidth,
+      rasterHeight,
+    ).then(() => {
+      if (revision !== panelRenderRevision.current) return
+      setDisplayOverride(canvas)
+      panel.classList.add("retro-canvas-rendered")
+    }).catch(() => {
+      if (revision !== panelRenderRevision.current) return
+      setDisplayOverride(null)
+      panel.classList.remove("retro-canvas-rendered")
+    })
+    return () => {
+      panelRenderRevision.current = Math.max(panelRenderRevision.current, revision + 1)
+    }
+  }, [
+    activeVtocCheckKey,
+    canvasBounds,
+    currentFrame,
+    currentMenu,
+    panelClasses,
+    isOpen,
+    manualMenuStack,
+    manualSelectedIndex,
+    now,
+    rootMenu,
+  ])
   const submenuTitleValue = selectedItem?.contextualSubmenuTitleValue
     ?? currentFrame?.submenuTitleValue?.(currentFrame.items, currentFrame.values)
   const submenuTitleValueWidth = submenuTitleValue
@@ -999,8 +1055,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                     {visibleOption}
                     {item.textInput && selectedIndex === index && <span
                       className={`retro-text-cursor retro-mousetext${item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")
-                          ? " retro-solid-text-cursor"
-                          : ""
+                        ? " retro-solid-text-cursor"
+                        : ""
                         }`}
                       aria-hidden="true"
                     >{mouseTextCursor}</span>}
@@ -1052,7 +1108,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           </footer>,
       }, {
         "aria-label": t("retroControl.ariaLabel"),
-        className: effects,
+        className: panelClasses,
         onContextMenu: event => event.preventDefault(),
         style: panelStyle,
       }), canvasHost)}

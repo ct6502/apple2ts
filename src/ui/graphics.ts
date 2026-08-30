@@ -14,6 +14,7 @@ import { getPreferenceRetroIIGSColor, getPreferenceRetroSkin, RETRO_SKIN } from 
 import { RETRO_IIGS_COLORS } from "./retro/retroskincolors"
 import { UI_THEME } from "../common/utility"
 let frameCount = 0
+let displayOverride: HTMLCanvasElement | null = null
 
 export const nRowsHgrMagnifier = 16
 export const nColsHgrMagnifier = 2
@@ -22,6 +23,10 @@ export let ymargin = 0
 
 const doBlurring = () => {
   return getMonitorMode() !== MONITOR_MODE.RGB
+}
+
+export const setDisplayOverride = (canvas: HTMLCanvasElement | null) => {
+  displayOverride = canvas
 }
 
 // Convert canvas coordinates (absolute to the entire browser window)
@@ -634,9 +639,12 @@ const paintIIGSScanlines = (ctx: CanvasRenderingContext2D, width: number, height
 const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE, width: number, height: number,
-  foreground: string | null, background: string | null, borderColor: string | null) => {
+  foreground: string | null, background: string | null, borderColor: string | null,
+  renderText = true) => {
   // Draw text before distortion
-  processTextPage(ctx, hiddenContext, colorMode, width, height, true, foreground, background)
+  if (renderText) {
+    processTextPage(ctx, hiddenContext, colorMode, width, height, true, foreground, background)
+  }
 
   // Build one framebuffer so screen and surround share the same distortion.
   const nx = 560
@@ -646,7 +654,7 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   hiddenContext.putImageData(hiddenData, 0, 0)
 
   resizeWorkCanvas(crtCombinedCanvas, width, height)
-  const combinedContext = crtCombinedCanvas.getContext("2d")!
+  const combinedContext = crtCombinedCanvas.getContext("2d", { willReadFrequently: true })!
   combinedContext.clearRect(0, 0, width, height)
   if (borderColor) {
     combinedContext.fillStyle = borderColor
@@ -838,8 +846,45 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     )
   }
 
+  if (displayOverride) {
+    if (!crtDistortion && (displayOverride.width !== 560 || displayOverride.height !== 384)) {
+      const imageWidth = Math.floor(width * (1 - 2 * xmargin))
+      const imageHeight = Math.floor(height * (1 - 2 * ymargin))
+      ctx.drawImage(
+        displayOverride,
+        xmargin * width,
+        ymargin * height,
+        imageWidth,
+        imageHeight,
+      )
+      if (iigsSkin && getShowScanlines()) paintIIGSScanlines(ctx, width, height)
+      return
+    }
+  }
+
   hiddenContext.fillStyle = effectBackground ?? "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
+
+  if (displayOverride) {
+    hiddenContext.drawImage(displayOverride, 0, 0, 560, 384)
+    if (crtDistortion) {
+      applyCrtDistortion(
+        ctx,
+        hiddenContext,
+        colorMode,
+        width,
+        height,
+        foreground,
+        effectBackground,
+        borderColor,
+        false,
+      )
+    } else {
+      drawImage(ctx, hiddenContext, width, height)
+      if (iigsSkin && getShowScanlines()) paintIIGSScanlines(ctx, width, height)
+    }
+    return
+  }
 
   if (effectBackground) {
     const hiddenData = hiddenContext.getImageData(0, 0, 560, 384)
