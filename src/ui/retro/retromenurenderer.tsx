@@ -75,6 +75,7 @@ const submenuTextWidth = 31
 const submenuTitleContentWidth = 34
 const retroNativeWidth = 560
 const retroNativeHeight = 384
+const clockPauseMs = 50
 
 const RetroVtocIndicator = ({
   active,
@@ -323,6 +324,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const panelCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const panelCanvasPoolRef = useRef<HTMLCanvasElement[]>([])
   const panelRenderRevision = useRef(0)
+  const clockPausedUntilRef = useRef(0)
   const menuStackRef = useRef<RetroMenuFrame[]>([])
   useLayoutEffect(() => {
     menuStackRef.current = manualMenuStack
@@ -488,7 +490,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
 
   useEffect(() => {
     if (!isOpen || currentFrame) return
-    const timer = window.setInterval(() => setNow(new Date()), 1000)
+    const timer = window.setInterval(() => {
+      if (Date.now() >= clockPausedUntilRef.current) setNow(new Date())
+    }, 1000)
     return () => window.clearInterval(timer)
   }, [currentFrame, isOpen])
 
@@ -577,6 +581,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           menuStack.toReversed().forEach(restoreMenuFramePreview)
           resetCollectionDriveSelectionSession()
           setNow(new Date())
+          clockPausedUntilRef.current = Date.now() + clockPauseMs
           setCanvasRenderState(getCrtDistortion() ? "pending" : "native")
           setIsOpen(true)
           setMenuStack([])
@@ -585,6 +590,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         return
       }
       if (!isOpen) return
+      clockPausedUntilRef.current = Date.now() + clockPauseMs
 
       const isSubmitFrame = Boolean(currentFrame?.submit) &&
         currentMenu.some(item => item.checkmarkIndex !== undefined)

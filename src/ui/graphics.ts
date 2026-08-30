@@ -15,6 +15,7 @@ import { RETRO_IIGS_COLORS } from "./retro/retroskincolors"
 import { UI_THEME } from "../common/utility"
 let frameCount = 0
 let displayOverride: HTMLCanvasElement | null = null
+let displayOverrideRevision = 0
 
 export const nRowsHgrMagnifier = 16
 export const nColsHgrMagnifier = 2
@@ -27,6 +28,7 @@ const doBlurring = () => {
 
 export const setDisplayOverride = (canvas: HTMLCanvasElement | null) => {
   displayOverride = canvas
+  displayOverrideRevision++
 }
 
 // Convert canvas coordinates (absolute to the entire browser window)
@@ -527,6 +529,7 @@ let monitorOpeningMaskLoading = false
 let surroundLayerCache: { key: string, canvas: HTMLCanvasElement } | null = null
 const crtDistortedCanvas = document.createElement("canvas")
 const crtClippedCanvas = document.createElement("canvas")
+const crtOverrideFrameCanvas = document.createElement("canvas")
 const scanlineCanvas = document.createElement("canvas")
 const crtSourceWidth = 560
 const crtSourceHeight = 384
@@ -534,6 +537,7 @@ const crtOutsideSource = 0xFFFFFFFF
 let crtDistortionMap: Uint32Array | null = null
 let crtDistortionWeightX: Uint16Array | null = null
 let crtDistortionWeightY: Uint16Array | null = null
+let crtOverrideFrameCacheKey = ""
 
 const resizeWorkCanvas = (canvas: HTMLCanvasElement, width: number, height: number) => {
   if (canvas.width !== width) canvas.width = width
@@ -718,7 +722,7 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
     document.fullscreenElement === null && !isCanvasOnlyTheme()
   if (hasClassicMonitorFrame && !monitorOpeningMask) {
     loadMonitorOpeningMask()
-    return
+    return false
   }
   paintScreenSurround(ctx, width, height, borderColor ?? background ?? "#000000", false)
 
@@ -743,6 +747,7 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   if (getShowScanlines() && applyEffectsToSurround) {
     paintIIGSScanlines(ctx, width, height)
   }
+  return true
 }
 
 const shrRgbaBuffer = new Uint8ClampedArray(560 * 384 * 4)
@@ -898,7 +903,30 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     )
   }
 
+  let overrideFrameKey = ""
   if (displayOverride) {
+    if (crtDistortion) {
+      overrideFrameKey = [
+        displayOverrideRevision,
+        width,
+        height,
+        xmargin,
+        ymargin,
+        colorMode,
+        getMonitorMode(),
+        foreground,
+        effectBackground,
+        borderColor,
+        getShowScanlines(),
+        getTheme(),
+        document.fullscreenElement !== null,
+        isCanvasOnlyTheme(),
+      ].join(":")
+      if (crtOverrideFrameCacheKey === overrideFrameKey) {
+        ctx.drawImage(crtOverrideFrameCanvas, 0, 0)
+        return
+      }
+    }
     if (!crtDistortion && (displayOverride.width !== 560 || displayOverride.height !== 384)) {
       const imageWidth = Math.floor(width * (1 - 2 * xmargin))
       const imageHeight = Math.floor(height * (1 - 2 * ymargin))
@@ -920,8 +948,13 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   if (displayOverride) {
     hiddenContext.drawImage(displayOverride, 0, 0, 560, 384)
     if (crtDistortion) {
-      applyCrtDistortion(
-        ctx,
+      resizeWorkCanvas(crtOverrideFrameCanvas, width, height)
+      const overrideContext = crtOverrideFrameCanvas.getContext("2d")!
+      overrideContext.imageSmoothingEnabled = ctx.imageSmoothingEnabled
+      overrideContext.imageSmoothingQuality = ctx.imageSmoothingQuality
+      overrideContext.clearRect(0, 0, width, height)
+      const rendered = applyCrtDistortion(
+        overrideContext,
         hiddenContext,
         colorMode,
         width,
@@ -931,6 +964,10 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
         borderColor,
         false,
       )
+      if (rendered) {
+        crtOverrideFrameCacheKey = overrideFrameKey
+        ctx.drawImage(crtOverrideFrameCanvas, 0, 0)
+      }
     } else {
       drawImage(ctx, hiddenContext, width, height)
       if (iigsSkin && getShowScanlines()) paintIIGSScanlines(ctx, width, height)
