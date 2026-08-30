@@ -18,6 +18,11 @@
   overflow-y: auto;
 }
 
+body.dark-mode .disk-collection-panel {
+  outline: 1px solid var(--button-active);
+  outline-offset: -1px;
+}
+
 .dcp-tab-row {
   display: flex;
   align-items: stretch;
@@ -96,6 +101,11 @@
   width: 1.25em;
   height: 1.25em;
   vertical-align: middle;
+}
+
+body.dark-mode .dcp-tab {
+  border-color: var(--button-active);
+  color: var(--button-active);
 }
 
 .dcp-export-row {
@@ -196,6 +206,11 @@
   background-color: var(--button-active);
 }
 
+body.dark-mode .dcp-tab:hover,
+body.dark-mode .dcp-tab-active {
+  color: var(--text-color);
+}
+
 .dcp-tab-highlighted {
   animation: tabFadeInOut 3s 5;
 }
@@ -205,10 +220,12 @@
   0%,
   100% {
     background-color: #aba7a2;
+    color: var(--text-color);
   }
 
   50% {
     background-color: gray;
+    color: var(--text-color);
   }
 }
 
