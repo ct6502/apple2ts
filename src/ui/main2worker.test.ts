@@ -3,6 +3,7 @@ import {
   doOnMessage,
   requestLoadBinary,
   requestKeyboardState,
+  requestSetDriveNewData,
   requestSetState6502,
   requestSetRunMode,
   requestSpeedMode,
@@ -131,5 +132,31 @@ describe("worker operations", () => {
 
     sendOperationResult(message.operationId)
     await expect(operation).resolves.toBeUndefined()
+  })
+
+  test("sends drive data as a confirmed worker operation", async () => {
+    const props = {index: 2, filename: "test.woz"} as DriveProps
+    let resolved = false
+    const operation = requestSetDriveNewData(props).then(() => {
+      resolved = true
+    })
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    expect(message).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.DRIVE_NEW_DATA,
+      payload: props,
+    }))
+
+    await Promise.resolve()
+    expect(resolved).toBe(false)
+    sendOperationResult(message.operationId)
+    await expect(operation).resolves.toBeUndefined()
+  })
+
+  test("reports a rejected drive operation", async () => {
+    const operation = requestSetDriveNewData({index: 2, filename: "bad.woz"} as DriveProps)
+
+    sendOperationResult(lastOperationId(), "Invalid disk image")
+
+    await expect(operation).rejects.toThrow("Invalid disk image")
   })
 })

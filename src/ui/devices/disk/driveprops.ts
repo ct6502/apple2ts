@@ -10,7 +10,7 @@ import {
   RUN_MODE,
 } from "../../../common/utility"
 
-import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode, handleGetProdosFloppy } from "../../main2worker"
+import { passSetDriveNewData, requestSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode, handleGetProdosFloppy } from "../../main2worker"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
 import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
@@ -89,13 +89,13 @@ export const handleGetFilename = (index: number) => {
   return null
 }
 
-export const doSetUIDriveProps = (props: DriveProps) => {
+export const doSetUIDriveProps = (props: DriveProps, replaceDiskData = false) => {
   // For efficiency we only receive disk data if it has changed.
   // If our disk is the same but it hasn't changed, keep the existing data.
   // Also preserve writableFileHandle (custom Electron handlers aren't sent to worker)
   const existingWritableFileHandle = driveProps[props.index].writableFileHandle
   
-  if (props.diskData.length === 0) {
+  if (props.diskData.length === 0 && !replaceDiskData) {
     const tmp = driveProps[props.index].diskData
     const diskHasChanges = driveProps[props.index].diskHasChanges
     driveProps[props.index] = props
@@ -115,7 +115,7 @@ export const handleGetDriveProps = (index: number) => {
   return driveProps[index]
 }
 
-export const handleSetDiskData = (
+const setDiskData = (
   index: number,
   data: Uint8Array,
   filename: string,
@@ -124,7 +124,8 @@ export const handleSetDiskData = (
   lastLocalFileWriteTime: number,
   helpFile?: string,
   applyHelpText: (helpText: string) => void = setHelpText,
-  forceIndex = false) => {
+  forceIndex = false,
+  confirmed = false) => {
   if (cloudData) {
     cloudData.fileSize = data.length
   }
@@ -141,13 +142,42 @@ export const handleSetDiskData = (
     ...driveProps[index],
     writableFileHandle: isFileSystemHandle ? writableFileHandle : null
   }
-  passSetDriveNewData(propsForWorker, forceIndex)
+  let workerOperation: Promise<void> | undefined
+  if (confirmed) {
+    workerOperation = requestSetDriveNewData(propsForWorker, forceIndex)
+  } else {
+    passSetDriveNewData(propsForWorker, forceIndex)
+  }
   if (filename) {
     setTimeout(() => {
       selectHelpText(helpFile, applyHelpText)
     }, 150)
   }
 
+  return workerOperation
+}
+
+export const handleSetDiskData = (
+  index: number,
+  data: Uint8Array,
+  filename: string,
+  cloudData: CloudData | null,
+  writableFileHandle: WritableFileHandle | null,
+  lastLocalFileWriteTime: number,
+  helpFile?: string,
+  applyHelpText: (helpText: string) => void = setHelpText,
+  forceIndex = false) => {
+  void setDiskData(
+    index,
+    data,
+    filename,
+    cloudData,
+    writableFileHandle,
+    lastLocalFileWriteTime,
+    helpFile,
+    applyHelpText,
+    forceIndex,
+  )
 }
 
 export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boolean) => {
@@ -158,6 +188,11 @@ export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boo
 export const handleEjectDisk = (index: number) => {
   driveProps[index] = initDriveProps(index, driveProps[index].drive, driveProps[index].hardDrive)
   passSetDriveNewData(driveProps[index])
+}
+
+export const requestEjectDisk = (index: number) => {
+  driveProps[index] = initDriveProps(index, driveProps[index].drive, driveProps[index].hardDrive)
+  return requestSetDriveNewData(driveProps[index])
 }
 
 const findMatchingDiskImage = (url: string) => {
@@ -189,14 +224,15 @@ export const setDefaultBinaryAddress = (address: number) => {
   binaryRunAddress = address
 }
 
-export const handleSetDiskOrFileFromBuffer = (
+const setDiskOrFileFromBuffer = (
   index: number,
   buffer: ArrayBuffer,
   filename: string,
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null,
   helpFile?: string,
-  preserveDriveIndex = false) => {
+  preserveDriveIndex = false,
+  confirmed = false) => {
 
   // Sanity check for strange downloads with no filename.
   if (buffer.byteLength === 143360 && !filename.includes(".")) {
@@ -205,6 +241,28 @@ export const handleSetDiskOrFileFromBuffer = (
 
   const fname = filename.toLowerCase()
   let newIndex = index
+  const isGenericProgram = fname.endsWith(".bin") || fname.endsWith(".bas") || fname.endsWith(".a")
+
+  if (confirmed) {
+    if (isGenericProgram) {
+      // A confirmed remote disk mount is intentionally narrower than the GUI's
+      // generic file loader and must not execute a program as a side effect.
+      return { mountedDrive: index, workerOperation: undefined }
+    }
+    const workerOperation = setDiskData(
+      index,
+      new Uint8Array(buffer),
+      filename,
+      cloudData,
+      writableFileHandle,
+      Date.now(),
+      helpFile,
+      setHelpText,
+      true,
+      true,
+    )
+    return { mountedDrive: index, workerOperation }
+  }
 
   if (fname.endsWith(".bin")) {
     passSetBinaryBlock(binaryRunAddress, new Uint8Array(buffer), true)
@@ -235,7 +293,7 @@ export const handleSetDiskOrFileFromBuffer = (
         newIndex = defaultDriveIndex
       }
     }
-    handleSetDiskData(
+    setDiskData(
       newIndex,
       new Uint8Array(buffer),
       filename,
@@ -245,15 +303,61 @@ export const handleSetDiskOrFileFromBuffer = (
       helpFile,
       setHelpText,
       preserveDriveIndex,
+      false,
     )
-    if (bootsExplicitDrive || handleGetRunMode() === RUN_MODE.IDLE) {
+    const shouldBoot = bootsExplicitDrive || handleGetRunMode() === RUN_MODE.IDLE
+    if (shouldBoot) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     } else {
 //      props.updateDisplay()
     }
   }
 
-  return newIndex
+  return { mountedDrive: newIndex, workerOperation: undefined }
+}
+
+export const handleSetDiskOrFileFromBuffer = (
+  index: number,
+  buffer: ArrayBuffer,
+  filename: string,
+  cloudData: CloudData | null,
+  writableFileHandle: WritableFileHandle | null,
+  helpFile?: string,
+  preserveDriveIndex = false) => {
+  return setDiskOrFileFromBuffer(
+    index,
+    buffer,
+    filename,
+    cloudData,
+    writableFileHandle,
+    helpFile,
+    preserveDriveIndex,
+  ).mountedDrive
+}
+
+export const requestMountDiskFromBuffer = async (
+  index: number,
+  buffer: ArrayBuffer,
+  filename: string,
+  cloudData: CloudData | null,
+  writableFileHandle: WritableFileHandle | null,
+  helpFile?: string,
+  preserveDriveIndex = false) => {
+  const result = setDiskOrFileFromBuffer(
+    index,
+    buffer,
+    filename,
+    cloudData,
+    writableFileHandle,
+    helpFile,
+    preserveDriveIndex,
+    true,
+  )
+  if (!result.workerOperation) {
+    throw new Error("Remote disk mount requires disk media")
+  }
+  await result.workerOperation
+  return result.mountedDrive
 }
 
 export const handleSetDiskFromCloudData = async (
@@ -564,9 +668,40 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
   }, 3 * 1000)
 }
 
-export const handleSetDiskFromURL = async (url: string,
+const setDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
-  debug?: (message: string) => void, preserveDriveIndex = false): Promise<boolean> => {
+  debug?: (message: string) => void, preserveDriveIndex = false, confirmed = false): Promise<boolean> => {
+  const requestedIndex = index
+  const installDisk = (
+    installIndex: number,
+    buffer: ArrayBuffer,
+    filename: string,
+    installCloudData: CloudData | null,
+    writableFileHandle: WritableFileHandle | null,
+    helpFile?: string,
+    preserveInstallIndex = false,
+  ) => {
+    if (confirmed) {
+      return requestMountDiskFromBuffer(
+        requestedIndex,
+        buffer,
+        filename,
+        installCloudData,
+        writableFileHandle,
+        helpFile,
+        true,
+      )
+    }
+    return Promise.resolve(handleSetDiskOrFileFromBuffer(
+      installIndex,
+      buffer,
+      filename,
+      installCloudData,
+      writableFileHandle,
+      helpFile,
+      preserveInstallIndex,
+    ))
+  }
   debug?.(`handleSetDiskFromURL(${url}) drive=${index}`)
   let helpFile = findCatalogHelpFile(url)
   // Check if it's a local file (not http/https URL and not Internet Archive)
@@ -578,14 +713,14 @@ export const handleSetDiskFromURL = async (url: string,
         // Fetch for browser (may fail for local files due to CORS)
         const state = getDiskImageFromLocalStorage()
         if (state) {
-          resetAllDiskDrives()
-          index = handleSetDiskOrFileFromBuffer(state.index, state.data.buffer, url, null, null, helpFile)
+          if (!preserveDriveIndex) resetAllDiskDrives()
+          index = await installDisk(state.index, state.data.buffer, url, null, null, helpFile)
         } else {
           const response = await fetch(url)
           const buffer = await response.arrayBuffer()
           const fileName = url.split("/").pop() || url        
-          resetAllDiskDrives()
-          index = handleSetDiskOrFileFromBuffer(
+          if (!preserveDriveIndex) resetAllDiskDrives()
+          index = await installDisk(
             index,
             buffer,
             fileName,
@@ -841,7 +976,7 @@ export const handleSetDiskFromURL = async (url: string,
           resetAllDiskDrives()
         }
         
-        handleSetDiskOrFileFromBuffer(
+        await installDisk(
           index,
           buffer,
           name,
@@ -877,6 +1012,19 @@ export const handleSetDiskFromURL = async (url: string,
       showGlobalProgressModal(false)
     }
   }
+}
+
+export const handleSetDiskFromURL = async (url: string,
+  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
+  debug?: (message: string) => void, preserveDriveIndex = false): Promise<boolean> => {
+  return setDiskFromURL(url, updateDisplay, index, cloudData, callback, debug, preserveDriveIndex)
+}
+
+export const requestSetDiskFromURL = async (url: string,
+  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
+  debug?: (message: string) => void): Promise<number | false> => {
+  const mounted = await setDiskFromURL(url, updateDisplay, index, cloudData, callback, debug, true, true)
+  return mounted ? index : false
 }
 
 export const prepWritableFile = async (index: number, writableFileHandle: WritableFileHandle) => {

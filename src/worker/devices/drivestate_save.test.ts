@@ -3,6 +3,7 @@ import { doSetEmuDriveNewData, getDriveSaveState, getHardDriveData, getHardDrive
   restoreDriveSaveState } from "./drivestate"
 import { doGetSaveState, doRestoreSaveState } from "../save_restore"
 import { setIsTesting } from "../worker2main"
+import * as workerMessages from "../worker2main"
 
 const largeDiskSize = 32_000_000
 
@@ -34,6 +35,72 @@ const mountHardDrive = (diskData: Uint8Array, filename = "large-disk.hdv") => {
 beforeAll(() => setIsTesting())
 beforeEach(() => restoreDriveSaveState(emptyDriveSaveState()))
 afterEach(() => jest.restoreAllMocks())
+
+test("rejects invalid non-empty media and forces the empty canonical drive to the UI", () => {
+  const passDriveProps = jest.spyOn(workerMessages, "passDriveProps")
+  const result = doSetEmuDriveNewData({
+    index: 2,
+    hardDrive: false,
+    drive: 1,
+    filename: "invalid.woz",
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData: new Uint8Array([1, 2, 3]),
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  })
+
+  expect(result).toBe(false)
+  expect(passDriveProps).toHaveBeenCalledWith(expect.objectContaining({
+    index: 2,
+    filename: "",
+    diskData: new Uint8Array(),
+  }), true)
+})
+
+test("accepts valid media at a forced drive index", () => {
+  const result = doSetEmuDriveNewData({
+    index: 3,
+    hardDrive: true,
+    drive: 2,
+    filename: "valid.hdv",
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData: new Uint8Array(16_384),
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }, true)
+
+  expect(result).toBe(true)
+})
+
+test("accepts an empty drive as an eject operation", () => {
+  const result = doSetEmuDriveNewData({
+    index: 2,
+    hardDrive: false,
+    drive: 1,
+    filename: "",
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData: new Uint8Array(),
+    lastAppleWriteTime: -1,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: -1,
+  })
+
+  expect(result).toBe(true)
+})
 
 test("a time-travel snapshot omits large-disk data without losing the disk on restore", () => {
   const diskData = new Uint8Array(largeDiskSize)

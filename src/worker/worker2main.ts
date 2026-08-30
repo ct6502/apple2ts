@@ -71,8 +71,8 @@ export const passClickSpeaker = (cycleCount: number) => {
   doPostMessage(MSG_WORKER.CLICK, cycleCount)
 }
 
-export const passDriveProps = (props: DriveProps) => {
-  doPostMessage(MSG_WORKER.DRIVE_PROPS, props)
+export const passDriveProps = (props: DriveProps, replaceDiskData = false) => {
+  doPostMessage(MSG_WORKER.DRIVE_PROPS, replaceDiskData ? {props, replaceDiskData} : props)
 }
 
 export const passDriveSound = (sound: DRIVE) => {
@@ -238,10 +238,20 @@ if (typeof self !== "undefined") {
       }
       case MSG_MAIN.DRIVE_NEW_DATA: {
         const payload = e.data.payload as DriveProps | { props: DriveProps, forceIndex: boolean }
-        if ("props" in payload) {
-          doSetEmuDriveNewData(payload.props, payload.forceIndex)
-        } else {
-          doSetEmuDriveNewData(payload)
+        try {
+          const accepted = "props" in payload
+            ? doSetEmuDriveNewData(payload.props, payload.forceIndex)
+            : doSetEmuDriveNewData(payload)
+          if (e.data.operationId !== undefined) {
+            if (!accepted) throw new Error("Worker rejected disk image")
+            passWorkerOperationResult(e.data.operationId)
+          }
+        } catch (error) {
+          if (e.data.operationId === undefined) throw error
+          passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
+          )
         }
         break
       }
