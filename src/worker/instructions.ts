@@ -363,6 +363,7 @@ const doInterrupt = (name: string, addr: number, pcOffset = 0) => {
   const vHi = memGet(addr + 1)
   pushStack(`${name} $` + toHex(vHi) + toHex(vLo), Math.trunc(PCreturn / 256))
   pushStack(name, PCreturn % 256)
+  setBreak(name === "BRK")
   pushStack("P", s6502.PStatus)
   setDecimal(false)  // 65c02 only
   setInterruptDisabled()
