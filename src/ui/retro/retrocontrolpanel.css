@@ -65,6 +65,14 @@
   text-transform: uppercase;
 }
 
+.retro-panel.retro-monitor-ntsc {
+  --retro-ntsc-blur: clamp(0.45px, calc(var(--retro-cell-width) / 16), 0.7px);
+}
+
+.retro-panel.retro-monitor-ntsc .retro-window {
+  filter: blur(var(--retro-ntsc-blur));
+}
+
 .retro-panel.retro-effect-ghosting .retro-window {
   text-shadow: 0.08em 0 color-mix(in srgb, var(--retro-foreground) 45%, transparent);
 }

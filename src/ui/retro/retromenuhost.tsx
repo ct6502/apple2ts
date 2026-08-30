@@ -11,7 +11,7 @@ import {
   setPreferenceRetroIIGSColor,
   setPreferenceRetroSkin,
 } from "../localstorage"
-import { getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isMinimalTheme } from "../ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, getMonitorMode, getShowScanlines, getTheme, isMinimalTheme } from "../ui_settings"
 import { retroMenuRegistry } from "./retromenucomposition"
 import type { DiskLoadDialog, RetroMenuContext } from "./retromenucontext"
 import { useGlobalContext } from "../globalcontext"
@@ -20,6 +20,7 @@ import ImageWriter from "../devices/printer/imagewriter"
 import { getDiskCollection } from "../diskdialog/diskpanel_utils"
 import { DISK_BOOKMARKS_CHANGED_EVENT, DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { newReleases } from "../devices/disk/newreleases"
+import { MONITOR_MODE } from "../../common/utility"
 
 const colorModeClasses = ["color", "color", "green", "amber", "white", "inverse"]
 const retroSkinClasses = ["apple-iie", "apple-iigs", "apple-iiplus"]
@@ -133,6 +134,7 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
   const effects = [
     `retro-color-${colorModeClasses[getColorMode()]}`,
     `retro-skin-${retroSkinClasses[retroSkin]}`,
+    getMonitorMode() === MONITOR_MODE.NTSC ? "retro-monitor-ntsc" : "retro-monitor-rgb",
     ghosting ? "retro-effect-ghosting" : "",
     getCrtDistortion() ? "retro-effect-crt" : "",
   ].filter(Boolean).join(" ")
