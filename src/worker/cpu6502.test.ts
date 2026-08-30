@@ -1,5 +1,5 @@
-import { processInstruction } from "./cpu6502"
-import { memory, updateAddressTables } from "./memory"
+import { interruptRequest, nonMaskableInterrupt, processInstruction } from "./cpu6502"
+import { doSetRom, getCurrentMachineName, memory, updateAddressTables } from "./memory"
 import { reset6502, s6502, setCycleCount, setPC } from "./instructions"
 import { createHash } from "crypto"
 import fs from "fs"
@@ -7,7 +7,7 @@ import { IncomingMessage } from "http"
 import https from "https"
 import path from "path"
 import { pipeline } from "stream/promises"
-import { checkSoftSwitches } from "./softswitches"
+import { checkSoftSwitches, SWITCHES } from "./softswitches"
 
 const fileChecksum = (filename: string) => createHash("sha256").update(fs.readFileSync(filename)).digest("hex")
 
@@ -40,6 +40,7 @@ const klausRevision = "6bae44e4062722b22fb1de26dd68bea55f80c8e0"
 const klausChecksums = {
   "6502_functional_test.bin": "fa12bfc761e6f9057e4cc01a665a7b800ff01ae91f598af1e39a1201d01953fd",
   "65C02_extended_opcodes_test.bin": "10a2a07fa240666fa610c46accebe8d42b1000feef3aae619da15a8d152869b2",
+  "6502_65c02_interrupt_test.bin": "f82cb23debf6ba411c77861dbc3d50afd010b198dd26a2f5fb6a610c6e2e0ebc",
 } as const
 
 type KlausTestName = keyof typeof klausChecksums
@@ -130,3 +131,48 @@ const runKlaus6502Test = async (testname: KlausTestName) => {
 test("Klaus 6502", async () => {await runKlaus6502Test("6502_functional_test.bin")}, 20000)
 
 test("Klaus 65C02 extended opcodes", async () => {await runKlaus6502Test("65C02_extended_opcodes_test.bin")}, 20000)
+
+test.each([
+  ["NMOS", "APPLE2EU", 0x0400, 0x073A],
+  ["CMOS", "APPLE2EE", 0x0404, 0x0737],
+] as const)("Klaus %s interrupts", async (_cpu, machine, entryPC, successPC) => {
+  const pcode = await getKlausBinary("6502_65c02_interrupt_test.bin")
+  const previousMachine = getCurrentMachineName()
+  const previousMemory = memory.slice()
+  const bankSwitches = ["BSR_PREWRITE", "BSR_WRITE", "BSRBANK2", "BSRREADRAM"] as const
+  const previousBankSwitches = bankSwitches.map(name => SWITCHES[name].isSet)
+
+  doSetRom(machine)
+  try {
+    reset6502()
+    memory.set(pcode)
+    checkSoftSwitches(0xC080, false, 0)
+    updateAddressTables()
+
+    const feedbackPort = 0xBFFC
+    memory[feedbackPort] = 0
+    setPC(entryPC)
+    setCycleCount(0)
+
+    let feedback = 0
+    for (let i = 0; i < 10000; i++) {
+      const previousPC = s6502.PC
+      processInstruction()
+      const nextFeedback = memory[feedbackPort]
+      interruptRequest(0, (nextFeedback & 1) !== 0)
+      if ((feedback & 2) === 0 && (nextFeedback & 2) !== 0) nonMaskableInterrupt()
+      feedback = nextFeedback
+      if (s6502.PC === previousPC) {
+        expect(s6502.PC).toEqual(successPC)
+        return
+      }
+    }
+    throw new Error(`Klaus interrupt test did not terminate at $${s6502.PC.toString(16)}`)
+  } finally {
+    doSetRom(previousMachine)
+    memory.set(previousMemory)
+    bankSwitches.forEach((name, index) => {SWITCHES[name].isSet = previousBankSwitches[index]})
+    reset6502()
+    updateAddressTables()
+  }
+}, 20000)
