@@ -15,6 +15,7 @@ import AgentTab from "./agent/agent_tab"
 import VeraTab from "./vera/veratab"
 import { setPreferenceBoolean } from "../localstorage"
 import { isDefaultHelp } from "./help/helpselection"
+import { SETTINGS_CHANGED_EVENT } from "../settingschange"
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, minimalPresentation?: boolean }) => {
 
@@ -64,6 +65,14 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
   useEffect(() => {
     forceRefresh()
   }, [isFlyoutOpen])
+
+  useEffect(() => {
+    const handleSettingsChanged = () => {
+      setActiveTab(getTabView())
+    }
+    window.addEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
+    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
+  }, [])
 
   const tabOrientation = props.narrow ? "horizontal" : "vertical"
   const tabClass = `dbg-tab-${tabOrientation}`

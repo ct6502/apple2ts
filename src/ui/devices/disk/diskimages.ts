@@ -95,7 +95,8 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://archive.org/details/TotalReplay",
     type: undefined,
     lastUpdated: new Date(0),
-    fileSize: 33553920
+    fileSize: 33553920,
+    params: "slot3=vidhd",
   },
   {
     title: "Instant Replay",
@@ -106,7 +107,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://github.com/a2-4am/4sports",
     type: undefined,
     lastUpdated: new Date(0),
-    fileSize: 33553920
+    fileSize: 33553920,
   },
   {
     title: "Pitch Dark",
@@ -117,7 +118,8 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://github.com/anomixer/pitch-dark/releases",
     type: undefined,
     lastUpdated: new Date(0),
-    fileSize: 33553920
+    fileSize: 33553920,
+    params: "slot3=vidhd",
   },
   {
     title: "Tass Times in Tonetown",

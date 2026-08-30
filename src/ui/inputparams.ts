@@ -8,8 +8,9 @@ import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setColorMode, setMonitorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
-import { setPreferenceSpeedMode } from "./localstorage"
+import { getPreferenceSlotConfig, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
 import { Expectin } from "./api/expectin"
+import { notifySettingsChanged } from "./settingschange"
 
 export const handleInputParams = (paramString = "") => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -21,13 +22,16 @@ export const handleInputParams = (paramString = "") => {
   const porig = new URLSearchParams(paramString)
 
   const tab = (params.get("tab") as string || "").toLowerCase()
-  const tabNames = ["info", "debug", "basic", "expectin", "ai"]
+  const tabNames = ["info", "debug", "basic", "expectin", "vera", "ai"]
   if (tab) {
-    const tabNum = tabNames.indexOf(tab)
+    let tabNum = tabNames.indexOf(tab)
+    if (tab === "agent") tabNum = 5
     if (tabNum >= 0) {
+      setUIStateBoolean("infoPanel", true)
       setTabView(tabNum)
       passSetDebug(tabNum === 1)
       passSetShowDebugTab(tabNum === 1)
+      notifySettingsChanged(["panels.tab"], "external")
     }
   }
 
@@ -35,6 +39,7 @@ export const handleInputParams = (paramString = "") => {
     setTabView(tabNames.indexOf("debug"))
     passSetDebug(true)
     passSetShowDebugTab(true)
+    notifySettingsChanged(["panels.tab"], "external")
   }
 
   const mode = params.get("appmode") as string
@@ -129,6 +134,61 @@ export const handleInputParams = (paramString = "") => {
     if (index >= 0) {
       passSetRamWorks(parseInt(sizes[index]))
     }
+  }
+
+  const currentSlotConfig = getPreferenceSlotConfig()
+  const nextSlotConfig = { ...currentSlotConfig }
+  let slotConfigChanged = false
+
+  const validCards: Record<number, string[]> = {
+    1: ["none", "ssc"],
+    2: ["none", "vera", "passport", "softcard"],
+    3: ["none", "aux", "videoterm", "vidhd"],
+    4: ["none", "mouse", "mockingboard", "vera", "softcard"],
+    5: ["none", "mouse", "mockingboard", "softcard"],
+    6: ["none", "disk2"],
+    7: ["none", "smartport"],
+  }
+
+  for (let slotNum = 1; slotNum <= 7; slotNum++) {
+    const cardParam = params.get(`slot${slotNum}`)?.toLowerCase()
+    if (cardParam && validCards[slotNum]?.includes(cardParam)) {
+      const card = cardParam as SLOT_CARD_ID
+      if (card !== "none" && card !== "mockingboard") {
+        for (let otherSlot = 1; otherSlot <= 7; otherSlot++) {
+          if (otherSlot !== slotNum && nextSlotConfig[otherSlot as 1 | 2 | 3 | 4 | 5 | 6 | 7] === card) {
+            nextSlotConfig[otherSlot as 1 | 2 | 3 | 4 | 5 | 6 | 7] = "none"
+          }
+        }
+      }
+      nextSlotConfig[slotNum as 1 | 2 | 3 | 4 | 5 | 6 | 7] = card
+      if (card === "vera") {
+        setPreferenceVeraSlot(slotNum as VERA_SLOT)
+      } else if (currentSlotConfig[slotNum as 1 | 2 | 3 | 4 | 5 | 6 | 7] === "vera") {
+        setPreferenceVeraSlot(0)
+      }
+      slotConfigChanged = true
+    }
+  }
+
+  const veraSlotParam = params.get("veraslot")
+  if (veraSlotParam) {
+    const vSlot = parseInt(veraSlotParam, 10)
+    if (vSlot === 0 || vSlot === 2 || vSlot === 4) {
+      setPreferenceVeraSlot(vSlot as VERA_SLOT)
+      if (vSlot > 0) {
+        const otherVeraSlot = vSlot === 2 ? 4 : 2
+        if (nextSlotConfig[otherVeraSlot] === "vera") {
+          nextSlotConfig[otherVeraSlot] = "none"
+        }
+        nextSlotConfig[vSlot as 2 | 4] = "vera"
+        slotConfigChanged = true
+      }
+    }
+  }
+
+  if (slotConfigChanged) {
+    setPreferenceSlotConfig(nextSlotConfig)
   }
 
   const theme = params.get("theme")
