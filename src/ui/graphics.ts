@@ -525,10 +525,13 @@ const replaceBlackPixels = (image: ImageData, background: string | null) => {
 let monitorOpeningMask: HTMLImageElement | null = null
 let monitorOpeningMaskLoading = false
 let surroundLayerCache: { key: string, canvas: HTMLCanvasElement } | null = null
-const crtCombinedCanvas = document.createElement("canvas")
 const crtDistortedCanvas = document.createElement("canvas")
 const crtClippedCanvas = document.createElement("canvas")
 const scanlineCanvas = document.createElement("canvas")
+const crtSourceWidth = 560
+const crtSourceHeight = 384
+const crtOutsideSource = 0xFFFFFFFF
+let crtDistortionMap: Uint32Array | null = null
 
 const resizeWorkCanvas = (canvas: HTMLCanvasElement, width: number, height: number) => {
   if (canvas.width !== width) canvas.width = width
@@ -546,30 +549,44 @@ const loadMonitorOpeningMask = () => {
   image.src = window.assetRegistry.monitorOpeningMask
 }
 
-const distortLayer = (source: HTMLCanvasElement) => {
-  const sourceContext = source.getContext("2d", { willReadFrequently: true })!
-  const sourceData = sourceContext.getImageData(0, 0, source.width, source.height)
-  const distortedData = sourceContext.createImageData(source.width, source.height)
-  const centerX = source.width / 2
-  const centerY = source.height / 2
-  for (let y = 0; y < source.height; y++) {
-    for (let x = 0; x < source.width; x++) {
+const getCrtDistortionMap = () => {
+  if (crtDistortionMap) return crtDistortionMap
+  const map = new Uint32Array(crtSourceWidth * crtSourceHeight)
+  const centerX = crtSourceWidth / 2
+  const centerY = crtSourceHeight / 2
+  for (let y = 0; y < crtSourceHeight; y++) {
+    const normalizedY = (y - centerY) / centerY
+    for (let x = 0; x < crtSourceWidth; x++) {
       const normalizedX = (x - centerX) / centerX
-      const normalizedY = (y - centerY) / centerY
       const distance = normalizedX * normalizedX + normalizedY * normalizedY
-      const sourceX = Math.max(0, Math.min(source.width - 1,
-        Math.round(centerX + normalizedX * centerX * (1 + 0.015 * distance))))
-      const sourceY = Math.max(0, Math.min(source.height - 1,
-        Math.round(centerY + normalizedY * centerY * (1 + 0.04 * distance))))
-      const sourceOffset = 4 * (sourceY * source.width + sourceX)
-      const destinationOffset = 4 * (y * source.width + x)
-      distortedData.data[destinationOffset] = sourceData.data[sourceOffset]
-      distortedData.data[destinationOffset + 1] = sourceData.data[sourceOffset + 1]
-      distortedData.data[destinationOffset + 2] = sourceData.data[sourceOffset + 2]
-      distortedData.data[destinationOffset + 3] = sourceData.data[sourceOffset + 3]
+      const sourceX = Math.round(centerX + normalizedX * centerX * (1 + 0.015 * distance))
+      const sourceY = Math.round(centerY + normalizedY * centerY * (1 + 0.04 * distance))
+      map[y * crtSourceWidth + x] = sourceX < 0 || sourceX >= crtSourceWidth ||
+        sourceY < 0 || sourceY >= crtSourceHeight
+        ? crtOutsideSource
+        : sourceY * crtSourceWidth + sourceX
     }
   }
-  resizeWorkCanvas(crtDistortedCanvas, source.width, source.height)
+  crtDistortionMap = map
+  return map
+}
+
+const distortLayer = (source: HTMLCanvasElement) => {
+  const sourceContext = source.getContext("2d", { willReadFrequently: true })!
+  const sourceData = sourceContext.getImageData(0, 0, crtSourceWidth, crtSourceHeight)
+  const distortedData = sourceContext.createImageData(crtSourceWidth, crtSourceHeight)
+  const sourcePixels = new Uint32Array(sourceData.data.buffer)
+  const distortedPixels = new Uint32Array(distortedData.data.buffer)
+  const map = getCrtDistortionMap()
+  for (let index = 0; index < map.length; index++) {
+    const sourceIndex = map[index]
+    if (sourceIndex === crtOutsideSource) {
+      distortedData.data[index * 4 + 3] = 255
+    } else {
+      distortedPixels[index] = sourcePixels[sourceIndex]
+    }
+  }
+  resizeWorkCanvas(crtDistortedCanvas, crtSourceWidth, crtSourceHeight)
   crtDistortedCanvas.getContext("2d")!.putImageData(distortedData, 0, 0)
   return crtDistortedCanvas
 }
@@ -646,49 +663,43 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
     processTextPage(ctx, hiddenContext, colorMode, width, height, true, foreground, background)
   }
 
-  // Build one framebuffer so screen and surround share the same distortion.
-  const nx = 560
-  const ny = 384
-  const hiddenData = hiddenContext.getImageData(0, 0, nx, ny)
+  const hiddenData = hiddenContext.getImageData(0, 0, crtSourceWidth, crtSourceHeight)
   replaceBlackPixels(hiddenData, background)
   hiddenContext.putImageData(hiddenData, 0, 0)
 
-  resizeWorkCanvas(crtCombinedCanvas, width, height)
-  const combinedContext = crtCombinedCanvas.getContext("2d", { willReadFrequently: true })!
-  combinedContext.clearRect(0, 0, width, height)
-  if (borderColor) {
-    combinedContext.fillStyle = borderColor
-    combinedContext.fillRect(0, 0, width, height)
-  }
-  combinedContext.imageSmoothingEnabled = true
-  combinedContext.imageSmoothingQuality = "high"
-  combinedContext.drawImage(hiddenContext.canvas, 0, 0, nx, ny,
-    xmargin * width, ymargin * height,
-    width * (1 - 2 * xmargin), height * (1 - 2 * ymargin))
+  const distorted = distortLayer(hiddenContext.canvas)
   if (getShowScanlines()) {
-    combinedContext.fillStyle = "rgba(0, 0, 0, 0.3)"
-    for (let y = 2; y < height; y += 4) combinedContext.fillRect(0, y, width, 2)
+    const distortedContext = distorted.getContext("2d")!
+    distortedContext.fillStyle = "rgba(0, 0, 0, 0.3)"
+    for (let y = 2; y < crtSourceHeight; y += 4) {
+      distortedContext.fillRect(0, y, crtSourceWidth, 2)
+    }
   }
 
-  const distorted = distortLayer(crtCombinedCanvas)
   const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC &&
     document.fullscreenElement === null && !isCanvasOnlyTheme()
-  if (hasClassicMonitorFrame && borderColor && !monitorOpeningMask) {
+  if (hasClassicMonitorFrame && !monitorOpeningMask) {
     loadMonitorOpeningMask()
     return
   }
+  paintScreenSurround(ctx, width, height, borderColor ?? background ?? "#000000", false)
+
+  const screenX = xmargin * width
+  const screenY = ymargin * height
+  const screenWidth = width * (1 - 2 * xmargin)
+  const screenHeight = height * (1 - 2 * ymargin)
   ctx.save()
   if (hasClassicMonitorFrame && monitorOpeningMask) {
     resizeWorkCanvas(crtClippedCanvas, width, height)
     const clippedContext = crtClippedCanvas.getContext("2d")!
     clippedContext.clearRect(0, 0, width, height)
-    clippedContext.drawImage(distorted, 0, 0)
+    clippedContext.drawImage(distorted, screenX, screenY, screenWidth, screenHeight)
     clippedContext.globalCompositeOperation = "destination-in"
     clippedContext.drawImage(monitorOpeningMask, 0, 0, width, height)
     clippedContext.globalCompositeOperation = "source-over"
     ctx.drawImage(crtClippedCanvas, 0, 0)
   } else {
-    ctx.drawImage(distorted, 0, 0)
+    ctx.drawImage(distorted, screenX, screenY, screenWidth, screenHeight)
   }
   ctx.restore()
 }
