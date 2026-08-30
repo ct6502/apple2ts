@@ -2819,7 +2819,7 @@ msgstr "Färg"
 
 msgctxt "retroControl.monitorMode"
 msgid "Monitor Mode"
-msgstr "Monitor Mode"
+msgstr "Bildskärmsläge"
 
 msgctxt "retroControl.monitorModeChoice.ntsc"
 msgid "NTSC"

@@ -2662,7 +2662,7 @@ msgstr "Anzeige"
 
 msgctxt "retroControl.monitorMode"
 msgid "Monitor Mode"
-msgstr "Monitor Mode"
+msgstr "Monitormodus"
 
 msgctxt "retroControl.monitorModeChoice.ntsc"
 msgid "NTSC"

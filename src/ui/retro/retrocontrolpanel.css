@@ -9,16 +9,15 @@
 }
 
 .retro-panel {
-  --retro-cell-width: min(calc(100vw / 40), calc(100vh * 7 / 192));
-  --retro-cell-height: calc(var(--retro-cell-width) * 8 / 7);
+  --retro-cell-width: 14px;
+  --retro-cell-height: 16px;
   --retro-row-height: var(--retro-cell-height);
+  --retro-scale: 1;
+  --retro-viewport-height: 384px;
+  --retro-viewport-width: 560px;
   --retro-background: #000;
   --retro-foreground: #fff;
   --retro-surround: #000;
-  --scanlines-height: 100%;
-  --scanlines-left: 0;
-  --scanlines-top: 0;
-  --scanlines-width: 100%;
   background: var(--retro-surround);
   color: var(--retro-foreground);
   display: grid;
@@ -65,23 +64,41 @@
   text-transform: uppercase;
 }
 
-.retro-panel.retro-effect-ghosting .retro-window {
-  text-shadow: 0.08em 0 color-mix(in srgb, var(--retro-foreground) 45%, transparent);
+.retro-panel.retro-canvas-pending,
+.retro-panel.retro-canvas-rendered {
+  background: transparent;
 }
 
-.retro-panel.retro-effect-crt .retro-window {
-  transform: perspective(100vh) rotateX(0.4deg) scale(0.985, 0.97);
+.retro-panel.retro-canvas-pending .retro-native-surface,
+.retro-panel.retro-canvas-rendered .retro-native-surface {
+  opacity: 0;
+}
+
+.retro-viewport {
+  align-self: center;
+  height: var(--retro-viewport-height);
+  justify-self: center;
+  position: relative;
+  width: var(--retro-viewport-width);
+}
+
+.retro-native-surface {
+  height: 384px;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform: scale(var(--retro-scale));
+  transform-origin: top left;
+  width: 560px;
 }
 
 .retro-window {
-  align-self: center;
   background: var(--retro-background);
   box-sizing: border-box;
   display: grid;
   grid-template-columns: repeat(40, var(--retro-cell-width));
   grid-template-rows: repeat(24, var(--retro-row-height));
   height: calc(24 * var(--retro-row-height));
-  justify-self: center;
   margin: 0;
   padding: 0;
   width: calc(40 * var(--retro-cell-width));

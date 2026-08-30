@@ -9,51 +9,39 @@ import PopupMenu from "../../controls/popupmenu"
 import { getMidiDeviceOptions, handleMidiDeviceSelect, isMidiDeviceSelected } from "./midiselect"
 
 import { useTranslation } from "../../../i18n/useTranslation"
-import { choiceMetadata } from "../../retro/retromenuhelpers"
 import type { RetroControlMetadata } from "../../retro/retromenucontext"
 import { audioEnable, getAudioStatus } from "./speaker"
 import { ControlRegistry } from "../../controls/controlregistry"
 import { controlsToPopupItems } from "../../controls/controlpopup"
 import { createControlContext } from "../../retro/retromenucontext"
+import { choiceBinding, controlsFromJson, type RetroControlBindings } from "../../retro/retrocontrolmetadata"
 
-export const retroAudioControls: RetroControlMetadata[] = [
-  {
-    id: "sound",
-    parentId: null,
-    order: 4,
-    label: context => context.t("retroControl.sound"),
+const audioBindings: RetroControlBindings = {
+  sound: {
     value: context => context.t(getAudioStatus() === "enabled" ? "messages.on" : "messages.off"),
   },
-  choiceMetadata({
-    id: "sound.enabled",
-    parentId: "sound",
-    order: 0,
-    label: context => context.t("retroControl.sound"),
-    labels: context => [context.t("messages.off"), context.t("messages.on")],
+  "sound.enabled": choiceBinding({
+    options: context => [
+      { label: context.t("messages.off") },
+      { label: context.t("messages.on") },
+    ],
     currentIndex: () => getAudioStatus() === "enabled" ? 1 : 0,
-    defaultIndex: 1,
     select: (context, index) => {
       audioEnable(index === 1)
       notifySettingsChanged(["sound.enabled"], context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
   }),
-  choiceMetadata({
-    id: "sound.mockingboard",
-    parentId: "sound",
-    order: 1,
-    label: context => context.t("audio.mockingboard"),
-    labels: () => MockingboardNames,
-    currentIndex: getMockingboardMode,
-    select: (context, index) => setPreferenceMockingboardMode(index, context.settingsOrigin),
+  "sound.mockingboard": {
+    ...choiceBinding({
+      options: () => MockingboardNames.map(label => ({ label })),
+      currentIndex: getMockingboardMode,
+      select: (context, index) => setPreferenceMockingboardMode(index, context.settingsOrigin),
+    }),
     defaultIndex: 0,
-  }),
-  choiceMetadata({
-    id: "sound.midi",
-    parentId: "sound",
-    order: 2,
-    label: context => context.t("audio.midi"),
-    labels: () => getMidiDeviceOptions().map(option => option.label),
+  },
+  "sound.midi": choiceBinding({
+    options: () => getMidiDeviceOptions().map(option => ({ label: option.label })),
     currentIndex: () => Math.max(0, getMidiDeviceOptions().findIndex(isMidiDeviceSelected)),
     select: (context, index) => {
       void handleMidiDeviceSelect(getMidiDeviceOptions()[index]).then(() => {
@@ -61,7 +49,9 @@ export const retroAudioControls: RetroControlMetadata[] = [
       })
     },
   }),
-]
+}
+
+export const retroAudioControls: RetroControlMetadata[] = controlsFromJson("audio", audioBindings)
 
 const audioControlRegistry = new ControlRegistry(retroAudioControls)
 

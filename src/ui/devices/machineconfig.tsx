@@ -8,11 +8,11 @@ import { useTranslation } from "../../i18n/useTranslation"
 import { DEFAULT_SLOT_CONFIG, RUN_MODE } from "../../common/utility"
 import { handleSetCPUState } from "../controller"
 import { isCanvasFullscreen, setCanvasFullscreen } from "../controls/fullscreenbutton"
-import { choiceMetadata } from "../retro/retromenuhelpers"
 import type { RetroControlMetadata, RetroMenuContext } from "../retro/retromenucontext"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "../controls/controlregistry"
 import { controlOptionsToPopupItems } from "../controls/controlpopup"
+import { choiceBinding, controlsFromJson, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
 export const RAM_OPTIONS = [64, 512, 1024, 4096, 8192] as const
 
@@ -96,80 +96,62 @@ const selectRetroSlotCard = (context: RetroMenuContext, slot: SlotNumber, option
   context.displayProps.updateDisplay()
 }
 
-export const retroMachineControls: RetroControlMetadata[] = [
-  {
-    id: "machine",
-    parentId: null,
-    order: 0,
-    tourTargets: ["#tour-maincontrols"],
-    label: context => context.t("retroControl.machine"),
-    actionLabel: context => context.t("retroControl.select"),
-  },
-  {
-    id: "machine.boot",
-    parentId: "machine",
-    order: 0,
-    tourTargets: ["#tour-boot-button"],
-    label: context => context.t("controls.boot"),
+const machineBindings: RetroControlBindings = {
+  "machine.boot": {
     action: context => {
       handleSetCPUState(RUN_MODE.NEED_BOOT)
       context.close()
     },
   },
-  {
-    id: "machine.reset",
-    parentId: "machine",
-    order: 1,
-    tourTargets: ["#tour-reset-button"],
-    label: context => context.t("controls.reset"),
+  "machine.reset": {
     action: context => {
       handleSetCPUState(RUN_MODE.NEED_RESET)
       context.close()
     },
   },
-  choiceMetadata({
-    id: "machine.fullscreen",
-    parentId: "display",
-    order: 4,
-    label: context => context.t("retroControl.fullscreen"),
-    labels: context => [context.t("messages.off"), context.t("messages.on")],
-    currentIndex: () => isCanvasFullscreen() ? 1 : 0,
-    select: (context, index) => setCanvasFullscreen(index === 1, context.settingsOrigin),
+  "machine.fullscreen": {
+    ...choiceBinding({
+      options: context => [
+        { label: context.t("messages.off") },
+        { label: context.t("messages.on") },
+      ],
+      currentIndex: () => isCanvasFullscreen() ? 1 : 0,
+      select: (context, index) => setCanvasFullscreen(index === 1, context.settingsOrigin),
+    }),
     defaultIndex: 0,
-  }),
-  {
-    id: "slots",
-    parentId: null,
-    order: 8,
-    label: context => context.t("retroControl.slots"),
+  },
+  slots: {
     value: context => context.t("retroControl.configured", {
       count: String(SLOT_NUMBERS.filter(slot => handleGetSlotConfig()[slot] !== "none").length),
     }),
   },
-  ...SLOT_NUMBERS.map((slot, index) => choiceMetadata({
-    id: `slots.${slot}`,
-    parentId: "slots",
-    order: index,
-    label: context => context.t("retroControl.slot", { slot: String(slot) }),
-    labels: context => getSlotOptions(slot, handleGetMachineName())
-      .map(option => getRetroSlotOptionLabel(context, option)),
-    currentIndex: () => {
-      const currentCard = handleGetSlotConfig()[slot]
-      const currentRamSize = handleGetMemSize()
-      return getSlotOptions(slot, handleGetMachineName()).findIndex(option =>
-        option.card === currentCard
-        && (option.card !== "aux" || option.ramSizeKb === currentRamSize))
-    },
-    select: (context, optionIndex) => {
-      selectRetroSlotCard(context, slot, getSlotOptions(slot, handleGetMachineName())[optionIndex])
-    },
-    defaultIndex: getSlotOptions(slot, handleGetMachineName()).findIndex(option =>
-      option.card === (slot === 3 && handleGetMachineName() === "APPLE2P"
-        ? "videoterm"
-        : DEFAULT_SLOT_CONFIG[slot])
-      && (option.card !== "aux" || option.ramSizeKb === 64)),
-  })),
-]
+  ...Object.fromEntries(SLOT_NUMBERS.map(slot => [
+    `slots.${slot}`,
+    {
+      ...choiceBinding({
+        options: context => getSlotOptions(slot, handleGetMachineName())
+          .map(option => ({ label: getRetroSlotOptionLabel(context, option) })),
+        currentIndex: () => {
+          const currentCard = handleGetSlotConfig()[slot]
+          const currentRamSize = handleGetMemSize()
+          return getSlotOptions(slot, handleGetMachineName()).findIndex(option =>
+            option.card === currentCard
+            && (option.card !== "aux" || option.ramSizeKb === currentRamSize))
+        },
+        select: (context, optionIndex) => {
+          selectRetroSlotCard(context, slot, getSlotOptions(slot, handleGetMachineName())[optionIndex])
+        },
+      }),
+      defaultIndex: () => getSlotOptions(slot, handleGetMachineName()).findIndex(option =>
+        option.card === (slot === 3 && handleGetMachineName() === "APPLE2P"
+          ? "videoterm"
+          : DEFAULT_SLOT_CONFIG[slot])
+        && (option.card !== "aux" || option.ramSizeKb === 64)),
+    } satisfies Partial<RetroControlMetadata>,
+  ])),
+}
+
+export const retroMachineControls: RetroControlMetadata[] = controlsFromJson("machine", machineBindings)
 
 const machineControlRegistry = new ControlRegistry(retroMachineControls)
 

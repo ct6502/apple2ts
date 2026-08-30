@@ -9,8 +9,16 @@ import {
   loadDemoZooSnapshot,
   type DemoZooItem,
 } from "./demozoodialog"
+import { controlFromJson, type RetroControlBindings } from "../../retro/retrocontrolmetadata"
 
 const PAGE_SIZE = 50
+
+const demoZooTemplateBindings: RetroControlBindings = {
+  "diskDrives.demoZoo.type": { label: (): string => "Type" },
+  "diskDrives.demoZoo.title": { label: (): string => "Title" },
+  "diskDrives.demoZoo.resultsSeparator": { label: (): string => "Results" },
+  "diskDrives.demoZoo.result": { label: (): string => "" },
+}
 
 type DemoZooRetroState = {
   items: DemoZooItem[]
@@ -38,15 +46,13 @@ const buildItems = (context: RetroMenuContext, driveIndex: number, state: DemoZo
   const type = demoZooTypeFilters[state.typeIndex].id
   const results = filterDemoZooItems(state.items, type, state.query)
   const visibleResults = results.slice(0, state.page * PAGE_SIZE)
+  const typeBase = controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.demoZoo.type", demoZooTemplateBindings, { driveIndex })
+  const titleBase = controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.demoZoo.title", demoZooTemplateBindings, { driveIndex })
   const controls: RetroControlMetadata[] = [
     {
-      id: `diskDrives.${driveIndex}.demoZoo.type`,
-      kind: "action",
-      label: "Type",
+      ...typeBase,
       options: demoZooTypeFilters.map(filter => ({ label: context.t(filter.labelKey) })),
       optionIndex: state.typeIndex,
-      keepMenuOpen: true,
-      refreshAfterAction: true,
       action: async () => { await ensureItems(state) },
       refreshOptions: (runtime, index) => {
         state.typeIndex = index
@@ -55,13 +61,8 @@ const buildItems = (context: RetroMenuContext, driveIndex: number, state: DemoZo
       },
     },
     {
-      id: `diskDrives.${driveIndex}.demoZoo.title`,
-      kind: "action",
-      label: "Title",
-      textInput: true,
+      ...titleBase,
       textValue: state.query,
-      keepMenuOpen: true,
-      refreshAfterAction: true,
       onTextInput: (runtime, value) => {
         state.query = value
         state.page = 1
@@ -72,21 +73,17 @@ const buildItems = (context: RetroMenuContext, driveIndex: number, state: DemoZo
   ]
 
   if (visibleResults.length === 0) return controls
-  controls.push({
-    id: `diskDrives.${driveIndex}.demoZoo.resultsSeparator`,
-    label: "Results",
-    separator: true,
-    selectable: false,
-  })
+  const resultsSepBase = controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.demoZoo.resultsSeparator", demoZooTemplateBindings, { driveIndex })
+  controls.push(resultsSepBase)
+  const resultBase = controlFromJson("diskTemplates", "diskDrives.demoZoo.result", demoZooTemplateBindings)
   visibleResults.forEach((item, index) => {
     const itemId = `demozoo_${item.id}`
     const isLast = index === visibleResults.length - 1
     controls.push({
+      ...resultBase,
       id: `diskDrives.${driveIndex}.demoZoo.result.${item.id}`,
       label: item.title,
       indicator: context.diskBookmarks?.contains(itemId) ? "*" : undefined,
-      contextualActionLabel: "Load",
-      keepMenuOpen: true,
       onHorizontalInput: (runtime, direction) => {
         if (!runtime.diskBookmarks) return
         if (direction < 0) runtime.diskBookmarks.remove(itemId)
@@ -125,11 +122,14 @@ const buildItems = (context: RetroMenuContext, driveIndex: number, state: DemoZo
 
 export const createRetroDemoZooControl = (driveIndex: number): RetroControlMetadata => {
   let state = initialState()
+  const template = controlFromJson(
+    "diskTemplates",
+    "diskDrives.{{driveIndex}}.load.demoZoo",
+    {},
+    { driveIndex },
+  )
   return {
-    id: `diskDrives.${driveIndex}.load.demoZoo`,
-    label: context => context.t("disk.loadDiskFromDemoZoo"),
-    submenuTitle: "DemoZoo",
-    actionLabel: "Search",
+    ...template,
     dynamicChildren: (context, items) => {
       if (items === undefined) state = initialState()
       return buildItems(context, driveIndex, state)

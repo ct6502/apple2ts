@@ -13,19 +13,14 @@ import type { RetroControlMetadata, RetroMenuContext } from "./retromenucontext"
 import { retroSkinColorControls, retroSkinControl, retroSkinSeparator } from "./retroskincontrol"
 import { retroGamepadControls } from "../devices/gamepadconfig"
 import { retroImageWriterControls } from "../devices/printer/imagewriter"
+import { retroPanelControls } from "./retrocontrolmetadata"
 
 const menuControls: RetroControlMetadata[] = [
   ...retroMachineControls,
   ...retroDiskControls,
   ...retroDisplayControls,
   ...retroAudioControls,
-  {
-    id: "options",
-    parentId: null,
-    order: 8.5,
-    tourTargets: ["#tour-configbuttons"],
-    label: context => context.t("retroControl.options"),
-  },
+  ...retroPanelControls,
   retroSpeedControl,
   ...retroConfigControls,
   ...retroGamepadControls,
@@ -34,24 +29,9 @@ const menuControls: RetroControlMetadata[] = [
   retroSkinControl,
   ...retroSkinColorControls,
   ...createRetroLanguageControls(),
-  {
-    id: "options.other",
-    parentId: "options",
-    order: 1000,
-    label: context => context.t("retroControl.other"),
-    separator: true,
-    selectable: false,
-  },
   ...retroStateControls,
   ...retroDebugControls,
   ...retroSerialControls,
-  {
-    id: "quit",
-    parentId: null,
-    order: 10,
-    label: context => context.t("retroControl.quit"),
-    action: context => context.close(),
-  },
 ]
 
 export const retroMenuRegistry = new ControlRegistry<RetroMenuContext>(menuControls)

@@ -11,7 +11,7 @@ import {
   setPreferenceRetroIIGSColor,
   setPreferenceRetroSkin,
 } from "../localstorage"
-import { getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isMinimalTheme } from "../ui_settings"
+import { getColorMode, getGhosting, getShowScanlines, getTheme, isMinimalTheme } from "../ui_settings"
 import { retroMenuRegistry } from "./retromenucomposition"
 import type { DiskLoadDialog, RetroMenuContext } from "./retromenucontext"
 import { useGlobalContext } from "../globalcontext"
@@ -130,11 +130,9 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
   }
   const rootMenu = retroMenuRegistry.resolve(context)
   const resolveMenu = (parentId: string) => retroMenuRegistry.resolve(context, parentId)
-  const effects = [
+  const panelClasses = [
     `retro-color-${colorModeClasses[getColorMode()]}`,
     `retro-skin-${retroSkinClasses[retroSkin]}`,
-    ghosting ? "retro-effect-ghosting" : "",
-    getCrtDistortion() ? "retro-effect-crt" : "",
   ].filter(Boolean).join(" ")
   const iigsStyle = retroSkin === RETRO_SKIN.APPLE_IIGS
     ? {
@@ -164,7 +162,7 @@ export const useRetroMenuHost = (displayProps: DisplayProps, close: () => void) 
     dialogs,
     diskBookmarks,
     diskCollection,
-    effects,
+    panelClasses,
     hasOpenDialog: diskLoadDialog !== null,
     iigsStyle,
     language,

@@ -14,6 +14,8 @@ import { getPreferenceRetroIIGSColor, getPreferenceRetroSkin, RETRO_SKIN } from 
 import { RETRO_IIGS_COLORS } from "./retro/retroskincolors"
 import { UI_THEME } from "../common/utility"
 let frameCount = 0
+let displayOverride: HTMLCanvasElement | null = null
+let displayOverrideRevision = 0
 
 export const nRowsHgrMagnifier = 16
 export const nColsHgrMagnifier = 2
@@ -22,6 +24,11 @@ export let ymargin = 0
 
 const doBlurring = () => {
   return getMonitorMode() !== MONITOR_MODE.RGB
+}
+
+export const setDisplayOverride = (canvas: HTMLCanvasElement | null) => {
+  displayOverride = canvas
+  displayOverrideRevision++
 }
 
 // Convert canvas coordinates (absolute to the entire browser window)
@@ -520,10 +527,19 @@ const replaceBlackPixels = (image: ImageData, background: string | null) => {
 let monitorOpeningMask: HTMLImageElement | null = null
 let monitorOpeningMaskLoading = false
 let surroundLayerCache: { key: string, canvas: HTMLCanvasElement } | null = null
-const crtCombinedCanvas = document.createElement("canvas")
 const crtDistortedCanvas = document.createElement("canvas")
 const crtClippedCanvas = document.createElement("canvas")
+const crtOverrideFrameCanvas = document.createElement("canvas")
 const scanlineCanvas = document.createElement("canvas")
+const crtSourceWidth = 560
+const crtSourceHeight = 384
+const crtOutsideSource = 0xFFFFFFFF
+let crtDistortionMap: Uint32Array | null = null
+let crtDistortionWeightX: Uint16Array | null = null
+let crtDistortionWeightY: Uint16Array | null = null
+let crtDistortionEdgeSource: Uint32Array | null = null
+let crtDistortionEdgeWeight: Uint16Array | null = null
+let crtOverrideFrameCacheKey = ""
 
 const resizeWorkCanvas = (canvas: HTMLCanvasElement, width: number, height: number) => {
   if (canvas.width !== width) canvas.width = width
@@ -541,30 +557,104 @@ const loadMonitorOpeningMask = () => {
   image.src = window.assetRegistry.monitorOpeningMask
 }
 
-const distortLayer = (source: HTMLCanvasElement) => {
-  const sourceContext = source.getContext("2d", { willReadFrequently: true })!
-  const sourceData = sourceContext.getImageData(0, 0, source.width, source.height)
-  const distortedData = sourceContext.createImageData(source.width, source.height)
-  const centerX = source.width / 2
-  const centerY = source.height / 2
-  for (let y = 0; y < source.height; y++) {
-    for (let x = 0; x < source.width; x++) {
-      const normalizedX = (x - centerX) / centerX
-      const normalizedY = (y - centerY) / centerY
-      const distance = normalizedX * normalizedX + normalizedY * normalizedY
-      const sourceX = Math.max(0, Math.min(source.width - 1,
-        Math.round(centerX + normalizedX * centerX * (1 + 0.015 * distance))))
-      const sourceY = Math.max(0, Math.min(source.height - 1,
-        Math.round(centerY + normalizedY * centerY * (1 + 0.04 * distance))))
-      const sourceOffset = 4 * (sourceY * source.width + sourceX)
-      const destinationOffset = 4 * (y * source.width + x)
-      distortedData.data[destinationOffset] = sourceData.data[sourceOffset]
-      distortedData.data[destinationOffset + 1] = sourceData.data[sourceOffset + 1]
-      distortedData.data[destinationOffset + 2] = sourceData.data[sourceOffset + 2]
-      distortedData.data[destinationOffset + 3] = sourceData.data[sourceOffset + 3]
+const getCrtDistortionMap = () => {
+  if (crtDistortionMap && crtDistortionWeightX && crtDistortionWeightY &&
+    crtDistortionEdgeSource && crtDistortionEdgeWeight) {
+    return {
+      map: crtDistortionMap,
+      weightX: crtDistortionWeightX,
+      weightY: crtDistortionWeightY,
+      edgeSource: crtDistortionEdgeSource,
+      edgeWeight: crtDistortionEdgeWeight,
     }
   }
-  resizeWorkCanvas(crtDistortedCanvas, source.width, source.height)
+  const map = new Uint32Array(crtSourceWidth * crtSourceHeight)
+  const weightX = new Uint16Array(map.length)
+  const weightY = new Uint16Array(map.length)
+  const edgeSource = new Uint32Array(map.length)
+  const edgeWeight = new Uint16Array(map.length)
+  const centerX = crtSourceWidth / 2
+  const centerY = crtSourceHeight / 2
+  for (let y = 0; y < crtSourceHeight; y++) {
+    const normalizedY = (y - centerY) / centerY
+    for (let x = 0; x < crtSourceWidth; x++) {
+      const normalizedX = (x - centerX) / centerX
+      const distance = normalizedX * normalizedX + normalizedY * normalizedY
+      const sourceX = centerX + normalizedX * centerX * (1 + 0.015 * distance)
+      const sourceY = centerY + normalizedY * centerY * (1 + 0.04 * distance)
+      const index = y * crtSourceWidth + x
+      if (sourceX < 0 || sourceX >= crtSourceWidth || sourceY < 0 || sourceY >= crtSourceHeight) {
+        map[index] = crtOutsideSource
+        const edgeX = Math.max(0, Math.min(crtSourceWidth - 1, Math.round(sourceX)))
+        const edgeY = Math.max(0, Math.min(crtSourceHeight - 1, Math.round(sourceY)))
+        const coverageX = sourceX < 0
+          ? Math.max(0, sourceX + 1)
+          : sourceX >= crtSourceWidth ? Math.max(0, crtSourceWidth - sourceX) : 1
+        const coverageY = sourceY < 0
+          ? Math.max(0, sourceY + 1)
+          : sourceY >= crtSourceHeight ? Math.max(0, crtSourceHeight - sourceY) : 1
+        edgeSource[index] = edgeY * crtSourceWidth + edgeX
+        edgeWeight[index] = Math.round(coverageX * coverageY * 256)
+      } else {
+        const sourceFloorX = Math.floor(sourceX)
+        const sourceFloorY = Math.floor(sourceY)
+        const sourceBaseX = Math.min(sourceFloorX, crtSourceWidth - 2)
+        const sourceBaseY = Math.min(sourceFloorY, crtSourceHeight - 2)
+        map[index] = sourceBaseY * crtSourceWidth + sourceBaseX
+        weightX[index] = sourceFloorX === crtSourceWidth - 1
+          ? 256
+          : Math.round((sourceX - sourceFloorX) * 256)
+        weightY[index] = sourceFloorY === crtSourceHeight - 1
+          ? 256
+          : Math.round((sourceY - sourceFloorY) * 256)
+      }
+    }
+  }
+  crtDistortionMap = map
+  crtDistortionWeightX = weightX
+  crtDistortionWeightY = weightY
+  crtDistortionEdgeSource = edgeSource
+  crtDistortionEdgeWeight = edgeWeight
+  return { map, weightX, weightY, edgeSource, edgeWeight }
+}
+
+const blendPixels = (first: number, second: number, weight: number) => {
+  const redBlue = ((first & 0x00FF00FF) +
+    ((((second & 0x00FF00FF) - (first & 0x00FF00FF)) * weight) >> 8)) & 0x00FF00FF
+  const green = ((first & 0x0000FF00) +
+    ((((second & 0x0000FF00) - (first & 0x0000FF00)) * weight) >> 8)) & 0x0000FF00
+  return (0xFF000000 | redBlue | green) >>> 0
+}
+
+const distortLayer = (source: HTMLCanvasElement, outsideColor: string | null) => {
+  const sourceContext = source.getContext("2d", { willReadFrequently: true })!
+  const sourceData = sourceContext.getImageData(0, 0, crtSourceWidth, crtSourceHeight)
+  const distortedData = sourceContext.createImageData(crtSourceWidth, crtSourceHeight)
+  const sourcePixels = new Uint32Array(sourceData.data.buffer)
+  const distortedPixels = new Uint32Array(distortedData.data.buffer)
+  const { map, weightX, weightY, edgeSource, edgeWeight } = getCrtDistortionMap()
+  const [outsideRed, outsideGreen, outsideBlue] =
+    outsideColor?.match(/\d+/g)?.map(Number) ?? [0, 0, 0]
+  const outsidePixel = (0xFF000000 | outsideBlue << 16 |
+    outsideGreen << 8 | outsideRed) >>> 0
+  for (let index = 0; index < map.length; index++) {
+    const sourceIndex = map[index]
+    if (sourceIndex === crtOutsideSource) {
+      distortedPixels[index] = blendPixels(
+        outsidePixel,
+        sourcePixels[edgeSource[index]],
+        edgeWeight[index],
+      )
+    } else {
+      const xWeight = weightX[index]
+      const yWeight = weightY[index]
+      const lowerIndex = sourceIndex + crtSourceWidth
+      const top = blendPixels(sourcePixels[sourceIndex], sourcePixels[sourceIndex + 1], xWeight)
+      const bottom = blendPixels(sourcePixels[lowerIndex], sourcePixels[lowerIndex + 1], xWeight)
+      distortedPixels[index] = blendPixels(top, bottom, yWeight)
+    }
+  }
+  resizeWorkCanvas(crtDistortedCanvas, crtSourceWidth, crtSourceHeight)
   crtDistortedCanvas.getContext("2d")!.putImageData(distortedData, 0, 0)
   return crtDistortedCanvas
 }
@@ -634,55 +724,57 @@ const paintIIGSScanlines = (ctx: CanvasRenderingContext2D, width: number, height
 const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE, width: number, height: number,
-  foreground: string | null, background: string | null, borderColor: string | null) => {
+  foreground: string | null, background: string | null, borderColor: string | null,
+  renderText = true) => {
   // Draw text before distortion
-  processTextPage(ctx, hiddenContext, colorMode, width, height, true, foreground, background)
+  if (renderText) {
+    processTextPage(ctx, hiddenContext, colorMode, width, height, true, foreground, background)
+  }
 
-  // Build one framebuffer so screen and surround share the same distortion.
-  const nx = 560
-  const ny = 384
-  const hiddenData = hiddenContext.getImageData(0, 0, nx, ny)
+  const hiddenData = hiddenContext.getImageData(0, 0, crtSourceWidth, crtSourceHeight)
   replaceBlackPixels(hiddenData, background)
   hiddenContext.putImageData(hiddenData, 0, 0)
 
-  resizeWorkCanvas(crtCombinedCanvas, width, height)
-  const combinedContext = crtCombinedCanvas.getContext("2d")!
-  combinedContext.clearRect(0, 0, width, height)
-  if (borderColor) {
-    combinedContext.fillStyle = borderColor
-    combinedContext.fillRect(0, 0, width, height)
-  }
-  combinedContext.imageSmoothingEnabled = true
-  combinedContext.imageSmoothingQuality = "high"
-  combinedContext.drawImage(hiddenContext.canvas, 0, 0, nx, ny,
-    xmargin * width, ymargin * height,
-    width * (1 - 2 * xmargin), height * (1 - 2 * ymargin))
-  if (getShowScanlines()) {
-    combinedContext.fillStyle = "rgba(0, 0, 0, 0.3)"
-    for (let y = 2; y < height; y += 4) combinedContext.fillRect(0, y, width, 2)
+  const distorted = distortLayer(hiddenContext.canvas, borderColor ?? background)
+  const applyEffectsToSurround = borderColor !== null
+  if (getShowScanlines() && !applyEffectsToSurround) {
+    const distortedContext = distorted.getContext("2d")!
+    distortedContext.fillStyle = "rgba(0, 0, 0, 0.3)"
+    for (let y = 2; y < crtSourceHeight; y += 4) {
+      distortedContext.fillRect(0, y, crtSourceWidth, 2)
+    }
   }
 
-  const distorted = distortLayer(crtCombinedCanvas)
   const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC &&
     document.fullscreenElement === null && !isCanvasOnlyTheme()
-  if (hasClassicMonitorFrame && borderColor && !monitorOpeningMask) {
+  if (hasClassicMonitorFrame && !monitorOpeningMask) {
     loadMonitorOpeningMask()
-    return
+    return false
   }
+  paintScreenSurround(ctx, width, height, borderColor ?? background ?? "#000000", false)
+
+  const screenX = xmargin * width
+  const screenY = ymargin * height
+  const screenWidth = width * (1 - 2 * xmargin)
+  const screenHeight = height * (1 - 2 * ymargin)
   ctx.save()
   if (hasClassicMonitorFrame && monitorOpeningMask) {
     resizeWorkCanvas(crtClippedCanvas, width, height)
     const clippedContext = crtClippedCanvas.getContext("2d")!
     clippedContext.clearRect(0, 0, width, height)
-    clippedContext.drawImage(distorted, 0, 0)
+    clippedContext.drawImage(distorted, screenX, screenY, screenWidth, screenHeight)
     clippedContext.globalCompositeOperation = "destination-in"
     clippedContext.drawImage(monitorOpeningMask, 0, 0, width, height)
     clippedContext.globalCompositeOperation = "source-over"
     ctx.drawImage(crtClippedCanvas, 0, 0)
   } else {
-    ctx.drawImage(distorted, 0, 0)
+    ctx.drawImage(distorted, screenX, screenY, screenWidth, screenHeight)
   }
   ctx.restore()
+  if (getShowScanlines() && applyEffectsToSurround) {
+    paintIIGSScanlines(ctx, width, height)
+  }
+  return true
 }
 
 const shrRgbaBuffer = new Uint8ClampedArray(560 * 384 * 4)
@@ -838,8 +930,77 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     )
   }
 
+  let overrideFrameKey = ""
+  if (displayOverride) {
+    if (crtDistortion) {
+      overrideFrameKey = [
+        displayOverrideRevision,
+        width,
+        height,
+        xmargin,
+        ymargin,
+        colorMode,
+        getMonitorMode(),
+        foreground,
+        effectBackground,
+        borderColor,
+        getShowScanlines(),
+        getTheme(),
+        document.fullscreenElement !== null,
+        isCanvasOnlyTheme(),
+      ].join(":")
+      if (crtOverrideFrameCacheKey === overrideFrameKey) {
+        ctx.drawImage(crtOverrideFrameCanvas, 0, 0)
+        return
+      }
+    }
+    if (!crtDistortion && (displayOverride.width !== 560 || displayOverride.height !== 384)) {
+      const imageWidth = Math.floor(width * (1 - 2 * xmargin))
+      const imageHeight = Math.floor(height * (1 - 2 * ymargin))
+      ctx.drawImage(
+        displayOverride,
+        xmargin * width,
+        ymargin * height,
+        imageWidth,
+        imageHeight,
+      )
+      if (iigsSkin && getShowScanlines()) paintIIGSScanlines(ctx, width, height)
+      return
+    }
+  }
+
   hiddenContext.fillStyle = effectBackground ?? "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
+
+  if (displayOverride) {
+    hiddenContext.drawImage(displayOverride, 0, 0, 560, 384)
+    if (crtDistortion) {
+      resizeWorkCanvas(crtOverrideFrameCanvas, width, height)
+      const overrideContext = crtOverrideFrameCanvas.getContext("2d")!
+      overrideContext.imageSmoothingEnabled = ctx.imageSmoothingEnabled
+      overrideContext.imageSmoothingQuality = ctx.imageSmoothingQuality
+      overrideContext.clearRect(0, 0, width, height)
+      const rendered = applyCrtDistortion(
+        overrideContext,
+        hiddenContext,
+        colorMode,
+        width,
+        height,
+        foreground,
+        effectBackground,
+        borderColor,
+        false,
+      )
+      if (rendered) {
+        crtOverrideFrameCacheKey = overrideFrameKey
+        ctx.drawImage(crtOverrideFrameCanvas, 0, 0)
+      }
+    } else {
+      drawImage(ctx, hiddenContext, width, height)
+      if (iigsSkin && getShowScanlines()) paintIIGSScanlines(ctx, width, height)
+    }
+    return
+  }
 
   if (effectBackground) {
     const hiddenData = hiddenContext.getImageData(0, 0, 560, 384)
@@ -866,9 +1027,6 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     // The hidden canvas was causing overlay issues with the text page.
     // So instead, draw the graphics first and then overlay the text chars.
     if (!isVidhdActive) {
-      if (iigsSkin && !crtDistortion && getShowScanlines()) {
-        paintIIGSScanlines(ctx, width, height)
-      }
       processTextPage(ctx, hiddenContext, colorMode, width, height, false, foreground, effectBackground)
       // If we are doing regular NTSC color, then we need to draw the text again.
       // This will cause a subtle smoothing.

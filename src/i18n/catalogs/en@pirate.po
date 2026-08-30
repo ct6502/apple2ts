@@ -2649,7 +2649,7 @@ msgstr "Colour"
 
 msgctxt "retroControl.monitorMode"
 msgid "Monitor Mode"
-msgstr "Monitor Mode"
+msgstr "Spyglass Mode"
 
 msgctxt "retroControl.monitorModeChoice.ntsc"
 msgid "NTSC"

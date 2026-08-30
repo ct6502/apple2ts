@@ -10,12 +10,11 @@ import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions"
 import PopupMenu from "../controls/popupmenu"
 import { getColorMode, getCrtDistortion, getGhosting, getMonitorMode, getShowScanlines, setMonitorMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
-import { choiceMetadata, toggleMetadata } from "../retro/retromenuhelpers"
-import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { setColorMode, setUIStateBoolean } from "../ui_settings"
 import { ControlRegistry } from "../controls/controlregistry"
 import { controlOptionsToPopupItems, controlsToPopupItems } from "../controls/controlpopup"
 import { createControlContext } from "../retro/retromenucontext"
+import { choiceBinding, controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 import { toggleScanlines } from "../ui_utilities"
 
 const COLOR_MODES = Object.values(COLOR_MODE).filter(
@@ -40,20 +39,12 @@ const monitorModeLabels = (t: (key: string) => string) => [
   t("retroControl.monitorModeChoice.rgb"),
 ]
 
-export const retroDisplayControls: RetroControlMetadata[] = [
-  {
-    id: "display",
-    parentId: null,
-    order: 3,
-    label: context => context.t("retroControl.display"),
+const displayBindings: RetroControlBindings = {
+  display: {
     value: context => colorLabels(context.t)[getColorMode()],
   },
-  choiceMetadata({
-    id: "display.color",
-    parentId: "display",
-    order: 0,
-    label: context => context.t("retroControl.color"),
-    labels: context => colorLabels(context.t),
+  "display.color": choiceBinding({
+    options: context => colorLabels(context.t).map(label => ({ label })),
     currentIndex: getColorMode,
     select: (context, index) => {
       setPreferenceColorMode(COLOR_MODES[index], context.settingsOrigin)
@@ -63,14 +54,9 @@ export const retroDisplayControls: RetroControlMetadata[] = [
       setColorMode(COLOR_MODES[index])
       context.displayProps.updateDisplay()
     },
-    defaultIndex: COLOR_MODE.COLOR,
   }),
-  choiceMetadata({
-    id: "display.monitorMode",
-    parentId: "display",
-    order: 0,
-    label: context => context.t("retroControl.monitorMode"),
-    labels: context => monitorModeLabels(context.t),
+  "display.monitorMode": choiceBinding({
+    options: context => monitorModeLabels(context.t).map(label => ({ label })),
     currentIndex: getMonitorMode,
     select: (context, index) => {
       setPreferenceMonitorMode(MONITOR_MODES[index])
@@ -80,17 +66,12 @@ export const retroDisplayControls: RetroControlMetadata[] = [
       setMonitorMode(MONITOR_MODES[index])
       context.displayProps.updateDisplay()
     },
-    defaultIndex: MONITOR_MODE.NTSC,
   }),
-  ...([
-    ["display.scanlines", "config.scanlines", "showScanlines", getShowScanlines],
-    ["display.ghosting", "config.ghosting", "ghosting", getGhosting],
-    ["display.crtDistortion", "config.crtDistortion", "crtDistortion", getCrtDistortion],
-  ] as const).map(([id, labelKey, preference, getter], index) => toggleMetadata({
-    id,
-    parentId: "display",
-    order: index + 1,
-    label: context => context.t(labelKey),
+  ...Object.fromEntries(([
+    ["display.scanlines", "showScanlines", getShowScanlines],
+    ["display.ghosting", "ghosting", getGhosting],
+    ["display.crtDistortion", "crtDistortion", getCrtDistortion],
+  ] as const).map(([id, preference, getter]) => [id, toggleBinding({
     enabled: getter,
     setEnabled: (context, enabled) => {
       setPreferenceBoolean(preference, enabled, context.settingsOrigin)
@@ -106,8 +87,10 @@ export const retroDisplayControls: RetroControlMetadata[] = [
       }
       context.displayProps.updateDisplay()
     },
-  })),
-]
+  })])),
+}
+
+export const retroDisplayControls = controlsFromJson("display", displayBindings)
 
 const displayControlRegistry = new ControlRegistry(retroDisplayControls)
 

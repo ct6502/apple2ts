@@ -2643,7 +2643,7 @@ msgstr "Tela"
 
 msgctxt "retroControl.monitorMode"
 msgid "Monitor Mode"
-msgstr "Monitor Mode"
+msgstr "Modo do monitor"
 
 msgctxt "retroControl.monitorModeChoice.ntsc"
 msgid "NTSC"

@@ -4,6 +4,12 @@ jest.mock("./diskdrive", () => ({
   loadDiskFromCloudDrive: (...args: unknown[]) => mockLoadDiskFromCloudDrive(...args),
 }))
 jest.mock("./googledrive", () => ({ GoogleDrive: jest.fn() }))
+jest.mock("../../retro/retrocontrolmetadata", () => ({
+  controlFromJson: jest.fn(() => ({
+    id: "diskDrives.2.load.googleDrive",
+    label: "Google Drive",
+  })),
+}))
 
 import { ControlRegistry } from "../../controls/controlregistry"
 import { createControlContext } from "../../retro/retromenucontext"
