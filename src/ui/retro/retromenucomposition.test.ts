@@ -426,11 +426,11 @@ describe("Retro menu metadata structure", () => {
     values[items.findIndex(item => item.payload === localDisk)] = 1
     expect(getRetroExportHdvSize(items, values)).toBe("140 KB / 32 MB")
     values[items.findIndex(item => item.payload === cloudDisk)] = 1
-    expect(getRetroExportHdvSize(items, values)).toBe("1.14 MB / 32 MB")
+    expect(getRetroExportHdvSize(items, values)).toBe("1.1 MB / 32 MB")
 
     const exportTab = retroMenuRegistry.resolve(context, "diskCollection")
       .find(control => control.id === "diskCollection.export")
-    expect(exportTab?.submenuTitleValue?.(items, values)).toBe("1.14 MB / 32 MB")
+    expect(exportTab?.submenuTitleValue?.(items, values)).toBe("1.1 MB / 32 MB")
   })
 
   test("shows the active VTOC spinner and leaves other unresolved disks as unknown", () => {

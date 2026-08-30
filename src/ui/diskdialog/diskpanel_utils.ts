@@ -284,7 +284,7 @@ const maxHdvBytes = 33554432
 
 export const formatBytes = (bytes: number) => bytes < 1024 * 1024
   ? `${parseFloat((bytes / 1024).toFixed(0))} KB`
-  : `${parseFloat((bytes / (1024 * 1024)).toFixed(2))} MB`
+  : `${parseFloat((bytes / (1024 * 1024)).toFixed(1))} MB`
 
 export const isDiskExportable = (disk: DiskCollectionItem) => {
   // A disk explicitly flagged exportDisabled is never exportable (e.g. whole-volume
