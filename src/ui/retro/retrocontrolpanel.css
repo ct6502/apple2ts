@@ -9,9 +9,12 @@
 }
 
 .retro-panel {
-  --retro-cell-width: min(calc(100vw / 40), calc(100vh * 7 / 192));
-  --retro-cell-height: calc(var(--retro-cell-width) * 8 / 7);
+  --retro-cell-width: 14px;
+  --retro-cell-height: 16px;
   --retro-row-height: var(--retro-cell-height);
+  --retro-scale: 1;
+  --retro-viewport-height: 384px;
+  --retro-viewport-width: 560px;
   --retro-background: #000;
   --retro-foreground: #fff;
   --retro-surround: #000;
@@ -66,10 +69,10 @@
 }
 
 .retro-panel.retro-monitor-ntsc {
-  --retro-ntsc-blur: clamp(0.45px, calc(var(--retro-cell-width) / 16), 0.7px);
+  --retro-ntsc-blur: 0.7px;
 }
 
-.retro-panel.retro-monitor-ntsc .retro-window {
+.retro-panel.retro-monitor-ntsc .retro-viewport {
   filter: blur(var(--retro-ntsc-blur));
 }
 
@@ -81,15 +84,31 @@
   transform: perspective(100vh) rotateX(0.4deg) scale(0.985, 0.97);
 }
 
-.retro-window {
+.retro-viewport {
   align-self: center;
+  height: var(--retro-viewport-height);
+  justify-self: center;
+  position: relative;
+  width: var(--retro-viewport-width);
+}
+
+.retro-native-surface {
+  height: 384px;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform: scale(var(--retro-scale));
+  transform-origin: top left;
+  width: 560px;
+}
+
+.retro-window {
   background: var(--retro-background);
   box-sizing: border-box;
   display: grid;
   grid-template-columns: repeat(40, var(--retro-cell-width));
   grid-template-rows: repeat(24, var(--retro-row-height));
   height: calc(24 * var(--retro-row-height));
-  justify-self: center;
   margin: 0;
   padding: 0;
   width: calc(40 * var(--retro-cell-width));

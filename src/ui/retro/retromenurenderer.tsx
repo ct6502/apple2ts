@@ -69,6 +69,8 @@ const rightBorderGlyph = String.fromCodePoint(0xE09A)
 const rootMenuContentWidth = 30
 const submenuTextWidth = 31
 const submenuTitleContentWidth = 34
+const retroNativeWidth = 560
+const retroNativeHeight = 384
 
 const RetroVtocIndicator = ({
   active,
@@ -418,14 +420,19 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       width: canvasBounds.width,
     }
     : undefined
+  const retroScale = panelBounds
+    ? Math.min(
+      panelBounds.width * (1 - 2 * xmargin) / retroNativeWidth,
+      panelBounds.height * (1 - 2 * ymargin) / retroNativeHeight,
+    )
+    : 1
   const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC && document.fullscreenElement === null
   const panelStyle = panelBounds
     ? {
       ...iigsStyle,
-      "--retro-cell-width": `${Math.min(
-        panelBounds.width * (1 - 2 * xmargin) / 40,
-        panelBounds.height * (1 - 2 * ymargin) * 7 / (24 * 8),
-      )}px`,
+      "--retro-scale": retroScale,
+      "--retro-viewport-height": `${retroNativeHeight * retroScale}px`,
+      "--retro-viewport-width": `${retroNativeWidth * retroScale}px`,
       ...(hasClassicMonitorFrame
         ? {
           WebkitMaskImage: `url(${window.assetRegistry.monitorOpeningMask})`,
@@ -873,7 +880,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         aria-label={t("retroControl.ariaLabel")}
         onContextMenu={event => event.preventDefault()}
       >
-        <div className="retro-window">
+        <div className="retro-viewport">
+          <div className="retro-native-surface">
+            <div className="retro-window">
           <RetroBorder
             appleIIPlus={isAppleIIPlus}
             className="retro-outer-border"
@@ -1052,6 +1061,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 </span></span>
               </span>
             </footer>}
+            </div>
+          </div>
         </div>
       </section>, canvasHost)}
       <DiskPanelVtoc
