@@ -75,7 +75,7 @@ const submenuTextWidth = 31
 const submenuTitleContentWidth = 34
 const retroNativeWidth = 560
 const retroNativeHeight = 384
-const clockPauseMs = 50
+const clockPauseMs = 33
 
 const RetroVtocIndicator = ({
   active,
