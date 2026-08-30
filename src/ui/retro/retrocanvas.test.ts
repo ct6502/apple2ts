@@ -13,7 +13,7 @@ describe("retro canvas SVG", () => {
     `
     document.head.append(style)
     const panel = document.createElement("div")
-    panel.className = "retro-panel retro-color-green retro-monitor-ntsc retro-effect-crt"
+    panel.className = "retro-panel retro-color-green retro-monitor-ntsc retro-effect-crt retro-canvas-pending"
     panel.style.setProperty("--retro-foreground", "#39ff14")
     panel.style.backgroundImage = "url(https://example.com/mask.png)"
     const nativeSurface = document.createElement("div")
@@ -28,6 +28,7 @@ describe("retro canvas SVG", () => {
     expect(svg).toContain("Control Panel")
     expect(svg).not.toContain("retro-monitor-ntsc")
     expect(svg).not.toContain("retro-effect-crt")
+    expect(svg).not.toContain("retro-canvas-pending")
     expect(svg).not.toContain("example.com")
     style.remove()
   })

@@ -64,10 +64,12 @@
   text-transform: uppercase;
 }
 
+.retro-panel.retro-canvas-pending,
 .retro-panel.retro-canvas-rendered {
   background: transparent;
 }
 
+.retro-panel.retro-canvas-pending .retro-native-surface,
 .retro-panel.retro-canvas-rendered .retro-native-surface {
   opacity: 0;
 }

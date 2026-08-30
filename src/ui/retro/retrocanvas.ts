@@ -98,7 +98,7 @@ export const createRetroPanelSvg = async (
   clone.style.transform = "none"
   const panelClasses = Array.from(panel.classList)
     .filter(className => !className.startsWith("retro-monitor-") &&
-      !className.startsWith("retro-effect-") && className !== "retro-canvas-rendered")
+      !className.startsWith("retro-effect-") && !className.startsWith("retro-canvas-"))
     .join(" ")
   const wrapper = document.createElement("div")
   wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml")

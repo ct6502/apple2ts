@@ -41,6 +41,8 @@ type CanvasBounds = {
   height: number
 }
 
+type CanvasRenderState = "native" | "pending" | "rendered"
+
 type RetroMenuFrame = {
   menuId: string
   title: string
@@ -317,6 +319,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [, setSettingsRevision] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
+  const [canvasRenderState, setCanvasRenderState] = useState<CanvasRenderState>("native")
   const panelCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const panelCanvasPoolRef = useRef<HTMLCanvasElement[]>([])
   const panelRenderRevision = useRef(0)
@@ -329,6 +332,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     const frame = menuStackRef.current.at(-1)
     menuStackRef.current = []
     leaveMenuFrame(frame)
+    setCanvasRenderState("native")
     setIsOpen(false)
   }
   const {
@@ -573,6 +577,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           menuStack.toReversed().forEach(restoreMenuFramePreview)
           resetCollectionDriveSelectionSession()
           setNow(new Date())
+          setCanvasRenderState(getCrtDistortion() ? "pending" : "native")
           setIsOpen(true)
           setMenuStack([])
           setSelectedIndex(0)
@@ -898,12 +903,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       if (panelCanvasRef.current) panelCanvasPoolRef.current.push(panelCanvasRef.current)
       panelCanvasRef.current = canvas
       setDisplayOverride(canvas)
-      panel.classList.add("retro-canvas-rendered")
+      setCanvasRenderState("rendered")
     }).catch(() => {
       panelCanvasPoolRef.current.push(canvas)
       if (revision !== panelRenderRevision.current) return
       setDisplayOverride(null)
-      panel.classList.remove("retro-canvas-rendered")
+      setCanvasRenderState("native")
     })
     return () => {
       panelRenderRevision.current = Math.max(panelRenderRevision.current, revision + 1)
@@ -1115,7 +1120,9 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           </footer>,
       }, {
         "aria-label": t("retroControl.ariaLabel"),
-        className: panelClasses,
+        className: `${panelClasses}${canvasRenderState === "native"
+          ? ""
+          : ` retro-canvas-${canvasRenderState}`}`,
         onContextMenu: event => event.preventDefault(),
         style: panelStyle,
       }), canvasHost)}
