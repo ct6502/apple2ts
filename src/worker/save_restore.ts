@@ -8,6 +8,7 @@ import { configureMachine, doReset, doSetMachineName, doSetRunMode, getMachineNa
 import { SWITCHES } from "./softswitches"
 import { vidhd } from "./devices/vidhd"
 import { passRequestThumbnail } from "./worker2main"
+import { getSlotCardSaveState, restoreSlotCardSaveState } from "./devices/slot_card_state"
 
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
@@ -58,6 +59,7 @@ export const getApple2State = (): Apple2SaveState => {
     s6502: save6502,
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     machineName: getMachineName(),
+    cardStates: getSlotCardSaveState(),
     softSwitches: getSoftSwitches(),
     stackDump: getStackDump(),
     memvalid: memvalid.slice(0, maxGood + 1).join(""),
@@ -139,6 +141,7 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
   if (newState.stackDump) {
     setStackDump(newState.stackDump)
   }
+  restoreSlotCardSaveState(newState.cardStates)
   updateAddressTables()
   // Force the help text to be reset if necessary.
   handleGameSetup(true)

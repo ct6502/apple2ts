@@ -83,11 +83,18 @@ type Apple2SaveState = {
   s6502: STATE6502,
   extraRamSize: number,
   machineName: MACHINE_NAME,
+  cardStates?: SlotCardSaveState[],
   softSwitches: {[name: string]: boolean},
   stackDump: Array<string>,
   memvalid: string,
   memC000: string,
   memory: string
+}
+
+type SlotCardSaveState = {
+  slot: number,
+  card: SLOT_CARD_ID,
+  state: unknown
 }
 
 type UpdateDisplay = (speed = 0, helptext = "") => void
