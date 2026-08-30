@@ -2,6 +2,7 @@
 // Now combined Mouse/Clock driver
 
 import { setSlotDriver, setSlotIOCallback, memGet, memSet, memSetC000, memGetC000 } from "../memory"
+import { registerSlotCardState } from "./slot_card_state"
 import { MouseEventSimple } from "../../common/utility"
 import { interruptRequest } from "../cpu6502"
 import { s6502 } from "../instructions"
@@ -365,9 +366,6 @@ export const resetMouse = () => {
   clampidx = 0
 }
 
-// Technically these should probably be saved in the save/restore state,
-// perhaps in the peripheral card I/O locations, but everything seems to
-// work fine if these are reset on a restore state.
 let mousex = 0
 let mousey = 0
 let clampidx = 0
@@ -428,6 +426,12 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
   if (mode !== 0) {
     passShowAppleMouse(true)
   }
+  registerSlotCardState(
+    slot,
+    "mouse",
+    getMouseSaveState,
+    state => restoreMouseSaveState(state as MouseSaveState),
+  )
 }
 
 export const onMouseVBL = () => {
@@ -533,6 +537,67 @@ let basicPos = 0
 let basicString = ""
 let CSWHSave = 0
 let CSWLSave = 0
+
+type MouseSaveState = {
+  mousex: number,
+  mousey: number,
+  clampidx: number,
+  bstatus: number,
+  istatus: number,
+  lastbstatus: number,
+  lastmousex: number,
+  lastmousey: number,
+  tmpmousex: number,
+  tmpmousey: number,
+  servestatus: number,
+  command: number,
+  basicPos: number,
+  basicString: string,
+  CSWHSave: number,
+  CSWLSave: number,
+}
+
+const getMouseSaveState = (): MouseSaveState => ({
+  mousex,
+  mousey,
+  clampidx,
+  bstatus,
+  istatus,
+  lastbstatus,
+  lastmousex,
+  lastmousey,
+  tmpmousex,
+  tmpmousey,
+  servestatus,
+  command,
+  basicPos,
+  basicString,
+  CSWHSave,
+  CSWLSave,
+})
+
+const restoreMouseSaveState = (state: MouseSaveState) => {
+  ({
+    mousex,
+    mousey,
+    clampidx,
+    bstatus,
+    istatus,
+    lastbstatus,
+    lastmousex,
+    lastmousey,
+    tmpmousex,
+    tmpmousey,
+    servestatus,
+    command,
+    basicPos,
+    basicString,
+    CSWHSave,
+    CSWLSave,
+  } = state)
+  passShowAppleMouse(memGetC000(ADDR_MODE) !== 0)
+  interruptRequest(slot, servestatus !== 0)
+}
 
 // entry: X: (anything)  Y: (anything)  A: (char.out) if CSW
 // exit : X: (unchanged) Y: (unchanged) A: (char.in)  if KSW
