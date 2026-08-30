@@ -1,6 +1,6 @@
 import { ROMmemoryStart, toHex } from "../common/utility"
 import { interruptRequest, nonMaskableInterrupt, processInstruction } from "./cpu6502"
-import { memory, updateAddressTables } from "./memory"
+import { doSetRom, memory, updateAddressTables } from "./memory"
 import { reset6502, doBranch, s6502, setPC, setInterruptDisabled, setCycleCount, incrementPC } from "./instructions"
 import { enableMockingboard } from "./devices/mockingboard"
 import { parseAssembly } from "./utility/assembler"
@@ -605,6 +605,30 @@ test("BRK followed by NMI stacks source-specific break flags", () => {
 
   expect(memory[0x1FD] & B).toEqual(B)
   expect(memory[0x1FA] & B).toEqual(0)
+})
+
+test.each([
+  ["enhanced IIe", "APPLE2EE", 0],
+  ["unenhanced IIe", "APPLE2EU", D],
+  ["Apple II+", "APPLE2P", D],
+] as const)("%s interrupt entry handles decimal mode for its CPU", (_name, machine, expected) => {
+  doSetRom(machine)
+  try {
+    reset6502()
+    updateAddressTables()
+    memory[0x2000] = 0xEA
+    memory[ROMmemoryStart + 0x3FFA] = 0x00
+    memory[ROMmemoryStart + 0x3FFB] = 0x30
+    setPC(0x2000)
+    s6502.PStatus |= D
+    nonMaskableInterrupt()
+
+    processInstruction()
+
+    expect(s6502.PStatus & D).toEqual(expected)
+  } finally {
+    doSetRom("APPLE2EE")
+  }
 })
 
 const crossPageTest = (start: number, cyclesExpect: number) => {
