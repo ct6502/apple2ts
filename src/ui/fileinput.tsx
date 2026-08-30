@@ -16,8 +16,8 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
   }
 
   const readFile = async (file: File, index: number) => {
-    const fname = file.name.toLowerCase()
-    if (fname.endsWith("a2ts")) {
+    const fileExtension = file.name.substring(file.name.lastIndexOf("."))
+    if (fileExtension === ".a2ts") {
       const fileread = new FileReader()
       fileread.onload = function (ev) {
         if (ev.target) {
@@ -26,46 +26,16 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
         }
       }
       fileread.readAsText(file)
-    } else {
+    } else if (fileExtension === ".bin") {
       const buffer = await file.arrayBuffer()
-      if (fname.toLowerCase().endsWith(".bin")) {
         // Display dialog, ask for address for where to put into memory
         setBinaryBuffer(new Uint8Array(buffer))
         if (buffer.byteLength > 0) {
           setDisplayBinaryDialog(true)
         }
-      } else {
-        handleSetDiskOrFileFromBuffer(index, buffer, file.name, null, null)
-        notifyLoadSuccess()
-      }
-    }
-  }
-
-  const showReadWriteFilePicker = async (index: number) => {
-    let [writableFileHandle] = await window.showOpenFilePicker({
-      types: [
-        {
-          description: "Disk Images",
-          accept: {
-            "application/octet-stream": FILE_SUFFIXES_ALL.split(",") as `.${string}`[]
-          }
-        }
-      ],
-      excludeAcceptAllOption: true,
-      multiple: false,
-    })
-
-    if (writableFileHandle == null) {
-      return
-    }
-
-    const file = await writableFileHandle.getFile()
-    const fileExtension = file.name.substring(file.name.lastIndexOf("."))
-    let newIndex = index
-
-    if (fileExtension === ".a2ts" || fileExtension === ".bin") {
-      readFile(file, props.showFileOpenDialog.index)
     } else {
+      let filename = file.name
+      let writableFileHandle: FileSystemFileHandle | null = null
       if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
         const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
         writableFileHandle = await window.showSaveFilePicker({
@@ -78,10 +48,31 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
             },
           ]
         })
+        filename = writableFileHandle.name
       }
-      newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
-      prepWritableFile(newIndex, writableFileHandle)
+      const newIndex = handleSetDiskOrFileFromBuffer(index,
+        await file.arrayBuffer(), filename, null, writableFileHandle)
+      if (writableFileHandle) prepWritableFile(newIndex, writableFileHandle)
       notifyLoadSuccess()
+    }
+  }
+
+  const showReadWriteFilePicker = async (index: number) => {
+    const [writableFileHandle] = await window.showOpenFilePicker({
+      types: [
+        {
+          description: "Disk Images",
+          accept: {
+            "application/octet-stream": FILE_SUFFIXES_ALL.split(",") as `.${string}`[]
+          }
+        }
+      ],
+      excludeAcceptAllOption: true,
+      multiple: false,
+    })
+    if (writableFileHandle) {
+      const file = await writableFileHandle.getFile()
+      readFile(file, index)
     }
   }
 

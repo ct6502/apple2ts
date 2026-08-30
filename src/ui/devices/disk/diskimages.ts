@@ -1,9 +1,9 @@
 export const diskImages: DiskCollectionItem[] = [
   {
     title: "Aztec",
-    diskUrl: "Aztec.po",
+    diskUrl: "Aztec.woz",
     imageUrl: "disks/Aztec.png",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 819200
   },
@@ -13,7 +13,7 @@ export const diskImages: DiskCollectionItem[] = [
     helpFile: "Eamon 1.txt",
     imageUrl: "disks/Eamon%201.png",
     detailsUrl: "https://eamon.wiki/Source:Eamon_Player%27s_Manual_(revised)",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 819200
   },
@@ -28,7 +28,7 @@ export const diskImages: DiskCollectionItem[] = [
     title: "MECC Inspector",
     diskUrl: "MECC-Inspector.woz",
     imageUrl: "disks/MECC-Inspector.png",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 234496
   },
@@ -36,7 +36,7 @@ export const diskImages: DiskCollectionItem[] = [
     title: "MousePaint",
     diskUrl: "MousePaint.woz",
     imageUrl: "disks/MousePaint.png",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     params: "color=white",
     fileSize: 234496
@@ -46,7 +46,7 @@ export const diskImages: DiskCollectionItem[] = [
     diskUrl: "Nox%20Archaist%20Demo.hdv",
     imageUrl: "disks/Nox%20Archaist%20Demo.png",
     detailsUrl: "https://noxarchaist.com",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 1474560
   },
@@ -55,7 +55,7 @@ export const diskImages: DiskCollectionItem[] = [
     diskUrl: "Olympic%20Decathlon.woz",
     imageUrl: "disks/Olympic%20Decathlon.png",
     detailsUrl: "https://archive.org/details/microsoft-olympic-decathlon-a2-ph/",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 234496
   },
@@ -63,7 +63,7 @@ export const diskImages: DiskCollectionItem[] = [
     title: "Print Shop Color",
     diskUrl: "Print%20Shop%20Color.po",
     imageUrl: "disks/Print%20Shop%20Color.png",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 234757
   },
@@ -72,7 +72,7 @@ export const diskImages: DiskCollectionItem[] = [
     diskUrl: "ProDOS%202.4.3.po",
     imageUrl: "disks/ProDOS%202.4.3.png",
     detailsUrl: "https://prodos8.com/",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 143360
   },
@@ -81,7 +81,7 @@ export const diskImages: DiskCollectionItem[] = [
     diskUrl: "Robotron4Joy.po",
     imageUrl: "disks/Robotron4Joy.png",
     detailsUrl: "https://groups.google.com/g/comp.sys.apple2/c/2xlihijn82o/",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 143360
   },
@@ -93,7 +93,7 @@ export const diskImages: DiskCollectionItem[] = [
     // diskUrl: "https://archive.org/download/TotalReplay/Total%20Replay%20v5.2.hdv",
     imageUrl: "disks/Total%20Replay.png",
     detailsUrl: "https://archive.org/details/TotalReplay",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 33553920,
     params: "slot3=vidhd",
@@ -105,7 +105,7 @@ export const diskImages: DiskCollectionItem[] = [
     // diskUrl: "https://archive.org/download/TotalReplay2/Total%20Replay%20II%20v1.0-alpha.4.hdv",
     imageUrl: "disks/Instant%20Replay.png",
     detailsUrl: "https://github.com/a2-4am/4sports",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 33553920,
   },
@@ -116,7 +116,7 @@ export const diskImages: DiskCollectionItem[] = [
     // diskUrl: "https://archive.org/download/PitchDark/00playable.hdv",
     imageUrl: "disks/Pitch%20Dark.png",
     detailsUrl: "https://github.com/anomixer/pitch-dark/releases",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 33553920,
     params: "slot3=vidhd",
@@ -126,7 +126,7 @@ export const diskImages: DiskCollectionItem[] = [
     diskUrl: "Tass Times.2mg",
     imageUrl: "disks/Tass%20Times.png",
     detailsUrl: "https://www.mobygames.com/game/90/tass-times-in-tonetown/",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 819264,
     params: "color=nofringe",
@@ -136,7 +136,7 @@ export const diskImages: DiskCollectionItem[] = [
     diskUrl: "Ultima%20IV.hdv",
     imageUrl: "disks/Ultima%20IV.png",
     detailsUrl: "https://wiki.ultimacodex.com/wiki/Ultima_IV:_Quest_of_the_Avatar",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 819200
   },
@@ -145,7 +145,7 @@ export const diskImages: DiskCollectionItem[] = [
     diskUrl: "Ultima%20V.hdv",
     imageUrl: "disks/Ultima%20V.png",
     detailsUrl: "https://wiki.ultimacodex.com/wiki/Ultima_V:_Warriors_of_Destiny",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 1474560
   },
@@ -156,11 +156,11 @@ export const diskImages: DiskCollectionItem[] = [
     // diskUrl: "https://archive.org/download/WizardReplay/Wizard%20Replay%20v2.0.hdv",
     imageUrl: "disks/WizardReplay.png",
     detailsUrl: "https://archive.org/details/WizardReplay",
-    type: undefined,
+    type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 33553920
-    }
-  ]
+  },
+]
 
 export const internalDiskResources = [
   {

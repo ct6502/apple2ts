@@ -11,11 +11,11 @@ import { showGlobalProgressModal } from "../ui_utilities"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
-  A2TS_ARCHIVE,
-  INTERNET_ARCHIVE,
-  NEW_RELEASE,
-  CLOUD_DRIVE,
-  DEMOZOO
+  A2TS_ARCHIVE = "builtin",
+  INTERNET_ARCHIVE = "internet",
+  NEW_RELEASE = "new",
+  CLOUD_DRIVE = "cloud",
+  DEMOZOO = "demozoo"
 }
 
 export enum TAB_INDEX {
@@ -136,7 +136,6 @@ export const getDiskCollection = (diskBookmarks: DiskBookmarks, newReleases: Dis
 
   // Load built-in disk images
   diskImages.forEach((diskImage) => {
-    diskImage.type = DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE
     restoreCachedVtocType(diskImage)
     newDiskCollection.push(diskImage)
   })
@@ -168,7 +167,6 @@ export const getDiskCollection = (diskBookmarks: DiskBookmarks, newReleases: Dis
 
   // Load new releases
   newReleases.forEach((newRelease) => {
-    newRelease.type = DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE
     // Reuse the previously determined VTOC type (or HDV assumption) so we don't
     // re-download the disk's bytes just to redetermine an unchanging value.
     restoreCachedVtocType(newRelease)

@@ -1,6 +1,6 @@
 export const newReleases: DiskCollectionItem[] = [
   {
-    type: -1,
+    type: "new",
     title: "Glider for Apple\u00A0II",
     lastUpdated: new Date("3/16/2025"),
     imageUrl: "https://www.colino.net/wordpress/wp-content/uploads/glider-splash.png",
@@ -10,7 +10,7 @@ export const newReleases: DiskCollectionItem[] = [
     fileSize: 143360
   },
   {
-    type: -1,
+    type: "new",
     title: "Million Perfect Tiles",
     lastUpdated: new Date("12/30/2024"),
     imageUrl: "https://archive.org/download/MillionPerfectTiles/00playable_screenshot.png",
@@ -19,7 +19,7 @@ export const newReleases: DiskCollectionItem[] = [
     fileSize: 143360
   },
   {
-    type: -1,
+    type: "new",
     title: "Encounter Adventure",
     lastUpdated: new Date("11/11/2024"),
     imageUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg",
@@ -28,7 +28,7 @@ export const newReleases: DiskCollectionItem[] = [
     fileSize: 143360
   },
   {
-    type: -1,
+    type: "new",
     title: "Undead Demo",
     lastUpdated: new Date("9/10/2024"),
     imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
@@ -38,7 +38,7 @@ export const newReleases: DiskCollectionItem[] = [
     exportDisabled: true
   },
   {
-    type: -1,
+    type: "new",
     title: "Kontrabant",
     lastUpdated: new Date("4/10/2025"),
     imageUrl: "https://www.brutaldeluxe.fr/products/apple2/kontrabant/Kontrabant%20Box.jpg",
@@ -47,7 +47,7 @@ export const newReleases: DiskCollectionItem[] = [
     fileSize: 819200
   },
   {
-    type: -1,
+    type: "new",
     title: "Shufflepuck Cafe",
     lastUpdated: new Date("4/23/2025"),
     imageUrl: "https://www.colino.net/wordpress/wp-content/uploads/shufflepuck-cafe-bar.png",
@@ -57,7 +57,7 @@ export const newReleases: DiskCollectionItem[] = [
     fileSize: 143360
   },
   {
-    type: -1,
+    type: "new",
     title: "K2 Presentation",
     lastUpdated: new Date("5/2/2025"),
     imageUrl: "https://github.com/rsheehan/K2/raw/refs/heads/main/images/intro.png",
@@ -67,7 +67,7 @@ export const newReleases: DiskCollectionItem[] = [
     fileSize: 143360
   },
   {
-    type: -1,
+    type: "new",
     title: "A2DeskTop",
     lastUpdated: new Date("7/31/2025"),
     imageUrl: "https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/a2desktop.jpg",
@@ -78,7 +78,7 @@ export const newReleases: DiskCollectionItem[] = [
     exportDisabled: true
   },
   {
-    type: -1,
+      type: "new",
     title: "Quarx",
     lastUpdated: new Date("2/17/2026"),
     imageUrl: "https://i0.wp.com/www.the8bitguy.com/wp-content/uploads/2026/02/screenshot-01.png",
@@ -87,17 +87,17 @@ export const newReleases: DiskCollectionItem[] = [
     fileSize: 143360,
   },
   {
+    type: "new",
     title: "Sean's Garage Giveaway - demo",
     diskUrl: "GarageGiveaway-Demo.po",
     imageUrl: "disks/GarageGiveaway.png",
     helpFile: "GarageGiveaway.txt",
     detailsUrl: "https://www.8bitshack.net/seans-garage-giveaway",
-    type: undefined,
     lastUpdated: new Date(0),
     fileSize: 143360,
   },
   {
-    type: -1,
+    type: "new",
     title: "VERA Graphics & Sound Demo",
     lastUpdated: new Date("8/28/2026"),
     imageUrl: "disks/veratest.png",
@@ -107,7 +107,7 @@ export const newReleases: DiskCollectionItem[] = [
     fileSize: 143360
   },
   {
-    type: -1,
+    type: "new",
     title: "VERA 256-Color Music Slideshow",
     lastUpdated: new Date("8/30/2026"),
     imageUrl: "disks/slideshow.png",

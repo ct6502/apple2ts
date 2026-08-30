@@ -437,7 +437,7 @@ type DisassemblyProps = {
 type VtocType = "dos" | "prodos" | "other" | "dosup" | "4cade"
 
 type DiskCollectionItem = {
-  type: DISK_COLLECTION_ITEM_TYPE,
+  type: "builtin" | "internet" | "new" | "cloud" | "demozoo",
   title: string,
   lastUpdated: Date,
   imageUrl?: string,
