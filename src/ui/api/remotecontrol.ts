@@ -49,6 +49,7 @@ import {
   setPreferenceMachineName,
   setPreferenceRamWorks,
   requestPreferenceSpeedMode,
+  setPreferenceMonitorMode,
 } from "../localstorage"
 import { RestoreSaveState } from "../savestate"
 import { getUIState } from "../ui_settings"
@@ -416,6 +417,10 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
 
     case "setColorMode":
       setPreferenceColorMode(Number(payload.colorMode))
+      return collectStatus()
+
+    case "setMonitorMode":
+      setPreferenceMonitorMode(Number(payload.monitorMode))
       return collectStatus()
 
     case "setMachineName":

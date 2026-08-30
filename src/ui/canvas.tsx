@@ -52,6 +52,9 @@ const Apple2Canvas = (props: DisplayProps) => {
   const lastFrameTimeRef = useRef(0)
   const startTimeForMaxFramesRef = useRef(0)
   const lastFPSLogRef = useRef(0)
+  // Always points at the newest RenderCanvas closure so the perpetual rAF loop
+  // below picks up HMR-updated code instead of running the stale one forever.
+  const renderCanvasRef = useRef<(timestamp: number) => void>(() => {})
 
   const myCanvas = useRef<HTMLCanvasElement>(null)
   const hiddenCanvas = useRef<HTMLCanvasElement>(null)
@@ -474,8 +477,12 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
 
     // Changing this refresh interval to be less often has no effect on the "fast" speed.
-    window.requestAnimationFrame(RenderCanvas)
+    window.requestAnimationFrame((t) => renderCanvasRef.current(t))
   }
+  // Refs must not be mutated during render, so update it after each render instead.
+  useEffect(() => {
+    renderCanvasRef.current = RenderCanvas
+  })
 
   const scaleMouseEvent = (event: ReactMouseEvent<HTMLCanvasElement>): MouseEventSimple | null => {
     let x = 0
@@ -605,7 +612,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }).observe(mainCanvas)
     document.body.style.setProperty("--scanlines-display", getShowScanlines() ? "block" : "none")
 
-    RenderCanvas(0)
+    renderCanvasRef.current(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

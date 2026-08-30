@@ -1,14 +1,14 @@
 import { useState } from "react"
 import { ReactNode } from "react"
-import { COLOR_MODE } from "../../common/utility"
+import { COLOR_MODE, MONITOR_MODE } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons"
-import { setPreferenceBoolean, setPreferenceColorMode } from "../localstorage"
+import { setPreferenceBoolean, setPreferenceColorMode, setPreferenceMonitorMode } from "../localstorage"
 import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions"
 import PopupMenu from "../controls/popupmenu"
-import { getColorMode, getCrtDistortion, getGhosting, getShowScanlines } from "../ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, getMonitorMode, getShowScanlines, setMonitorMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
 import { choiceMetadata, toggleMetadata } from "../retro/retromenuhelpers"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
@@ -17,7 +17,7 @@ import { ControlRegistry } from "../controls/controlregistry"
 import { controlOptionsToPopupItems, controlsToPopupItems } from "../controls/controlpopup"
 import { createControlContext } from "../retro/retromenucontext"
 
-export const COLOR_MODES = Object.values(COLOR_MODE).filter(
+const COLOR_MODES = Object.values(COLOR_MODE).filter(
   (value): value is COLOR_MODE => typeof value === "number",
 )
 
@@ -28,6 +28,15 @@ const colorLabels = (t: (key: string) => string) => [
   t("retroControl.amber"),
   t("retroControl.white"),
   t("retroControl.inverse"),
+]
+
+const MONITOR_MODES = Object.values(MONITOR_MODE).filter(
+  (value): value is MONITOR_MODE => typeof value === "number",
+)
+
+const monitorModeLabels = (t: (key: string) => string) => [
+  t("retroControl.monitorModeChoice.ntsc"),
+  t("retroControl.monitorModeChoice.rgb"),
 ]
 
 export const retroDisplayControls: RetroControlMetadata[] = [
@@ -54,6 +63,23 @@ export const retroDisplayControls: RetroControlMetadata[] = [
       context.displayProps.updateDisplay()
     },
     defaultIndex: COLOR_MODE.COLOR,
+  }),
+  choiceMetadata({
+    id: "display.monitorMode",
+    parentId: "display",
+    order: 0,
+    label: context => context.t("retroControl.monitorMode"),
+    labels: context => monitorModeLabels(context.t),
+    currentIndex: getMonitorMode,
+    select: (context, index) => {
+      setPreferenceMonitorMode(MONITOR_MODES[index])
+      context.displayProps.updateDisplay()
+    },
+    preview: (context, index) => {
+      setMonitorMode(MONITOR_MODES[index])
+      context.displayProps.updateDisplay()
+    },
+    defaultIndex: MONITOR_MODE.NTSC,
   }),
   ...([
     ["display.scanlines", "config.scanlines", "showScanlines", getShowScanlines],
@@ -92,7 +118,7 @@ export const DisplayConfig = (props: DisplayProps) => {
     createControlContext(props, t, language, changeLanguage),
     "display",
   )
-  const [colorControl, ...effectControls] = controls
+  const [colorControl, monitorModeControl, ...effectControls] = controls
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const handleClick = (event: React.MouseEvent) => {
@@ -123,6 +149,8 @@ export const DisplayConfig = (props: DisplayProps) => {
           ...controlOptionsToPopupItems(colorControl),
           { label: "-" },
           ...controlsToPopupItems(effectControls),
+          { label: "-" },
+          ...controlOptionsToPopupItems(monitorModeControl),
         ]]}
       />
     </span>

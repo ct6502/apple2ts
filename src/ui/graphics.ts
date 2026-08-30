@@ -4,11 +4,11 @@ import { handleGetAltCharSet, handleGetTextPage,
   handleGetShr,
   handleGetVidhdActive,
   handleGetSoftSwitches } from "./main2worker"
-import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
+import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex, MONITOR_MODE } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { i18n } from "../i18n"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isCanvasOnlyTheme, isEmbedMode, isGameMode } from "./ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, getMonitorMode, getShowScanlines, getTheme, isCanvasOnlyTheme, isEmbedMode, isGameMode } from "./ui_settings"
 import { doCRTStartup } from "./crtstartup"
 import { getPreferenceRetroIIGSColor, getPreferenceRetroSkin, RETRO_SKIN } from "./localstorage"
 import { RETRO_IIGS_COLORS } from "./retro/retroskincolors"
@@ -19,6 +19,10 @@ export const nRowsHgrMagnifier = 16
 export const nColsHgrMagnifier = 2
 export let xmargin = 0
 export let ymargin = 0
+
+const doBlurring = () => {
+  return getMonitorMode() !== MONITOR_MODE.RGB
+}
 
 // Convert canvas coordinates (absolute to the entire browser window)
 // to normalized HGR screen coordinates.
@@ -60,7 +64,7 @@ export const screenBytesToCanvasPixels = (current: HTMLCanvasElement, dx: number
 
 // We will draw the text on both the on-screen canvas and the hidden canvas.
 // This is wasteful, but we need to get text on the hidden canvas
-// for mixed text/graphics mode, yet the text looks siginificantly better
+// for mixed text/graphics mode, yet the text looks significantly better
 // if it's drawn directly onto the on-screen canvas.
 const processTextPage = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
@@ -218,6 +222,19 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
 
 const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
 
+// Holds an RGBA buffer at native (un-doubled) line resolution so it can be
+// scaled 2x in Y via drawImage instead of manually duplicating rows.
+const rowDoubleCanvas = document.createElement("canvas")
+rowDoubleCanvas.width = 560
+rowDoubleCanvas.height = 192
+const rowDoubleContext = rowDoubleCanvas.getContext("2d")!
+
+const putImageDataDoubled = (hiddenContext: CanvasRenderingContext2D,
+  rgba: Uint8ClampedArray, nlines: number) => {
+  rowDoubleContext.putImageData(new ImageData(rgba as ImageDataArray, 560, nlines), 0, 0)
+  hiddenContext.drawImage(rowDoubleCanvas, 0, 0, 560, nlines, 0, 0, 560, 2 * nlines)
+}
+
 const processLoRes = (hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE) => {
   const textPage = handleGetLores()
@@ -258,14 +275,7 @@ const processLoRes = (hiddenContext: CanvasRenderingContext2D,
       }
     })
   }
-  const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)
-  for (let j = 0; j < nlines; j++) {
-    const slice = hgrRGBA.slice(4 * 560 * j, 4 * 560 * (j + 1))
-    hgrDataStretched.set(slice, 4 * 560 * 2 * j)
-    hgrDataStretched.set(slice, 4 * 560 * 2 * j + 4 * 560)
-  }
-  const imageData = new ImageData(hgrDataStretched, 560, 2 * nlines)
-  hiddenContext.putImageData(imageData, 0, 0)
+  putImageDataDoubled(hiddenContext, hgrRGBA, nlines)
   return true
 }
 
@@ -413,14 +423,24 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
     hgrColors = applyVideo7MixedMode(hgrPage, hgrColors)
   }
   const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes || video7foreground)
-  const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)
-  for (let j = 0; j < nlines; j++) {
-    const slice = hgrRGBA.slice(4 * 560 * j, 4 * 560 * (j + 1))
-    hgrDataStretched.set(slice, 4 * 560 * 2 * j)
-    hgrDataStretched.set(slice, 4 * 560 * 2 * j + 4 * 560)
+  if (doBlurring()) {
+    for (let j = 0; j < nlines; j++) {
+      const row = hgrRGBA.slice(4 * 560 * j, 4 * 560 * (j + 1))
+      for (let i = 1; i < 559; i++) {
+        const pt2 = row.slice(4 * i, 4 * (i + 1))
+        const isBlack = (pt2[0] === 0 && pt2[1] === 0 && pt2[2] === 0)
+        if (isBlack) {
+          const pt1 = row.slice(4 * (i - 1), 4 * i)
+          const pt3 = row.slice(4 * (i + 1), 4 * (i + 2))
+          pt1[0] = Math.floor((pt1[0] + 2 * pt2[0] + pt3[0]) / 4)
+          pt1[1] = Math.floor((pt1[1] + 2 * pt2[1] + pt3[1]) / 4)
+          pt1[2] = Math.floor((pt1[2] + 2 * pt2[2] + pt3[2]) / 4)
+          hgrRGBA.set(pt1, 4 * i + 4 * 560 * j)
+        }
+      }
+    }
   }
-  const imageData = new ImageData(hgrDataStretched, 560, 2 * nlines)
-  hiddenContext.putImageData(imageData, 0, 0)
+  putImageDataDoubled(hiddenContext, hgrRGBA, nlines)
   return true
 }
 
@@ -632,7 +652,8 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
     combinedContext.fillStyle = borderColor
     combinedContext.fillRect(0, 0, width, height)
   }
-  combinedContext.imageSmoothingEnabled = false
+  combinedContext.imageSmoothingEnabled = true
+  combinedContext.imageSmoothingQuality = "high"
   combinedContext.drawImage(hiddenContext.canvas, 0, 0, nx, ny,
     xmargin * width, ymargin * height,
     width * (1 - 2 * xmargin), height * (1 - 2 * ymargin))
@@ -769,7 +790,11 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
   frameCount++
-  ctx.imageSmoothingEnabled = false
+  const colorMode = getColorMode()
+  ctx.imageSmoothingEnabled = doBlurring()
+  ctx.imageSmoothingQuality = "high"
+  hiddenContext.imageSmoothingEnabled = doBlurring()
+  hiddenContext.imageSmoothingQuality = "high"
   const iigsSkin = getPreferenceRetroSkin() === RETRO_SKIN.APPLE_IIGS
   const foreground = iigsSkin
     ? RETRO_IIGS_COLORS[getPreferenceRetroIIGSColor("text")].css
@@ -783,7 +808,6 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   const ghosting = getGhosting()
   const crtDistortion = getCrtDistortion()
   if (ghosting) {
-    ctx.imageSmoothingEnabled = true
     // Make a copy of the current canvas contents.
     const dx = xmargin * width
     const dy = ymargin * height
@@ -814,10 +838,8 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     )
   }
 
-  hiddenContext.imageSmoothingEnabled = false
   hiddenContext.fillStyle = effectBackground ?? "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
-  const colorMode = getColorMode()
 
   if (effectBackground) {
     const hiddenData = hiddenContext.getImageData(0, 0, 560, 384)
@@ -848,6 +870,11 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
         paintIIGSScanlines(ctx, width, height)
       }
       processTextPage(ctx, hiddenContext, colorMode, width, height, false, foreground, effectBackground)
+      // If we are doing regular NTSC color, then we need to draw the text again.
+      // This will cause a subtle smoothing.
+      if (colorMode !== COLOR_MODE.NOFRINGE) {
+        drawImage(ctx, hiddenContext, width, height)
+      }
       if (iigsSkin && !crtDistortion && getShowScanlines()) {
         paintIIGSScanlines(ctx, width, height)
       }

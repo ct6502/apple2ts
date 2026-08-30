@@ -1,10 +1,10 @@
-import { COLOR_MODE, RUN_MODE, UI_THEMES } from "../common/utility"
+import { COLOR_MODE, MONITOR_MODE, RUN_MODE, UI_THEMES } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug, passSetProdosFloppy } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
 import { audioEnable } from "./devices/audio/speaker"
-import { setAppMode, setColorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
+import { setAppMode, setColorMode, setMonitorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { setPreferenceSpeedMode } from "./localstorage"
@@ -85,6 +85,15 @@ export const handleInputParams = (paramString = "") => {
     const colors = ["color", "nofringe", "green", "amber", "white", "inverse"]
     const mode = colors.indexOf(colorMode)
     if (mode >= 0) setColorMode(mode as COLOR_MODE)
+  }
+
+  const monitorMode = params.get("monitormode")?.toLowerCase()
+  if (monitorMode) {
+    if (monitorMode === "ntsc") {
+      setMonitorMode(MONITOR_MODE.NTSC)
+    } else if (monitorMode === "rgb") {
+      setMonitorMode(MONITOR_MODE.RGB)
+    }
   }
 
   const scanlines = params.get("scanlines")

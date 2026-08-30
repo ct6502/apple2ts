@@ -1,4 +1,4 @@
-import { COLOR_MODE, UI_THEME } from "../common/utility"
+import { COLOR_MODE, MONITOR_MODE, UI_THEME } from "../common/utility"
 import { handleGetMachineName } from "./main2worker"
 
 export const INFO_PANEL_COLLAPSED_EVENT = "apple2ts-info-panel-collapsed"
@@ -17,6 +17,7 @@ const uiState: UIState = {
   helpText: "",
   hotReload: false,
   infoPanel: false,
+  monitorMode: MONITOR_MODE.NTSC,
   prodosFloppy: false,
   reverseYAxis: false,
   showScanlines: false,
@@ -42,6 +43,7 @@ export const setUIState = (state: UIState) => {
   uiState.helpText = state?.helpText ?? ""
   uiState.hotReload = state?.hotReload ?? false
   uiState.infoPanel = state?.infoPanel ?? false
+  uiState.monitorMode = state?.monitorMode ?? MONITOR_MODE.NTSC
   uiState.showScanlines = state?.showScanlines ?? false
   uiState.theme = state?.theme ?? UI_THEME.CLASSIC
   uiState.touchJoystickMode = state?.touchJoystickMode ?? "off"
@@ -69,6 +71,10 @@ export const setAppMode = (mode: string) => {
 
 export const setColorMode = (mode: COLOR_MODE) => {
   uiState.colorMode = mode
+}
+
+export const setMonitorMode = (mode: MONITOR_MODE) => {
+  uiState.monitorMode = mode
 }
 
 export const setHelpText = (helptext: string) => {
@@ -119,6 +125,10 @@ export const getLowercaseMode = () => {
 
 export const getColorMode = () => {
   return uiState.colorMode
+}
+
+export const getMonitorMode = () => {
+  return uiState.monitorMode
 }
 
 export const getCrtDistortion = () => {

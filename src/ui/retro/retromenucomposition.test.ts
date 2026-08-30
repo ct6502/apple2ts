@@ -520,6 +520,7 @@ describe("Retro menu metadata structure", () => {
     ])
     expect(retroMenuRegistry.getIds("display")).toEqual([
       "display.color",
+      "display.monitorMode",
       "display.scanlines",
       "display.ghosting",
       "display.crtDistortion",

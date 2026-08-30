@@ -1,9 +1,9 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
-import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME, UI_THEMES } from "../common/utility"
+import { COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetProdosFloppy, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
-import { getTheme, getUIState, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
+import { getTheme, getUIState, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf, setMonitorMode } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 
 export {
@@ -148,6 +148,17 @@ export const setPreferenceColorMode = (
   }
   setColorMode(mode)
   notifySettingsChanged(["display.color"], origin)
+}
+
+export const setPreferenceMonitorMode = (
+  mode: MONITOR_MODE = MONITOR_MODE.NTSC,
+) => {
+  if (mode === MONITOR_MODE.NTSC) {
+    localStorage.removeItem("monitorMode")
+  } else {
+    localStorage.setItem("monitorMode", JSON.stringify(mode))
+  }
+  setMonitorMode(mode)
 }
 
 export const setPreferenceTheme = (theme: UI_THEME = UI_THEME.CLASSIC) => {
@@ -484,6 +495,15 @@ export const loadPreferences = () => {
     }
   }
 
+  const monitorMode = localStorage.getItem("monitorMode")
+  if (monitorMode) {
+    try {
+      setMonitorMode(JSON.parse(monitorMode))
+    } catch {
+      localStorage.removeItem("monitorMode")
+    }
+  }
+
   // Keep for backwards-compatibility
   const darkMode = localStorage.getItem("darkMode")
   if (darkMode) {
@@ -587,6 +607,7 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   
   setPreferenceSpeedMode(0, origin)
   setPreferenceColorMode(COLOR_MODE.COLOR, origin)
+  setPreferenceMonitorMode(MONITOR_MODE.NTSC)
   setPreferenceTheme()
   setPreferenceRetroSkin()
   setPreferenceRetroIIGSColor("text")

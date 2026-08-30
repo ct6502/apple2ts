@@ -184,6 +184,7 @@ type UIState = {
   helpText: string,
   hotReload: boolean,
   infoPanel: boolean,
+  monitorMode: MONITOR_MODE,
   prodosFloppy: boolean,
   reverseYAxis: boolean,
   showScanlines: boolean,

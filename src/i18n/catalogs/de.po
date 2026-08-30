@@ -2593,6 +2593,18 @@ msgctxt "retroControl.display"
 msgid "Display"
 msgstr "Anzeige"
 
+msgctxt "retroControl.monitorMode"
+msgid "Monitor Mode"
+msgstr "Monitor Mode"
+
+msgctxt "retroControl.monitorModeChoice.ntsc"
+msgid "NTSC"
+msgstr "NTSC"
+
+msgctxt "retroControl.monitorModeChoice.rgb"
+msgid "RGB"
+msgstr "RGB"
+
 msgctxt "retroControl.sound"
 msgid "Sound"
 msgstr "Ton"

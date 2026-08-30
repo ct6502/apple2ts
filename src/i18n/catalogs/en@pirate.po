@@ -2576,6 +2576,18 @@ msgctxt "retroControl.color"
 msgid "Color"
 msgstr "Colour"
 
+msgctxt "retroControl.monitorMode"
+msgid "Monitor Mode"
+msgstr "Monitor Mode"
+
+msgctxt "retroControl.monitorModeChoice.ntsc"
+msgid "NTSC"
+msgstr "NTSC"
+
+msgctxt "retroControl.monitorModeChoice.rgb"
+msgid "RGB"
+msgstr "RGB"
+
 msgctxt "retroControl.colorNoFringe"
 msgid "Color (no fringe)"
 msgstr ""

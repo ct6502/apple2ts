@@ -122,6 +122,11 @@ export enum COLOR_MODE {
   INVERSEBLACKANDWHITE
 }
 
+export enum MONITOR_MODE {
+  NTSC,
+  RGB,
+}
+
 export enum ARROW {
   LEFT,
   RIGHT,
