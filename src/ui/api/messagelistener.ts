@@ -20,7 +20,10 @@ export const messagelistener = (event: MessageEvent) => {
   )
   
   if (!isTrusted) {
-    console.warn("Received message from untrusted origin:", event.origin)
+    const externalSdkOrigins = ["https://accounts.google.com", "https://docs.google.com"]
+    if (!externalSdkOrigins.includes(event.origin)) {
+      console.warn("Received message from untrusted origin:", event.origin)
+    }
     return
   }
 

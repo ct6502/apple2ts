@@ -205,6 +205,19 @@ test("SED ADC invalid low digits", () =>
 test("SED ADC invalid low digits carry into high digit", () =>
   runAssemblyTest([" SED", " SEC", " LDA #$1F", " ADC #$2A"], 0x40, D))
 
+test.each([
+  ["enhanced IIe", "APPLE2EE", Z | C | D],
+  ["unenhanced IIe", "APPLE2EU", N | C | D],
+  ["Apple II+", "APPLE2P", N | C | D],
+] as const)("%s decimal ADC sets CPU-specific N/Z flags", (_name, machine, expected) => {
+  doSetRom(machine)
+  try {
+    runAssemblyTest([" SED", " SEC", " LDA #$99", " ADC #$00"], 0x00, expected)
+  } finally {
+    doSetRom("APPLE2EE")
+  }
+})
+
 const doSED_SBC = (v1: number, v2 = 0) => {
   const instr = [
     " SED",
@@ -218,6 +231,30 @@ test("SED SBC 1", () => runAssemblyTest(doSED_SBC(1), 0x01, C | D))
 test("SED SBC 9", () => runAssemblyTest(doSED_SBC(9), 0x09, C | D))
 test("SED SBC 10", () => runAssemblyTest(doSED_SBC(0x10), 0x10, C | D))
 test("SED SBC 1D", () => runAssemblyTest(doSED_SBC(0x1D), 0x1D, C | D))
+test.each([
+  ["enhanced IIe", "APPLE2EE", V | D],
+  ["unenhanced IIe", "APPLE2EU", N | V | D],
+  ["Apple II+", "APPLE2P", N | V | D],
+] as const)("%s decimal SBC sets CPU-specific N/Z flags", (_name, machine, expected) => {
+  doSetRom(machine)
+  try {
+    runAssemblyTest(doSED_SBC(0, 0x80), 0x20, expected)
+  } finally {
+    doSetRom("APPLE2EE")
+  }
+})
+test.each([
+  ["enhanced IIe", "APPLE2EE", 0x8F],
+  ["unenhanced IIe", "APPLE2EU", 0x9F],
+  ["Apple II+", "APPLE2P", 0x9F],
+] as const)("%s decimal SBC handles invalid low digits", (_name, machine, expected) => {
+  doSetRom(machine)
+  try {
+    runAssemblyTest([" SED", " SEC", " LDA #$00", " SBC #$0B"], expected, N | D)
+  } finally {
+    doSetRom("APPLE2EE")
+  }
+})
 test("SED SBC 99", () => runAssemblyTest(doSED_SBC(0x99), 0x99, N | C | D))
 test("SED SBC BD", () => runAssemblyTest(doSED_SBC(0xBD), 0xBD, N | C | D))
 test("SED SBC FF", () => runAssemblyTest(doSED_SBC(0xFF), 0xFF, N | C | D))

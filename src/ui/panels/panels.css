@@ -614,6 +614,12 @@ body.dark-mode .icon-text {
   background-color: var(--background-color);
 }
 
+body.dark-mode .dbg-tab {
+  background-color: var(--background-color-dark);
+  border-color: var(--button-active);
+  color: var(--button-active);
+}
+
 .dbg-tab:hover {
   background-color: var(--button-active);
 }
@@ -621,6 +627,12 @@ body.dark-mode .icon-text {
 .dbg-tab-active {
   background-color: var(--button-active);
   border-bottom-style: none;
+}
+
+body.dark-mode .dbg-tab:hover,
+body.dark-mode .dbg-tab-active {
+  background-color: var(--button-active);
+  color: var(--text-color);
 }
 
 .dbg-tab-horizontal {

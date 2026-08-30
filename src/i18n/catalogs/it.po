@@ -153,8 +153,8 @@ msgid "Machine Configuration"
 msgstr ""
 
 msgctxt "machine.slotConfigurator"
-msgid "Slot Configurator"
-msgstr "Configuratore slot"
+msgid "Slot Configuration"
+msgstr "Configurazione slot"
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"

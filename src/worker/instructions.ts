@@ -232,7 +232,9 @@ const doIndirectInstruction = (vZP: number,
 
 // 300: F8 18 B8 A9 BD 69 00 D8 00
 const doADC_BCD = (value: number) => {
-  let ones = (s6502.Accum & 0x0F) + (value & 0x0F) + (isCarry() ? 1 : 0)
+  const carryIn = isCarry() ? 1 : 0
+  const binarySum = (s6502.Accum + value + carryIn) & 0xFF
+  let ones = (s6502.Accum & 0x0F) + (value & 0x0F) + carryIn
   let onesCarry = 0
   // Handle illegal BCD hex values by wrapping to "tens" digit
   if (ones >= 0xA) {
@@ -242,6 +244,7 @@ const doADC_BCD = (value: number) => {
 
   const tens = (s6502.Accum & 0xF0) + (value & 0xF0) + onesCarry
   let tmp = tens + ones
+  const preHighAdjustSum = tmp
   // Pretend we're doing normal addition to set overflow flag
   const bothPositive = (s6502.Accum <= 127 && value <= 127)
   const bothNegative = (s6502.Accum >= 128 && value >= 128)
@@ -252,9 +255,13 @@ const doADC_BCD = (value: number) => {
     tmp += 0x60
   }
   s6502.Accum = tmp & 0xFF
-  // Assume we're a 65c02 and set the zero flag properly.
-  // This doesn't happen on a 6502 for BCD mode.
-  checkStatus(s6502.Accum)
+  if (getCurrentMachineName() === "APPLE2EE") {
+    checkStatus(s6502.Accum)
+  } else {
+    // NMOS ADC sets Z from the binary sum and N after low-digit correction.
+    setZero(binarySum === 0)
+    setNegative((preHighAdjustSum & 0x80) !== 0)
+  }
 }
 
 const doADC_HEX = (value: number) => {
@@ -648,25 +655,33 @@ PCODE("RTS", ADDR_MODE.IMPLIED, 0x60, 1, () => {setPC(address(popStack(), popSta
 // 300: F8 38 B8 A9 00 E9 00 D8 00
 const doSBC_BCD = (value: number) => {
   // On 65c02, do normal hex subtraction to set the carry & overflow flags.
+  const is65C02 = getCurrentMachineName() === "APPLE2EE"
+  const borrowIn = isCarry() ? 0 : 1
   const vtmp = 255 - value
-  let tmp = s6502.Accum + vtmp + (isCarry() ? 1 : 0)
+  let tmp = s6502.Accum + vtmp + (1 - borrowIn)
+  const binaryResult = tmp & 0xFF
   const newCarry = (tmp >= 256)
   const bothPositive = (s6502.Accum <= 127 && vtmp <= 127)
   const bothNegative = (s6502.Accum >= 128 && vtmp >= 128)
   setOverflow((tmp % 256) >= 128 ? bothPositive : bothNegative)
 
-  const ones = (s6502.Accum & 0x0F) - (value & 0x0F) + (isCarry() ? 0 : -1)
-  tmp = s6502.Accum - value + (isCarry() ? 0 : -1)
-  if (tmp < 0) {
-    tmp -= 0x60
-  }
-  if (ones < 0) {
-    tmp -= 0x06
+  let ones = (s6502.Accum & 0x0F) - (value & 0x0F) - borrowIn
+  tmp = s6502.Accum - value - borrowIn
+  if (is65C02) {
+    if (tmp < 0) tmp -= 0x60
+    if (ones < 0) tmp -= 0x06
+  } else {
+    let tens = (s6502.Accum & 0xF0) - (value & 0xF0)
+    if (ones < 0) {
+      ones = (ones - 0x06) & 0x0F
+      tens -= 0x10
+    }
+    if (tens < 0) tens -= 0x60
+    tmp = tens + ones
   }
   s6502.Accum = tmp & 0xFF
-  // Assume we're a 65c02 and set the zero flag properly.
-  // This doesn't happen on a 6502 for BCD mode.
-  checkStatus(s6502.Accum)
+  // 65C02 sets N/Z from the decimal result; NMOS uses the binary result.
+  checkStatus(is65C02 ? s6502.Accum : binaryResult)
   setCarry(newCarry)
 }
 
