@@ -5,6 +5,7 @@ import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetProdosFloppy, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
 import { getTheme, getUIState, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf, setMonitorMode } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
+import { toggleScanlines } from "./ui_utilities"
 
 export {
   notifySettingsChanged,
@@ -619,7 +620,7 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceTouchJoystickMode()
   setPreferenceTouchJoystickSensitivity()
   setPreferenceNewReleasesChecked()
-  document.body.style.setProperty("--scanlines-display", "none")
+  toggleScanlines(false)
   window.dispatchEvent(new CustomEvent(PREFERENCES_RESET_EVENT))
   localStorage.removeItem("binaryRunAddress")
   setPreferenceTraceSettings()

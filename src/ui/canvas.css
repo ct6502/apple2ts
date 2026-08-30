@@ -63,9 +63,9 @@ body.dark-mode .hgr-view-text {
   width: var(--scanlines-width);
   height: var(--scanlines-height);
   background: linear-gradient(to bottom,
-      transparent 50%,
-      rgba(0, 0, 0, 0.3) 51%);
-  background-size: 100% 4px;
+      transparent 62%,
+      rgba(0, 0, 0, 0.3) 63%);
+  background-size: 100% var(--scanlines-size, 3px);
   z-index: 1;
 }
 

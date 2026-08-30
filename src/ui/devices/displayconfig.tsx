@@ -16,6 +16,7 @@ import { setColorMode, setUIStateBoolean } from "../ui_settings"
 import { ControlRegistry } from "../controls/controlregistry"
 import { controlOptionsToPopupItems, controlsToPopupItems } from "../controls/controlpopup"
 import { createControlContext } from "../retro/retromenucontext"
+import { toggleScanlines } from "../ui_utilities"
 
 const COLOR_MODES = Object.values(COLOR_MODE).filter(
   (value): value is COLOR_MODE => typeof value === "number",
@@ -94,14 +95,14 @@ export const retroDisplayControls: RetroControlMetadata[] = [
     setEnabled: (context, enabled) => {
       setPreferenceBoolean(preference, enabled, context.settingsOrigin)
       if (preference === "showScanlines") {
-        document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
+        toggleScanlines(enabled)
       }
       context.displayProps.updateDisplay()
     },
     preview: (context, enabled) => {
       setUIStateBoolean(preference, enabled)
       if (preference === "showScanlines") {
-        document.body.style.setProperty("--scanlines-display", enabled ? "block" : "none")
+        toggleScanlines(enabled)
       }
       context.displayProps.updateDisplay()
     },
