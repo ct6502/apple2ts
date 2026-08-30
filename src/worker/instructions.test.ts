@@ -243,6 +243,18 @@ test.each([
     doSetRom("APPLE2EE")
   }
 })
+test.each([
+  ["enhanced IIe", "APPLE2EE", 0x8F],
+  ["unenhanced IIe", "APPLE2EU", 0x9F],
+  ["Apple II+", "APPLE2P", 0x9F],
+] as const)("%s decimal SBC handles invalid low digits", (_name, machine, expected) => {
+  doSetRom(machine)
+  try {
+    runAssemblyTest([" SED", " SEC", " LDA #$00", " SBC #$0B"], expected, N | D)
+  } finally {
+    doSetRom("APPLE2EE")
+  }
+})
 test("SED SBC 99", () => runAssemblyTest(doSED_SBC(0x99), 0x99, N | C | D))
 test("SED SBC BD", () => runAssemblyTest(doSED_SBC(0xBD), 0xBD, N | C | D))
 test("SED SBC FF", () => runAssemblyTest(doSED_SBC(0xFF), 0xFF, N | C | D))
