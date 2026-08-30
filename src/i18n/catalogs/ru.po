@@ -2654,7 +2654,7 @@ msgstr "Экран"
 
 msgctxt "retroControl.monitorMode"
 msgid "Monitor Mode"
-msgstr "Monitor Mode"
+msgstr "Режим монитора"
 
 msgctxt "retroControl.monitorModeChoice.ntsc"
 msgid "NTSC"
