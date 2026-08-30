@@ -9,23 +9,20 @@ import { handleGetSlotConfig, setSerialConfigCallback } from "../../main2worker"
 import { getSerialMode } from "../serial/serialhub"
 import { useTranslation } from "../../../i18n/useTranslation"
 import type { RetroControlMetadata } from "../../retro/retromenucontext"
+import { controlsFromJson, type RetroControlBindings } from "../../retro/retrocontrolmetadata"
 
 const OPEN_IMAGEWRITER_EVENT = "apple2ts:open-imagewriter"
 
 export const openImageWriterDialog = () => window.dispatchEvent(new Event(OPEN_IMAGEWRITER_EVENT))
 
-export const retroImageWriterControls: RetroControlMetadata[] = [
-  {
-    id: "printer.imageWriterII",
-    parentId: "ports",
-    order: 1,
-    label: context => context.t("print.imageWriterII"),
+const imageWriterBindings: RetroControlBindings = {
+  "printer.imageWriterII": {
     selectable: () => handleGetSlotConfig()[1] !== "none",
-    contextualActionLabel: context => context.t("retroControl.open"),
-    keepMenuOpen: true,
     action: openImageWriterDialog,
   },
-]
+}
+
+export const retroImageWriterControls: RetroControlMetadata[] = controlsFromJson("imagewriter", imageWriterBindings)
 
 enum AUDIO {
   TURN_ON = 0,
@@ -81,7 +78,7 @@ const ImageWriter = ({ showLauncher = true }: { showLauncher?: boolean }) => {
         })
       }
     })
-    
+
     // Cleanup audio on unmount
     const audioDevices = audioDevicesRef.current
     return () => {
@@ -168,12 +165,12 @@ const ImageWriter = ({ showLauncher = true }: { showLauncher?: boolean }) => {
         height="57px"
         onClick={() => { if (!isPrinterDisabled) setOpen(true) }} />
     </span>}
-      <PrinterDialog
-        open={open}
-        onClose={() => { setOpen(false) }}
-        canvas={canvas}
-        printer={ImageWriterII}
-      />
+    <PrinterDialog
+      open={open}
+      onClose={() => { setOpen(false) }}
+      canvas={canvas}
+      printer={ImageWriterII}
+    />
   </>
 }
 

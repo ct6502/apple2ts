@@ -9,6 +9,7 @@ import {
   type InternetArchiveResult,
 } from "./internetarchive"
 import { generateUrlFromInternetArchiveId } from "./internetarchive_utils"
+import { controlFromJson, type RetroControlBindings } from "../../retro/retrocontrolmetadata"
 
 type InternetArchiveRetroState = {
   collectionIndex: number
@@ -27,6 +28,13 @@ const initialState = (): InternetArchiveRetroState => ({
   page: 0,
   loading: false,
 })
+
+const iaTemplateBindings: RetroControlBindings = {
+  "diskDrives.internetArchive.collection": { label: (): string => "Collection" },
+  "diskDrives.internetArchive.title": { label: (): string => "Title" },
+  "diskDrives.internetArchive.resultsSeparator": { label: (): string => "Results" },
+  "diskDrives.internetArchive.result": { label: (): string => "" },
+}
 
 const collectionTitle = (title: string) => {
   const separatorIndex = title.indexOf(":")
@@ -58,15 +66,13 @@ const buildItems = (
   driveIndex: number,
   state: InternetArchiveRetroState,
 ): RetroControlMetadata[] => {
+  const collectionBase = controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.internetArchive.collection", iaTemplateBindings, { driveIndex })
+  const titleBase = controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.internetArchive.title", iaTemplateBindings, { driveIndex })
   const items: RetroControlMetadata[] = [
     {
-      id: `diskDrives.${driveIndex}.internetArchive.collection`,
-      kind: "action",
-      label: "Collection",
+      ...collectionBase,
       options: internetArchiveCollections.map(collection => ({ label: collectionTitle(collection.title) })),
       optionIndex: state.collectionIndex,
-      keepMenuOpen: true,
-      refreshAfterAction: true,
       action: async () => {
         await runSearch(state, false)
       },
@@ -79,13 +85,8 @@ const buildItems = (
       },
     },
     {
-      id: `diskDrives.${driveIndex}.internetArchive.title`,
-      kind: "action",
-      label: "Title",
-      textInput: true,
+      ...titleBase,
       textValue: state.query,
-      keepMenuOpen: true,
-      refreshAfterAction: true,
       onTextInput: (runtime, value) => {
         state.query = value
         state.results = []
@@ -101,21 +102,17 @@ const buildItems = (
 
   if (state.results.length === 0) return items
 
-  items.push({
-    id: `diskDrives.${driveIndex}.internetArchive.resultsSeparator`,
-    label: "Results",
-    separator: true,
-    selectable: false,
-  })
+  const resultsSepBase = controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.internetArchive.resultsSeparator", iaTemplateBindings, { driveIndex })
+  items.push(resultsSepBase)
+  const resultBase = controlFromJson("diskTemplates", "diskDrives.internetArchive.result", iaTemplateBindings)
   state.results.forEach((result, index) => {
     const isLast = index === state.results.length - 1
     const isFavorite = context.diskBookmarks?.contains(result.identifier) ?? false
     items.push({
+      ...resultBase,
       id: `diskDrives.${driveIndex}.internetArchive.result.${result.identifier}`,
       label: result.title,
       indicator: isFavorite ? "*" : undefined,
-      contextualActionLabel: "Load",
-      keepMenuOpen: true,
       onHorizontalInput: (runtime, direction) => {
         if (!runtime.diskBookmarks) return
         if (direction < 0) {
@@ -150,11 +147,14 @@ const buildItems = (
 
 export const createRetroInternetArchiveControl = (driveIndex: number): RetroControlMetadata => {
   let state = initialState()
+  const template = controlFromJson(
+    "diskTemplates",
+    "diskDrives.{{driveIndex}}.load.internetArchive",
+    {},
+    { driveIndex },
+  )
   return {
-    id: `diskDrives.${driveIndex}.load.internetArchive`,
-    label: context => context.t("disk.loadDiskFromInternetArchive"),
-    submenuTitle: "Internet Archive",
-    actionLabel: "Search",
+    ...template,
     dynamicChildren: (context, items) => {
       if (items === undefined) state = initialState()
       return buildItems(context, driveIndex, state)

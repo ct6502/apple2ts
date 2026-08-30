@@ -1,6 +1,7 @@
 import { FILE_SUFFIXES_DISK } from "../../../common/utility"
 import { RETRO_SKIN } from "../../localstorage"
 import type { RetroControlMetadata, RetroMenuContext } from "../../retro/retromenucontext"
+import { controlFromJson, type RetroControlBindings } from "../../retro/retrocontrolmetadata"
 import { showGlobalProgressModal } from "../../ui_utilities"
 
 export type CloudBrowserItem = {
@@ -17,6 +18,7 @@ export type CloudBrowserProvider = {
   id: string
   displayName: string
   loadLabelKey: string
+  template?: RetroControlMetadata
   hasAuthToken: () => boolean
   signIn: () => Promise<boolean>
   listFolder: (folderId: string) => Promise<CloudBrowserItem[]>
@@ -35,6 +37,12 @@ type CloudBrowserState = {
 }
 
 const diskExtensions = FILE_SUFFIXES_DISK.split(",")
+
+const cloudDriveTemplateBindings: RetroControlBindings = {
+  "diskDrives.cloudDrive.parentItem": { label: (): string => ".." },
+  "diskDrives.cloudDrive.folder": { label: (): string => "" },
+  "diskDrives.cloudDrive.file": { label: (): string => "" },
+}
 
 const isDiskFile = (name: string) => {
   const lowerName = name.toLowerCase()
@@ -70,12 +78,10 @@ export const createRetroCloudDriveControl = (
   const buildItems = (context: RetroMenuContext): RetroControlMetadata[] => {
     const controls: RetroControlMetadata[] = []
     if (state.folders.length > 1) {
+      const parentBase = controlFromJson("diskTemplates", "diskDrives.cloudDrive.parentItem", cloudDriveTemplateBindings)
       controls.push({
+        ...parentBase,
         id: `${provider.id}.parent`,
-        label: "..",
-        contextualActionLabel: context.t("retroControl.open"),
-        keepMenuOpen: true,
-        refreshAfterAction: true,
         action: async runtime => {
           state.folders.pop()
           await loadCurrentFolder(runtime)
@@ -88,21 +94,23 @@ export const createRetroCloudDriveControl = (
       .sort((left, right) => Number(right.kind === "folder") - Number(left.kind === "folder") ||
         left.name.localeCompare(right.name))
 
-    controls.push(...visibleItems.map((item): RetroControlMetadata => ({
-      id: `${provider.id}.${item.kind}.${item.id}`,
-      label: item.kind === "folder" ? folderLabel(context, item.name) : item.name,
-      useRetroFont: item.kind === "folder",
-      contextualActionLabel: item.kind === "folder"
-        ? context.t("retroControl.open")
-        : context.t("retroControl.load"),
-      keepMenuOpen: true,
-      refreshAfterAction: item.kind === "folder",
-      action: item.kind === "folder"
-        ? async runtime => {
+    const folderBase = controlFromJson("diskTemplates", "diskDrives.cloudDrive.folder", cloudDriveTemplateBindings)
+    const fileBase = controlFromJson("diskTemplates", "diskDrives.cloudDrive.file", cloudDriveTemplateBindings)
+    controls.push(...visibleItems.map((item): RetroControlMetadata => item.kind === "folder"
+      ? {
+        ...folderBase,
+        id: `${provider.id}.folder.${item.id}`,
+        label: folderLabel(context, item.name),
+        action: async runtime => {
           state.folders.push({ id: item.id, name: item.name })
           await loadCurrentFolder(runtime)
-        }
-        : async runtime => {
+        },
+      }
+      : {
+        ...fileBase,
+        id: `${provider.id}.file.${item.id}`,
+        label: item.name,
+        action: async runtime => {
           showGlobalProgressModal(true, runtime.t("messages.fetchingCloudData"))
           try {
             if (await provider.loadFile(item, driveIndex)) runtime.close()
@@ -110,15 +118,16 @@ export const createRetroCloudDriveControl = (
             showGlobalProgressModal(false)
           }
         },
-    })))
+      }))
     return controls
   }
 
   return {
+    ...provider.template,
     id: provider.id,
-    label: context => context.t(provider.loadLabelKey),
-    submenuTitle: provider.displayName,
-    actionLabel: context => context.t("retroControl.open"),
+    label: provider.template?.label ?? (context => context.t(provider.loadLabelKey)),
+    submenuTitle: provider.template?.submenuTitle ?? provider.displayName,
+    actionLabel: provider.template?.actionLabel ?? (context => context.t("retroControl.open")),
     afterOpen: async context => {
       if (!provider.hasAuthToken() && !await provider.signIn()) return
       if (!state.loaded) await loadCurrentFolder(context)

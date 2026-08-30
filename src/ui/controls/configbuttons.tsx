@@ -28,10 +28,10 @@ import { AudioConfig } from "../devices/audio/audioconfig"
 import { GamepadConfig } from "../devices/gamepadconfig"
 import LinkBuilder from "./linkbuilder"
 import { ControlAvailabilityIcon } from "./controlavailabilityicon"
-import { choiceMetadata, toggleMetadata } from "../retro/retromenuhelpers"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
+import { choiceBinding, controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
 const themeLabels = (t: (key: string) => string) => [
   t("themes.classic"),
@@ -39,68 +39,47 @@ const themeLabels = (t: (key: string) => string) => [
   t("themes.minimal"),
 ]
 
-const retroThemeControl: RetroControlMetadata = choiceMetadata({
-  id: "options.theme",
-  order: 4,
-  tourTargets: ["#tour-theme-button"],
-  label: context => context.t("config.theme"),
-  labels: context => themeLabels(context.t),
-  currentIndex: () => UI_THEMES.findIndex(theme => theme.value === getTheme()),
-  select: (_context, index) => {
-    setPreferenceTheme(UI_THEMES[index].value)
-    const url = new URL(window.location.href)
-    url.searchParams.delete("theme")
-    url.searchParams.set("cache", Date.now().toString())
-    window.location.href = url.toString()
+const configBindings: RetroControlBindings = {
+  "options.theme": {
+    ...choiceBinding({
+      options: context => themeLabels(context.t).map(label => ({ label })),
+      currentIndex: () => UI_THEMES.findIndex(theme => theme.value === getTheme()),
+      select: (_context, index) => {
+        setPreferenceTheme(UI_THEMES[index].value)
+        const url = new URL(window.location.href)
+        url.searchParams.delete("theme")
+        url.searchParams.set("cache", Date.now().toString())
+        window.location.href = url.toString()
+      },
+    }),
+    defaultIndex: UI_THEMES.findIndex(theme => theme.value === UI_THEME.CLASSIC),
   },
-  defaultIndex: UI_THEMES.findIndex(theme => theme.value === UI_THEME.CLASSIC),
-})
-retroThemeControl.refreshParentOnOption = true
-
-export const retroConfigControls: RetroControlMetadata[] = [
-  retroThemeControl,
-  {
-    id: "keyboard",
-    parentId: null,
-    order: 6,
-    label: context => context.t("retroControl.keyboard"),
+  keyboard: {
     value: context => context.t(getLowercaseMode() ? "retroControl.lowercase" : "keyboard.capsLock"),
   },
-  toggleMetadata({
-    id: "keyboard.lowercase",
-    parentId: "keyboard",
-    order: 0,
-    tourTargets: ["#tour-keyboardbuttons"],
-    label: context => context.t("retroControl.lowercaseInput"),
+  "keyboard.lowercase": toggleBinding({
     enabled: getLowercaseMode,
     setEnabled: (context, enabled) => {
       setPreferenceBoolean("lowercaseMode", enabled, context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
   }),
-  toggleMetadata({
-    id: "keyboard.openApple",
-    parentId: "keyboard",
-    order: 1,
-    label: context => context.t("retroControl.openAppleKey"),
+  "keyboard.openApple": toggleBinding({
     enabled: () => getUIStateBoolean("useOpenAppleKey"),
     setEnabled: (context, enabled) => {
       setPreferenceBoolean("useOpenAppleKey", enabled, context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
   }),
-  {
-    id: "settings.reset",
-    parentId: "options",
-    order: 1002,
-    tourTargets: ["#tour-clearcookies"],
-    label: context => context.t("config.resetSettings"),
+  "settings.reset": {
     action: context => {
       resetPreferences(context.settingsOrigin)
       context.displayProps.updateDisplay()
     },
   },
-]
+}
+
+export const retroConfigControls: RetroControlMetadata[] = controlsFromJson("config", configBindings)
 
 const configControlRegistry = new ControlRegistry(retroConfigControls)
 

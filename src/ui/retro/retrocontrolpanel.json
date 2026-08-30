@@ -1,0 +1,948 @@
+{
+  "layout": {
+    "element": "section",
+    "id": "panel",
+    "className": "retro-panel menu-open scanline-gradient",
+    "attributes": {
+      "role": "dialog"
+    },
+    "children": [
+      {
+        "element": "div",
+        "className": "retro-viewport",
+        "children": [
+          {
+            "element": "div",
+            "className": "retro-native-surface",
+            "children": [
+              {
+                "element": "div",
+                "className": "retro-window",
+                "children": [
+                  {
+                    "slot": "border"
+                  },
+                  {
+                    "slot": "title"
+                  },
+                  {
+                    "slot": "submenu"
+                  },
+                  {
+                    "slot": "clock"
+                  },
+                  {
+                    "slot": "menu"
+                  },
+                  {
+                    "slot": "footer"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "controls": [
+    {
+      "group": "panel",
+      "id": "options",
+      "parentId": null,
+      "order": 8.5,
+      "tourTargets": [
+        "#tour-configbuttons"
+      ],
+      "labelKey": "retroControl.options"
+    },
+    {
+      "group": "panel",
+      "id": "options.other",
+      "parentId": "options",
+      "order": 1000,
+      "labelKey": "retroControl.other",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "panel",
+      "id": "quit",
+      "parentId": null,
+      "order": 10,
+      "labelKey": "retroControl.quit"
+    },
+    {
+      "group": "display",
+      "id": "display",
+      "parentId": null,
+      "order": 3,
+      "labelKey": "retroControl.display"
+    },
+    {
+      "group": "display",
+      "id": "display.color",
+      "kind": "choice",
+      "parentId": "display",
+      "order": 0,
+      "labelKey": "retroControl.color",
+      "defaultIndex": 0
+    },
+    {
+      "group": "display",
+      "id": "display.monitorMode",
+      "kind": "choice",
+      "parentId": "display",
+      "order": 0,
+      "labelKey": "retroControl.monitorMode",
+      "defaultIndex": 0
+    },
+    {
+      "group": "display",
+      "id": "display.scanlines",
+      "kind": "toggle",
+      "parentId": "display",
+      "order": 1,
+      "labelKey": "config.scanlines",
+      "defaultIndex": 0
+    },
+    {
+      "group": "display",
+      "id": "display.ghosting",
+      "kind": "toggle",
+      "parentId": "display",
+      "order": 2,
+      "labelKey": "config.ghosting",
+      "defaultIndex": 0
+    },
+    {
+      "group": "display",
+      "id": "display.crtDistortion",
+      "kind": "toggle",
+      "parentId": "display",
+      "order": 3,
+      "labelKey": "config.crtDistortion",
+      "defaultIndex": 0
+    },
+    {
+      "group": "gamepad",
+      "id": "keyboard.joystick",
+      "parentId": null,
+      "order": 6.5,
+      "labelKey": "retroControl.joystick"
+    },
+    {
+      "group": "gamepad",
+      "id": "keyboard.joystick.arrowKeys",
+      "kind": "toggle",
+      "parentId": "keyboard.joystick",
+      "order": 0,
+      "labelKey": "gamepad.useArrowKeys",
+      "defaultIndex": 0
+    },
+    {
+      "group": "gamepad",
+      "id": "keyboard.joystick.reverseYAxis",
+      "kind": "toggle",
+      "parentId": "keyboard.joystick",
+      "order": 1,
+      "labelKey": "gamepad.reverseYAxis",
+      "defaultIndex": 0
+    },
+    {
+      "group": "gamepad",
+      "id": "keyboard.joystick.siriusJoyport",
+      "kind": "toggle",
+      "parentId": "keyboard.joystick",
+      "order": 2,
+      "labelKey": "gamepad.siriusJoyport",
+      "defaultIndex": 0
+    },
+    {
+      "group": "config",
+      "id": "options.theme",
+      "binding": "options.theme",
+      "order": 4,
+      "kind": "choice",
+      "tourTargets": [
+        "#tour-theme-button"
+      ],
+      "labelKey": "config.theme",
+      "refreshParentOnOption": true,
+      "defaultIndex": 0
+    },
+    {
+      "group": "config",
+      "id": "keyboard",
+      "binding": "keyboard",
+      "parentId": null,
+      "order": 6,
+      "labelKey": "retroControl.keyboard"
+    },
+    {
+      "group": "config",
+      "id": "keyboard.lowercase",
+      "binding": "keyboard.lowercase",
+      "kind": "toggle",
+      "parentId": "keyboard",
+      "order": 0,
+      "tourTargets": [
+        "#tour-keyboardbuttons"
+      ],
+      "labelKey": "retroControl.lowercaseInput",
+      "defaultIndex": 0
+    },
+    {
+      "group": "config",
+      "id": "keyboard.openApple",
+      "binding": "keyboard.openApple",
+      "kind": "toggle",
+      "parentId": "keyboard",
+      "order": 1,
+      "labelKey": "retroControl.openAppleKey",
+      "defaultIndex": 0
+    },
+    {
+      "group": "config",
+      "id": "settings.reset",
+      "binding": "settings.reset",
+      "parentId": "options",
+      "order": 1002,
+      "tourTargets": [
+        "#tour-clearcookies"
+      ],
+      "labelKey": "config.resetSettings"
+    },
+    {
+      "group": "state",
+      "id": "state.restore",
+      "binding": "state.restore",
+      "parentId": "machine",
+      "order": 2,
+      "tourTargets": [
+        "#tour-saverestore"
+      ],
+      "labelKey": "controls.restoreState"
+    },
+    {
+      "group": "state",
+      "id": "state.save",
+      "binding": "state.save",
+      "parentId": "machine",
+      "order": 3,
+      "labelKey": "controls.saveState"
+    },
+    {
+      "group": "state",
+      "id": "machine.clipboard",
+      "parentId": "machine",
+      "order": 3.1,
+      "labelKey": "retroControl.clipboard",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "state",
+      "id": "clipboard.copyText",
+      "binding": "clipboard.copyText",
+      "parentId": "machine",
+      "order": 3.2,
+      "labelKey": "controls.copyText"
+    },
+    {
+      "group": "state",
+      "id": "clipboard.pasteText",
+      "binding": "clipboard.pasteText",
+      "parentId": "machine",
+      "order": 3.3,
+      "labelKey": "controls.pasteText"
+    },
+    {
+      "group": "debug",
+      "id": "machine.timeMachine",
+      "parentId": "machine",
+      "order": 4,
+      "tourTargets": [
+        "#tour-snapshot"
+      ],
+      "labelKey": "retroControl.timeMachine",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "debug",
+      "id": "snapshot.back",
+      "binding": "snapshot.back",
+      "parentId": "machine",
+      "order": 5,
+      "labelKey": "debugControls.goBackInTime"
+    },
+    {
+      "group": "debug",
+      "id": "snapshot.take",
+      "binding": "snapshot.take",
+      "parentId": "machine",
+      "order": 6,
+      "labelKey": "debugControls.takeSnapshot"
+    },
+    {
+      "group": "debug",
+      "id": "snapshot.forward",
+      "binding": "snapshot.forward",
+      "parentId": "machine",
+      "order": 7,
+      "labelKey": "debugControls.goForwardInTime"
+    },
+    {
+      "group": "debug",
+      "id": "snapshot.saveState",
+      "binding": "snapshot.saveState",
+      "parentId": "machine",
+      "order": 8,
+      "labelKey": "debugControls.saveStateWithSnapshots"
+    },
+    {
+      "group": "debug",
+      "id": "emulator.pause",
+      "binding": "emulator.pause",
+      "parentId": "machine",
+      "order": 9,
+      "tourTargets": [
+        "#tour-pause-button",
+        "#tour-debug-pause"
+      ]
+    },
+    {
+      "group": "debug",
+      "id": "options.hotReload",
+      "binding": "options.hotReload",
+      "kind": "toggle",
+      "order": 1,
+      "defaultIndex": 0
+    },
+    {
+      "group": "language",
+      "id": "options.language",
+      "binding": "options.language",
+      "kind": "choice",
+      "parentId": "display",
+      "order": 101,
+      "labelKey": "retroControl.language",
+      "refreshParentOnOption": true
+    },
+    {
+      "group": "speed",
+      "id": "options.speed",
+      "binding": "options.speed",
+      "kind": "choice",
+      "order": 0,
+      "labelKey": "retroControl.systemSpeed",
+      "defaultIndex": 2
+    },
+    {
+      "group": "audio",
+      "id": "sound",
+      "binding": "sound",
+      "parentId": null,
+      "order": 4,
+      "labelKey": "retroControl.sound"
+    },
+    {
+      "group": "audio",
+      "id": "sound.enabled",
+      "binding": "sound.enabled",
+      "kind": "choice",
+      "parentId": "sound",
+      "order": 0,
+      "labelKey": "retroControl.sound",
+      "defaultIndex": 1
+    },
+    {
+      "group": "audio",
+      "id": "sound.mockingboard",
+      "binding": "sound.mockingboard",
+      "kind": "choice",
+      "parentId": "sound",
+      "order": 1,
+      "labelKey": "audio.mockingboard",
+      "defaultIndex": 0
+    },
+    {
+      "group": "audio",
+      "id": "sound.midi",
+      "binding": "sound.midi",
+      "kind": "choice",
+      "parentId": "sound",
+      "order": 2,
+      "labelKey": "audio.midi"
+    },
+    {
+      "group": "machine",
+      "id": "machine",
+      "parentId": null,
+      "order": 0,
+      "tourTargets": [
+        "#tour-maincontrols"
+      ],
+      "labelKey": "retroControl.machine",
+      "actionLabelKey": "retroControl.select"
+    },
+    {
+      "group": "machine",
+      "id": "machine.boot",
+      "binding": "machine.boot",
+      "parentId": "machine",
+      "order": 0,
+      "tourTargets": [
+        "#tour-boot-button"
+      ],
+      "labelKey": "controls.boot"
+    },
+    {
+      "group": "machine",
+      "id": "machine.reset",
+      "binding": "machine.reset",
+      "parentId": "machine",
+      "order": 1,
+      "tourTargets": [
+        "#tour-reset-button"
+      ],
+      "labelKey": "controls.reset"
+    },
+    {
+      "group": "machine",
+      "id": "machine.fullscreen",
+      "binding": "machine.fullscreen",
+      "kind": "choice",
+      "parentId": "display",
+      "order": 4,
+      "labelKey": "retroControl.fullscreen",
+      "defaultIndex": 0
+    },
+    {
+      "group": "machine",
+      "id": "slots",
+      "binding": "slots",
+      "parentId": null,
+      "order": 8,
+      "labelKey": "retroControl.slots"
+    },
+    {
+      "group": "machine",
+      "id": "slots.1",
+      "binding": "slots.1",
+      "kind": "choice",
+      "parentId": "slots",
+      "order": 0,
+      "labelKey": "retroControl.slot",
+      "labelParams": {
+        "slot": "1"
+      }
+    },
+    {
+      "group": "machine",
+      "id": "slots.2",
+      "binding": "slots.2",
+      "kind": "choice",
+      "parentId": "slots",
+      "order": 1,
+      "labelKey": "retroControl.slot",
+      "labelParams": {
+        "slot": "2"
+      }
+    },
+    {
+      "group": "machine",
+      "id": "slots.3",
+      "binding": "slots.3",
+      "kind": "choice",
+      "parentId": "slots",
+      "order": 2,
+      "labelKey": "retroControl.slot",
+      "labelParams": {
+        "slot": "3"
+      }
+    },
+    {
+      "group": "machine",
+      "id": "slots.4",
+      "binding": "slots.4",
+      "kind": "choice",
+      "parentId": "slots",
+      "order": 3,
+      "labelKey": "retroControl.slot",
+      "labelParams": {
+        "slot": "4"
+      }
+    },
+    {
+      "group": "machine",
+      "id": "slots.5",
+      "binding": "slots.5",
+      "kind": "choice",
+      "parentId": "slots",
+      "order": 4,
+      "labelKey": "retroControl.slot",
+      "labelParams": {
+        "slot": "5"
+      }
+    },
+    {
+      "group": "machine",
+      "id": "slots.6",
+      "binding": "slots.6",
+      "kind": "choice",
+      "parentId": "slots",
+      "order": 5,
+      "labelKey": "retroControl.slot",
+      "labelParams": {
+        "slot": "6"
+      }
+    },
+    {
+      "group": "machine",
+      "id": "slots.7",
+      "binding": "slots.7",
+      "kind": "choice",
+      "parentId": "slots",
+      "order": 6,
+      "labelKey": "retroControl.slot",
+      "labelParams": {
+        "slot": "7"
+      }
+    },
+    {
+      "group": "serial",
+      "id": "ports",
+      "parentId": null,
+      "order": 7,
+      "labelKey": "print.printer"
+    },
+    {
+      "group": "serial",
+      "id": "printerPort",
+      "binding": "printerPort",
+      "kind": "choice",
+      "parentId": "ports",
+      "order": 0,
+      "labelKey": "retroControl.printerPort",
+      "defaultIndex": 0
+    },
+    {
+      "group": "imagewriter",
+      "id": "printer.imageWriterII",
+      "binding": "printer.imageWriterII",
+      "parentId": "ports",
+      "order": 1,
+      "labelKey": "print.imageWriterII",
+      "contextualActionLabelKey": "retroControl.open",
+      "keepMenuOpen": true
+    },
+    {
+      "group": "skin",
+      "id": "options.retroSkinSeparator",
+      "order": 3.9,
+      "labelKey": "retroControl.personalization",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "skin",
+      "id": "options.retroSkin",
+      "binding": "options.retroSkin",
+      "kind": "choice",
+      "order": 5,
+      "labelKey": "retroControl.skin",
+      "refreshParentOnOption": true,
+      "defaultIndex": 0
+    },
+    {
+      "group": "skin",
+      "id": "options.retroSkin.text",
+      "binding": "options.retroSkin.text",
+      "kind": "choice",
+      "order": 5.1,
+      "labelKey": "retroControl.text"
+    },
+    {
+      "group": "skin",
+      "id": "options.retroSkin.background",
+      "binding": "options.retroSkin.background",
+      "kind": "choice",
+      "order": 5.2,
+      "labelKey": "retroControl.background"
+    },
+    {
+      "group": "skin",
+      "id": "options.retroSkin.border",
+      "binding": "options.retroSkin.border",
+      "kind": "choice",
+      "order": 5.3,
+      "labelKey": "retroControl.border"
+    },
+    {
+      "group": "disk",
+      "id": "diskCollection",
+      "parentId": null,
+      "order": 1,
+      "labelKey": "retroControl.diskCollection",
+      "actionLabelKey": "retroControl.open"
+    },
+    {
+      "group": "disk",
+      "id": "diskCollection.builtIn",
+      "binding": "diskCollection.builtIn",
+      "parentId": "diskCollection",
+      "order": 0,
+      "tourTargets": [
+        "#tour-disk-images"
+      ],
+      "labelKey": "retroControl.apple2tsCollection"
+    },
+    {
+      "group": "disk",
+      "id": "diskCollection.newReleases",
+      "binding": "diskCollection.newReleases",
+      "parentId": "diskCollection",
+      "order": 1,
+      "labelKey": "retroControl.newReleases"
+    },
+    {
+      "group": "disk",
+      "id": "diskCollection.favorites",
+      "binding": "diskCollection.favorites",
+      "parentId": "diskCollection",
+      "order": 2,
+      "labelKey": "retroControl.favorites"
+    },
+    {
+      "group": "disk",
+      "id": "diskCollection.export",
+      "binding": "diskCollection.export",
+      "parentId": "diskCollection",
+      "order": 3,
+      "labelKey": "retroControl.exportDisksToHdv"
+    },
+    {
+      "group": "disk",
+      "id": "diskCollection.drivesSeparator",
+      "parentId": "diskCollection",
+      "order": 4,
+      "tourTargets": [
+        "#tour-floppy-disks"
+      ],
+      "labelKey": "retroControl.diskDrives",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "disk",
+      "id": "diskDrives.none",
+      "binding": "diskDrives.none",
+      "parentId": "diskCollection",
+      "order": 5,
+      "labelKey": "retroControl.noDiskDrivesAvailable",
+      "selectable": false
+    },
+    {
+      "group": "disk",
+      "id": "diskDrives.0",
+      "binding": "diskDrives.0",
+      "parentId": "diskCollection",
+      "order": 6
+    },
+    {
+      "group": "disk",
+      "id": "diskDrives.1",
+      "binding": "diskDrives.1",
+      "parentId": "diskCollection",
+      "order": 7
+    },
+    {
+      "group": "disk",
+      "id": "diskDrives.2",
+      "binding": "diskDrives.2",
+      "parentId": "diskCollection",
+      "order": 8
+    },
+    {
+      "group": "disk",
+      "id": "diskDrives.3",
+      "binding": "diskDrives.3",
+      "parentId": "diskCollection",
+      "order": 9
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.load.device",
+      "binding": "diskDrives.load.device",
+      "labelKey": "disk.loadDisk",
+      "keepMenuOpen": true
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.load.internetArchive",
+      "binding": "diskDrives.load.internetArchive",
+      "labelKey": "disk.loadDiskFromInternetArchive",
+      "submenuTitle": "Internet Archive",
+      "actionLabel": "Search"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.load.demoZoo",
+      "binding": "diskDrives.load.demoZoo",
+      "labelKey": "disk.loadDiskFromDemoZoo",
+      "submenuTitle": "DemoZoo",
+      "actionLabel": "Search"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.load.oneDrive",
+      "binding": "diskDrives.load.cloudProvider",
+      "providerId": "OneDrive",
+      "providerName": "OneDrive",
+      "labelKey": "disk.loadDiskFromOneDrive",
+      "submenuTitle": "OneDrive",
+      "actionLabelKey": "retroControl.open"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.load.googleDrive",
+      "binding": "diskDrives.load.cloudProvider",
+      "providerId": "GoogleDrive",
+      "providerName": "Google Drive",
+      "labelKey": "disk.loadDiskFromGoogleDrive",
+      "submenuTitle": "Google Drive",
+      "actionLabelKey": "retroControl.open"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.eject",
+      "kind": "action",
+      "labelKey": "disk.ejectDisk"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.writeProtected",
+      "kind": "toggle",
+      "labelKey": "disk.writeProtectDisk",
+      "defaultIndex": 0
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.addToCollection",
+      "kind": "action",
+      "labelKey": "disk.addDiskToCollection"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.removeFromCollection",
+      "kind": "action",
+      "labelKey": "disk.removeDiskFromCollection"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.saveToDevice",
+      "kind": "action",
+      "labelKey": "disk.saveDiskToDevice"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.download",
+      "kind": "action",
+      "labelKey": "disk.downloadDisk"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.downloadAndEject",
+      "kind": "action",
+      "labelKey": "disk.downloadAndEjectDisk"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.saveToOneDrive",
+      "kind": "action",
+      "labelKey": "disk.saveDiskToOneDrive"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.saveToGoogleDrive",
+      "kind": "action",
+      "labelKey": "disk.saveDiskToGoogleDrive"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.syncEveryMinute",
+      "kind": "action",
+      "labelKey": "disk.syncEveryMinute"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.syncEvery5Minutes",
+      "kind": "action",
+      "labelKey": "disk.syncEvery5Minutes"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.pauseSyncing",
+      "kind": "action",
+      "labelKey": "disk.pauseSyncing"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.syncNow",
+      "kind": "action",
+      "labelKey": "disk.syncNow"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.{{separatorId}}",
+      "binding": "diskDrives.blankSeparator",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.cloudSection",
+      "binding": "diskDrives.cloudSection",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskCollection.{{tabIndex}}.sort",
+      "binding": "diskCollection.sort",
+      "kind": "choice",
+      "valueOnly": true
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskCollection.{{tabIndex}}.sortSeparator",
+      "labelKey": "retroControl.sortOrder",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskCollection.diskRow",
+      "binding": "diskCollection.diskRow",
+      "kind": "action",
+      "keepMenuOpen": true,
+      "hideOptionValue": true
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskCollection.exportDiskRow",
+      "binding": "diskCollection.exportDiskRow",
+      "kind": "choice",
+      "checkmarkIndex": 1
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskCollection.cloudAuthNotification",
+      "binding": "diskCollection.cloudAuthNotification",
+      "kind": "action",
+      "keepMenuOpen": true,
+      "refreshAfterAction": true,
+      "contextualActionLabelKey": "messages.confirm"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskCollection.cloudAuthNotificationSeparator",
+      "labelKey": "retroControl.diskCollection",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.demoZoo.type",
+      "binding": "diskDrives.demoZoo.type",
+      "kind": "action",
+      "keepMenuOpen": true,
+      "refreshAfterAction": true
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.demoZoo.title",
+      "binding": "diskDrives.demoZoo.title",
+      "kind": "action",
+      "textInput": true,
+      "keepMenuOpen": true,
+      "refreshAfterAction": true
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.demoZoo.resultsSeparator",
+      "binding": "diskDrives.demoZoo.resultsSeparator",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.demoZoo.result",
+      "binding": "diskDrives.demoZoo.result",
+      "kind": "action",
+      "keepMenuOpen": true,
+      "contextualActionLabelKey": "retroControl.load"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.internetArchive.collection",
+      "binding": "diskDrives.internetArchive.collection",
+      "kind": "action",
+      "keepMenuOpen": true,
+      "refreshAfterAction": true
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.internetArchive.title",
+      "binding": "diskDrives.internetArchive.title",
+      "kind": "action",
+      "textInput": true,
+      "keepMenuOpen": true,
+      "refreshAfterAction": true
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.internetArchive.resultsSeparator",
+      "binding": "diskDrives.internetArchive.resultsSeparator",
+      "separator": true,
+      "selectable": false
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.internetArchive.result",
+      "binding": "diskDrives.internetArchive.result",
+      "kind": "action",
+      "keepMenuOpen": true,
+      "contextualActionLabelKey": "retroControl.load"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.cloudDrive.parentItem",
+      "binding": "diskDrives.cloudDrive.parentItem",
+      "kind": "action",
+      "keepMenuOpen": true,
+      "refreshAfterAction": true,
+      "contextualActionLabelKey": "retroControl.open"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.cloudDrive.folder",
+      "binding": "diskDrives.cloudDrive.folder",
+      "kind": "action",
+      "keepMenuOpen": true,
+      "refreshAfterAction": true,
+      "contextualActionLabelKey": "retroControl.open",
+      "useRetroFont": true
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.cloudDrive.file",
+      "binding": "diskDrives.cloudDrive.file",
+      "kind": "action",
+      "keepMenuOpen": true,
+      "contextualActionLabelKey": "retroControl.load"
+    }
+  ]
+}

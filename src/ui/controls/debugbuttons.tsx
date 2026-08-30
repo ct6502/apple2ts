@@ -20,63 +20,34 @@ import { getHotReload, isGameMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
 import { setPreferenceBoolean } from "../localstorage"
 import { isFileSystemApiSupported } from "../ui_utilities"
-import { toggleMetadata } from "../retro/retromenuhelpers"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
+import { controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
 const emulatorStarted = () => {
   const runMode = handleGetRunMode()
   return runMode !== RUN_MODE.IDLE && runMode !== RUN_MODE.NEED_BOOT
 }
 
-export const retroDebugControls: RetroControlMetadata[] = [
-  {
-    id: "machine.timeMachine",
-    parentId: "machine",
-    order: 4,
-    tourTargets: ["#tour-snapshot"],
-    label: context => context.t("retroControl.timeMachine"),
-    separator: true,
-    selectable: false,
-  },
-  {
-    id: "snapshot.back",
-    parentId: "machine",
-    order: 5,
-    label: context => context.t("debugControls.goBackInTime"),
+const debugBindings: RetroControlBindings = {
+  "snapshot.back": {
     action: passGoBackInTime,
     selectable: () => emulatorStarted() && handleCanGoBackward(),
   },
-  {
-    id: "snapshot.take",
-    parentId: "machine",
-    order: 6,
-    label: context => context.t("debugControls.takeSnapshot"),
+  "snapshot.take": {
     action: passTimeTravelSnapshot,
     selectable: emulatorStarted,
   },
-  {
-    id: "snapshot.forward",
-    parentId: "machine",
-    order: 7,
-    label: context => context.t("debugControls.goForwardInTime"),
+  "snapshot.forward": {
     action: passGoForwardInTime,
     selectable: () => emulatorStarted() && handleCanGoForward(),
   },
-  {
-    id: "snapshot.saveState",
-    parentId: "machine",
-    order: 8,
-    label: context => context.t("debugControls.saveStateWithSnapshots"),
+  "snapshot.saveState": {
     action: () => handleFileSave(true),
     selectable: emulatorStarted,
   },
-  {
-    id: "emulator.pause",
-    parentId: "machine",
-    order: 9,
-    tourTargets: ["#tour-pause-button", "#tour-debug-pause"],
+  "emulator.pause": {
     label: context => context.t(handleGetRunMode() === RUN_MODE.PAUSED
       ? "debugControls.resume"
       : "debugControls.pause"),
@@ -86,20 +57,22 @@ export const retroDebugControls: RetroControlMetadata[] = [
     },
     selectable: () => handleGetRunMode() !== RUN_MODE.IDLE,
   },
-  toggleMetadata({
-    id: "options.hotReload",
-    order: 1,
+  "options.hotReload": {
+    ...toggleBinding({
+      enabled: getHotReload,
+      setEnabled: (context, enabled) => {
+        setPreferenceBoolean("hotReload", enabled, context.settingsOrigin)
+        context.displayProps.updateDisplay()
+      },
+    }),
     label: context => context.t(getHotReload()
       ? "debugControls.hotReloadEnabled"
       : "debugControls.hotReloadDisabled"),
-    enabled: getHotReload,
-    setEnabled: (context, enabled) => {
-      setPreferenceBoolean("hotReload", enabled, context.settingsOrigin)
-      context.displayProps.updateDisplay()
-    },
     isVisible: isFileSystemApiSupported,
-  }),
-]
+  },
+}
+
+export const retroDebugControls: RetroControlMetadata[] = controlsFromJson("debug", debugBindings)
 
 const debugControlRegistry = new ControlRegistry(retroDebugControls)
 

@@ -19,24 +19,16 @@ import { useTranslation } from "../../i18n/useTranslation"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
+import { controlsFromJson, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
-export const retroStateControls: RetroControlMetadata[] = [
-  {
-    id: "state.restore",
-    parentId: "machine",
-    order: 2,
-    tourTargets: ["#tour-saverestore"],
-    label: context => context.t("controls.restoreState"),
+const stateBindings: RetroControlBindings = {
+  "state.restore": {
     action: context => {
       context.close()
       context.displayProps.setShowFileOpenDialog(true, 0)
     },
   },
-  {
-    id: "state.save",
-    parentId: "machine",
-    order: 3,
-    label: context => context.t("controls.saveState"),
+  "state.save": {
     action: () => {
       const runMode = handleGetRunMode()
       if (runMode !== RUN_MODE.IDLE && runMode !== RUN_MODE.NEED_BOOT) handleFileSave(false)
@@ -46,32 +38,18 @@ export const retroStateControls: RetroControlMetadata[] = [
       return runMode !== RUN_MODE.IDLE && runMode !== RUN_MODE.NEED_BOOT
     },
   },
-  {
-    id: "machine.clipboard",
-    parentId: "machine",
-    order: 3.1,
-    label: context => context.t("retroControl.clipboard"),
-    separator: true,
-    selectable: false,
-  },
-  {
-    id: "clipboard.copyText",
-    parentId: "machine",
-    order: 3.2,
-    label: context => context.t("controls.copyText"),
+  "clipboard.copyText": {
     action: handleCopyToClipboard,
     selectable: () => handleGetTextPage().length > 0,
   },
-  {
-    id: "clipboard.pasteText",
-    parentId: "machine",
-    order: 3.3,
-    label: context => context.t("controls.pasteText"),
+  "clipboard.pasteText": {
     action: () => {
       void navigator.clipboard.readText().then(data => passPasteText(data))
     },
   },
-]
+}
+
+export const retroStateControls: RetroControlMetadata[] = controlsFromJson("state", stateBindings)
 
 const stateControlRegistry = new ControlRegistry(retroStateControls)
 

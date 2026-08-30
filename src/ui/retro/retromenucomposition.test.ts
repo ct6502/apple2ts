@@ -401,10 +401,11 @@ describe("Retro menu metadata structure", () => {
     expect(unknown?.indicator).toBe("?")
     expect(items.at(-2)).toMatchObject({
       id: "diskCollection.export.sortSeparator",
-      label: "retroControl.sortOrder",
       separator: true,
       selectable: false,
     })
+    const sortSepLabel = items.at(-2)?.label
+    expect(typeof sortSepLabel === "function" ? sortSepLabel(context) : sortSepLabel).toBe("retroControl.sortOrder")
     expect(items.at(-1)).toMatchObject({
       id: "diskCollection.export.sort",
       valueOnly: true,
@@ -491,6 +492,30 @@ describe("Retro menu metadata structure", () => {
       context,
       selectedItems as unknown as RetroResolvedControl[],
       metadataValues(selectedItems, context),
+    )).toBe(true)
+  })
+
+  test("hides Export until a disk is selected", () => {
+    mockHandleGetDriveProps.mockReturnValue({ filename: "" })
+    mockHandleGetFilename.mockReturnValue("")
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const items = createRetroExportItems(context, [collectionDisk("prodos")])
+    const values = metadataValues(items, context)
+    const exportTab = retroMenuRegistry.resolve(context, "diskCollection")
+      .find(control => control.id === "diskCollection.export")
+    const diskItem = items.find(item => item.payload)
+
+    expect(diskItem?.kind).toBe("choice")
+    expect(exportTab?.isSubmitVisible?.(
+      items as unknown as RetroResolvedControl[],
+      values,
+    )).toBe(false)
+
+    const diskIndex = items.findIndex(item => item.payload)
+    values[diskIndex] = 1
+    expect(exportTab?.isSubmitVisible?.(
+      items as unknown as RetroResolvedControl[],
+      values,
     )).toBe(true)
   })
 

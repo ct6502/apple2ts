@@ -3,40 +3,31 @@ import { useTranslation } from "../../i18n/useTranslation"
 import { AllLanguages, LanguageFlags, LanguageNames } from "../../i18n"
 import PopupMenu from "./popupmenu"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
-import { choiceMetadata } from "../retro/retromenuhelpers"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
 import { controlOptionsToPopupItems } from "./controlpopup"
 import { retroFontSupports } from "../retro/retrotext"
 import { notifySettingsChanged } from "../settingschange"
+import { controlFromJson, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
 const createLanguageControl = (selectedLanguageIndex?: number): RetroControlMetadata => {
-  const control = choiceMetadata({
-    id: "options.language",
-    parentId: "display",
-    order: 101,
-    label: context => context.t("retroControl.language"),
-    labels: () => AllLanguages.map(language => LanguageNames[language]),
-    currentIndex: context => selectedLanguageIndex ?? AllLanguages.indexOf(context.language),
-    select: (context, index) => {
-      context.changeLanguage(AllLanguages[index])
-      notifySettingsChanged(["options.language"], context.settingsOrigin)
+  const languageBindings: RetroControlBindings = {
+    "options.language": {
+      options: () => AllLanguages.map(language => ({
+        label: LanguageNames[language],
+        popupLabel: `${LanguageFlags[language]} ${LanguageNames[language]}`,
+        action: runtime => {
+          runtime.changeLanguage(language)
+          notifySettingsChanged(["options.language"], runtime.settingsOrigin)
+        },
+        preview: runtime => runtime.changeLanguage(language),
+        useBrowserFont: !retroFontSupports(LanguageNames[language]),
+      })),
+      optionIndex: context => selectedLanguageIndex ?? AllLanguages.indexOf(context.language),
+      refreshTitle: context => context.t("retroControl.display"),
     },
-    preview: (context, index) => context.changeLanguage(AllLanguages[index]),
-  })
-  control.options = () => AllLanguages.map(language => ({
-    label: LanguageNames[language],
-    popupLabel: `${LanguageFlags[language]} ${LanguageNames[language]}`,
-    action: runtime => {
-      runtime.changeLanguage(language)
-      notifySettingsChanged(["options.language"], runtime.settingsOrigin)
-    },
-    preview: runtime => runtime.changeLanguage(language),
-    useBrowserFont: !retroFontSupports(LanguageNames[language]),
-  }))
-  control.refreshParentOnOption = true
-  control.refreshTitle = context => context.t("retroControl.display")
-  return control
+  }
+  return controlFromJson("language", "options.language", languageBindings)
 }
 
 export const createRetroLanguageControls = (selectedLanguageIndex?: number): RetroControlMetadata[] => [

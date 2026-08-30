@@ -8,35 +8,26 @@ import { getArrowKeysAsJoystick } from "../ui_settings"
 import { getPreferenceBoolean, setPreferenceBoolean } from "../localstorage"
 
 import { useTranslation } from "../../i18n/useTranslation"
-import { toggleMetadata } from "../retro/retromenuhelpers"
-import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "../controls/controlregistry"
 import { controlsToPopupItems } from "../controls/controlpopup"
+import { controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
 const joystickSettings = [
-  ["keyboard.joystick.arrowKeys", "gamepad.useArrowKeys", "arrowKeysAsJoystick", getArrowKeysAsJoystick],
-  ["keyboard.joystick.reverseYAxis", "gamepad.reverseYAxis", "reverseYAxis", () => getPreferenceBoolean("reverseYAxis")],
-  ["keyboard.joystick.siriusJoyport", "gamepad.siriusJoyport", "siriusJoyport", () => getPreferenceBoolean("siriusJoyport")],
+  ["keyboard.joystick.arrowKeys", "arrowKeysAsJoystick", getArrowKeysAsJoystick],
+  ["keyboard.joystick.reverseYAxis", "reverseYAxis", () => getPreferenceBoolean("reverseYAxis")],
+  ["keyboard.joystick.siriusJoyport", "siriusJoyport", () => getPreferenceBoolean("siriusJoyport")],
 ] as const
 
-export const retroGamepadControls: RetroControlMetadata[] = [
-  {
-    id: "keyboard.joystick",
-    parentId: null,
-    order: 6.5,
-    label: context => context.t("retroControl.joystick"),
-  },
-  ...joystickSettings.map(([id, labelKey, preference, getter], order) => toggleMetadata({
-    id,
-    parentId: "keyboard.joystick",
-    order,
-    label: context => context.t(labelKey),
+const gamepadBindings: RetroControlBindings = Object.fromEntries(
+  joystickSettings.map(([id, preference, getter]) => [id, toggleBinding({
     enabled: getter,
     setEnabled: (context, enabled) =>
       setPreferenceBoolean(preference, enabled, context.settingsOrigin),
-  })),
-]
+  })]),
+)
+
+export const retroGamepadControls = controlsFromJson("gamepad", gamepadBindings)
 
 const gamepadControlRegistry = new ControlRegistry(retroGamepadControls)
 

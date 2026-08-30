@@ -17,10 +17,10 @@ const MinimumSpeedMode = -2
 export const MaximumSpeedMode = 4
 
 import { useTranslation } from "../../i18n/useTranslation"
-import { choiceMetadata } from "../retro/retromenuhelpers"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
+import { controlsFromJson, choiceBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
 export const SPEED_MODES = [-2, -1, 0, 1, 2, 3, 4] as const
 const SPEED_LABEL_KEYS = [
@@ -33,18 +33,21 @@ const SPEED_LABEL_KEYS = [
   "retroControl.warp",
 ] as const
 
-export const retroSpeedControl: RetroControlMetadata = choiceMetadata({
-  id: "options.speed",
-  order: 0,
-  label: context => context.t("retroControl.systemSpeed"),
-  labels: context => SPEED_LABEL_KEYS.map(key => context.t(key)),
-  currentIndex: () => SPEED_MODES.indexOf(handleGetSpeedMode() as typeof SPEED_MODES[number]),
-  select: (context, index) => {
-    setPreferenceSpeedMode(SPEED_MODES[index], context.settingsOrigin)
-    context.displayProps.updateDisplay()
+const speedBindings: RetroControlBindings = {
+  "options.speed": {
+    ...choiceBinding({
+      options: context => SPEED_LABEL_KEYS.map(key => ({ label: context.t(key) })),
+      currentIndex: () => SPEED_MODES.indexOf(handleGetSpeedMode() as typeof SPEED_MODES[number]),
+      select: (context, index) => {
+        setPreferenceSpeedMode(SPEED_MODES[index], context.settingsOrigin)
+        context.displayProps.updateDisplay()
+      },
+    }),
+    defaultIndex: SPEED_MODES.indexOf(0),
   },
-  defaultIndex: SPEED_MODES.indexOf(0),
-})
+}
+
+export const retroSpeedControl: RetroControlMetadata = controlsFromJson("speed", speedBindings)[0]
 
 const speedControlRegistry = new ControlRegistry([retroSpeedControl])
 
