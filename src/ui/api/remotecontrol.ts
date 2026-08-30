@@ -65,6 +65,7 @@ import {
   requestMountDiskFromBuffer,
 } from "../devices/disk/driveprops"
 import { parseRemoteKeyboardState } from "./remotecontrol_input"
+import { captureRenderedScreen } from "./remotecontrol_screen"
 
 const CONNECT_RETRY_MS = 3000
 const HEARTBEAT_MS = 2000
@@ -403,6 +404,9 @@ export const executeCommand = async (action: string, payload: Record<string, unk
 
     case "getMemory":
       return collectMemory()
+
+    case "captureScreen":
+      return captureRenderedScreen()
 
     case "setRunMode": {
       const runMode = Number(payload.runMode) as RUN_MODE
