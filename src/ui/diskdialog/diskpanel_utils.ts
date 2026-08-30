@@ -323,26 +323,26 @@ export const diskItemKey = (item: DiskCollectionItem): string =>
 // why; disks whose VTOC hasn't been determined yet show a yellow "pending" badge.
 export const getExportBadgeInfo = (disk: DiskCollectionItem): { state: "exportable" | "blocked" | "pending"; title: string } => {
   if (disk.exportDisabled) {
-    return { state: "blocked", title: "Export is not currently supported for this disk" }
+    return { state: "blocked", title: i18n.t("collection.exportUnavailable") }
   }
   if (disk.fileSize >= maxHdvBytes * 0.95) {
-    return { state: "blocked", title: "Disk is too large to be exported" }
+    return { state: "blocked", title: i18n.t("collection.exportTooLarge") }
   }
   if (disk.vtocType === "other") {
-    return { state: "blocked", title: "Disk is not exportable due to copy protection" }
+    return { state: "blocked", title: i18n.t("collection.exportCopyProtected") }
   }
   if (disk.vtocType === "dosup") {
-    return { state: "blocked", title: "Disk is not exportable due to DOS Master incompatibility" }
+    return { state: "blocked", title: i18n.t("collection.exportDosMasterIncompatible") }
   }
   if (disk.vtocType === undefined) {
-    return { state: "pending", title: "Disk export status pending" }
+    return { state: "pending", title: i18n.t("collection.exportStatusPending") }
   }
-  return { state: "exportable", title: "Disk can be exported" }
+  return { state: "exportable", title: i18n.t("collection.exportAvailable") }
 }
 
 export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) => {
 
-  showGlobalProgressModal(true, "Creating HDV image")
+  showGlobalProgressModal(true, i18n.t("collection.creatingHdv"))
   try {
     const omittedFourCadeTitles: FourCadeExportFailure[] = []
     let skipUnavailableTitles = false
@@ -356,7 +356,7 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
         i18n.t("collection.continueHdvExportWithoutUnavailableTitles"),
       )
       if (skipUnavailableTitles) {
-        showGlobalProgressModal(true, "Creating HDV image")
+        showGlobalProgressModal(true, i18n.t("collection.creatingHdv"))
       }
       return skipUnavailableTitles
     }
@@ -482,15 +482,14 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
     downloadExportHdv(hdvData, "APPLE2TS.HDV")
     if (omittedFourCadeTitles.length > 0) {
       showGlobalProgressModal(false)
-      alert(
-        "HDV created without:\n\n" + omittedFourCadeTitles
-          .map(({ title, reason }) => `"${title}": ${reason}`)
-          .join("\n"),
-      )
+      const details = omittedFourCadeTitles
+        .map(({ title, reason }) => `"${title}": ${reason}`)
+        .join("\n")
+      alert(i18n.t("collection.hdvCreatedWithOmissions", {details}))
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    alert(`Failed to build ProDOS HDV: ${message}`)
+    alert(i18n.t("collection.hdvCreationFailed", {message}))
   } finally {
     showGlobalProgressModal(false)
   }

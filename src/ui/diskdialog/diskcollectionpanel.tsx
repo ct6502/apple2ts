@@ -345,7 +345,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       // Dismiss the disk collection dialog/flyout so the error isn't left
       // hanging over a half-finished export.
       dismissDiskCollection()
-      alert("An unexpected error occurred while downloading the disk. Export to HDV has been aborted.")
+      alert(t("collection.hdvDownloadFailed"))
     } else if (buffer !== undefined) {
       const currentItem = exportQueue[0]
       if (!currentItem) {
@@ -359,7 +359,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       ]))
       setExportQueue((prevExportQueue) => prevExportQueue.slice(1))
     } else if (exportQueue.length > 0) {
-      showGlobalProgressModal(true, `Fetching disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
+      showGlobalProgressModal(true, t("collection.fetchingDisk", {
+        current: String(selectedDisks.length - exportQueue.length + 1),
+        total: String(selectedDisks.length),
+      }))
       loadDisk(-1, exportQueue[0], props.updateDisplay, processExportQueue)
     }
   }
@@ -915,7 +918,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
             ...(activeTab == TAB_INDEX.EXPORT
               ? [
                 {
-                  label: "Select all disks",
+                  label: t("collection.selectAllDisks"),
                   icon: faCheckCircle,
                   onClick: () => {
                     const newSelectedDisks = [...selectedDisks]
@@ -928,7 +931,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                   }
                 },
                 {
-                  label: "Unselect all disks",
+                  label: t("collection.clearDiskSelection"),
                   icon: faCircle,
                   onClick: () => {
                     setSelectedDisks([])

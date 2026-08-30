@@ -7,6 +7,7 @@ import { isDiskExportable, getExportFilename, DISK_COLLECTION_ITEM_TYPE, TAB_IND
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/disk/driveprops"
 import { clearIaResolveCache, internetArchiveUrlProtocol } from "../devices/disk/internetarchive_utils"
+import { i18n } from "../../i18n"
 
 type DiskPanelVtocProps = {
   activeTab: number,
@@ -253,7 +254,10 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     const suppressProgress = suppressProgressRef.current
     suppressProgressRef.current = false
     if (!suppressProgress && props.activeTab === TAB_INDEX.EXPORT && props.showProgressModal !== false) {
-      showGlobalProgressModal(true, `Fetching disk metadata ${currentDisk}/${totalDisks}`)
+      showGlobalProgressModal(true, i18n.t("collection.checkingDiskForExport", {
+        current: String(currentDisk),
+        total: String(totalDisks),
+      }))
       vtocProgressVisibleRef.current = true
     }
 

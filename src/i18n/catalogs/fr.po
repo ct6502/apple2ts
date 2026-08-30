@@ -1877,6 +1877,65 @@ msgctxt "collection.continueHdvExportWithoutUnavailableTitles"
 msgid "Continue creating the HDV and skip unavailable titles?"
 msgstr ""
 
+msgctxt "collection.exportUnavailable"
+msgid "This disk cannot be exported"
+msgstr ""
+
+msgctxt "collection.exportTooLarge"
+msgid "This disk is too large to export"
+msgstr ""
+
+msgctxt "collection.exportCopyProtected"
+msgid "Copy protection prevents exporting this disk"
+msgstr ""
+
+msgctxt "collection.exportDosMasterIncompatible"
+msgid "This disk is incompatible with DOS.MASTER"
+msgstr ""
+
+msgctxt "collection.exportStatusPending"
+msgid "Checking whether this disk can be exported"
+msgstr ""
+
+msgctxt "collection.exportAvailable"
+msgid "This disk can be exported"
+msgstr ""
+
+msgctxt "collection.creatingHdv"
+msgid "Creating the HDV image"
+msgstr ""
+
+msgctxt "collection.hdvCreatedWithOmissions"
+msgid ""
+"Apple2TS created the HDV with some titles omitted:\n"
+"\n"
+"{{details}}"
+msgstr ""
+
+msgctxt "collection.hdvCreationFailed"
+msgid "Apple2TS could not create the HDV: {{message}}"
+msgstr ""
+
+msgctxt "collection.hdvDownloadFailed"
+msgid "Apple2TS could not download the disk, so HDV creation was canceled."
+msgstr ""
+
+msgctxt "collection.fetchingDisk"
+msgid "Fetching disk {{current}} of {{total}}"
+msgstr ""
+
+msgctxt "collection.checkingDiskForExport"
+msgid "Checking disk {{current}} of {{total}} for export"
+msgstr ""
+
+msgctxt "collection.selectAllDisks"
+msgid "Select all disks"
+msgstr ""
+
+msgctxt "collection.clearDiskSelection"
+msgid "Clear disk selection"
+msgstr ""
+
 #, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"

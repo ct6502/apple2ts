@@ -20,7 +20,7 @@ jest.mock("../ui_utilities", () => ({
   showGlobalProgressModal: (...args: unknown[]) => mockShowGlobalProgressModal(...args),
 }))
 
-import { createHdv, DISK_COLLECTION_ITEM_TYPE, loadDisk, loadDiskIntoDrive } from "./diskpanel_utils"
+import { createHdv, DISK_COLLECTION_ITEM_TYPE, getExportBadgeInfo, loadDisk, loadDiskIntoDrive } from "./diskpanel_utils"
 
 describe("loadDisk", () => {
   const disk = {
@@ -112,10 +112,11 @@ describe("createHdv", () => {
       "Continue creating the HDV and skip unavailable titles?",
     )
     expect(alert).toHaveBeenCalledWith(
-      "HDV created without:\n\n\"Aztec\": no usable binary\n\"Chivalry\": download failed",
+      "Apple2TS created the HDV with some titles omitted:\n\n" +
+      "\"Aztec\": no usable binary\n\"Chivalry\": download failed",
     )
     expect(createElement).toHaveBeenCalledWith("a")
-    expect(mockShowGlobalProgressModal).toHaveBeenNthCalledWith(1, true, "Creating HDV image")
+    expect(mockShowGlobalProgressModal).toHaveBeenNthCalledWith(1, true, "Creating the HDV image")
     expect(mockShowGlobalProgressModal).toHaveBeenLastCalledWith(false)
 
     alert.mockRestore()
@@ -138,7 +139,7 @@ describe("createHdv", () => {
     await createHdv([])
 
     expect(alert).toHaveBeenCalledWith(
-      "Failed to build ProDOS HDV: Could not export \"Aztec\": no usable binary",
+      "Apple2TS could not create the HDV: Could not export \"Aztec\": no usable binary",
     )
     expect(createElement).not.toHaveBeenCalledWith("a")
     expect(mockShowGlobalProgressModal).toHaveBeenLastCalledWith(false)
@@ -146,5 +147,24 @@ describe("createHdv", () => {
     alert.mockRestore()
     confirm.mockRestore()
     createElement.mockRestore()
+  })
+})
+
+describe("getExportBadgeInfo", () => {
+  const disk = {
+    fileSize: 143360,
+    title: "Example",
+    type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
+  } as DiskCollectionItem
+
+  test.each([
+    [{ ...disk, exportDisabled: true }, "blocked", "This disk cannot be exported"],
+    [{ ...disk, fileSize: 33554432 }, "blocked", "This disk is too large to export"],
+    [{ ...disk, vtocType: "other" }, "blocked", "Copy protection prevents exporting this disk"],
+    [{ ...disk, vtocType: "dosup" }, "blocked", "This disk is incompatible with DOS.MASTER"],
+    [{ ...disk, vtocType: undefined }, "pending", "Checking whether this disk can be exported"],
+    [{ ...disk, vtocType: "prodos" }, "exportable", "This disk can be exported"],
+  ])("returns localized export status", (item, state, title) => {
+    expect(getExportBadgeInfo(item as DiskCollectionItem)).toEqual({ state, title })
   })
 })
