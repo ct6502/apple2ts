@@ -87,7 +87,7 @@ type FourCadeDiskMetadata = {
   }>  // companion files used by multi-file games and runtime loaders
 }
 
-import { FOUR_CADE_PRELAUNCH_DB, FourCadeEntry } from "./four_cade_prelaunch_db"
+import { FOUR_CADE_CATALOG, FourCadeEntry } from "./four_cade_catalog"
 import { PrelaunchOp, fetchFourCadeDisk, fetchFourCadePrelaunch, parsePrelaunchScript, extractAllBinFiles } from "./four_cade_prelaunch"
 
 /** FNV-1a 32-bit hash of a Uint8Array — fast, synchronous, collision-resistant for disk identification. */
@@ -101,7 +101,7 @@ const normalizeFourCadeName = (name: string): string =>
 const getFourCadeNameIndex = (): Map<string, string> => {
   if (!fourCadeNameIndex) {
     fourCadeNameIndex = new Map()
-    for (const key of Object.keys(FOUR_CADE_PRELAUNCH_DB)) {
+    for (const key of Object.keys(FOUR_CADE_CATALOG)) {
       fourCadeNameIndex.set(normalizeFourCadeName(key), key)
     }
     fourCadeNameIndex.set(normalizeFourCadeName("Pitfall II: Lost Caverns"), "Pitfall II")
@@ -120,7 +120,7 @@ export const lookupFourCadeByTitle = (title: string): FourCadeEntry | undefined 
     .replace(/\s*\[.*?\]\s*$/g, "")
     .trim()
   const key = getFourCadeNameIndex().get(normalizeFourCadeName(cleaned))
-  return key ? FOUR_CADE_PRELAUNCH_DB[key] : undefined
+  return key ? FOUR_CADE_CATALOG[key] : undefined
 }
 
 /**

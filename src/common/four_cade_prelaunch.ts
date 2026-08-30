@@ -1,4 +1,4 @@
-import { FourCadeEntry } from "./four_cade_prelaunch_db"
+import { FourCadeEntry } from "./four_cade_catalog"
 
 export type PrelaunchOp =
   | { op: "patch"; addr: number; val: number }   // LDA #val; STA addr
