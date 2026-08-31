@@ -110,6 +110,7 @@ export const setPreferenceBoolean = (
     localStorage.removeItem(key)
   }
   setUIStateBoolean(key as BooleanKeyOf<UIState>, value)
+  if (key === "siriusJoyport") passSiriusJoyport(value)
   const controlId = booleanControlIds[key]
   if (controlId) notifySettingsChanged([controlId], origin)
 }

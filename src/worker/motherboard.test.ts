@@ -3,17 +3,90 @@ import { getHires, memGet, memory, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doLoadBinary, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSpeedMode, doSetState6502, getExternalMachineState, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, getExternalMachineState, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { getCurrentDriveState } from "./devices/drivestate"
 import * as worker2main from "./worker2main"
+import { getSiriusJoyport } from "./devices/sirius_joyport"
 
 // Make sure we don't accidentally leave debug mode on.
 test("debugMode", () => {
   expect(TEST_DEBUG).toEqual(false)
   expect(TEST_GRAPHICS).toEqual(false)
+})
+
+describe("Sirius reset", () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+    setIsTesting()
+    doSetCycleCount(0)
+    doSetSiriusJoyport(true)
+    doReset()
+  })
+
+  afterEach(() => {
+    doSetSiriusJoyport(false)
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  })
+
+  test("a live disable cancels delayed re-enable", () => {
+    expect(getSiriusJoyport()).toBe(false)
+
+    doSetSiriusJoyport(false)
+
+    expect(getSiriusJoyport()).toBe(false)
+    expect(jest.getTimerCount()).toBe(0)
+  })
+
+  test("a live enable waits for reset protection", () => {
+    doSetSiriusJoyport(true)
+    expect(getSiriusJoyport()).toBe(false)
+    expect(jest.getTimerCount()).toBe(1)
+
+    doSetCycleCount(1001)
+    jest.advanceTimersByTime(50)
+    expect(getSiriusJoyport()).toBe(true)
+  })
+
+  test("enabling after a disabled reset waits for reset protection", () => {
+    doSetSiriusJoyport(false)
+    doReset()
+
+    doSetSiriusJoyport(true)
+
+    expect(getSiriusJoyport()).toBe(false)
+    expect(jest.getTimerCount()).toBe(1)
+  })
+
+  test("disabling and re-enabling does not bypass reset protection", () => {
+    doSetSiriusJoyport(false)
+    doSetSiriusJoyport(true)
+
+    expect(getSiriusJoyport()).toBe(false)
+    expect(jest.getTimerCount()).toBe(1)
+  })
+
+  test("restores an unchanged setting after startup", () => {
+    doSetCycleCount(1001)
+    jest.advanceTimersByTime(50)
+
+    expect(getSiriusJoyport()).toBe(true)
+  })
+
+  test("a second reset restarts delayed re-enable", () => {
+    doSetCycleCount(999)
+    doReset()
+    doSetCycleCount(1001)
+    jest.advanceTimersByTime(50)
+    expect(getSiriusJoyport()).toBe(false)
+
+    doSetCycleCount(2000)
+    jest.advanceTimersByTime(50)
+    expect(getSiriusJoyport()).toBe(true)
+  })
 })
 
 test("run binary resets hardware before loading and starting the program", () => {

@@ -1,4 +1,6 @@
-jest.mock("./main2worker", () => ({}))
+const passSiriusJoyport = jest.fn()
+
+jest.mock("./main2worker", () => ({ passSiriusJoyport }))
 jest.mock("./ui_settings", () => ({
   getTheme: jest.fn(),
   setTheme: jest.fn(),
@@ -66,6 +68,12 @@ describe("theme preferences", () => {
 })
 
 describe("settings change events", () => {
+  test.each([true, false])("applies Sirius Joyport setting %s live", enabled => {
+    setPreferenceBoolean("siriusJoyport", enabled)
+
+    expect(passSiriusJoyport).toHaveBeenCalledWith(enabled)
+  })
+
   test("identifies the visible control changed by the standard UI", () => {
     const listener = jest.fn<void, [Event]>()
     window.addEventListener(SETTINGS_CHANGED_EVENT, listener)

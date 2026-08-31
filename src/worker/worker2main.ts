@@ -9,6 +9,7 @@ import { doSetRunMode, doSetSpeedMode,
   doSetCycleCount,
   doSetShowDebugTab,
   doSetAppMode,
+  doSetSiriusJoyport,
   setTracing,
   doExecuteBasicCommand,
   doSetCyclesToRun} from "./motherboard"
@@ -21,7 +22,6 @@ import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
 import { receiveCommData } from "./devices/superserial/serial"
 import { setTraceSettings } from "./tracelog"
-import { setSiriusJoyport } from "./devices/sirius_joyport"
 import { getMemoryDump } from "./memory"
 import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState } from "./save_restore"
 
@@ -309,7 +309,7 @@ if (typeof self !== "undefined") {
         forceVideo7Override(e.data.payload as Video7Override)
         break
       case MSG_MAIN.SIRIUS_JOYPORT:
-        setSiriusJoyport(e.data.payload)
+        doSetSiriusJoyport(e.data.payload)
         break
       case MSG_MAIN.EXECUTE_BASIC_COMMAND: {
         const command = e.data.payload as string
