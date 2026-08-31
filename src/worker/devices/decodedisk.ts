@@ -72,14 +72,26 @@ const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   return newData
 }
 
-export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array, isProdosFloppy: boolean): Uint8Array => {
+export const decodeDiskData = (
+  driveState: DriveState,
+  diskData: Uint8Array,
+  isProdosFloppy: boolean,
+  enforceDriveKind = false,
+): Uint8Array => {
   driveState.diskHasChanges = false
   const fname = driveState.filename.toLowerCase()
   if (diskData.length > 10000) {
     if (isHardDriveImage(fname, diskData?.length, isProdosFloppy)) {
+      if (enforceDriveKind && !driveState.hardDrive) {
+        return new Uint8Array()
+      }
       driveState.hardDrive = true
       driveState.status = ""
       return diskData
+    }
+    if (enforceDriveKind && driveState.hardDrive &&
+      (fname.endsWith(".woz") || fname.endsWith(".dsk") || fname.endsWith(".do") || fname.endsWith(".po"))) {
+      return new Uint8Array()
     }
     // We might have a DSK file that has already been renamed as a WOZ
     // but is still in DSK format. So double check the disk data length.

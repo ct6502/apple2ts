@@ -1,6 +1,7 @@
 import { Buffer } from "buffer"
-import { doSetEmuDriveNewData, getDriveSaveState, getHardDriveData, getHardDriveState,
-  restoreDriveSaveState } from "./drivestate"
+import { convertdsk2woz } from "./convertdsk2woz"
+import { doSetEmuDriveNewData, getCurrentDriveData, getCurrentDriveState, getDriveSaveState,
+  getHardDriveData, getHardDriveState, restoreDriveSaveState } from "./drivestate"
 import { doGetSaveState, doRestoreSaveState } from "../save_restore"
 import { setIsTesting } from "../worker2main"
 import * as workerMessages from "../worker2main"
@@ -80,6 +81,148 @@ test("accepts valid media at a forced drive index", () => {
   }, true)
 
   expect(result).toBe(true)
+})
+
+test("rejects hard-drive-sized ProDOS media forced into fd1 and publishes empty state", () => {
+  const passDriveProps = jest.spyOn(workerMessages, "passDriveProps")
+  const result = doSetEmuDriveNewData({
+    index: 2,
+    hardDrive: false,
+    drive: 1,
+    filename: "large.po",
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData: new Uint8Array(143361),
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }, true)
+
+  expect(result).toBe(false)
+  expect(getCurrentDriveState()).toEqual(expect.objectContaining({
+    index: 2,
+    hardDrive: false,
+    filename: "",
+  }))
+  expect(getCurrentDriveData()).toHaveLength(0)
+  expect(passDriveProps).toHaveBeenCalledWith(expect.objectContaining({
+    index: 2,
+    hardDrive: false,
+    filename: "",
+    diskData: new Uint8Array(),
+  }), true)
+})
+
+test("accepts the same hard-drive-sized ProDOS media forced into hd1", () => {
+  const diskData = new Uint8Array(143361)
+  diskData[0] = 0xA5
+  const result = doSetEmuDriveNewData({
+    index: 0,
+    hardDrive: true,
+    drive: 1,
+    filename: "large.po",
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData,
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }, true)
+
+  expect(result).toBe(true)
+  expect(getHardDriveState(1)).toEqual(expect.objectContaining({
+    index: 0,
+    hardDrive: true,
+    filename: "large.po",
+  }))
+  expect(getHardDriveData(1)[0]).toBe(diskData)
+})
+
+test("accepts a standard-sized ProDOS floppy forced into fd1", () => {
+  const result = doSetEmuDriveNewData({
+    index: 2,
+    hardDrive: false,
+    drive: 1,
+    filename: "standard.po",
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData: new Uint8Array(143360),
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }, true)
+
+  expect(result).toBe(true)
+  expect(getCurrentDriveState()).toEqual(expect.objectContaining({
+    index: 2,
+    hardDrive: false,
+    filename: "standard.woz",
+  }))
+  expect(getCurrentDriveData().length).toBeGreaterThan(0)
+})
+
+test("rejects a standard-sized ProDOS floppy forced into hd1", () => {
+  const result = doSetEmuDriveNewData({
+    index: 0,
+    hardDrive: true,
+    drive: 1,
+    filename: "standard.po",
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData: new Uint8Array(143360),
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }, true)
+
+  expect(result).toBe(false)
+  expect(getHardDriveState(1)).toEqual(expect.objectContaining({
+    index: 0,
+    hardDrive: true,
+    filename: "",
+  }))
+  expect(getHardDriveData(1)[0]).toHaveLength(0)
+})
+
+test.each([
+  ["valid.woz", convertdsk2woz(new Uint8Array(143360), false)],
+  ["valid.dsk", new Uint8Array(143360)],
+])("rejects floppy-only %s media forced into hd1", (filename, diskData) => {
+  const result = doSetEmuDriveNewData({
+    index: 0,
+    hardDrive: true,
+    drive: 1,
+    filename,
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData,
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }, true)
+
+  expect(result).toBe(false)
+  expect(getHardDriveState(1)).toEqual(expect.objectContaining({
+    index: 0,
+    hardDrive: true,
+    filename: "",
+  }))
+  expect(getHardDriveData(1)[0]).toHaveLength(0)
 })
 
 test("accepts an empty drive as an eject operation", () => {

@@ -215,11 +215,10 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   }
   driveState[index] = initDriveState(index, drive, isHardDrive)
   driveState[index].filename = props.filename
-  // Tricky code: if we are forcing a disk into a certain drive,
-  // then whether we treat a ProDOS floppy as a hard drive is determined by the caller.
-  // If we are not forcing the index, then we look at our isProdosFloppy preference.
-  const treatProdosAsFloppy = forceIndex ? (!isHardDrive) : isProdosFloppy
-  driveData[index] = decodeDiskData(driveState[index], props.diskData, treatProdosAsFloppy)
+  // For a forced mount, classify a .po image from its size before comparing it
+  // with the requested drive.
+  const treatProdosAsFloppy = forceIndex || isProdosFloppy
+  driveData[index] = decodeDiskData(driveState[index], props.diskData, treatProdosAsFloppy, forceIndex)
   if (driveData[index].length === 0) {
     driveState[index].filename = ""
     passDriveData(index)
