@@ -1,6 +1,14 @@
 const wideCharacter = /[\u1100-\u115F\u2329\u232A\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6]/u
-const retroGlyph = /^[\x20-\x7E\u00A0-\u017F\u2006\u2014\u2026\u2190-\u2193\u21B5\u2713]*$/u
+const retroGlyph = /^[\x20-\x7E\u00A0-\u017F\u2006\u2014\u2026\u2190-\u2193\u21B5\u2713\uE000-\uE0FF]*$/u
 const latinText = /^[\p{Script=Latin}\p{Number}\p{Punctuation}\p{Separator}\p{Symbol}]*$/u
+
+export const mouseTextGlyphs = {
+  left: String.fromCodePoint(0xE088),
+  down: String.fromCodePoint(0xE08A),
+  up: String.fromCodePoint(0xE08B),
+  return: String.fromCodePoint(0xE08D),
+  right: String.fromCodePoint(0xE095),
+} as const
 
 const graphemes = (text: string, locale: string) =>
   Array.from(new Intl.Segmenter(locale, { granularity: "grapheme" }).segment(text), segment => segment.segment)

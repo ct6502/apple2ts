@@ -1,11 +1,5 @@
 .retro-panel {
-  font-family: PrintChar21Retro, monospace;
-}
-
-@font-face {
-  font-display: block;
-  font-family: PrintChar21Retro;
-  src: url(../fonts/PrintChar21-2020.ttf) format("truetype");
+  font-family: PrintChar21, monospace;
 }
 
 .retro-panel {
@@ -105,7 +99,7 @@
 }
 
 .retro-mousetext {
-  font-family: PrintChar21Retro, monospace;
+  font-family: PrintChar21, monospace;
   font-size: var(--retro-cell-height);
   font-style: normal;
   line-height: 1;
@@ -613,7 +607,7 @@
 
 .retro-panel.retro-skin-apple-iiplus .retro-window footer.retro-compact-apple-footer::before {
   content: "____________________________________";
-  font-family: PrintChar21Retro, monospace;
+  font-family: PrintChar21, monospace;
   inset: 0;
   position: absolute;
   z-index: 0;

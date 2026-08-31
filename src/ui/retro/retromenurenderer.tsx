@@ -8,6 +8,7 @@ import {
   controlTextWidth,
   fitControlText,
   formatClockTime,
+  mouseTextGlyphs,
   retroFontSupports,
   selectArrowSpacing,
   selectHintWidth,
@@ -58,11 +59,11 @@ type RetroMenuFrame = {
   onLeave?: (items: readonly RetroMenuItem[], values: number[]) => void
 }
 
-const mouseTextDown = String.fromCodePoint(0x2193)
-const mouseTextLeft = String.fromCodePoint(0x2190)
-const mouseTextRight = String.fromCodePoint(0x2192)
-const mouseTextUp = String.fromCodePoint(0x2191)
-const mouseTextReturn = String.fromCodePoint(0x21B5)
+const mouseTextDown = mouseTextGlyphs.down
+const mouseTextLeft = mouseTextGlyphs.left
+const mouseTextRight = mouseTextGlyphs.right
+const mouseTextUp = mouseTextGlyphs.up
+const mouseTextReturn = mouseTextGlyphs.return
 const mouseTextCursor = String.fromCodePoint(0xE07F)
 const checkmark = String.fromCodePoint(0x2713)
 const fixedWidthSpace = String.fromCodePoint(0x2007)

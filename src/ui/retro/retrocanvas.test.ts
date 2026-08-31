@@ -9,7 +9,7 @@ describe("retro canvas SVG", () => {
     const originalFetch = globalThis.fetch
     const fetchMock = jest.fn(async () => ({
       ok: true,
-      blob: async () => new Blob(["font"], { type: "font/ttf" }),
+      blob: async () => new Blob(["font"], { type: "font/woff2" }),
     } as Response))
     Object.defineProperty(globalThis, "fetch", { configurable: true, value: fetchMock })
     Object.defineProperty(document, "styleSheets", {
@@ -17,7 +17,7 @@ describe("retro canvas SVG", () => {
       value: [{
         href: "https://example.com/app/assets/index.css",
         cssRules: [{
-          cssText: "@font-face { font-family: PrintChar21Retro; src: url(./PrintChar21-2020.ttf); }",
+          cssText: "@font-face { font-family: PrintChar21; src: url(./PrintChar21.woff2); }",
         }],
       }],
     })
@@ -28,8 +28,8 @@ describe("retro canvas SVG", () => {
     try {
       const svg = await createRetroPanelSvg(panel, nativeSurface)
 
-      expect(fetchMock).toHaveBeenCalledWith("https://example.com/app/assets/PrintChar21-2020.ttf")
-      expect(svg).toContain("data:font/ttf;base64,")
+      expect(fetchMock).toHaveBeenCalledWith("https://example.com/app/assets/PrintChar21.woff2")
+      expect(svg).toContain("data:font/woff2;base64,")
     } finally {
       if (originalFetch) {
         Object.defineProperty(globalThis, "fetch", { configurable: true, value: originalFetch })

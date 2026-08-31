@@ -3,6 +3,7 @@ import {
   controlTextWidth,
   fitControlText,
   formatClockTime,
+  mouseTextGlyphs,
   retroFontSupports,
   selectArrowSpacing,
   selectHintWidth,
@@ -29,7 +30,18 @@ describe("Retro control-panel text", () => {
 
   test("uses the control-panel font for supported accented Latin text", () => {
     expect(retroFontSupports("Français, Español, Čeština, Ångström")).toBe(true)
+    expect(retroFontSupports(Object.values(mouseTextGlyphs).join(""))).toBe(true)
     expect(retroFontSupports("日本語")).toBe(false)
+  })
+
+  test("uses PrintChar21's mirrored MouseText glyphs for footer controls", () => {
+    expect(mouseTextGlyphs).toEqual({
+      left: String.fromCodePoint(0xE088),
+      down: String.fromCodePoint(0xE08A),
+      up: String.fromCodePoint(0xE08B),
+      return: String.fromCodePoint(0xE08D),
+      right: String.fromCodePoint(0xE095),
+    })
   })
 
   test("preserves a menu item name when its selected value is long", () => {
