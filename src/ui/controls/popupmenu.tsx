@@ -129,7 +129,7 @@ const PopupMenu = (props: PopupMenuProps) => {
               <span className="popup-item-label">
                 {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
                 {menuItem.svg && menuItem.svg}
-                {`${menuItem.label}\u2004`}
+                {menuItem.label}
               </span>
             </span>
             {menuItem.subMenu && menuItem.subMenu.length > 0 && (

@@ -277,17 +277,23 @@ body.dark-mode .droplist-edit:disabled {
   background-color: var(--input-background);
   color: var(--text-color);
   user-select: none;
+  white-space: nowrap;
+  margin-right: 5px;
 }
 
 .popup-item-main {
   align-items: center;
-  display: flex;
-  min-width: 0;
+  display: grid;
+  grid-template-columns: 1.25em max-content;
+  white-space: nowrap;
+}
+
+.popup-item-label {
+  white-space: nowrap;
 }
 
 .popup-selection-marker {
   display: inline-flex;
-  flex: 0 0 1.25em;
   justify-content: center;
 }
 
