@@ -3,9 +3,10 @@ export const diskImages: DiskCollectionItem[] = [
     title: "Aztec",
     diskUrl: "Aztec.woz",
     imageUrl: "disks/Aztec.png",
+    detailsUrl: "https://archive.org/details/wozaday_Aztec",
     type: "builtin",
     lastUpdated: new Date(0),
-    fileSize: 819200
+    fileSize: 233469
   },
   {
     title: "Eamon",
