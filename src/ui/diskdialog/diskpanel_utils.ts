@@ -338,6 +338,11 @@ export const getExportBadgeInfo = (disk: DiskCollectionItem): { state: "exportab
   return { state: "exportable", title: i18n.t("collection.exportAvailable") }
 }
 
+type PreparedHdvTitle = {
+  inputFile: { name: string; type: number; data: Uint8Array; auxType: number }
+  menuEntry: MenuDiskEntry
+}
+
 export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) => {
 
   showGlobalProgressModal(true, i18n.t("collection.creatingHdv"))
@@ -359,90 +364,59 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       return skipUnavailableTitles
     }
 
-    const wozExtractedByIndex = new Map<number, ImportedDiskFile[]>()
-    // WOZ DOS disks decoded to a flat DOS 3.3 (.dsk) sector image, keyed by disk index.
-    // DOS.MASTER runtime volumes must be plain DOS-order sector images, but classifyImageKind
-    // (unlike determineVtocType used for export eligibility) does not decode the WOZ
-    // bitstream, so decode it here to keep detection and writing consistent.
-    const wozDosImageByIndex = new Map<number, Uint8Array>()
-    for (let i = 0; i < orderedDownloadedDisks.length; i++) {
-      const disk = orderedDownloadedDisks[i]
-      if (!disk.filename.toLowerCase().endsWith(".woz")) continue
-      const extracted = loadWozAndExtractProDosFiles(disk.buffer)
-      if (extracted.length > 0) {
-        wozExtractedByIndex.set(i, extracted)
-        continue
-      }
-      const dosImage = loadWozAndExtractDosImage(disk.buffer)
-      if (dosImage) {
-        wozDosImageByIndex.set(i, dosImage)
-      }
-    }
-
-    const fileKinds: Array<"dos" | "prodos" | "unknown" | "4cade"> = orderedDownloadedDisks.map((downloadedDisk) =>
-      classifyImageKind(downloadedDisk.filename, downloadedDisk.buffer)
-    )
-
-    for (const [index] of wozExtractedByIndex) {
-      fileKinds[index] = "prodos"
-    }
-
-    for (const [index] of wozDosImageByIndex) {
-      fileKinds[index] = "dos"
-    }
-
-    // Re-check with the downloaded bytes so stale cached classifications cannot
-    // override a real ProDOS volume, while title-matched 4cade disks still use
-    // their direct-load path.
-    for (let i = 0; i < orderedDownloadedDisks.length; i++) {
-      const disk = orderedDownloadedDisks[i]
-      const recheck = determineVtocType(disk.filename, disk.buffer, disk.item.title)
-      if (recheck === "prodos") {
-        fileKinds[i] = "prodos"
-      } else if (disk.item.vtocType === "4cade" || recheck === "4cade") {
-        fileKinds[i] = "4cade"
-      }
-    }
-
-    const fileEntries = orderedDownloadedDisks.map((downloadedDisk, index) => {
-      const fileKind = fileKinds[index]
-      const isText = downloadedDisk.filename.toUpperCase().endsWith(".TXT")
-      // Prefer the decoded DOS-order sector image for WOZ DOS disks so the runtime
-      // volume is a plain .dsk that DOS.MASTER can read; otherwise use the raw buffer.
-      // Strip any 2IMG (.2mg) 64-byte header so the ProDOS/DOS block image parses from
-      // block 0 (otherwise extraction finds no files and the disk only shows
-      // "PRODOS FILES IMPORTED"/CATALOG instead of launching).
-      const wozDosImage = wozDosImageByIndex.get(index)
-      let data = wozDosImage ?? stripTwoImgHeader(downloadedDisk.buffer)
-      if (fileKind === "dos" && !isText) {
-        // DOS.MASTER always runs a greeting named HELLO on the selected volume; ensure
-        // one exists (chaining to the source disk's real greeting) so booting a volume
-        // whose greeting was not named HELLO does not fail with FILE NOT FOUND.
-        const greeting = ensureDosVolumeHasHelloGreeting(data)
-        data = greeting.image
-      }
-      return {
-        name: downloadedDisk.filename.split(".")[0].slice(0, 15),
-        type: isText
-          ? PRODOS_FILE_TYPE_TEXT
-          : (fileKind === "dos" ? PRODOS_FILE_TYPE_DOS_MASTER : 0xE0),
-        data,
-        auxType: 0x0000,
-      }
-    })
-
     // Convert each disk's preview screenshot to Apple II hi-res, stamping the
     // Apple2TS logo into the corner. Conversion is deterministic; the source image is
     // fetched through a localStorage cache (see resolveScreenshotUrlWithCache) so each
     // screenshot only hits the network/app assets once across exports.
-    const screenshots: Array<{ name: string; data: HiresScreenshotSet | null }> = []
     const showScreenshotNavigation = orderedDownloadedDisks.length > 1
     const titleInitials = orderedDownloadedDisks
       .map(disk => disk.item.title.trimStart().charAt(0).toUpperCase())
       .filter(initial => /^[A-Z0-9]$/.test(initial))
       .join("")
+    const preparedTitles: PreparedHdvTitle[] = []
     for (let index = 0; index < orderedDownloadedDisks.length; index++) {
       const disk = orderedDownloadedDisks[index]
+      let imageKind: NonNullable<MenuDiskEntry["imageKind"]> = classifyImageKind(disk.filename, disk.buffer)
+      let wozExtractedProDosFiles: ImportedDiskFile[] | undefined
+      let wozDosImage: Uint8Array | undefined
+
+      // DOS.MASTER runtime volumes must be plain DOS-order sector images, but
+      // classifyImageKind does not decode a WOZ bitstream.
+      if (disk.filename.toLowerCase().endsWith(".woz")) {
+        const extracted = loadWozAndExtractProDosFiles(disk.buffer)
+        if (extracted.length > 0) {
+          wozExtractedProDosFiles = extracted
+          imageKind = "prodos"
+        } else {
+          wozDosImage = loadWozAndExtractDosImage(disk.buffer)
+          if (wozDosImage) imageKind = "dos"
+        }
+      }
+
+      // Re-check with the downloaded bytes so stale cached classifications cannot
+      // override a real ProDOS volume, while title-matched 4cade disks still use
+      // their direct-load path.
+      const recheck = determineVtocType(disk.filename, disk.buffer, disk.item.title)
+      if (recheck === "prodos") {
+        imageKind = "prodos"
+      } else if (disk.item.vtocType === "4cade" || recheck === "4cade") {
+        imageKind = "4cade"
+      }
+
+      const isText = disk.filename.toUpperCase().endsWith(".TXT")
+      // Prefer the decoded DOS-order sector image for WOZ DOS disks so the runtime
+      // volume is a plain .dsk that DOS.MASTER can read; otherwise use the raw buffer.
+      // Strip any 2IMG (.2mg) 64-byte header so the ProDOS/DOS block image parses from
+      // block 0 (otherwise extraction finds no files and the disk only shows
+      // "PRODOS FILES IMPORTED"/CATALOG instead of launching).
+      let data = wozDosImage ?? stripTwoImgHeader(disk.buffer)
+      if (imageKind === "dos" && !isText) {
+        // DOS.MASTER always runs a greeting named HELLO on the selected volume; ensure
+        // one exists (chaining to the source disk's real greeting) so booting a volume
+        // whose greeting was not named HELLO does not fail with FILE NOT FOUND.
+        data = ensureDosVolumeHasHelloGreeting(data).image
+      }
+
       const screenshotData = await loadAndConvertImageToHires(
         disk.item.imageUrl,
         true,
@@ -452,28 +426,33 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
         orderedDownloadedDisks.length,
         index + 1,
       )
-      screenshots.push({
-        name: disk.filename.split(".")[0].slice(0, 15),
-        data: screenshotData,
+      const filename = disk.filename.split(".")[0].slice(0, 15)
+      preparedTitles.push({
+        inputFile: {
+          name: filename,
+          type: isText
+            ? PRODOS_FILE_TYPE_TEXT
+            : (imageKind === "dos" ? PRODOS_FILE_TYPE_DOS_MASTER : 0xE0),
+          data,
+          auxType: 0x0000,
+        },
+        menuEntry: {
+          filename,
+          sourceFilename: disk.filename,
+          displayName: disk.item.title,
+          screenshotData: screenshotData?.plain,
+          keyboardScreenshotData: showScreenshotNavigation ? screenshotData?.keyboard : undefined,
+          imageKind,
+          wozExtractedProDosFiles,
+        },
       })
     }
 
-    // Create menu metadata with screenshot references
-    const menuEntries: MenuDiskEntry[] = orderedDownloadedDisks.map((disk, index) => ({
-      filename: disk.filename.split(".")[0].slice(0, 15),
-      sourceFilename: disk.filename,
-      displayName: disk.item.title,
-      screenshotData: screenshots[index].data?.plain,
-      keyboardScreenshotData: showScreenshotNavigation ? screenshots[index].data?.keyboard : undefined,
-      imageKind: fileKinds[index],
-      wozExtractedProDosFiles: wozExtractedByIndex.get(index),
-    }))
-
     const hdvData = await buildProDosHdv(
-      fileEntries,
+      preparedTitles.map(title => title.inputFile),
       "APPLE2TS",
       undefined,
-      menuEntries,
+      preparedTitles.map(title => title.menuEntry),
       undefined,
       handleFourCadeExportFailure,
     )
