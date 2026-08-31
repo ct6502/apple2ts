@@ -2,12 +2,27 @@ import { interruptRequest, registerCycleCountCallback } from "../cpu6502"
 import { s6502 } from "../instructions"
 import { debugSlot, memGetSlotROM, memSetSlotROM, setSlotIOCallback } from "../memory"
 import { passMockingboard } from "../worker2main"
+import { registerSlotCardState } from "./slot_card_state"
+
+type MockingboardSaveState = {
+  data: number[],
+  prevCycleCount: number,
+}
 
 export const enableMockingboard = (enable = true, slot = 4) => {
   if (!enable)
     return
   setSlotIOCallback(slot, handleMockingboard)
   registerCycleCountCallback(cycleCountCallback, slot)
+  registerSlotCardState(
+    slot,
+    "mockingboard",
+    () => ({
+      data: Array.from({length: 256}, (_, addr) => memGetSlotROM(slot, addr)),
+      prevCycleCount: prevCycleCount[slot],
+    }),
+    state => restoreMockingboardState(slot, state as MockingboardSaveState),
+  )
 }
 
 const ORB = [0x0, 0x80]
@@ -123,6 +138,18 @@ const handleTimerT2 = (slot: number, chip: number, cycleDelta: number) => {
 }
 
 const prevCycleCount = new Array<number>(8).fill(0)
+
+const restoreMockingboardState = (slot: number, state: MockingboardSaveState) => {
+  prevCycleCount[slot] = state.prevCycleCount
+  state.data.forEach((value, addr) => memSetSlotROM(slot, addr, value))
+  for (let chip = 0; chip <= 1; chip++) {
+    handleInterruptFlag(slot, chip, -1)
+    doPassRegisters(slot, chip)
+  }
+  const slotActive = [0, 1].some(chip =>
+    (memGetSlotROM(slot, IFR[chip]) & memGetSlotROM(slot, IER[chip]) & 0x7F) !== 0)
+  interruptRequest(slot, slotActive)
+}
 
 const cycleCountCallback = (slot: number) => {
   const cycleDelta = s6502.cycleCount - prevCycleCount[slot]

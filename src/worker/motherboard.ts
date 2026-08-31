@@ -34,6 +34,7 @@ import { enableVera, resetVera } from "./devices/vera/vera"
 import { videoTerm, enableVideoTerm, disableVideoTerm } from "./devices/videoterm"
 import { vidhd } from "./devices/vidhd"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
+import { clearSlotCardStateHandlers } from "./devices/slot_card_state"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
 import { pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
@@ -181,6 +182,7 @@ export const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
   resetCycleCountCallbacks()
+  clearSlotCardStateHandlers()
 
   for (let s = 1; s <= 7; s++) {
     clearSlot(s)
