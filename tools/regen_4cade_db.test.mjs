@@ -31,7 +31,7 @@ test("writes the generated catalog", () => {
   try {
     const source = join(root, "4cade")
     const tools = join(root, "tools")
-    const output = join(root, "src/common/four_cade_prelaunch_db.ts")
+    const output = join(root, "src/common/four_cade_catalog.json")
     mkdirSync(join(source, "res/dsk"), { recursive: true })
     mkdirSync(join(source, "src/prelaunch"), { recursive: true })
     mkdirSync(tools)
@@ -43,8 +43,8 @@ test("writes the generated catalog", () => {
       encoding: "utf8",
     })
     assert.equal(result.status, 0, result.stderr)
-    const generated = readFileSync(output, "utf8")
-    assert.match(generated, /export const FOUR_CADE_PRELAUNCH_DB/)
+    const generated = JSON.parse(readFileSync(output, "utf8"))
+    assert.deepEqual(generated, {})
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
