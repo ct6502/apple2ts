@@ -643,7 +643,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const machine = handleGetMachineName()
   const bgImg = machine === "APPLE2P" ?
     window.assetRegistry.bgImgApple2Plus : window.assetRegistry.bgImage
-  const backgroundImage = noBackgroundImage ? "" : `url(${bgImg})`
+  const backgroundImage = noBackgroundImage ? "" : `url("${new URL(bgImg, document.baseURI).href}")`
 
   return (
     <span className="canvas-text scanline-gradient"
