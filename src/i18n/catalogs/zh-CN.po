@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-08-29 08:51+0000\n"
+"PO-Revision-Date: 2026-08-31 13:52+0000\n"
 "Last-Translator: reducedradius "
 "<137701630+flytothehighest@users.noreply.github.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
@@ -23,32 +23,26 @@ msgctxt "controls.reset"
 msgid "Reset"
 msgstr "重置"
 
-#, fuzzy
 msgctxt "controls.copyScreen"
 msgid "Copy Screen"
 msgstr "复制屏幕"
 
-#, fuzzy
 msgctxt "controls.copyText"
 msgid "Copy Text"
 msgstr "复制文本"
 
-#, fuzzy
 msgctxt "controls.pasteText"
 msgid "Paste Text"
 msgstr "粘贴文本"
 
-#, fuzzy
 msgctxt "controls.saveState"
 msgid "Save State"
 msgstr "保存状态"
 
-#, fuzzy
 msgctxt "controls.restoreState"
 msgid "Restore State"
 msgstr "恢复状态"
 
-#, fuzzy
 msgctxt "controls.toggleSound"
 msgid "Toggle Sound"
 msgstr "切换音效"
@@ -84,7 +78,6 @@ msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "模拟器速度"
 
-#, fuzzy
 msgctxt "config.display"
 msgid "Display Settings"
 msgstr "显示设置"
@@ -107,8 +100,6 @@ msgctxt "config.useOpenApple"
 msgid "Use {{modKey}} key for Open Apple"
 msgstr "将 {{modKey}} 键用作 Open Apple 键"
 
-#, fuzzy
-#| msgid "Use for keyboard shortcuts"
 msgctxt "config.useShortcuts"
 msgid "Use {{modKey}} key for Keyboard Shortcuts"
 msgstr "将 {{modKey}} 键用于键盘快捷键"
@@ -223,27 +214,22 @@ msgctxt "colors.nofringe"
 msgid "Color (no fringe)"
 msgstr "彩色 (无边缘)"
 
-#, fuzzy
 msgctxt "colors.green"
 msgid "Green"
 msgstr "绿色"
 
-#, fuzzy
 msgctxt "colors.amber"
 msgid "Amber"
 msgstr "琥珀色"
 
-#, fuzzy
 msgctxt "colors.white"
 msgid "Black and White"
 msgstr "黑白"
 
-#, fuzzy
 msgctxt "colors.inverse"
 msgid "Black and White (inverse)"
 msgstr "黑白 (反色)"
 
-#, fuzzy
 msgctxt "themes.classic"
 msgid "Classic"
 msgstr "经典"
@@ -269,12 +255,10 @@ msgctxt "debug.expectinPanel"
 msgid "Show Apple exPectin panel"
 msgstr "显示 Apple exPectin 面板"
 
-#, fuzzy
 msgctxt "debug.helpTab"
 msgid "Help"
 msgstr "帮助"
 
-#, fuzzy
 msgctxt "debug.debugTab"
 msgid "Debugging"
 msgstr "调试"
@@ -287,7 +271,6 @@ msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
 msgstr ""
 
-#, fuzzy
 msgctxt "debug.breakpoints"
 msgid "Breakpoints"
 msgstr "断点"
@@ -296,17 +279,14 @@ msgctxt "debug.memory"
 msgid "Memory"
 msgstr "内存"
 
-#, fuzzy
 msgctxt "debug.stack"
 msgid "Stack"
 msgstr "堆栈"
 
-#, fuzzy
 msgctxt "debug.state"
 msgid "CPU State"
 msgstr "CPU 状态"
 
-#, fuzzy
 msgctxt "debug.registers"
 msgid "Registers"
 msgstr "寄存器"
@@ -404,7 +384,7 @@ msgstr ""
 
 msgctxt "disassembly.cassette.toggleOutput"
 msgid "Toggle cassette output"
-msgstr ""
+msgstr "切换卡带输出"
 
 msgctxt "disassembly.cassette.sampleInput"
 msgid "Sample cassette input"
@@ -796,21 +776,18 @@ msgid ""
 "Select this option to reset the Apple II and either reboot or enter BASIC."
 msgstr ""
 
-#, fuzzy
 msgctxt "tour.diskImages"
 msgid "Choose one of the installed disk images."
 msgstr "选择其中一个已安装的磁盘映像文件。"
 
-#, fuzzy
 msgctxt "tour.floppyDisks"
 msgid "Or click one of the floppy disk icons to load a disk image."
-msgstr "或按一下软盘图标来加载磁盘映像文件。"
+msgstr "或点击一下软盘图标来加载磁盘映像文件。"
 
 msgctxt "tour.retroFloppyDisks"
 msgid "Or select a disk drive to load a disk image."
-msgstr ""
+msgstr "或选择一个磁盘驱动器加载磁盘映像。"
 
-#, fuzzy
 msgctxt "tour.saveRestore"
 msgid ""
 "You can save and restore the complete state of the emulator using these "
@@ -821,12 +798,11 @@ msgctxt "tour.retroSaveRestore"
 msgid ""
 "You can save and restore the complete state of the emulator using these "
 "options."
-msgstr ""
+msgstr "您可以使用这些选项保存和恢复模拟器的完整状态。"
 
-#, fuzzy
 msgctxt "tour.themeButton"
 msgid "Click here to change the emulator UI theme."
-msgstr "按这里更改模拟器 UI 主题。"
+msgstr "点击这里更改模拟器 UI 主题。"
 
 msgctxt "tour.retroThemeButton"
 msgid "Use the arrow keys to change the emulator UI theme."
@@ -852,13 +828,10 @@ msgid ""
 "using the emulator."
 msgstr ""
 
-#, fuzzy
 msgctxt "tour.settingsWelcome"
 msgid ""
 "Apple2TS has a full set of controls for both the emulator and the Apple II."
-msgstr ""
-"Apple2TS 拥有一套完整的控制项，用于模拟器和 Apple II。若要了解更多，请按下一"
-"步按钮。"
+msgstr "Apple2TS 拥有一套完整的控制项，用于模拟器和 Apple II。"
 
 #, fuzzy
 msgctxt "tour.mainControls"
