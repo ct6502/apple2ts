@@ -14,8 +14,8 @@ const blobToDataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => {
   reader.readAsDataURL(blob)
 })
 
-const inlineFontUrl = (url: string) => {
-  const absoluteUrl = new URL(url, document.baseURI).href
+const inlineFontUrl = (url: string, baseUrl: string) => {
+  const absoluteUrl = new URL(url, baseUrl).href
   let dataUrl = fontDataUrls.get(absoluteUrl)
   if (!dataUrl) {
     dataUrl = fetch(absoluteUrl)
@@ -37,18 +37,21 @@ const getDocumentCss = async () => {
     return documentCssCache.value
   }
   const value = Promise.resolve().then(async () => {
-    const css = styleSheets.flatMap(styleSheet => {
+    const css = await Promise.all(styleSheets.map(async styleSheet => {
       try {
-        return Array.from(styleSheet.cssRules, rule => rule.cssText)
+        const rules = Array.from(styleSheet.cssRules, rule => rule.cssText)
           .filter(rule => /retro-|PrintChar21Retro/i.test(rule))
+          .join("\n")
+        const matches = Array.from(rules.matchAll(fontUrlPattern))
+        const baseUrl = styleSheet.href ?? document.baseURI
+        const replacements = await Promise.all(matches.map(match => inlineFontUrl(match[2], baseUrl)))
+        let index = 0
+        return rules.replace(fontUrlPattern, () => `url("${replacements[index++]}")`)
       } catch {
-        return []
+        return ""
       }
-    }).join("\n")
-    const matches = Array.from(css.matchAll(fontUrlPattern))
-    const replacements = await Promise.all(matches.map(match => inlineFontUrl(match[2])))
-    let index = 0
-    return css.replace(fontUrlPattern, () => `url("${replacements[index++]}")`)
+    }))
+    return css.join("\n")
   })
   documentCssCache = { styleSheets, value }
   return value
