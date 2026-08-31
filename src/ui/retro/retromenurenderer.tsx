@@ -8,6 +8,7 @@ import {
   controlTextWidth,
   fitControlText,
   formatClockTime,
+  menuItemTextWidth,
   mouseTextGlyphs,
   retroFontSupports,
   selectArrowSpacing,
@@ -71,8 +72,6 @@ const topBorderGlyph = String.fromCodePoint(0xE05F)
 const bottomBorderGlyph = String.fromCodePoint(0xE08C)
 const leftBorderGlyph = String.fromCodePoint(0xE09F)
 const rightBorderGlyph = String.fromCodePoint(0xE09A)
-const rootMenuContentWidth = 30
-const submenuTextWidth = 31
 const submenuTitleContentWidth = 34
 const retroNativeWidth = 560
 const retroNativeHeight = 384
@@ -1027,7 +1026,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             const hasOptionValue = (option && !item.valueOnly && !item.hideOptionValue &&
               item.checkmarkIndex === undefined
             ) || item.textInput
-            const availableWidth = currentFrame ? submenuTextWidth : rootMenuContentWidth
+            const availableWidth = currentFrame ? menuItemTextWidth.submenu : menuItemTextWidth.root
             const fittedText = fitControlText(
               itemLabel,
               hasOptionValue ? textValue ?? option?.label : undefined,

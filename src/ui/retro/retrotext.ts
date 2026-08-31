@@ -10,6 +10,11 @@ export const mouseTextGlyphs = {
   right: String.fromCodePoint(0xE095),
 } as const
 
+export const menuItemTextWidth = {
+  root: 33,
+  submenu: 34,
+} as const
+
 const graphemes = (text: string, locale: string) =>
   Array.from(new Intl.Segmenter(locale, { granularity: "grapheme" }).segment(text), segment => segment.segment)
 
