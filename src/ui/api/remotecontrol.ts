@@ -32,6 +32,7 @@ import {
   passSetBinaryBlock,
   requestSetState6502,
   passSetMemory,
+  requestWriteMemory,
   passSetSoftSwitches,
   passStepInto,
   passStepOut,
@@ -501,6 +502,13 @@ export const executeCommand = async (action: string, payload: Record<string, unk
 
     case "setMemory":
       passSetMemory(Number(payload.address), Number(payload.value))
+      return collectStatus()
+
+    case "writeMemory":
+      await requestWriteMemory(
+        Number(payload.address),
+        Uint8Array.from(payload.data as number[]),
+      )
       return collectStatus()
 
     case "setCpuState":

@@ -3,7 +3,7 @@ import { getAuxCardEnabled, getHires, memGet, memSet, memory, setAuxCardEnabled,
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, doStepOver, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, doStepOver, doWriteMemory, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
@@ -549,6 +549,73 @@ test("CPU state changes complete after publishing their state", () => {
     passMachineState.mockRestore()
     passOperationResult.mockRestore()
     doSetState6502(previousState)
+  }
+})
+
+test("mapped memory writes use active soft switches before completing", () => {
+  setIsTesting()
+  const address = 0x0200
+  const auxAddress = RamWorksMemoryStart + address
+  const previousMain = memory[address]
+  const previousAux = memory[auxAddress]
+  const previousRamWrite = SWITCHES.RAMWRT.isSet
+  const passMachineState = jest.spyOn(worker2main, "passMachineState")
+  const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
+
+  try {
+    SWITCHES.RAMWRT.isSet = false
+    updateAddressTables()
+    memory[address] = 0x11
+    memory[auxAddress] = 0x22
+
+    doWriteMemory(0xC005, Uint8Array.of(0), 12)
+    expect(SWITCHES.RAMWRT.isSet).toEqual(true)
+    expect(passOperationResult).toHaveBeenCalledWith(12)
+    passMachineState.mockClear()
+    passOperationResult.mockClear()
+
+    doWriteMemory(address, Uint8Array.of(0x42), 13)
+    expect(memory[address]).toEqual(0x11)
+    expect(memory[auxAddress]).toEqual(0x42)
+    expect(passOperationResult).toHaveBeenCalledWith(13)
+    expect(passMachineState.mock.invocationCallOrder[0]).toBeLessThan(
+      passOperationResult.mock.invocationCallOrder[0],
+    )
+  } finally {
+    SWITCHES.RAMWRT.isSet = previousRamWrite
+    updateAddressTables()
+    memory[address] = previousMain
+    memory[auxAddress] = previousAux
+    passMachineState.mockRestore()
+    passOperationResult.mockRestore()
+  }
+})
+
+test("mapped memory writes report worker errors", () => {
+  setIsTesting()
+  const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
+  const oldState = SWITCHES.RAMWRT.isSet
+
+  try {
+    Object.defineProperty(SWITCHES.RAMWRT, "isSet", {
+      configurable: true,
+      get: () => oldState,
+      set: () => { throw new Error("switch failed") },
+    })
+
+    doWriteMemory(0xC005, Uint8Array.of(0), 14)
+    expect(passOperationResult).toHaveBeenCalledWith(
+      14,
+      "Memory write processed 0 of 1 bytes; the next byte and earlier writes may have taken effect. switch failed",
+    )
+  } finally {
+    Object.defineProperty(SWITCHES.RAMWRT, "isSet", {
+      configurable: true,
+      writable: true,
+      value: oldState,
+    })
+    updateAddressTables()
+    passOperationResult.mockRestore()
   }
 })
 

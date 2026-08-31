@@ -438,6 +438,24 @@ export const doSetMemory = (addr: number, value: number) => {
   updateExternalMachineState()
 }
 
+export const doWriteMemory = (addr: number, data: Uint8Array, operationId?: number) => {
+  let bytesProcessed = 0
+  try {
+    for (const value of data) {
+      memSet(addr + bytesProcessed, value)
+      bytesProcessed += 1
+    }
+    refreshMemoryBlock(addr, data.length)
+    if (operationId !== undefined) passWorkerOperationResult(operationId)
+  } catch (error) {
+    if (operationId === undefined) throw error
+    passWorkerOperationResult(
+      operationId,
+      `Memory write processed ${bytesProcessed} of ${data.length} bytes; the next byte and earlier writes may have taken effect. ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+}
+
 const refreshMemoryBlock = (addr: number, length: number) => {
   if (cpuRunMode === RUN_MODE.PAUSED) {
     const hiresLines = new Set<number>()

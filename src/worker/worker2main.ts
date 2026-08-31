@@ -2,6 +2,7 @@ import { doSetRunMode, doSetSpeedMode,
   doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doLoadBinary, doRunBinary, doSetIsDebugging, doSetState6502, doTakeSnapshot, doSetPastedText, forceSoftSwitches,
   forceVideo7Override,
   doSetMemory,
+  doWriteMemory,
   doSetMachineName,
   doSetRamWorks,
   doSetVeraSlot,
@@ -301,6 +302,11 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.SET_MEMORY: {
         const setmem = e.data.payload
         doSetMemory(setmem.address, setmem.value)
+        break
+      }
+      case MSG_MAIN.WRITE_MEMORY: {
+        const setmem = e.data.payload
+        doWriteMemory(setmem.address, setmem.data, e.data.operationId)
         break
       }
       case MSG_MAIN.COMM_DATA:

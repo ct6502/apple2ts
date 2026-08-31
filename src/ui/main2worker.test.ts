@@ -9,6 +9,7 @@ import {
   requestSpeedMode,
   requestMemoryView,
   setExecutionStateCallback,
+  requestWriteMemory,
   setMain2Worker,
 } from "./main2worker"
 
@@ -136,6 +137,19 @@ describe("worker operations", () => {
     expect(message).toEqual(expect.objectContaining({
       msg: MSG_MAIN.STATE6502,
       payload: state,
+    }))
+
+    sendOperationResult(message.operationId)
+    await expect(operation).resolves.toBeUndefined()
+  })
+
+  test("sends mapped memory writes as confirmed worker operations", async () => {
+    const data = Uint8Array.from([0x42, 0x43])
+    const operation = requestWriteMemory(0x0200, data)
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    expect(message).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.WRITE_MEMORY,
+      payload: {address: 0x0200, data},
     }))
 
     sendOperationResult(message.operationId)
