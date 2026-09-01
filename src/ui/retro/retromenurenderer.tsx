@@ -76,6 +76,12 @@ const submenuTitleContentWidth = 34
 const retroNativeWidth = 560
 const retroNativeHeight = 384
 const clockPauseMs = 33
+const cursorBlinkMs = 500
+
+const isCloudSearchTitle = (item: RetroMenuItem | undefined) => Boolean(
+  item?.textInput &&
+  (item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")),
+)
 
 const RetroVtocIndicator = ({
   active,
@@ -369,6 +375,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     : 0
   const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
   const selectedItem = currentMenu[selectedIndex]
+  const hasBlinkingCloudSearchCursor = Boolean(currentFrame) && isCloudSearchTitle(selectedItem)
+  const showCloudSearchCursor = Math.floor(now.getTime() / cursorBlinkMs) % 2 === 0
   const selectLabel = t("retroControl.select")
   const isAppleIIPlus = retroSkin === RETRO_SKIN.APPLE_IIPLUS
   const isExportScreen = Boolean(currentFrame?.items.some(item =>
@@ -489,12 +497,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       : currentFrame.actionLabel !== t("retroControl.load") || Boolean(selectedItem?.action))
 
   useEffect(() => {
-    if (!isOpen || currentFrame) return
+    if (!isOpen || (currentFrame && !hasBlinkingCloudSearchCursor)) return
     const timer = window.setInterval(() => {
-      if (Date.now() >= clockPausedUntilRef.current) setNow(new Date())
-    }, 1000)
+      if (currentFrame || Date.now() >= clockPausedUntilRef.current) setNow(new Date())
+    }, currentFrame ? cursorBlinkMs : 1000)
     return () => window.clearInterval(timer)
-  }, [currentFrame, isOpen])
+  }, [currentFrame, hasBlinkingCloudSearchCursor, isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -1071,13 +1079,14 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 {(visibleOption || item.textInput) &&
                   <>{" "}<span className={`retro-menu-value${option?.useBrowserFont || !retroFontSupports(visibleOption ?? "") ? " retro-browser-font" : ""}`}>
                     {visibleOption}
-                    {item.textInput && selectedIndex === index && <span
-                      className={`retro-text-cursor retro-mousetext${item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")
-                        ? " retro-solid-text-cursor"
-                        : ""
-                        }`}
-                      aria-hidden="true"
-                    >{mouseTextCursor}</span>}
+                    {item.textInput && selectedIndex === index &&
+                      (!isCloudSearchTitle(item) || showCloudSearchCursor) && <span
+                        className={`retro-text-cursor retro-mousetext${item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")
+                          ? " retro-solid-text-cursor"
+                          : ""
+                          }`}
+                        aria-hidden="true"
+                      >{mouseTextCursor}</span>}
                   </span></>}
               </div>
             )

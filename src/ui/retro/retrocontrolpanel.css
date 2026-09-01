@@ -323,6 +323,10 @@
   animation: retro-cursor-blink 500ms steps(1, end) infinite;
 }
 
+.retro-solid-text-cursor {
+  animation: none;
+}
+
 .retro-panel.retro-skin-apple-iiplus .retro-solid-text-cursor {
   background: var(--retro-foreground);
   color: transparent;
