@@ -33,6 +33,7 @@ import {
 } from "../devices/disk/diskinterface"
 import { renderRetroPanelLayout } from "./retropanellayout"
 import { renderRetroPanelToCanvas } from "./retrocanvas"
+import { isInteractiveKeyboardTarget } from "./retrokeyboard"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -580,6 +581,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (isInteractiveKeyboardTarget(event.target)) return
       if (runTour) return
       if (hasOpenDialog) return
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
