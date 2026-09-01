@@ -40,7 +40,7 @@ const getDocumentCss = async () => {
     const css = await Promise.all(styleSheets.map(async styleSheet => {
       try {
         const rules = Array.from(styleSheet.cssRules, rule => rule.cssText)
-          .filter(rule => /retro-|PrintChar21Retro/i.test(rule))
+          .filter(rule => /retro-|font-family:\s*PrintChar21(?:\s*;|\s*})/i.test(rule))
           .join("\n")
         const matches = Array.from(rules.matchAll(fontUrlPattern))
         const baseUrl = styleSheet.href ?? document.baseURI

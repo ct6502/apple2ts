@@ -3,6 +3,8 @@ import {
   controlTextWidth,
   fitControlText,
   formatClockTime,
+  menuItemTextWidth,
+  mouseTextGlyphs,
   retroFontSupports,
   selectArrowSpacing,
   selectHintWidth,
@@ -11,6 +13,10 @@ import {
 } from "./retrotext"
 
 describe("Retro control-panel text", () => {
+  test("allows three additional cells in root and submenu items", () => {
+    expect(menuItemTextWidth).toEqual({ root: 33, submenu: 34 })
+  })
+
   test("reserves the leading hour cell only for single-digit hours", () => {
     expect(formatClockTime(new Date(2020, 0, 1, 6, 7, 8), "en-US")).toMatch(/^\u20076:/)
     expect(formatClockTime(new Date(2020, 0, 1, 12, 7, 8), "en-US")).toMatch(/^12:/)
@@ -29,7 +35,18 @@ describe("Retro control-panel text", () => {
 
   test("uses the control-panel font for supported accented Latin text", () => {
     expect(retroFontSupports("Français, Español, Čeština, Ångström")).toBe(true)
+    expect(retroFontSupports(Object.values(mouseTextGlyphs).join(""))).toBe(true)
     expect(retroFontSupports("日本語")).toBe(false)
+  })
+
+  test("uses PrintChar21's mirrored MouseText glyphs for footer controls", () => {
+    expect(mouseTextGlyphs).toEqual({
+      left: String.fromCodePoint(0xE088),
+      down: String.fromCodePoint(0xE08A),
+      up: String.fromCodePoint(0xE08B),
+      return: String.fromCodePoint(0xE08D),
+      right: String.fromCodePoint(0xE095),
+    })
   })
 
   test("preserves a menu item name when its selected value is long", () => {

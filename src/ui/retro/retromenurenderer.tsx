@@ -8,6 +8,8 @@ import {
   controlTextWidth,
   fitControlText,
   formatClockTime,
+  menuItemTextWidth,
+  mouseTextGlyphs,
   retroFontSupports,
   selectArrowSpacing,
   selectHintWidth,
@@ -31,6 +33,7 @@ import {
 } from "../devices/disk/diskinterface"
 import { renderRetroPanelLayout } from "./retropanellayout"
 import { renderRetroPanelToCanvas } from "./retrocanvas"
+import { isInteractiveKeyboardTarget } from "./retrokeyboard"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -58,11 +61,11 @@ type RetroMenuFrame = {
   onLeave?: (items: readonly RetroMenuItem[], values: number[]) => void
 }
 
-const mouseTextDown = String.fromCodePoint(0x2193)
-const mouseTextLeft = String.fromCodePoint(0x2190)
-const mouseTextRight = String.fromCodePoint(0x2192)
-const mouseTextUp = String.fromCodePoint(0x2191)
-const mouseTextReturn = String.fromCodePoint(0x21B5)
+const mouseTextDown = mouseTextGlyphs.down
+const mouseTextLeft = mouseTextGlyphs.left
+const mouseTextRight = mouseTextGlyphs.right
+const mouseTextUp = mouseTextGlyphs.up
+const mouseTextReturn = mouseTextGlyphs.return
 const mouseTextCursor = String.fromCodePoint(0xE07F)
 const checkmark = String.fromCodePoint(0x2713)
 const fixedWidthSpace = String.fromCodePoint(0x2007)
@@ -70,12 +73,16 @@ const topBorderGlyph = String.fromCodePoint(0xE05F)
 const bottomBorderGlyph = String.fromCodePoint(0xE08C)
 const leftBorderGlyph = String.fromCodePoint(0xE09F)
 const rightBorderGlyph = String.fromCodePoint(0xE09A)
-const rootMenuContentWidth = 30
-const submenuTextWidth = 31
 const submenuTitleContentWidth = 34
 const retroNativeWidth = 560
 const retroNativeHeight = 384
 const clockPauseMs = 33
+const cursorBlinkMs = 500
+
+const isCloudSearchTitle = (item: RetroMenuItem | undefined) => Boolean(
+  item?.textInput &&
+  (item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")),
+)
 
 const RetroVtocIndicator = ({
   active,
@@ -369,6 +376,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     : 0
   const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
   const selectedItem = currentMenu[selectedIndex]
+  const hasBlinkingCloudSearchCursor = Boolean(currentFrame) && isCloudSearchTitle(selectedItem)
+  const showCloudSearchCursor = Math.floor(now.getTime() / cursorBlinkMs) % 2 === 0
   const selectLabel = t("retroControl.select")
   const isAppleIIPlus = retroSkin === RETRO_SKIN.APPLE_IIPLUS
   const isExportScreen = Boolean(currentFrame?.items.some(item =>
@@ -489,12 +498,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       : currentFrame.actionLabel !== t("retroControl.load") || Boolean(selectedItem?.action))
 
   useEffect(() => {
-    if (!isOpen || currentFrame) return
+    if (!isOpen || (currentFrame && !hasBlinkingCloudSearchCursor)) return
     const timer = window.setInterval(() => {
-      if (Date.now() >= clockPausedUntilRef.current) setNow(new Date())
-    }, 1000)
+      if (currentFrame || Date.now() >= clockPausedUntilRef.current) setNow(new Date())
+    }, currentFrame ? cursorBlinkMs : 1000)
     return () => window.clearInterval(timer)
-  }, [currentFrame, isOpen])
+  }, [currentFrame, hasBlinkingCloudSearchCursor, isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -572,6 +581,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (isInteractiveKeyboardTarget(event.target)) return
       if (runTour) return
       if (hasOpenDialog) return
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
@@ -1026,7 +1036,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             const hasOptionValue = (option && !item.valueOnly && !item.hideOptionValue &&
               item.checkmarkIndex === undefined
             ) || item.textInput
-            const availableWidth = currentFrame ? submenuTextWidth : rootMenuContentWidth
+            const availableWidth = currentFrame ? menuItemTextWidth.submenu : menuItemTextWidth.root
             const fittedText = fitControlText(
               itemLabel,
               hasOptionValue ? textValue ?? option?.label : undefined,
@@ -1071,13 +1081,14 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 {(visibleOption || item.textInput) &&
                   <>{" "}<span className={`retro-menu-value${option?.useBrowserFont || !retroFontSupports(visibleOption ?? "") ? " retro-browser-font" : ""}`}>
                     {visibleOption}
-                    {item.textInput && selectedIndex === index && <span
-                      className={`retro-text-cursor retro-mousetext${item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")
-                        ? " retro-solid-text-cursor"
-                        : ""
-                        }`}
-                      aria-hidden="true"
-                    >{mouseTextCursor}</span>}
+                    {item.textInput && selectedIndex === index &&
+                      (!isCloudSearchTitle(item) || showCloudSearchCursor) && <span
+                        className={`retro-text-cursor retro-mousetext${item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")
+                          ? " retro-solid-text-cursor"
+                          : ""
+                          }`}
+                        aria-hidden="true"
+                      >{mouseTextCursor}</span>}
                   </span></>}
               </div>
             )
