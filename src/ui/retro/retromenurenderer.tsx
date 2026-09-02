@@ -6,6 +6,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type WheelEvent as ReactWheelEvent,
 } from "react"
 import { createPortal, flushSync } from "react-dom"
 import type { RetroResolvedControl } from "./retromenucontext"
@@ -533,6 +534,13 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     delete panel.dataset.pointerY
     setDraggedToggleIndex(null)
     if (pointerId !== event.pointerId || !Number.isFinite(startX) || !Number.isFinite(startY)) return
+    const key = getPanelSwipeKey(event.clientX - startX, event.clientY - startY)
+    if (key) {
+      panel.dataset.suppressClick = "true"
+      window.setTimeout(() => delete panel.dataset.suppressClick, 500)
+      dispatchPanelKey(key)
+      return
+    }
     const row = menuRowAtPoint(panel, event.clientX, event.clientY)
     const index = row ? Number(row.dataset.menuIndex) : -1
     const item = currentMenu[index]
@@ -542,11 +550,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       activateMenuItem(row, item, index, event.clientX)
       return
     }
-    const key = getPanelSwipeKey(event.clientX - startX, event.clientY - startY)
-    if (!key) return
-    panel.dataset.suppressClick = "true"
-    window.setTimeout(() => delete panel.dataset.suppressClick, 0)
-    dispatchPanelKey(key)
+  }
+  const handlePanelWheel = (event: ReactWheelEvent<HTMLElement>) => {
+    if (event.deltaY === 0) return
+    event.preventDefault()
+    dispatchPanelKey(event.deltaY < 0 ? "ArrowUp" : "ArrowDown")
   }
   const handlePanelPointerCancel = (event: ReactPointerEvent<HTMLElement>) => {
     delete event.currentTarget.dataset.pointerId
@@ -1352,6 +1360,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         onPointerMove: handlePanelPointerMove,
         onPointerUp: handlePanelPointerUp,
         onPointerCancel: handlePanelPointerCancel,
+        onWheel: handlePanelWheel,
         style: panelStyle,
       }), canvasHost)}
       <DiskPanelVtoc
