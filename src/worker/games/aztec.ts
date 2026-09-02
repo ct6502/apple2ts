@@ -106,6 +106,7 @@ const joystick = (axes: number[]) => {
 const helptext = 
 `AZTEC
 Paul Stephenson, Datamost 1982
+<a href="https://gamefaqs.gamespot.com/appleii/581004-aztec/faqs/10557" target="_blank">FAQ</a>
 
 W: walk
 R: run

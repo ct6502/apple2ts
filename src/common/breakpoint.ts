@@ -56,11 +56,12 @@ export const getBreakpointString = (bp: Breakpoint) => {
         break
     }
   } else {
-    result = (bp.address >= 0) ? (bp.basic ? bp.address.toString() : toHex(bp.address, 4)) : "Any"
+    result = (bp.address >= 0) ? (bp.basic ? bp.address.toString() : `$${toHex(bp.address, 4)}`) : "Any"
   }
   if (bp.watchpoint) {
     if (bp.memget) result += " read"
     if (bp.memset) result += " write"
+    if (bp.hexvalue >= 0) result += " $" + toHex(bp.hexvalue, 2)
   } else if (bp.basic) {
     result += " BASIC"
   } else {
@@ -70,6 +71,9 @@ export const getBreakpointString = (bp: Breakpoint) => {
     if (bp.expression1.register !== "") {
       result += " (expression)"
     }
+  }
+  if (bp.action1.action !== "" || bp.action2.action !== "") {
+    result += " + actions"
   }
   return result
 }
