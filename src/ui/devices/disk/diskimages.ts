@@ -3,10 +3,10 @@ export const diskImages: DiskCollectionItem[] = [
     title: "Aztec",
     diskUrl: "Aztec.woz",
     imageUrl: "disks/Aztec.png",
-    detailsUrl: "https://archive.org/details/wozaday_Aztec",
+    detailsUrl: "https://www.mobygames.com/game/13259/aztec/",
     type: "builtin",
     lastUpdated: new Date(0),
-    fileSize: 233469
+    fileSize: 234496
   },
   {
     title: "Eamon",
