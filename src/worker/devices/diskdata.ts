@@ -305,10 +305,6 @@ const dumpData = (ds: DriveState) => {
   }
 }
 
-const pattern = [0xD9, 0xC5, 0xC5]
-const found = [false, false, false]
-let index = 0
-
 export const handleDriveSoftSwitches: AddressCallback =
   (addr: number, value: number): number => {
   // We don't care about memgets to our card firmware, only to our card I/O
@@ -368,16 +364,6 @@ export const handleDriveSoftSwitches: AddressCallback =
       // See additional comment about read in the MOTOR_OFF case below.
       if (ds.motorRunning && !ds.writeMode) {
         result = getNextByte(ds, dd, cycles)
-        if (result === pattern[index] || result === (pattern[index] & 0x7F)) {
-          found[index] = true
-          index++
-          if (index === pattern.length) {
-            console.log(`Found pattern ${pattern.map(x => toHex(x, 2)).join(" ")} at PC=${toHex(s6502.PC, 4)}`)
-            index = 0
-          }
-        } else {
-          index = 0
-        }
         // Reset the Disk II Logic State Sequencer clock
         prevCycleCount = s6502.cycleCount
       }
