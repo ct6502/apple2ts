@@ -97,6 +97,10 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "테마"
 
+msgctxt "config.openRetroControlPanel"
+msgid "Control Panel"
+msgstr "제어판"
+
 #, fuzzy
 msgctxt "config.resetSettings"
 msgid "Reset All Settings"

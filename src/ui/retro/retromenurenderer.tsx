@@ -34,6 +34,7 @@ import {
 import { renderRetroPanelLayout } from "./retropanellayout"
 import { renderRetroPanelToCanvas } from "./retrocanvas"
 import { isInteractiveKeyboardTarget } from "./retrokeyboard"
+import { OPEN_RETRO_CONTROL_PANEL_EVENT } from "./retrocontrolevents"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -367,6 +368,16 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const currentMenu = currentFrame?.items ?? rootMenu
   const selectedIndex = manualSelectedIndex
   const isOpen = manualIsOpen
+  const open = () => {
+    menuStack.toReversed().forEach(restoreMenuFramePreview)
+    resetCollectionDriveSelectionSession()
+    setNow(new Date())
+    clockPausedUntilRef.current = Date.now() + clockPauseMs
+    setCanvasRenderState(getCrtDistortion() ? "pending" : "native")
+    setIsOpen(true)
+    setMenuStack([])
+    setSelectedIndex(0)
+  }
   const maxVisibleMenuItems = 16
   const visibleMenuStart = currentFrame
     ? Math.min(
@@ -580,6 +591,14 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   }, [currentFrame, isOpen, selectedIndex])
 
   useEffect(() => {
+    const handleOpen = () => {
+      if (!isOpen) open()
+    }
+    window.addEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
+    return () => window.removeEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
+  }, [isOpen, menuStack])
+
+  useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (isInteractiveKeyboardTarget(event.target)) return
       if (runTour) return
@@ -587,16 +606,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
         event.preventDefault()
         event.stopPropagation()
-        if (!isOpen) {
-          menuStack.toReversed().forEach(restoreMenuFramePreview)
-          resetCollectionDriveSelectionSession()
-          setNow(new Date())
-          clockPausedUntilRef.current = Date.now() + clockPauseMs
-          setCanvasRenderState(getCrtDistortion() ? "pending" : "native")
-          setIsOpen(true)
-          setMenuStack([])
-          setSelectedIndex(0)
-        }
+        if (!isOpen) open()
         return
       }
       if (!isOpen) return

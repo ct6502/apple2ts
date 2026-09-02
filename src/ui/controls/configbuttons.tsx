@@ -6,6 +6,7 @@ import {
   faSync,
   faPalette,
 } from "@fortawesome/free-solid-svg-icons"
+import { faWindowMaximize as faWindowMaximizeOutline } from "@fortawesome/free-regular-svg-icons"
 import { MachineConfig } from "../devices/machineconfig"
 import { notifySettingsChanged, resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
@@ -32,6 +33,7 @@ import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
 import { choiceBinding, controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
+import { openRetroControlPanel } from "../retro/retrocontrolevents"
 
 const themeLabels = (t: (key: string) => string) => [
   t("themes.classic"),
@@ -200,6 +202,13 @@ const ConfigButtons = (props: DisplayProps) => {
     {!isGameMode() && <RunTour showTour={false} />}
 
     <LinkBuilder />
+
+    <button className="push-button"
+      title={t("config.openRetroControlPanel")}
+      type="button"
+      onClick={openRetroControlPanel}>
+      <FontAwesomeIcon icon={faWindowMaximizeOutline} />
+    </button>
 
   </div>
 }
