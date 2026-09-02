@@ -483,11 +483,16 @@
   padding: 0;
 }
 
+.retro-panel {
+  touch-action: none;
+}
+
 .retro-submenu-menu {
   grid-column: 2 / 37;
 }
 
 .retro-menu-item {
+  cursor: pointer;
   display: block;
   height: var(--retro-cell-height);
   line-height: 1;
@@ -502,6 +507,7 @@
 }
 
 .retro-menu-item[aria-disabled="true"]:not(.separator) {
+  cursor: default;
   opacity: 0.5;
 }
 
@@ -580,6 +586,25 @@
 
 .retro-footer-action.hidden {
   visibility: hidden;
+}
+
+.retro-panel-key {
+  cursor: pointer;
+}
+
+.retro-panel-arrow-key {
+  align-items: center;
+  box-sizing: border-box;
+  display: inline-flex;
+  height: var(--retro-cell-height);
+  justify-content: center;
+  vertical-align: top;
+  width: var(--retro-cell-width);
+}
+
+.retro-panel-key:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 1px;
 }
 
 .retro-window footer.retro-compact-latin-footer {
