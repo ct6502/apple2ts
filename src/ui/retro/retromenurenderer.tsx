@@ -83,6 +83,7 @@ const topBorderGlyph = String.fromCodePoint(0xE05F)
 const bottomBorderGlyph = String.fromCodePoint(0xE08C)
 const leftBorderGlyph = String.fromCodePoint(0xE09F)
 const rightBorderGlyph = String.fromCodePoint(0xE09A)
+const toggleSelectionBox = `${rightBorderGlyph}${String.fromCodePoint(0xE09C)}${leftBorderGlyph}`
 const submenuTitleContentWidth = 34
 const retroNativeWidth = 560
 const retroNativeHeight = 384
@@ -399,6 +400,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [manualIsOpen, setIsOpen] = useState(false)
   const [manualMenuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
   const [manualSelectedIndex, setSelectedIndex] = useState(0)
+  const [draggedToggleIndex, setDraggedToggleIndex] = useState<number | null>(null)
+  const [hoveredToggleIndex, setHoveredToggleIndex] = useState<number | null>(null)
   const [, setSettingsRevision] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
@@ -461,6 +464,27 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     : 0
   const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
   const selectedItem = currentMenu[selectedIndex]
+  const activateMenuItem = (
+    row: HTMLElement,
+    item: RetroMenuItem,
+    index: number,
+    clientX: number,
+  ) => {
+    if (!isMenuItemSelectable(item, currentFrame)) return
+    flushSync(() => setSelectedIndex(index))
+    const checkBounds = row
+      .querySelector<HTMLElement>(".retro-menu-check")
+      ?.getBoundingClientRect()
+    const clickedCheck = checkBounds !== undefined &&
+      clientX >= checkBounds.left && clientX <= checkBounds.right
+    const togglesOnRowClick = item.id.startsWith("diskCollection.export.disk.")
+    dispatchPanelKey(currentFrame && item.checkmarkIndex !== undefined &&
+      (clickedCheck || togglesOnRowClick)
+      ? "ArrowRight"
+      : currentFrame && item.options && item.kind !== "action"
+        ? "ArrowRight"
+        : "Enter")
+  }
   const handleMenuItemClick = (
     event: ReactMouseEvent<HTMLElement>,
     item: RetroMenuItem,
@@ -471,18 +495,33 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       delete panel.dataset.suppressClick
       return
     }
-    if (!isMenuItemSelectable(item, currentFrame)) return
-    flushSync(() => setSelectedIndex(index))
-    dispatchPanelKey(currentFrame && item.options && item.kind !== "action"
-      ? "ArrowRight"
-      : "Enter")
+    activateMenuItem(event.currentTarget, item, index, event.clientX)
   }
+  const menuRowAtPoint = (panel: HTMLElement, clientX: number, clientY: number) =>
+    Array.from(panel.querySelectorAll<HTMLElement>(".retro-menu-item"))
+      .find(element => {
+        const bounds = element.getBoundingClientRect()
+        return clientX >= bounds.left && clientX <= bounds.right &&
+          clientY >= bounds.top && clientY <= bounds.bottom
+      })
   const handlePanelPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (!event.isPrimary) return
     event.currentTarget.dataset.pointerId = String(event.pointerId)
     event.currentTarget.dataset.pointerX = String(event.clientX)
     event.currentTarget.dataset.pointerY = String(event.clientY)
     delete event.currentTarget.dataset.suppressClick
+  }
+  const handlePanelPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+    if (Number(event.currentTarget.dataset.pointerId) !== event.pointerId) return
+    const row = menuRowAtPoint(event.currentTarget, event.clientX, event.clientY)
+    const index = row ? Number(row.dataset.menuIndex) : -1
+    const item = currentMenu[index]
+    if (row && isMenuItemSelectable(item, currentFrame)) {
+      setSelectedIndex(index)
+      setDraggedToggleIndex(item.checkmarkIndex === undefined ? null : index)
+    } else {
+      setDraggedToggleIndex(null)
+    }
   }
   const handlePanelPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
     const panel = event.currentTarget
@@ -492,7 +531,17 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     delete panel.dataset.pointerId
     delete panel.dataset.pointerX
     delete panel.dataset.pointerY
+    setDraggedToggleIndex(null)
     if (pointerId !== event.pointerId || !Number.isFinite(startX) || !Number.isFinite(startY)) return
+    const row = menuRowAtPoint(panel, event.clientX, event.clientY)
+    const index = row ? Number(row.dataset.menuIndex) : -1
+    const item = currentMenu[index]
+    if (event.pointerType === "touch" && row && item && isMenuItemSelectable(item, currentFrame)) {
+      panel.dataset.suppressClick = "true"
+      window.setTimeout(() => delete panel.dataset.suppressClick, 500)
+      activateMenuItem(row, item, index, event.clientX)
+      return
+    }
     const key = getPanelSwipeKey(event.clientX - startX, event.clientY - startY)
     if (!key) return
     panel.dataset.suppressClick = "true"
@@ -504,6 +553,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     delete event.currentTarget.dataset.pointerX
     delete event.currentTarget.dataset.pointerY
     delete event.currentTarget.dataset.suppressClick
+    setDraggedToggleIndex(null)
   }
   const hasBlinkingCloudSearchCursor = Boolean(currentFrame) && isCloudSearchTitle(selectedItem)
   const showCloudSearchCursor = Math.floor(now.getTime() / cursorBlinkMs) % 2 === 0
@@ -1195,24 +1245,35 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 role="menuitem"
                 aria-current={selectedIndex === index ? "true" : undefined}
                 aria-disabled={!isMenuItemSelectable(item, currentFrame) ? "true" : undefined}
+                data-menu-index={index}
                 onClick={event => handleMenuItemClick(event, item, index)}
-                onMouseEnter={() => {
-                  if (isMenuItemSelectable(item, currentFrame)) setSelectedIndex(index)
+                onPointerEnter={event => {
+                  if (event.pointerType !== "mouse") return
+                  if (!isMenuItemSelectable(item, currentFrame)) return
+                  setSelectedIndex(index)
+                  setHoveredToggleIndex(item.checkmarkIndex === undefined ? null : index)
+                }}
+                onPointerLeave={event => {
+                  if (event.pointerType === "mouse") setHoveredToggleIndex(null)
                 }}
                 style={!currentFrame && item.id === "quit"
                   ? { gridRow: visibleIndex + 2 }
                   : undefined}
               >
                 {currentFrame && <span className="retro-menu-check">
-                  {unresolvedExportDisk
-                    ? <RetroVtocIndicator
-                      active={diskItemKey(unresolvedExportDisk) === activeVtocCheckKey}
-                      disk={unresolvedExportDisk}
-                      isAppleIIPlus={isAppleIIPlus}
-                    />
-                    : item.indicator ?? (isChecked
-                      ? item.checkedIndicator ?? (isAppleIIPlus ? "*" : checkmark)
-                      : " ")}
+                  {(draggedToggleIndex === index || hoveredToggleIndex === index) &&
+                    item.checkmarkIndex !== undefined && !unresolvedExportDisk &&
+                    item.indicator === undefined && !isChecked
+                    ? isAppleIIPlus ? "[]" : toggleSelectionBox
+                    : unresolvedExportDisk
+                      ? <RetroVtocIndicator
+                        active={diskItemKey(unresolvedExportDisk) === activeVtocCheckKey}
+                        disk={unresolvedExportDisk}
+                        isAppleIIPlus={isAppleIIPlus}
+                      />
+                      : item.indicator ?? (isChecked
+                        ? item.checkedIndicator ?? (isAppleIIPlus ? "*" : checkmark)
+                        : " ")}
                 </span>}
                 <span className={`retro-menu-name${item.useRetroFont || retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
                   {visibleLabel}
@@ -1283,8 +1344,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         className: `${panelClasses}${canvasRenderState === "native"
           ? ""
           : ` retro-canvas-${canvasRenderState}`}`,
-        onContextMenu: event => event.preventDefault(),
+        onContextMenu: event => {
+          event.preventDefault()
+          dispatchPanelKey("Escape")
+        },
         onPointerDown: handlePanelPointerDown,
+        onPointerMove: handlePanelPointerMove,
         onPointerUp: handlePanelPointerUp,
         onPointerCancel: handlePanelPointerCancel,
         style: panelStyle,
