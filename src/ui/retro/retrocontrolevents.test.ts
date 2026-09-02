@@ -9,7 +9,7 @@ describe("openRetroControlPanel", () => {
     jest.restoreAllMocks()
   })
 
-  test("focuses the canvas before dispatching the open event", () => {
+  test("focuses the canvas before dispatching the control-panel toggle event", () => {
     const canvas = document.createElement("canvas")
     canvas.id = "apple2canvas"
     document.body.appendChild(canvas)

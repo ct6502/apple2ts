@@ -592,7 +592,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
 
   useEffect(() => {
     const handleOpen = () => {
-      if (!isOpen) open()
+      if (isOpen) {
+        close()
+      } else {
+        open()
+      }
     }
     window.addEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
     return () => window.removeEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
@@ -606,7 +610,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
         event.preventDefault()
         event.stopPropagation()
-        if (!isOpen) open()
+        if (isOpen) {
+          close()
+        } else {
+          open()
+        }
         return
       }
       if (!isOpen) return
