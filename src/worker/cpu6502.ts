@@ -8,7 +8,9 @@ import { MEMORY_BANKS } from "../common/memorybanks"
 import { getInstructionString } from "../common/util_disassemble"
 
 let breakpointSkipOnce = false
-let doWatchpointBreak = false
+let pendingWatchpointAddress: number | null = null
+let lastBreakpointAddress: number | null = null
+let lastBreakpointReason: "breakpoint" | "watchpoint" = "breakpoint"
 export let breakpointMap: BreakpointMap = new BreakpointMap()
 let runToRTS = false
 
@@ -200,8 +202,8 @@ export const checkBreakpointExpression = (bp: Breakpoint) => {
   return passes2
 }
 
-export const setWatchpointBreak = () => {
-  doWatchpointBreak = true
+export const setWatchpointBreak = (address: number) => {
+  pendingWatchpointAddress ??= address
 }
 
 const printBreakpointToConsole = (vLo: number, vHi: number, code: PCodeInstr | null) => {
@@ -260,8 +262,12 @@ const processBreakpointActions = (bp: Breakpoint, vLo: number, vHi: number,
 
 // This is only exported for breakpoint testing
 export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | null = null): BREAKPOINT_RESULT => {
-  if (doWatchpointBreak) {
-    doWatchpointBreak = false
+  lastBreakpointAddress = null
+  lastBreakpointReason = "breakpoint"
+  if (pendingWatchpointAddress !== null) {
+    lastBreakpointAddress = pendingWatchpointAddress
+    lastBreakpointReason = "watchpoint"
+    pendingWatchpointAddress = null
     return BREAKPOINT_RESULT.BREAK
   }
   if (breakpointMap.size === 0 || breakpointSkipOnce) return BREAKPOINT_RESULT.NO_BREAK
@@ -271,6 +277,7 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
     const bp = breakpointMap.get(lineNum)
     if (bp?.basic && !bp.disabled) {
       if (bp.once) breakpointMap.delete(lineNum)
+      lastBreakpointAddress = bp.address
       return BREAKPOINT_RESULT.HIDDEN_BREAK
     }
   }
@@ -325,7 +332,11 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
     return BREAKPOINT_RESULT.NO_BREAK
   }
   if (bp.once) breakpointMap.delete(breakpointKey)
-  return processBreakpointActions(bp, vLo, vHi, code)
+  const result = processBreakpointActions(bp, vLo, vHi, code)
+  if (result === BREAKPOINT_RESULT.BREAK || result === BREAKPOINT_RESULT.HIDDEN_BREAK) {
+    lastBreakpointAddress = bp.address
+  }
+  return result
 }
 
 export const processInstruction = (updateTrace: ((str: string) => void) | null = null) => {
@@ -342,7 +353,12 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
   if (!runOnlyMode()) {
     const bpResult = hitBreakpoint(instr, vLo, vHi, code)
     if (bpResult === BREAKPOINT_RESULT.BREAK || bpResult === BREAKPOINT_RESULT.HIDDEN_BREAK) {
-      doSetRunMode(RUN_MODE.PAUSED, bpResult !== BREAKPOINT_RESULT.HIDDEN_BREAK)
+      doSetRunMode(
+        RUN_MODE.PAUSED,
+        bpResult !== BREAKPOINT_RESULT.HIDDEN_BREAK,
+        undefined,
+        {reason: lastBreakpointReason, breakpointAddress: lastBreakpointAddress ?? undefined},
+      )
       return -1
     } else if (bpResult === BREAKPOINT_RESULT.ACTION) {
       // If we had a breakpoint action that did not halt, we want to leave
@@ -413,7 +429,7 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
   }
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false
-    doSetRunMode(RUN_MODE.PAUSED)
+    doSetRunMode(RUN_MODE.PAUSED, true, undefined, {reason: "run-to-return"})
     return -1
   }
   return cycles

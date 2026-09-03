@@ -8,6 +8,7 @@ import {
   requestSetRunMode,
   requestSpeedMode,
   requestMemoryView,
+  setExecutionStateCallback,
   setMain2Worker,
 } from "./main2worker"
 
@@ -182,4 +183,31 @@ describe("worker operations", () => {
 
     await expect(operation).rejects.toThrow("Invalid disk image")
   })
+})
+
+test("publishes only new worker-owned execution snapshots", () => {
+  const snapshots: ExecutionSnapshot[] = []
+  setExecutionStateCallback((execution) => snapshots.push(execution))
+  snapshots.length = 0
+  const execution = {
+    executionSequence: 9,
+    state: "paused",
+    pauseReason: "explicit",
+    breakpoint: null,
+    PC: 0x6000,
+    A: 1,
+    X: 2,
+    Y: 3,
+    S: 0xFF,
+    PStatus: 0x24,
+    machineName: "APPLE2EE",
+    memoryConfiguration: {slot3Card: "aux", ramWorksKb: 64},
+  } as ExecutionSnapshot
+  const state = {runMode: RUN_MODE.PAUSED, speedMode: 0, cpuSpeed: 0, execution} as MachineState
+
+  doOnMessage({data: {msg: MSG_WORKER.MACHINE_STATE, payload: state}} as MessageEvent)
+  doOnMessage({data: {msg: MSG_WORKER.MACHINE_STATE, payload: state}} as MessageEvent)
+
+  expect(snapshots).toEqual([execution])
+  setExecutionStateCallback(() => {})
 })
