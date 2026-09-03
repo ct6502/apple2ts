@@ -38,17 +38,21 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
       let writableFileHandle: FileSystemFileHandle | null = null
       if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
         const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
-        writableFileHandle = await window.showSaveFilePicker({
-          excludeAcceptAllOption: false,
-          suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
-          types: [
-            {
-              description: "Disk Image",
-              accept: { "application/octet": [newFileExtension] as `.${string}`[] },
-            },
-          ]
-        })
-        filename = writableFileHandle.name
+        if (isFileSystemApiSupported()) {
+          writableFileHandle = await window.showSaveFilePicker({
+            excludeAcceptAllOption: false,
+            suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
+            types: [
+              {
+                description: "Disk Image",
+                accept: { "application/octet": [newFileExtension] as `.${string}`[] },
+              },
+            ]
+          })
+          filename = writableFileHandle.name
+        } else {
+          filename = filename.replace(fileExtension, newFileExtension ?? "")
+        }
       }
       const newIndex = handleSetDiskOrFileFromBuffer(index,
         await file.arrayBuffer(), filename, null, writableFileHandle)
