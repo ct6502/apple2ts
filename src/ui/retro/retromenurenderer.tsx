@@ -79,6 +79,7 @@ const mouseTextUp = mouseTextGlyphs.up
 const mouseTextReturn = mouseTextGlyphs.return
 const mouseTextCursor = String.fromCodePoint(0xE07F)
 const checkmark = String.fromCodePoint(0xE084)
+const favoriteIndicator = String.fromCodePoint(0xE09B)
 const fixedWidthSpace = String.fromCodePoint(0x2007)
 const topBorderGlyph = String.fromCodePoint(0xE05F)
 const bottomBorderGlyph = String.fromCodePoint(0xE08C)
@@ -136,6 +137,9 @@ const isCloudSearchTitle = (item: RetroMenuItem | undefined) => Boolean(
   item?.textInput &&
   (item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")),
 )
+
+const showsSelectionBox = (item: RetroMenuItem) => item.checkmarkIndex !== undefined ||
+  item.id.includes(".internetArchive.result.") || item.id.includes(".demoZoo.result.")
 
 const RetroVtocIndicator = ({
   active,
@@ -479,12 +483,15 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     const clickedCheck = checkBounds !== undefined &&
       clientX >= checkBounds.left && clientX <= checkBounds.right
     const togglesOnRowClick = item.id.startsWith("diskCollection.export.disk.")
-    dispatchPanelKey(currentFrame && item.checkmarkIndex !== undefined &&
-      (clickedCheck || togglesOnRowClick)
-      ? "ArrowRight"
-      : currentFrame && item.options && item.kind !== "action"
+    const togglesFavorite = clickedCheck && showsSelectionBox(item) &&
+      item.checkmarkIndex === undefined
+    dispatchPanelKey(togglesFavorite
+      ? item.indicator === undefined ? "ArrowRight" : "ArrowLeft"
+      : currentFrame && item.checkmarkIndex !== undefined && (clickedCheck || togglesOnRowClick)
         ? "ArrowRight"
-        : "Enter")
+        : currentFrame && item.options && item.kind !== "action"
+          ? "ArrowRight"
+          : "Enter")
   }
   const handleMenuItemClick = (
     event: ReactMouseEvent<HTMLElement>,
@@ -519,7 +526,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     const item = currentMenu[index]
     if (row && isMenuItemSelectable(item, currentFrame)) {
       setSelectedIndex(index)
-      setDraggedToggleIndex(item.checkmarkIndex === undefined ? null : index)
+      setDraggedToggleIndex(showsSelectionBox(item) ? index : null)
     } else {
       setDraggedToggleIndex(null)
     }
@@ -1242,6 +1249,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             const isChecked = item.checkmarkIndex !== undefined
               ? valueIndex === item.checkmarkIndex
               : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
+            const isFavoriteRow = item.checkedIndicator === "X"
+            const displayedIndicator = isFavoriteRow
+              ? isChecked ? undefined : isAppleIIPlus ? "*" : favoriteIndicator
+              : item.indicator === "*" && showsSelectionBox(item)
+                ? isAppleIIPlus ? "*" : favoriteIndicator
+                : item.indicator
             const exportDisk = item.id.startsWith("diskCollection.export.disk.") && item.payload
               ? item.payload as DiskCollectionItem
               : undefined
@@ -1259,7 +1272,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                   if (event.pointerType !== "mouse") return
                   if (!isMenuItemSelectable(item, currentFrame)) return
                   setSelectedIndex(index)
-                  setHoveredToggleIndex(item.checkmarkIndex === undefined ? null : index)
+                  setHoveredToggleIndex(showsSelectionBox(item) ? index : null)
                 }}
                 onPointerLeave={event => {
                   if (event.pointerType === "mouse") setHoveredToggleIndex(null)
@@ -1270,8 +1283,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               >
                 {currentFrame && <span className="retro-menu-check">
                   {(draggedToggleIndex === index || hoveredToggleIndex === index) &&
-                    item.checkmarkIndex !== undefined && !unresolvedExportDisk &&
-                    item.indicator === undefined && !isChecked
+                    showsSelectionBox(item) && !unresolvedExportDisk &&
+                    displayedIndicator === undefined && (!isChecked || isFavoriteRow)
                     ? isAppleIIPlus ? "[]" : toggleSelectionBox
                     : unresolvedExportDisk
                       ? <RetroVtocIndicator
@@ -1279,7 +1292,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                         disk={unresolvedExportDisk}
                         isAppleIIPlus={isAppleIIPlus}
                       />
-                      : item.indicator ?? (isChecked
+                      : displayedIndicator ?? (isChecked && !isFavoriteRow
                         ? item.checkedIndicator ?? (isAppleIIPlus ? "*" : checkmark)
                         : " ")}
                 </span>}
