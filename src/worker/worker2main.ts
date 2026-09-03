@@ -12,7 +12,8 @@ import { doSetRunMode, doSetSpeedMode,
   doSetSiriusJoyport,
   setTracing,
   doExecuteBasicCommand,
-  doSetCyclesToRun} from "./motherboard"
+  doSetCyclesToRun,
+  getExternalMemoryView} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps, doSetProdosFloppy } from "./devices/drivestate"
 import { apple2KeyRelease, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
@@ -131,8 +132,15 @@ export const passSerialConfig = (config: SerialConfig) => {
   doPostMessage(MSG_WORKER.SERIAL_CONFIG_CHANGE, config)
 }
 
-export const passWorkerOperationResult = (operationId: number, error?: string) => {
-  doPostMessage(MSG_WORKER.OPERATION_RESULT, { operationId, error })
+export const passWorkerOperationResult = (
+  operationId: number,
+  error?: string,
+  value?: MessagePayload,
+) => {
+  doPostMessage(
+    MSG_WORKER.OPERATION_RESULT,
+    value === undefined ? {operationId, error} : {operationId, error, value},
+  )
 }
 
 // We do this weird check so we can safely run this code from the node.js
@@ -224,6 +232,20 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.GET_MEMORY:
         passMemory(getMemoryDump())
+        break
+      case MSG_MAIN.GET_MEMORY_VIEW:
+        try {
+          passWorkerOperationResult(
+            e.data.operationId,
+            undefined,
+            getExternalMemoryView(e.data.payload as MemoryViewRequest),
+          )
+        } catch (error) {
+          passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
+          )
+        }
         break
       case MSG_MAIN.GET_SAVE_STATE:
         passSaveState(doGetSaveState(true))

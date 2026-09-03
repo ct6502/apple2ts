@@ -24,19 +24,19 @@ let bootCallback: (() => void) | null = null
 let serialConfigCallback: ((config: SerialConfig) => void) | null = null
 let nextWorkerOperationId = 0
 const pendingWorkerOperations = new Map<number, {
-  resolve: () => void,
+  resolve: (value: MessagePayload | undefined) => void,
   reject: (error: Error) => void,
   timeout: ReturnType<typeof setTimeout>,
 }>()
 
-const requestWorkerOperation = (
+const requestWorkerOperation = <T = void>(
   msg: MSG_MAIN,
   payload: MessagePayload,
   timeoutMs = 5000,
-): Promise<void> => new Promise((resolve, reject) => {
+): Promise<T> => new Promise((resolve, reject) => {
   const operationId = ++nextWorkerOperationId
   const operation = {
-    resolve,
+    resolve: (value: MessagePayload | undefined) => resolve(value as T),
     reject,
     timeout: setTimeout(() => {
       pendingWorkerOperations.delete(operationId)
@@ -47,7 +47,7 @@ const requestWorkerOperation = (
   doPostMessage(msg, payload, operationId)
 })
 
-const resolveWorkerOperation = ({ operationId, error }: WorkerOperationResult) => {
+const resolveWorkerOperation = ({ operationId, error, value }: WorkerOperationResult) => {
   const operation = pendingWorkerOperations.get(operationId)
   if (!operation) return
   clearTimeout(operation.timeout)
@@ -55,7 +55,7 @@ const resolveWorkerOperation = ({ operationId, error }: WorkerOperationResult) =
   if (error) {
     operation.reject(new Error(error))
   } else {
-    operation.resolve()
+    operation.resolve(value)
   }
 }
 
@@ -364,6 +364,11 @@ export const passSetTraceSettings = (traceSettings: TraceSettings) => {
 export const passRequestMemoryDump = () => {
   doPostMessage(MSG_MAIN.GET_MEMORY, true)
 }
+
+export const requestMemoryView = (
+  request: MemoryViewRequest,
+  timeoutMs = 5000,
+) => requestWorkerOperation<MemoryView>(MSG_MAIN.GET_MEMORY_VIEW, request, timeoutMs)
 
 // This is a cached memory dump, updated whenever the main requests a new one.
 // Currently only used by the AI Agent, since it may want to look at memory

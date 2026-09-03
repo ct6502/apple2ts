@@ -1,9 +1,9 @@
 import { BREAKPOINT_RESULT, breakpointMap, doSetBreakpoints, hitBreakpoint, processInstruction } from "./cpu6502"
-import { getHires, memGet, memory, updateAddressTables } from "./memory"
+import { getAuxCardEnabled, getHires, memGet, memory, setAuxCardEnabled, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, getExternalMachineState, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
@@ -15,6 +15,56 @@ import { getSiriusJoyport } from "./devices/sirius_joyport"
 test("debugMode", () => {
   expect(TEST_DEBUG).toEqual(false)
   expect(TEST_GRAPHICS).toEqual(false)
+})
+
+test("physical memory inspection requires a stable paused worker", () => {
+  setIsTesting()
+  doSetRunMode(RUN_MODE.PAUSED, false)
+  expect(getExternalMemoryView({address: 0, length: 1, space: "main"}).bytes).toHaveLength(1)
+  expect(() => getExternalMemoryView({address: 0, length: 1, space: "main", auxBank: 0}))
+    .toThrow("Auxiliary bank is valid only for auxiliary memory")
+
+  doSetRunMode(RUN_MODE.RUNNING, false)
+  expect(() => getExternalMemoryView({address: 0, length: 1, space: "active"}))
+    .toThrow("Memory is available only while the emulator is paused")
+  expect(() => getExternalMemoryView({address: 0, length: 1, space: "main"}))
+    .toThrow("Memory is available only while the emulator is paused")
+
+  doSetRunMode(RUN_MODE.PAUSED, false)
+  doSetRunMode(RUN_MODE.IDLE, false)
+})
+
+test("physical memory inspection preserves CPU and execution state", () => {
+  setIsTesting()
+  const previousCpu = {...s6502}
+  const previousRunMode = getExternalMachineState().runMode
+  const previousAuxCardEnabled = getAuxCardEnabled()
+
+  try {
+    Object.assign(s6502, {
+      PC: 0x4321,
+      Accum: 0x11,
+      XReg: 0x22,
+      YReg: 0x33,
+      StackPtr: 0x44,
+      PStatus: 0xA5,
+    })
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    setAuxCardEnabled(true)
+    const expectedCpu = {...s6502}
+
+    getExternalMemoryView({address: 0x03A4, length: 1, space: "main"})
+    expect(s6502).toEqual(expectedCpu)
+    expect(getExternalMachineState().runMode).toEqual(RUN_MODE.PAUSED)
+
+    getExternalMemoryView({address: 0x03A4, length: 1, space: "aux", auxBank: 0})
+    expect(s6502).toEqual(expectedCpu)
+    expect(getExternalMachineState().runMode).toEqual(RUN_MODE.PAUSED)
+  } finally {
+    Object.assign(s6502, previousCpu)
+    doSetRunMode(previousRunMode, false)
+    setAuxCardEnabled(previousAuxCardEnabled)
+  }
 })
 
 describe("Sirius reset", () => {

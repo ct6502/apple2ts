@@ -7,6 +7,7 @@ import {
   requestSetState6502,
   requestSetRunMode,
   requestSpeedMode,
+  requestMemoryView,
   setMain2Worker,
 } from "./main2worker"
 
@@ -32,11 +33,11 @@ const sendMachineState = (runMode: RUN_MODE) => {
   } as MessageEvent)
 }
 
-const sendOperationResult = (operationId: number, error?: string) => {
+const sendOperationResult = (operationId: number, error?: string, value?: MessagePayload) => {
   doOnMessage({
     data: {
       msg: MSG_WORKER.OPERATION_RESULT,
-      payload: { operationId, error },
+      payload: { operationId, error, value },
     },
   } as MessageEvent)
 }
@@ -103,6 +104,28 @@ describe("worker operations", () => {
 
     sendOperationResult(message.operationId)
     await expect(operation).resolves.toBeUndefined()
+  })
+
+  test("returns a worker-owned memory view", async () => {
+    const operation = requestMemoryView({address: 0x03A4, length: 1, space: "aux"})
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    const value = {
+      address: 0x03A4,
+      length: 1,
+      requestedSpace: "aux",
+      requestedAuxBank: null,
+      effectiveAuxBank: 0,
+      effectiveSegments: [{address: 0x03A4, length: 1, space: "aux", auxBank: 0}],
+      mapping: {RAMRD: false, RAMWRT: false, ALTZP: false, "80STORE": false, PAGE2: false, HIRES: false},
+      bytes: Uint8Array.from([0x42]),
+    } as MemoryView
+
+    expect(message).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.GET_MEMORY_VIEW,
+      payload: {address: 0x03A4, length: 1, space: "aux"},
+    }))
+    sendOperationResult(message.operationId, undefined, value)
+    await expect(operation).resolves.toEqual(value)
   })
 
   test("sends CPU state changes as confirmed worker operations", async () => {

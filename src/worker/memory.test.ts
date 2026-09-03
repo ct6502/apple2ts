@@ -11,6 +11,9 @@ import {
   setRamWorks,
   setSlotDriver,
   loadMainMemoryBlock,
+  getMemoryView,
+  setAuxCardEnabled,
+  updateAddressTables,
 } from "./memory"
 import { hiresLineToAddress, RamWorksMemoryStart } from "../common/utility"
 import { setIsTesting } from "./worker2main"
@@ -415,6 +418,125 @@ test("test RamWorks", () => {
   }
 
   memSet(0xC008,0)
+})
+
+describe("side-effect-free memory views", () => {
+  const mappingSwitches = [
+    SWITCHES.RAMRD,
+    SWITCHES.RAMWRT,
+    SWITCHES.ALTZP,
+    SWITCHES.STORE80,
+    SWITCHES.PAGE2,
+    SWITCHES.HIRES,
+  ]
+
+  beforeEach(() => {
+    setAuxCardEnabled(true)
+    setRamWorks(128)
+    memoryReset()
+  })
+
+  afterEach(() => {
+    setAuxCardEnabled(true)
+    setRamWorks(64)
+    memoryReset()
+  })
+
+  test("reads main, selected auxiliary, and explicit RamWorks banks directly", () => {
+    memory[0x03A4] = 0x11
+    memory[RamWorksMemoryStart + 0x03A4] = 0x22
+    memory[RamWorksMemoryStart + 0x10000 + 0x03A4] = 0x33
+    memSet(0xC073, 1)
+    const beforeSwitches = mappingSwitches.map((softSwitch) => softSwitch.isSet)
+
+    expect(getMemoryView({address: 0x03A4, length: 1, space: "main"})).toMatchObject({
+      bytes: Uint8Array.from([0x11]),
+      requestedAuxBank: null,
+      effectiveAuxBank: null,
+      effectiveSegments: [{address: 0x03A4, length: 1, space: "main"}],
+    })
+    expect(getMemoryView({address: 0x03A4, length: 1, space: "aux"})).toMatchObject({
+      bytes: Uint8Array.from([0x33]),
+      requestedAuxBank: null,
+      effectiveAuxBank: 1,
+      effectiveSegments: [{address: 0x03A4, length: 1, space: "aux", auxBank: 1}],
+    })
+    expect(getMemoryView({address: 0x03A4, length: 1, space: "aux", auxBank: 0})).toMatchObject({
+      bytes: Uint8Array.from([0x22]),
+      requestedAuxBank: 0,
+      effectiveAuxBank: 0,
+    })
+    expect(memGetC000(0xC073)).toBe(1)
+    expect(mappingSwitches.map((softSwitch) => softSwitch.isSet)).toEqual(beforeSwitches)
+  })
+
+  test("reports active segments where mapping changes", () => {
+    SWITCHES.RAMRD.isSet = false
+    SWITCHES.STORE80.isSet = true
+    SWITCHES.PAGE2.isSet = true
+    updateAddressTables()
+
+    const view = getMemoryView({address: 0x03FF, length: 2, space: "active"})
+    expect(view.effectiveSegments).toEqual([
+      {address: 0x03FF, length: 1, space: "main"},
+      {address: 0x0400, length: 1, space: "aux", auxBank: 0},
+    ])
+    expect(view.effectiveAuxBank).toBe(0)
+    expect(view.mapping).toEqual({
+      RAMRD: false,
+      RAMWRT: false,
+      ALTZP: false,
+      "80STORE": true,
+      PAGE2: true,
+      HIRES: false,
+    })
+  })
+
+  test("rejects unavailable and out-of-range auxiliary banks", () => {
+    expect(() => getMemoryView({address: 0, length: 1, space: "active", auxBank: 0}))
+      .toThrow("Auxiliary bank is valid only for auxiliary memory")
+    expect(() => getMemoryView({address: 0, length: 1, space: "aux", auxBank: 2}))
+      .toThrow("Auxiliary bank must be between 0 and 1")
+    setAuxCardEnabled(false)
+    expect(() => getMemoryView({address: 0, length: 1, space: "aux"}))
+      .toThrow("Auxiliary memory is not configured")
+  })
+
+  test("keeps physical views below I/O and ROM", () => {
+    expect(getMemoryView({address: 0xBFFF, length: 1, space: "main"}).bytes).toHaveLength(1)
+    expect(() => getMemoryView({address: 0xC000, length: 1, space: "main"}))
+      .toThrow("Physical memory range must fit within $0000-$BFFF")
+    expect(() => getMemoryView({address: 0xBFFF, length: 2, space: "aux"}))
+      .toThrow("Physical memory range must fit within $0000-$BFFF")
+    expect(getMemoryView({address: 0xC000, length: 1, space: "active"}).effectiveSegments)
+      .toEqual([{address: 0xC000, length: 1, space: "system"}])
+  })
+
+  test("does not describe Language Card mappings as main or auxiliary physical RAM", () => {
+    const previous = {
+      ALTZP: SWITCHES.ALTZP.isSet,
+      BSRBANK2: SWITCHES.BSRBANK2.isSet,
+      BSRREADRAM: SWITCHES.BSRREADRAM.isSet,
+    }
+    try {
+      SWITCHES.BSRREADRAM.isSet = false
+      updateAddressTables()
+      expect(getMemoryView({address: 0xD000, length: 0x3000, space: "active"}).effectiveSegments)
+        .toEqual([{address: 0xD000, length: 0x3000, space: "system"}])
+
+      SWITCHES.BSRREADRAM.isSet = true
+      SWITCHES.BSRBANK2.isSet = false
+      SWITCHES.ALTZP.isSet = true
+      updateAddressTables()
+      expect(getMemoryView({address: 0xD000, length: 0x3000, space: "active"}).effectiveSegments)
+        .toEqual([{address: 0xD000, length: 0x3000, space: "system"}])
+    } finally {
+      SWITCHES.ALTZP.isSet = previous.ALTZP
+      SWITCHES.BSRBANK2.isSet = previous.BSRBANK2
+      SWITCHES.BSRREADRAM.isSet = previous.BSRREADRAM
+      updateAddressTables()
+    }
+  })
 })
 
 test("test RamWorks Save/Restore", () => {
