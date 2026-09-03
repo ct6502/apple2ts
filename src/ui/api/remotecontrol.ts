@@ -183,8 +183,11 @@ const getDriveSummary = () => {
   })
 }
 
+let statusSequence = 0
+
 const collectStatus = () => {
   return {
+    statusSequence: statusSequence++,
     timestamp: Date.now(),
     machine: {
       runMode: handleGetRunMode(),

@@ -554,8 +554,9 @@ export const doStepInto = () => {
   }
   // Remove all tracelog values if we are no longer tracing.
   if (!tracing) clearTracelog()
-  processInstruction(tracing ? updateTrace : null)
-  doSetRunMode(RUN_MODE.PAUSED, true, undefined, {reason: "step"})
+  if (processInstruction(tracing ? updateTrace : null) !== -1) {
+    doSetRunMode(RUN_MODE.PAUSED, true, undefined, {reason: "step"})
+  }
 }
 
 export const doStepOver = () => {
@@ -568,8 +569,7 @@ export const doStepOver = () => {
     // Remove all tracelog values if we are no longer tracing.
     if (!tracing) clearTracelog()
     // If we're at a JSR then briefly step in, then step out.
-    processInstruction(tracing ? updateTrace : null)
-    doStepOut()
+    if (processInstruction(tracing ? updateTrace : null) !== -1) doStepOut()
   } else {
     // Otherwise just do a single step.
     doStepInto()

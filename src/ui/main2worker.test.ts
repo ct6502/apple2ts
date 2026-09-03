@@ -188,7 +188,7 @@ describe("worker operations", () => {
 test("publishes only new worker-owned execution snapshots", () => {
   const snapshots: ExecutionSnapshot[] = []
   setExecutionStateCallback((execution) => snapshots.push(execution))
-  snapshots.length = 0
+  expect(snapshots).toEqual([])
   const execution = {
     executionSequence: 9,
     state: "paused",
@@ -209,5 +209,13 @@ test("publishes only new worker-owned execution snapshots", () => {
   doOnMessage({data: {msg: MSG_WORKER.MACHINE_STATE, payload: state}} as MessageEvent)
 
   expect(snapshots).toEqual([execution])
+
+  setMain2Worker({postMessage: jest.fn()} as unknown as Worker)
+  const replacement = {...execution, executionSequence: 0, PC: 0x7000}
+  const publishedReplacement = {...replacement, executionSequence: 10}
+  doOnMessage({
+    data: {msg: MSG_WORKER.MACHINE_STATE, payload: {...state, execution: replacement}},
+  } as MessageEvent)
+  expect(snapshots).toEqual([execution, publishedReplacement])
   setExecutionStateCallback(() => {})
 })

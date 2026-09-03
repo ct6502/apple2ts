@@ -277,7 +277,7 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
     const bp = breakpointMap.get(lineNum)
     if (bp?.basic && !bp.disabled) {
       if (bp.once) breakpointMap.delete(lineNum)
-      lastBreakpointAddress = bp.address
+      lastBreakpointReason = "step"
       return BREAKPOINT_RESULT.HIDDEN_BREAK
     }
   }
@@ -333,8 +333,11 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
   }
   if (bp.once) breakpointMap.delete(breakpointKey)
   const result = processBreakpointActions(bp, vLo, vHi, code)
-  if (result === BREAKPOINT_RESULT.BREAK || result === BREAKPOINT_RESULT.HIDDEN_BREAK) {
+  if (result === BREAKPOINT_RESULT.BREAK) {
     lastBreakpointAddress = bp.address
+  } else if (result === BREAKPOINT_RESULT.HIDDEN_BREAK) {
+    lastBreakpointReason = "step"
+    lastBreakpointAddress = null
   }
   return result
 }
@@ -429,7 +432,7 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
   }
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false
-    doSetRunMode(RUN_MODE.PAUSED, true, undefined, {reason: "run-to-return"})
+    doSetRunMode(RUN_MODE.PAUSED)
     return -1
   }
   return cycles

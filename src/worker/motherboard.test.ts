@@ -3,7 +3,7 @@ import { getAuxCardEnabled, getHires, memGet, memSet, memory, setAuxCardEnabled,
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, doStepOver, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
@@ -457,6 +457,7 @@ test("execution snapshots identify the watchpoint that stopped execution", () =>
   setIsTesting()
   const watchpointAddress = 0x03A4
   const previousByte = memGet(watchpointAddress, false)
+  const previousProgram = memory.slice(0x6000, 0x6003)
   const watchpoints = new BreakpointMap()
   const watchpoint = BreakpointNew()
   watchpoint.address = watchpointAddress
@@ -466,8 +467,10 @@ test("execution snapshots identify the watchpoint that stopped execution", () =>
   try {
     doSetBreakpoints(watchpoints)
     doSetRunMode(RUN_MODE.RUNNING, false)
+    memory.set([0x20, 0x00, 0x60], 0x6000)
+    setPC(0x6000)
     memSet(watchpointAddress, 0x5A)
-    expect(processInstruction()).toEqual(-1)
+    doStepOver()
     expect(getExternalMachineState().execution).toEqual(expect.objectContaining({
       state: "paused",
       pauseReason: "watchpoint",
@@ -475,8 +478,46 @@ test("execution snapshots identify the watchpoint that stopped execution", () =>
     }))
   } finally {
     doSetBreakpoints(new BreakpointMap())
+    memory.set(previousProgram, 0x6000)
     memSet(watchpointAddress, previousByte)
     doSetRunMode(RUN_MODE.PAUSED, false)
+    resetCpuSpeedForTesting()
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
+})
+
+test("execution snapshots report hidden stepping traps as steps", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const previousState = getExternalMachineState()
+  const previousBytes = memory.slice(0x6000, 0x6003)
+  const breakpoints = new BreakpointMap()
+  const stepTrap = BreakpointNew()
+  stepTrap.address = 0x6002
+  stepTrap.hidden = true
+  stepTrap.once = true
+  breakpoints.set(stepTrap.address, stepTrap)
+
+  try {
+    doSetBreakpoints(breakpoints)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    memory.set([0xA9, 0x00, 0xEA], 0x6000)
+    setPC(0x6000)
+    expect(processInstruction()).toEqual(2)
+    expect(s6502.PC).toEqual(0x6002)
+    expect(breakpointMap.has(0x6002)).toEqual(true)
+    expect(processInstruction()).toEqual(-1)
+    expect(getExternalMachineState().execution).toEqual(expect.objectContaining({
+      state: "paused",
+      pauseReason: "step",
+      breakpoint: null,
+      PC: 0x6002,
+    }))
+  } finally {
+    doSetBreakpoints(new BreakpointMap())
+    memory.set(previousBytes, 0x6000)
+    doSetRunMode(previousState.runMode, false)
     resetCpuSpeedForTesting()
     jest.clearAllTimers()
     jest.useRealTimers()

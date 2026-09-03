@@ -189,7 +189,7 @@ type MachineState = {
   cout: number,
   cpuSpeed: number,
   extraRamSize: number,
-  execution: ExecutionSnapshot,
+  execution?: ExecutionSnapshot,
   hires: Uint8Array,
   iTempState: number,
   isDebugging: boolean,
@@ -222,8 +222,7 @@ type ExecutionPauseReason =
   "breakpoint" |
   "watchpoint" |
   "step" |
-  "cycle-limit" |
-  "run-to-return"
+  "cycle-limit"
 
 type ExecutionStopDescriptor = {
   reason: Exclude<ExecutionPauseReason, "idle">,

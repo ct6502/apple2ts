@@ -24,6 +24,8 @@ let bootCallback: (() => void) | null = null
 let serialConfigCallback: ((config: SerialConfig) => void) | null = null
 let executionStateCallback: ((execution: ExecutionSnapshot) => void) | null = null
 let lastExecutionSequence = -1
+let executionSequenceOffset = 0
+let resetExecutionSequence = false
 let nextWorkerOperationId = 0
 const pendingWorkerOperations = new Map<number, {
   resolve: (value: MessagePayload | undefined) => void,
@@ -62,7 +64,9 @@ const resolveWorkerOperation = ({ operationId, error, value }: WorkerOperationRe
 }
 
 export const setMain2Worker = (workerIn: Worker) => {
+  resetExecutionSequence = worker !== null && worker !== workerIn
   worker = workerIn
+  machineState.execution = undefined
 }
 
 export const setBootCallback = (callback: () => void) => {
@@ -395,20 +399,6 @@ let machineState: MachineState = {
   cout: 0,
   cpuSpeed: 0,
   extraRamSize: 64,
-  execution: {
-    executionSequence: 0,
-    state: "paused",
-    pauseReason: "idle",
-    breakpoint: null,
-    PC: 0,
-    A: 0,
-    X: 0,
-    Y: 0,
-    S: 0,
-    PStatus: 0,
-    machineName: "APPLE2EE",
-    memoryConfiguration: {slot3Card: "aux", ramWorksKb: 64},
-  },
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
   isTracing: TEST_DEBUG,
@@ -443,10 +433,21 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
         }
         emulatorSoundEnable(newState.runMode === RUN_MODE.RUNNING)
       }
-      machineState = newState
-      if (newState.execution && newState.execution.executionSequence > lastExecutionSequence) {
-        lastExecutionSequence = newState.execution.executionSequence
-        executionStateCallback?.(newState.execution)
+      let execution = newState.execution
+      if (execution) {
+        if (resetExecutionSequence) {
+          executionSequenceOffset = lastExecutionSequence + 1 - execution.executionSequence
+          resetExecutionSequence = false
+        }
+        execution = {
+          ...execution,
+          executionSequence: execution.executionSequence + executionSequenceOffset,
+        }
+      }
+      machineState = {...newState, execution}
+      if (execution && execution.executionSequence > lastExecutionSequence) {
+        lastExecutionSequence = execution.executionSequence
+        executionStateCallback?.(execution)
       }
       const helpText = getHelpText()
       return {speed: machineState.cpuSpeed, helptext: helpText}
