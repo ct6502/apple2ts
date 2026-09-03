@@ -1,5 +1,15 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
-import { createPortal } from "react-dom"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  type WheelEvent as ReactWheelEvent,
+} from "react"
+import { createPortal, flushSync } from "react-dom"
 import type { RetroResolvedControl } from "./retromenucontext"
 import { formatControlLabel } from "../controls/controlregistry"
 import { useRetroMenuHost } from "./retromenuhost"
@@ -34,6 +44,8 @@ import {
 import { renderRetroPanelLayout } from "./retropanellayout"
 import { renderRetroPanelToCanvas } from "./retrocanvas"
 import { isInteractiveKeyboardTarget } from "./retrokeyboard"
+import { OPEN_RETRO_CONTROL_PANEL_EVENT } from "./retrocontrolevents"
+import { getPanelSwipeKey } from "./retrogestures"
 
 type RetroMenuItem = RetroResolvedControl
 
@@ -67,22 +79,68 @@ const mouseTextRight = mouseTextGlyphs.right
 const mouseTextUp = mouseTextGlyphs.up
 const mouseTextReturn = mouseTextGlyphs.return
 const mouseTextCursor = String.fromCodePoint(0xE07F)
-const checkmark = String.fromCodePoint(0x2713)
+const checkmark = String.fromCodePoint(0xE084)
+const favoriteIndicator = String.fromCodePoint(0xE09B)
 const fixedWidthSpace = String.fromCodePoint(0x2007)
 const topBorderGlyph = String.fromCodePoint(0xE05F)
 const bottomBorderGlyph = String.fromCodePoint(0xE08C)
 const leftBorderGlyph = String.fromCodePoint(0xE09F)
 const rightBorderGlyph = String.fromCodePoint(0xE09A)
+const toggleSelectionBox = `${rightBorderGlyph}${String.fromCodePoint(0xE09C)}${leftBorderGlyph}`
 const submenuTitleContentWidth = 34
 const retroNativeWidth = 560
 const retroNativeHeight = 384
 const clockPauseMs = 33
 const cursorBlinkMs = 500
 
+const dispatchPanelKey = (key: string) => {
+  window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }))
+}
+
+const PanelKeyControl = ({ children, keyName }: { children: ReactNode, keyName: string }) =>
+  <span
+    className={`retro-panel-key${keyName.startsWith("Arrow") ? " retro-panel-arrow-key" : ""}`}
+    role="button"
+    tabIndex={0}
+    onClick={() => dispatchPanelKey(keyName)}
+    onKeyDown={event => {
+      if (event.key !== "Enter" && event.key !== " ") return
+      event.preventDefault()
+      dispatchPanelKey(keyName)
+    }}
+  >{children}</span>
+
+const PanelArrowControls = ({
+  separator,
+  showHorizontal,
+  submenuOpen,
+}: {
+  separator: string
+  showHorizontal: boolean
+  submenuOpen: boolean
+}) => <i className="retro-mousetext">
+    {showHorizontal && <>
+      <PanelKeyControl keyName="ArrowLeft">{mouseTextLeft}</PanelKeyControl>{separator}
+      <PanelKeyControl keyName="ArrowRight">{mouseTextRight}</PanelKeyControl>{separator}
+    </>}
+    {submenuOpen
+      ? <>
+        <PanelKeyControl keyName="ArrowUp">{mouseTextUp}</PanelKeyControl>{separator}
+        <PanelKeyControl keyName="ArrowDown">{mouseTextDown}</PanelKeyControl>
+      </>
+      : <>
+        <PanelKeyControl keyName="ArrowDown">{mouseTextDown}</PanelKeyControl>{separator}
+        <PanelKeyControl keyName="ArrowUp">{mouseTextUp}</PanelKeyControl>
+      </>}
+  </i>
+
 const isCloudSearchTitle = (item: RetroMenuItem | undefined) => Boolean(
   item?.textInput &&
   (item.id.endsWith(".internetArchive.title") || item.id.endsWith(".demoZoo.title")),
 )
+
+const showsSelectionBox = (item: RetroMenuItem) => item.checkmarkIndex !== undefined ||
+  item.id.includes(".internetArchive.result.") || item.id.includes(".demoZoo.result.")
 
 const RetroVtocIndicator = ({
   active,
@@ -133,14 +191,20 @@ const AppleIIPlusFooter = ({
       ? " retro-compact-latin-footer"
       : ""}`}>
       <span className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}>
-        {`${selectLabel}:`}<i className="retro-mousetext">{arrowText}</i>
+        {`${selectLabel}:`}<PanelArrowControls
+          separator="_"
+          showHorizontal={showHorizontalSelectionHint}
+          submenuOpen={Boolean(cancelLabel)}
+        />
       </span>
       <span className={`retro-footer-cancel${retroFontSupports(cancelLabel ?? "") ? "" : " retro-browser-font"}`}>
-        {cancelLabel}
+        {cancelLabel && <PanelKeyControl keyName="Escape">{cancelLabel}</PanelKeyControl>}
       </span>
       <span className={`retro-footer-action${showAction ? "" : " hidden"}${retroFontSupports(actionLabel) ? "" : " retro-browser-font"
         }`}>
-        {`${actionLabel}:`}<i className="retro-mousetext">{mouseTextReturn}</i>
+        <PanelKeyControl keyName="Enter">
+          {`${actionLabel}:`}<i className="retro-mousetext">{mouseTextReturn}</i>
+        </PanelKeyControl>
       </span>
     </footer>
   }
@@ -157,20 +221,38 @@ const AppleIIPlusFooter = ({
       (actionStart - maxSelectWidth - cancelWidth) / 2,
     ))
     : 0
-  const placements = [
-    { start: 0, text: selectText },
+  const placements: Array<{ start: number, text: string, content: ReactNode }> = [
+    {
+      start: 0,
+      text: selectText,
+      content: <>{`${selectLabel}:`}<PanelArrowControls
+        separator="_"
+        showHorizontal={showHorizontalSelectionHint}
+        submenuOpen={Boolean(cancelLabel)}
+      /></>,
+    },
     ...(cancelLabel
-      ? [{ start: cancelStart, text: cancelLabel }]
+      ? [{
+        start: cancelStart,
+        text: cancelLabel,
+        content: <PanelKeyControl keyName="Escape">{cancelLabel}</PanelKeyControl>,
+      }]
       : []),
     ...(actionText
-      ? [{ start: actionStart, text: actionText }]
+      ? [{
+        start: actionStart,
+        text: actionText,
+        content: <PanelKeyControl keyName="Enter">
+          {`${actionLabel}:`}<i className="retro-mousetext">{mouseTextReturn}</i>
+        </PanelKeyControl>,
+      }]
       : []),
   ].sort((left, right) => left.start - right.start)
-  const runs: { border: boolean, text: string }[] = []
+  const runs: { border: boolean, text: string, content?: ReactNode }[] = []
   let cursor = 0
   placements.forEach((placement) => {
     if (placement.start > cursor) runs.push({ border: true, text: "_".repeat(placement.start - cursor) })
-    runs.push({ border: false, text: placement.text })
+    runs.push({ border: false, text: placement.text, content: placement.content })
     cursor = Math.max(cursor, placement.start + controlTextWidth(placement.text, language))
   })
   if (cursor < rowWidth) runs.push({ border: true, text: "_".repeat(rowWidth - cursor) })
@@ -179,7 +261,7 @@ const AppleIIPlusFooter = ({
     {runs.map((run, index) => <span
       className={run.border || retroFontSupports(run.text) ? undefined : "retro-browser-font"}
       key={`${index}-${run.text}`}
-    >{run.text}</span>)}
+    >{run.content ?? run.text}</span>)}
   </footer>
 }
 
@@ -324,6 +406,8 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const [manualIsOpen, setIsOpen] = useState(false)
   const [manualMenuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
   const [manualSelectedIndex, setSelectedIndex] = useState(0)
+  const [draggedToggleIndex, setDraggedToggleIndex] = useState<number | null>(null)
+  const [hoveredToggleIndex, setHoveredToggleIndex] = useState<number | null>(null)
   const [, setSettingsRevision] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const [canvasBounds, setCanvasBounds] = useState<CanvasBounds | null>(null)
@@ -367,6 +451,16 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const currentMenu = currentFrame?.items ?? rootMenu
   const selectedIndex = manualSelectedIndex
   const isOpen = manualIsOpen
+  const open = useCallback(() => {
+    menuStack.toReversed().forEach(restoreMenuFramePreview)
+    resetCollectionDriveSelectionSession()
+    setNow(new Date())
+    clockPausedUntilRef.current = Date.now() + clockPauseMs
+    setCanvasRenderState(getCrtDistortion() ? "pending" : "native")
+    setIsOpen(true)
+    setMenuStack([])
+    setSelectedIndex(0)
+  }, [menuStack])
   const maxVisibleMenuItems = 16
   const visibleMenuStart = currentFrame
     ? Math.min(
@@ -376,6 +470,107 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     : 0
   const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
   const selectedItem = currentMenu[selectedIndex]
+  const activateMenuItem = (
+    row: HTMLElement,
+    item: RetroMenuItem,
+    index: number,
+    clientX: number,
+  ) => {
+    if (!isMenuItemSelectable(item, currentFrame)) return
+    flushSync(() => setSelectedIndex(index))
+    const checkBounds = row
+      .querySelector<HTMLElement>(".retro-menu-check")
+      ?.getBoundingClientRect()
+    const clickedCheck = checkBounds !== undefined &&
+      clientX >= checkBounds.left && clientX <= checkBounds.right
+    const togglesOnRowClick = item.id.startsWith("diskCollection.export.disk.")
+    const togglesFavorite = clickedCheck && showsSelectionBox(item) &&
+      item.checkmarkIndex === undefined
+    dispatchPanelKey(togglesFavorite
+      ? item.indicator === undefined ? "ArrowRight" : "ArrowLeft"
+      : currentFrame && item.checkmarkIndex !== undefined && (clickedCheck || togglesOnRowClick)
+        ? "ArrowRight"
+        : currentFrame && item.options && item.kind !== "action"
+          ? "ArrowRight"
+          : "Enter")
+  }
+  const handleMenuItemClick = (
+    event: ReactMouseEvent<HTMLElement>,
+    item: RetroMenuItem,
+    index: number,
+  ) => {
+    const panel = event.currentTarget.closest<HTMLElement>(".retro-panel")
+    if (panel?.dataset.suppressClick === "true") {
+      delete panel.dataset.suppressClick
+      return
+    }
+    activateMenuItem(event.currentTarget, item, index, event.clientX)
+  }
+  const menuRowAtPoint = (panel: HTMLElement, clientX: number, clientY: number) =>
+    Array.from(panel.querySelectorAll<HTMLElement>(".retro-menu-item"))
+      .find(element => {
+        const bounds = element.getBoundingClientRect()
+        return clientX >= bounds.left && clientX <= bounds.right &&
+          clientY >= bounds.top && clientY <= bounds.bottom
+      })
+  const handlePanelPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    if (!event.isPrimary) return
+    event.currentTarget.dataset.pointerId = String(event.pointerId)
+    event.currentTarget.dataset.pointerX = String(event.clientX)
+    event.currentTarget.dataset.pointerY = String(event.clientY)
+    delete event.currentTarget.dataset.suppressClick
+  }
+  const handlePanelPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+    if (Number(event.currentTarget.dataset.pointerId) !== event.pointerId) return
+    const row = menuRowAtPoint(event.currentTarget, event.clientX, event.clientY)
+    const index = row ? Number(row.dataset.menuIndex) : -1
+    const item = currentMenu[index]
+    if (row && isMenuItemSelectable(item, currentFrame)) {
+      setSelectedIndex(index)
+      setDraggedToggleIndex(showsSelectionBox(item) ? index : null)
+    } else {
+      setDraggedToggleIndex(null)
+    }
+  }
+  const handlePanelPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
+    const panel = event.currentTarget
+    const pointerId = Number(panel.dataset.pointerId)
+    const startX = Number(panel.dataset.pointerX)
+    const startY = Number(panel.dataset.pointerY)
+    delete panel.dataset.pointerId
+    delete panel.dataset.pointerX
+    delete panel.dataset.pointerY
+    setDraggedToggleIndex(null)
+    if (pointerId !== event.pointerId || !Number.isFinite(startX) || !Number.isFinite(startY)) return
+    const key = getPanelSwipeKey(event.clientX - startX, event.clientY - startY)
+    if (key) {
+      panel.dataset.suppressClick = "true"
+      window.setTimeout(() => delete panel.dataset.suppressClick, 500)
+      dispatchPanelKey(key)
+      return
+    }
+    const row = menuRowAtPoint(panel, event.clientX, event.clientY)
+    const index = row ? Number(row.dataset.menuIndex) : -1
+    const item = currentMenu[index]
+    if (event.pointerType === "touch" && row && item && isMenuItemSelectable(item, currentFrame)) {
+      panel.dataset.suppressClick = "true"
+      window.setTimeout(() => delete panel.dataset.suppressClick, 500)
+      activateMenuItem(row, item, index, event.clientX)
+      return
+    }
+  }
+  const handlePanelWheel = (event: ReactWheelEvent<HTMLElement>) => {
+    if (event.deltaY === 0) return
+    event.preventDefault()
+    dispatchPanelKey(event.deltaY < 0 ? "ArrowUp" : "ArrowDown")
+  }
+  const handlePanelPointerCancel = (event: ReactPointerEvent<HTMLElement>) => {
+    delete event.currentTarget.dataset.pointerId
+    delete event.currentTarget.dataset.pointerX
+    delete event.currentTarget.dataset.pointerY
+    delete event.currentTarget.dataset.suppressClick
+    setDraggedToggleIndex(null)
+  }
   const hasBlinkingCloudSearchCursor = Boolean(currentFrame) && isCloudSearchTitle(selectedItem)
   const showCloudSearchCursor = Math.floor(now.getTime() / cursorBlinkMs) % 2 === 0
   const selectLabel = t("retroControl.select")
@@ -580,6 +775,18 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   }, [currentFrame, isOpen, selectedIndex])
 
   useEffect(() => {
+    const handleOpen = () => {
+      if (isOpen) {
+        close()
+      } else {
+        open()
+      }
+    }
+    window.addEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
+    return () => window.removeEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
+  }, [isOpen, menuStack, open])
+
+  useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (isInteractiveKeyboardTarget(event.target)) return
       if (runTour) return
@@ -587,15 +794,10 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
       if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && event.key === "Escape") {
         event.preventDefault()
         event.stopPropagation()
-        if (!isOpen) {
-          menuStack.toReversed().forEach(restoreMenuFramePreview)
-          resetCollectionDriveSelectionSession()
-          setNow(new Date())
-          clockPausedUntilRef.current = Date.now() + clockPauseMs
-          setCanvasRenderState(getCrtDistortion() ? "pending" : "native")
-          setIsOpen(true)
-          setMenuStack([])
-          setSelectedIndex(0)
+        if (isOpen) {
+          close()
+        } else {
+          open()
         }
         return
       }
@@ -876,6 +1078,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     hasOpenDialog,
     isOpen,
     menuStack,
+    open,
     runTour,
     saveActionLabel,
     selectedItem,
@@ -1048,6 +1251,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             const isChecked = item.checkmarkIndex !== undefined
               ? valueIndex === item.checkmarkIndex
               : item.defaultIndex !== undefined && valueIndex === item.defaultIndex
+            const isFavoriteRow = item.checkedIndicator === "X"
+            const displayedIndicator = isFavoriteRow
+              ? isChecked ? undefined : isAppleIIPlus ? "*" : favoriteIndicator
+              : item.indicator === "*" && showsSelectionBox(item)
+                ? isAppleIIPlus ? "*" : favoriteIndicator
+                : item.indicator
             const exportDisk = item.id.startsWith("diskCollection.export.disk.") && item.payload
               ? item.payload as DiskCollectionItem
               : undefined
@@ -1059,20 +1268,35 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 role="menuitem"
                 aria-current={selectedIndex === index ? "true" : undefined}
                 aria-disabled={!isMenuItemSelectable(item, currentFrame) ? "true" : undefined}
+                data-menu-index={index}
+                onClick={event => handleMenuItemClick(event, item, index)}
+                onPointerEnter={event => {
+                  if (event.pointerType !== "mouse") return
+                  if (!isMenuItemSelectable(item, currentFrame)) return
+                  setSelectedIndex(index)
+                  setHoveredToggleIndex(showsSelectionBox(item) ? index : null)
+                }}
+                onPointerLeave={event => {
+                  if (event.pointerType === "mouse") setHoveredToggleIndex(null)
+                }}
                 style={!currentFrame && item.id === "quit"
                   ? { gridRow: visibleIndex + 2 }
                   : undefined}
               >
                 {currentFrame && <span className="retro-menu-check">
-                  {unresolvedExportDisk
-                    ? <RetroVtocIndicator
-                      active={diskItemKey(unresolvedExportDisk) === activeVtocCheckKey}
-                      disk={unresolvedExportDisk}
-                      isAppleIIPlus={isAppleIIPlus}
-                    />
-                    : item.indicator ?? (isChecked
-                      ? item.checkedIndicator ?? (isAppleIIPlus ? "*" : checkmark)
-                      : " ")}
+                  {(draggedToggleIndex === index || hoveredToggleIndex === index) &&
+                    showsSelectionBox(item) && !unresolvedExportDisk &&
+                    displayedIndicator === undefined && (!isChecked || isFavoriteRow)
+                    ? isAppleIIPlus ? "[]" : toggleSelectionBox
+                    : unresolvedExportDisk
+                      ? <RetroVtocIndicator
+                        active={diskItemKey(unresolvedExportDisk) === activeVtocCheckKey}
+                        disk={unresolvedExportDisk}
+                        isAppleIIPlus={isAppleIIPlus}
+                      />
+                      : displayedIndicator ?? (isChecked && !isFavoriteRow
+                        ? item.checkedIndicator ?? (isAppleIIPlus ? "*" : checkmark)
+                        : " ")}
                 </span>}
                 <span className={`retro-menu-name${item.useRetroFont || retroFontSupports(visibleLabel) ? "" : " retro-browser-font"}`}>
                   {visibleLabel}
@@ -1111,27 +1335,30 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             <span
               className={`retro-footer-select${retroFontSupports(selectLabel) ? "" : " retro-browser-font"}`}
               style={{ gridColumn: `1 / ${selectHintCells + 1}` }}
-            ><span className="retro-footer-text"><span className="retro-footer-content">{`${selectLabel}:`}<i className="retro-mousetext">
-              {showHorizontalSelectionHint && <>{mouseTextLeft}{arrowSpacing}{mouseTextRight}{arrowSpacing}</>}
-              {currentFrame
-                ? <>{mouseTextUp}{arrowSpacing}{mouseTextDown}</>
-                : <>{mouseTextDown}{arrowSpacing}{mouseTextUp}</>}
-            </i></span></span></span>
+            ><span className="retro-footer-text"><span className="retro-footer-content">{`${selectLabel}:`}
+              <PanelArrowControls
+                separator={arrowSpacing}
+                showHorizontal={showHorizontalSelectionHint}
+                submenuOpen={Boolean(currentFrame)}
+              />
+            </span></span></span>
             {currentFrame && <span
               className={`retro-footer-cancel${retroFontSupports(cancelLabel) ? "" : " retro-browser-font"}`}
               style={{
                 gridColumn: `${selectHintCells + 1} / ${actionStartLine}`,
               }}
             ><span className="retro-footer-text"><span className="retro-footer-content">
-              {cancelLabel}
+              <PanelKeyControl keyName="Escape">{cancelLabel}</PanelKeyControl>
             </span></span></span>}
             <span
               aria-hidden={!showFooterAction}
               className={`retro-footer-action${showFooterAction ? "" : " hidden"}${retroFontSupports(footerActionLabel) ? "" : " retro-browser-font"}`}
               style={{ gridColumn: `${actionStartLine} / 37` }}
             >
-              <span className="retro-footer-text"><span className="retro-footer-content">{`${footerActionLabel}:`}
-                <i className="retro-mousetext">{mouseTextReturn}</i>
+              <span className="retro-footer-text"><span className="retro-footer-content">
+                <PanelKeyControl keyName="Enter">
+                  {`${footerActionLabel}:`}<i className="retro-mousetext">{mouseTextReturn}</i>
+                </PanelKeyControl>
               </span></span>
             </span>
           </footer>,
@@ -1140,7 +1367,15 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
         className: `${panelClasses}${canvasRenderState === "native"
           ? ""
           : ` retro-canvas-${canvasRenderState}`}`,
-        onContextMenu: event => event.preventDefault(),
+        onContextMenu: event => {
+          event.preventDefault()
+          dispatchPanelKey("Escape")
+        },
+        onPointerDown: handlePanelPointerDown,
+        onPointerMove: handlePanelPointerMove,
+        onPointerUp: handlePanelPointerUp,
+        onPointerCancel: handlePanelPointerCancel,
+        onWheel: handlePanelWheel,
         style: panelStyle,
       }), canvasHost)}
       <DiskPanelVtoc

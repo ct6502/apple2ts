@@ -81,6 +81,10 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "Ship's Liv'ry"
 
+msgctxt "config.openRetroControlPanel"
+msgid "Control Panel"
+msgstr "Control Deck"
+
 msgctxt "config.resetSettings"
 msgid "Reset All Settings"
 msgstr "Reset All Rigging"

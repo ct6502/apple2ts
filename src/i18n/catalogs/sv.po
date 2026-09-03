@@ -96,6 +96,10 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "Tema"
 
+msgctxt "config.openRetroControlPanel"
+msgid "Control Panel"
+msgstr "Kontrollpanel"
+
 #, fuzzy
 msgctxt "config.resetSettings"
 msgid "Reset All Settings"

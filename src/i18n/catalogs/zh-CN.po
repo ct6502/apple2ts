@@ -86,6 +86,10 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "主题"
 
+msgctxt "config.openRetroControlPanel"
+msgid "Control Panel"
+msgstr "控制面板"
+
 msgctxt "config.resetSettings"
 msgid "Reset All Settings"
 msgstr "重置所有设置"
