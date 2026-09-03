@@ -620,6 +620,14 @@ export const doSetRunMode = (
     executionState = "paused"
     executionPauseReason = stop?.reason ?? "explicit"
     executionBreakpointAddress = stop?.breakpointAddress ?? null
+  } else if (
+    cpuRunMode === RUN_MODE.IDLE
+    && (executionState !== "paused" || executionPauseReason !== "idle")
+  ) {
+    executionSequence++
+    executionState = "paused"
+    executionPauseReason = "idle"
+    executionBreakpointAddress = null
   }
   if (cpuRunMode === RUN_MODE.PAUSED) {
     syncSoftSwitchStatusFlags()

@@ -410,10 +410,42 @@ test("execution snapshots record transitions and the breakpoint that stopped exe
     doSetRunMode(RUN_MODE.NEED_RESET, false)
     doSetRunMode(RUN_MODE.RUNNING, false)
     expect(getExternalMachineState().execution.executionSequence).toEqual(runningSequence)
+
   } finally {
     doSetBreakpoints(new BreakpointMap())
     memory.set(previousBytes, 0x6000)
     doSetRunMode(previousState.runMode, false)
+    resetCpuSpeedForTesting()
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
+})
+
+test("media-driven idle transitions publish one authoritative idle stop", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const previousRunMode = getExternalMachineState().runMode
+
+  try {
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    const runningSequence = getExternalMachineState().execution.executionSequence
+    doSetRunMode(RUN_MODE.IDLE, false)
+    const idle = getExternalMachineState().execution
+    expect(idle).toEqual(expect.objectContaining({
+      executionSequence: runningSequence + 1,
+      state: "paused",
+      pauseReason: "idle",
+      breakpoint: null,
+    }))
+
+    doSetRunMode(RUN_MODE.IDLE, false)
+    expect(getExternalMachineState().execution).toEqual(idle)
+    doSetRunMode(RUN_MODE.NEED_BOOT, false)
+    expect(getExternalMachineState().execution).toEqual(idle)
+    doSetRunMode(RUN_MODE.NEED_RESET, false)
+    expect(getExternalMachineState().execution).toEqual(idle)
+  } finally {
+    doSetRunMode(previousRunMode, false)
     resetCpuSpeedForTesting()
     jest.clearAllTimers()
     jest.useRealTimers()
