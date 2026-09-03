@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -450,7 +451,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const currentMenu = currentFrame?.items ?? rootMenu
   const selectedIndex = manualSelectedIndex
   const isOpen = manualIsOpen
-  const open = () => {
+  const open = useCallback(() => {
     menuStack.toReversed().forEach(restoreMenuFramePreview)
     resetCollectionDriveSelectionSession()
     setNow(new Date())
@@ -459,7 +460,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     setIsOpen(true)
     setMenuStack([])
     setSelectedIndex(0)
-  }
+  }, [menuStack])
   const maxVisibleMenuItems = 16
   const visibleMenuStart = currentFrame
     ? Math.min(
@@ -783,7 +784,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     }
     window.addEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
     return () => window.removeEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
-  }, [isOpen, menuStack])
+  }, [isOpen, menuStack, open])
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -1077,6 +1078,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     hasOpenDialog,
     isOpen,
     menuStack,
+    open,
     runTour,
     saveActionLabel,
     selectedItem,
