@@ -11,6 +11,12 @@ import { getCurrentDriveState } from "./devices/drivestate"
 import * as worker2main from "./worker2main"
 import { getSiriusJoyport } from "./devices/sirius_joyport"
 
+const getExecutionSnapshot = () => {
+  const execution = getExternalMachineState().execution
+  if (!execution) throw new Error("Expected an execution snapshot")
+  return execution
+}
+
 // Make sure we don't accidentally leave debug mode on.
 test("debugMode", () => {
   expect(TEST_DEBUG).toEqual(false)
@@ -352,9 +358,9 @@ test("execution snapshots record transitions and the breakpoint that stopped exe
 
   try {
     doSetRunMode(RUN_MODE.PAUSED, false)
-    const initialSequence = getExternalMachineState().execution.executionSequence
+    const initialSequence = getExecutionSnapshot().executionSequence
     doSetRunMode(RUN_MODE.RUNNING, false)
-    const running = getExternalMachineState().execution
+    const running = getExecutionSnapshot()
     expect(running).toEqual(expect.objectContaining({
       executionSequence: initialSequence + 1,
       state: "running",
@@ -373,7 +379,7 @@ test("execution snapshots record transitions and the breakpoint that stopped exe
     expect(processInstruction()).toEqual(2)
     expect(processInstruction()).toEqual(-1)
 
-    const stopped = getExternalMachineState().execution
+    const stopped = getExecutionSnapshot()
     expect(stopped).toEqual(expect.objectContaining({
       executionSequence: running.executionSequence + 1,
       state: "paused",
@@ -392,7 +398,7 @@ test("execution snapshots record transitions and the breakpoint that stopped exe
     expect(breakpointMap.has(0x6002)).toBe(true)
 
     doSetRunMode(RUN_MODE.PAUSED, false)
-    expect(getExternalMachineState().execution.executionSequence).toEqual(stopped.executionSequence)
+    expect(getExecutionSnapshot().executionSequence).toEqual(stopped.executionSequence)
 
     doSetRunMode(RUN_MODE.NEED_BOOT, false)
     expect(getExternalMachineState().execution).toEqual(stopped)
@@ -405,11 +411,11 @@ test("execution snapshots record transitions and the breakpoint that stopped exe
       pauseReason: null,
     }))
 
-    const runningSequence = getExternalMachineState().execution.executionSequence
+    const runningSequence = getExecutionSnapshot().executionSequence
     doSetRunMode(RUN_MODE.NEED_BOOT, false)
     doSetRunMode(RUN_MODE.NEED_RESET, false)
     doSetRunMode(RUN_MODE.RUNNING, false)
-    expect(getExternalMachineState().execution.executionSequence).toEqual(runningSequence)
+    expect(getExecutionSnapshot().executionSequence).toEqual(runningSequence)
 
   } finally {
     doSetBreakpoints(new BreakpointMap())
@@ -428,9 +434,9 @@ test("media-driven idle transitions publish one authoritative idle stop", () => 
 
   try {
     doSetRunMode(RUN_MODE.RUNNING, false)
-    const runningSequence = getExternalMachineState().execution.executionSequence
+    const runningSequence = getExecutionSnapshot().executionSequence
     doSetRunMode(RUN_MODE.IDLE, false)
-    const idle = getExternalMachineState().execution
+    const idle = getExecutionSnapshot()
     expect(idle).toEqual(expect.objectContaining({
       executionSequence: runningSequence + 1,
       state: "paused",

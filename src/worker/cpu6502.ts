@@ -10,7 +10,7 @@ import { getInstructionString } from "../common/util_disassemble"
 let breakpointSkipOnce = false
 let pendingWatchpointAddress: number | null = null
 let lastBreakpointAddress: number | null = null
-let lastBreakpointReason: "breakpoint" | "watchpoint" = "breakpoint"
+let lastBreakpointReason: "breakpoint" | "watchpoint" | "step" = "breakpoint"
 export let breakpointMap: BreakpointMap = new BreakpointMap()
 let runToRTS = false
 
