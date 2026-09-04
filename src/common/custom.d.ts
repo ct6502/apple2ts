@@ -26,6 +26,43 @@ type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
 type WorkerOperationResult = {
   operationId: number,
   error?: string,
+  value?: MessagePayload,
+}
+
+type MemorySpace = "active" | "main" | "aux"
+
+type MemoryMappingState = {
+  RAMRD: boolean,
+  RAMWRT: boolean,
+  ALTZP: boolean,
+  "80STORE": boolean,
+  PAGE2: boolean,
+  HIRES: boolean,
+}
+
+type MemoryViewRequest = {
+  address: number,
+  length: number,
+  space: MemorySpace,
+  auxBank?: number,
+}
+
+type MemoryViewSegment = {
+  address: number,
+  length: number,
+  space: "main" | "aux" | "system",
+  auxBank?: number,
+}
+
+type MemoryView = {
+  address: number,
+  length: number,
+  requestedSpace: MemorySpace,
+  requestedAuxBank: number | null,
+  effectiveAuxBank: number | null,
+  effectiveSegments: MemoryViewSegment[],
+  mapping: MemoryMappingState,
+  bytes: Uint8Array,
 }
 
 type KeyboardState = {

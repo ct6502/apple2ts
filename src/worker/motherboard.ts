@@ -22,6 +22,7 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   memSet,
   exportMemoryToHiresLine,
   getDataBlock,
+  getMemoryView,
   setSlotDriver,
   clearSlot} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
@@ -56,6 +57,14 @@ let showDebugTab = false
 let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 let cpuRunMode = RUN_MODE.IDLE
+export const getCpuRunMode = () => cpuRunMode
+
+export const getExternalMemoryView = (request: MemoryViewRequest) => {
+  if (cpuRunMode !== RUN_MODE.PAUSED) {
+    throw new Error("Memory is available only while the emulator is paused")
+  }
+  return getMemoryView(request)
+}
 let pendingRunModeOperation: number | undefined
 let cyclesToRun = 0
 let nextFrameTime = 0
