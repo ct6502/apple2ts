@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import "./demozoodialog.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
@@ -8,8 +8,7 @@ import { CLOUD_SYNC } from "../../../common/utility"
 import { svgDemoZooLogo, svgDemoZooTitle } from "../../img/icon_demozoo"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import { showGlobalProgressModal } from "../../ui_utilities"
-import { handleSetDiskFromURL } from "./driveprops"
-import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
+import { fetchWithCorsProxy, getWaybackRawUrl, handleSetDiskFromURL, normalizeDownloadUrl } from "./driveprops"
 import { useTranslation } from "../../../i18n/useTranslation"
 export interface DemoZooItem {
   id: number
@@ -23,12 +22,15 @@ export interface DemoZooItem {
   demozooUrl: string
   page: number
   downloadUrl?: string
+  downloadUrls?: string[]
   downloadLinkClass?: string
+  youtubeUrl?: string
   externalUrl?: string
 }
 
 interface DemoZooSnapshot {
   pageCount: number
+  generatedAt?: string
   pages: Array<{ page: number; items: DemoZooItem[] }>
 }
 
@@ -55,7 +57,7 @@ export const filterDemoZooItems = (items: DemoZooItem[], type: string, query: st
       item.author.toLowerCase().includes(normalizedQuery)))
 }
 
-export const createDemoZooCloudData = (item: DemoZooItem, downloadUrl = item.demozooUrl): CloudData => ({
+export const createDemoZooCloudData = (item: DemoZooItem, downloadUrl = item.downloadUrl || item.demozooUrl): CloudData => ({
   providerName: "DemoZoo",
   syncStatus: CLOUD_SYNC.INACTIVE,
   syncInterval: -1,
@@ -207,9 +209,26 @@ const isDiskDownloadUrl = (url: string) => {
   }
 }
 
+const nonDiskMediaExtensions = [
+  ".mp4", ".webm", ".mkv", ".avi", ".mov", ".flv", ".wmv", ".m4v",
+  ".mp3", ".ogg", ".flac", ".wav", ".aac", ".m4a",
+  ".pdf", ".txt", ".nfo", ".diz", ".doc",
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"
+]
+
+const isNonDiskMediaUrl = (url: string) => {
+  try {
+    const pathname = decodeURIComponent(new URL(url).pathname).toLowerCase()
+    return nonDiskMediaExtensions.some(extension => pathname.endsWith(extension))
+  } catch {
+    return false
+  }
+}
+
 const chooseDemoZooDownloadUrls = (links: RawDemoZooApiProduction["download_links"] = []) => {
   return [...links]
-    .filter(link => Boolean(link.url))
+    .filter(link => Boolean(link.url) && !isNonDiskMediaUrl(link.url))
+    .map(link => ({ ...link, url: normalizeDownloadUrl(link.url) }))
     .sort((left, right) => {
       const leftScore = isDiskDownloadUrl(left.url) ? 100 : /download/i.test(left.link_class || "") ? 10 : 0
       const rightScore = isDiskDownloadUrl(right.url) ? 100 : /download/i.test(right.link_class || "") ? 10 : 0
@@ -233,6 +252,7 @@ const parseDemoZooProductionPage = (html: string, id: number): RawDemoZooApiProd
       continue
     }
 
+    url = normalizeDownloadUrl(url)
     if (isDiskDownloadUrl(url)) {
       links.push({ url, link_class: "disk image" })
     } else if (/youtube\.com|youtu\.be/i.test(url)) {
@@ -248,7 +268,8 @@ const parseDemoZooProductionPage = (html: string, id: number): RawDemoZooApiProd
   }
 }
 
-const resolveExternalDownloadUrls = async (url: string): Promise<string[]> => {
+const resolveExternalDownloadUrls = async (rawUrl: string): Promise<string[]> => {
+  const url = normalizeDownloadUrl(rawUrl)
   try {
     new URL(url)
   } catch {
@@ -257,6 +278,10 @@ const resolveExternalDownloadUrls = async (url: string): Promise<string[]> => {
 
   if (isDiskDownloadUrl(url)) {
     return [url]
+  }
+
+  if (isNonDiskMediaUrl(url)) {
+    return []
   }
 
   const html = await fetchExternalServerText(url)
@@ -274,26 +299,44 @@ const resolveExternalDownloadUrls = async (url: string): Promise<string[]> => {
     }
   }
 
-  if (candidates.length === 0) throw new Error(`No disk image found on external page: ${url}`)
   return candidates
 }
 
 const fetchDemoZooServerText = async (url: string): Promise<string> => {
-  const parsed = new URL(url)
-  const response = await fetch(apple2tsProxyPath(`/api/demozoo-direct${parsed.pathname}${parsed.search}`))
-  if (!response.ok) throw new Error(`DemoZoo server fetch failed: ${response.status}`)
-  return response.text()
+  const corsResponse = await fetchWithCorsProxy(url)
+  if (corsResponse?.ok) return corsResponse.text()
+  try {
+    const response = await fetch(url)
+    if (response.ok) return response.text()
+  } catch {
+    // Fall through
+  }
+  throw new Error(`DemoZoo server fetch failed for ${url}`)
 }
 
 const fetchExternalServerText = async (url: string): Promise<string> => {
-  if (hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname)) {
-    const response = await fetch(apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(url)}`))
-    if (!response.ok) throw new Error(`External server fetch failed: ${response.status}`)
-    return response.text()
+  const corsResponse = await fetchWithCorsProxy(url)
+  if (corsResponse?.ok) {
+    return corsResponse.text()
   }
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`External server fetch failed: ${response.status}`)
-  return response.text()
+  try {
+    const response = await fetch(url)
+    if (response.ok) return response.text()
+  } catch {
+    // Fall through
+  }
+  const waybackUrl = getWaybackRawUrl(url)
+  if (waybackUrl) {
+    const wbCors = await fetchWithCorsProxy(waybackUrl)
+    if (wbCors?.ok) return wbCors.text()
+    try {
+      const wbRes = await fetch(waybackUrl)
+      if (wbRes.ok) return wbRes.text()
+    } catch {
+      // Fall through
+    }
+  }
+  throw new Error(`External server fetch failed: ${url}`)
 }
 
 const fetchDemoZooProduction = async (id: number): Promise<RawDemoZooApiProduction> => {
@@ -327,10 +370,17 @@ const fetchDemoZooProduction = async (id: number): Promise<RawDemoZooApiProducti
 }
 
 export const loadDemoZooResult = async (item: DemoZooItem, driveIndex: number): Promise<boolean> => {
-  let downloadUrls = item.downloadUrl ? [item.downloadUrl] : []
+  let downloadUrls = item.downloadUrls?.length
+    ? item.downloadUrls.map(normalizeDownloadUrl)
+    : (item.downloadUrl ? [normalizeDownloadUrl(item.downloadUrl)] : [])
+
   if (downloadUrls.length === 0) {
-    const detail = await fetchDemoZooProduction(item.id)
-    downloadUrls = chooseDemoZooDownloadUrls(detail.download_links)
+    try {
+      const detail = await fetchDemoZooProduction(item.id)
+      downloadUrls = chooseDemoZooDownloadUrls(detail.download_links)
+    } catch (e) {
+      console.warn("Fallback production detail fetch failed:", e)
+    }
   }
 
   const resolvedDownloadUrls: string[] = []
@@ -409,6 +459,20 @@ export interface DemoZooDialogProps {
   onLoadSuccess?: () => void
 }
 
+const formatSnapshotDate = (isoStr?: string): string => {
+  if (!isoStr) return ""
+  try {
+    const d = new Date(isoStr)
+    if (isNaN(d.getTime())) return ""
+    const y = d.getUTCFullYear()
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+    const day = String(d.getUTCDate()).padStart(2, "0")
+    return `${y}/${m}/${day}`
+  } catch {
+    return ""
+  }
+}
+
 const DemoZooDialog = (props: DemoZooDialogProps) => {
   const { t } = useTranslation()
   const [savedDialogState] = useState(readDemoZooDialogState)
@@ -426,6 +490,28 @@ const DemoZooDialog = (props: DemoZooDialogProps) => {
   const ITEMS_PER_PAGE = 50
   const [liveItems, setLiveItems] = useState<DemoZooItem[]>([])
   const [snapshotPageCount, setSnapshotPageCount] = useState<number>(1)
+  const [snapshotDate, setSnapshotDate] = useState<string>("")
+  const [downloadError, setDownloadError] = useState<string | null>(null)
+  const downloadErrorTimerRef = useRef<number | null>(null)
+
+  const showDownloadError = (msg = "Unable to Download!") => {
+    if (downloadErrorTimerRef.current !== null) {
+      window.clearTimeout(downloadErrorTimerRef.current)
+    }
+    setDownloadError(msg)
+    downloadErrorTimerRef.current = window.setTimeout(() => {
+      setDownloadError(null)
+      downloadErrorTimerRef.current = null
+    }, 2000)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (downloadErrorTimerRef.current !== null) {
+        window.clearTimeout(downloadErrorTimerRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!props.open) return
@@ -441,6 +527,7 @@ const DemoZooDialog = (props: DemoZooDialogProps) => {
         // optional and must never turn a usable list into an empty dialog.
         setLiveItems(snapshotItems)
         setSnapshotPageCount(pages.length || 1)
+        setSnapshotDate(formatSnapshotDate(snapshot.generatedAt))
         if (snapshot.pageCount < 1) {
           try {
             const freshPages: Array<{ page: number; items: DemoZooItem[] }> = []
@@ -530,10 +617,12 @@ const DemoZooDialog = (props: DemoZooDialogProps) => {
   const handleTileClick = async (item: DemoZooItem) => {
     showGlobalProgressModal(true, t("disk.downloadingDisk"))
     try {
-      let downloadUrl = item.downloadUrl || ""
-      let downloadUrls = downloadUrl ? [downloadUrl] : []
-      let externalUrl = item.externalUrl || ""
-      if (!downloadUrl && !externalUrl) {
+      let downloadUrls = (item.downloadUrls && item.downloadUrls.length > 0)
+        ? item.downloadUrls.map(normalizeDownloadUrl)
+        : (item.downloadUrl ? [normalizeDownloadUrl(item.downloadUrl)] : [])
+      let downloadUrl = downloadUrls[0] || ""
+      let externalUrl = item.externalUrl || item.youtubeUrl || ""
+      if (downloadUrls.length === 0 && !externalUrl) {
         const detail = await fetchDemoZooProduction(item.id)
         downloadUrls = chooseDemoZooDownloadUrls(detail.download_links)
         downloadUrl = downloadUrls[0] || ""
@@ -595,16 +684,23 @@ const DemoZooDialog = (props: DemoZooDialogProps) => {
           props.onLoadSuccess?.()
         } else {
           console.error(`DemoZoo disk could not be loaded: ${downloadUrl}`)
+          showDownloadError("Unable to Download!")
         }
       } else {
-        setYoutubeModalInfo({
-          open: true,
-          title: item.title,
-          url: item.demozooUrl
-        })
+        if (item.demozooUrl) {
+          setYoutubeModalInfo({
+            open: true,
+            title: item.title,
+            url: item.demozooUrl
+          })
+        } else {
+          showDownloadError("Unable to Download!")
+        }
       }
     } catch (err) {
       console.error("Failed to load DemoZoo disk:", err)
+      showDownloadError("Unable to Download!")
+    } finally {
       showGlobalProgressModal(false)
     }
   }
@@ -634,8 +730,20 @@ const DemoZooDialog = (props: DemoZooDialogProps) => {
     <div className="modal-overlay" onClick={handleClose}>
       <div className="demozoo-dialog" onClick={e => e.stopPropagation()}>
         <div className="dzd-header">
-          {svgDemoZooLogo}
-          {svgDemoZooTitle}
+          <div className="dzd-header-left">
+            {svgDemoZooLogo}
+            {svgDemoZooTitle}
+          </div>
+          {downloadError && (
+            <div className="dzd-error-banner">
+              ⚠️ {downloadError}
+            </div>
+          )}
+          {snapshotDate && (
+            <div className="dzd-snapshot-badge" title={`DemoZoo snapshot created: ${snapshotDate}`}>
+              Snapshot at {snapshotDate}
+            </div>
+          )}
         </div>
         <div className="dzd-search">
           <div className="dzd-type-filters">

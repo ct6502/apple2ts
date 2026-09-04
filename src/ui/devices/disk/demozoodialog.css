@@ -27,7 +27,53 @@
   border-bottom: 2px solid #C32E3B;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-shrink: 0;
+}
+
+.dzd-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.dzd-error-banner {
+  background: #c32e3b;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 4px 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  animation: dzd-fade-in 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+@keyframes dzd-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dzd-snapshot-badge {
+  font-size: 0.72rem;
+  color: #ffcccc;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 200, 200, 0.2);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  user-select: none;
+  white-space: nowrap;
 }
 
 .dzd-logo {

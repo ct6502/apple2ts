@@ -155,6 +155,62 @@ async function main() {
     return
   }
 
+  const diskExts = [".hdv", ".2mg", ".dsk", ".woz", ".po", ".do", ".bin", ".bas", ".nib", ".2img", ".d13", ".dc", ".img", ".zip", ".7z", ".gz", ".tar"]
+  const isDisk = url => {
+    try {
+      const path = decodeURIComponent(new URL(url).pathname).toLowerCase()
+      return diskExts.some(ext => path.endsWith(ext))
+    } catch {
+      return false
+    }
+  }
+
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+  const normalizeUrl = raw => {
+    if (!raw) return ""
+    let trimmed = raw.trim()
+    const match = trimmed.match(/^https?:\/\/files\.scene\.org\/(?:view|get)\/(.+)$/i)
+    if (match) trimmed = `https://archive.scene.org/pub/${match[1]}`
+    if (trimmed.includes("marqueeedesign_")) {
+      trimmed = trimmed.replace("marqueeedesign_", "marqueedesign_")
+    }
+    const brutalLocsMatch = trimmed.match(/^https?:\/\/(?:www\.)?brutaldeluxe\.fr\/products\/french\/locs\/(.+)$/i)
+    if (brutalLocsMatch) {
+      trimmed = `https://web.archive.org/web/0id_/http://www.brutaldeluxe.fr/products/french/locs/${brutalLocsMatch[1]}`
+    }
+    return trimmed
+  }
+
+  const fetchDetailWithRetry = async id => {
+    const url = `https://demozoo.org/api/v1/productions/${id}/?format=json`
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const { stdout } = await execFile("curl.exe", ["-L", "--fail", "--max-time", "15", "-sS", url])
+        if (/just a moment|enable javascript and cookies|cf-chl-/i.test(stdout)) {
+          console.warn(`CF challenge on item ${id}, waiting 3s (attempt ${attempt})`)
+          await sleep(3000)
+          continue
+        }
+        const detail = JSON.parse(stdout)
+        const links = (detail.download_links || [])
+          .filter(link => Boolean(link.url))
+          .map(link => ({ ...link, url: normalizeUrl(link.url) }))
+          .sort((a, b) => {
+            const sa = isDisk(a.url) ? 100 : (/download/i.test(a.link_class || "") ? 10 : 0)
+            const sb = isDisk(b.url) ? 100 : (/download/i.test(b.link_class || "") ? 10 : 0)
+            return sb - sa
+          })
+          .map(link => link.url)
+        const yt = (detail.external_links || []).find(link => /youtube/i.test(link.link_class || "") || /youtube\.com|youtu\.be/i.test(link.url || ""))?.url || ""
+        return { downloadUrls: links, downloadUrl: links[0] || "", youtubeUrl: yt }
+      } catch {
+        if (attempt < 3) await sleep(2000)
+      }
+    }
+    return { downloadUrls: [], downloadUrl: "", youtubeUrl: "" }
+  }
+
   const pages = []
   for (let page = 1; page <= 1000; page++) {
     try {
@@ -176,6 +232,31 @@ async function main() {
       throw error
     }
   }
+
+  const allItems = pages.flatMap(p => p.items)
+  console.log(`Pre-fetching download links for ${allItems.length} productions...`)
+  let linksCount = 0
+  for (let i = 0; i < allItems.length; i++) {
+    const item = allItems[i]
+    if (item.downloadUrls?.length) {
+      linksCount++
+      continue
+    }
+    const res = await fetchDetailWithRetry(item.id)
+    if (res.downloadUrl) {
+      item.downloadUrl = res.downloadUrl
+      item.downloadUrls = res.downloadUrls
+      linksCount++
+    }
+    if (res.youtubeUrl) {
+      item.youtubeUrl = res.youtubeUrl
+    }
+    if ((i + 1) % 50 === 0 || i + 1 === allItems.length) {
+      console.log(`Pre-fetch progress: ${i + 1}/${allItems.length} (${linksCount} with links)`)
+    }
+    await sleep(150)
+  }
+  console.log(`Pre-fetched download links: ${linksCount}/${allItems.length}`)
 
   await mkdir(dirname(OUTPUT), { recursive: true })
   await writeFile(OUTPUT, JSON.stringify({

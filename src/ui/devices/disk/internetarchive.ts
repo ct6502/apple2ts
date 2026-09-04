@@ -1,5 +1,5 @@
 import { CLOUD_SYNC } from "../../../common/utility"
-import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
+import { hasApple2tsProxy } from "./apple2tsproxy"
 import { handleSetDiskFromURL } from "./driveprops"
 import { generateUrlFromInternetArchiveId } from "./internetarchive_utils"
 
@@ -76,8 +76,8 @@ export const searchInternetArchive = async (
   page = 1,
 ): Promise<InternetArchiveSearchPage> => {
   const queryUrl = buildInternetArchiveQueryUrl(query, collectionId, page)
-  const requestUrl = (hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname))
-    ? apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(queryUrl)}`)
+  const requestUrl = (typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname) && !hasApple2tsProxy)
+    ? `/api/disk-direct?url=${encodeURIComponent(queryUrl)}`
     : queryUrl
   const response = await fetch(requestUrl)
   if (!response.ok) throw new Error(`Internet Archive search failed: ${response.status}`)

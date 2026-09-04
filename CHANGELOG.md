@@ -13,11 +13,19 @@
 - Support MC6845 CRTC hardware scrolling (R12/R13 start address) and cursor positioning (R14/R15) for CP/M and terminal software.
 - Enable full ASCII lowercase support in 80-column mode on Apple II+ models.
 - Support genuine Videx card identification signatures in Slot 3 ROM ($C30B=0x01, $C30C=0x82) for peripheral card detectors (such as Card Cat) and Microsoft Z80 CP/M BIOS.
+- Add self-contained DemoZoo catalog snapshot bundled in `public/data/demozoo_snapshot.json` with pre-fetched direct download links, enabling DemoZoo catalog browsing and search on GitHub Pages and static web hosts with zero proxy server configuration.
+- Display snapshot creation date badge (`Snapshot at YYYY/MM/DD`) in the DemoZoo dialog header.
+- Add generic Wayback Machine raw stream fallback (`web.archive.org/web/0id_/`) for offline or broken external disk image download links.
+- Add dedicated Internet Archive `archive.org/cors/` endpoint fallback for IA disk downloads to ensure permissive CORS headers across all global storage nodes.
+- Add a 2-second "Unable to Download!" notification badge in the DemoZoo dialog header when all download sources fail.
 
 **Fixed bugs:**
 
 - Fix ProDOS boot freeze on Apple II+ with Slot 3 cards by preventing premature I/O activation and avoiding slot scan conflicts with disk controller firmware.
 - Fix CP/M 80-column screen corruption and solid white attribute boxes caused by inverted ASCII character rendering.
+- Eliminate external `pages.dev` proxy runtime dependencies on static deployments.
+- Filter out non-disk media links (.mp4, .mov, .webm, etc.) from DemoZoo download candidates.
+- Automatically normalize upstream scene.org download URLs and fix typos (e.g., `marqueedesign_`).
 
 ## [v3.5.2](https://github.com/ct6502/apple2ts/tree/v3.5.2) (2026-08-06)
 
