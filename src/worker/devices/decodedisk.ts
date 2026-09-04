@@ -1,5 +1,5 @@
-import { convertdsk2woz } from "./convertdsk2woz"
-import { crc32, replaceSuffix, isHardDriveImage } from "../../common/utility"
+import { convertdsk2woz } from "../../common/convertdsk2woz"
+import { crc32, isHardDriveImage } from "../../common/utility"
 
 const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]
@@ -66,22 +66,18 @@ const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   if (newData.length === 0) {
     return new Uint8Array()
   }
-  driveState.filename = replaceSuffix(driveState.filename, "woz")
-  driveState.diskHasChanges = true
-  driveState.lastAppleWriteTime = Date.now()
   return newData
 }
 
 export const decodeDiskData = (
   driveState: DriveState,
   diskData: Uint8Array,
-  isProdosFloppy: boolean,
   enforceDriveKind = false,
 ): Uint8Array => {
   driveState.diskHasChanges = false
   const fname = driveState.filename.toLowerCase()
   if (diskData.length > 10000) {
-    if (isHardDriveImage(fname, diskData?.length, isProdosFloppy)) {
+    if (isHardDriveImage(fname, diskData?.length)) {
       if (enforceDriveKind && !driveState.hardDrive) {
         return new Uint8Array()
       }
@@ -93,17 +89,13 @@ export const decodeDiskData = (
       (fname.endsWith(".woz") || fname.endsWith(".dsk") || fname.endsWith(".do") || fname.endsWith(".po"))) {
       return new Uint8Array()
     }
+    // Keep comment for a bit
     // We might have a DSK file that has already been renamed as a WOZ
     // but is still in DSK format. So double check the disk data length.
     if (diskData.length === 143360) {
       diskData = decodeDSK(driveState, diskData)
     }
     if (decodeWoz2(driveState, diskData)) {
-      if (fname.endsWith(".dsk") || fname.endsWith(".do") || fname.endsWith(".po")) {
-        driveState.filename = replaceSuffix(driveState.filename, "woz")
-        driveState.diskHasChanges = true
-        driveState.lastAppleWriteTime = Date.now()
-      }
       return diskData
     }
     if (decodeWoz1(driveState, diskData)) {

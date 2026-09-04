@@ -18,7 +18,6 @@ const uiState: UIState = {
   hotReload: false,
   infoPanel: false,
   monitorMode: MONITOR_MODE.NTSC,
-  prodosFloppy: false,
   reverseYAxis: false,
   showScanlines: false,
   siriusJoyport: false,

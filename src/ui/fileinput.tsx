@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES_ALL } from "../common/utility"
+import { FILE_SUFFIXES_ALL } from "../common/utility"
 import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
 import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
@@ -34,26 +34,26 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
           setDisplayBinaryDialog(true)
         }
     } else {
-      let filename = file.name
-      let writableFileHandle: FileSystemFileHandle | null = null
-      if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
-        const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
-        if (isFileSystemApiSupported()) {
-          writableFileHandle = await window.showSaveFilePicker({
-            excludeAcceptAllOption: false,
-            suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
-            types: [
-              {
-                description: "Disk Image",
-                accept: { "application/octet": [newFileExtension] as `.${string}`[] },
-              },
-            ]
-          })
-          filename = writableFileHandle.name
-        } else {
-          filename = filename.replace(fileExtension, newFileExtension ?? "")
-        }
-      }
+      const filename = file.name
+      const writableFileHandle: FileSystemFileHandle | null = null
+      // if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
+      //   const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
+      //   if (isFileSystemApiSupported()) {
+      //     writableFileHandle = await window.showSaveFilePicker({
+      //       excludeAcceptAllOption: false,
+      //       suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
+      //       types: [
+      //         {
+      //           description: "Disk Image",
+      //           accept: { "application/octet": [newFileExtension] as `.${string}`[] },
+      //         },
+      //       ]
+      //     })
+      //     filename = writableFileHandle.name
+      //   } else {
+      //     filename = filename.replace(fileExtension, newFileExtension ?? "")
+      //   }
+      // }
       const newIndex = handleSetDiskOrFileFromBuffer(index,
         await file.arrayBuffer(), filename, null, writableFileHandle)
       if (writableFileHandle) prepWritableFile(newIndex, writableFileHandle)

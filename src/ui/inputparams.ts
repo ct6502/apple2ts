@@ -1,6 +1,6 @@
 import { COLOR_MODE, MONITOR_MODE, RUN_MODE, UI_THEMES } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug, passSetProdosFloppy } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
 import { isOneDriveMsalAuthCallback } from "./devices/disk/onedrive_authredirect"
@@ -107,13 +107,6 @@ export const handleInputParams = (paramString = "") => {
     setUIStateBoolean("showScanlines", true)
   } else if (scanlines === "off") {
     setUIStateBoolean("showScanlines", false)
-  }
-
-  const prodosFloppy = params.get("prodosfloppy")
-  if (prodosFloppy === "on") {
-    passSetProdosFloppy(true)
-  } else if (prodosFloppy === "off") {
-    passSetProdosFloppy(false)
   }
 
   const machineName = params.get("machine")?.toUpperCase()

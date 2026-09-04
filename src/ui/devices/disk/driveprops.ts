@@ -10,7 +10,7 @@ import {
   RUN_MODE,
 } from "../../../common/utility"
 
-import { passSetDriveNewData, requestSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode, handleGetProdosFloppy } from "../../main2worker"
+import { passSetDriveNewData, requestSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
 import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
@@ -276,11 +276,7 @@ const setDiskOrFileFromBuffer = (
       passPasteText(basic + cmd)
     }
   } else {
-    const defaultDriveIndex = getDefaultDiskDriveIndex(
-      fname,
-      buffer.byteLength,
-      handleGetProdosFloppy(),
-    )
+    const defaultDriveIndex = getDefaultDiskDriveIndex(fname, buffer.byteLength)
     const bootsExplicitDrive = preserveDriveIndex && index === defaultDriveIndex
     if (bootsExplicitDrive) {
       passSetRunMode(RUN_MODE.IDLE)
@@ -1111,11 +1107,7 @@ export const handleSetDiskFromFile = async (disk: string,
   if (callback) {
     callback(data)
   } else {
-    const defaultDriveIndex = getDefaultDiskDriveIndex(
-      disk,
-      data.byteLength,
-      handleGetProdosFloppy(),
-    )
+    const defaultDriveIndex = getDefaultDiskDriveIndex(disk, data.byteLength)
     let needsBoot = preserveDriveIndex
       ? (driveIndex === 0 || driveIndex === 2)
       : handleGetRunMode() === RUN_MODE.IDLE

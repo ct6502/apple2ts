@@ -2,7 +2,7 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetProdosFloppy, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
+import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
 import { getTheme, getUIState, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf, setMonitorMode } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
@@ -16,7 +16,7 @@ export {
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["arrowKeysAsJoystick",
   "capitalizeBasic", "crtDistortion",
   "debugMode", "ghosting", "hotReload", "lowercaseMode",
-  "manualNumbering", "prodosFloppy",
+  "manualNumbering",
   "reverseYAxis", "showScanlines", "siriusJoyport",
   "tiltSensorJoystick", "useOpenAppleKey"]
 
@@ -478,9 +478,6 @@ export const loadPreferences = () => {
   if (getUIState().debugMode) {
     passSetShowDebugTab(true)
   }
-  if (getUIState().prodosFloppy) {
-    passSetProdosFloppy(true)
-  }
   if (getUIState().reverseYAxis) {
     passReverseYAxis(true)
   }
@@ -602,7 +599,6 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
     setUIStateBoolean(key, false)
   })
   // Extra processing for certain boolean prefs
-  passSetProdosFloppy(false)
   passReverseYAxis(false)
   passSiriusJoyport(false)
   passSetShowDebugTab(false)

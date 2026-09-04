@@ -8,7 +8,7 @@ import CheckBox from "../panels/checkbox"
 import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode } from "../ui_settings"
 import { UI_THEMES } from "../../common/utility"
 import { isAudioEnabled } from "../devices/audio/speaker"
-import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetProdosFloppy, handleGetSpeedMode } from "../main2worker"
+import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode } from "../main2worker"
 import { useTranslation } from "../../i18n/useTranslation"
 
 export enum TAB {
@@ -65,7 +65,6 @@ const LinkBuilder = () => {
   const [loadBlock, setLoadBlock] = useState("")
   const [hexBlock, setHexBlock] = useState("")
   const [machine, setMachine] = useState("")
-  const [prodosFloppy, setProdosFloppy] = useState(false)
   const [ramdisk, setRamdisk] = useState("")
   const [scanlines, setScanlines] = useState(false)
   const [selectedDisk, setSelectedDisk] = useState("")
@@ -151,10 +150,6 @@ const LinkBuilder = () => {
       params.push("machine=apple2p")
     }
 
-    if (prodosFloppy) {
-      params.push("prodosfloppy=on")
-    }
-
     const ramIndex = ramdiskValues.indexOf(ramdisk)
     if (ramIndex > 0) {
       params.push("ramdisk=" + ramdiskParams[ramIndex])
@@ -226,7 +221,6 @@ const LinkBuilder = () => {
     setLoadBlock("")
     setHexBlock("")
     setMachine(machineValues[0])
-    setProdosFloppy(false)
     setRamdisk(ramdiskValues[0])
     setScanlines(false)
     setSelectedDisk("")
@@ -243,7 +237,6 @@ const LinkBuilder = () => {
     setScanlines(getShowScanlines())
     setLowercaseMode(getLowercaseMode())
     setDebug(handleGetIsDebugging())
-    setProdosFloppy(handleGetProdosFloppy())
     setSoundoff(!isAudioEnabled())
     setTextBlock("")
     setHexBlock("")
@@ -347,9 +340,6 @@ const LinkBuilder = () => {
                 <CheckBox name={t("linkBuilder.showDebugTab")}
                   checked={debug}
                   setChecked={setDebug} />
-                <CheckBox name={t("config.prodosFloppy")}
-                  checked={prodosFloppy}
-                  setChecked={setProdosFloppy} />
                 <CheckBox name={t("linkBuilder.sound")}
                   checked={!soundoff}
                   setChecked={(on: boolean) => { setSoundoff(!on) }} />

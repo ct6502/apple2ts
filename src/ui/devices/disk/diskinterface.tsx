@@ -1,5 +1,5 @@
 import { DiskCollectionSortMode, setPreferenceDiskCollectionSort } from "../../localstorage"
-import { handleGetProdosFloppy, handleGetSlotConfig, passSetDriveProps } from "../../main2worker"
+import { handleGetSlotConfig, passSetDriveProps } from "../../main2worker"
 import { CLOUD_SYNC, getDefaultDiskDriveIndex } from "../../../common/utility"
 import {
   DISK_COLLECTION_ITEM_TYPE,
@@ -99,7 +99,7 @@ const getCollectionDriveIndex = (disk: DiskCollectionItem) => {
   if (selectedCollectionDriveIndex !== undefined) return selectedCollectionDriveIndex
   const filename = disk.cloudData?.fileName || disk.diskUrl
   const fileSize = disk.cloudData?.fileSize ?? disk.fileSize
-  return getDefaultDiskDriveIndex(filename, fileSize, handleGetProdosFloppy())
+  return getDefaultDiskDriveIndex(filename, fileSize)
 }
 
 const diskTemplateBindings: RetroControlBindings = {

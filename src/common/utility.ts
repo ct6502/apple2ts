@@ -9,7 +9,7 @@ const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po,.2meg"
 export const FILE_SUFFIXES_DISK = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
 export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK}`
 export const MAX_DRIVES = 4
-export const DISK_CONVERSION_SUFFIXES = new Map<string, string>([[".dsk", ".woz"]])
+// export const DISK_CONVERSION_SUFFIXES = new Map<string, string>([[".dsk", ".woz"]])
 
 // Put memory offset constants here so we can use them in the worker and main thread.
 // We used to have these in the memory.ts file, but when we imported that into
@@ -74,7 +74,6 @@ export enum MSG_MAIN {
   MIDI_DATA,
   MOUSEEVENT,
   PASTE_TEXT,
-  PRODOS_FLOPPY,
   RAMWORKS,
   RESTORE_STATE,
   REVERSE_YAXIS,
@@ -507,15 +506,12 @@ export const getSymbolTables = (machineName: string) => {
   return [machineSymbolTable, userSymbolTable]
 }
 
-export const isHardDriveImage = (filename: string, fileSize: number, isProdosFloppy: boolean) => {
+export const isHardDriveImage = (filename: string, fileSize: number) => {
   const f = filename.toLowerCase()
   if (/\.(?:hdv|2mg|2meg)(?:$|[^a-z0-9])/.test(f)) {
     return true
   }
   if (/\.po(?:$|[^a-z0-9])/.test(f)) {
-    if (!isProdosFloppy || fileSize === undefined) {
-      return true
-    }
     // 5.25" ProDOS floppy disk is 140KB (143360 bytes).
     // Anything larger (e.g. 800KB 3.5" disk, 2MB, 16MB, 32MB hard drive images)
     // is treated as a Slot 7 SmartPort hard drive image.
@@ -527,8 +523,7 @@ export const isHardDriveImage = (filename: string, fileSize: number, isProdosFlo
 export const getDefaultDiskDriveIndex = (
   filename: string,
   fileSize: number,
-  isProdosFloppy: boolean,
-) => isHardDriveImage(filename, fileSize, isProdosFloppy) ? 0 : 2
+) => isHardDriveImage(filename, fileSize) ? 0 : 2
 
 export const constructAudio = (mp3track: string) => {
   const audioDevice: AudioDevice = {

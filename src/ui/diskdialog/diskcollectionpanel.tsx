@@ -522,26 +522,15 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         }
       }
       ))
-    const isHD = isHardDriveImage(filename, filesize, false)
-    const isFD = !isHardDriveImage(filename, filesize, true)
-    if (isHD && isFD) {
-      return [[
-        ...hardDriveMenuItems,
-        { label: "-" },
-        ...floppyDriveMenuItems
-      ]]
-    }
+    const isHD = isHardDriveImage(filename, filesize)
     if (isHD) {
       return [[
         ...hardDriveMenuItems
       ]]
     }
-    if (isFD) {
-      return [[
-        ...floppyDriveMenuItems
-      ]]
-    }
-    return [[]]
+    return [[
+      ...floppyDriveMenuItems
+    ]]
   }
 
   return (

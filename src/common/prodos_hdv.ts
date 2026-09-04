@@ -7,6 +7,7 @@
 
 import { unzipSync } from "fflate"
 import { createQrHgrRuntimeBinary } from "./qr_hgr"
+import { decodeWozToSectorCandidates } from "./convertwoz2dsk"
 
 export type ProDosFileKind = "seedling" | "sapling" | "tree"
 
@@ -639,13 +640,6 @@ const readLittleEndian24 = (data: Uint8Array, offset: number) => {
   return data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16)
 }
 
-const readLittleEndian32 = (data: Uint8Array, offset: number) => {
-  return (data[offset]) |
-    (data[offset + 1] << 8) |
-    (data[offset + 2] << 16) |
-    (data[offset + 3] << 24)
-}
-
 const readFileDataFromProDosImage = (
   disk: Uint8Array,
   storageType: 1 | 2 | 3,
@@ -791,140 +785,6 @@ const extractProDosFilesRecursive = (diskImage: Uint8Array): ExtractedProDosFile
   return extracted
 }
 
-const SIX_AND_TWO_ENCODE = [
-  0x96, 0x97, 0x9A, 0x9B, 0x9D, 0x9E, 0x9F, 0xA6,
-  0xA7, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xB2, 0xB3,
-  0xB4, 0xB5, 0xB6, 0xB7, 0xB9, 0xBA, 0xBB, 0xBC,
-  0xBD, 0xBE, 0xBF, 0xCB, 0xCD, 0xCE, 0xCF, 0xD3,
-  0xD6, 0xD7, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE,
-  0xDF, 0xE5, 0xE6, 0xE7, 0xE9, 0xEA, 0xEB, 0xEC,
-  0xED, 0xEE, 0xEF, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6,
-  0xF7, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF,
-]
-
-const SIX_AND_TWO_DECODE = (() => {
-  const table = new Int16Array(256)
-  table.fill(-1)
-  for (let i = 0; i < SIX_AND_TWO_ENCODE.length; i++) {
-    table[SIX_AND_TWO_ENCODE[i]] = i
-  }
-  return table
-})()
-
-const DOS_PHYSICAL_TO_LOGICAL = [0, 13, 11, 9, 7, 5, 3, 1, 14, 12, 10, 8, 6, 4, 2, 15]
-const PRODOS_PHYSICAL_TO_LOGICAL = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
-const DOS_LOGICAL_TO_PHYSICAL = [0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15]
-const PRODOS_LOGICAL_TO_PHYSICAL = [0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]
-
-const decode4and4 = (a: number, b: number) => (((a << 1) | 1) & b) & 0xFF
-
-const decodeSixAndTwoSector = (encoded: Uint8Array): Uint8Array | undefined => {
-  if (encoded.length < 343) return undefined
-
-  const delta = new Uint8Array(343)
-  for (let i = 0; i < 343; i++) {
-    const v = SIX_AND_TWO_DECODE[encoded[i]]
-    if (v < 0) return undefined
-    delta[i] = v
-  }
-
-  const unxor = new Uint8Array(342)
-  unxor[0] = delta[0]
-  for (let i = 1; i <= 341; i++) {
-    unxor[i] = delta[i] ^ unxor[i - 1]
-  }
-  if (delta[342] !== unxor[341]) return undefined
-
-  const out = new Uint8Array(256)
-  for (let i = 0; i < 256; i++) {
-    out[i] = (unxor[86 + i] & 0x3F) << 2
-  }
-
-  const bitReverse = [0, 2, 1, 3]
-  for (let c = 0; c < 84; c++) {
-    const packed = unxor[c]
-    out[c] |= bitReverse[(packed >> 0) & 0x03]
-    out[c + 86] |= bitReverse[(packed >> 2) & 0x03]
-    out[c + 172] |= bitReverse[(packed >> 4) & 0x03]
-  }
-  out[84] |= bitReverse[(unxor[84] >> 0) & 0x03]
-  out[170] |= bitReverse[(unxor[84] >> 2) & 0x03]
-  out[85] |= bitReverse[(unxor[85] >> 0) & 0x03]
-  out[171] |= bitReverse[(unxor[85] >> 2) & 0x03]
-
-  return out
-}
-
-type WozTrackBits = {
-  bits: Uint8Array
-  bitCount: number
-}
-
-const getWozTracks = (wozData: Uint8Array): Array<WozTrackBits | undefined> | undefined => {
-  if (wozData.length < 256) return undefined
-  const sig = String.fromCharCode(wozData[0], wozData[1], wozData[2], wozData[3])
-  if (sig !== "WOZ1" && sig !== "WOZ2") return undefined
-
-  let tmapOffset = -1
-  let trksOffset = -1
-  let ptr = 12
-  while (ptr + 8 <= wozData.length) {
-    const id = String.fromCharCode(wozData[ptr], wozData[ptr + 1], wozData[ptr + 2], wozData[ptr + 3])
-    const size = readLittleEndian32(wozData, ptr + 4)
-    const dataOffset = ptr + 8
-    if (dataOffset + size > wozData.length) break
-    if (id === "TMAP") tmapOffset = dataOffset
-    if (id === "TRKS") trksOffset = dataOffset
-    ptr = dataOffset + size
-  }
-
-  if (tmapOffset < 0 || trksOffset < 0) return undefined
-  const tracks: Array<WozTrackBits | undefined> = new Array(160)
-
-  for (let q = 0; q < 160; q++) {
-    const tmapIndex = wozData[tmapOffset + q]
-    if (tmapIndex === undefined || tmapIndex >= 0xFF) continue
-
-    if (sig === "WOZ2") {
-      const meta = trksOffset + (tmapIndex * 8)
-      if (meta + 8 > wozData.length) continue
-      const startBlock = readLittleEndian16(wozData, meta)
-      const blockCount = readLittleEndian16(wozData, meta + 2)
-      const bitCount = readLittleEndian32(wozData, meta + 4)
-      const start = startBlock * 512
-      const byteCount = Math.max(1, Math.ceil(bitCount / 8))
-      if (blockCount <= 0 || bitCount <= 0 || start + byteCount > wozData.length) continue
-      tracks[q] = { bits: wozData.slice(start, start + byteCount), bitCount }
-    } else {
-      const start = trksOffset + (tmapIndex * 6656)
-      if (start + 6656 > wozData.length) continue
-      const bitCount = readLittleEndian16(wozData, start + 6648)
-      const byteCount = Math.max(1, Math.ceil(bitCount / 8))
-      if (bitCount <= 0 || start + byteCount > wozData.length) continue
-      tracks[q] = { bits: wozData.slice(start, start + byteCount), bitCount }
-    }
-  }
-
-  return tracks
-}
-
-const getBit = (bits: Uint8Array, bitPos: number, bitCount: number) => {
-  if (bitCount <= 0) return 0
-  const wrapped = ((bitPos % bitCount) + bitCount) % bitCount
-  const bytePos = wrapped >> 3
-  const shift = 7 - (wrapped & 7)
-  if (bytePos < 0 || bytePos >= bits.length) return 0
-  return (bits[bytePos] >> shift) & 1
-}
-
-const getByteAtBit = (bits: Uint8Array, bitPos: number, bitCount: number) => {
-  let value = 0
-  for (let i = 0; i < 8; i++) {
-    value = (value << 1) | getBit(bits, bitPos + i, bitCount)
-  }
-  return value
-}
-
 const DOS_ORDER_MAP = [0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15]
 const PRODOS_ORDER_MAP = [0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]
 
@@ -1016,103 +876,6 @@ const readProDosVolumeName = (data: Uint8Array): string | undefined => {
 
   const normalized = normalizeProDosFilename(rawName)
   return normalized.length > 0 ? normalized : undefined
-}
-
-const decodeWozToSectorCandidates = (wozData: Uint8Array): { candidates: Array<{ label: string, data: Uint8Array }>, decodedSectorCount: number } | undefined => {
-  const tracks = getWozTracks(wozData)
-  if (!tracks) return undefined
-
-  const dosPhysicalToLogical = new Uint8Array(35 * 16 * 256)
-  const prodosPhysicalToLogical = new Uint8Array(35 * 16 * 256)
-  const dosLogicalToPhysical = new Uint8Array(35 * 16 * 256)
-  const prodosLogicalToPhysical = new Uint8Array(35 * 16 * 256)
-  const seen = new Set<string>()
-
-  for (let q = 0; q < tracks.length; q++) {
-    const track = tracks[q]
-    if (!track || track.bitCount < 5000) continue
-
-    let pendingTrack = -1
-    let pendingSector = -1
-    let pendingBitPos = -1
-
-    // Prologues are not guaranteed to be byte-aligned in the captured bitstream.
-    // Scan every bit so we do not miss valid address/data fields on shifted tracks.
-    for (let bitPos = 0; bitPos < track.bitCount; bitPos++) {
-      const b0 = getByteAtBit(track.bits, bitPos, track.bitCount)
-      const b1 = getByteAtBit(track.bits, bitPos + 8, track.bitCount)
-      const b2 = getByteAtBit(track.bits, bitPos + 16, track.bitCount)
-
-      // Address prologue: D5 AA 96
-      if (b0 === 0xD5 && b1 === 0xAA && b2 === 0x96) {
-        const vol = decode4and4(
-          getByteAtBit(track.bits, bitPos + 24, track.bitCount),
-          getByteAtBit(track.bits, bitPos + 32, track.bitCount)
-        )
-        const addrTrack = decode4and4(
-          getByteAtBit(track.bits, bitPos + 40, track.bitCount),
-          getByteAtBit(track.bits, bitPos + 48, track.bitCount)
-        )
-        const addrSector = decode4and4(
-          getByteAtBit(track.bits, bitPos + 56, track.bitCount),
-          getByteAtBit(track.bits, bitPos + 64, track.bitCount)
-        )
-        const checksum = decode4and4(
-          getByteAtBit(track.bits, bitPos + 72, track.bitCount),
-          getByteAtBit(track.bits, bitPos + 80, track.bitCount)
-        )
-
-        if (((vol ^ addrTrack ^ addrSector) & 0xFF) === checksum &&
-          addrTrack >= 0 && addrTrack < 35 &&
-          addrSector >= 0 && addrSector < 16) {
-          pendingTrack = addrTrack
-          pendingSector = addrSector
-          pendingBitPos = bitPos
-        }
-        continue
-      }
-
-      // Data prologue: D5 AA AD
-      if (b0 === 0xD5 && b1 === 0xAA && b2 === 0xAD) {
-        if (pendingTrack < 0 || pendingSector < 0) continue
-        // Require proximity to reduce false pairings.
-        if (pendingBitPos >= 0 && bitPos - pendingBitPos > (700 * 8)) continue
-
-        const encoded = new Uint8Array(343)
-        for (let i = 0; i < 343; i++) {
-          encoded[i] = getByteAtBit(track.bits, bitPos + 24 + (i * 8), track.bitCount)
-        }
-        const decoded = decodeSixAndTwoSector(encoded)
-        if (!decoded) continue
-
-        const key = `${pendingTrack}:${pendingSector}`
-        if (seen.has(key)) continue
-        seen.add(key)
-
-        const dosLogical = DOS_PHYSICAL_TO_LOGICAL[pendingSector]
-        const prodosLogical = PRODOS_PHYSICAL_TO_LOGICAL[pendingSector]
-        const dosPhysical = DOS_LOGICAL_TO_PHYSICAL[pendingSector]
-        const prodosPhysical = PRODOS_LOGICAL_TO_PHYSICAL[pendingSector]
-
-        dosPhysicalToLogical.set(decoded, ((pendingTrack * 16) + dosLogical) * 256)
-        prodosPhysicalToLogical.set(decoded, ((pendingTrack * 16) + prodosLogical) * 256)
-        dosLogicalToPhysical.set(decoded, ((pendingTrack * 16) + dosPhysical) * 256)
-        prodosLogicalToPhysical.set(decoded, ((pendingTrack * 16) + prodosPhysical) * 256)
-      }
-    }
-  }
-
-  if (seen.size === 0) return undefined
-
-  return {
-    candidates: [
-      { label: "prodos-physical-to-logical", data: prodosPhysicalToLogical },
-      { label: "dos-physical-to-logical", data: dosPhysicalToLogical },
-      { label: "prodos-logical-to-physical", data: prodosLogicalToPhysical },
-      { label: "dos-logical-to-physical", data: dosLogicalToPhysical },
-    ],
-    decodedSectorCount: seen.size,
-  }
 }
 
 export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskFile[] => {

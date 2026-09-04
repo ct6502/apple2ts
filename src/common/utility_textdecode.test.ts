@@ -1,12 +1,11 @@
 import { convertTextPageValueToASCII, getDefaultDiskDriveIndex } from "./utility"
 
 test("disk drive defaults use the emulator's hard-drive image classification", () => {
-  expect(getDefaultDiskDriveIndex("disk.dsk", 143360, true)).toBe(2)
-  expect(getDefaultDiskDriveIndex("disk.hdv", 143360, true)).toBe(0)
-  expect(getDefaultDiskDriveIndex("disk.po", 143360, true)).toBe(2)
-  expect(getDefaultDiskDriveIndex("disk.po", 143360, false)).toBe(0)
-  expect(getDefaultDiskDriveIndex("disk.po", 143361, true)).toBe(0)
-  expect(getDefaultDiskDriveIndex("WizardReplay.hdv_.zip", 33553920, true)).toBe(0)
+  expect(getDefaultDiskDriveIndex("disk.dsk", 143360)).toBe(2)
+  expect(getDefaultDiskDriveIndex("disk.hdv", 143360)).toBe(0)
+  expect(getDefaultDiskDriveIndex("disk.po", 143360)).toBe(2)
+  expect(getDefaultDiskDriveIndex("disk.po", 143361)).toBe(0)
+  expect(getDefaultDiskDriveIndex("WizardReplay.hdv_.zip", 33553920)).toBe(0)
 })
 
 test("II+ decode maps 0x60/0x6C/0x6E to space/comma/period", () => {

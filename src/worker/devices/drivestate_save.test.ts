@@ -1,5 +1,5 @@
 import { Buffer } from "buffer"
-import { convertdsk2woz } from "./convertdsk2woz"
+import { convertdsk2woz } from "../../common/convertdsk2woz"
 import { doSetEmuDriveNewData, getCurrentDriveData, getCurrentDriveState, getDriveSaveState,
   getHardDriveData, getHardDriveState, restoreDriveSaveState } from "./drivestate"
 import { doGetSaveState, doRestoreSaveState } from "../save_restore"
@@ -165,35 +165,9 @@ test("accepts a standard-sized ProDOS floppy forced into fd1", () => {
   expect(getCurrentDriveState()).toEqual(expect.objectContaining({
     index: 2,
     hardDrive: false,
-    filename: "standard.woz",
+    filename: "standard.po",
   }))
   expect(getCurrentDriveData().length).toBeGreaterThan(0)
-})
-
-test("rejects a standard-sized ProDOS floppy forced into hd1", () => {
-  const result = doSetEmuDriveNewData({
-    index: 0,
-    hardDrive: true,
-    drive: 1,
-    filename: "standard.po",
-    status: "",
-    motorRunning: false,
-    diskHasChanges: false,
-    isWriteProtected: false,
-    diskData: new Uint8Array(143360),
-    lastAppleWriteTime: 0,
-    cloudData: null,
-    writableFileHandle: null,
-    lastLocalFileWriteTime: 0,
-  }, true)
-
-  expect(result).toBe(false)
-  expect(getHardDriveState(1)).toEqual(expect.objectContaining({
-    index: 0,
-    hardDrive: true,
-    filename: "",
-  }))
-  expect(getHardDriveData(1)[0]).toHaveLength(0)
 })
 
 test.each([

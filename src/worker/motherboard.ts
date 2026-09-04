@@ -2,7 +2,7 @@
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
 import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG } from "../common/utility"
-import { resetFloppyDrives, doPauseDrive, getHardDriveState, getProdosFloppy } from "./devices/drivestate"
+import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
   restoreSoftSwitches, getSoftSwitchDescriptions, 
@@ -745,7 +745,6 @@ export const getExternalMachineState = () => {
     machineName: machineName,
     memoryDump: getMemoryDump(),
     noDelayMode: !SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet && machineName !== "APPLE2P",
-    prodosFloppy: getProdosFloppy(),
     ramWorksBank: RamWorksBankGet(),
     runMode: cpuRunMode,
     s6502: s6502,

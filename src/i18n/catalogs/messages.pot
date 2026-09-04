@@ -113,10 +113,6 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr ""
 
-msgctxt "config.prodosFloppy"
-msgid "Load ProDOS disks in floppy drive"
-msgstr ""
-
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr ""

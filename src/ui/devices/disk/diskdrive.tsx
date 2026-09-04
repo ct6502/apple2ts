@@ -27,6 +27,7 @@ import { DiskBookmarks } from "./diskbookmarks"
 import { determineVtocType, VTOC_REFRESH } from "../../../common/prodos_hdv"
 import { isFileSystemApiSupported } from "../../ui_utilities"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { convertwoz2dsk } from "../../../common/convertwoz2dsk"
 
 export const DISK_DRIVE_LABELS = ["S7,D1", "S7,D2", "S6,D1", "S6,D2"]
 
@@ -49,7 +50,15 @@ export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blo
   return new Blob([diskData] as BlobPart[])
 }
 
-const downloadDisk = (diskData: Uint8Array, filename: string) => {
+const downloadDisk = (diskData: Uint8Array, filename: string, downloadWoz: boolean) => {
+  const fileExt = filename.substring(filename.lastIndexOf(".")).toLowerCase()
+  if ((fileExt === ".dsk" || fileExt === ".do" || fileExt === ".po") && diskData.length > 143360) {
+    if (downloadWoz) {
+      filename = filename.substring(0, filename.lastIndexOf(".")) + ".woz"
+    } else {
+      diskData = convertwoz2dsk(diskData, fileExt === ".po")
+    }
+  }
   const blob = getBlobFromDiskData(diskData, filename)
   const link = document.createElement("a")
   const url = URL.createObjectURL(blob)
@@ -65,7 +74,7 @@ export const downloadDiskToDevice = (index: number) => {
   const dprops = handleGetDriveProps(index)
   if (dprops.diskData.length === 0) return
 
-  downloadDisk(dprops.diskData, dprops.filename)
+  downloadDisk(dprops.diskData, dprops.filename, false)
   const nextProps: DriveProps = { ...dprops, diskHasChanges: false }
   doSetUIDriveProps(nextProps)
 }
@@ -405,7 +414,7 @@ const DiskDrive = (props: DiskDriveProps) => {
               icon: faDownload,
               onClick: () => {
                 if (dprops.diskData.length > 0) {
-                  downloadDisk(dprops.diskData, filename)
+                  downloadDisk(dprops.diskData, filename, false)
                   const dpropsTmp: DriveProps = { ...dprops }
                   dpropsTmp.diskHasChanges = false
                   doSetUIDriveProps(dpropsTmp)
@@ -417,7 +426,7 @@ const DiskDrive = (props: DiskDriveProps) => {
               icon: faDownload,
               onClick: () => {
                 if (dprops.diskData.length > 0) {
-                  downloadDisk(dprops.diskData, filename)
+                  downloadDisk(dprops.diskData, filename, false)
                   const dpropsTmp: DriveProps = { ...dprops }
                   dpropsTmp.diskHasChanges = false
                   doSetUIDriveProps(dpropsTmp)

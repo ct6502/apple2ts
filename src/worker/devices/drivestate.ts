@@ -45,11 +45,6 @@ const initializeDriveState = () => {
 const driveState: DriveState[] = []
 const driveData: Array<Uint8Array> = []
 const largeDiskSnapshotThreshold = 32_000_000
-let isProdosFloppy = false
-export const doSetProdosFloppy: (value: boolean) => void = (value: boolean) => {
-  isProdosFloppy = value
-}
-export const getProdosFloppy: () => boolean = () => isProdosFloppy
 
 initializeDriveState()
 
@@ -196,7 +191,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   let isHardDrive = props.hardDrive
   if (!forceIndex) {
     if (props.filename !== "") {
-      if (isHardDriveImage(props.filename, props.diskData?.length, isProdosFloppy)) {
+      if (isHardDriveImage(props.filename, props.diskData?.length)) {
         isHardDrive = true
         index = (props.drive <= 1) ? 0 : 1
         drive = index + 1
@@ -215,10 +210,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   }
   driveState[index] = initDriveState(index, drive, isHardDrive)
   driveState[index].filename = props.filename
-  // For a forced mount, classify a .po image from its size before comparing it
-  // with the requested drive.
-  const treatProdosAsFloppy = forceIndex || isProdosFloppy
-  driveData[index] = decodeDiskData(driveState[index], props.diskData, treatProdosAsFloppy, forceIndex)
+  driveData[index] = decodeDiskData(driveState[index], props.diskData, forceIndex)
   if (driveData[index].length === 0) {
     driveState[index].filename = ""
     passDriveData(index)

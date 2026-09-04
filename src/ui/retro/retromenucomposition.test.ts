@@ -29,12 +29,7 @@ jest.mock("../devices/disk/diskdrive", () => ({
 }))
 const mockHandleGetDriveProps = jest.fn()
 const mockHandleGetFilename = jest.fn()
-const mockHandleGetProdosFloppy = jest.fn(() => true)
 const mockLoadDisk = jest.fn()
-jest.mock("../main2worker", () => ({
-  ...jest.requireActual("../main2worker"),
-  handleGetProdosFloppy: () => mockHandleGetProdosFloppy(),
-}))
 jest.mock("../devices/disk/driveprops", () => ({
   handleGetDriveProps: (...args: unknown[]) => mockHandleGetDriveProps(...args),
   handleGetFilename: (...args: unknown[]) => mockHandleGetFilename(...args),
@@ -102,7 +97,6 @@ describe("Retro menu metadata structure", () => {
     mockGetCloudProvidersNeedingAuth.mockReturnValue([])
     mockSignInToCloudProvider.mockResolvedValue(true)
     mockLoadDisk.mockClear()
-    mockHandleGetProdosFloppy.mockReturnValue(true)
     resetCollectionDriveSelectionSession()
   })
 
