@@ -13,7 +13,6 @@ import {
 import { passSetDriveNewData, requestSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
-import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
 import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
 import { parseGameList } from "./totalreplayutilities"
@@ -66,9 +65,45 @@ const isDemoZooDiskDownload = (url: string) => {
   }
 }
 
+export const normalizeDownloadUrl = (url: string): string => {
+  if (!url) return url
+  let trimmed = url.trim()
+  const sceneOrgMatch = trimmed.match(/^https?:\/\/files\.scene\.org\/(?:view|get)\/(.+)$/i)
+  if (sceneOrgMatch) {
+    trimmed = `https://archive.scene.org/pub/${sceneOrgMatch[1]}`
+  }
+  if (trimmed.includes("marqueeedesign_")) {
+    trimmed = trimmed.replace("marqueeedesign_", "marqueedesign_")
+  }
+  const brutalLocsMatch = trimmed.match(/^https?:\/\/(?:www\.)?brutaldeluxe\.fr\/products\/french\/locs\/(.+)$/i)
+  if (brutalLocsMatch) {
+    trimmed = `https://web.archive.org/web/0id_/http://www.brutaldeluxe.fr/products/french/locs/${brutalLocsMatch[1]}`
+  }
+  return trimmed
+}
+
+export const getArchiveOrgCorsUrl = (url: string): string => {
+  if (!url) return ""
+  const trimmed = url.trim()
+  const match = trimmed.match(/^https?:\/\/archive\.org\/download\/(.+)$/i)
+  if (match) {
+    return `https://archive.org/cors/${match[1]}`
+  }
+  return ""
+}
+
+export const getWaybackRawUrl = (url: string): string => {
+  if (!url) return ""
+  const trimmed = url.trim()
+  if (!/^https?:/i.test(trimmed)) return ""
+  if (/web\.archive\.org|archive\.org/i.test(trimmed)) return ""
+  return `https://web.archive.org/web/0id_/${trimmed}`
+}
+
 const chooseDemoZooDownloads = (links: Array<{ url: string; link_class?: string }>) => {
   return [...links]
     .filter(link => Boolean(link.url))
+    .map(link => ({ ...link, url: normalizeDownloadUrl(link.url) }))
     .sort((left, right) => {
       const leftScore = isDemoZooDiskDownload(left.url) ? 100 : /download/i.test(left.link_class || "") ? 10 : 0
       const rightScore = isDemoZooDiskDownload(right.url) ? 100 : /download/i.test(right.link_class || "") ? 10 : 0
@@ -540,6 +575,7 @@ const logFetchDebug = (...args: unknown[]) => {
 const shouldAttemptDirectFetch = (url: string): boolean => {
   try {
     const parsed = new URL(url)
+    if (parsed.hostname === "github.com") return false
     return parsed.protocol === "http:" || parsed.protocol === "https:"
   } catch {
     // If URL parsing fails, keep prior behavior and try direct fetch.
@@ -552,7 +588,8 @@ const shouldUseCloudflareDiskProxy = (url: string): boolean => {
     const target = new URL(url)
     return /^https?:$/i.test(target.protocol) &&
       target.origin !== window.location.origin &&
-      (hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname))
+      typeof window !== "undefined" &&
+      /\.pages\.dev$/i.test(window.location.hostname)
   } catch {
     return false
   }
@@ -560,14 +597,14 @@ const shouldUseCloudflareDiskProxy = (url: string): boolean => {
 
 const fetchWithCloudflareDiskProxy = async (url: string): Promise<Response | null> => {
   try {
-    const response = await fetch(apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(url)}`))
+    const response = await fetch(`/api/disk-direct?url=${encodeURIComponent(url)}`)
     return response.ok ? response : null
   } catch {
     return null
   }
 }
 
-const fetchWithCorsProxy = async (url: string, debug?: (message: string) => void) => {
+export const fetchWithCorsProxy = async (url: string, debug?: (message: string) => void) => {
   let lastResponse: Response | null = null
   const domain = getProxyTargetDomain(url)
   const candidates = sortProxyCandidatesForDomain(domain, getCorsProxyCandidates(url))
@@ -600,27 +637,10 @@ const fetchWithCorsProxy = async (url: string, debug?: (message: string) => void
 }
 
 const fetchDemoZooResource = async (url: string): Promise<Response | null> => {
-  try {
-    const parsed = new URL(url)
-    if ((import.meta.env.DEV || hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname)) && parsed.hostname === "demozoo.org") {
-      return await fetch(apple2tsProxyPath(`/api/demozoo-direct${parsed.pathname}${parsed.search}`))
-    }
-  } catch {
-    return null
-  }
-
   return fetchWithCorsProxy(url)
 }
 
 const fetchExternalDownloadPage = async (url: string): Promise<Response | null> => {
-  if (hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname)) {
-    try {
-      return await fetch(apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(url)}`))
-    } catch {
-      return null
-    }
-  }
-
   return fetchWithCorsProxy(url)
 }
 
@@ -777,10 +797,8 @@ const setDiskFromURL = async (url: string,
     }
   }
 
-  // Transform scene.org view URL to direct download URL
-  if (url.includes("files.scene.org/view/")) {
-    url = url.replace("files.scene.org/view/", "files.scene.org/get/")
-  }
+  // Normalize external URLs such as scene.org to direct archive downloads
+  url = normalizeDownloadUrl(url)
 
   // Resolve DemoZoo production web page URL to direct download link if needed
   let alternateDownloadUrls: string[] = []
@@ -796,9 +814,7 @@ const setDiskFromURL = async (url: string,
             const resolvedUrls: string[] = []
             for (const downloadUrl of chooseDemoZooDownloads(prodData.download_links)) {
               const resolvedUrl = await findDirectDownloadOnExternalPage(downloadUrl) || downloadUrl
-              const normalizedUrl = resolvedUrl.includes("files.scene.org/view/")
-                ? resolvedUrl.replace("files.scene.org/view/", "files.scene.org/get/")
-                : resolvedUrl
+              const normalizedUrl = normalizeDownloadUrl(resolvedUrl)
               if (!resolvedUrls.includes(normalizedUrl)) {
                 resolvedUrls.push(normalizedUrl)
               }
@@ -831,14 +847,26 @@ const setDiskFromURL = async (url: string,
   // hosts). The disk VTOC check that drives these downloads is serialized one
   // request at a time, so this does not flood Internet Archive with parallel
   // requests (the cause of the earlier 429 throttling).
-  const downloadUrlsToTry = [url, ...alternateDownloadUrls.filter(candidate => candidate !== url)]
+  const initialUrls = [url, ...alternateDownloadUrls.filter(candidate => candidate !== url)]
+  const downloadUrlsToTry: string[] = []
+  for (const candidate of initialUrls) {
+    if (!downloadUrlsToTry.includes(candidate)) {
+      downloadUrlsToTry.push(candidate)
+    }
+    const iaCors = getArchiveOrgCorsUrl(candidate)
+    if (iaCors && !downloadUrlsToTry.includes(iaCors)) {
+      downloadUrlsToTry.push(iaCors)
+    }
+    const wayback = getWaybackRawUrl(candidate)
+    if (wayback && !downloadUrlsToTry.includes(wayback)) {
+      downloadUrlsToTry.push(wayback)
+    }
+  }
   for (const candidateUrl of downloadUrlsToTry) {
     url = candidateUrl
     response = null
 
-    if (shouldUseCloudflareDiskProxy(url)) {
-      response = await fetchWithCloudflareDiskProxy(url)
-    } else if (shouldAttemptDirectFetch(url)) {
+    if (shouldAttemptDirectFetch(url)) {
       try {
         response = await fetch(url)
         if (!response.ok) {
@@ -853,6 +881,10 @@ const setDiskFromURL = async (url: string,
     if (!response || !response.ok) {
       logFetchDebug("Direct fetch failed, trying corsfix proxy")
       response = await fetchWithCorsProxy(url, debug)
+    }
+
+    if ((!response || !response.ok) && shouldUseCloudflareDiskProxy(url)) {
+      response = await fetchWithCloudflareDiskProxy(url)
     }
 
     if (response?.ok) break

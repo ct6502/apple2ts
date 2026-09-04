@@ -20,9 +20,7 @@ import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import InternetArchivePopup from "./internetarchivedialog"
 import DemoZooDialog from "./demozoodialog"
 
-export const demoZooEnabled = import.meta.env.DEV ||
-  import.meta.env.VITE_DEMOZOO_ENABLED === "true" ||
-  (typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname))
+export const demoZooEnabled = true
 import { DiskBookmarks } from "./diskbookmarks"
 import { determineVtocType, VTOC_REFRESH } from "../../../common/prodos_hdv"
 import { isFileSystemApiSupported } from "../../ui_utilities"
