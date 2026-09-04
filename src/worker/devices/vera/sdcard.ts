@@ -199,7 +199,7 @@ export const sdcard_select = (select: boolean): void =>
 {
 	selected = select
 	rxbuf_idx = 0
-	console.log("*** SD card select: " + select)
+	// console.log("*** SD card select: " + select)
 }
 
 const set_response_csd = (): void =>

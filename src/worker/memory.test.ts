@@ -11,7 +11,6 @@ import {
   setRamWorks,
   setSlotDriver,
   loadMainMemoryBlock,
-  getMemoryView,
   setAuxCardEnabled,
   updateAddressTables,
 } from "./memory"
@@ -20,6 +19,7 @@ import { setIsTesting } from "./worker2main"
 import { getApple2State, setApple2State } from "./save_restore"
 import { SWITCHES } from "./softswitches"
 import { setKeyboardState } from "./devices/keyboard"
+import { getMemoryView } from "./memory_view"
 
 type ExpectValue = (i: number) => void
 

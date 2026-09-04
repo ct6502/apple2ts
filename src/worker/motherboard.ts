@@ -22,7 +22,6 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   memSet,
   exportMemoryToHiresLine,
   getDataBlock,
-  getMemoryView,
   setSlotDriver,
   clearSlot} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
@@ -48,6 +47,7 @@ import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTe
 import { SoftCard } from "./devices/softcard"
 import { setSlotIOCallback } from "./memory"
 import { hasHardDriveMounted } from "./devices/drivestate"
+import { getMemoryView } from "./memory_view"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -59,12 +59,6 @@ let cpuCyclesPerRefresh = 17030
 let cpuRunMode = RUN_MODE.IDLE
 export const getCpuRunMode = () => cpuRunMode
 
-export const getExternalMemoryView = (request: MemoryViewRequest) => {
-  if (cpuRunMode !== RUN_MODE.PAUSED) {
-    throw new Error("Memory is available only while the emulator is paused")
-  }
-  return getMemoryView(request)
-}
 let pendingRunModeOperation: number | undefined
 let cyclesToRun = 0
 let nextFrameTime = 0
@@ -80,6 +74,13 @@ let speedTracker: Array<{time: number, cycles: number}> = []
 
 export const resetCpuSpeedForTesting = () => {
   cpuSpeed = 0
+}
+
+export const getExternalMemoryView = (request: MemoryViewRequest) => {
+  if (cpuRunMode !== RUN_MODE.PAUSED) {
+    throw new Error("Memory is available only while the emulator is paused")
+  }
+  return getMemoryView(request)
 }
 
 const startSiriusJoyportResetTimer = () => {

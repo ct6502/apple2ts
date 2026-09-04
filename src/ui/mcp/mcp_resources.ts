@@ -34,7 +34,7 @@ const DISK_CATALOG = [
     games: "Classic RPGs: Wizardry: Proving Grounds of the Mad Overlord and other Wizardry series games with WizPlus character editor integration"
   },
   { name: "Pitch Dark", filename: "https://github.com/anomixer/pitch-dark/releases/download/R6/Pitch_Dark.hdv.zip", path: "https://github.com/anomixer/pitch-dark/releases/download/R6/Pitch_Dark.hdv.zip", type: "game", description: "Interactive fiction adventure" },
-  { name: "Aztec", filename: "Aztec.po", path: "disks/Aztec.po", type: "game", description: "Adventure game exploring Aztec pyramid" },
+  { name: "Aztec", filename: "Aztec.woz", path: "disks/Aztec.woz", type: "game", description: "Adventure game exploring Aztec pyramid" },
   { name: "Eamon", filename: "Eamon%201.po", path: "disks/Eamon%201.po", type: "game", description: "Text adventure RPG system" },
   { name: "MECC Inspector", filename: "MECC-Inspector.woz", path: "disks/MECC-Inspector.woz", type: "educational", description: "Educational detective game" },
   { name: "MousePaint", filename: "MousePaint.woz", path: "disks/MousePaint.woz", type: "application", description: "Graphics drawing program" },

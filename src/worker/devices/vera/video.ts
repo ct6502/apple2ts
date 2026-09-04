@@ -157,7 +157,7 @@ const default_palette = new Uint16Array([
 ])
 
 export const video_reset = (): void => {
-	console.log("[VERA] video_reset")
+	// console.log("[VERA] video_reset")
 	// init I/O registers
 	io_addr.fill(0)
 	io_inc.fill(0)

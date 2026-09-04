@@ -271,7 +271,7 @@ export class OneDriveCloudDrive implements CloudProvider {
     cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
 
     while (cloudData.syncStatus == CLOUD_SYNC.INPROGRESS) {
-      console.log(`fetch: PUT ${uploadUrl}`)
+      // console.log(`fetch: PUT ${uploadUrl}`)
       await fetch(uploadUrl, {
         method: "PUT",
         mode: "cors",
@@ -283,7 +283,7 @@ export class OneDriveCloudDrive implements CloudProvider {
         body: buffer.slice(offset, offset + chunkSize)
       } as RequestInit)
         .then(async response => {
-          console.log(`fetch response: ${response.status} (${response.statusText})`)
+          //console.log(`fetch response: ${response.status} (${response.statusText})`)
 
           if (response.ok) {
             offset += chunkSize
