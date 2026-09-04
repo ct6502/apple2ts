@@ -24,6 +24,14 @@ const menuEntry = { filename: "AZTEC", displayName: "Aztec", imageKind: "4cade" 
 describe("4cade HDV export failures", () => {
   const stopExport = jest.fn(() => false)
 
+  beforeAll(() => {
+    jest.spyOn(console, "warn").mockImplementation(() => undefined)
+  })
+
+  afterAll(() => {
+    jest.restoreAllMocks()
+  })
+
   beforeEach(() => {
     mockFetchDisk.mockResolvedValue(new Uint8Array([1, 2, 3]))
     mockFetchPrelaunch.mockResolvedValue("jmp $800")
