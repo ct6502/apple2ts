@@ -520,7 +520,7 @@ export const memGet = (addr: number, checkWatchpoints = true): number => {
     }
   }
   if (checkWatchpoints && isWatchpoint(addr, value, false)) {
-    setWatchpointBreak()
+    setWatchpointBreak(addr)
   }
   return value
 }
@@ -588,7 +588,7 @@ export const memSet = (addr: number, value: number) => {
     memory[shifted + (addr & 255)] = value
   }
   if (isWatchpoint(addr, value, true)) {
-    setWatchpointBreak()
+    setWatchpointBreak(addr)
   }
 }
 

@@ -1,15 +1,21 @@
 import { BREAKPOINT_RESULT, breakpointMap, doSetBreakpoints, hitBreakpoint, processInstruction } from "./cpu6502"
-import { getAuxCardEnabled, getHires, memGet, memory, setAuxCardEnabled, updateAddressTables } from "./memory"
+import { getAuxCardEnabled, getHires, memGet, memSet, memory, setAuxCardEnabled, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, doStepOver, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { getCurrentDriveState } from "./devices/drivestate"
 import * as worker2main from "./worker2main"
 import { getSiriusJoyport } from "./devices/sirius_joyport"
+
+const getExecutionSnapshot = () => {
+  const execution = getExternalMachineState().execution
+  if (!execution) throw new Error("Expected an execution snapshot")
+  return execution
+}
 
 // Make sure we don't accidentally leave debug mode on.
 test("debugMode", () => {
@@ -333,6 +339,194 @@ test("run changes complete after publishing their state", () => {
     passMachineState.mockRestore()
     passOperationResult.mockRestore()
     doSetRunMode(previousState.runMode)
+  }
+})
+
+test("execution snapshots record transitions and the breakpoint that stopped execution", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const previousState = getExternalMachineState()
+  const previousBytes = memory.slice(0x6000, 0x6002)
+  const breakpoints = new BreakpointMap()
+  const breakpoint = BreakpointNew()
+  breakpoint.address = 0x6001
+  breakpoint.once = true
+  breakpoints.set(breakpoint.address, breakpoint)
+  const failureBreakpoint = BreakpointNew()
+  failureBreakpoint.address = 0x6002
+  breakpoints.set(failureBreakpoint.address, failureBreakpoint)
+
+  try {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    const initialSequence = getExecutionSnapshot().executionSequence
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    const running = getExecutionSnapshot()
+    expect(running).toEqual(expect.objectContaining({
+      executionSequence: initialSequence + 1,
+      state: "running",
+      pauseReason: null,
+      breakpoint: null,
+    }))
+
+    memory.set([0xEA, 0xEA], 0x6000)
+    setPC(0x6000)
+    s6502.Accum = 0x41
+    s6502.XReg = 0x42
+    s6502.YReg = 0x43
+    s6502.StackPtr = 0xF0
+    s6502.PStatus = 0x24
+    doSetBreakpoints(breakpoints)
+    expect(processInstruction()).toEqual(2)
+    expect(processInstruction()).toEqual(-1)
+
+    const stopped = getExecutionSnapshot()
+    expect(stopped).toEqual(expect.objectContaining({
+      executionSequence: running.executionSequence + 1,
+      state: "paused",
+      pauseReason: "breakpoint",
+      breakpoint: {breakpointId: "bp:24577", address: 0x6001},
+      PC: 0x6001,
+      A: 0x41,
+      X: 0x42,
+      Y: 0x43,
+      S: 0xF0,
+      PStatus: 0x24,
+      machineName: previousState.machineName,
+      memoryConfiguration: expect.objectContaining({ramWorksKb: previousState.extraRamSize}),
+    }))
+    expect(breakpointMap.has(0x6001)).toBe(false)
+    expect(breakpointMap.has(0x6002)).toBe(true)
+
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    expect(getExecutionSnapshot().executionSequence).toEqual(stopped.executionSequence)
+
+    doSetRunMode(RUN_MODE.NEED_BOOT, false)
+    expect(getExternalMachineState().execution).toEqual(stopped)
+    doSetRunMode(RUN_MODE.NEED_RESET, false)
+    expect(getExternalMachineState().execution).toEqual(stopped)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    expect(getExternalMachineState().execution).toEqual(expect.objectContaining({
+      executionSequence: stopped.executionSequence + 1,
+      state: "running",
+      pauseReason: null,
+    }))
+
+    const runningSequence = getExecutionSnapshot().executionSequence
+    doSetRunMode(RUN_MODE.NEED_BOOT, false)
+    doSetRunMode(RUN_MODE.NEED_RESET, false)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    expect(getExecutionSnapshot().executionSequence).toEqual(runningSequence)
+
+  } finally {
+    doSetBreakpoints(new BreakpointMap())
+    memory.set(previousBytes, 0x6000)
+    doSetRunMode(previousState.runMode, false)
+    resetCpuSpeedForTesting()
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
+})
+
+test("media-driven idle transitions publish one authoritative idle stop", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const previousRunMode = getExternalMachineState().runMode
+
+  try {
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    const runningSequence = getExecutionSnapshot().executionSequence
+    doSetRunMode(RUN_MODE.IDLE, false)
+    const idle = getExecutionSnapshot()
+    expect(idle).toEqual(expect.objectContaining({
+      executionSequence: runningSequence + 1,
+      state: "paused",
+      pauseReason: "idle",
+      breakpoint: null,
+    }))
+
+    doSetRunMode(RUN_MODE.IDLE, false)
+    expect(getExternalMachineState().execution).toEqual(idle)
+    doSetRunMode(RUN_MODE.NEED_BOOT, false)
+    expect(getExternalMachineState().execution).toEqual(idle)
+    doSetRunMode(RUN_MODE.NEED_RESET, false)
+    expect(getExternalMachineState().execution).toEqual(idle)
+  } finally {
+    doSetRunMode(previousRunMode, false)
+    resetCpuSpeedForTesting()
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
+})
+
+test("execution snapshots identify the watchpoint that stopped execution", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const watchpointAddress = 0x03A4
+  const previousByte = memGet(watchpointAddress, false)
+  const previousProgram = memory.slice(0x6000, 0x6003)
+  const watchpoints = new BreakpointMap()
+  const watchpoint = BreakpointNew()
+  watchpoint.address = watchpointAddress
+  watchpoint.watchpoint = true
+  watchpoints.set(watchpointAddress, watchpoint)
+
+  try {
+    doSetBreakpoints(watchpoints)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    memory.set([0x20, 0x00, 0x60], 0x6000)
+    setPC(0x6000)
+    memSet(watchpointAddress, 0x5A)
+    doStepOver()
+    expect(getExternalMachineState().execution).toEqual(expect.objectContaining({
+      state: "paused",
+      pauseReason: "watchpoint",
+      breakpoint: {breakpointId: `bp:${watchpointAddress}`, address: watchpointAddress},
+    }))
+  } finally {
+    doSetBreakpoints(new BreakpointMap())
+    memory.set(previousProgram, 0x6000)
+    memSet(watchpointAddress, previousByte)
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    resetCpuSpeedForTesting()
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
+})
+
+test("execution snapshots report hidden stepping traps as steps", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const previousState = getExternalMachineState()
+  const previousBytes = memory.slice(0x6000, 0x6003)
+  const breakpoints = new BreakpointMap()
+  const stepTrap = BreakpointNew()
+  stepTrap.address = 0x6002
+  stepTrap.hidden = true
+  stepTrap.once = true
+  breakpoints.set(stepTrap.address, stepTrap)
+
+  try {
+    doSetBreakpoints(breakpoints)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    memory.set([0xA9, 0x00, 0xEA], 0x6000)
+    setPC(0x6000)
+    expect(processInstruction()).toEqual(2)
+    expect(s6502.PC).toEqual(0x6002)
+    expect(breakpointMap.has(0x6002)).toEqual(true)
+    expect(processInstruction()).toEqual(-1)
+    expect(getExternalMachineState().execution).toEqual(expect.objectContaining({
+      state: "paused",
+      pauseReason: "step",
+      breakpoint: null,
+      PC: 0x6002,
+    }))
+  } finally {
+    doSetBreakpoints(new BreakpointMap())
+    memory.set(previousBytes, 0x6000)
+    doSetRunMode(previousState.runMode, false)
+    resetCpuSpeedForTesting()
+    jest.clearAllTimers()
+    jest.useRealTimers()
   }
 })
 

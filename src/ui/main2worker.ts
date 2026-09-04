@@ -22,6 +22,10 @@ let worker: Worker | null = null
 let saveStateCallback: (sState: EmulatorSaveState) => void
 let bootCallback: (() => void) | null = null
 let serialConfigCallback: ((config: SerialConfig) => void) | null = null
+let executionStateCallback: ((execution: ExecutionSnapshot) => void) | null = null
+let lastExecutionSequence = -1
+let executionSequenceOffset = 0
+let resetExecutionSequence = false
 let nextWorkerOperationId = 0
 const pendingWorkerOperations = new Map<number, {
   resolve: (value: MessagePayload | undefined) => void,
@@ -60,7 +64,9 @@ const resolveWorkerOperation = ({ operationId, error, value }: WorkerOperationRe
 }
 
 export const setMain2Worker = (workerIn: Worker) => {
+  resetExecutionSequence = worker !== null && worker !== workerIn
   worker = workerIn
+  machineState.execution = undefined
 }
 
 export const setBootCallback = (callback: () => void) => {
@@ -69,6 +75,11 @@ export const setBootCallback = (callback: () => void) => {
 
 export const setSerialConfigCallback = (callback: (config: SerialConfig) => void) => {
   serialConfigCallback = callback
+}
+
+export const setExecutionStateCallback = (callback: (execution: ExecutionSnapshot) => void) => {
+  executionStateCallback = callback
+  if (machineState.execution) callback(machineState.execution)
 }
 
 const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload, operationId?: number) => {
@@ -414,7 +425,22 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
         }
         emulatorSoundEnable(newState.runMode === RUN_MODE.RUNNING)
       }
-      machineState = newState
+      let execution = newState.execution
+      if (execution) {
+        if (resetExecutionSequence) {
+          executionSequenceOffset = lastExecutionSequence + 1 - execution.executionSequence
+          resetExecutionSequence = false
+        }
+        execution = {
+          ...execution,
+          executionSequence: execution.executionSequence + executionSequenceOffset,
+        }
+      }
+      machineState = {...newState, execution}
+      if (execution && execution.executionSequence > lastExecutionSequence) {
+        lastExecutionSequence = execution.executionSequence
+        executionStateCallback?.(execution)
+      }
       const helpText = getHelpText()
       return {speed: machineState.cpuSpeed, helptext: helpText}
     }
@@ -566,6 +592,10 @@ export const handleGetShowDebugTab = () => {
 
 export const handleGetState6502 = () => {
   return machineState.s6502
+}
+
+export const handleGetExecution = () => {
+  return machineState.execution
 }
 
 export const handleGetTextPage = () => {

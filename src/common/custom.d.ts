@@ -189,6 +189,7 @@ type MachineState = {
   cout: number,
   cpuSpeed: number,
   extraRamSize: number,
+  execution?: ExecutionSnapshot,
   hires: Uint8Array,
   iTempState: number,
   isDebugging: boolean,
@@ -212,6 +213,40 @@ type MachineState = {
   veraSlot: VERA_SLOT,
   vidhdActive?: boolean,
   zeroPage: Uint8Array
+}
+
+type ExecutionPauseReason =
+  "idle" |
+  "explicit" |
+  "breakpoint" |
+  "watchpoint" |
+  "step" |
+  "cycle-limit"
+
+type ExecutionStopDescriptor = {
+  reason: Exclude<ExecutionPauseReason, "idle">,
+  breakpointAddress?: number,
+}
+
+type ExecutionSnapshot = {
+  executionSequence: number,
+  state: "running" | "paused",
+  pauseReason: ExecutionPauseReason | null,
+  breakpoint: {
+    breakpointId: string,
+    address: number,
+  } | null,
+  PC: number,
+  A: number,
+  X: number,
+  Y: number,
+  S: number,
+  PStatus: number,
+  machineName: MACHINE_NAME,
+  memoryConfiguration: {
+    slot3Card: SLOT_CARD_ID,
+    ramWorksKb: number,
+  },
 }
 
 type UIState = {

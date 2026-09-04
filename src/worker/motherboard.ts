@@ -61,6 +61,10 @@ export const getCpuRunMode = () => cpuRunMode
 
 let pendingRunModeOperation: number | undefined
 let cyclesToRun = 0
+let executionSequence = 0
+let executionState: "running" | "paused" = "paused"
+let executionPauseReason: ExecutionPauseReason | null = "idle"
+let executionBreakpointAddress: number | null = null
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
 let veraSlot: VERA_SLOT = 0
@@ -550,8 +554,9 @@ export const doStepInto = () => {
   }
   // Remove all tracelog values if we are no longer tracing.
   if (!tracing) clearTracelog()
-  processInstruction(tracing ? updateTrace : null)
-  doSetRunMode(RUN_MODE.PAUSED)
+  if (processInstruction(tracing ? updateTrace : null) !== -1) {
+    doSetRunMode(RUN_MODE.PAUSED, true, undefined, {reason: "step"})
+  }
 }
 
 export const doStepOver = () => {
@@ -564,8 +569,7 @@ export const doStepOver = () => {
     // Remove all tracelog values if we are no longer tracing.
     if (!tracing) clearTracelog()
     // If we're at a JSR then briefly step in, then step out.
-    processInstruction(tracing ? updateTrace : null)
-    doStepOut()
+    if (processInstruction(tracing ? updateTrace : null) !== -1) doStepOut()
   } else {
     // Otherwise just do a single step.
     doStepInto()
@@ -591,6 +595,7 @@ export const doSetRunMode = (
   cpuRunModeIn: RUN_MODE,
   doShowDebugTab = true,
   operationId?: number,
+  stop?: ExecutionStopDescriptor,
 ) => {
   if (pendingRunModeOperation !== undefined && pendingRunModeOperation !== operationId) {
     passWorkerOperationResult(pendingRunModeOperation, "Worker operation was superseded")
@@ -602,6 +607,28 @@ export const doSetRunMode = (
     showDebugTab = true
   }
   cpuRunMode = cpuRunModeIn
+  if (cpuRunMode === RUN_MODE.RUNNING && executionState !== "running") {
+    executionSequence++
+    executionState = "running"
+    executionPauseReason = null
+    executionBreakpointAddress = null
+  } else if (
+    cpuRunMode === RUN_MODE.PAUSED
+    && (executionState !== "paused" || stop !== undefined)
+  ) {
+    executionSequence++
+    executionState = "paused"
+    executionPauseReason = stop?.reason ?? "explicit"
+    executionBreakpointAddress = stop?.breakpointAddress ?? null
+  } else if (
+    cpuRunMode === RUN_MODE.IDLE
+    && (executionState !== "paused" || executionPauseReason !== "idle")
+  ) {
+    executionSequence++
+    executionState = "paused"
+    executionPauseReason = "idle"
+    executionBreakpointAddress = null
+  }
   if (cpuRunMode === RUN_MODE.PAUSED) {
     syncSoftSwitchStatusFlags()
     if (gameSetupTimerID) {
@@ -737,6 +764,26 @@ export const getExternalMachineState = () => {
     cout: memGet(0x0039, false) << 8 | memGet(0x0038, false),
     cpuSpeed: cpuSpeed,
     extraRamSize: 64 * (RamWorksMaxBank + 1),
+    execution: {
+      executionSequence,
+      state: executionState,
+      pauseReason: executionPauseReason,
+      breakpoint: executionBreakpointAddress === null ? null : {
+        breakpointId: `bp:${executionBreakpointAddress}`,
+        address: executionBreakpointAddress,
+      },
+      PC: s6502.PC,
+      A: s6502.Accum,
+      X: s6502.XReg,
+      Y: s6502.YReg,
+      S: s6502.StackPtr,
+      PStatus: s6502.PStatus,
+      machineName,
+      memoryConfiguration: {
+        slot3Card: currentSlotConfig[3],
+        ramWorksKb: 64 * (RamWorksMaxBank + 1),
+      },
+    },
     hires: getHires(),
     iTempState: getTempStateIndex(),
     isDebugging: isDebugging,
@@ -852,7 +899,7 @@ const doAdvance6502 = () => {
     }
     if (cyclesToRun > 0 && (s6502.cycleCount - cycleToRunStart) >= cyclesToRun) {
       cyclesToRun = 0
-      doSetRunMode(RUN_MODE.PAUSED)
+      doSetRunMode(RUN_MODE.PAUSED, true, undefined, {reason: "cycle-limit"})
       break
     }
     if (cycleTotal >= cpuCyclesPerRefresh) {

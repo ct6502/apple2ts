@@ -13,6 +13,20 @@ jest.mock("../main2worker", () => ({
   handleCanGoBackward: () => false,
   handleCanGoForward: () => false,
   handleGetC800Slot: () => 0,
+  handleGetExecution: () => ({
+    executionSequence: 0,
+    state: "paused",
+    pauseReason: "idle",
+    breakpoint: null,
+    PC: 0,
+    A: 0,
+    X: 0,
+    Y: 0,
+    S: 0,
+    PStatus: 0,
+    machineName: "APPLE2EE",
+    memoryConfiguration: {slot3Card: "aux", ramWorksKb: 64},
+  }),
   handleGetIsDebugging: () => false,
   handleGetMachineName: () => "APPLE2EE",
   handleGetMemSize: () => 64,
@@ -49,6 +63,7 @@ jest.mock("../main2worker", () => ({
   passSetRunMode: jest.fn(),
   requestSetRunMode: jest.fn(),
   requestLoadBinary: jest.fn(),
+  setExecutionStateCallback: jest.fn(),
 }))
 
 jest.mock("../localstorage", () => ({
@@ -88,6 +103,14 @@ const mockPassSetRunMode = jest.mocked(passSetRunMode)
 const mockRequestEjectDisk = jest.mocked(requestEjectDisk)
 const mockRequestSetDiskFromURL = jest.mocked(requestSetDiskFromURL)
 const mockRequestMountDiskFromBuffer = jest.mocked(requestMountDiskFromBuffer)
+
+test("remote-control status includes the worker execution snapshot", async () => {
+  await expect(executeCommand("getStatus", {})).resolves.toEqual(expect.objectContaining({
+    machine: expect.objectContaining({
+      execution: expect.objectContaining({executionSequence: 0, pauseReason: "idle"}),
+    }),
+  }))
+})
 
 describe("remote-control media confirmation", () => {
   beforeEach(() => jest.clearAllMocks())

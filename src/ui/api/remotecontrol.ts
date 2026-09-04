@@ -5,6 +5,7 @@ import {
   handleCanGoBackward,
   handleCanGoForward,
   handleGetC800Slot,
+  handleGetExecution,
   handleGetIsDebugging,
   handleGetMachineName,
   handleGetMemSize,
@@ -42,6 +43,7 @@ import {
   passSetRunMode,
   requestSetRunMode,
   requestLoadBinary,
+  setExecutionStateCallback,
 } from "../main2worker"
 import { getBinaryLoadError, runBinary } from "../binaryload"
 import {
@@ -181,11 +183,15 @@ const getDriveSummary = () => {
   })
 }
 
+let statusSequence = 0
+
 const collectStatus = () => {
   return {
+    statusSequence: statusSequence++,
     timestamp: Date.now(),
     machine: {
       runMode: handleGetRunMode(),
+      execution: handleGetExecution(),
       speedMode: handleGetSpeedMode(),
       machineName: handleGetMachineName(),
       ramWorksKb: handleGetMemSize(),
@@ -318,6 +324,10 @@ const postState = async () => {
     state: collectStatus(),
   }))
 }
+
+setExecutionStateCallback(() => {
+  void postState()
+})
 
 const postReply = async (commandId: string, ok: boolean, result: unknown, error = "") => {
   if (!clientId) return
