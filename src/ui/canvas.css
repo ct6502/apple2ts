@@ -4,6 +4,7 @@
   vertical-align: middle;
   padding-bottom: 0px;
   position: relative;
+  width: max-content;
 }
 
 .canvas-text::before {
