@@ -1149,6 +1149,10 @@ msgctxt "disk.loadDisk"
 msgid "Load Disk"
 msgstr "加载磁盘"
 
+msgctxt "disk.loadDiskFrom"
+msgid "Load Disk From"
+msgstr ""
+
 #, fuzzy
 msgctxt "disk.loadDiskFromDevice"
 msgid "Load Disk"
@@ -1163,6 +1167,22 @@ msgstr "从设备加载磁盘 (只读)"
 msgctxt "disk.loadDiskFromDeviceReadWrite"
 msgid "Load Disk from Device (Read/Write)"
 msgstr "从设备加载磁盘 (读写)"
+
+msgctxt "disk.InternetArchive"
+msgid "Internet Archive"
+msgstr ""
+
+msgctxt "disk.DemoZoo"
+msgid "DemoZoo"
+msgstr ""
+
+msgctxt "disk.OneDrive"
+msgid "OneDrive"
+msgstr ""
+
+msgctxt "disk.GoogleDrive"
+msgid "Google Drive"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.loadDiskFromInternetArchive"

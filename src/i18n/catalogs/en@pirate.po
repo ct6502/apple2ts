@@ -1154,6 +1154,10 @@ msgctxt "disk.loadDisk"
 msgid "Load Disk"
 msgstr "Load Disk Aboard"
 
+msgctxt "disk.loadDiskFrom"
+msgid "Load Disk From"
+msgstr ""
+
 msgctxt "disk.loadDiskFromDevice"
 msgid "Load Disk"
 msgstr "Load Disk from Yer Device"
@@ -1165,6 +1169,22 @@ msgstr "Load Disk from Device (Locked Down)"
 msgctxt "disk.loadDiskFromDeviceReadWrite"
 msgid "Load Disk from Device (Read/Write)"
 msgstr "Load Disk from Device (Editable)"
+
+msgctxt "disk.InternetArchive"
+msgid "Internet Archive"
+msgstr ""
+
+msgctxt "disk.DemoZoo"
+msgid "DemoZoo"
+msgstr ""
+
+msgctxt "disk.OneDrive"
+msgid "OneDrive"
+msgstr ""
+
+msgctxt "disk.GoogleDrive"
+msgid "Google Drive"
+msgstr ""
 
 msgctxt "disk.loadDiskFromInternetArchive"
 msgid "Load Disk from Internet Archive"

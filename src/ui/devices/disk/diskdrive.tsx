@@ -7,13 +7,14 @@ import {
   doSetUIDriveProps
 } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faRotate, faStar, faSync } from "@fortawesome/free-solid-svg-icons"
+import { faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen,
+  faGlobe,
+  faLock, faPause, faRotate, faStar, faSync } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import React from "react"
 import { CLOUD_SYNC, crc32, FILE_SUFFIXES_DISK, uint32toBytes } from "../../../common/utility"
 import PopupMenu from "../../controls/popupmenu"
-import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
 import { svgDemoZooLogo } from "../../img/icon_demozoo"
 import { passSetDriveProps, handleGetSlotConfig } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
@@ -26,6 +27,7 @@ import { determineVtocType, VTOC_REFRESH } from "../../../common/prodos_hdv"
 import { isFileSystemApiSupported } from "../../ui_utilities"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { convertwoz2dsk } from "../../../common/convertwoz2dsk"
+import { faInternetArchive } from "@fortawesome/free-brands-svg-icons"
 
 export const DISK_DRIVE_LABELS = ["S7,D1", "S7,D2", "S6,D1", "S6,D2"]
 
@@ -297,6 +299,44 @@ const DiskDrive = (props: DiskDriveProps) => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const diskLabelClass = `disk-label${dprops.diskHasChanges ? " disk-label-unsaved" : ""}${isTouchDevice ? " disk-label-small" : ""}`
 
+  const loadDiskSubMenu = [
+    {
+      label: t("disk.InternetArchive"),
+      icon: faInternetArchive,
+      onClick: () => {
+        setPopupLocation(undefined)
+        showInternetArchivePicker()
+      }
+    },
+    {
+      label: t("disk.DemoZoo"),
+      svg: svgDemoZooLogo,
+      isDisabled: !demoZooEnabled,
+      onClick: () => {
+        setPopupLocation(undefined)
+        setDemoZooDialogOpen(true)
+      }
+    },
+    {
+      label: t("disk.OneDrive"),
+      icon: faCloud,
+      isVisible: () => { return !isElectron },
+      onClick: () => {
+        setPopupLocation(undefined)
+        loadDiskFromCloudDrive(new OneDriveCloudDrive(), dprops.index)
+      }
+    },
+    {
+      label: t("disk.GoogleDrive"),
+      icon: faCloud,
+      isVisible: () => { return !isElectron },
+      onClick: () => {
+        setPopupLocation(undefined)
+        loadDiskFromCloudDrive(new GoogleDrive(), dprops.index)
+      }
+    },
+  ]
+
   return (
     <span
       className="flex-column"
@@ -353,31 +393,9 @@ const DiskDrive = (props: DiskDriveProps) => {
             onClick: () => { props.setShowFileOpenDialog(true, props.index) }
           },
           {
-            label: t("disk.loadDiskFromInternetArchive"),
-            svg: svgInternetArchiveLogo,
-            onClick: () => {
-              showInternetArchivePicker()
-            }
-          },
-          {
-            label: t("disk.loadDiskFromDemoZoo"),
-            svg: svgDemoZooLogo,
-            isDisabled: !demoZooEnabled,
-            onClick: () => {
-              setDemoZooDialogOpen(true)
-            }
-          },
-          {
-            label: t("disk.loadDiskFromOneDrive"),
-            icon: faCloud,
-            isVisible: () => { return !isElectron },
-            onClick: () => { loadDiskFromCloudDrive(new OneDriveCloudDrive(), dprops.index) }
-          },
-          {
-            label: t("disk.loadDiskFromGoogleDrive"),
-            icon: faCloud,
-            isVisible: () => { return !isElectron },
-            onClick: () => { loadDiskFromCloudDrive(new GoogleDrive(), dprops.index) }
+              label: t("disk.loadDiskFrom"),
+              icon: faGlobe,
+              subMenu: loadDiskSubMenu
           },
           {
             label: "-"

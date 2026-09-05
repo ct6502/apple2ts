@@ -1223,6 +1223,10 @@ msgctxt "disk.loadDisk"
 msgid "Load Disk"
 msgstr "Disk laden"
 
+msgctxt "disk.loadDiskFrom"
+msgid "Load Disk From"
+msgstr ""
+
 #, fuzzy
 msgctxt "disk.loadDiskFromDevice"
 msgid "Load Disk"
@@ -1237,6 +1241,22 @@ msgstr "Disk vom Gerät laden (Nur Lesen)"
 msgctxt "disk.loadDiskFromDeviceReadWrite"
 msgid "Load Disk from Device (Read/Write)"
 msgstr "Disk vom Gerät laden (Lesen/Schreiben)"
+
+msgctxt "disk.InternetArchive"
+msgid "Internet Archive"
+msgstr ""
+
+msgctxt "disk.DemoZoo"
+msgid "DemoZoo"
+msgstr ""
+
+msgctxt "disk.OneDrive"
+msgid "OneDrive"
+msgstr ""
+
+msgctxt "disk.GoogleDrive"
+msgid "Google Drive"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.loadDiskFromInternetArchive"

@@ -1205,6 +1205,10 @@ msgctxt "disk.loadDisk"
 msgid "Load Disk"
 msgstr "ディスクを読み込む"
 
+msgctxt "disk.loadDiskFrom"
+msgid "Load Disk From"
+msgstr ""
+
 #, fuzzy
 msgctxt "disk.loadDiskFromDevice"
 msgid "Load Disk"
@@ -1219,6 +1223,22 @@ msgstr "デバイスからディスクを読み込み (読み取り専用)"
 msgctxt "disk.loadDiskFromDeviceReadWrite"
 msgid "Load Disk from Device (Read/Write)"
 msgstr "デバイスからディスクを読み込み (読み書き)"
+
+msgctxt "disk.InternetArchive"
+msgid "Internet Archive"
+msgstr ""
+
+msgctxt "disk.DemoZoo"
+msgid "DemoZoo"
+msgstr ""
+
+msgctxt "disk.OneDrive"
+msgid "OneDrive"
+msgstr ""
+
+msgctxt "disk.GoogleDrive"
+msgid "Google Drive"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.loadDiskFromInternetArchive"

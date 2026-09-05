@@ -1032,6 +1032,10 @@ msgctxt "disk.loadDisk"
 msgid "Load Disk"
 msgstr ""
 
+msgctxt "disk.loadDiskFrom"
+msgid "Load Disk From"
+msgstr ""
+
 msgctxt "disk.loadDiskFromDevice"
 msgid "Load Disk"
 msgstr ""
@@ -1042,6 +1046,22 @@ msgstr ""
 
 msgctxt "disk.loadDiskFromDeviceReadWrite"
 msgid "Load Disk from Device (Read/Write)"
+msgstr ""
+
+msgctxt "disk.InternetArchive"
+msgid "Internet Archive"
+msgstr ""
+
+msgctxt "disk.DemoZoo"
+msgid "DemoZoo"
+msgstr ""
+
+msgctxt "disk.OneDrive"
+msgid "OneDrive"
+msgstr ""
+
+msgctxt "disk.GoogleDrive"
+msgid "Google Drive"
 msgstr ""
 
 msgctxt "disk.loadDiskFromInternetArchive"
