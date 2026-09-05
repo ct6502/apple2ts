@@ -69,11 +69,11 @@ const downloadDisk = (diskData: Uint8Array, filename: string, isHardDrive: boole
   document.body.removeChild(link)
 }
 
-export const downloadDiskToDevice = (index: number) => {
+export const downloadDiskToDevice = (index: number, downloadWoz = false) => {
   const dprops = handleGetDriveProps(index)
   if (dprops.diskData.length === 0) return
 
-  downloadDisk(dprops.diskData, dprops.filename, dprops.hardDrive, false)
+  downloadDisk(dprops.diskData, dprops.filename, dprops.hardDrive, downloadWoz)
   const nextProps: DriveProps = { ...dprops, diskHasChanges: false }
   doSetUIDriveProps(nextProps)
 }
@@ -346,199 +346,200 @@ const DiskDrive = (props: DiskDriveProps) => {
           setPopupLocation(undefined)
         }}
         menuItems={[[
-            // Disk load
-            {
-              label: t("disk.loadDisk"),
-              icon: faFolderOpen,
-              onClick: () => { props.setShowFileOpenDialog(true, props.index) }
-            },
-            {
-              label: t("disk.loadDiskFromInternetArchive"),
-              svg: svgInternetArchiveLogo,
-              onClick: () => {
-                showInternetArchivePicker()
+          // Disk load
+          {
+            label: t("disk.loadDisk"),
+            icon: faFolderOpen,
+            onClick: () => { props.setShowFileOpenDialog(true, props.index) }
+          },
+          {
+            label: t("disk.loadDiskFromInternetArchive"),
+            svg: svgInternetArchiveLogo,
+            onClick: () => {
+              showInternetArchivePicker()
+            }
+          },
+          {
+            label: t("disk.loadDiskFromDemoZoo"),
+            svg: svgDemoZooLogo,
+            isDisabled: !demoZooEnabled,
+            onClick: () => {
+              setDemoZooDialogOpen(true)
+            }
+          },
+          {
+            label: t("disk.loadDiskFromOneDrive"),
+            icon: faCloud,
+            isVisible: () => { return !isElectron },
+            onClick: () => { loadDiskFromCloudDrive(new OneDriveCloudDrive(), dprops.index) }
+          },
+          {
+            label: t("disk.loadDiskFromGoogleDrive"),
+            icon: faCloud,
+            isVisible: () => { return !isElectron },
+            onClick: () => { loadDiskFromCloudDrive(new GoogleDrive(), dprops.index) }
+          },
+          {
+            label: "-"
+          },
+          {
+            label: t("disk.writeProtectDisk"),
+            icon: faLock,
+            isDisabled: !dprops.filename || dprops.filename.length === 0,
+            isSelected: () => { return dprops.isWriteProtected },
+            onClick: () => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }
+          },
+          {
+            label: "-",
+          },
+          {
+            label: t("disk.downloadDisk"),
+            icon: faDownload,
+            isDisabled: dprops.filename.length === 0,
+            onClick: () => {
+              if (dprops.diskData.length > 0) {
+                downloadDisk(dprops.diskData, filename, dprops.hardDrive, false)
+                const dpropsTmp: DriveProps = { ...dprops }
+                dpropsTmp.diskHasChanges = false
+                doSetUIDriveProps(dpropsTmp)
               }
-            },
-            {
-              label: t("disk.loadDiskFromDemoZoo"),
-              svg: svgDemoZooLogo,
-              isDisabled: !demoZooEnabled,
-              onClick: () => {
-                setDemoZooDialogOpen(true)
+            }
+          },
+          {
+            label: t("disk.downloadWoz"),
+            icon: faDownload,
+            isDisabled: dprops.filename.length === 0 || dprops.hardDrive || dprops.filename.toLowerCase().endsWith(".woz"),
+            onClick: () => {
+              if (dprops.diskData.length > 0) {
+                downloadDisk(dprops.diskData, filename, dprops.hardDrive, true)
+                const dpropsTmp: DriveProps = { ...dprops }
+                dpropsTmp.diskHasChanges = false
+                doSetUIDriveProps(dpropsTmp)
               }
-            },
-            {
-              label: t("disk.loadDiskFromOneDrive"),
-              icon: faCloud,
-              isVisible: () => { return !isElectron },
-              onClick: () => { loadDiskFromCloudDrive(new OneDriveCloudDrive(), dprops.index) }
-            },
-            {
-              label: t("disk.loadDiskFromGoogleDrive"),
-              icon: faCloud,
-              isVisible: () => { return !isElectron },
-              onClick: () => { loadDiskFromCloudDrive(new GoogleDrive(), dprops.index) }
-            },
-            {
-              label: "-"
-            },
-            {
-              label: t("disk.writeProtectDisk"),
-              icon: faLock,
-              isDisabled: !dprops.filename || dprops.filename.length === 0,
-              isSelected: () => { return dprops.isWriteProtected },
-              onClick: () => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }
-            },
-            {
-              label: "-",
-            },
-            {
-              label: t("disk.downloadDisk"),
-              icon: faDownload,
-              isDisabled: dprops.filename.length === 0,
-              onClick: () => {
-                if (dprops.diskData.length > 0) {
-                  downloadDisk(dprops.diskData, filename, dprops.hardDrive, false)
-                  const dpropsTmp: DriveProps = { ...dprops }
-                  dpropsTmp.diskHasChanges = false
-                  doSetUIDriveProps(dpropsTmp)
-                }
-              }
-            },
-            {
-              label: t("disk.downloadWoz"),
-              icon: faDownload,
-              isDisabled: dprops.filename.length === 0 || dprops.hardDrive || dprops.filename.toLowerCase().endsWith(".woz"),
-              onClick: () => {
-                if (dprops.diskData.length > 0) {
-                  downloadDisk(dprops.diskData, filename, dprops.hardDrive, true)
-                  const dpropsTmp: DriveProps = { ...dprops }
-                  dpropsTmp.diskHasChanges = false
-                  doSetUIDriveProps(dpropsTmp)
-                }
-              }
-            },
-            {
-              label: t("disk.downloadAndEjectDisk"),
-              icon: faDownload,
-              isDisabled: dprops.filename.length === 0,
-              onClick: () => {
-                if (dprops.diskData.length > 0) {
-                  downloadDisk(dprops.diskData, filename, dprops.hardDrive, false)
-                  const dpropsTmp: DriveProps = { ...dprops }
-                  dpropsTmp.diskHasChanges = false
-                  doSetUIDriveProps(dpropsTmp)
-                  ejectDisk(props.index)
-                }
-              }
-            },
-            {
-              label: t("disk.ejectDisk"),
-              icon: faEject,
-              isDisabled: dprops.filename.length === 0,
-              onClick: () => {
+            }
+          },
+          {
+            label: t("disk.downloadAndEjectDisk"),
+            icon: faDownload,
+            isDisabled: dprops.filename.length === 0,
+            onClick: () => {
+              if (dprops.diskData.length > 0) {
+                downloadDisk(dprops.diskData, filename, dprops.hardDrive, false)
+                const dpropsTmp: DriveProps = { ...dprops }
+                dpropsTmp.diskHasChanges = false
+                doSetUIDriveProps(dpropsTmp)
                 ejectDisk(props.index)
               }
-            },
-            {
-              label: "-"
-            },
-            {
-              label: t("disk.saveDiskToDevice"),
-              icon: faFloppyDisk,
-              isDisabled: dprops.filename.length === 0,
-              isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle },
-              onClick: () => { showDiskSaveFilePicker(props.index) }
-            },
-            {
-              label: t("disk.saveDiskToOneDrive"),
-              icon: faCloud,
-              isDisabled: dprops.filename.length === 0,
-              isVisible: () => { return !isElectron },
-              onClick: () => { saveDiskToCloud(new OneDriveCloudDrive()) }
-            },
-            {
-              label: t("disk.saveDiskToGoogleDrive"),
-              icon: faCloud,
-              isDisabled: dprops.filename.length === 0,
-              isVisible: () => { return !isElectron },
-              onClick: () => { saveDiskToCloud(new GoogleDrive()) }
-            },
-            {
-              label: t("disk.pauseSyncing"),
-              icon: faPause,
-              isDisabled: dprops.filename.length === 0,
-              isSelected: () => { return dprops.cloudData?.syncInterval == Number.MAX_VALUE },
-              onClick: () => {
-                if (dprops.cloudData) {
-                  const dpropsTmp: DriveProps = { ...dprops }
-                  if (dpropsTmp.cloudData) {
-                    dpropsTmp.cloudData.syncInterval = Number.MAX_VALUE
-                    doSetUIDriveProps(dpropsTmp)
-                  }
+            }
+          },
+          {
+            label: t("disk.ejectDisk"),
+            icon: faEject,
+            isDisabled: dprops.filename.length === 0,
+            onClick: () => {
+              ejectDisk(props.index)
+            }
+          },
+          {
+            label: "-"
+          },
+          {
+            label: t("disk.saveDiskToDevice"),
+            icon: faFloppyDisk,
+            isDisabled: dprops.filename.length === 0,
+            isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle },
+            onClick: () => { showDiskSaveFilePicker(props.index) }
+          },
+          {
+            label: t("disk.saveDiskToOneDrive"),
+            icon: faCloud,
+            isDisabled: dprops.filename.length === 0,
+            isVisible: () => { return !isElectron },
+            onClick: () => { saveDiskToCloud(new OneDriveCloudDrive()) }
+          },
+          {
+            label: t("disk.saveDiskToGoogleDrive"),
+            icon: faCloud,
+            isDisabled: dprops.filename.length === 0,
+            isVisible: () => { return !isElectron },
+            onClick: () => { saveDiskToCloud(new GoogleDrive()) }
+          },
+          {
+            label: t("disk.pauseSyncing"),
+            icon: faPause,
+            isDisabled: dprops.filename.length === 0,
+            isSelected: () => { return dprops.cloudData?.syncInterval == Number.MAX_VALUE },
+            onClick: () => {
+              if (dprops.cloudData) {
+                const dpropsTmp: DriveProps = { ...dprops }
+                if (dpropsTmp.cloudData) {
+                  dpropsTmp.cloudData.syncInterval = Number.MAX_VALUE
+                  doSetUIDriveProps(dpropsTmp)
                 }
               }
-            },
-            {
-              label: t("disk.syncNow"),
-              icon: faSync,
-              isDisabled: dprops.filename.length === 0,
-              isSelected: () => { return dprops.cloudData?.syncInterval == Number.MIN_VALUE },
-              onClick: () => {
-                if (dprops.cloudData) {
-                  switch (dprops.cloudData?.providerName) {
-                    case "OneDrive":
-                      updateCloudDrive(new OneDriveCloudDrive())
-                      break
-                    case "GoogleDrive":
-                      updateCloudDrive(new GoogleDrive())
-                      break
-                    default:
-                      console.error("Unknown cloud provider")
-                  }
+            }
+          },
+          {
+            label: t("disk.syncNow"),
+            icon: faSync,
+            isDisabled: dprops.filename.length === 0,
+            isSelected: () => { return dprops.cloudData?.syncInterval == Number.MIN_VALUE },
+            onClick: () => {
+              if (dprops.cloudData) {
+                switch (dprops.cloudData?.providerName) {
+                  case "OneDrive":
+                    updateCloudDrive(new OneDriveCloudDrive())
+                    break
+                  case "GoogleDrive":
+                    updateCloudDrive(new GoogleDrive())
+                    break
+                  default:
+                    console.error("Unknown cloud provider")
                 }
               }
-            },
+            }
+          },
 
-            // Disk is in drive
-            {
-              label: "-"
+          // Disk is in drive
+          {
+            label: "-"
+          },
+          {
+            label: t("disk.addDiskToCollection"),
+            icon: faStar,
+            isDisabled: () => {
+              const itemId = dprops.cloudData?.itemId
+              return !itemId || diskBookmarks.contains(itemId)
             },
-            {
-              label: t("disk.addDiskToCollection"),
-              icon: faStar,
-              isDisabled: () => {
-                const itemId = dprops.cloudData?.itemId
-                return !itemId || diskBookmarks.contains(itemId)
-              },
-              onClick: () => {
-                if (dprops.cloudData) {
-                  diskBookmarks.set({
-                    type: dprops.cloudData.downloadUrl ? DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE : DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE,
-                    id: dprops.cloudData.itemId,
-                    title: dprops.cloudData.fileName,
-                    screenshotUrl: getImageDataUrlFromCanvas(),
-                    lastUpdated: new Date(Date.now()),
-                    diskUrl: dprops.cloudData.downloadUrl,
-                    cloudData: dprops.cloudData,
-                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData),
-                    vtocVersion: VTOC_REFRESH
-                  })
-                }
+            onClick: () => {
+              if (dprops.cloudData) {
+                diskBookmarks.set({
+                  type: dprops.cloudData.downloadUrl ? DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE : DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE,
+                  id: dprops.cloudData.itemId,
+                  title: dprops.cloudData.fileName,
+                  screenshotUrl: getImageDataUrlFromCanvas(),
+                  lastUpdated: new Date(Date.now()),
+                  diskUrl: dprops.cloudData.downloadUrl,
+                  cloudData: dprops.cloudData,
+                  vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData),
+                  vtocVersion: VTOC_REFRESH
+                })
               }
+            }
+          },
+          {
+            label: t("disk.removeDiskFromCollection"),
+            icon: faStar,
+            isDisabled: () => {
+              const itemId = dprops.cloudData?.itemId
+              return !itemId || !diskBookmarks.contains(itemId)
             },
-            {
-              label: t("disk.removeDiskFromCollection"),
-              icon: faStar,
-              isDisabled: () => {
-                const itemId = dprops.cloudData?.itemId
-                return !itemId || !diskBookmarks.contains(itemId) },
-              onClick: () => {
-                if (dprops.cloudData && diskBookmarks.contains(dprops.cloudData.itemId)) {
-                  diskBookmarks.remove(dprops.cloudData.itemId)
-                }
+            onClick: () => {
+              if (dprops.cloudData && diskBookmarks.contains(dprops.cloudData.itemId)) {
+                diskBookmarks.remove(dprops.cloudData.itemId)
               }
-            },
+            }
+          },
 
         ]]}
       />

@@ -726,7 +726,9 @@
       "id": "diskDrives.{{driveIndex}}.writeProtected",
       "kind": "toggle",
       "labelKey": "disk.writeProtectDisk",
-      "defaultIndex": 0
+      "checkmarkIndex": 1,
+      "hideOptionValue": true,
+      "contextualActionLabelKey": "retroControl.save"
     },
     {
       "group": "diskTemplates",
@@ -751,6 +753,12 @@
       "id": "diskDrives.{{driveIndex}}.download",
       "kind": "action",
       "labelKey": "disk.downloadDisk"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.downloadWoz",
+      "kind": "action",
+      "labelKey": "disk.downloadWoz"
     },
     {
       "group": "diskTemplates",

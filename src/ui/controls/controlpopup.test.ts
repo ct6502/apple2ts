@@ -3,7 +3,8 @@ import { formatControlLabel, type ResolvedControl } from "./controlregistry"
 
 describe("shared control rendering", () => {
   test("adds separator em dashes only at runtime without spaces", () => {
-    expect(formatControlLabel("Sort Order", true)).toBe("—Sort Order—")
+    expect(formatControlLabel("Sort Order", true)).toBe("\uE093Sort Order\uE093")
+    expect(formatControlLabel("Sort Order", true, "-")).toBe("-Sort Order-")
     expect(formatControlLabel("Other", false)).toBe("Other")
   })
 

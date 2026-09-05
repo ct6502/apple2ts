@@ -149,8 +149,8 @@ type RegisteredControl<Context, Payload> = {
 const valueOf = <Context, Value>(value: ControlValue<Context, Value>, context: Context): Value =>
   typeof value === "function" ? (value as (context: Context) => Value)(context) : value
 
-export const formatControlLabel = (label: string, separator = false) =>
-  separator ? `—${label}—` : label
+export const formatControlLabel = (label: string, separator = false, separatorCharacter = "\uE093") =>
+  separator ? `${separatorCharacter}${label}${separatorCharacter}` : label
 
 export const inferControlKind = <Context, Payload>(metadata: ControlMetadata<Context, Payload>): ControlKind => {
   if (metadata.kind) return metadata.kind
