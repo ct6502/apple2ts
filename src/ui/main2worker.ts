@@ -285,6 +285,10 @@ export const passSetMemory = (address: number, value: number) => {
   doPostMessage(MSG_MAIN.SET_MEMORY, {address, value})
 }
 
+export const requestWriteMemory = (address: number, data: Uint8Array, timeoutMs = 5000) => {
+  return requestWorkerOperation(MSG_MAIN.WRITE_MEMORY, {address, data}, timeoutMs)
+}
+
 export const passRxCommData = (data: Uint8Array) => {
   doPostMessage(MSG_MAIN.COMM_DATA, data)
 }

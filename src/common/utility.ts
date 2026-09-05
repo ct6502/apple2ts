@@ -101,6 +101,7 @@ export enum MSG_MAIN {
   RUN_BINARY,
   LOAD_BINARY,
   GET_MEMORY_VIEW,
+  WRITE_MEMORY,
 }
 
 export const DEFAULT_SLOT_CONFIG: SlotConfig = {
