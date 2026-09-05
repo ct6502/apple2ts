@@ -383,6 +383,18 @@ export const requestMemorySearch = (
   timeoutMs = 5000,
 ) => requestWorkerOperation<MemorySearchResult>(MSG_MAIN.FIND_MEMORY, request, timeoutMs)
 
+export const requestSetMemoryWriteWatchpoint = (
+  request: MemoryViewRequest,
+  timeoutMs = 5000,
+) => requestWorkerOperation<MemoryWriteWatchpoint & {executionSequence: number}>(
+  MSG_MAIN.SET_MEMORY_WRITE_WATCHPOINT,
+  request,
+  timeoutMs,
+)
+
+export const requestClearMemoryWriteWatchpoint = (timeoutMs = 5000) =>
+  requestWorkerOperation<{cleared: boolean}>(MSG_MAIN.CLEAR_MEMORY_WRITE_WATCHPOINT, {}, timeoutMs)
+
 // This is a cached memory dump, updated whenever the main requests a new one.
 // Currently only used by the AI Agent, since it may want to look at memory
 // even when the emulator is not paused.

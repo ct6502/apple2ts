@@ -7,7 +7,7 @@ import { romBase64 as romBase64u } from "./roms/rom_2e_unenhanced"
 import { Buffer } from "buffer"
 // import { isDebugging } from "./motherboard";
 import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress } from "../common/utility"
-import { isWatchpoint, setWatchpointBreak } from "./cpu6502"
+import { isWatchpoint, observeMemoryWrite, setWatchpointBreak } from "./cpu6502"
 import { noSlotClock } from "./nsc"
 import { videoTerm } from "./devices/videoterm"
 import { vidhd } from "./devices/vidhd"
@@ -565,6 +565,7 @@ export const memSet = (addr: number, value: number) => {
   const page = addr >>> 8
   // debugSlot(4, addr, value)
   if (page === 0xC0) {
+    observeMemoryWrite(addr, value, "system", null)
     memSetSoftSwitch(addr, value)
   } else {
     if (addr === 0x37 && videoTerm.enabled) {
@@ -576,16 +577,27 @@ export const memSet = (addr: number, value: number) => {
       }
     }
     if (page >= 0xC1 && page <= 0xC7) {
+      observeMemoryWrite(addr, value, "system", null)
       checkSlotIO(addr, value)
     } else if (page >= 0xCC && page <= 0xCD && videoTerm.enabled) {
+      observeMemoryWrite(addr, value, "system", null)
       videoTerm.writeMemory(addr, value)
     } else if (addr === 0xCFFF) {
+      observeMemoryWrite(addr, value, "system", null)
       manageC800(0xFF)
     }
     const shifted = addressSetTable[page]
     // This will prevent us from setting slot ROM or motherboard ROM
     if (shifted < 0) return
-    memory[shifted + (addr & 255)] = value
+    const offset = shifted + (addr & 255)
+    const effectiveSpace = offset < 0x10000
+      ? "main" as const
+      : offset >= RamWorksMemoryStart ? "aux" as const : "system" as const
+    const effectiveAuxBank = effectiveSpace === "aux"
+      ? Math.floor((offset - RamWorksMemoryStart) / 0x10000)
+      : null
+    observeMemoryWrite(addr, value, effectiveSpace, effectiveAuxBank)
+    memory[offset] = value
   }
   if (isWatchpoint(addr, value, true)) {
     setWatchpointBreak(addr)

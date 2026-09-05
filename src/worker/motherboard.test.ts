@@ -3,7 +3,7 @@ import { getAuxCardEnabled, getHires, memGet, memSet, memory, setAuxCardEnabled,
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, doStepOver, doWriteMemory, findExternalMemory, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doClearMemoryWriteWatchpoint, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetCyclesToRun, doSetMachineName, doSetMemoryWriteWatchpoint, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, doStepInto, doStepOver, doWriteMemory, findExternalMemory, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
@@ -498,6 +498,188 @@ test("execution snapshots identify the watchpoint that stopped execution", () =>
     resetCpuSpeedForTesting()
     jest.clearAllTimers()
     jest.useRealTimers()
+  }
+})
+
+test("a bounded physical write watchpoint records the writer and coherent mapping", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const address = 0x03A5
+  const previousProgram = memory.slice(0x6000, 0x6006)
+  const previousByte = memory[address]
+
+  try {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    const armed = doSetMemoryWriteWatchpoint({
+      address: 0x03A4,
+      length: 4,
+      space: "main",
+    })
+    memory.set([0xA9, 0x5A, 0x8D, 0xA5, 0x03, 0xEA], 0x6000)
+    setPC(0x6000)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+
+    expect(processInstruction()).toBeGreaterThan(0)
+    expect(processInstruction()).toEqual(-1)
+
+    expect(memory[address]).toEqual(0x5A)
+    expect(getExternalMachineState().execution).toEqual(expect.objectContaining({
+      executionSequence: armed.executionSequence + 2,
+      state: "paused",
+      pauseReason: "watchpoint",
+      breakpoint: null,
+      memoryWrite: {
+        watchpointId: armed.watchpointId,
+        writerPC: 0x6002,
+        address,
+        value: 0x5A,
+        watchpointSpace: "main",
+        watchpointAuxBank: null,
+        effectiveSpace: "main",
+        effectiveAuxBank: null,
+        mapping: {
+          RAMRD: SWITCHES.RAMRD.isSet,
+          RAMWRT: SWITCHES.RAMWRT.isSet,
+          ALTZP: SWITCHES.ALTZP.isSet,
+          "80STORE": SWITCHES.STORE80.isSet,
+          PAGE2: SWITCHES.PAGE2.isSet,
+          HIRES: SWITCHES.HIRES.isSet,
+        },
+      },
+    }))
+    expect(doClearMemoryWriteWatchpoint()).toEqual({cleared: true})
+    expect(doClearMemoryWriteWatchpoint()).toEqual({cleared: false})
+  } finally {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    doClearMemoryWriteWatchpoint()
+    memory.set(previousProgram, 0x6000)
+    memory[address] = previousByte
+    resetCpuSpeedForTesting()
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
+})
+
+test.each([
+  ["step", () => doStepInto()],
+  ["cycle limit", () => {
+    doSetCyclesToRun(1)
+    resetCpuSpeedForTesting()
+    doSetRunMode(RUN_MODE.RUNNING, false)
+  }],
+])("a write watchpoint takes precedence over a competing %s stop", (_label, run) => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const address = 0x03A4
+  const previousProgram = memory.slice(0x6000, 0x6003)
+  const previousByte = memory[address]
+
+  try {
+    resetCpuSpeedForTesting()
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    doSetMemoryWriteWatchpoint({address, length: 1, space: "main"})
+    memory.set([0x8D, 0xA4, 0x03], 0x6000)
+    s6502.Accum = 0x5A
+    setPC(0x6000)
+
+    run()
+
+    expect(getExecutionSnapshot()).toEqual(expect.objectContaining({
+      state: "paused",
+      pauseReason: "watchpoint",
+      memoryWrite: expect.objectContaining({writerPC: 0x6000, address, value: 0x5A}),
+    }))
+  } finally {
+    doSetCyclesToRun(0)
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    doClearMemoryWriteWatchpoint()
+    memory.set(previousProgram, 0x6000)
+    memory[address] = previousByte
+    resetCpuSpeedForTesting()
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
+})
+
+test("physical write watchpoints distinguish main from auxiliary mapping", () => {
+  setIsTesting()
+  const previousProgram = memory.slice(0x6000, 0x6003)
+  const previousRamWrite = SWITCHES.RAMWRT.isSet
+  const address = 0x2000
+
+  try {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    memSet(0xC005, 0)
+    const armed = doSetMemoryWriteWatchpoint({address, length: 1, space: "aux", auxBank: 0})
+    memory.set([0x8D, 0x00, 0x20], 0x6000)
+    s6502.Accum = 0x7E
+    setPC(0x6000)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+
+    expect(processInstruction()).toEqual(-1)
+    expect(getExecutionSnapshot().memoryWrite).toEqual(expect.objectContaining({
+      watchpointId: armed.watchpointId,
+      effectiveSpace: "aux",
+      effectiveAuxBank: 0,
+      address,
+      value: 0x7E,
+    }))
+
+    doClearMemoryWriteWatchpoint()
+    const active = doSetMemoryWriteWatchpoint({address, length: 1, space: "active"})
+    setPC(0x6000)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    expect(processInstruction()).toEqual(-1)
+    expect(getExecutionSnapshot().memoryWrite).toEqual(expect.objectContaining({
+      watchpointId: active.watchpointId,
+      watchpointSpace: "active",
+      effectiveSpace: "aux",
+      effectiveAuxBank: 0,
+    }))
+  } finally {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    doClearMemoryWriteWatchpoint()
+    SWITCHES.RAMWRT.isSet = previousRamWrite
+    updateAddressTables()
+    memory.set(previousProgram, 0x6000)
+  }
+})
+
+test("write watchpoint configuration is bounded and paused-only", () => {
+  setIsTesting()
+  doSetRunMode(RUN_MODE.PAUSED, false)
+  expect(() => doSetMemoryWriteWatchpoint({address: 0, length: 4097, space: "active"}))
+    .toThrow("length must be between 1 and 4096")
+  doSetRunMode(RUN_MODE.RUNNING, false)
+  expect(() => doSetMemoryWriteWatchpoint({address: 0, length: 1, space: "active"}))
+    .toThrow("only while the emulator is paused")
+  doSetRunMode(RUN_MODE.PAUSED, false)
+})
+
+test("active write watchpoints observe slot I/O without treating it as RAM", () => {
+  setIsTesting()
+  const previousProgram = memory.slice(0x6000, 0x6003)
+
+  try {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    doSetMemoryWriteWatchpoint({address: 0xC100, length: 1, space: "active"})
+    memory.set([0x8D, 0x00, 0xC1], 0x6000)
+    s6502.Accum = 0x5A
+    setPC(0x6000)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+
+    expect(processInstruction()).toEqual(-1)
+    expect(getExecutionSnapshot().memoryWrite).toEqual(expect.objectContaining({
+      writerPC: 0x6000,
+      address: 0xC100,
+      value: 0x5A,
+      watchpointSpace: "active",
+      effectiveSpace: "system",
+    }))
+  } finally {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    doClearMemoryWriteWatchpoint()
+    memory.set(previousProgram, 0x6000)
   }
 })
 

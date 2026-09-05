@@ -1,10 +1,17 @@
-import { requestMemorySearch, requestMemoryView } from "../main2worker"
-import { findRemoteMemory, readRemoteMemory } from "./remotecontrol_memory"
+import { requestClearMemoryWriteWatchpoint, requestMemorySearch, requestMemoryView, requestSetMemoryWriteWatchpoint } from "../main2worker"
+import { clearRemoteMemoryWriteWatchpoint, findRemoteMemory, readRemoteMemory, setRemoteMemoryWriteWatchpoint } from "./remotecontrol_memory"
 
-jest.mock("../main2worker", () => ({requestMemorySearch: jest.fn(), requestMemoryView: jest.fn()}))
+jest.mock("../main2worker", () => ({
+  requestClearMemoryWriteWatchpoint: jest.fn(),
+  requestMemorySearch: jest.fn(),
+  requestMemoryView: jest.fn(),
+  requestSetMemoryWriteWatchpoint: jest.fn(),
+}))
 
 const mockRequestMemorySearch = jest.mocked(requestMemorySearch)
 const mockRequestMemoryView = jest.mocked(requestMemoryView)
+const mockRequestSetMemoryWriteWatchpoint = jest.mocked(requestSetMemoryWriteWatchpoint)
+const mockRequestClearMemoryWriteWatchpoint = jest.mocked(requestClearMemoryWriteWatchpoint)
 
 test("returns the complete worker-owned memory view", async () => {
   mockRequestMemoryView.mockResolvedValue({
@@ -94,4 +101,25 @@ test("preserves the worker default when maximum matches is omitted", async () =>
     bytes: [0],
     maxMatches: undefined,
   })
+})
+
+test("sets and clears the worker-owned write watchpoint", async () => {
+  mockRequestSetMemoryWriteWatchpoint.mockResolvedValue({
+    watchpointId: "mwp:main:-:932:4",
+    address: 0x03A4,
+    length: 4,
+    space: "main",
+    auxBank: null,
+    executionSequence: 7,
+  })
+  mockRequestClearMemoryWriteWatchpoint.mockResolvedValue({cleared: true})
+
+  await setRemoteMemoryWriteWatchpoint({address: 0x03A4, length: 4, space: "main"})
+  expect(mockRequestSetMemoryWriteWatchpoint).toHaveBeenCalledWith({
+    address: 0x03A4,
+    length: 4,
+    space: "main",
+    auxBank: undefined,
+  })
+  await expect(clearRemoteMemoryWriteWatchpoint()).resolves.toEqual({cleared: true})
 })
