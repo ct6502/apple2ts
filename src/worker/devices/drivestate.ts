@@ -77,7 +77,7 @@ export const getFilename = () => {
 const previousProps: Array<{diskHasChanges: boolean,
   motorRunning: boolean, status: string}> = []
 
-const getDriveProps = (index: number): DriveProps => ({
+const getDriveProps = (index: number, forcePassData: boolean): DriveProps => ({
   index,
   hardDrive: driveState[index].hardDrive,
   drive: driveState[index].drive,
@@ -86,7 +86,7 @@ const getDriveProps = (index: number): DriveProps => ({
   motorRunning: driveState[index].motorRunning,
   diskHasChanges: driveState[index].diskHasChanges,
   isWriteProtected: driveState[index].isWriteProtected,
-  diskData: (driveState[index].diskHasChanges && !driveState[index].motorRunning) ?
+  diskData: ((driveState[index].diskHasChanges && !driveState[index].motorRunning) || forcePassData) ?
     driveData[index] : new Uint8Array(),
   lastAppleWriteTime: driveState[index].lastAppleWriteTime,
   lastLocalFileWriteTime: driveState[index].lastLocalFileWriteTime,
@@ -94,7 +94,7 @@ const getDriveProps = (index: number): DriveProps => ({
   writableFileHandle: driveState[index].writableFileHandle
 })
 
-export const passDriveData = (replaceDiskDataIndex = -1) => {
+export const passDriveData = (replaceDiskDataIndex = -1, forcePassData = false) => {
   for (let i = 0; i < driveState.length; i++) {
     // For empty drives, only update if one of our special properties changed.
     if (driveState[i].filename === "" &&
@@ -106,8 +106,8 @@ export const passDriveData = (replaceDiskDataIndex = -1) => {
       i !== replaceDiskDataIndex) {
       continue
     }
-    const dprops = getDriveProps(i)
-    passDriveProps(dprops, i === replaceDiskDataIndex)
+    const dprops = getDriveProps(i, forcePassData)
+    passDriveProps(dprops, i === replaceDiskDataIndex || forcePassData)
     previousProps[i] = {diskHasChanges: dprops.diskHasChanges,
       motorRunning: dprops.motorRunning,
       status: dprops.status}
@@ -223,7 +223,9 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   driveState[index].cloudData = props.cloudData
   driveState[index].writableFileHandle = props.writableFileHandle
   driveState[index].lastLocalFileWriteTime = props.lastLocalFileWriteTime
-  passDriveData()
+  // Be sure to pass the data back the first time we load a disk. That way
+  // if we've converted to a woz, we get back the woz bits.
+  passDriveData(-1, true)
   return true
 }
 

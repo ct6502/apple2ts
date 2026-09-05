@@ -1176,6 +1176,10 @@ msgctxt "disk.downloadDisk"
 msgid "Download Disk"
 msgstr "Disk Downloaden"
 
+msgctxt "disk.downloadWoz"
+msgid "Download WOZ Disk Image"
+msgstr ""
+
 #, fuzzy
 msgctxt "disk.downloadAndEjectDisk"
 msgid "Download and Eject Disk"

@@ -20,7 +20,7 @@ export const iconData = () => {
 const isAnomixerDomain = () => {
   if (typeof window === "undefined") return true
   const host = window.location.hostname.toLowerCase()
-  return host.includes("pages.dev") || host.includes("github.io") || host.includes("anomixer") || host === "localhost" || host === "127.0.0.1"
+  return host.includes("pages.dev") || host.includes("github.io") || host.includes("anomixer")
 }
 
 export const pickerKey = () => {

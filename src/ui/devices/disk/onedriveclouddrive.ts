@@ -11,7 +11,7 @@ const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 const isAnomixerDomain = () => {
   if (typeof window === "undefined") return true
   const host = window.location.hostname.toLowerCase()
-  return host.includes("pages.dev") || host.includes("github.io") || host.includes("anomixer") || host === "localhost" || host === "127.0.0.1"
+  return host.includes("pages.dev") || host.includes("github.io") || host.includes("anomixer")
 }
 // anomixer: use own Azure App ID; upstream: 74fef3d4-4cf3-4de9-b2d7-ef63f9add409
 const applicationId = isAnomixerDomain()

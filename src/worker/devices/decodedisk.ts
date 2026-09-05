@@ -89,7 +89,6 @@ export const decodeDiskData = (
       (fname.endsWith(".woz") || fname.endsWith(".dsk") || fname.endsWith(".do") || fname.endsWith(".po"))) {
       return new Uint8Array()
     }
-    // Keep comment for a bit
     // We might have a DSK file that has already been renamed as a WOZ
     // but is still in DSK format. So double check the disk data length.
     if (diskData.length === 143360) {

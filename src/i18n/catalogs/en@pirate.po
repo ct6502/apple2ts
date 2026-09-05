@@ -1130,6 +1130,10 @@ msgctxt "disk.downloadDisk"
 msgid "Download Disk"
 msgstr "Plunder th' Disk"
 
+msgctxt "disk.downloadWoz"
+msgid "Download WOZ Disk Image"
+msgstr ""
+
 msgctxt "disk.downloadAndEjectDisk"
 msgid "Download and Eject Disk"
 msgstr "Plunder an' Eject Disk"
