@@ -29,10 +29,12 @@ jest.mock("../devices/disk/diskdrive", () => ({
 }))
 const mockHandleGetDriveProps = jest.fn()
 const mockHandleGetFilename = jest.fn()
+const mockHandleSetDiskWriteProtected = jest.fn()
 const mockLoadDisk = jest.fn()
 jest.mock("../devices/disk/driveprops", () => ({
   handleGetDriveProps: (...args: unknown[]) => mockHandleGetDriveProps(...args),
   handleGetFilename: (...args: unknown[]) => mockHandleGetFilename(...args),
+  handleSetDiskWriteProtected: (...args: unknown[]) => mockHandleSetDiskWriteProtected(...args),
 }))
 jest.mock("../diskdialog/diskpanel_utils", () => ({
   ...jest.requireActual("../diskdialog/diskpanel_utils"),
@@ -97,6 +99,7 @@ describe("Retro menu metadata structure", () => {
     mockGetCloudProvidersNeedingAuth.mockReturnValue([])
     mockSignInToCloudProvider.mockResolvedValue(true)
     mockLoadDisk.mockClear()
+    mockHandleSetDiskWriteProtected.mockClear()
     resetCollectionDriveSelectionSession()
   })
 
@@ -289,6 +292,36 @@ describe("Retro menu metadata structure", () => {
       "disk.saveDiskToGoogleDrive", "disk.pauseSyncing", "disk.syncNow", "Favorites",
       "disk.addDiskToCollection",
     ])
+  })
+
+  test("stages Write Protect as a checkmark and commits it with Save", () => {
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    mockHandleGetDriveProps.mockReturnValue({
+      filename: "Disk.po",
+      diskData: new Uint8Array(),
+      isWriteProtected: true,
+      writableFileHandle: null,
+      cloudData: null,
+    })
+
+    const item = insertedDiskItems(0, context)
+      .find(control => control.id.endsWith(".writeProtected"))
+    const options = typeof item?.options === "function" ? item.options(context) : item?.options
+    const optionIndex = typeof item?.optionIndex === "function"
+      ? item.optionIndex(context)
+      : item?.optionIndex
+    const actionLabel = typeof item?.contextualActionLabel === "function"
+      ? item.contextualActionLabel(context)
+      : item?.contextualActionLabel
+
+    expect(item).toMatchObject({ checkmarkIndex: 1, hideOptionValue: true })
+    expect(optionIndex).toBe(1)
+    expect(actionLabel).toBe("retroControl.save")
+    expect(options?.[0].preview).toBeUndefined()
+    expect(mockHandleSetDiskWriteProtected).not.toHaveBeenCalled()
+
+    options?.[0].action?.(context)
+    expect(mockHandleSetDiskWriteProtected).toHaveBeenCalledWith(0, false)
   })
 
   test("matches popup item order for an active cloud disk", () => {

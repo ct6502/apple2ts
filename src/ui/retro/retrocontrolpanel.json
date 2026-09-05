@@ -726,7 +726,9 @@
       "id": "diskDrives.{{driveIndex}}.writeProtected",
       "kind": "toggle",
       "labelKey": "disk.writeProtectDisk",
-      "defaultIndex": 0
+      "checkmarkIndex": 1,
+      "hideOptionValue": true,
+      "contextualActionLabelKey": "retroControl.save"
     },
     {
       "group": "diskTemplates",

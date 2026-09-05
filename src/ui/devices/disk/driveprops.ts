@@ -215,7 +215,10 @@ export const handleSetDiskData = (
   )
 }
 
-export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boolean) => {
+export const handleSetDiskWriteProtected = (
+  index: number,
+  isWriteProtected: boolean,
+) => {
   driveProps[index].isWriteProtected = isWriteProtected
   passSetDriveProps(driveProps[index])
 }
