@@ -47,7 +47,7 @@ import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTe
 import { SoftCard } from "./devices/softcard"
 import { setSlotIOCallback } from "./memory"
 import { hasHardDriveMounted } from "./devices/drivestate"
-import { getMemoryView } from "./memory_view"
+import { findMemory, getMemoryView } from "./memory_view"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -85,6 +85,13 @@ export const getExternalMemoryView = (request: MemoryViewRequest) => {
     throw new Error("Memory is available only while the emulator is paused")
   }
   return getMemoryView(request)
+}
+
+export const findExternalMemory = (request: MemorySearchRequest) => {
+  if (cpuRunMode !== RUN_MODE.PAUSED) {
+    throw new Error("Memory is available only while the emulator is paused")
+  }
+  return findMemory(request)
 }
 
 const startSiriusJoyportResetTimer = () => {

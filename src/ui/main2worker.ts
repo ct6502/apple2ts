@@ -374,6 +374,11 @@ export const requestMemoryView = (
   timeoutMs = 5000,
 ) => requestWorkerOperation<MemoryView>(MSG_MAIN.GET_MEMORY_VIEW, request, timeoutMs)
 
+export const requestMemorySearch = (
+  request: MemorySearchRequest,
+  timeoutMs = 5000,
+) => requestWorkerOperation<MemorySearchResult>(MSG_MAIN.FIND_MEMORY, request, timeoutMs)
+
 // This is a cached memory dump, updated whenever the main requests a new one.
 // Currently only used by the AI Agent, since it may want to look at memory
 // even when the emulator is not paused.

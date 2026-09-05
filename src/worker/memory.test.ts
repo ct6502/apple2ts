@@ -19,7 +19,7 @@ import { setIsTesting } from "./worker2main"
 import { getApple2State, setApple2State } from "./save_restore"
 import { SWITCHES } from "./softswitches"
 import { setKeyboardState } from "./devices/keyboard"
-import { getMemoryView } from "./memory_view"
+import { findMemory, getMemoryView } from "./memory_view"
 
 type ExpectValue = (i: number) => void
 
@@ -536,6 +536,98 @@ describe("side-effect-free memory views", () => {
       SWITCHES.BSRREADRAM.isSet = previous.BSRREADRAM
       updateAddressTables()
     }
+  })
+})
+
+describe("side-effect-free memory search", () => {
+  beforeEach(() => {
+    setAuxCardEnabled(true)
+    setRamWorks(128)
+    memoryReset()
+  })
+
+  afterEach(() => {
+    setAuxCardEnabled(true)
+    setRamWorks(64)
+    memoryReset()
+  })
+
+  test("finds overlapping matches in ascending order and truncates deterministically", () => {
+    memory.set([0xAA, 0xAA, 0xAA, 0x00, 0xAA, 0xAA], 0x2000)
+
+    expect(findMemory({
+      address: 0x2000,
+      length: 6,
+      space: "main",
+      bytes: [0xAA, 0xAA],
+      maxMatches: 2,
+    })).toMatchObject({
+      matches: [0x2000, 0x2001],
+      totalMatchCount: 3,
+      truncated: true,
+      effectiveSegments: [{address: 0x2000, length: 6, space: "main"}],
+    })
+  })
+
+  test("reuses active mapping and selected auxiliary-bank semantics", () => {
+    SWITCHES.STORE80.isSet = true
+    SWITCHES.PAGE2.isSet = true
+    updateAddressTables()
+    memory[0x03FF] = 0x12
+    memory[RamWorksMemoryStart + 0x0400] = 0x34
+
+    expect(findMemory({
+      address: 0x03FF,
+      length: 2,
+      space: "active",
+      bytes: [0x12, 0x34],
+    })).toMatchObject({
+      matches: [0x03FF],
+      totalMatchCount: 1,
+      truncated: false,
+      effectiveSegments: [
+        {address: 0x03FF, length: 1, space: "main"},
+        {address: 0x0400, length: 1, space: "aux", auxBank: 0},
+      ],
+    })
+
+    memory[RamWorksMemoryStart + 0x10000 + 0x1000] = 0x56
+    expect(findMemory({
+      address: 0x1000,
+      length: 1,
+      space: "aux",
+      auxBank: 1,
+      bytes: [0x56],
+    }).matches).toEqual([0x1000])
+    expect(findMemory({
+      address: 0x1000,
+      length: 1,
+      space: "main",
+      bytes: [0x56],
+    }).matches).toEqual([])
+
+    const beforeSwitches = [SWITCHES.RAMRD, SWITCHES.RAMWRT, SWITCHES.ALTZP]
+      .map((softSwitch) => softSwitch.isSet)
+    const systemByte = getMemoryView({address: 0xC000, length: 1, space: "active"}).bytes[0]
+    expect(findMemory({
+      address: 0xC000,
+      length: 1,
+      space: "active",
+      bytes: [systemByte],
+    }).matches).toEqual([0xC000])
+    expect([SWITCHES.RAMRD, SWITCHES.RAMWRT, SWITCHES.ALTZP]
+      .map((softSwitch) => softSwitch.isSet)).toEqual(beforeSwitches)
+  })
+
+  test("returns no matches and validates search-specific bounds", () => {
+    expect(findMemory({address: 0, length: 1, space: "main", bytes: [0x42]}))
+      .toMatchObject({matches: [], totalMatchCount: 0, truncated: false})
+    expect(() => findMemory({address: 0, length: 1, space: "main", bytes: []}))
+      .toThrow("Memory pattern must contain 1 to 32 byte values")
+    expect(() => findMemory({address: 0, length: 1, space: "main", bytes: [256]}))
+      .toThrow("Memory pattern must contain 1 to 32 byte values")
+    expect(() => findMemory({address: 0, length: 1, space: "main", bytes: [0], maxMatches: 65}))
+      .toThrow("Maximum matches must be between 1 and 64")
   })
 })
 

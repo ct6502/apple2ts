@@ -3,7 +3,7 @@ import { getAuxCardEnabled, getHires, memGet, memSet, memory, setAuxCardEnabled,
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, doStepOver, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doLoadBinary, doReset, doRunBinary, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSiriusJoyport, doSetSpeedMode, doSetState6502, doStepOver, findExternalMemory, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
@@ -27,6 +27,8 @@ test("physical memory inspection requires a stable paused worker", () => {
   setIsTesting()
   doSetRunMode(RUN_MODE.PAUSED, false)
   expect(getExternalMemoryView({address: 0, length: 1, space: "main"}).bytes).toHaveLength(1)
+  expect(findExternalMemory({address: 0, length: 1, space: "main", bytes: [0]}))
+    .toMatchObject({matches: expect.any(Array)})
   expect(() => getExternalMemoryView({address: 0, length: 1, space: "main", auxBank: 0}))
     .toThrow("Auxiliary bank is valid only for auxiliary memory")
 
@@ -34,6 +36,8 @@ test("physical memory inspection requires a stable paused worker", () => {
   expect(() => getExternalMemoryView({address: 0, length: 1, space: "active"}))
     .toThrow("Memory is available only while the emulator is paused")
   expect(() => getExternalMemoryView({address: 0, length: 1, space: "main"}))
+    .toThrow("Memory is available only while the emulator is paused")
+  expect(() => findExternalMemory({address: 0, length: 1, space: "main", bytes: [0]}))
     .toThrow("Memory is available only while the emulator is paused")
 
   doSetRunMode(RUN_MODE.PAUSED, false)
@@ -64,6 +68,10 @@ test("physical memory inspection preserves CPU and execution state", () => {
     expect(getExternalMachineState().runMode).toEqual(RUN_MODE.PAUSED)
 
     getExternalMemoryView({address: 0x03A4, length: 1, space: "aux", auxBank: 0})
+    expect(s6502).toEqual(expectedCpu)
+    expect(getExternalMachineState().runMode).toEqual(RUN_MODE.PAUSED)
+
+    findExternalMemory({address: 0x03A4, length: 1, space: "main", bytes: [0]})
     expect(s6502).toEqual(expectedCpu)
     expect(getExternalMachineState().runMode).toEqual(RUN_MODE.PAUSED)
   } finally {
