@@ -2591,7 +2591,7 @@ msgid "Slot {{slot}}"
 msgstr ""
 
 msgctxt "retroControl.drive"
-msgid "{{drive}}: {{disk}}"
+msgid "{{drive}}:{{disk}}"
 msgstr ""
 
 msgctxt "retroControl.configured"

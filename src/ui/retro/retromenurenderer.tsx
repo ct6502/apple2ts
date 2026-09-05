@@ -1234,7 +1234,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             const valueIndex = currentFrame?.values[index] ?? item.optionIndex ?? -1
             const option = item.options?.[valueIndex]
             const baseLabel = item.valueOnly && option ? option.label : item.label
-            const itemLabel = formatControlLabel(baseLabel, item.separator)
+            const itemLabel = formatControlLabel(baseLabel, item.separator, isAppleIIPlus ? "-" : undefined)
             const textValue = item.textInput ? item.textValue ?? "" : undefined
             const hasOptionValue = (option && !item.valueOnly && !item.hideOptionValue &&
               item.checkmarkIndex === undefined

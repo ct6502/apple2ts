@@ -25,7 +25,6 @@ import { createRetroDemoZooControl } from "./demozoo_retro"
 import { createRetroInternetArchiveControl } from "./internetarchive_retro"
 import {
   DISK_DRIVE_LABELS,
-  demoZooEnabled,
   downloadDiskToDevice,
   getBlobFromDiskData,
   saveDiskToDevice,
@@ -402,15 +401,22 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
     { driveIndex },
   ),
   createRetroInternetArchiveControl(driveIndex),
-  ...(demoZooEnabled ? [createRetroDemoZooControl(driveIndex)] : []),
-  ...(!navigator.userAgent.includes("Electron") ? [
-    createRetroOneDriveControl(driveIndex),
-    createRetroGoogleDriveControl(driveIndex),
-  ] : []),
+  createRetroDemoZooControl(driveIndex),
+  createRetroOneDriveControl(driveIndex),
+  createRetroGoogleDriveControl(driveIndex),
 ]
 
 const diskMenuSeparator = (driveIndex: number, id: string): RetroControlMetadata =>
   controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.{{separatorId}}", diskTemplateBindings, { driveIndex, separatorId: id })
+
+const diskMenuGroup = (
+  driveIndex: number,
+  id: string,
+  label: string,
+  items: RetroControlMetadata[],
+): RetroControlMetadata[] => items.length > 0
+    ? [{ ...diskMenuSeparator(driveIndex, id), label }, ...items]
+    : []
 
 const getDiskScreenshotUrl = () => {
   const canvas = document.getElementById("hiddenCanvas") as HTMLCanvasElement | null
@@ -526,62 +532,40 @@ export const insertedDiskItems = (
 ): RetroControlMetadata[] => {
   const drive = handleGetDriveProps(driveIndex)
   const activeCloudDisk = Boolean(drive.cloudData && drive.cloudData.syncStatus !== CLOUD_SYNC.INACTIVE)
-  if (activeCloudDisk) {
-    const setSyncInterval = (syncInterval: number) => {
-      const latestDrive = handleGetDriveProps(driveIndex)
-      if (!latestDrive.cloudData) return
-      doSetUIDriveProps({
-        ...latestDrive,
-        cloudData: { ...latestDrive.cloudData, syncInterval },
-      })
-    }
-    return [
-      baseWriteProtectItem(driveIndex, drive),
-      ejectItem(driveIndex),
-      ...bookmarkItems(driveIndex, drive, DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE, context)
-        .filter(item => !item.separator),
-      controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.cloudSection", diskTemplateBindings, { driveIndex }),
-      ...[
-        { id: "syncEveryMinute" as const, interval: 60000 },
-        { id: "syncEvery5Minutes" as const, interval: 300000 },
-        { id: "pauseSyncing" as const, interval: Number.MAX_VALUE },
-      ].map(({ id, interval }): RetroControlMetadata => ({
-        ...controlFromJson("diskTemplates", `diskDrives.{{driveIndex}}.${id}`, {}, { driveIndex }),
-        indicator: () => drive.cloudData?.syncInterval === interval ? "*" : undefined,
-        action: () => setSyncInterval(interval),
-      })),
-      {
-        ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.syncNow", {}, { driveIndex }),
-        action: () => { void syncCloudDisk(driveIndex) },
-      },
-    ]
+  const setSyncInterval = (syncInterval: number) => {
+    const latestDrive = handleGetDriveProps(driveIndex)
+    if (!latestDrive.cloudData) return
+    doSetUIDriveProps({
+      ...latestDrive,
+      cloudData: { ...latestDrive.cloudData, syncInterval },
+    })
   }
 
-  const isLocalDisk = !drive.cloudData
-  return [
-    baseWriteProtectItem(driveIndex, drive),
-    ...(!isLocalDisk ? [diskMenuSeparator(driveIndex, "writeProtectSeparator")] : []),
-    ...(isFileSystemApiSupported() && !drive.writableFileHandle ? [{
-      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.saveToDevice", {}, { driveIndex }),
-      action: () => { void saveDiskToDevice(driveIndex) },
-    }] : []),
-    ...bookmarkItems(driveIndex, drive, DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE, context),
+  const downloadItems: RetroControlMetadata[] = [
     {
       ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.download", {}, { driveIndex }),
       action: () => downloadDiskToDevice(driveIndex),
     },
+    ...(!drive.hardDrive && !drive.filename.toLowerCase().endsWith(".woz") ? [{
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.downloadWoz", {}, { driveIndex }),
+      action: () => downloadDiskToDevice(driveIndex, true),
+    }] : []),
     {
       ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.downloadAndEject", {}, { driveIndex }),
-      action: (context: RetroMenuContext) => {
+      action: (currentContext: RetroMenuContext) => {
         downloadDiskToDevice(driveIndex)
         handleEjectDisk(driveIndex)
-        context.displayProps.updateDisplay()
+        currentContext.displayProps.updateDisplay()
       },
     },
     ejectItem(driveIndex),
-    isLocalDisk
-      ? controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.cloudSection", diskTemplateBindings, { driveIndex })
-      : diskMenuSeparator(driveIndex, "cloudSaveSeparator"),
+  ]
+
+  const saveItems: RetroControlMetadata[] = [
+    ...(isFileSystemApiSupported() && !drive.writableFileHandle ? [{
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.saveToDevice", {}, { driveIndex }),
+      action: () => { void saveDiskToDevice(driveIndex) },
+    }] : []),
     ...(!navigator.userAgent.includes("Electron") ? [
       {
         ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.saveToOneDrive", {}, { driveIndex }),
@@ -592,6 +576,31 @@ export const insertedDiskItems = (
         action: () => { void saveDiskToCloud(driveIndex, new GoogleDrive()) },
       },
     ] : []),
+    ...[
+      {
+        ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.pauseSyncing", {}, { driveIndex }),
+        indicator: () => drive.cloudData?.syncInterval === Number.MAX_VALUE ? "*" : undefined,
+        action: () => setSyncInterval(Number.MAX_VALUE),
+      },
+      {
+        ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.syncNow", {}, { driveIndex }),
+        action: () => { void syncCloudDisk(driveIndex) },
+      },
+    ],
+  ]
+
+  const favoriteItems = bookmarkItems(
+    driveIndex,
+    drive,
+    activeCloudDisk ? DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE : DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+    context,
+  ).filter(item => !item.separator)
+
+  return [
+    ...diskMenuGroup(driveIndex, "diskSeparator", "Disk", [baseWriteProtectItem(driveIndex, drive)]),
+    ...diskMenuGroup(driveIndex, "downloadSeparator", "Download", downloadItems),
+    ...diskMenuGroup(driveIndex, "saveSeparator", "Save", saveItems),
+    ...diskMenuGroup(driveIndex, "favoritesSeparator", "Favorites", favoriteItems),
   ]
 }
 
@@ -669,9 +678,10 @@ const diskBindings: RetroControlBindings = {
         })
       },
       isVisible: () => handleGetSlotConfig()[slot] !== "none",
-      dynamicChildren: (context: RetroMenuContext) => handleGetDriveProps(index).filename
-        ? insertedDiskItems(index, context)
-        : diskLoadItems(index),
+      dynamicChildren: (context: RetroMenuContext) => [
+        ...diskLoadItems(index),
+        ...(handleGetDriveProps(index).filename ? insertedDiskItems(index, context) : []),
+      ],
       actionLabel: (context: RetroMenuContext) => context.t(handleGetDriveProps(index).filename
         ? "retroControl.select"
         : "retroControl.load"),
