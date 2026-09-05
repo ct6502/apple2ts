@@ -65,6 +65,17 @@ type MemoryView = {
   bytes: Uint8Array,
 }
 
+type MemorySearchRequest = MemoryViewRequest & {
+  bytes: number[],
+  maxMatches?: number,
+}
+
+type MemorySearchResult = Omit<MemoryView, "bytes"> & {
+  matches: number[],
+  totalMatchCount: number,
+  truncated: boolean,
+}
+
 type KeyboardState = {
   key: number,
   isDown: boolean,

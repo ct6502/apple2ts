@@ -103,3 +103,30 @@ export const getMemoryView = (request: MemoryViewRequest): MemoryView => {
     bytes,
   }
 }
+
+export const findMemory = (request: MemorySearchRequest): MemorySearchResult => {
+  const {bytes: pattern, maxMatches = 32} = request
+  if (!Array.isArray(pattern) || pattern.length < 1 || pattern.length > 32
+    || pattern.some((byte) => !Number.isInteger(byte) || byte < 0 || byte > 0xFF)) {
+    throw new Error("Memory pattern must contain 1 to 32 byte values")
+  }
+  if (!Number.isInteger(maxMatches) || maxMatches < 1 || maxMatches > 64) {
+    throw new Error("Maximum matches must be between 1 and 64")
+  }
+
+  const {bytes, ...view} = getMemoryView(request)
+  const matches: number[] = []
+  let totalMatchCount = 0
+  for (let offset = 0; offset + pattern.length <= bytes.length; offset++) {
+    if (pattern.every((byte, index) => bytes[offset + index] === byte)) {
+      totalMatchCount++
+      if (matches.length < maxMatches) matches.push(request.address + offset)
+    }
+  }
+  return {
+    ...view,
+    matches,
+    totalMatchCount,
+    truncated: totalMatchCount > matches.length,
+  }
+}

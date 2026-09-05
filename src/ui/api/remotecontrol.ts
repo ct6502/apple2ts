@@ -68,7 +68,7 @@ import {
 } from "../devices/disk/driveprops"
 import { parseRemoteKeyboardState } from "./remotecontrol_input"
 import { captureRenderedScreen } from "./remotecontrol_screen"
-import { readRemoteMemory } from "./remotecontrol_memory"
+import { findRemoteMemory, readRemoteMemory } from "./remotecontrol_memory"
 
 const CONNECT_RETRY_MS = 3000
 const HEARTBEAT_MS = 2000
@@ -418,6 +418,10 @@ export const executeCommand = async (action: string, payload: Record<string, unk
 
     case "getMemoryView": {
       return readRemoteMemory(payload)
+    }
+
+    case "findMemory": {
+      return findRemoteMemory(payload)
     }
 
     case "captureScreen":

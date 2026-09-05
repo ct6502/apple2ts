@@ -7,6 +7,7 @@ import {
   requestSetState6502,
   requestSetRunMode,
   requestSpeedMode,
+  requestMemorySearch,
   requestMemoryView,
   setExecutionStateCallback,
   setMain2Worker,
@@ -125,6 +126,28 @@ describe("worker operations", () => {
       msg: MSG_MAIN.GET_MEMORY_VIEW,
       payload: {address: 0x03A4, length: 1, space: "aux"},
     }))
+    sendOperationResult(message.operationId, undefined, value)
+    await expect(operation).resolves.toEqual(value)
+  })
+
+  test("returns a worker-owned memory search result", async () => {
+    const request = {address: 0x2000, length: 16, space: "main" as const, bytes: [0xAA]}
+    const operation = requestMemorySearch(request)
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    const value = {
+      address: 0x2000,
+      length: 16,
+      requestedSpace: "main",
+      requestedAuxBank: null,
+      effectiveAuxBank: null,
+      effectiveSegments: [{address: 0x2000, length: 16, space: "main"}],
+      mapping: {RAMRD: false, RAMWRT: false, ALTZP: false, "80STORE": false, PAGE2: false, HIRES: false},
+      matches: [0x2004],
+      totalMatchCount: 1,
+      truncated: false,
+    } as MemorySearchResult
+
+    expect(message).toEqual(expect.objectContaining({msg: MSG_MAIN.FIND_MEMORY, payload: request}))
     sendOperationResult(message.operationId, undefined, value)
     await expect(operation).resolves.toEqual(value)
   })
