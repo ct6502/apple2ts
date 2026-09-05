@@ -400,10 +400,20 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
     },
     { driveIndex },
   ),
-  createRetroInternetArchiveControl(driveIndex),
-  createRetroDemoZooControl(driveIndex),
-  createRetroOneDriveControl(driveIndex),
-  createRetroGoogleDriveControl(driveIndex),
+  {
+    ...controlFromJson(
+      "diskTemplates",
+      "diskDrives.{{driveIndex}}.load.from",
+      {},
+      { driveIndex },
+    ),
+    dynamicChildren: () => [
+      createRetroInternetArchiveControl(driveIndex),
+      createRetroDemoZooControl(driveIndex),
+      createRetroOneDriveControl(driveIndex),
+      createRetroGoogleDriveControl(driveIndex),
+    ],
+  },
 ]
 
 const diskMenuSeparator = (driveIndex: number, id: string): RetroControlMetadata =>

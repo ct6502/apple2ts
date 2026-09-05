@@ -681,9 +681,15 @@
     },
     {
       "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.load.from",
+      "labelKey": "disk.loadDiskFrom",
+      "submenuTitleKey": "disk.loadDiskFrom"
+    },
+    {
+      "group": "diskTemplates",
       "id": "diskDrives.{{driveIndex}}.load.internetArchive",
       "binding": "diskDrives.load.internetArchive",
-      "labelKey": "disk.loadDiskFromInternetArchive",
+      "labelKey": "disk.InternetArchive",
       "submenuTitle": "Internet Archive",
       "actionLabel": "Search"
     },
@@ -691,7 +697,7 @@
       "group": "diskTemplates",
       "id": "diskDrives.{{driveIndex}}.load.demoZoo",
       "binding": "diskDrives.load.demoZoo",
-      "labelKey": "disk.loadDiskFromDemoZoo",
+      "labelKey": "disk.DemoZoo",
       "submenuTitle": "DemoZoo",
       "actionLabel": "Search"
     },
@@ -701,7 +707,7 @@
       "binding": "diskDrives.load.cloudProvider",
       "providerId": "OneDrive",
       "providerName": "OneDrive",
-      "labelKey": "disk.loadDiskFromOneDrive",
+      "labelKey": "disk.OneDrive",
       "submenuTitle": "OneDrive",
       "actionLabelKey": "retroControl.open"
     },
@@ -711,7 +717,7 @@
       "binding": "diskDrives.load.cloudProvider",
       "providerId": "GoogleDrive",
       "providerName": "Google Drive",
-      "labelKey": "disk.loadDiskFromGoogleDrive",
+      "labelKey": "disk.GoogleDrive",
       "submenuTitle": "Google Drive",
       "actionLabelKey": "retroControl.open"
     },

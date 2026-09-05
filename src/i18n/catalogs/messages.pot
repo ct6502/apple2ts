@@ -1033,7 +1033,7 @@ msgid "Load Disk"
 msgstr ""
 
 msgctxt "disk.loadDiskFrom"
-msgid "Load Disk From"
+msgid "Load Disk from"
 msgstr ""
 
 msgctxt "disk.loadDiskFromDevice"

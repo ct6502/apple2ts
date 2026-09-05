@@ -213,17 +213,31 @@ describe("Retro menu metadata structure", () => {
     expect(actionLabel(context)).toBe("retroControl.load")
   })
 
-  test("always shows every disk load item for an empty drive", () => {
+  test("moves disk provider items to the Load Disk from screen", () => {
     const drive = retroDiskControls.find(control => control.id === "diskDrives.0")
     const context = createControlContext(undefined, key => key, "en", () => undefined)
     mockHandleGetDriveProps.mockReturnValue({ filename: "" })
 
-    expect(drive?.dynamicChildren?.(context).map(item => item.id)).toEqual([
+    const items = drive?.dynamicChildren?.(context) ?? []
+    expect(items.map(item => item.id)).toEqual([
       "diskDrives.0.load.device",
+      "diskDrives.0.load.from",
+    ])
+
+    const loadFromItems = items[1].dynamicChildren?.(context) ?? []
+    expect(loadFromItems.map(item => item.id)).toEqual([
       "diskDrives.0.load.internetArchive",
       "diskDrives.0.load.demoZoo",
       "diskDrives.0.load.oneDrive",
       "diskDrives.0.load.googleDrive",
+    ])
+    expect(loadFromItems.map(item => item.label instanceof Function
+      ? item.label(context)
+      : item.label)).toEqual([
+      "disk.InternetArchive",
+      "disk.DemoZoo",
+      "disk.OneDrive",
+      "disk.GoogleDrive",
     ])
   })
 
@@ -241,12 +255,9 @@ describe("Retro menu metadata structure", () => {
 
     const items = drive?.dynamicChildren?.(context) ?? []
 
-    expect(items.slice(0, 5).map(item => item.id)).toEqual([
+    expect(items.slice(0, 2).map(item => item.id)).toEqual([
       "diskDrives.0.load.device",
-      "diskDrives.0.load.internetArchive",
-      "diskDrives.0.load.demoZoo",
-      "diskDrives.0.load.oneDrive",
-      "diskDrives.0.load.googleDrive",
+      "diskDrives.0.load.from",
     ])
     expect(items.filter(item => item.separator).map(item => item.label)).toEqual([
       "Disk", "Download", "Save",
