@@ -3,6 +3,7 @@ import {
   doOnMessage,
   requestLoadBinary,
   requestKeyboardState,
+  requestKeySequence,
   requestSetDriveNewData,
   requestSetState6502,
   requestSetRunMode,
@@ -193,6 +194,37 @@ describe("worker operations", () => {
 
     sendOperationResult(message.operationId)
     await expect(operation).resolves.toBeUndefined()
+  })
+
+  test("sends key sequences as confirmed worker operations", async () => {
+    const request = {keys: "AZ\r", timeoutMs: 5000}
+    const operation = requestKeySequence(request)
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    expect(message).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.KEY_SEQUENCE,
+      payload: request,
+    }))
+
+    const result: KeySequenceResult = {
+      outcome: "completed",
+      keysDelivered: 3,
+      keyMayHaveBeenObserved: false,
+    }
+    sendOperationResult(message.operationId, undefined, result)
+    await expect(operation).resolves.toEqual(result)
+  })
+
+  test("gives the worker time to reject an invalid key-sequence timeout", async () => {
+    jest.useFakeTimers()
+    try {
+      const operation = requestKeySequence({keys: "A", timeoutMs: Number.NaN})
+      const operationId = lastOperationId()
+      jest.advanceTimersByTime(0)
+      sendOperationResult(operationId, "Invalid key sequence")
+      await expect(operation).rejects.toThrow("Invalid key sequence")
+    } finally {
+      jest.useRealTimers()
+    }
   })
 
   test("sends drive data as a confirmed worker operation", async () => {

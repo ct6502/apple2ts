@@ -14,16 +14,108 @@ const setKeyStrobe = (key: number) => {
 }
 
 let keyboardRepeatKey = 0
+let keyboardIsDown = false
 let nextKeyboardRepeatTime = 0
 const Apple2eRepeatDelayMs = 600
 const Apple2eRepeatRateMs = 75
 
+type PendingKeySequence = {
+  keys: number[],
+  currentIndex: number,
+  strobeCleared: boolean,
+  timeout: ReturnType<typeof setTimeout>,
+  resolve: (result: KeySequenceResult) => void,
+}
+
+let pendingKeySequence: PendingKeySequence | null = null
+
+const finishKeySequence = (
+  outcome: KeySequenceResult["outcome"],
+  keyMayHaveBeenObserved: boolean,
+) => {
+  const sequence = pendingKeySequence
+  if (!sequence) return
+  pendingKeySequence = null
+  clearTimeout(sequence.timeout)
+  keyboardRepeatKey = 0
+  clearKeyStrobe()
+  apple2KeyRelease()
+  sequence.resolve({
+    outcome,
+    keysDelivered: sequence.currentIndex,
+    keyMayHaveBeenObserved,
+  })
+}
+
+export const interruptKeySequence = () => {
+  finishKeySequence("interrupted", true)
+}
+
+export const sendKeySequence = async ({keys, timeoutMs}: KeySequenceRequest) => {
+  if (
+    keys.length < 1
+    || keys.length > 32
+    || Array.from(keys).some((key) => {
+      const code = key.charCodeAt(0)
+      return key.length !== 1 || code < 1 || code > 0xFF
+    })
+    || !Number.isInteger(timeoutMs)
+    || timeoutMs < 1
+    || timeoutMs > 120000
+  ) {
+    throw new Error("Invalid key sequence")
+  }
+  if (
+    pendingKeySequence
+    || keyBuffer !== ""
+    || keyboardIsDown
+    || memGetC000(0xC000) >= 0x80
+  ) {
+    return {
+      outcome: "input_busy",
+      keysDelivered: 0,
+      keyMayHaveBeenObserved: false,
+    } satisfies KeySequenceResult
+  }
+
+  const mappedKeys = Array.from(keys, (key) =>
+    handleKeyMapping(key).charCodeAt(0))
+  keyboardRepeatKey = 0
+  return new Promise<KeySequenceResult>((resolve) => {
+    pendingKeySequence = {
+      keys: mappedKeys,
+      currentIndex: 0,
+      strobeCleared: false,
+      timeout: setTimeout(() => finishKeySequence("timeout", true), timeoutMs),
+      resolve,
+    }
+    setKeyStrobe(mappedKeys[0])
+  })
+}
+
+export const advanceKeySequence = () => {
+  const sequence = pendingKeySequence
+  if (!sequence?.strobeCleared) return
+
+  apple2KeyRelease()
+  sequence.currentIndex += 1
+  if (sequence.currentIndex === sequence.keys.length) {
+    finishKeySequence("completed", false)
+    return
+  }
+  sequence.strobeCleared = false
+  setKeyStrobe(sequence.keys[sequence.currentIndex])
+}
+
 export const setKeyboardState = (state: KeyboardState) => {
+  interruptKeySequence()
   if (!state.isDown || state.key <= 0) {
+    keyboardIsDown = false
     keyboardRepeatKey = 0
     apple2KeyRelease()
     return
   }
+  keyboardIsDown = true
   keyboardRepeatKey = handleKeyMapping(String.fromCharCode(state.key)).charCodeAt(0)
   setKeyStrobe(keyboardRepeatKey)
   if (!state.repeat) {
@@ -44,8 +136,12 @@ export const pollKeyboardRepeat = () => {
 export const clearKeyStrobe = () => {
   // Here, we only clear the high bit for $C00x, not $C01x (AKD, any-key-down).
   // We will clear AKD when the key is released (below).
-  const keyvalue = memGetC000(0xC000) & 0b01111111
+  const previousValue = memGetC000(0xC000)
+  const keyvalue = previousValue & 0b01111111
   memSetC000(0xC000, keyvalue, 16)
+  if (pendingKeySequence && previousValue >= 0x80) {
+    pendingKeySequence.strobeCleared = true
+  }
 }
 
 export const apple2KeyRelease = () => {
@@ -115,6 +211,7 @@ export const addToBufferDebounce = (text: string, timeout = 300) => {
 }
 
 export const sendTextToEmulator = (key: number) => {
+  interruptKeySequence()
   let text = String.fromCharCode(key)
   text = handleKeyMapping(text)
   addToBuffer(text)
@@ -124,6 +221,7 @@ export const sendTextToEmulator = (key: number) => {
 // TODO: Does this need its own buffer, so we can guarantee that chars
 // won't get dropped from the text if it takes too long to process?
 export const sendPastedText = (text: string) => {
+  interruptKeySequence()
   if (text.length === 1) {
     text = handleKeyMapping(text)
   }

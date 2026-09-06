@@ -82,6 +82,17 @@ type KeyboardState = {
   repeat: boolean,
 }
 
+type KeySequenceRequest = {
+  keys: string,
+  timeoutMs: number,
+}
+
+type KeySequenceResult = {
+  outcome: "completed" | "timeout" | "interrupted" | "not_running" | "input_busy",
+  keysDelivered: number,
+  keyMayHaveBeenObserved: boolean,
+}
+
 type HiresScreenshotSet = {
   plain: Uint8Array,
   keyboard: Uint8Array,

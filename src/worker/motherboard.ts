@@ -37,7 +37,7 @@ import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { clearSlotCardStateHandlers } from "./devices/slot_card_state"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
-import { pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
+import { advanceKeySequence, interruptKeySequence, pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
 import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
@@ -622,6 +622,7 @@ export const doSetRunMode = (
   operationId?: number,
   stop?: ExecutionStopDescriptor,
 ) => {
+  if (cpuRunModeIn !== RUN_MODE.RUNNING) interruptKeySequence()
   if (pendingRunModeOperation !== undefined && pendingRunModeOperation !== operationId) {
     passWorkerOperationResult(pendingRunModeOperation, "Worker operation was superseded")
   }
@@ -904,6 +905,7 @@ const doAdvance6502 = () => {
     } else {
       cycles = processInstruction(tracing ? updateTrace : null)
     }
+    advanceKeySequence()
     if (cycles < 0) break
     cycleTotal += cycles
     const cycleInFrame = s6502.cycleCount % 17030
