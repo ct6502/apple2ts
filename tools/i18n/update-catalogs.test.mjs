@@ -379,6 +379,38 @@ msgstr "Enregistrer"
     assert.deepEqual(readdirSync(directory).sort(), ["fr.po", "messages.pot"])
   })
 
+  it("rejects comments separated from their PO entry", () => {
+    const directory = mkdtempSync(join(tmpdir(), "apple2ts-po-update-comments-"))
+    temporaryDirectories.push(directory)
+    const source = join(directory, "messages.pot")
+    const input = join(directory, "fr.po")
+    const sourceText = `msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\\n"
+`
+    const original = `${sourceText}
+# Translator note for removed.entry
+
+msgctxt "removed.entry"
+msgid "Removed"
+msgstr "Supprimé"
+`
+    writeFileSync(source, sourceText)
+    writeFileSync(input, original)
+    let message = ""
+
+    assert.equal(updateCatalogs({
+      catalogDirectory: directory,
+      locales: ["fr"],
+      source,
+      run: () => ({status: 0}),
+      stderr: {write(value) { message += value }},
+    }), 1)
+    assert.match(message, /must keep comments with their PO entry/)
+    assert.equal(readFileSync(input, "utf8"), original)
+    assert.deepEqual(readdirSync(directory).sort(), ["fr.po", "messages.pot"])
+  })
+
   it("rejects active plural entries without modifying the original", () => {
     const directory = mkdtempSync(join(tmpdir(), "apple2ts-po-update-plural-"))
     temporaryDirectories.push(directory)

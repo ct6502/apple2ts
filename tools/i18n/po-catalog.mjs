@@ -214,6 +214,9 @@ export const preparePoCatalogForMerge = (sourceCatalog, translationCatalog) => {
     block,
     message: readPoBlock(translationBlocks[0], block),
   }))
+  if (blocks.some(({block, message}) => !message && block.body.trim().length > 0)) {
+    throw new Error("Translation catalog must keep comments with their PO entry")
+  }
   if (blocks.filter(({message}) => message).length !== countParsedMessages(translation)) {
     throw new Error("Translation catalog must separate PO entries with blank lines")
   }
