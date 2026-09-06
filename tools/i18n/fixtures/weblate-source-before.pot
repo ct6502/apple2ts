@@ -1,0 +1,22 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+#. Keep the translator note and placeholder translation.
+msgctxt "disk.save"
+msgid "Save disk {{name}}"
+msgstr ""
+
+#, javascript-format
+msgctxt "tour.unchanged"
+msgid "A long unchanged source message that Weblate wrapped in its normal style."
+msgstr ""
+
+#, javascript-format
+msgctxt "disk.empty"
+msgid "Old empty source"
+msgstr ""
+
+msgctxt "removed.entry"
+msgid "Removed source"
+msgstr ""

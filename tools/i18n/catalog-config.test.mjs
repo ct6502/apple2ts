@@ -10,6 +10,7 @@ import {
 import { tmpdir } from "node:os"
 import { basename, extname, join, relative, resolve } from "node:path"
 import { describe, it } from "node:test"
+import { TextDecoder } from "node:util"
 import ts from "typescript"
 
 import {
@@ -94,6 +95,16 @@ describe("catalog configuration", () => {
       fileStems(outputDirectory, ".ts"),
       [...configured, "registry"].sort(),
     )
+  })
+
+  it("keeps every tracked catalog in the shared UTF-8 format", () => {
+    const inputs = new Set([sourceCatalog, ...catalogs.map(({input}) => input)])
+    for (const input of inputs) {
+      const bytes = readFileSync(input)
+      assert.notDeepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf], input)
+      const source = new TextDecoder("utf-8", {fatal: true}).decode(bytes)
+      assert.match(source, /Content-Type: text\/plain; charset=UTF-8/i, input)
+    }
   })
 
   it("registers every generated language catalog for the runtime", () => {

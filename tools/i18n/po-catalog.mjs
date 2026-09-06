@@ -62,21 +62,6 @@ const isFuzzy = item => (
     .some(flag => flag.trim() === "fuzzy") ?? false
 )
 
-const setFuzzy = (item, fuzzy) => {
-  const flags = new Set(
-    item.comments?.flag?.split(/[,\s]+/).filter(Boolean) ?? [],
-  )
-  if (fuzzy) flags.add("fuzzy")
-  else flags.delete("fuzzy")
-
-  if (flags.size > 0) {
-    item.comments = {...item.comments, flag: [...flags].join(", ")}
-  } else if (item.comments) {
-    delete item.comments.flag
-    if (Object.keys(item.comments).length === 0) delete item.comments
-  }
-}
-
 const previousSource = item => {
   const previous = item?.comments?.previous
   if (!previous) return undefined
@@ -145,53 +130,126 @@ const readParsedActiveMessages = po => {
   return messages
 }
 
+const splitPoBlocks = catalog => {
+  const blocks = []
+  const separatorPattern = /\r?\n(?:\r?\n)+/g
+  let start = 0
+  let prefix = ""
+  for (const match of catalog.matchAll(separatorPattern)) {
+    blocks.push({prefix, body: catalog.slice(start, match.index)})
+    prefix = match[0]
+    start = match.index + match[0].length
+  }
+  blocks.push({prefix, body: catalog.slice(start)})
+  return blocks
+}
+
+const readPoBlock = (header, block) => {
+  const parsed = poParser.parse(
+    Buffer.from(`${header.body}${block.prefix}${block.body}`),
+    {validation: true},
+  )
+  const active = []
+  const obsolete = []
+  for (const [context, entries] of Object.entries(parsed.translations)) {
+    for (const item of Object.values(entries)) {
+      if (item.msgid.length > 0) active.push({context, item})
+    }
+  }
+  for (const [context, entries] of Object.entries(parsed.obsolete ?? {})) {
+    for (const item of Object.values(entries)) obsolete.push({context, item})
+  }
+  if (active.length + obsolete.length > 1) {
+    throw new Error("PO block contains multiple messages")
+  }
+  if (active[0]) return {...active[0], obsolete: false, parsed}
+  if (obsolete[0]) return {...obsolete[0], obsolete: true, parsed}
+  return undefined
+}
+
+const countParsedMessages = parsed => (
+  Object.values(parsed.translations).reduce((count, entries) => (
+    count + Object.values(entries).filter(item => item.msgid.length > 0).length
+  ), 0)
+  + Object.values(parsed.obsolete ?? {}).reduce((count, entries) => (
+    count + Object.keys(entries).length
+  ), 0)
+)
+
+const updateMessage = (message, msgid, eol) => {
+  const translated = (message.item.msgstr?.[0] ?? "").length > 0
+  const comments = {...message.item.comments}
+  const flags = [...new Set(
+    (comments.flag ?? "").split(/[,\s]+/).filter(Boolean),
+  )].filter(flag => flag !== "fuzzy")
+  if (translated) flags.push("fuzzy")
+  if (flags.length > 0) comments.flag = flags.join(", ")
+  else delete comments.flag
+  if (translated) comments.previous = `msgid ${JSON.stringify(message.item.msgid)}`
+  else delete comments.previous
+
+  const entries = message.parsed.translations[message.context]
+  delete entries[message.item.msgid]
+  message.item.msgid = msgid
+  message.item.comments = comments
+  entries[msgid] = message.item
+
+  const compiled = poParser.compile(message.parsed, {eol, foldLength: 77}).toString("utf8")
+  const blocks = splitPoBlocks(compiled)
+  const messageBlocks = blocks.slice(1).filter(block => block.body.length > 0)
+  if (messageBlocks.length !== 1) {
+    throw new Error(`Unable to compile one PO message block: ${message.context}`)
+  }
+  const body = messageBlocks[0].body
+  return body.endsWith(eol) ? body.slice(0, -eol.length) : body
+}
+
 export const preparePoCatalogForMerge = (sourceCatalog, translationCatalog) => {
   const source = poParser.parse(sourceCatalog, {validation: true})
   const translation = poParser.parse(translationCatalog, {validation: true})
   const sourceMessages = readParsedActiveMessages(source)
   readParsedActiveMessages(translation)
+  const translationBlocks = splitPoBlocks(translationCatalog)
+  const blocks = translationBlocks.slice(1).map(block => ({
+    block,
+    message: readPoBlock(translationBlocks[0], block),
+  }))
+  if (blocks.filter(({message}) => message).length !== countParsedMessages(translation)) {
+    throw new Error("Translation catalog must separate PO entries with blank lines")
+  }
   let changed = false
-
-  for (const [context, entries] of Object.entries(translation.translations)) {
-    if (!context) continue
-    const sourceItem = sourceMessages.get(context)
-    if (!sourceItem) {
-      delete translation.translations[context]
+  const retainedBlocks = [translationBlocks[0]]
+  for (const {block, message} of blocks) {
+    if (!message) {
+      retainedBlocks.push(block)
+      continue
+    }
+    const sourceItem = sourceMessages.get(message.context)
+    if (!sourceItem || message.obsolete) {
       changed = true
       continue
     }
-
-    for (const [storedMsgid, item] of Object.entries(entries)) {
-      if (item.msgid === sourceItem.msgid) continue
-
-      const oldSource = item.msgid
-      delete entries[storedMsgid]
-      item.msgid = sourceItem.msgid
-      entries[item.msgid] = item
-      changed = true
-
-      if ((item.msgstr?.[0] ?? "").length > 0) {
-        item.comments = {
-          ...item.comments,
-          previous: `msgid ${JSON.stringify(oldSource)}`,
-        }
-        setFuzzy(item, true)
-      } else {
-        if (item.comments) {
-          delete item.comments.previous
-          if (Object.keys(item.comments).length === 0) delete item.comments
-        }
-        setFuzzy(item, false)
-      }
+    if (message.item.msgid === sourceItem.msgid) {
+      retainedBlocks.push(block)
+      continue
     }
-  }
-
-  if (Object.keys(translation.obsolete ?? {}).length > 0) {
-    delete translation.obsolete
+    retainedBlocks.push({
+      ...block,
+      body: updateMessage(
+        message,
+        sourceItem.msgid,
+        block.body.includes("\r\n") ? "\r\n" : "\n",
+      ),
+    })
     changed = true
   }
 
-  return changed ? poParser.compile(translation).toString() : translationCatalog
+  if (!changed) return translationCatalog
+  const updated = retainedBlocks.map(block => `${block.prefix}${block.body}`).join("")
+  const finalEol = translationCatalog.endsWith("\r\n")
+    ? "\r\n"
+    : translationCatalog.endsWith("\n") ? "\n" : ""
+  return finalEol && !updated.endsWith(finalEol) ? `${updated}${finalEol}` : updated
 }
 
 const readObsoleteMessages = source => {
