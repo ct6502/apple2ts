@@ -15,8 +15,10 @@ import { formatControlLabel } from "../controls/controlregistry"
 import { useRetroMenuHost } from "./retromenuhost"
 import {
   actionHintWidth,
+  centerControlTextOffset,
   controlTextWidth,
   fitControlText,
+  formatClockDate,
   formatClockTime,
   menuItemTextWidth,
   mouseTextGlyphs,
@@ -1162,6 +1164,12 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     ? truncateControlText(currentFrame.title, submenuTitleWidth, language)
     : ""
   const visibleSubmenuTitleWidth = controlTextWidth(visibleSubmenuTitle, language)
+  const clockTime = formatClockTime(now, language)
+  const clockDate = formatClockDate(now, language, isAppleIIPlus ? "_" : " ")
+  const clockTextWidth = isAppleIIPlus ? 12 : 11
+  const clockTimeOffset = centerControlTextOffset(clockTime, clockTextWidth, language)
+  const clockDateOffset = centerControlTextOffset(clockDate, clockTextWidth, language) +
+    (isAppleIIPlus ? -1 : 1)
 
   return (
     <>
@@ -1222,16 +1230,16 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           <RetroBorder
             appleIIPlus={isAppleIIPlus}
             className="retro-clock-border"
-            columns={isAppleIIPlus ? 14 : 17}
+            columns={isAppleIIPlus ? 13 : 17}
             notchedCorners
             rows={4}
           />
-          <time>{formatClockTime(now, language)}</time>
-          <time><span>{now.toLocaleDateString(language, {
-            month: "numeric",
-            day: "numeric",
-            year: "2-digit",
-          })}</span></time>
+          <time><span style={{ marginInlineStart: `calc(${clockTimeOffset} * var(--retro-cell-width))` }}>
+            {clockTime}
+          </span></time>
+          <time><span style={{ marginInlineStart: `calc(${clockDateOffset} * var(--retro-cell-width))` }}>
+            {clockDate}
+          </span></time>
         </div>,
         menu: <div className={`retro-menu${currentFrame ? " retro-submenu-menu" : " retro-root-menu"}`} role="menu">
           {visibleMenu.map((item, visibleIndex) => {

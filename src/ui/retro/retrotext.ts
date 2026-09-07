@@ -40,8 +40,22 @@ export const formatClockTime = (date: Date, locale: string) => {
   return `${hour.length === 1 ? "\u2007" : ""}${formatter.format(date)}`
 }
 
+export const formatClockDate = (date: Date, locale: string, padding = " ") => {
+  const formatter = new Intl.DateTimeFormat(locale, {
+    month: "numeric",
+    day: "numeric",
+    year: "2-digit",
+  })
+  return formatter.formatToParts(date).map(part =>
+    part.type === "month" || part.type === "day" ? part.value.padStart(2, padding) : part.value,
+  ).join("")
+}
+
 export const controlTextWidth = (text: string, locale: string) =>
   graphemes(text, locale).reduce((width, grapheme) => width + (wideCharacter.test(grapheme) ? 2 : 1), 0)
+
+export const centerControlTextOffset = (text: string, availableWidth: number, locale: string) =>
+  Math.max(0, Math.floor((availableWidth - controlTextWidth(text, locale)) / 2))
 
 export const shouldUseCompactLatinFooter = (
   texts: readonly string[],

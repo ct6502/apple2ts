@@ -1,7 +1,9 @@
 import {
   actionHintWidth,
+  centerControlTextOffset,
   controlTextWidth,
   fitControlText,
+  formatClockDate,
   formatClockTime,
   menuItemTextWidth,
   mouseTextGlyphs,
@@ -21,6 +23,17 @@ describe("Retro control-panel text", () => {
     expect(formatClockTime(new Date(2020, 0, 1, 6, 7, 8), "en-US")).toMatch(/^\u20076:/)
     expect(formatClockTime(new Date(2020, 0, 1, 12, 7, 8), "en-US")).toMatch(/^12:/)
     expect(formatClockTime(new Date(2020, 0, 1, 18, 7, 8), "en-US")).toMatch(/ PM$/)
+  })
+
+  test("pads single-digit clock date fields to two cells", () => {
+    expect(formatClockDate(new Date(2026, 8, 6), "en-US")).toBe(" 9/ 6/26")
+    expect(formatClockDate(new Date(2026, 8, 6), "en-US", "_")).toBe("_9/_6/26")
+    expect(formatClockDate(new Date(2026, 10, 16), "en-US")).toBe("11/16/26")
+  })
+
+  test("centers clock text on whole control-panel cells", () => {
+    expect(centerControlTextOffset("12:07:08 PM", 11, "en-US")).toBe(0)
+    expect(centerControlTextOffset(" 9/ 6/26", 11, "en-US")).toBe(1)
   })
 
   test("truncates at grapheme boundaries with three dots", () => {
