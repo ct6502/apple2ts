@@ -112,9 +112,12 @@ a check for every language to accommodate one intentional translation.
    cross-key fuzzy matching because the stable `msgctxt`, not similar English
    wording, identifies a message. Each locale is staged before replacement; a
    failure preserves the affected original and reports any earlier catalogs
-   already updated. Catalogs use UTF-8 without a byte-order mark. An update
-   preserves the header and entries whose source text and metadata did not
-   change byte-for-byte, and repeating it produces no diff.
+   already updated. To prevent formatting churn and avoidable translation-file
+   conflicts, the pre-merge step never recompiles a complete translation
+   catalog: it preserves the header and unrelated entries byte-for-byte and
+   rewrites only entries whose English source changed before `msgmerge`.
+   Catalogs use UTF-8 without a byte-order mark, and regression tests require a
+   repeated update to produce no diff.
 3. Review the affected `msgstr` values. Clear fuzzy only after confirming a
    translation against current English. Leave missing translations empty so
    runtime fallback remains visible; do not copy English merely to complete
