@@ -25,4 +25,8 @@ jobs:
     - run: npm ci --ignore-scripts
     - run: npm run lint
     - run: npm run build
+    - name: Install GNU gettext
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes gettext
     - run: npm test
