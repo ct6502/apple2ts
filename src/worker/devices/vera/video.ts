@@ -187,6 +187,10 @@ export const video_reset = (): void => {
 	psg_pending_writes.length = 0
 	// init Layer registers
 	reg_layer.forEach(arr => arr.fill(0))
+	prev_layer_properties_version[0].fill(0xFFFFFFFF)
+	prev_layer_properties_version[1].fill(0xFFFFFFFF)
+	refresh_layer_properties(0)
+	refresh_layer_properties(1)
 	// init composer registers
 	reg_composer.fill(0)
 	reg_composer[1] = 128 // hscale = 1.0
@@ -293,6 +297,8 @@ interface video_layer_properties {
 const NUM_LAYERS = 2
 const layer_properties: video_layer_properties[] = new Array(NUM_LAYERS).fill(null).map(() => ({} as video_layer_properties))
 const prev_layer_properties: video_layer_properties[][] = new Array(2).fill(null).map(() => new Array(NUM_LAYERS).fill(null).map(() => ({} as video_layer_properties)))
+const layer_properties_version = new Uint32Array(NUM_LAYERS)
+const prev_layer_properties_version = new Array(2).fill(null).map(() => new Uint32Array(NUM_LAYERS))
 const calc_layer_eff_x = (props: video_layer_properties, x: number): number => {
 	return (x + props.hscroll) & (props.layerw_max)
 }
@@ -382,6 +388,7 @@ const refresh_layer_properties = (layer: number): void => {
 	props.first_color_pos  = 8 - props.bits_per_pixel
 	props.color_mask       = (1 << props.bits_per_pixel) - 1
 	props.color_fields_max = (8 >> props.color_depth) - 1
+	layer_properties_version[layer]++
 }
 
 const copy_layer_properties = (dest: video_layer_properties, src: video_layer_properties): void => {
@@ -685,6 +692,62 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 	const tile_bytes = scanline_tile_bytes // Reused static buffer: zero GC allocations
   // @ts-ignore
 	video_space_read_range(tile_bytes, map_addr_begin, size)
+	const output_line = layer_line[layer]
+	const hscroll = props.hscroll
+	const layer_width_mask = props.layerw_max
+	const tile_width_mask = props.tilew_max
+	const tile_width_log2 = props.tilew_log2
+	const tile_data_base = props.tile_base
+	const map_row_offset = ((eff_y >> props.tileh_log2) << props.mapw_log2) << 1
+	if (props.color_depth === 2) {
+		let tile_start = 0
+		let palette_offset = 0
+		let hflip = false
+		let tile_y_add = y_add
+		for (let x = 0; x < SCREEN_WIDTH; x++) {
+			const eff_x = (x + hscroll) & layer_width_mask
+			if (x === 0 || (eff_x & tile_width_mask) === 0) {
+				const map_addr = props.map_base + map_row_offset + ((eff_x >> tile_width_log2) << 1) - map_addr_begin
+				const byte0 = tile_bytes[map_addr]
+				const byte1 = tile_bytes[map_addr + 1]
+				tile_start = (byte0 | ((byte1 & 3) << 8)) << props.tile_size_log2
+				palette_offset = byte1 & 0xF0
+				hflip = (byte1 & 4) !== 0
+				tile_y_add = (byte1 & 8) !== 0 ? y_add_flip : y_add
+			}
+			let tile_x = eff_x & tile_width_mask
+			if (hflip) tile_x ^= tile_width_mask
+			const packed = video_ram[(tile_data_base + tile_start + tile_y_add + (tile_x >> 1)) & 0x1FFFF]
+			let col_index = (tile_x & 1) === 0 ? packed >> 4 : packed & 0x0F
+			if (palette_offset !== 0 && col_index > 0) col_index += palette_offset
+			output_line[x] = col_index
+		}
+		return
+	}
+	if (props.color_depth === 3) {
+		let tile_start = 0
+		let palette_offset = 0
+		let hflip = false
+		let tile_y_add = y_add
+		for (let x = 0; x < SCREEN_WIDTH; x++) {
+			const eff_x = (x + hscroll) & layer_width_mask
+			if (x === 0 || (eff_x & tile_width_mask) === 0) {
+				const map_addr = props.map_base + map_row_offset + ((eff_x >> tile_width_log2) << 1) - map_addr_begin
+				const byte0 = tile_bytes[map_addr]
+				const byte1 = tile_bytes[map_addr + 1]
+				tile_start = (byte0 | ((byte1 & 3) << 8)) << props.tile_size_log2
+				palette_offset = byte1 & 0xF0
+				hflip = (byte1 & 4) !== 0
+				tile_y_add = (byte1 & 8) !== 0 ? y_add_flip : y_add
+			}
+			let tile_x = eff_x & tile_width_mask
+			if (hflip) tile_x ^= tile_width_mask
+			let col_index = video_ram[(tile_data_base + tile_start + tile_y_add + tile_x) & 0x1FFFF]
+			if (palette_offset !== 0 && col_index > 0 && col_index < 16) col_index += palette_offset
+			output_line[x] = col_index
+		}
+		return
+	}
 	let palette_offset: number = 0
 	let vflip: boolean = false
 	let hflip: boolean = false
@@ -863,13 +926,20 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		// render but delayed until the next line, or applied mid-line
 		// at scan-out
 
-		prev_reg_composer[1].set(prev_reg_composer[0])
-		prev_reg_composer[0].set(reg_composer)
-		// Same with the layer properties
-		copy_layer_properties(prev_layer_properties[1][0], prev_layer_properties[0][0])
-		copy_layer_properties(prev_layer_properties[1][1], prev_layer_properties[0][1])
-		copy_layer_properties(prev_layer_properties[0][0], layer_properties[0])
-		copy_layer_properties(prev_layer_properties[0][1], layer_properties[1])
+		// Vertical scale is the only delayed composer value consumed below.
+		prev_reg_composer[1][2] = prev_reg_composer[0][2]
+		prev_reg_composer[0][2] = reg_composer[2]
+		// Copy layer state only after a register write changed it.
+		for (let layer = 0; layer < NUM_LAYERS; layer++) {
+			if (prev_layer_properties_version[1][layer] !== prev_layer_properties_version[0][layer]) {
+				copy_layer_properties(prev_layer_properties[1][layer], prev_layer_properties[0][layer])
+				prev_layer_properties_version[1][layer] = prev_layer_properties_version[0][layer]
+			}
+			if (prev_layer_properties_version[0][layer] !== layer_properties_version[layer]) {
+				copy_layer_properties(prev_layer_properties[0][layer], layer_properties[layer])
+				prev_layer_properties_version[0][layer] = layer_properties_version[layer]
+			}
+		}
 		if ((dc_video & 3) > 1) { // 480i or 240p
 			if ((y >> 1) == 0) {
 				eff_y_fp = y*(prev_reg_composer[1][2] << 9)
@@ -911,6 +981,9 @@ const render_line = (y: number, scan_pos_x: number): void => {
 	}
 
 	const out_mode: number = reg_composer[0] & 3
+	let direct_color_output = false
+	let direct_color_start = 0
+	let direct_color_stop = 0
 	const border_color: number = reg_composer[3]
 	let hstart: number = reg_composer[4] << 2
 	let hstop: number = reg_composer[5] << 2
@@ -992,16 +1065,60 @@ const render_line = (y: number, scan_pos_x: number): void => {
 			}
 
 			const scale: number = reg_composer[1]
-  // @ts-ignore
-			for (let x: number = MAX(hstart, s_pos_x_p); x < hstop && x < s_pos_x; ++x) {
-  // @ts-ignore
-				const eff_x: number = eff_x_fp >> 16
-				col_line[x] = eff_x >= SCREEN_WIDTH ? 0 : !sprite_line_enable
-					? (layer_line[1][eff_x] || layer_line[0][eff_x])
-					: calculate_line_col_index(sprite_line_z[eff_x], sprite_line_col[eff_x], layer_line[0][eff_x], layer_line[1][eff_x])
-  // @ts-ignore
-				eff_x_fp += (scale << 9)
+			const start_x = MAX(hstart, s_pos_x_p)
+			const stop_x = Math.min(hstop, s_pos_x)
+			if (!sprite_line_enable && layer_line_enable[0] && !layer_line_enable[1]) {
+				let fb_idx = y * SCREEN_WIDTH + start_x
+				for (let x = start_x; x < stop_x; x++) {
+					const eff_x = eff_x_fp >> 16
+					const col_index = eff_x < SCREEN_WIDTH ? layer_line[0][eff_x] : 0
+					framebuffer32[fb_idx++] = video_palette.entries[col_index]
+					eff_x_fp += scale << 9
+				}
+				direct_color_output = true
+			} else if (!sprite_line_enable && !layer_line_enable[0] && layer_line_enable[1]) {
+				let fb_idx = y * SCREEN_WIDTH + start_x
+				for (let x = start_x; x < stop_x; x++) {
+					const eff_x = eff_x_fp >> 16
+					const col_index = eff_x < SCREEN_WIDTH ? layer_line[1][eff_x] : 0
+					framebuffer32[fb_idx++] = video_palette.entries[col_index]
+					eff_x_fp += scale << 9
+				}
+				direct_color_output = true
+			} else if (!sprite_line_enable && layer_line_enable[0] && layer_line_enable[1]) {
+				for (let x = start_x; x < stop_x; x++) {
+					const eff_x = eff_x_fp >> 16
+					col_line[x] = eff_x < SCREEN_WIDTH
+						? (layer_line[1][eff_x] || layer_line[0][eff_x]) : 0
+					eff_x_fp += scale << 9
+				}
+			} else if (sprite_line_enable && layer_line_enable[0] && !layer_line_enable[1]) {
+				let fb_idx = y * SCREEN_WIDTH + start_x
+				for (let x = start_x; x < stop_x; x++) {
+					const eff_x = eff_x_fp >> 16
+					let col_index = 0
+					if (eff_x < SCREEN_WIDTH) {
+						const sprite_z = sprite_line_z[eff_x]
+						const sprite_col = sprite_line_col[eff_x]
+						const layer_col = layer_line[0][eff_x]
+						col_index = sprite_z >= 2
+							? (sprite_col || layer_col)
+							: (sprite_z === 1 ? (layer_col || sprite_col) : layer_col)
+					}
+					framebuffer32[fb_idx++] = video_palette.entries[col_index]
+					eff_x_fp += scale << 9
+				}
+				direct_color_output = true
+			} else {
+				for (let x = start_x; x < stop_x; x++) {
+					const eff_x = eff_x_fp >> 16
+					col_line[x] = eff_x < SCREEN_WIDTH
+						? calculate_line_col_index(sprite_line_z[eff_x], sprite_line_col[eff_x], layer_line[0][eff_x], layer_line[1][eff_x]) : 0
+					eff_x_fp += scale << 9
+				}
 			}
+			direct_color_start = start_x
+			direct_color_stop = stop_x
 			for (let x: number = hstop; x < s_pos_x; ++x) {
 				col_line[x] = border_color
 			}
@@ -1011,8 +1128,14 @@ const render_line = (y: number, scan_pos_x: number): void => {
 	// Look up all color indices via direct 32-bit array stores
 	{
 		let fb32_idx: number = y * SCREEN_WIDTH + s_pos_x_p
-		for (let x: number = s_pos_x_p; x < s_pos_x; x++) {
+		for (let x: number = s_pos_x_p; x < (direct_color_output ? direct_color_start : s_pos_x); x++) {
 			framebuffer32[fb32_idx++] = video_palette.entries[col_line[x]]
+		}
+		if (direct_color_output) {
+			fb32_idx = y * SCREEN_WIDTH + direct_color_stop
+			for (let x = direct_color_stop; x < s_pos_x; x++) {
+				framebuffer32[fb32_idx++] = video_palette.entries[col_line[x]]
+			}
 		}
 	}
 

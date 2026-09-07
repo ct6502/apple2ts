@@ -678,7 +678,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       break
     }
     case MSG_WORKER.VERA_FRAME: {
-      latestVeraFrame = e.data.payload as { fb?: Uint8ClampedArray<ArrayBuffer>, dcVideo: number }
+      latestVeraFrame = e.data.payload as VeraUiFrame
       break
     }
     case MSG_WORKER.ERRORMSG: {
@@ -703,7 +703,14 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
 // easy to just stash them here.
 let showAppleMouse = false
 let softSwitchDescriptions = [""]
-let latestVeraFrame: { fb?: Uint8ClampedArray<ArrayBuffer>, dcVideo: number } | null = null
+export type VeraUiFrame = {
+  fb?: Uint8ClampedArray<ArrayBuffer>,
+  dcVideo: number,
+  sequence: number,
+  postMs: number,
+}
+
+let latestVeraFrame: VeraUiFrame | null = null
 
 export const handleGetVeraFrame = () => {
   return latestVeraFrame

@@ -67,12 +67,18 @@ const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
   }
 }
 
+let veraFrameSequence = 0
+let previousVeraPostMs = 0
+
 export const passVeraFramebuffer = (fb: Uint8ClampedArray<ArrayBuffer>, dcVideo: number) => {
+  const sequence = ++veraFrameSequence
+  const start = performance.now()
   if (dcVideo !== 0) {
-    doPostMessage(MSG_WORKER.VERA_FRAME, { fb, dcVideo })
+    doPostMessage(MSG_WORKER.VERA_FRAME, { fb, dcVideo, sequence, postMs: previousVeraPostMs })
   } else {
-    doPostMessage(MSG_WORKER.VERA_FRAME, { dcVideo })
+    doPostMessage(MSG_WORKER.VERA_FRAME, { dcVideo, sequence, postMs: previousVeraPostMs })
   }
+  previousVeraPostMs = performance.now() - start
 }
 
 export const passErrorMsg = (event: ErrorMsg) => {

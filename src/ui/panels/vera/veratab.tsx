@@ -5,6 +5,7 @@ import { getMouseButtonReleaseEvents } from "../../mouseevent"
 
 const VeraTab = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const lastSequenceRef = useRef<number | null>(null)
   const [withinScreen, setWithinScreen] = useState(false)
   const [viewSize, setViewSize] = useState<"320" | "640">(() => {
     try {
@@ -95,8 +96,12 @@ const VeraTab = () => {
     const render = () => {
       const veraFrame = handleGetVeraFrame()
       const canvas = canvasRef.current
+      const sequence = veraFrame?.sequence ?? -1
 
-      if (canvas) {
+      // Draw each published VERA frame once. The browser animation loop may
+      // run faster than VERA and repeatedly uploading 1.2 MB is expensive.
+      if (canvas && sequence !== lastSequenceRef.current) {
+        lastSequenceRef.current = sequence
         const ctx = canvas.getContext("2d")
         if (ctx) {
           // If DC_VIDEO output is disabled (lowest 2 bits are 0) or no frame, show standby/help screen
