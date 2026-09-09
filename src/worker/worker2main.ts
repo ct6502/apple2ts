@@ -3,6 +3,8 @@ import { doSetRunMode, doSetSpeedMode,
   forceVideo7Override,
   doSetMemory,
   doWriteMemory,
+  doSetMemoryWriteWatchpoint,
+  doClearMemoryWriteWatchpoint,
   doSetMachineName,
   doSetRamWorks,
   doSetVeraSlot,
@@ -274,6 +276,34 @@ if (typeof self !== "undefined") {
             e.data.operationId,
             undefined,
             findExternalMemory(e.data.payload as MemorySearchRequest),
+          )
+        } catch (error) {
+          passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
+          )
+        }
+        break
+      case MSG_MAIN.SET_MEMORY_WRITE_WATCHPOINT:
+        try {
+          passWorkerOperationResult(
+            e.data.operationId,
+            undefined,
+            doSetMemoryWriteWatchpoint(e.data.payload as MemoryViewRequest),
+          )
+        } catch (error) {
+          passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
+          )
+        }
+        break
+      case MSG_MAIN.CLEAR_MEMORY_WRITE_WATCHPOINT:
+        try {
+          passWorkerOperationResult(
+            e.data.operationId,
+            undefined,
+            doClearMemoryWriteWatchpoint(),
           )
         } catch (error) {
           passWorkerOperationResult(

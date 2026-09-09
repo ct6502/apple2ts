@@ -76,6 +76,26 @@ type MemorySearchResult = Omit<MemoryView, "bytes"> & {
   truncated: boolean,
 }
 
+type MemoryWriteWatchpoint = {
+  watchpointId: string,
+  address: number,
+  length: number,
+  space: MemorySpace,
+  auxBank: number | null,
+}
+
+type MemoryWriteEvent = {
+  watchpointId: string,
+  writerPC: number,
+  address: number,
+  value: number,
+  watchpointSpace: MemorySpace,
+  watchpointAuxBank: number | null,
+  effectiveSpace: "main" | "aux" | "system",
+  effectiveAuxBank: number | null,
+  mapping: MemoryMappingState,
+}
+
 type KeyboardState = {
   key: number,
   isDown: boolean,
@@ -248,6 +268,7 @@ type ExecutionPauseReason =
 type ExecutionStopDescriptor = {
   reason: Exclude<ExecutionPauseReason, "idle">,
   breakpointAddress?: number,
+  memoryWrite?: MemoryWriteEvent,
 }
 
 type ExecutionSnapshot = {
@@ -258,6 +279,7 @@ type ExecutionSnapshot = {
     breakpointId: string,
     address: number,
   } | null,
+  memoryWrite: MemoryWriteEvent | null,
   PC: number,
   A: number,
   X: number,

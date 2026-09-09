@@ -43,7 +43,7 @@ const getEffectiveSegments = (
   return segments
 }
 
-export const getMemoryView = (request: MemoryViewRequest): MemoryView => {
+export const resolveMemoryRangeRequest = (request: MemoryViewRequest) => {
   const {address, length, space} = request
   if (!Number.isInteger(address) || address < 0 || address > 0xFFFF) {
     throw new Error("Memory address must be between $0000 and $FFFF")
@@ -69,6 +69,18 @@ export const getMemoryView = (request: MemoryViewRequest): MemoryView => {
     }
   }
 
+  return {
+    address,
+    length,
+    space,
+    requestedAuxBank: request.auxBank ?? null,
+    auxBank,
+  }
+}
+
+export const getMemoryView = (request: MemoryViewRequest): MemoryView => {
+  const {address, length, space, requestedAuxBank, auxBank} = resolveMemoryRangeRequest(request)
+
   let bytes: Uint8Array
   if (space === "active") {
     bytes = new Uint8Array(length)
@@ -87,7 +99,7 @@ export const getMemoryView = (request: MemoryViewRequest): MemoryView => {
     address,
     length,
     requestedSpace: space,
-    requestedAuxBank: request.auxBank ?? null,
+    requestedAuxBank,
     effectiveAuxBank: effectiveSegments.some((segment) => segment.space === "aux")
       ? auxBank
       : null,

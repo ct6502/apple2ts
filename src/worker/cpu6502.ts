@@ -8,9 +8,12 @@ import { MEMORY_BANKS } from "../common/memorybanks"
 import { getInstructionString } from "../common/util_disassemble"
 
 let breakpointSkipOnce = false
-let pendingWatchpointAddress: number | null = null
+let pendingWatchpoint: {address: number, memoryWrite: MemoryWriteEvent | null} | null = null
 let lastBreakpointAddress: number | null = null
 let lastBreakpointReason: "breakpoint" | "watchpoint" | "step" = "breakpoint"
+let lastMemoryWrite: MemoryWriteEvent | null = null
+let memoryWriteWatchpoint: MemoryWriteWatchpoint | null = null
+let activeWriterPC: number | null = null
 export let breakpointMap: BreakpointMap = new BreakpointMap()
 let runToRTS = false
 
@@ -52,6 +55,45 @@ export const doSetBasicStep = () => {
 export const doSetBreakpoints = (bp: BreakpointMap) => {
   // Replacing the UI-configured map also erases hidden stepping breakpoints.
   breakpointMap = bp
+}
+
+export const doSetMemoryWriteWatchpoint = (watchpoint: MemoryWriteWatchpoint | null) => {
+  const hadWatchpoint = memoryWriteWatchpoint !== null
+  memoryWriteWatchpoint = watchpoint
+  if (!watchpoint && pendingWatchpoint?.memoryWrite) pendingWatchpoint = null
+  return hadWatchpoint
+}
+
+export const observeMemoryWrite = (
+  address: number,
+  value: number,
+  effectiveSpace: "main" | "aux" | "system",
+  effectiveAuxBank: number | null,
+) => {
+  const watchpoint = memoryWriteWatchpoint
+  if (activeWriterPC === null || !watchpoint) return
+  if (address < watchpoint.address || address >= watchpoint.address + watchpoint.length) return
+  if (watchpoint.space !== "active" && watchpoint.space !== effectiveSpace) return
+  if (watchpoint.space === "aux" && watchpoint.auxBank !== effectiveAuxBank) return
+
+  setWatchpointBreak(address, {
+    watchpointId: watchpoint.watchpointId,
+    writerPC: activeWriterPC,
+    address,
+    value,
+    watchpointSpace: watchpoint.space,
+    watchpointAuxBank: watchpoint.auxBank,
+    effectiveSpace,
+    effectiveAuxBank,
+    mapping: {
+      RAMRD: SWITCHES.RAMRD.isSet,
+      RAMWRT: SWITCHES.RAMWRT.isSet,
+      ALTZP: SWITCHES.ALTZP.isSet,
+      "80STORE": SWITCHES.STORE80.isSet,
+      PAGE2: SWITCHES.PAGE2.isSet,
+      HIRES: SWITCHES.HIRES.isSet,
+    },
+  })
 }
 
 // These MEMORY_BANKS structures are defined within the common directory,
@@ -202,8 +244,10 @@ export const checkBreakpointExpression = (bp: Breakpoint) => {
   return passes2
 }
 
-export const setWatchpointBreak = (address: number) => {
-  pendingWatchpointAddress ??= address
+export const setWatchpointBreak = (address: number, memoryWrite: MemoryWriteEvent | null = null) => {
+  if (!pendingWatchpoint || (memoryWrite && !pendingWatchpoint.memoryWrite)) {
+    pendingWatchpoint = {address, memoryWrite}
+  }
 }
 
 const printBreakpointToConsole = (vLo: number, vHi: number, code: PCodeInstr | null) => {
@@ -264,10 +308,12 @@ const processBreakpointActions = (bp: Breakpoint, vLo: number, vHi: number,
 export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | null = null): BREAKPOINT_RESULT => {
   lastBreakpointAddress = null
   lastBreakpointReason = "breakpoint"
-  if (pendingWatchpointAddress !== null) {
-    lastBreakpointAddress = pendingWatchpointAddress
+  lastMemoryWrite = null
+  if (pendingWatchpoint) {
+    lastBreakpointAddress = pendingWatchpoint.address
     lastBreakpointReason = "watchpoint"
-    pendingWatchpointAddress = null
+    lastMemoryWrite = pendingWatchpoint.memoryWrite
+    pendingWatchpoint = null
     return BREAKPOINT_RESULT.BREAK
   }
   if (breakpointMap.size === 0 || breakpointSkipOnce) return BREAKPOINT_RESULT.NO_BREAK
@@ -342,6 +388,21 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
   return result
 }
 
+const pauseForBreakpointResult = (result: BREAKPOINT_RESULT) => {
+  if (result !== BREAKPOINT_RESULT.BREAK && result !== BREAKPOINT_RESULT.HIDDEN_BREAK) return false
+  doSetRunMode(
+    RUN_MODE.PAUSED,
+    result !== BREAKPOINT_RESULT.HIDDEN_BREAK,
+    undefined,
+    {
+      reason: lastBreakpointReason,
+      breakpointAddress: lastMemoryWrite ? undefined : lastBreakpointAddress ?? undefined,
+      memoryWrite: lastMemoryWrite ?? undefined,
+    },
+  )
+  return true
+}
+
 export const processInstruction = (updateTrace: ((str: string) => void) | null = null) => {
   let cycles = 0
   const PC1 = s6502.PC
@@ -355,15 +416,8 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
 
   if (!runOnlyMode()) {
     const bpResult = hitBreakpoint(instr, vLo, vHi, code)
-    if (bpResult === BREAKPOINT_RESULT.BREAK || bpResult === BREAKPOINT_RESULT.HIDDEN_BREAK) {
-      doSetRunMode(
-        RUN_MODE.PAUSED,
-        bpResult !== BREAKPOINT_RESULT.HIDDEN_BREAK,
-        undefined,
-        {reason: lastBreakpointReason, breakpointAddress: lastBreakpointAddress ?? undefined},
-      )
-      return -1
-    } else if (bpResult === BREAKPOINT_RESULT.ACTION) {
+    if (pauseForBreakpointResult(bpResult)) return -1
+    if (bpResult === BREAKPOINT_RESULT.ACTION) {
       // If we had a breakpoint action that did not halt, we want to leave
       // here but continue running. This will then call immediately back
       // into processInstruction. We need to do this in case the action
@@ -390,7 +444,12 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
   // RTI uses the value restored from the stack.
   let interruptDisabled = isInterruptDisabled()
   clearInterruptEntry()
-  cycles = code.execute(vLo, vHi)
+  activeWriterPC = PC1
+  try {
+    cycles = code.execute(vLo, vHi)
+  } finally {
+    activeWriterPC = null
+  }
   if (code.pcode === 0x40) interruptDisabled = isInterruptDisabled()
 
   if (updateTrace) {
@@ -430,6 +489,7 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
       cycles = intcycles
     }
   }
+  if (pendingWatchpoint?.memoryWrite && pauseForBreakpointResult(hitBreakpoint())) return -1
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false
     doSetRunMode(RUN_MODE.PAUSED)

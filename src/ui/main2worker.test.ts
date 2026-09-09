@@ -10,6 +10,8 @@ import {
   requestSpeedMode,
   requestMemorySearch,
   requestMemoryView,
+  requestSetMemoryWriteWatchpoint,
+  requestClearMemoryWriteWatchpoint,
   setExecutionStateCallback,
   requestWriteMemory,
   setMain2Worker,
@@ -152,6 +154,33 @@ describe("worker operations", () => {
     expect(message).toEqual(expect.objectContaining({msg: MSG_MAIN.FIND_MEMORY, payload: request}))
     sendOperationResult(message.operationId, undefined, value)
     await expect(operation).resolves.toEqual(value)
+  })
+
+  test("sets and clears a write watchpoint as confirmed worker operations", async () => {
+    const request = {address: 0x03A4, length: 4, space: "main" as const}
+    const setting = requestSetMemoryWriteWatchpoint(request)
+    const setMessage = worker.postMessage.mock.calls.at(-1)[0]
+    const value = {
+      watchpointId: "mwp:main:-:932:4",
+      ...request,
+      auxBank: null,
+      executionSequence: 7,
+    }
+    expect(setMessage).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.SET_MEMORY_WRITE_WATCHPOINT,
+      payload: request,
+    }))
+    sendOperationResult(setMessage.operationId, undefined, value)
+    await expect(setting).resolves.toEqual(value)
+
+    const clearing = requestClearMemoryWriteWatchpoint()
+    const clearMessage = worker.postMessage.mock.calls.at(-1)[0]
+    expect(clearMessage).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.CLEAR_MEMORY_WRITE_WATCHPOINT,
+      payload: {},
+    }))
+    sendOperationResult(clearMessage.operationId, undefined, {cleared: true})
+    await expect(clearing).resolves.toEqual({cleared: true})
   })
 
   test("sends CPU state changes as confirmed worker operations", async () => {

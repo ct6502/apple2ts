@@ -26,7 +26,7 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   clearSlot} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
-import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, resetCycleCountCallbacks, setStepOut } from "./cpu6502"
+import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, processInstruction, resetCycleCountCallbacks, setStepOut } from "./cpu6502"
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
@@ -47,7 +47,7 @@ import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTe
 import { SoftCard } from "./devices/softcard"
 import { setSlotIOCallback } from "./memory"
 import { hasHardDriveMounted } from "./devices/drivestate"
-import { findMemory, getMemoryView } from "./memory_view"
+import { findMemory, getMemoryView, resolveMemoryRangeRequest } from "./memory_view"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -65,6 +65,7 @@ let executionSequence = 0
 let executionState: "running" | "paused" = "paused"
 let executionPauseReason: ExecutionPauseReason | null = "idle"
 let executionBreakpointAddress: number | null = null
+let executionMemoryWrite: MemoryWriteEvent | null = null
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
 let veraSlot: VERA_SLOT = 0
@@ -92,6 +93,33 @@ export const findExternalMemory = (request: MemorySearchRequest) => {
     throw new Error("Memory is available only while the emulator is paused")
   }
   return findMemory(request)
+}
+
+export const doSetMemoryWriteWatchpoint = (request: MemoryViewRequest) => {
+  if (cpuRunMode !== RUN_MODE.PAUSED) {
+    throw new Error("Memory write watchpoints can be changed only while the emulator is paused")
+  }
+  const resolved = resolveMemoryRangeRequest(request)
+  if (resolved.length > 4096) {
+    throw new Error("Memory write watchpoint length must be between 1 and 4096")
+  }
+  const auxBank = resolved.space === "aux" ? resolved.auxBank : null
+  const watchpoint: MemoryWriteWatchpoint = {
+    watchpointId: `mwp:${resolved.space}:${auxBank ?? "-"}:${resolved.address}:${resolved.length}`,
+    address: resolved.address,
+    length: resolved.length,
+    space: resolved.space,
+    auxBank,
+  }
+  setCpuMemoryWriteWatchpoint(watchpoint)
+  return {...watchpoint, executionSequence}
+}
+
+export const doClearMemoryWriteWatchpoint = () => {
+  if (cpuRunMode !== RUN_MODE.PAUSED) {
+    throw new Error("Memory write watchpoints can be changed only while the emulator is paused")
+  }
+  return {cleared: setCpuMemoryWriteWatchpoint(null)}
 }
 
 const startSiriusJoyportResetTimer = () => {
@@ -638,6 +666,7 @@ export const doSetRunMode = (
     executionState = "running"
     executionPauseReason = null
     executionBreakpointAddress = null
+    executionMemoryWrite = null
   } else if (
     cpuRunMode === RUN_MODE.PAUSED
     && (executionState !== "paused" || stop !== undefined)
@@ -646,6 +675,7 @@ export const doSetRunMode = (
     executionState = "paused"
     executionPauseReason = stop?.reason ?? "explicit"
     executionBreakpointAddress = stop?.breakpointAddress ?? null
+    executionMemoryWrite = stop?.memoryWrite ?? null
   } else if (
     cpuRunMode === RUN_MODE.IDLE
     && (executionState !== "paused" || executionPauseReason !== "idle")
@@ -654,6 +684,7 @@ export const doSetRunMode = (
     executionState = "paused"
     executionPauseReason = "idle"
     executionBreakpointAddress = null
+    executionMemoryWrite = null
   }
   if (cpuRunMode === RUN_MODE.PAUSED) {
     syncSoftSwitchStatusFlags()
@@ -798,6 +829,7 @@ export const getExternalMachineState = () => {
         breakpointId: `bp:${executionBreakpointAddress}`,
         address: executionBreakpointAddress,
       },
+      memoryWrite: executionMemoryWrite,
       PC: s6502.PC,
       A: s6502.Accum,
       X: s6502.XReg,
