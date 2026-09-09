@@ -1,31 +1,48 @@
 # Changelog
 
-## [Unreleased]
+## [v3.6.0](https://github.com/ct6502/apple2ts/tree/v3.6.0) (2026-09-09)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.5.2...v3.6.0)
 
 **Implemented enhancements:**
 
-- Add VidHD video expansion card emulation in Slot 3 for Apple IIe and Apple II+, providing Apple IIGS-compatible Super Hi-Res (SHR) 320x200 (16 colors per line from 16 12-bit RGB palettes / 4096 colors) and 640x200 dithered graphics modes.
-- Support `$C029` (`NEWVIDEO`) softswitch control, enabling seamless SHR activation and automatic Super Hi-Res box art rendering in modern software such as Total Replay.
-- Implement accurate Slot 3 ROM signature routing with `SLOTC3ROM` softswitch support, allowing VidHD hardware detection while preserving full compatibility with Apple IIe internal 80-column firmware and applications.
-- Add Applied Engineering (AE) RamWorks III auxiliary memory expansion card emulation on Apple IIe, supporting 512KB, 1MB, 4MB, and up to 8MB RAM bank switching with auxiliary 80-column and dHGR support.
-- Add Videx VideoTerm 80-Column Display Card emulation in Slot 3 for Apple II/II+ (MC6845 CRTC, 2KB static VRAM, bank switching, and official Videx 2.4 firmware ROM).
-- Implement Videx Soft Video Switch auto-switching: automatic display handover between 80-column text, 40-column text, and Apple II graphics (`GR`, `HGR`, `HGR2`). Note: In accordance with authentic Videx hardware behavior, `PR#0` resets character vectors to 40-column without resetting the display; returning the display to 40-column can be done via `Ctrl-Reset`.
-- Support MC6845 CRTC hardware scrolling (R12/R13 start address) and cursor positioning (R14/R15) for CP/M and terminal software.
-- Enable full ASCII lowercase support in 80-column mode on Apple II+ models.
-- Support genuine Videx card identification signatures in Slot 3 ROM ($C30B=0x01, $C30C=0x82) for peripheral card detectors (such as Card Cat) and Microsoft Z80 CP/M BIOS.
-- Add self-contained DemoZoo catalog snapshot bundled in `public/data/demozoo_snapshot.json` with pre-fetched direct download links, enabling DemoZoo catalog browsing and search on GitHub Pages and static web hosts with zero proxy server configuration.
-- Display snapshot creation date badge (`Snapshot at YYYY/MM/DD`) in the DemoZoo dialog header.
-- Add generic Wayback Machine raw stream fallback (`web.archive.org/web/0id_/`) for offline or broken external disk image download links.
-- Add dedicated Internet Archive `archive.org/cors/` endpoint fallback for IA disk downloads to ensure permissive CORS headers across all global storage nodes.
-- Add a 2-second "Unable to Download!" notification badge in the DemoZoo dialog header when all download sources fail.
+- Add opt-in browser previews for pull requests [\#347](https://github.com/ct6502/apple2ts/issues/347)
+- Automatically add new PO language catalogs to Apple2TS [\#318](https://github.com/ct6502/apple2ts/issues/318)
+- Add a portable command for updating the 4cade catalog [\#314](https://github.com/ct6502/apple2ts/issues/314)
+- Add A2Desktop option to images? [\#76](https://github.com/ct6502/apple2ts/issues/76)
 
 **Fixed bugs:**
 
-- Fix ProDOS boot freeze on Apple II+ with Slot 3 cards by preventing premature I/O activation and avoiding slot scan conflicts with disk controller firmware.
-- Fix CP/M 80-column screen corruption and solid white attribute boxes caused by inverted ASCII character rendering.
-- Eliminate external `pages.dev` proxy runtime dependencies on static deployments.
-- Filter out non-disk media links (.mp4, .mov, .webm, etc.) from DemoZoo download candidates.
-- Automatically normalize upstream scene.org download URLs and fix typos (e.g., `marqueedesign_`).
+- Load Disk stopped working for .DSK files [\#431](https://github.com/ct6502/apple2ts/issues/431)
+- iPad physical keyboard no longer working [\#396](https://github.com/ct6502/apple2ts/issues/396)
+- Disk Collection tab icons are hard to see in dark mode [\#383](https://github.com/ct6502/apple2ts/issues/383)
+- Selecting Undead Demo silently disables HDV export [\#382](https://github.com/ct6502/apple2ts/issues/382)
+- Preserve Mockingboard state in v2 save files [\#378](https://github.com/ct6502/apple2ts/issues/378)
+- Klaus tests can pass before cold-cache downloads finish [\#374](https://github.com/ct6502/apple2ts/issues/374)
+- Disk image picker can't insert disk into specific slot/drive [\#372](https://github.com/ct6502/apple2ts/issues/372)
+- Default slot-2 Z-80 SoftCard can disrupt expansion-card scans [\#363](https://github.com/ct6502/apple2ts/issues/363)
+- Bluetooth keyboard not recognized by emulator in webpage in Android -- Pixel 9a and Android Go Tablet [\#344](https://github.com/ct6502/apple2ts/issues/344)
+- Report skipped 4cade titles during HDV export [\#315](https://github.com/ct6502/apple2ts/issues/315)
+- Mockingboard timer flag generation incorrectly depends on interrupt enablement [\#308](https://github.com/ct6502/apple2ts/issues/308)
+- Google Drive fails to authenticate or open the picker [\#275](https://github.com/ct6502/apple2ts/issues/275)
+
+**Closed issues:**
+
+- Monitor bezel stretches away from the Apple II display in narrow windows [\#434](https://github.com/ct6502/apple2ts/issues/434)
+- Consider deleting transitional VERA PSG renderer [\#389](https://github.com/ct6502/apple2ts/issues/389)
+- Unused HDV export prototype remains alongside the active exporter [\#387](https://github.com/ct6502/apple2ts/issues/387)
+- HDV title state is spread across parallel arrays [\#386](https://github.com/ct6502/apple2ts/issues/386)
+- Generated 4cade catalog mixes static data with TypeScript code [\#385](https://github.com/ct6502/apple2ts/issues/385)
+- Remove the unused HDV boot-state capture path [\#313](https://github.com/ct6502/apple2ts/issues/313)
+- Add an action to reveal the current instruction’s target in Memory Dump [\#303](https://github.com/ct6502/apple2ts/issues/303)
+- Add a complete optional FASTChip IIe card profile [\#301](https://github.com/ct6502/apple2ts/issues/301)
+- Use neutral names for $C068-$C06F input aliases [\#300](https://github.com/ct6502/apple2ts/issues/300)
+- Use a device-neutral name for the $C074 compatibility soft switch [\#299](https://github.com/ct6502/apple2ts/issues/299)
+- Sirius Joyport menu toggle does not update the running emulator [\#297](https://github.com/ct6502/apple2ts/issues/297)
+- feat\(i18n\): separate translation fallback from catalog maintenance [\#283](https://github.com/ct6502/apple2ts/issues/283)
+- Honor IIe IOUDIS gating and trigger paddles on every $C07x access [\#279](https://github.com/ct6502/apple2ts/issues/279)
+- Correct Apple IIe $C019 vertical-blank polarity [\#277](https://github.com/ct6502/apple2ts/issues/277)
+- Add one-shot \(“hit once”\) breakpoints to the debugger UI [\#267](https://github.com/ct6502/apple2ts/issues/267)
 
 ## [v3.5.2](https://github.com/ct6502/apple2ts/tree/v3.5.2) (2026-08-06)
 
@@ -40,16 +57,6 @@
 
 **Fixed bugs:**
 
-- Selects direct disk files instead of informational download pages.
-- Boots the newly loaded DemoZoo disk and keeps the selected floppy drive synchronized when changing disks.
-- Prevents DemoZoo refreshes from running automatically on every `npm start`.
-- Fixes DemoZoo proxy routing and external disk downloads on the Cloudflare Pages deployment.
-- Fixes Internet Archive search and metadata resolution when the browser origin is `apple2ts.pages.dev`.
-- Makes Internet Archive result titles clickable and closes the DemoZoo dialog immediately after a disk loads.
-- Adds retries and a pinned Wrangler version for transient Cloudflare Pages Function publish failures.
-- Fixes DemoZoo restoring the latest saved page instead of resetting to page 1 when the dialog is reopened.
-- Fixes DemoZoo favorites resolving through the Cloudflare proxy and loading external disk-image links.
-- Marks DemoZoo favorites separately from Internet Archive disks and allows export after the disk format is verified.
 - Test slack integration [\#253](https://github.com/ct6502/apple2ts/issues/253)
 - Unable to use debugger properly unless current resolution allows all panels to be displayed completely [\#249](https://github.com/ct6502/apple2ts/issues/249)
 
