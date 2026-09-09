@@ -41,6 +41,7 @@ import {
   passTimeTravelSnapshot,
   passSetShowDebugTab,
   requestKeyboardState,
+  requestKeySequence,
   passSetRunMode,
   requestSetRunMode,
   requestLoadBinary,
@@ -467,6 +468,14 @@ export const executeCommand = async (action: string, payload: Record<string, unk
     case "setKeyboardState":
       await requestKeyboardState(parseRemoteKeyboardState(payload))
       return collectStatus()
+
+    case "sendKeys": {
+      const result = await requestKeySequence({
+        keys: String(payload.keys ?? ""),
+        timeoutMs: Number(payload.timeoutMs),
+      })
+      return {...result, status: collectStatus()}
+    }
 
     case "keypress": {
       const value = payload.key

@@ -14,9 +14,11 @@ import { doSetRunMode, doSetSpeedMode,
   setTracing,
   doExecuteBasicCommand,
   doSetCyclesToRun,
-  getExternalMemoryView, findExternalMemory} from "./motherboard"
+  getCpuRunMode,
+  getExternalMemoryView,
+  findExternalMemory} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
-import { apple2KeyRelease, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
+import { apple2KeyRelease, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
@@ -212,6 +214,24 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.KEYBOARD_STATE:
         setKeyboardState(e.data.payload as KeyboardState)
         if (e.data.operationId !== undefined) passWorkerOperationResult(e.data.operationId)
+        break
+      case MSG_MAIN.KEY_SEQUENCE:
+        if (e.data.operationId === undefined) break
+        if (getCpuRunMode() !== RUN_MODE.RUNNING) {
+          passWorkerOperationResult(e.data.operationId, undefined, {
+            outcome: "not_running",
+            keysDelivered: 0,
+            keyMayHaveBeenObserved: false,
+          })
+          break
+        }
+        void sendKeySequence(e.data.payload as KeySequenceRequest).then(
+          (result) => passWorkerOperationResult(e.data.operationId, undefined, result),
+          (error) => passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
+          ),
+        )
         break
       case MSG_MAIN.KEYPRESS:
         sendTextToEmulator(e.data.payload as number)
