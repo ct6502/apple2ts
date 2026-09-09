@@ -116,4 +116,14 @@ export const newReleases: DiskCollectionItem[] = [
     params: "slot2=vera&tab=vera",
     fileSize: 33553920
   },
+  {
+    type: "new",
+    title: "Time Pilot (VERA)",
+    lastUpdated: new Date("9/6/2026"),
+    imageUrl: "disks/timepilot.png",
+    diskUrl: "https://github.com/anomixer/Time-Pilot/releases/latest/download/TimePilot-IIvera.hdv",
+    detailsUrl: "https://github.com/anomixer/Time-Pilot",
+    params: "slot2=vera&tab=vera",
+    fileSize: 819200
+  }
 ]
