@@ -38,6 +38,11 @@ import { clearSlotCardStateHandlers } from "./devices/slot_card_state"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
 import { advanceKeySequence, interruptKeySequence, pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
+import {
+  advanceConditionalInputSequence,
+  finishConditionalInputSequence,
+  requestConditionalInputTermination,
+} from "./conditional_input"
 import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
@@ -625,7 +630,10 @@ export const doSetRunMode = (
   operationId?: number,
   stop?: ExecutionStopDescriptor,
 ) => {
-  if (cpuRunModeIn !== RUN_MODE.RUNNING) interruptKeySequence()
+  if (cpuRunModeIn !== RUN_MODE.RUNNING) {
+    requestConditionalInputTermination("unexpected_stop")
+    interruptKeySequence()
+  }
   if (pendingRunModeOperation !== undefined && pendingRunModeOperation !== operationId) {
     passWorkerOperationResult(pendingRunModeOperation, "Worker operation was superseded")
   }
@@ -680,6 +688,9 @@ export const doSetRunMode = (
   // Remove all tracelog values if we are no longer tracing.
   if (!tracing) clearTracelog()
   updateExternalMachineState()
+  if (cpuRunModeIn !== RUN_MODE.RUNNING && !isTransitional) {
+    finishConditionalInputSequence(s6502.cycleCount)
+  }
   resetRefreshCounter()
   // Jump start the emulator if we have never executed anything.
   if (cpuSpeed === 0) {
@@ -913,6 +924,10 @@ const doAdvance6502 = () => {
       cycles = processInstruction(tracing ? updateTrace : null)
     }
     advanceKeySequence()
+    if (advanceConditionalInputSequence()) {
+      doSetRunMode(RUN_MODE.PAUSED, false, undefined, {reason: "input-sequence"})
+      break
+    }
     if (cycles < 0) break
     cycleTotal += cycles
     const cycleInFrame = s6502.cycleCount % 17030

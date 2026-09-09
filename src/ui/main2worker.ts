@@ -209,6 +209,24 @@ export const requestKeySequence = (payload: KeySequenceRequest) => {
   )
 }
 
+export const requestConditionalKeySequence = (payload: ConditionalKeySequenceRequest) => {
+  const timeoutMs = Number.isFinite(payload.timeoutMs)
+    ? Math.max(1, payload.timeoutMs + 1000)
+    : 1000
+  return requestWorkerOperation<ConditionalKeySequenceResult>(
+    MSG_MAIN.CONDITIONAL_KEY_SEQUENCE,
+    payload,
+    timeoutMs,
+  )
+}
+
+export const requestCancelConditionalKeySequence = (timeoutMs = 5000) =>
+  requestWorkerOperation<{cancelled: boolean}>(
+    MSG_MAIN.CANCEL_CONDITIONAL_KEY_SEQUENCE,
+    {},
+    timeoutMs,
+  )
+
 export const passKeyRelease = () => {
   setTimeout(() => {
     // Delay the key release to give the emulator time to process the keypress

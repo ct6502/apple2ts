@@ -1,5 +1,6 @@
 import { MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import { sendKeySequence, setKeyboardState } from "./devices/keyboard"
+import { hasConditionalInputSequence, runConditionalInputSequence } from "./conditional_input"
 import * as motherboard from "./motherboard"
 
 jest.mock("./devices/keyboard", () => ({
@@ -7,6 +8,12 @@ jest.mock("./devices/keyboard", () => ({
   setKeyboardState: jest.fn(),
   sendKeySequence: jest.fn(),
   sendTextToEmulator: jest.fn(),
+}))
+
+jest.mock("./conditional_input", () => ({
+  hasConditionalInputSequence: jest.fn(() => false),
+  requestConditionalInputTermination: jest.fn(() => false),
+  runConditionalInputSequence: jest.fn(),
 }))
 
 import "./worker2main"
@@ -102,6 +109,60 @@ test("reports malformed key sequences without waiting for a timeout", async () =
       operationId: 20,
       error: "Invalid key sequence",
       value: undefined,
+    },
+  })
+  runMode.mockRestore()
+  postMessage.mockRestore()
+})
+
+test("confirms a conditional input sequence only after its worker result", async () => {
+  const postMessage = jest.spyOn(self, "postMessage").mockImplementation()
+  const runMode = jest.spyOn(motherboard, "getCpuRunMode").mockReturnValue(RUN_MODE.RUNNING)
+  const request: ConditionalKeySequenceRequest = {
+    phases: [{keys: "A"}],
+    final: {address: 0x0200, space: "main", bytes: [1]},
+    timeoutMs: 5000,
+  }
+  const result: ConditionalKeySequenceResult = {
+    outcome: "completed",
+    completedPhases: 1,
+    failurePhase: null,
+    keyDeliveries: [],
+    cyclesElapsed: 20,
+  }
+  let finish: (value: ConditionalKeySequenceResult) => void = () => {}
+  jest.mocked(runConditionalInputSequence).mockReturnValueOnce(
+    new Promise((resolve) => { finish = resolve }),
+  )
+
+  self.onmessage?.({
+    data: {msg: MSG_MAIN.CONDITIONAL_KEY_SEQUENCE, payload: request, operationId: 21},
+  } as MessageEvent)
+  expect(postMessage).not.toHaveBeenCalled()
+  finish(result)
+  await Promise.resolve()
+  expect(postMessage).toHaveBeenCalledWith({
+    msg: MSG_WORKER.OPERATION_RESULT,
+    payload: {operationId: 21, error: undefined, value: result},
+  })
+  runMode.mockRestore()
+  postMessage.mockRestore()
+})
+
+test("keeps direct key sequences out of an active conditional sequence", () => {
+  const postMessage = jest.spyOn(self, "postMessage").mockImplementation()
+  const runMode = jest.spyOn(motherboard, "getCpuRunMode").mockReturnValue(RUN_MODE.RUNNING)
+  jest.mocked(hasConditionalInputSequence).mockReturnValueOnce(true)
+
+  self.onmessage?.({
+    data: {msg: MSG_MAIN.KEY_SEQUENCE, payload: {keys: "A", timeoutMs: 5000}, operationId: 22},
+  } as MessageEvent)
+  expect(postMessage).toHaveBeenCalledWith({
+    msg: MSG_WORKER.OPERATION_RESULT,
+    payload: {
+      operationId: 22,
+      error: undefined,
+      value: {outcome: "input_busy", keysDelivered: 0, keyMayHaveBeenObserved: false},
     },
   })
   runMode.mockRestore()

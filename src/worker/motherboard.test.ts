@@ -10,6 +10,7 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { getCurrentDriveState } from "./devices/drivestate"
 import * as worker2main from "./worker2main"
 import { getApple2State, setApple2State } from "./save_restore"
+import { advanceConditionalInputSequence, runConditionalInputSequence } from "./conditional_input"
 
 const getExecutionSnapshot = () => {
   const execution = getExternalMachineState().execution
@@ -80,6 +81,34 @@ test("physical memory inspection preserves CPU and execution state", () => {
     setAuxCardEnabled(previousAuxCardEnabled)
   }
 })
+
+test.each([RUN_MODE.NEED_BOOT, RUN_MODE.NEED_RESET])(
+  "%s interruption resolves conditional input with a coherent paused snapshot",
+  async (transitionalMode) => {
+    setIsTesting()
+    const previousRunMode = getExternalMachineState().runMode
+
+    try {
+      doSetRunMode(RUN_MODE.RUNNING, false)
+      const result = runConditionalInputSequence({
+        phases: [{when: {address: 0x0200, space: "main", bytes: [0xFF]}, keys: "A"}],
+        final: {address: 0x0201, space: "main", bytes: [0xFF]},
+        timeoutMs: 5000,
+      }, s6502.cycleCount)
+
+      doSetRunMode(transitionalMode, false)
+      doSetRunMode(RUN_MODE.RUNNING, false)
+      expect(advanceConditionalInputSequence()).toBe("unexpected_stop")
+      doSetRunMode(RUN_MODE.PAUSED, false)
+
+      await expect(result).resolves.toMatchObject({outcome: "unexpected_stop"})
+      expect(getExecutionSnapshot()).toMatchObject({state: "paused"})
+    } finally {
+      doSetRunMode(previousRunMode, false)
+      resetCpuSpeedForTesting()
+    }
+  },
+)
 
 test.each([
   [false, true, true, false],

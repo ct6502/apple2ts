@@ -22,6 +22,12 @@ import { doSetRunMode, doSetSpeedMode,
   restoreExternalSessionSnapshot} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
+import {
+  hasConditionalInputSequence,
+  requestConditionalInputTermination,
+  runConditionalInputSequence,
+} from "./conditional_input"
+import { s6502 } from "./instructions"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
@@ -216,6 +222,7 @@ if (typeof self !== "undefined") {
         doRestoreSaveState(e.data.payload as EmulatorSaveState, true)
         break
       case MSG_MAIN.KEYBOARD_STATE:
+        requestConditionalInputTermination("cancelled")
         setKeyboardState(e.data.payload as KeyboardState)
         if (e.data.operationId !== undefined) passWorkerOperationResult(e.data.operationId)
         break
@@ -229,6 +236,14 @@ if (typeof self !== "undefined") {
           })
           break
         }
+        if (hasConditionalInputSequence()) {
+          passWorkerOperationResult(e.data.operationId, undefined, {
+            outcome: "input_busy",
+            keysDelivered: 0,
+            keyMayHaveBeenObserved: false,
+          })
+          break
+        }
         void sendKeySequence(e.data.payload as KeySequenceRequest).then(
           (result) => passWorkerOperationResult(e.data.operationId, undefined, result),
           (error) => passWorkerOperationResult(
@@ -237,7 +252,39 @@ if (typeof self !== "undefined") {
           ),
         )
         break
+      case MSG_MAIN.CONDITIONAL_KEY_SEQUENCE:
+        if (e.data.operationId === undefined) break
+        if (getCpuRunMode() !== RUN_MODE.RUNNING) {
+          passWorkerOperationResult(e.data.operationId, undefined, {
+            outcome: "not_running",
+            completedPhases: 0,
+            failurePhase: 0,
+            keyDeliveries: [],
+            cyclesElapsed: 0,
+          })
+          break
+        }
+        void runConditionalInputSequence(
+          e.data.payload as ConditionalKeySequenceRequest,
+          s6502.cycleCount,
+        ).then(
+          (result) => passWorkerOperationResult(e.data.operationId, undefined, result),
+          (error) => passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
+          ),
+        )
+        break
+      case MSG_MAIN.CANCEL_CONDITIONAL_KEY_SEQUENCE: {
+        const cancelled = requestConditionalInputTermination("cancelled")
+        if (cancelled) doSetRunMode(RUN_MODE.PAUSED, false, undefined, {reason: "input-sequence"})
+        if (e.data.operationId !== undefined) {
+          passWorkerOperationResult(e.data.operationId, undefined, {cancelled})
+        }
+        break
+      }
       case MSG_MAIN.KEYPRESS:
+        requestConditionalInputTermination("cancelled")
         sendTextToEmulator(e.data.payload as number)
         break
       case MSG_MAIN.KEYRELEASE:
@@ -247,6 +294,7 @@ if (typeof self !== "undefined") {
         MouseCardEvent(e.data.payload)
         break
       case MSG_MAIN.PASTE_TEXT:
+        requestConditionalInputTermination("cancelled")
         doSetPastedText(e.data.payload as string)
         break
       case MSG_MAIN.APPLE_PRESS:

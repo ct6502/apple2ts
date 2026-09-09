@@ -116,6 +116,44 @@ export const getMemoryView = (request: MemoryViewRequest): MemoryView => {
   }
 }
 
+export const createMemoryPredicateMatcher = (predicate: MemoryPredicate) => {
+  const pattern = predicate.bytes
+  const mask = predicate.mask ?? pattern.map(() => 0xFF)
+  if (!Array.isArray(pattern) || pattern.length < 1 || pattern.length > 32
+    || pattern.some((byte) => !Number.isInteger(byte) || byte < 0 || byte > 0xFF)) {
+    throw new Error("Memory predicate must contain 1 to 32 byte values")
+  }
+  if (!Array.isArray(mask) || mask.length !== pattern.length
+    || mask.some((byte) => !Number.isInteger(byte) || byte < 0 || byte > 0xFF)) {
+    throw new Error("Memory predicate mask must match the byte pattern")
+  }
+  const resolved = resolveMemoryRangeRequest({
+    address: predicate.address,
+    length: pattern.length,
+    space: predicate.space,
+    auxBank: predicate.auxBank,
+  })
+  const checks = pattern.flatMap((byte, index) => mask[index] === 0
+    ? []
+    : [{index, mask: mask[index], expected: byte & mask[index]}])
+  const physicalOffset = resolved.space === "main"
+    ? resolved.address
+    : resolved.space === "aux"
+      ? RamWorksMemoryStart + resolved.auxBank * 0x10000 + resolved.address
+      : null
+
+  return () => {
+    for (const check of checks) {
+      const address = resolved.address + check.index
+      const offset = physicalOffset === null
+        ? addressGetTable[address >>> 8] + (address & 0xFF)
+        : physicalOffset + check.index
+      if ((memory[offset] & check.mask) !== check.expected) return false
+    }
+    return true
+  }
+}
+
 export const findMemory = (request: MemorySearchRequest): MemorySearchResult => {
   const {bytes: pattern, maxMatches = 32} = request
   if (!Array.isArray(pattern) || pattern.length < 1 || pattern.length > 32

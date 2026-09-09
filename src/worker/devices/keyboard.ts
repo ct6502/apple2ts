@@ -24,10 +24,18 @@ type PendingKeySequence = {
   currentIndex: number,
   strobeCleared: boolean,
   timeout: ReturnType<typeof setTimeout>,
+  onFinish?: (result: KeySequenceResult) => void,
   resolve: (result: KeySequenceResult) => void,
 }
 
 let pendingKeySequence: PendingKeySequence | null = null
+
+export const isKeyboardInputBusy = () => Boolean(
+  pendingKeySequence
+  || keyBuffer !== ""
+  || keyboardIsDown
+  || memGetC000(0xC000) >= 0x80,
+)
 
 const finishKeySequence = (
   outcome: KeySequenceResult["outcome"],
@@ -40,18 +48,23 @@ const finishKeySequence = (
   keyboardRepeatKey = 0
   clearKeyStrobe()
   apple2KeyRelease()
-  sequence.resolve({
+  const result = {
     outcome,
     keysDelivered: sequence.currentIndex,
     keyMayHaveBeenObserved,
-  })
+  }
+  sequence.onFinish?.(result)
+  sequence.resolve(result)
 }
 
 export const interruptKeySequence = () => {
   finishKeySequence("interrupted", true)
 }
 
-export const sendKeySequence = async ({keys, timeoutMs}: KeySequenceRequest) => {
+export const sendKeySequence = async (
+  {keys, timeoutMs}: KeySequenceRequest,
+  onFinish?: (result: KeySequenceResult) => void,
+) => {
   if (
     keys.length < 1
     || keys.length > 32
@@ -65,17 +78,14 @@ export const sendKeySequence = async ({keys, timeoutMs}: KeySequenceRequest) => 
   ) {
     throw new Error("Invalid key sequence")
   }
-  if (
-    pendingKeySequence
-    || keyBuffer !== ""
-    || keyboardIsDown
-    || memGetC000(0xC000) >= 0x80
-  ) {
-    return {
+  if (isKeyboardInputBusy()) {
+    const result = {
       outcome: "input_busy",
       keysDelivered: 0,
       keyMayHaveBeenObserved: false,
     } satisfies KeySequenceResult
+    onFinish?.(result)
+    return result
   }
 
   const mappedKeys = Array.from(keys, (key) =>
@@ -87,6 +97,7 @@ export const sendKeySequence = async ({keys, timeoutMs}: KeySequenceRequest) => 
       currentIndex: 0,
       strobeCleared: false,
       timeout: setTimeout(() => finishKeySequence("timeout", true), timeoutMs),
+      onFinish,
       resolve,
     }
     setKeyStrobe(mappedKeys[0])
