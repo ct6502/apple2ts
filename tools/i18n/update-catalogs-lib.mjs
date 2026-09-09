@@ -17,8 +17,8 @@ export const stageCatalogUpdate = ({input, source}) => {
     writeFileSync(
       stagedInput,
       preparePoCatalogForMerge(
-        readFileSync(source),
-        readFileSync(input),
+        readFileSync(source, "utf8"),
+        readFileSync(input, "utf8"),
       ),
       {flag: "wx"},
     )
