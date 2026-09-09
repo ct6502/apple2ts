@@ -394,21 +394,21 @@
 }
 
 .retro-clock-border>.retro-border-glyph-left {
-  left: calc(3 * var(--retro-cell-width));
+  left: calc(4 * var(--retro-cell-width));
 }
 
 .retro-clock-border>.retro-border-glyph-top,
 .retro-clock-border>.retro-border-glyph-bottom {
-  left: calc(3 * var(--retro-cell-width));
+  left: calc(4 * var(--retro-cell-width));
 }
 
 .retro-clock-border>.retro-border-notch-top-left,
 .retro-clock-border>.retro-border-notch-bottom-left {
-  left: calc(3 * var(--retro-cell-width));
+  left: calc(4 * var(--retro-cell-width));
 }
 
 .retro-panel.retro-skin-apple-iiplus .retro-clock {
-  grid-column: 24 / 38;
+  grid-column: 25 / 38;
 }
 
 .retro-panel.retro-skin-apple-iiplus .retro-clock-border>.retro-border-glyph-left,
@@ -424,7 +424,7 @@
 
 .retro-clock time {
   box-sizing: border-box;
-  grid-column: 5 / -2;
+  grid-column: 6 / -1;
   line-height: 1;
   overflow: hidden;
   white-space: nowrap;
@@ -432,12 +432,13 @@
 
 .retro-clock time:nth-of-type(1) {
   grid-row: 2;
-  text-align: center;
+  text-align: left;
 }
 
 .retro-clock time:nth-of-type(2) {
-  grid-column: 5 / -2;
+  grid-column: 6 / -1;
   grid-row: 3;
+  text-align: left;
 }
 
 .retro-panel.retro-skin-apple-iiplus .retro-clock time:nth-of-type(2) {
