@@ -2483,6 +2483,19 @@ msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
 msgstr ""
 
+
+msgctxt "linkBuilder.slots.configure"
+msgid "Configure slot cards"
+msgstr "スロットカードの設定"
+
+msgctxt "linkBuilder.slots.slot"
+msgid "Slot {{slot}}:"
+msgstr "スロット {{slot}}:"
+
+msgctxt "linkBuilder.slots.cardNone"
+msgid "None (empty)"
+msgstr "なし (空)"
+
 msgctxt "agent.tabTitle"
 msgid "Agent"
 msgstr ""

@@ -24,7 +24,7 @@ type SlotOption = {
   ramSizeKb?: typeof RAM_OPTIONS[number]
 }
 
-const getSlotOptions = (slot: SlotNumber, machine: MACHINE_NAME): SlotOption[] => {
+export const getSlotOptions = (slot: SlotNumber, machine: MACHINE_NAME): SlotOption[] => {
   if (slot === 3) {
     return machine === "APPLE2P"
       ? [{ card: "none" }, { card: "videoterm" }, { card: "vidhd" }]

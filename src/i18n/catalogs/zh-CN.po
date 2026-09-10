@@ -2461,7 +2461,18 @@ msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
 msgstr "64 (默认)"
 
-#, fuzzy
+msgctxt "linkBuilder.slots.configure"
+msgid "Configure slot cards"
+msgstr "配置插槽扩展卡"
+
+msgctxt "linkBuilder.slots.slot"
+msgid "Slot {{slot}}:"
+msgstr "插槽 {{slot}}:"
+
+msgctxt "linkBuilder.slots.cardNone"
+msgid "None (empty)"
+msgstr "无 (空)"
+
 msgctxt "agent.tabTitle"
 msgid "Agent"
 msgstr "AI 代理"
