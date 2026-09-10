@@ -290,6 +290,14 @@
   white-space: nowrap;
 }
 
+.retro-submenu-title-level-3 {
+  grid-row: 5 / 8;
+}
+
+.retro-submenu-title-level-4 {
+  grid-row: 7 / 10;
+}
+
 .retro-submenu-title::before {
   background: var(--retro-foreground);
   content: "";
@@ -298,6 +306,10 @@
   position: absolute;
   right: 0;
   top: var(--retro-row-height);
+}
+
+.retro-submenu-title:not(.retro-active-title)::before {
+  display: none;
 }
 
 .retro-submenu-title>.retro-submenu-title-text {
@@ -317,6 +329,10 @@
   position: absolute;
   right: var(--retro-cell-width);
   top: var(--retro-row-height);
+}
+
+.retro-submenu-title:not(.retro-active-title) .retro-submenu-title-value {
+  color: var(--retro-foreground);
 }
 
 .retro-text-cursor {
@@ -356,6 +372,11 @@
   background: var(--retro-foreground);
   color: var(--retro-background);
   display: inline-block;
+}
+
+.retro-panel.retro-skin-apple-iiplus .retro-submenu-title:not(.retro-active-title) .retro-inverse-space {
+  background: var(--retro-background);
+  color: var(--retro-foreground);
 }
 
 .retro-submenu-title-row {
@@ -490,6 +511,16 @@
 
 .retro-submenu-menu {
   grid-column: 2 / 37;
+}
+
+.retro-menu.retro-menu-title-level-3 {
+  grid-row: 8 / 22;
+  grid-template-rows: repeat(14, var(--retro-row-height));
+}
+
+.retro-menu.retro-menu-title-level-4 {
+  grid-row: 10 / 22;
+  grid-template-rows: repeat(12, var(--retro-row-height));
 }
 
 .retro-menu-item {

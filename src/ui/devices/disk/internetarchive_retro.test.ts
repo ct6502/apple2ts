@@ -45,7 +45,7 @@ describe("retro Internet Archive screen", () => {
     const children = screen.children as (items?: never[]) => ReturnType<typeof registry.resolve>
     let items = children()
 
-    expect(screen.submenuTitle).toBe("Internet Archive")
+    expect(screen.submenuTitle).toBe("disk.loadDiskFromInternetArchive")
     expect(screen.actionLabel).toBe("Search")
     expect(items.map(item => item.label)).toEqual(["Collection", "Title"])
     expect(items[0].options?.map(option => option.label)).toEqual(["Collection One", "Collection Two"])

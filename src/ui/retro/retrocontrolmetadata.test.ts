@@ -67,9 +67,9 @@ describe("retro control panel metadata", () => {
   })
 
   it.each([
-    ["internetArchive", "Internet Archive"],
-    ["demoZoo", "DemoZoo"],
-  ])("preserves static metadata for the %s disk template", (source, submenuTitle) => {
+    ["internetArchive", "disk.loadDiskFromInternetArchive"],
+    ["demoZoo", "disk.loadDiskFromDemoZoo"],
+  ])("hydrates the joined title for the %s disk template", (source, submenuTitleKey) => {
     const control = controlFromJson(
       "diskTemplates",
       `diskDrives.{{driveIndex}}.load.${source}`,
@@ -78,7 +78,9 @@ describe("retro control panel metadata", () => {
     )
 
     expect(control.id).toBe(`diskDrives.2.load.${source}`)
-    expect(control.submenuTitle).toBe(submenuTitle)
+    expect(typeof control.submenuTitle).toBe("function")
+    expect((control.submenuTitle as (context: RetroMenuContext) => string)(createContext().context))
+      .toBe(`translated:${submenuTitleKey}`)
     expect(control.actionLabel).toBe("Search")
   })
 })

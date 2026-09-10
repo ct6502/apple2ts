@@ -466,9 +466,9 @@ describe("Retro menu metadata structure", () => {
   test("refreshes an ejected disk drive label to Empty", () => {
     const context = createControlContext(undefined, (key, params) =>
       key === "retroControl.drive" ? params?.disk ?? "" : key, "en", () => undefined)
-    const diskCollection = retroMenuRegistry.resolve(context)
-      .find(control => control.id === "diskCollection")
-    const children = diskCollection?.children as (() => RetroResolvedControl[]) | undefined
+    const drives = retroMenuRegistry.resolve(context, null)
+      .find(control => control.id === "diskDrives")
+    const children = drives?.children as (() => RetroResolvedControl[]) | undefined
 
     mockHandleGetDriveProps.mockReturnValue({ diskHasChanges: false, filename: "Disk.po" })
     mockHandleGetFilename.mockReturnValue("Disk.po")
@@ -741,6 +741,7 @@ describe("Retro menu metadata structure", () => {
     expect(retroMenuRegistry.getIds(null)).toEqual([
       "machine",
       "diskCollection",
+      "diskDrives",
       "display",
       "sound",
       "keyboard",
@@ -773,7 +774,8 @@ describe("Retro menu metadata structure", () => {
       "diskCollection.newReleases",
       "diskCollection.favorites",
       "diskCollection.export",
-      "diskCollection.drivesSeparator",
+    ])
+    expect(retroMenuRegistry.getIds("diskDrives")).toEqual([
       "diskDrives.none",
       "diskDrives.0",
       "diskDrives.1",
