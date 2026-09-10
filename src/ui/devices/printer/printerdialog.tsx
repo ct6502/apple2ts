@@ -43,7 +43,8 @@ const PrinterDialog = (props: PrinterDialogProps) => {
   const { open } = props
   const { t } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
-  const [offset, setOffset] = useState([0, 0])
+  const dragOffsetRef = useRef([0, 0])
+  const dragPositionRef = useRef<[number, number] | null>(null)
   const [dragging, setDragging] = useState(false)
   const printerDialogPosition = getPreferencePrinterDialogPosition()
   const [dialogPositionX, setDialogPositionX] = useState(printerDialogPosition.x < 0 ? window.outerWidth / 2 - 275 : printerDialogPosition.x)
@@ -59,37 +60,40 @@ const PrinterDialog = (props: PrinterDialogProps) => {
     return () => clearInterval(interval)
   }, [open, props.printer])
 
-  const setDialogPosition = (x: number, y: number) => {
-    setDialogPositionX(x)
-    setDialogPositionY(y)
-    // Save the position to local storage
-    setPreferencePrinterDialogPosition({ x, y })
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dialogRef.current || event.button !== 0 || (event.target as Element).closest("button")) return
+    event.preventDefault()
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragOffsetRef.current = [
+      event.clientX - dialogRef.current.offsetLeft,
+      event.clientY - dialogRef.current.offsetTop,
+    ]
+    dragPositionRef.current = [dialogPositionX, dialogPositionY]
+    setDragging(true)
   }
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (dialogRef.current) {
-      e.preventDefault() // Prevent text selection
-      setDragging(true)
-      const div = dialogRef.current as HTMLDivElement
-      // Offset of the mouse down event within the dialog title bar.
-      // This way we drag the window from where the user clicked.
-      setOffset([e.clientX - div.offsetLeft, e.clientY - div.offsetTop])
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId) || !dialogRef.current) return
+    event.preventDefault()
+    event.stopPropagation()
+    const left = event.clientX - dragOffsetRef.current[0]
+    const top = event.clientY - dragOffsetRef.current[1]
+    dragPositionRef.current = [left, top]
+    dialogRef.current.style.left = `${left}px`
+    dialogRef.current.style.top = `${top}px`
+  }
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return
+    event.currentTarget.releasePointerCapture(event.pointerId)
+    const position = dragPositionRef.current
+    if (position) {
+      setDialogPositionX(position[0])
+      setDialogPositionY(position[1])
+      setPreferencePrinterDialogPosition({ x: position[0], y: position[1] })
     }
-  }
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (dragging && dialogRef.current) {
-      e.preventDefault() // Prevent text selection
-      const div = dialogRef.current as HTMLDivElement
-      const left = e.clientX - offset[0]
-      const top = e.clientY - offset[1]
-      setDialogPosition(left, top)
-      div.style.left = `${left}px`
-      div.style.top = `${top}px`
-    }
-  }
-
-  const handleMouseUp = () => {
+    dragPositionRef.current = null
     setDragging(false)
   }
 
@@ -116,20 +120,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
     <div
       className="printer-dialog-host"
       tabIndex={0} // Make the div focusable
-      onMouseMove={(e) => handleMouseMove(e)}
-      onMouseUp={handleMouseUp}
-      style={{
-        cursor: dragging ? "move" : "default",
-        ...(dragging && {
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          zIndex: 9999,
-        }),
-      }}
-      >
+      style={{ cursor: dragging ? "move" : "default" }}>
       <div className="floating-dialog flex-column"
         ref={dialogRef}
         style={{
@@ -138,9 +129,11 @@ const PrinterDialog = (props: PrinterDialogProps) => {
         onClick={(e) => e.stopPropagation()}>
         <div className="flex-column">
           <div className="flex-row-space-between flexwrap printer-controls"
-            onMouseDown={(e) => handleMouseDown(e)}
-            onMouseMove={(e) => handleMouseMove(e)}
-            onMouseUp={handleMouseUp}>
+            onPointerCancel={handlePointerUp}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            style={{ touchAction: "none" }}>
             <svg height="28" width="120" style={{ marginLeft: "15px" }}>{imagewriter2}</svg>
             <div className="flex-row">
               {/* <button className="push-button"

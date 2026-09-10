@@ -148,10 +148,11 @@ const ImageWriter = ({ showLauncher = true }: { showLauncher?: boolean }) => {
   })
 
   useEffect(() => {
+    if (showLauncher) return
     const openDialog = () => setOpen(true)
     window.addEventListener(OPEN_IMAGEWRITER_EVENT, openDialog)
     return () => window.removeEventListener(OPEN_IMAGEWRITER_EVENT, openDialog)
-  }, [])
+  }, [showLauncher])
 
   const img1 = isPrinting ? iwiion : iwiioff
   const isTouchDevice = "ontouchstart" in document.documentElement
