@@ -404,6 +404,68 @@ const restoreMenuFramePreview = (frame: RetroMenuFrame) => {
   })
 }
 
+const RetroSubmenuTitle = ({
+  active,
+  frame,
+  isAppleIIPlus,
+  language,
+  levelIndex,
+  titleValue,
+}: {
+  active: boolean
+  frame: RetroMenuFrame
+  isAppleIIPlus: boolean
+  language: string
+  levelIndex: number
+  titleValue?: string
+}) => {
+  const titleValueWidth = titleValue ? controlTextWidth(titleValue, language) : 0
+  const titleWidth = Math.max(0, submenuTitleContentWidth - titleValueWidth - (titleValue ? 1 : 0))
+  const visibleTitle = truncateControlText(frame.title, titleWidth, language)
+  const visibleTitleWidth = controlTextWidth(visibleTitle, language)
+  const titleClasses = [
+    "retro-submenu-title",
+    isAppleIIPlus ? "retro-text-submenu-title" : "",
+    active ? "retro-active-title" : "",
+    `retro-submenu-title-level-${levelIndex + 2}`,
+  ].filter(Boolean).join(" ")
+
+  return isAppleIIPlus
+    ? <div className={titleClasses}>
+      <RetroBorder
+        appleIIPlus
+        appleIIPlusFullHeightSides
+        className="retro-submenu-title-border"
+        columns={38}
+        rows={3}
+      />
+      <span className="retro-submenu-title-row">
+        <span className={retroFontSupports(frame.title) ? undefined : "retro-browser-font"}>
+          {visibleTitle.replaceAll(" ", "_")}_
+        </span>
+        <span className="retro-inverse-space" aria-hidden="true">
+          {fixedWidthSpace.repeat(Math.max(
+            0,
+            submenuTitleContentWidth - visibleTitleWidth - titleValueWidth,
+          ))}
+          {titleValue}
+          {fixedWidthSpace}
+        </span>
+      </span>
+    </div>
+    : <div className={titleClasses}>
+      <RetroBorder className="retro-submenu-title-border" columns={38} rows={3} />
+      <span className={`retro-submenu-title-text${retroFontSupports(frame.title) ? "" : " retro-browser-font"}`}>
+        <span className="retro-submenu-title-content">
+          {visibleTitle}{fixedWidthSpace}
+        </span>
+      </span>
+      {titleValue && <span className="retro-submenu-title-value">
+        {titleValue}
+      </span>}
+    </div>
+}
+
 const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => {
   const [manualIsOpen, setIsOpen] = useState(false)
   const [manualMenuStack, setMenuStack] = useState<RetroMenuFrame[]>([])
@@ -468,7 +530,15 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     setMenuStack([])
     setSelectedIndex(0)
   }, [menuStack])
-  const maxVisibleMenuItems = 16
+  const previousFrame = menuStack[menuStack.length - 2]
+  const joinsLoadProviderTitle = Boolean(
+    currentFrame && previousFrame?.menuId.endsWith(".load.from"),
+  )
+  const visibleTitleFrames = joinsLoadProviderTitle
+    ? menuStack.filter(frame => frame !== previousFrame).slice(-3)
+    : menuStack.slice(-3)
+  const titleLevelCount = visibleTitleFrames.length
+  const maxVisibleMenuItems = 16 - Math.max(0, titleLevelCount - 1) * 2
   const visibleMenuStart = currentFrame
     ? Math.min(
       Math.max(0, selectedIndex - maxVisibleMenuItems + 1),
@@ -1084,6 +1154,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     currentMenu,
     hasOpenDialog,
     isOpen,
+    maxVisibleMenuItems,
     menuStack,
     open,
     runTour,
@@ -1153,17 +1224,6 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   ])
   const submenuTitleValue = selectedItem?.contextualSubmenuTitleValue
     ?? currentFrame?.submenuTitleValue?.(currentFrame.items, currentFrame.values)
-  const submenuTitleValueWidth = submenuTitleValue
-    ? controlTextWidth(submenuTitleValue, language)
-    : 0
-  const submenuTitleWidth = currentFrame
-    ? Math.max(0, submenuTitleContentWidth - submenuTitleValueWidth -
-      (submenuTitleValue ? 1 : 0))
-    : submenuTitleContentWidth
-  const visibleSubmenuTitle = currentFrame
-    ? truncateControlText(currentFrame.title, submenuTitleWidth, language)
-    : ""
-  const visibleSubmenuTitleWidth = controlTextWidth(visibleSubmenuTitle, language)
   const clockTime = formatClockTime(now, language)
   const clockDate = formatClockDate(now, language, isAppleIIPlus ? "_" : " ")
   const clockTextWidth = isAppleIIPlus ? 12 : 11
@@ -1192,40 +1252,23 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             </>
             : <span>{"Apple2TS Control Panel "}&#8198;</span>}
         </header>,
-        submenu: currentFrame && (isAppleIIPlus
-          ? <div className="retro-submenu-title retro-text-submenu-title">
-            <RetroBorder
-              appleIIPlus
-              appleIIPlusFullHeightSides
-              className="retro-submenu-title-border"
-              columns={38}
-              rows={3}
+        submenu: currentFrame && <>
+          {visibleTitleFrames.map((frame, levelIndex) => {
+            const active = levelIndex === visibleTitleFrames.length - 1
+            const titleValue = active
+              ? submenuTitleValue
+              : frame.submenuTitleValue?.(frame.items, frame.values)
+            return <RetroSubmenuTitle
+              active={active}
+              frame={frame}
+              isAppleIIPlus={isAppleIIPlus}
+              key={frame.menuId}
+              language={language}
+              levelIndex={levelIndex}
+              titleValue={titleValue}
             />
-            <span className="retro-submenu-title-row">
-              <span className={retroFontSupports(currentFrame.title) ? undefined : "retro-browser-font"}>
-                {visibleSubmenuTitle.replaceAll(" ", "_")}_
-              </span>
-              <span className="retro-inverse-space" aria-hidden="true">
-                {fixedWidthSpace.repeat(Math.max(
-                  0,
-                  submenuTitleContentWidth - visibleSubmenuTitleWidth - submenuTitleValueWidth,
-                ))}
-                {submenuTitleValue}
-                {fixedWidthSpace}
-              </span>
-            </span>
-          </div>
-          : <div className="retro-submenu-title">
-            <RetroBorder className="retro-submenu-title-border" columns={38} rows={3} />
-            <span className={`retro-submenu-title-text${retroFontSupports(currentFrame.title) ? "" : " retro-browser-font"}`}>
-              <span className="retro-submenu-title-content">
-                {visibleSubmenuTitle}{fixedWidthSpace}
-              </span>
-            </span>
-            {submenuTitleValue && <span className="retro-submenu-title-value">
-              {submenuTitleValue}
-            </span>}
-          </div>),
+          })}
+        </>,
         clock: menuStack.length === 0 && <div className="retro-clock" aria-label={`${now.toLocaleTimeString(language)} ${now.toLocaleDateString(language)}`}>
           <RetroBorder
             appleIIPlus={isAppleIIPlus}
@@ -1241,7 +1284,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             {clockDate}
           </span></time>
         </div>,
-        menu: <div className={`retro-menu${currentFrame ? " retro-submenu-menu" : " retro-root-menu"}`} role="menu">
+        menu: <div className={`retro-menu${currentFrame ? " retro-submenu-menu" : " retro-root-menu"} retro-menu-title-level-${titleLevelCount + 1}`} role="menu">
           {visibleMenu.map((item, visibleIndex) => {
             const index = visibleMenuStart + visibleIndex
             const valueIndex = currentFrame?.values[index] ?? item.optionIndex ?? -1

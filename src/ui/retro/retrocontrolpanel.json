@@ -625,22 +625,21 @@
     },
     {
       "group": "disk",
-      "id": "diskCollection.drivesSeparator",
-      "parentId": "diskCollection",
-      "order": 4,
+      "id": "diskDrives",
+      "parentId": null,
+      "order": 1.5,
       "tourTargets": [
         "#tour-floppy-disks"
       ],
       "labelKey": "retroControl.diskDrives",
-      "separator": true,
-      "selectable": false
+      "actionLabelKey": "retroControl.open"
     },
     {
       "group": "disk",
       "id": "diskDrives.none",
       "binding": "diskDrives.none",
-      "parentId": "diskCollection",
-      "order": 5,
+      "parentId": "diskDrives",
+      "order": 0,
       "labelKey": "retroControl.noDiskDrivesAvailable",
       "selectable": false
     },
@@ -648,29 +647,29 @@
       "group": "disk",
       "id": "diskDrives.0",
       "binding": "diskDrives.0",
-      "parentId": "diskCollection",
-      "order": 6
+      "parentId": "diskDrives",
+      "order": 1
     },
     {
       "group": "disk",
       "id": "diskDrives.1",
       "binding": "diskDrives.1",
-      "parentId": "diskCollection",
-      "order": 7
+      "parentId": "diskDrives",
+      "order": 2
     },
     {
       "group": "disk",
       "id": "diskDrives.2",
       "binding": "diskDrives.2",
-      "parentId": "diskCollection",
-      "order": 8
+      "parentId": "diskDrives",
+      "order": 3
     },
     {
       "group": "disk",
       "id": "diskDrives.3",
       "binding": "diskDrives.3",
-      "parentId": "diskCollection",
-      "order": 9
+      "parentId": "diskDrives",
+      "order": 4
     },
     {
       "group": "diskTemplates",
@@ -690,7 +689,7 @@
       "id": "diskDrives.{{driveIndex}}.load.internetArchive",
       "binding": "diskDrives.load.internetArchive",
       "labelKey": "disk.InternetArchive",
-      "submenuTitle": "Internet Archive",
+      "submenuTitleKey": "disk.loadDiskFromInternetArchive",
       "actionLabel": "Search"
     },
     {
@@ -698,7 +697,7 @@
       "id": "diskDrives.{{driveIndex}}.load.demoZoo",
       "binding": "diskDrives.load.demoZoo",
       "labelKey": "disk.DemoZoo",
-      "submenuTitle": "DemoZoo",
+      "submenuTitleKey": "disk.loadDiskFromDemoZoo",
       "actionLabel": "Search"
     },
     {
@@ -708,7 +707,7 @@
       "providerId": "OneDrive",
       "providerName": "OneDrive",
       "labelKey": "disk.OneDrive",
-      "submenuTitle": "OneDrive",
+      "submenuTitleKey": "disk.loadDiskFromOneDrive",
       "actionLabelKey": "retroControl.open"
     },
     {
@@ -718,7 +717,7 @@
       "providerId": "GoogleDrive",
       "providerName": "Google Drive",
       "labelKey": "disk.GoogleDrive",
-      "submenuTitle": "Google Drive",
+      "submenuTitleKey": "disk.loadDiskFromGoogleDrive",
       "actionLabelKey": "retroControl.open"
     },
     {

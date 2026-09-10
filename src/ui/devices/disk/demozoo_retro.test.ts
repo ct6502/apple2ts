@@ -40,7 +40,7 @@ describe("retro DemoZoo screen", () => {
     const children = screen.children as (items?: never[]) => ReturnType<typeof registry.resolve>
     let items = children()
 
-    expect(screen.submenuTitle).toBe("DemoZoo")
+    expect(screen.submenuTitle).toBe("disk.loadDiskFromDemoZoo")
     expect(screen.actionLabel).toBe("Search")
     expect(items.map(item => item.label)).toEqual(["Type", "Title"])
 
