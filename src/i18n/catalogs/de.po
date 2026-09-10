@@ -2510,6 +2510,19 @@ msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
 msgstr ""
 
+
+msgctxt "linkBuilder.slots.configure"
+msgid "Configure slot cards"
+msgstr "Steckplatzkarten konfigurieren"
+
+msgctxt "linkBuilder.slots.slot"
+msgid "Slot {{slot}}:"
+msgstr "Slot {{slot}}:"
+
+msgctxt "linkBuilder.slots.cardNone"
+msgid "None (empty)"
+msgstr "Keine (leer)"
+
 msgctxt "agent.tabTitle"
 msgid "Agent"
 msgstr ""

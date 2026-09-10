@@ -2480,6 +2480,19 @@ msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
 msgstr ""
 
+
+msgctxt "linkBuilder.slots.configure"
+msgid "Configure slot cards"
+msgstr "슬롯 카드 설정"
+
+msgctxt "linkBuilder.slots.slot"
+msgid "Slot {{slot}}:"
+msgstr "슬롯 {{slot}}:"
+
+msgctxt "linkBuilder.slots.cardNone"
+msgid "None (empty)"
+msgstr "없음 (비어 있음)"
+
 msgctxt "agent.tabTitle"
 msgid "Agent"
 msgstr ""

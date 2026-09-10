@@ -6,10 +6,11 @@ import { Droplist } from "../panels/droplist"
 import { diskImages } from "../devices/disk/diskimages"
 import CheckBox from "../panels/checkbox"
 import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode } from "../ui_settings"
-import { UI_THEMES } from "../../common/utility"
+import { DEFAULT_SLOT_CONFIG, UI_THEMES } from "../../common/utility"
 import { isAudioEnabled } from "../devices/audio/speaker"
-import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode } from "../main2worker"
+import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode, handleGetSlotConfig } from "../main2worker"
 import { useTranslation } from "../../i18n/useTranslation"
+import { SLOT_NUMBERS, getSlotOptions } from "../devices/machineconfig"
 
 export enum TAB {
   DISK,
@@ -71,12 +72,32 @@ const LinkBuilder = () => {
   const [speed, setSpeed] = useState("")
   const [theme, setTheme] = useState("")
   const [tabSection, setTabSection] = useState(TAB.DISK)
+  const [slotConfig, setSlotConfig] = useState<SlotConfig>({ ...DEFAULT_SLOT_CONFIG })
+
+  // Short display labels for cards in the Link Builder slot dropdowns
+  const cardShortLabels: Record<SLOT_CARD_ID, string> = {
+    none: t("linkBuilder.slots.cardNone"),
+    ssc: "SSC",
+    softcard: "SoftCard (Z80)",
+    aux: "Aux/80Col",
+    videoterm: "VideoTerm",
+    vidhd: "VidHD",
+    mockingboard: "Mockingboard",
+    mouse: "Mouse",
+    vera: "VERA",
+    passport: "Passport",
+    disk2: "Disk II",
+    smartport: "SmartPort",
+  }
 
   const machineValues = [
     t("linkBuilder.machines.enhanced"),
     t("linkBuilder.machines.unenhanced"),
     t("linkBuilder.machines.apple2p")
   ]
+  // Derive MACHINE_NAME from local machine state so slot options stay in sync
+  const lbMachineName: MACHINE_NAME = machine === machineValues[2] ? "APPLE2P"
+    : machine === machineValues[1] ? "APPLE2EU" : "APPLE2EE"
 
   const ramdiskValues = [
     t("linkBuilder.ramDiskSizes.default"),
@@ -151,7 +172,7 @@ const LinkBuilder = () => {
     }
 
     const ramIndex = ramdiskValues.indexOf(ramdisk)
-    if (ramIndex > 0) {
+    if (slotConfig[3] === "aux" && ramIndex > 0) {
       params.push("ramdisk=" + ramdiskParams[ramIndex])
     }
 
@@ -173,6 +194,20 @@ const LinkBuilder = () => {
     const themeIndex = themeValues.indexOf(theme)
     if (themeIndex > 0) {
       params.push(`theme=${themeParams[themeIndex]}`)
+    }
+
+    // Slot configuration params: emit slotN=card for any non-default slot
+    let hasVera = false
+    SLOT_NUMBERS.forEach(slot => {
+      const card = slotConfig[slot]
+      if (card !== DEFAULT_SLOT_CONFIG[slot]) {
+        params.push(`slot${slot}=${card}`)
+        if (card === "vera") hasVera = true
+      }
+    })
+    // Auto-add tab=vera when VERA is configured, for convenience
+    if (hasVera) {
+      params.push("tab=vera")
     }
 
     for (let i = 0; i < params.length; i++) {
@@ -226,6 +261,7 @@ const LinkBuilder = () => {
     setSelectedDisk("")
     setSpeed(speedNames[2])
     setTheme(themeValues[0])
+    setSlotConfig({ ...DEFAULT_SLOT_CONFIG })
   }
 
   const retrieveFromEmulatorSettings = () => {
@@ -270,6 +306,9 @@ const LinkBuilder = () => {
     } else {
       setAppmode(gameModes[0])
     }
+
+    // Retrieve current slot config from emulator
+    setSlotConfig({ ...handleGetSlotConfig() })
   }
 
   return (
@@ -281,7 +320,7 @@ const LinkBuilder = () => {
             if (event.key === "Escape") setShowBuilder(false)
           }}>
           <div className="floating-dialog flex-column"
-            style={{ left: "35%", top: "10%", width: "70%", maxWidth: "600px" }}>
+            style={{ left: "35%", top: "5%", width: "70%", maxWidth: "600px", maxHeight: "90vh", overflowX: "hidden", overflowY: "auto" }}>
             <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
               <div className="dialog-title" style={{ padding: 0, paddingTop: "6px" }}>{t("linkBuilder.title")}</div>
               <button className="push-button"
@@ -302,7 +341,19 @@ const LinkBuilder = () => {
                 <Droplist name={t("linkBuilder.machine")}
                   value={machine}
                   values={machineValues}
-                  setValue={setMachine} />
+                  setValue={(val: string) => {
+                    setMachine(val)
+                    // Adjust slot 3 when crossing between II+ and IIe families
+                    const newIsIIp = val === machineValues[2]
+                    const wasIIp = lbMachineName === "APPLE2P"
+                    if (newIsIIp !== wasIIp) {
+                      setSlotConfig(prev => ({
+                        ...prev,
+                        3: newIsIIp ? "videoterm" : "aux"
+                      }))
+                      if (!newIsIIp) setRamdisk(ramdiskValues[0]) // reset to 64KB default
+                    }
+                  }} />
 
                 <Droplist name={t("linkBuilder.colorMode")}
                   value={colormode}
@@ -312,7 +363,13 @@ const LinkBuilder = () => {
                 <Droplist name={t("linkBuilder.ramDiskSize")}
                   value={ramdisk}
                   values={ramdiskValues}
-                  setValue={setRamdisk} />
+                  setValue={(val: string) => {
+                    setRamdisk(val)
+                    const rIdx = ramdiskValues.indexOf(val)
+                    if (rIdx > 0 && lbMachineName !== "APPLE2P" && slotConfig[3] !== "aux") {
+                      setSlotConfig(prev => ({ ...prev, 3: "aux" }))
+                    }
+                  }} />
 
                 <Droplist name={t("linkBuilder.emulatorSpeed")}
                   value={speed !== "" ? speed : speedNames[2]}
@@ -344,6 +401,78 @@ const LinkBuilder = () => {
                   checked={!soundoff}
                   setChecked={(on: boolean) => { setSoundoff(!on) }} />
               </div>
+            </div>
+
+            <div className="horiz-rule" style={{ marginTop: "15px" }}></div>
+
+            {/* Slot Configuration – always visible */}
+            <div className="dialog-title" style={{ marginBottom: "4px" }}>{t("linkBuilder.slots.configure")}</div>
+            <div className="flex-row" style={{ flexWrap: "wrap", gap: "0 20px", marginBottom: "8px" }}>
+              {SLOT_NUMBERS.map(slot => {
+                const rawOptions = getSlotOptions(slot, lbMachineName)
+                // Filter out cards already installed in another slot (unless card is none or mockingboard)
+                const options = rawOptions.filter(o => {
+                  if (o.card === "none" || o.card === "mockingboard") return true
+                  if (slotConfig[slot] === o.card) return true
+                  return !SLOT_NUMBERS.some(otherSlot => otherSlot !== slot && slotConfig[otherSlot] === o.card)
+                })
+
+                // Build display label for each option (aux entries include RAM size)
+                const getOptionLabel = (o: typeof options[0]) => {
+                  if (o.card === "aux" && o.ramSizeKb !== undefined) {
+                    if (o.ramSizeKb <= 64) return "Aux/80Col (64KB)"
+                    const sizeStr = o.ramSizeKb >= 1024 ? `${o.ramSizeKb / 1024}MB` : `${o.ramSizeKb}KB`
+                    return `AE RamWorks (${sizeStr})`
+                  }
+                  return cardShortLabels[o.card]
+                }
+                const cardLabels = options.map(getOptionLabel)
+
+                // Current label: for slot 3 aux, reflect currently chosen ramdisk size
+                const currentCard = slotConfig[slot]
+                let currentLabel = cardShortLabels[currentCard]
+                if (slot === 3 && currentCard === "aux") {
+                  const ramIdx = ramdiskValues.indexOf(ramdisk)
+                  const ramSizeKb = parseInt(ramdiskParams[Math.max(ramIdx, 0)]) || 64
+                  currentLabel = ramSizeKb <= 64 ? "Aux/80Col (64KB)"
+                    : `AE RamWorks (${ramSizeKb >= 1024 ? `${ramSizeKb / 1024}MB` : `${ramSizeKb}KB`})`
+                }
+
+                return (
+                  <Droplist
+                    key={slot}
+                    name={t("linkBuilder.slots.slot", { slot: String(slot) })}
+                    value={currentLabel}
+                    values={cardLabels}
+                    setValue={(label: string) => {
+                      const idx = cardLabels.indexOf(label)
+                      if (idx >= 0) {
+                        const chosen = options[idx]
+                        setSlotConfig(prev => {
+                          const next = { ...prev, [slot]: chosen.card }
+                          if (chosen.card !== "none" && chosen.card !== "mockingboard") {
+                            SLOT_NUMBERS.forEach(otherSlot => {
+                              if (otherSlot !== slot && next[otherSlot] === chosen.card) {
+                                next[otherSlot] = "none"
+                              }
+                            })
+                          }
+                          return next
+                        })
+                        // For slot 3: sync or reset ramdisk
+                        if (slot === 3) {
+                          if (chosen.card === "aux" && chosen.ramSizeKb !== undefined) {
+                            const paramStr = String(chosen.ramSizeKb)
+                            const ramIdx = ramdiskParams.indexOf(paramStr)
+                            if (ramIdx >= 0) setRamdisk(ramdiskValues[ramIdx])
+                          } else {
+                            setRamdisk(ramdiskValues[0])
+                          }
+                        }
+                      }
+                    }} />
+                )
+              })}
             </div>
 
             <div className="horiz-rule" style={{ marginTop: "15px" }}></div>
@@ -380,7 +509,7 @@ const LinkBuilder = () => {
             </div>
 
             {tabSection === TAB.DISK &&
-              <div style={{ minHeight: "150px" }}>
+              <div>
                 <Droplist name={t("linkBuilder.diskImageToLoad")}
                   value={selectedDisk}
                   values={diskNames}
@@ -401,7 +530,6 @@ const LinkBuilder = () => {
                   setValue={setLoadBlock}
                   placeholder="CHOP"
                   width="15em" />
-
               </div>
             }
 
@@ -441,9 +569,7 @@ const LinkBuilder = () => {
                   setChecked={(on: boolean) => { setRunprogoff(!on) }} />
               </div>
             }
-
-
-            <div className="horiz-rule" style={{ marginTop: "20px" }}></div>
+            <div className="horiz-rule" style={{ marginTop: "10px" }}></div>
 
             {/* Show final link, readonly textarea for now */}
             <div className="flex-row-space-between" style={{ marginRight: "10px" }}>
@@ -457,7 +583,7 @@ const LinkBuilder = () => {
             <textarea
               className="link-builder-textarea"
               style={{ backgroundColor: "var(--input-bg-color)" }}
-              rows={5}
+              rows={8}
               value={link}
               readOnly
             />
