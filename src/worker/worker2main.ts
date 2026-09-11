@@ -254,26 +254,31 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.CONDITIONAL_KEY_SEQUENCE:
         if (e.data.operationId === undefined) break
-        if (getCpuRunMode() !== RUN_MODE.RUNNING) {
-          passWorkerOperationResult(e.data.operationId, undefined, {
-            outcome: "not_running",
-            completedPhases: 0,
-            failurePhase: 0,
-            keyDeliveries: [],
-            cyclesElapsed: 0,
-          })
-          break
+        {
+          const request = e.data.payload as ConditionalKeySequenceRequest
+          const runMode = getCpuRunMode()
+          if (runMode !== RUN_MODE.RUNNING && !(runMode === RUN_MODE.PAUSED && request.startExecution)) {
+            passWorkerOperationResult(e.data.operationId, undefined, {
+              outcome: "not_running",
+              completedPhases: 0,
+              failurePhase: 0,
+              keyDeliveries: [],
+              cyclesElapsed: 0,
+            })
+            break
+          }
+          const result = runConditionalInputSequence(request, s6502.cycleCount)
+          if (runMode === RUN_MODE.PAUSED && hasConditionalInputSequence()) {
+            doSetRunMode(RUN_MODE.RUNNING, false)
+          }
+          void result.then(
+            (value) => passWorkerOperationResult(e.data.operationId, undefined, value),
+            (error) => passWorkerOperationResult(
+              e.data.operationId,
+              error instanceof Error ? error.message : String(error),
+            ),
+          )
         }
-        void runConditionalInputSequence(
-          e.data.payload as ConditionalKeySequenceRequest,
-          s6502.cycleCount,
-        ).then(
-          (result) => passWorkerOperationResult(e.data.operationId, undefined, result),
-          (error) => passWorkerOperationResult(
-            e.data.operationId,
-            error instanceof Error ? error.message : String(error),
-          ),
-        )
         break
       case MSG_MAIN.CANCEL_CONDITIONAL_KEY_SEQUENCE: {
         const cancelled = requestConditionalInputTermination("cancelled")

@@ -130,6 +130,7 @@ type ConditionalKeySequenceRequest = {
   phases: ConditionalKeyPhase[],
   final: MemoryPredicate,
   timeoutMs: number,
+  startExecution?: boolean,
 }
 
 type ConditionalKeyDelivery = KeySequenceResult & {

@@ -186,4 +186,10 @@ test("rejects unbounded phases and invalid keys before starting", () => {
     final: predicate(2),
     timeoutMs: 5000,
   }, 0)).toThrow("valid Apple II keys")
+  expect(() => runConditionalInputSequence({
+    phases: [{keys: "A"}],
+    final: predicate(2),
+    timeoutMs: 5000,
+    startExecution: "yes" as unknown as boolean,
+  }, 0)).toThrow("startExecution must be boolean")
 })

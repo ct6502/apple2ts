@@ -33,6 +33,9 @@ const resultFor = (
 })
 
 const validateRequest = (request: ConditionalKeySequenceRequest) => {
+  if (request.startExecution !== undefined && typeof request.startExecution !== "boolean") {
+    throw new Error("Conditional input startExecution must be boolean")
+  }
   if (!Array.isArray(request.phases) || request.phases.length < 1 || request.phases.length > 16) {
     throw new Error("Conditional input sequence must contain 1 to 16 phases")
   }

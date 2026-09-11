@@ -149,6 +149,98 @@ test("confirms a conditional input sequence only after its worker result", async
   postMessage.mockRestore()
 })
 
+test("arms a conditional input sequence before starting paused execution", () => {
+  const postMessage = jest.spyOn(self, "postMessage").mockImplementation()
+  const runMode = jest.spyOn(motherboard, "getCpuRunMode").mockReturnValue(RUN_MODE.PAUSED)
+  const setRunMode = jest.spyOn(motherboard, "doSetRunMode").mockImplementation()
+  const request: ConditionalKeySequenceRequest = {
+    phases: [{keys: "A"}],
+    final: {address: 0x0200, space: "main", bytes: [1]},
+    timeoutMs: 5000,
+    startExecution: true,
+  }
+  jest.mocked(runConditionalInputSequence).mockReturnValueOnce(new Promise(() => {}))
+  jest.mocked(hasConditionalInputSequence).mockReturnValueOnce(true)
+
+  self.onmessage?.({
+    data: {msg: MSG_MAIN.CONDITIONAL_KEY_SEQUENCE, payload: request, operationId: 22},
+  } as MessageEvent)
+
+  expect(runConditionalInputSequence).toHaveBeenCalledWith(request, expect.any(Number))
+  expect(setRunMode).toHaveBeenCalledWith(RUN_MODE.RUNNING, false)
+  expect(jest.mocked(runConditionalInputSequence).mock.invocationCallOrder.at(-1))
+    .toBeLessThan(setRunMode.mock.invocationCallOrder.at(-1)!)
+  expect(postMessage).not.toHaveBeenCalled()
+  setRunMode.mockRestore()
+  runMode.mockRestore()
+  postMessage.mockRestore()
+})
+
+test("does not start paused execution when the conditional sequence cannot arm", async () => {
+  const postMessage = jest.spyOn(self, "postMessage").mockImplementation()
+  const runMode = jest.spyOn(motherboard, "getCpuRunMode").mockReturnValue(RUN_MODE.PAUSED)
+  const setRunMode = jest.spyOn(motherboard, "doSetRunMode").mockImplementation()
+  const result: ConditionalKeySequenceResult = {
+    outcome: "input_busy",
+    completedPhases: 0,
+    failurePhase: 0,
+    keyDeliveries: [],
+    cyclesElapsed: 0,
+  }
+  jest.mocked(runConditionalInputSequence).mockResolvedValueOnce(result)
+  jest.mocked(hasConditionalInputSequence).mockReturnValueOnce(false)
+
+  self.onmessage?.({
+    data: {
+      msg: MSG_MAIN.CONDITIONAL_KEY_SEQUENCE,
+      payload: {
+        phases: [{keys: "A"}],
+        final: {address: 0x0200, space: "main", bytes: [1]},
+        timeoutMs: 5000,
+        startExecution: true,
+      },
+      operationId: 23,
+    },
+  } as MessageEvent)
+  await Promise.resolve()
+
+  expect(setRunMode).not.toHaveBeenCalled()
+  expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+    payload: expect.objectContaining({value: result}),
+  }))
+  setRunMode.mockRestore()
+  runMode.mockRestore()
+  postMessage.mockRestore()
+})
+
+test("does not start a paused conditional input sequence without an explicit request", () => {
+  const postMessage = jest.spyOn(self, "postMessage").mockImplementation()
+  const runMode = jest.spyOn(motherboard, "getCpuRunMode").mockReturnValue(RUN_MODE.PAUSED)
+  const setRunMode = jest.spyOn(motherboard, "doSetRunMode").mockImplementation()
+  jest.mocked(runConditionalInputSequence).mockClear()
+
+  self.onmessage?.({
+    data: {
+      msg: MSG_MAIN.CONDITIONAL_KEY_SEQUENCE,
+      payload: {
+        phases: [{keys: "A"}],
+        final: {address: 0x0200, space: "main", bytes: [1]},
+        timeoutMs: 5000,
+      },
+      operationId: 24,
+    },
+  } as MessageEvent)
+
+  expect(runConditionalInputSequence).not.toHaveBeenCalled()
+  expect(setRunMode).not.toHaveBeenCalled()
+  expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+    payload: expect.objectContaining({value: expect.objectContaining({outcome: "not_running"})}),
+  }))
+  setRunMode.mockRestore()
+  runMode.mockRestore()
+  postMessage.mockRestore()
+})
+
 test("keeps direct key sequences out of an active conditional sequence", () => {
   const postMessage = jest.spyOn(self, "postMessage").mockImplementation()
   const runMode = jest.spyOn(motherboard, "getCpuRunMode").mockReturnValue(RUN_MODE.RUNNING)
