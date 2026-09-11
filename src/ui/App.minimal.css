@@ -58,10 +58,9 @@ body.iigs-minimal-surround::after {
   width: 100%;
   bottom: 1.25em;
   color: white;
+  opacity: 0.75;
   text-align: center;
-  font-size: max(0.66cqw, 5pt);
-  -webkit-text-fill-color: white;
-  -webkit-text-stroke: 1px;
+  font-size: max(0.66cqw, 7pt);
   user-select: none;
 }
 

@@ -438,6 +438,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const handleResize = () => {
     if (mainCanvas) {
       checkContentHeight()
+      handleCanvasResize(mainCanvas)
       props.updateDisplay()
     }
   }
@@ -548,16 +549,16 @@ const Apple2Canvas = (props: DisplayProps) => {
             let marginTop = canvas.offsetTop + height * ymargin
 
             if (isMinimalTheme()) {
-              const appleScreenWidth = width - 2 * width * xmargin + 20
-              const appleScreenHeight = height - 2 * height * ymargin
+              const appleScreenWidth = width //- 2 * width * xmargin //+ 20
+              const appleScreenHeight = height //- 2 * height * ymargin
               marginLeft = (window.innerWidth - appleScreenWidth) / 2
-              marginTop = ((window.innerHeight - appleScreenHeight) / 2)
+              marginTop = (window.innerHeight - appleScreenHeight) / 2
               const debugSection = document.getElementsByClassName("flyout-top-right")[0] as HTMLElement
               if (debugSection && debugSection.offsetWidth > 200) {
                 marginLeft = Math.max(Math.min(marginLeft, (debugSection.offsetLeft - appleScreenWidth) / 2), 0)
               }
-              scanlinesLeft = marginLeft - width * xmargin
-              scanlinesTop = Math.max(marginTop - height * ymargin - 160, 32)
+              scanlinesLeft = marginLeft
+              scanlinesTop = marginTop
               canvas.style.marginLeft = `${scanlinesLeft}px`
               canvas.style.marginTop = `${scanlinesTop}px`
             } else {

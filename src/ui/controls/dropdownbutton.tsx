@@ -48,7 +48,7 @@ export const DropdownButton = (props: DropdownProps) => {
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
                 key={index} onClick={() => handleMenuClose(index)}>
-                <span className="dropdown-checkmark">{index === props.currentIndex ? "\u2714" : ""}</span>
+                <span className="dropdown-checkmark">{index === props.currentIndex ? "\u2713" : ""}</span>
                 {hasIcons && <span className="dropdown-icon">{props.icons ? props.icons[index] : ""}</span>}
                 <span style={hasIcons ? {marginLeft: "30px"} : {}}>{item}</span>
               </div>))}

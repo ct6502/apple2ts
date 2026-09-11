@@ -28,11 +28,9 @@ import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText, getColo
 import { messagelistener } from "./api/messagelistener"
 import { CRTStartup } from "./graphics"
 import { startRemoteControlBridge } from "./api/remotecontrol"
-import { useTranslation } from "../i18n/useTranslation"
 import RetroMenuRenderer from "./retro/retromenurenderer"
 
 const DisplayApple2 = () => {
-  const { t } = useTranslation()
   const [myInit, setMyInit] = useState(false)
   const [renderCount, setRenderCount] = useState(0)
   const [currentSpeed, setCurrentSpeed] = useState(1.02)
@@ -179,7 +177,7 @@ const DisplayApple2 = () => {
     if (isTouchDevice) {
       document.body.style.marginLeft = "0"
       document.body.style.marginRight = "0"
-      document.body.style.marginTop = isLandscape ? "10px" : "0"
+      document.body.style.marginTop = "0"
     }
   }, [isTouchDevice, isLandscape])
   const machineName = handleGetMachineName()
@@ -188,13 +186,8 @@ const DisplayApple2 = () => {
   const hasAuxCard = !isApple2Plus && (slotConfig[3] === "aux" || slotConfig[3] === "vidhd")
   const mem = isApple2Plus ? 64 : (hasAuxCard ? (handleGetMemSize() + 64) : 64)
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
-  const status = <div className="default-font footer-item" translate="no">
+  const status = (isTouchDevice && isLandscape) ? <></> : <div className="default-font footer-item" translate="no">
     <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
-    <br />
-    <span>{t("help.credit", { year: String(new Date().getFullYear()) })}<br />
-      <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">{t("controls.reportIssue")}</a>&nbsp;&nbsp;
-      <a href="https://ct6502.org/privacy/">{t("controls.privacyPolicy")}</a>
-    </span>
   </div>
 
   if (isEmbedMode()) {

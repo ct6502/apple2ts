@@ -1044,8 +1044,8 @@ export const getCanvasSize = () => {
   const isCanvasFullScreen = document.fullscreenElement !== null
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isCanvasOnlyTheme()
   const margin = (handleGetMachineName() === "APPLE2P" && !isCanvasFullScreen) ? 0.12 : 0.075
-  xmargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
-  ymargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
+  xmargin = (noBackgroundImage || isTouchDevice) ? 0.02 : margin
+  ymargin = (noBackgroundImage || isTouchDevice) ? 0.02 : margin
   const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
@@ -1068,19 +1068,16 @@ export const getCanvasSize = () => {
     width -= noBackgroundImage ? 60 : 25
   } else if (isCanvasOnlyTheme()) {
     if (isLandscape) {
-      height -= 150
+      height -= 10//150
     } else {
-      height -= 45
+      height -= 0//45
     }
+  } else if (isGameMode()) {
+    height -= 70
+    width -= 25
   } else {
-    if (isGameMode())
-    {
-      height -= 70
-      width -= 25
-    } else {
-      height -= noBackgroundImage ? (isTouchDevice ? 0 : 40) : 160
-      width -= isLandscape ? 320 : (isTouchDevice ? 0 : 40)
-    }
+    height -= noBackgroundImage ? (isTouchDevice ? 0 : 40) : 160
+    width -= isLandscape ? 320 : (isTouchDevice ? 0 : 40)
   }
   if (!noBackgroundImage) {
     const debugSection = document.getElementById("debug-section") as HTMLElement

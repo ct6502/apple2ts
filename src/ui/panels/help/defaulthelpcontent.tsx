@@ -105,6 +105,14 @@ export const DefaultHelpContent = ({
     <HelpLink href="https://github.com/ct6502/apple2ts/graphs/contributors?all=1">
       {t("help.credit", { year: String(new Date().getFullYear()) })}
     </HelpLink>
+    <br/>
+    <HelpLink href="https://ct6502.org/privacy/">
+      {t("controls.privacyPolicy")}
+    </HelpLink>
+    <br/>
+    <HelpLink href="https://github.com/ct6502/apple2ts/issues">
+      {t("controls.reportIssue")}
+    </HelpLink>
     {isTouchDevice ? "\n\n\n" : "\n\n"}
     {isTouchDevice ? <>
       <b>{t("help.mobileInstructions")}</b>{"\n"}

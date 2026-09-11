@@ -124,7 +124,7 @@ const PopupMenu = (props: PopupMenuProps) => {
             }}>
             <span className="popup-item-main">
               <span className="popup-selection-marker">
-                {menuItem.isSelected?.() ? "\u2714" : ""}
+                {menuItem.isSelected?.() ? "\u2713" : ""}
               </span>
               <span className="popup-item-label">
                 {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
