@@ -41,6 +41,7 @@ const klausChecksums = {
   "6502_functional_test.bin": "fa12bfc761e6f9057e4cc01a665a7b800ff01ae91f598af1e39a1201d01953fd",
   "65C02_extended_opcodes_test.bin": "10a2a07fa240666fa610c46accebe8d42b1000feef3aae619da15a8d152869b2",
   "6502_65c02_interrupt_test.bin": "f82cb23debf6ba411c77861dbc3d50afd010b198dd26a2f5fb6a610c6e2e0ebc",
+  "6502_65c02_65816_decimal_test.bin": "de4c2819a201fa9aeae65fc13e76c093a816afe42aeee9030975a5607cb696b6",
 } as const
 
 type KlausTestName = keyof typeof klausChecksums
@@ -168,6 +169,45 @@ test.each([
       }
     }
     throw new Error(`Klaus interrupt test did not terminate at $${s6502.PC.toString(16)}`)
+  } finally {
+    doSetRom(previousMachine)
+    memory.set(previousMemory)
+    bankSwitches.forEach((name, index) => {SWITCHES[name].isSet = previousBankSwitches[index]})
+    reset6502()
+    updateAddressTables()
+  }
+}, 20000)
+
+test.each([
+  ["NMOS all-byte", "APPLE2EU", 0x0200, 0x029E],
+  ["NMOS valid BCD", "APPLE2EU", 0x0204, 0x02A1],
+  ["CMOS all-byte", "APPLE2EE", 0x0208, 0x02A4],
+  ["CMOS valid BCD", "APPLE2EE", 0x020C, 0x02A7],
+] as const)("Klaus %s decimal mode", async (_mode, machine, entryPC, successPC) => {
+  const pcode = await getKlausBinary("6502_65c02_65816_decimal_test.bin")
+  const previousMachine = getCurrentMachineName()
+  const previousMemory = memory.slice()
+  const bankSwitches = ["BSR_PREWRITE", "BSR_WRITE", "BSRBANK2", "BSRREADRAM"] as const
+  const previousBankSwitches = bankSwitches.map(name => SWITCHES[name].isSet)
+
+  doSetRom(machine)
+  try {
+    reset6502()
+    memory.set(pcode)
+    checkSoftSwitches(0xC080, false, 0)
+    updateAddressTables()
+    setPC(entryPC)
+    setCycleCount(0)
+
+    for (let i = 0; i < 100_000_000; i++) {
+      const previousPC = s6502.PC
+      processInstruction()
+      if (s6502.PC === previousPC) {
+        expect(s6502.PC).toEqual(successPC)
+        return
+      }
+    }
+    throw new Error(`Klaus decimal test did not terminate at $${s6502.PC.toString(16)}`)
   } finally {
     doSetRom(previousMachine)
     memory.set(previousMemory)
