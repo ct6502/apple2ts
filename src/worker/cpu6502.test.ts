@@ -60,101 +60,68 @@ const getKlausBinary = async (testname: KlausTestName) => {
 }
 
 // See https://github.com/ct6502/apple2ts/issues/43
-// for the original version of this test.
-const runKlaus6502Test = async (testname: KlausTestName) => {
-  const start = 0x400
-  reset6502()
-
-  // The Klaus test binaries are GPL-licensed, so download rather than include them.
+// for the original version of the functional test.
+const withKlausMachine = async (
+  testname: KlausTestName, machine: Parameters<typeof doSetRom>[0],
+  entryPC: number, run: () => void,
+) => {
   const pcode = await getKlausBinary(testname)
-  memory.set(pcode, 0x0)
-
-  // Since our test image extends across all 64k of RAM,
-  // set the softswitch for bank-switched RAM.
-  checkSoftSwitches(0xC080, false, 0)
-
-  // Make sure to do this in case we run the test just by itself.
-  // Otherwise all of the address lookups will be zero.
-  updateAddressTables()
-
-  let memloc = 0x0
-  let memexpect = 0x0
-  let pcExpect = 0
-  let iexpect = 0
-  let cycleExpect = 0
-
-  if (testname === "6502_functional_test.bin") {
-    memloc = 0x200
-    memexpect = 0xF0
-    pcExpect = 0x3469
-    iexpect = 30646177
-    cycleExpect = 96561324
-  } else if (testname === "65C02_extended_opcodes_test.bin") {
-    memloc = 0x202
-    memexpect = 0xF0
-    pcExpect = 0x24f1
-    iexpect = 21977668
-    cycleExpect = 66871574
-
-    // Skip tests for Rockwell custom instructions BBR, BBS
-    memory[0x717] = 0x4c
-    memory[0x718] = 0xff
-    memory[0x719] = 0x0b
-
-    // Skip tests for Rockwell custom instructions RMB, SMB
-    memory[0x1e64] = 0x4c
-    memory[0x1e65] = 0x31
-    memory[0x1e66] = 0x22
+  const previousMachine = getCurrentMachineName()
+  const previousMemory = memory.slice()
+  const bankSwitches = ["BSR_PREWRITE", "BSR_WRITE", "BSRBANK2", "BSRREADRAM"] as const
+  const previousBankSwitches = bankSwitches.map(name => SWITCHES[name].isSet)
+  try {
+    doSetRom(machine)
+    reset6502()
+    memory.set(pcode)
+    // The test images use RAM across the full 64 KiB address range.
+    checkSoftSwitches(0xC080, false, 0)
+    updateAddressTables()
+    setPC(entryPC)
+    setCycleCount(0)
+    run()
+  } finally {
+    doSetRom(previousMachine)
+    memory.set(previousMemory)
+    bankSwitches.forEach((name, index) => {SWITCHES[name].isSet = previousBankSwitches[index]})
+    reset6502()
+    updateAddressTables()
   }
-
-  setPC(start)
-  setCycleCount(0)
-
-  let i = 0
-  while (true) {
-    const pc_state = s6502.PC
-    processInstruction()
-    i++
-    if (pc_state == s6502.PC) {
-      // console.log(`${testname} PC: $${s6502.PC.toString(16)}  i: ${i}  cycles: ${s6502.cycleCount}`)
-      expect(memory[memloc]).toEqual(memexpect)
-      break
-    }
-  }
-
-  // See https://github.com/ct6502/apple2ts/issues/134
-  // for details on these values
-  expect(s6502.PC).toEqual(pcExpect)
-  expect(i).toEqual(iexpect)
-  expect(s6502.cycleCount).toEqual(cycleExpect)
 }
 
-test("Klaus 6502", async () => {await runKlaus6502Test("6502_functional_test.bin")}, 20000)
+test.each([
+  ["6502_functional_test.bin", "APPLE2EU", 0x200, 0x3469, 30646177, 96561324],
+  ["65C02_extended_opcodes_test.bin", "APPLE2EE", 0x202, 0x24F1, 21977668, 66871574],
+] as const)("Klaus %s", async (testname, machine, resultAddress, successPC, instructions, cycles) => {
+  await withKlausMachine(testname, machine, 0x0400, () => {
+    if (testname === "65C02_extended_opcodes_test.bin") {
+      // Skip Rockwell BBR/BBS and RMB/SMB instructions.
+      memory.set([0x4C, 0xFF, 0x0B], 0x0717)
+      memory.set([0x4C, 0x31, 0x22], 0x1E64)
+    }
+    let count = 0
+    do {
+      const previousPC = s6502.PC
+      processInstruction()
+      count++
+      if (s6502.PC === previousPC) break
+    } while (count <= instructions)
 
-test("Klaus 65C02 extended opcodes", async () => {await runKlaus6502Test("65C02_extended_opcodes_test.bin")}, 20000)
+    // See issue #134 for the expected instruction and cycle counts.
+    expect(memory[resultAddress]).toEqual(0xF0)
+    expect(s6502.PC).toEqual(successPC)
+    expect(count).toEqual(instructions)
+    expect(s6502.cycleCount).toEqual(cycles)
+  })
+}, 20000)
 
 test.each([
   ["NMOS", "APPLE2EU", 0x0400, 0x073A],
   ["CMOS", "APPLE2EE", 0x0404, 0x0737],
 ] as const)("Klaus %s interrupts", async (_cpu, machine, entryPC, successPC) => {
-  const pcode = await getKlausBinary("6502_65c02_interrupt_test.bin")
-  const previousMachine = getCurrentMachineName()
-  const previousMemory = memory.slice()
-  const bankSwitches = ["BSR_PREWRITE", "BSR_WRITE", "BSRBANK2", "BSRREADRAM"] as const
-  const previousBankSwitches = bankSwitches.map(name => SWITCHES[name].isSet)
-
-  doSetRom(machine)
-  try {
-    reset6502()
-    memory.set(pcode)
-    checkSoftSwitches(0xC080, false, 0)
-    updateAddressTables()
-
+  await withKlausMachine("6502_65c02_interrupt_test.bin", machine, entryPC, () => {
     const feedbackPort = 0xBFFC
     memory[feedbackPort] = 0
-    setPC(entryPC)
-    setCycleCount(0)
-
     let feedback = 0
     for (let i = 0; i < 10000; i++) {
       const previousPC = s6502.PC
@@ -169,13 +136,7 @@ test.each([
       }
     }
     throw new Error(`Klaus interrupt test did not terminate at $${s6502.PC.toString(16)}`)
-  } finally {
-    doSetRom(previousMachine)
-    memory.set(previousMemory)
-    bankSwitches.forEach((name, index) => {SWITCHES[name].isSet = previousBankSwitches[index]})
-    reset6502()
-    updateAddressTables()
-  }
+  })
 }, 20000)
 
 test.each([
@@ -184,21 +145,7 @@ test.each([
   ["CMOS all-byte", "APPLE2EE", 0x0208, 0x02A4],
   ["CMOS valid BCD", "APPLE2EE", 0x020C, 0x02A7],
 ] as const)("Klaus %s decimal mode", async (_mode, machine, entryPC, successPC) => {
-  const pcode = await getKlausBinary("6502_65c02_65816_decimal_test.bin")
-  const previousMachine = getCurrentMachineName()
-  const previousMemory = memory.slice()
-  const bankSwitches = ["BSR_PREWRITE", "BSR_WRITE", "BSRBANK2", "BSRREADRAM"] as const
-  const previousBankSwitches = bankSwitches.map(name => SWITCHES[name].isSet)
-
-  doSetRom(machine)
-  try {
-    reset6502()
-    memory.set(pcode)
-    checkSoftSwitches(0xC080, false, 0)
-    updateAddressTables()
-    setPC(entryPC)
-    setCycleCount(0)
-
+  await withKlausMachine("6502_65c02_65816_decimal_test.bin", machine, entryPC, () => {
     for (let i = 0; i < 100_000_000; i++) {
       const previousPC = s6502.PC
       processInstruction()
@@ -208,11 +155,5 @@ test.each([
       }
     }
     throw new Error(`Klaus decimal test did not terminate at $${s6502.PC.toString(16)}`)
-  } finally {
-    doSetRom(previousMachine)
-    memory.set(previousMemory)
-    bankSwitches.forEach((name, index) => {SWITCHES[name].isSet = previousBankSwitches[index]})
-    reset6502()
-    updateAddressTables()
-  }
+  })
 }, 20000)
