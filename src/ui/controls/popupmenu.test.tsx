@@ -17,7 +17,7 @@ describe("PopupMenu", () => {
     )
 
     expect(html.match(/class="popup-selection-marker"/g)).toHaveLength(2)
-    expect(html).toContain("class=\"popup-selection-marker\">✔</span>")
+    expect(html).toContain("class=\"popup-selection-marker\">\u2713</span>")
     expect(html).toContain("class=\"popup-selection-marker\"></span>")
   })
 })
