@@ -23,6 +23,8 @@ const MemoryTable = (props: MemoryTableProps) => {
     setUpdateHgrMagnifier: setUpdateHgrMagnifier } = useGlobalContext()
   const hgrMagnifierLocal = useRef([-1, -1])
   const cellValue = useRef("")
+  const isLandscape = (window.innerWidth > window.innerHeight)
+  const height = isLandscape ? Math.max((window.innerHeight - 605), 100) : 250
 
   const clearSelection = (table: HTMLTableElement) => {
     if (!table || !table.rows) return
@@ -86,7 +88,9 @@ const MemoryTable = (props: MemoryTableProps) => {
     }
   }, [hgrMagnifierLoc, props.isHGR])
 
-  if (props.memory.length <= 1) return "\n\n\n      *** Pause emulator to view memory ***"
+  if (props.memory.length <= 1) return <div
+      style={{ height: `${height}px` }}>
+    </div>
 
   const convertByteToAscii = (byte: number) => {
     if (props.highAscii) byte &= 0x7F
@@ -363,7 +367,8 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   return (
     <table className="memtable" id="memory-table"
-      style={{ cursor: props.pickWatchpoint ? "crosshair" : "default" }}
+      style={{ cursor: props.pickWatchpoint ? "crosshair" : "default",
+        lineHeight: "10pt", height: `${height}px` }}
       onMouseDown={onMouseDown}
       onMouseOver={onMouseOver}>
       <thead>

@@ -97,7 +97,7 @@ const TimeTravelPanel = () => {
   // Need to set tabIndex={-1} on the div to get onKeyDown to work.
   // Could change to tabIndex={0} to make the div part of the tab order.
   return (
-    <div className="round-rect-border short-panel">
+    <div className="round-rect-border short-panel" style={{ height: "120px" }}>
       <div className="bigger-font column-gap">Time Travel Snapshots</div>
       <div className="flex-row">
         <div ref={stateThumbRef} className="thin-border debug-panel mono-text"
@@ -105,7 +105,7 @@ const TimeTravelPanel = () => {
           tabIndex={-1}
           style={{
             width: "15em",
-            height: "102pt",
+            height: "72pt",
             overflow: "auto",
             cursor: "pointer",
             userSelect: "none",

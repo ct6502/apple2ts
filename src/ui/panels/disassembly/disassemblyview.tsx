@@ -10,7 +10,6 @@ import DisassemblyDiv from "./disassemblydiv"
 import { faCircle } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
-const nlines = 40
 let currentScrollAddress = -1
 let allowScrollEvent = false
 let isMouseDown = false
@@ -140,6 +139,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
   }
 
   // console.log(`Render ${props.update} ${handleGetState6502().PC.toString(16)}`)
+  const height = props.height - 60
 
   return (
     <div className="flex-row thin-border" id="tour-debug-disassembly"
@@ -151,7 +151,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
           overflowX: "hidden",
           width: "100%",
           top: "0px",
-          height: `${nlines * 10 - 2}pt`,
+          height: `${height}px`,
           paddingLeft: "15pt",
           paddingRight: "10px",
           marginRight: "0px",
@@ -168,6 +168,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
         onMouseLeave={handleCodeMouseLeave}
         onClick={handleCodeClick}>
         <DisassemblyDiv
+          height={height}
           hideFakePoint={() => {
             if (fakePointRef.current) {
               const fakePoint = fakePointRef.current as HTMLDivElement

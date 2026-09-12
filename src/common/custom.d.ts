@@ -554,6 +554,8 @@ type StepCallbackFunction = () => boolean
 type DisassemblyProps = {
   update: number,
   refresh: () => void,
+  isShort: boolean,
+  height: number,
 }
 
 type VtocType = "dos" | "prodos" | "other" | "dosup" | "4cade"

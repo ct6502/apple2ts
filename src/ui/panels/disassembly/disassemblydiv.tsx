@@ -9,22 +9,24 @@ import React, { useEffect, useRef } from "react"
 import { useGlobalContext } from "../../globalcontext"
 import { useTranslation } from "../../../i18n/useTranslation"
 
-const nlines = 40
 let lastRepositionedAddress = -1
-
  
-const DisassemblyDiv = (props: { 
+const DisassemblyDiv = (props: {
   disassemblyRef: React.RefObject<HTMLDivElement | null>,
   hideFakePoint: () => void,
   setAllowScrollEvent: (value: boolean) => void,
-  refresh: () => void}) => {
+  refresh: () => void,
+  height: number
+}) => {
   const { updateBreakpoint, setUpdateBreakpoint, setMemdumpAddress } = useGlobalContext()
   const { t } = useTranslation()
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const scrollToRef = useRef<HTMLDivElement>(null)
+  const lineHeightPx = 10 * (96 / 72)
+  const nlines = Math.max(15, Math.floor(props.height / lineHeightPx))
 
   const getAddress = (line: string) => {
-    return parseInt(line.slice(0, line.indexOf(":")), 16)
+    return parseInt(line, 16)//.slice(0, line.indexOf(":")), 16)
   }
 
   // const fWeight = (opcode: string) => {
@@ -168,7 +170,7 @@ const DisassemblyDiv = (props: {
     bottomHalf.push(i)
   }
 
-  return <div style={{ width: "24em" }}>
+  return <div style={{ width: "24em", lineHeight: "10pt" }}>
     {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
     {disArray.map((line, index) => (
       <div key={index}

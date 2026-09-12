@@ -58,6 +58,8 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
     setIsDragging(true)
   }
 
+  const isShort = !isMinimalTheme() && window.innerHeight < 900
+
   return (
     <div className="flex-column-gap debug-section">
       <State6502Controls />
@@ -67,7 +69,7 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
           ref={leftColumnRef}
           style={{ width: leftWidth > 0 ? `${leftWidth}px` : undefined, flexShrink: 0 }}
         >
-          <DisassemblyPanel />
+          <DisassemblyPanel isShort={isShort} />
           <BreakpointsView updateDisplay={props.updateDisplay} />
         </div>
         <div 

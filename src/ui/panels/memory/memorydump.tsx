@@ -427,8 +427,7 @@ const MemoryDump = () => {
       <div className="debug-panel mono-text"
         style={{
           overflow: "hidden",
-          height: "220px",
-          width: "380px"
+          width: "380px",
         }}
         ref={memoryDumpRef}
       >

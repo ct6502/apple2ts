@@ -1,4 +1,3 @@
-import React from "react"
 import "./helppanel.css"
 import { UI_THEME } from "../../../common/utility"
 import { isMinimalTheme } from "../../ui_settings"
@@ -13,9 +12,8 @@ type HelpPanelProps = {
   useOpenAppleKey: boolean,
 }
 
-const HelpTab = React.memo((props: HelpPanelProps) => {
+const HelpTab = (props: HelpPanelProps) => {
   const { t } = useTranslation()
-  const paperheight = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const isDarkMode = props.theme == UI_THEME.DARK
   const useMinimalPresentation = props.minimalPresentation || isMinimalTheme()
 
@@ -24,8 +22,9 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   }
 
   const isTouchDevice = "ontouchstart" in document.documentElement
-  const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
+  const isLandscape = (window.innerWidth > window.innerHeight)
+  const height = isLandscape ? Math.max((window.innerHeight - 100), 470) : 560
   const narrow = isTouchDevice || (width < height)
   const helpClassName = "help-text " + (isDarkMode ? "help-text-dark" : "help-text-light")
   const showDefaultHelp = isDefaultHelp(props.helptext)
@@ -34,7 +33,7 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
     <div className="help-parent" translate="no"
       style={{
         width: narrow || useMinimalPresentation ? "687px" : 500,
-        height: narrow || useMinimalPresentation ? "" : paperheight,
+        height: narrow || useMinimalPresentation ? "" : height,
         overflow: (narrow ? "visible" : "auto")
       }}>
       <div className={isDarkMode ? "" : "help-paper"}>
@@ -50,12 +49,7 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
       </div>
     </div>
   )
-}, (prevProps, nextProps) => {
-  return prevProps.helptext === nextProps.helptext
-    && prevProps.minimalPresentation === nextProps.minimalPresentation
-    && prevProps.theme === nextProps.theme
-    && prevProps.useOpenAppleKey === nextProps.useOpenAppleKey
-})
+}
 
 HelpTab.displayName = "HelpPanel"
 

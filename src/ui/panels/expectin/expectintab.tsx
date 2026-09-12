@@ -35,8 +35,11 @@ const ExpectinTab = () => {
     }
   }
 
+  const isLandscape = (window.innerWidth > window.innerHeight)
+  const height = isLandscape ? Math.max((window.innerHeight - 170), 450) : 560
+
   return (
-    <div className="flex-column-gap debug-section">
+    <div className="flex-column-gap debug-section" style={{ height: `${height}px` }}>
       <CodeMirrorEditor value={expectinText} setValue={setExpectinText} />
       <div className="flex-row-gap">
         {expectinError === "" ?

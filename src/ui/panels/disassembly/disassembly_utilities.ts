@@ -7,7 +7,7 @@ export const set6502Instructions = (instr: Array<PCodeInstr1>) => {
   instructions = instr
 }
 
-const nlines = 40  // should this be an argument?
+const nlines = 100  // should this be an argument?
 
 let visibleMode: DISASSEMBLE_VISIBLE = DISASSEMBLE_VISIBLE.RESET
 
@@ -74,23 +74,23 @@ export const getDisassembly = (startAddress = -1, endAddress = -1) => {
   return r
 }
 
-export const getLineOfDisassembly = (line: number) => {
-  const disArray = getDisassembly().split("\n")
-  if (disArray.length <= 1) {
-    return -1
-  }
-  const firstLine = parseInt(disArray[0].slice(0, disArray[0].indexOf(":")), 16)
-  if (line < firstLine) return -1
-  const last = disArray[disArray.length - 2]
-  const lastLine = parseInt(last.slice(0, last.indexOf(": ")), 16)
-  if (line > lastLine) return -1
-  const iend = Math.min(disArray.length - 1, nlines - 1)
-  for (let i = 0; i <= iend; i++) {
-    const addr = parseInt(disArray[i].slice(0, disArray[i].indexOf(":")), 16)
-    if (addr === line) return i
-  }
-  return -1
-}
+// export const getLineOfDisassembly = (line: number) => {
+//   const disArray = getDisassembly().split("\n")
+//   if (disArray.length <= 1) {
+//     return -1
+//   }
+//   const firstLine = parseInt(disArray[0].slice(0, disArray[0].indexOf(":")), 16)
+//   if (line < firstLine) return -1
+//   const last = disArray[disArray.length - 2]
+//   const lastLine = parseInt(last.slice(0, last.indexOf(": ")), 16)
+//   if (line > lastLine) return -1
+//   const iend = Math.min(disArray.length - 1, nlines - 1)
+//   for (let i = 0; i <= iend; i++) {
+//     const addr = parseInt(disArray[i].slice(0, disArray[i].indexOf(":")), 16)
+//     if (addr === line) return i
+//   }
+//   return -1
+// }
 
 
 export const getSymbolForAddress = (addr: number) => {
