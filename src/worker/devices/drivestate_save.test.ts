@@ -304,3 +304,53 @@ test("restoring a time-travel snapshot replaces current small-disk data with sna
   expect(restoredLength).toBe(16_384)
   expect(restoredData[0]).toBe(0xA5)
 })
+
+test("restoring a save state publishes the restored floppy's data to the UI, not an empty buffer", () => {
+  // Reproduces a bug where a freshly-restored, unwritten floppy (diskHasChanges
+  // false, motor left running from the moment it was captured) was reported to
+  // the UI with empty diskData: restoreDriveSaveState()'s closing passDriveData()
+  // call didn't force-pass drive data the way doSetEmuDriveNewData() does on a
+  // normal mount, so getDriveProps()'s
+  // "(diskHasChanges && !motorRunning) || forcePassData" gate suppressed the
+  // (correctly restored) disk bytes from ever reaching passDriveProps.
+  const passDriveProps = jest.spyOn(workerMessages, "passDriveProps")
+  const diskData = new Uint8Array(143360)
+  diskData[0] = 0xA5
+  diskData[diskData.length - 1] = 0x5A
+  doSetEmuDriveNewData({
+    index: 2,
+    hardDrive: false,
+    drive: 1,
+    filename: "standard.po",
+    status: "",
+    motorRunning: true,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData,
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }, true)
+  // doSetEmuDriveNewData() may re-encode the raw sector image (e.g. to WOZ)
+  // before publishing it, so capture what a real mount actually publishes
+  // rather than assuming the restored bytes equal the raw input.
+  const lastMountCall = passDriveProps.mock.calls.at(-1)
+  if (!lastMountCall) throw new Error("expected doSetEmuDriveNewData to call passDriveProps")
+  const mountedDiskData: Uint8Array = lastMountCall[0].diskData
+  expect(mountedDiskData.length).toBeGreaterThan(0)
+  const state = getDriveSaveState(true)
+
+  // Simulate returning to a session where that disk isn't mounted, then
+  // restoring the captured state -- the actual save/restore round trip, not
+  // just re-mounting the same disk.
+  restoreDriveSaveState(emptyDriveSaveState())
+  passDriveProps.mockClear()
+  restoreDriveSaveState(state)
+
+  expect(passDriveProps).toHaveBeenCalledWith(expect.objectContaining({
+    index: 2,
+    filename: "standard.po",
+    diskData: mountedDiskData,
+  }), expect.anything())
+})
