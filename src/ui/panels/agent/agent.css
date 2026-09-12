@@ -13,7 +13,7 @@
   flex: 1;
   min-height: 0;
   /* Important for flex children with overflow */
-  width: 667px;
+  width: 673px;
   overflow-y: auto;
   padding: 10px;
   background-color: #000;

@@ -238,7 +238,7 @@ const BasicEditor = (props: EditorProps) => {
   const height = isLandscape ? Math.max((window.innerHeight - 270), 350) : 560
 
   return <div ref={editorRef} style={{
-    height: `${height}px`, width: "687px",
+    height: `${height}px`, width: "693px",
     overflowY: "hidden"
   }} />
 }
