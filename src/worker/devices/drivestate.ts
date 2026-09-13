@@ -164,7 +164,12 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
     if (newState.driveState.length === 3 && i === 0) dindex = 1
     dindex++
   }
-  passDriveData()
+  // Force-pass restored disk data to the UI the same way doSetEmuDriveNewData()
+  // does on a normal mount: a freshly-restored, unwritten disk has
+  // diskHasChanges === false, so without forcing it, getDriveProps()'s
+  // "(diskHasChanges && !motorRunning) || forcePassData" gate would report an
+  // empty buffer even though driveData[] above was correctly restored.
+  passDriveData(-1, true)
 }
 
 export const resetFloppyDrives = () => {
