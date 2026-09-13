@@ -538,62 +538,21 @@ let basicString = ""
 let CSWHSave = 0
 let CSWLSave = 0
 
-type MouseSaveState = {
-  mousex: number,
-  mousey: number,
-  clampidx: number,
-  bstatus: number,
-  istatus: number,
-  lastbstatus: number,
-  lastmousex: number,
-  lastmousey: number,
-  tmpmousex: number,
-  tmpmousey: number,
-  servestatus: number,
-  command: number,
-  basicPos: number,
-  basicString: string,
-  CSWHSave: number,
-  CSWLSave: number,
-}
-
-const getMouseSaveState = (): MouseSaveState => ({
-  mousex,
-  mousey,
-  clampidx,
-  bstatus,
-  istatus,
-  lastbstatus,
-  lastmousex,
-  lastmousey,
-  tmpmousex,
-  tmpmousey,
-  servestatus,
-  command,
-  basicPos,
-  basicString,
-  CSWHSave,
-  CSWLSave,
+const getMouseSaveState = () => ({
+  mousex, mousey, clampidx, bstatus,
+  istatus, lastbstatus, lastmousex, lastmousey,
+  tmpmousex, tmpmousey, servestatus, command,
+  basicPos, basicString, CSWHSave, CSWLSave,
 })
+
+type MouseSaveState = ReturnType<typeof getMouseSaveState>
 
 const restoreMouseSaveState = (state: MouseSaveState) => {
   ({
-    mousex,
-    mousey,
-    clampidx,
-    bstatus,
-    istatus,
-    lastbstatus,
-    lastmousex,
-    lastmousey,
-    tmpmousex,
-    tmpmousey,
-    servestatus,
-    command,
-    basicPos,
-    basicString,
-    CSWHSave,
-    CSWLSave,
+    mousex, mousey, clampidx, bstatus,
+    istatus, lastbstatus, lastmousex, lastmousey,
+    tmpmousex, tmpmousey, servestatus, command,
+    basicPos, basicString, CSWHSave, CSWLSave,
   } = state)
   passShowAppleMouse(memGetC000(ADDR_MODE) !== 0)
   interruptRequest(slot, servestatus !== 0)
