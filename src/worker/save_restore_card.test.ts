@@ -1,13 +1,17 @@
 import { DEFAULT_SLOT_CONFIG } from "../common/utility"
 import { interruptRequest } from "./cpu6502"
-import { memGetSlotROM, memSetSlotROM } from "./memory"
+import { memGet, memGetSlotROM, memSet, memSetSlotROM } from "./memory"
 import { handleMockingboard, resetMockingboard } from "./devices/mockingboard"
+import { MouseCardEvent, onMouseVBL, resetMouse } from "./devices/mouse"
 import { configureMachine, doSetSlotConfig } from "./motherboard"
 import { getApple2State, setApple2State } from "./save_restore"
 import { setIsTesting } from "./worker2main"
 import { s6502 } from "./instructions"
 
-afterEach(() => interruptRequest(4, false))
+afterEach(() => {
+  interruptRequest(4, false)
+  interruptRequest(5, false)
+})
 
 test("v2 save state preserves Mockingboard registers and timers", () => {
   setIsTesting()
@@ -36,4 +40,27 @@ test("v2 save state preserves Mockingboard registers and timers", () => {
   handleMockingboard(0xC489, 0x12) // load Timer 2 from the restored latch
   expect(memGetSlotROM(4, 0x88)).toBe(0x37)
   expect(memGetSlotROM(4, 0x91)).toBe(3)
+})
+
+test("v2 save state preserves mouse position, button, and interrupt", () => {
+  setIsTesting()
+  doSetSlotConfig({...DEFAULT_SLOT_CONFIG})
+  configureMachine()
+  resetMouse()
+  memSet(0xC0D6, 3)
+  MouseCardEvent({x: 0.25, y: 0.75, buttons: -1})
+  MouseCardEvent({x: 0, y: 0, buttons: 0x10})
+  onMouseVBL()
+
+  const saved = getApple2State()
+  resetMouse()
+  interruptRequest(5, false)
+  setApple2State(saved, 2)
+
+  expect(memGet(0xC0D1)).toBe(0)
+  expect(memGet(0xC0D2)).toBe(1)
+  expect(memGet(0xC0D3)).toBe(0xFF)
+  expect(memGet(0xC0D4)).toBe(2)
+  expect(memGet(0xC0D5)).toBe(0x80)
+  expect(s6502.flagIRQ & (1 << 5)).not.toBe(0)
 })
