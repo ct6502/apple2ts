@@ -1,14 +1,15 @@
 import { BREAKPOINT_RESULT, breakpointMap, doSetBreakpoints, hitBreakpoint, processInstruction } from "./cpu6502"
-import { getAuxCardEnabled, getHires, memGet, memSet, memory, setAuxCardEnabled, updateAddressTables } from "./memory"
+import { getAuxCardEnabled, getHires, memGet, memSet, memory, RamWorksBankGet, setAuxCardEnabled, setRamWorks, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doBoot, doClearMemoryWriteWatchpoint, doLoadBinary, doRunBinary, doSetCycleCount, doSetCyclesToRun, doSetMachineName, doSetMemoryWriteWatchpoint, doSetRunMode, doSetSpeedMode, doSetState6502, doStepInto, doStepOver, doWriteMemory, findExternalMemory, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting } from "./motherboard"
+import { createExternalSessionSnapshot, doBoot, doClearMemoryWriteWatchpoint, doLoadBinary, doRunBinary, doSetCycleCount, doSetCyclesToRun, doSetMachineName, doSetMemoryWriteWatchpoint, doSetRunMode, doSetSpeedMode, doSetState6502, doStepInto, doStepOver, doWriteMemory, findExternalMemory, getExternalMachineState, getExternalMemoryView, resetCpuSpeedForTesting, restoreExternalSessionSnapshot } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { getCurrentDriveState } from "./devices/drivestate"
 import * as worker2main from "./worker2main"
+import { getApple2State, setApple2State } from "./save_restore"
 
 const getExecutionSnapshot = () => {
   const execution = getExternalMachineState().execution
@@ -77,6 +78,132 @@ test("physical memory inspection preserves CPU and execution state", () => {
     Object.assign(s6502, previousCpu)
     doSetRunMode(previousRunMode, false)
     setAuxCardEnabled(previousAuxCardEnabled)
+  }
+})
+
+test.each([
+  [false, true, true, false],
+  [true, false, false, true],
+])("session snapshot preserves sparse LC RAM: aux=%s bank2=%s write=%s prewrite=%s",
+  (aux, bank2, write, prewrite) => {
+    setIsTesting()
+    const previous = getApple2State()
+    const previousMachine = getExternalMachineState()
+    try {
+      doSetRunMode(RUN_MODE.PAUSED, false)
+      setRamWorks(128)
+      memory.fill(0xFF, 0, 0x10000)
+      memory.fill(0xFF, RamWorksMemoryStart)
+      const offsets = [0, RamWorksMemoryStart, RamWorksMemoryStart + 0x10000]
+      const addresses = [0x0800, 0xC123, 0xD123, 0xE366, 0xFFFF]
+      offsets.forEach((offset, bank) => addresses.forEach((address, index) => {
+        memory[offset + address] = 0x10 * (bank + 1) + index
+      }))
+      memSet(0xC073, 1)
+      SWITCHES.ALTZP.isSet = aux
+      SWITCHES.BSRBANK2.isSet = bank2
+      SWITCHES.BSRREADRAM.isSet = true
+      SWITCHES.BSR_WRITE.isSet = write
+      SWITCHES.BSR_PREWRITE.isSet = prewrite
+      updateAddressTables()
+      const captured = getApple2State()
+      const visible = [memGet(0xD123), memGet(0xE366)]
+      createExternalSessionSnapshot("session-snapshot:lc")
+
+      offsets.forEach(offset => memory.fill(0, offset, offset + 0x10000))
+      memSet(0xC073, 0)
+      memGet(0xC082)
+      SWITCHES.ALTZP.isSet = !aux
+      updateAddressTables()
+      restoreExternalSessionSnapshot("session-snapshot:lc")
+
+      expect(getApple2State()).toMatchObject({
+        memory: captured.memory,
+        memvalid: captured.memvalid,
+        softSwitches: captured.softSwitches,
+        s6502: captured.s6502,
+      })
+      expect(RamWorksBankGet()).toBe(1)
+      expect([memGet(0xD123), memGet(0xE366)]).toEqual(visible)
+      memSet(0xD123, 0x77)
+      expect(memGet(0xD123)).toBe(write ? 0x77 : visible[0])
+      if (prewrite) {
+        memGet(bank2 ? 0xC083 : 0xC08B)
+        memSet(0xD123, 0x88)
+        expect(memGet(0xD123)).toBe(0x88)
+      }
+      expect(getExecutionSnapshot().state).toBe("paused")
+    } finally {
+      setRamWorks(previous.extraRamSize)
+      setApple2State(previous, 2, false)
+      doSetRunMode(previousMachine.runMode, false)
+    }
+  })
+
+test("session snapshots restore one paused worker baseline", () => {
+  setIsTesting()
+  const previousState = getExternalMachineState()
+  const previousCpu = {...previousState.s6502}
+  const previousBytes = memory.slice(0x0800, 0x0802)
+  const previousBreakpoints = new BreakpointMap(breakpointMap)
+  const retainedBreakpoint = BreakpointNew()
+  retainedBreakpoint.address = 0x6123
+  const passMachineState = jest.spyOn(worker2main, "passMachineState")
+
+  try {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    doSetSpeedMode(3)
+    doSetBreakpoints(new BreakpointMap([[retainedBreakpoint.address, retainedBreakpoint]]))
+    memory.set([0x11, 0x22], 0x0800)
+    Object.assign(s6502, {PC: 0x6000, Accum: 0x33, XReg: 0x44})
+    const beforeSequence = getExecutionSnapshot().executionSequence
+    expect(createExternalSessionSnapshot("session-snapshot:one")).toEqual({
+      snapshotId: "session-snapshot:one",
+      cycleCount: s6502.cycleCount,
+    })
+
+    memory.set([0xAA, 0xBB], 0x0800)
+    Object.assign(s6502, {PC: 0x7000, Accum: 0x55, XReg: 0x66})
+    passMachineState.mockClear()
+    expect(restoreExternalSessionSnapshot("session-snapshot:one")).toEqual({
+      snapshotId: "session-snapshot:one",
+      cycleCount: s6502.cycleCount,
+    })
+    expect(passMachineState).toHaveBeenCalledTimes(1)
+    expect(Array.from(memory.slice(0x0800, 0x0802))).toEqual([0x11, 0x22])
+    expect(s6502).toEqual(expect.objectContaining({PC: 0x6000, Accum: 0x33, XReg: 0x44}))
+    expect(getExternalMachineState()).toEqual(expect.objectContaining({
+      runMode: RUN_MODE.PAUSED,
+      speedMode: 3,
+      execution: expect.objectContaining({
+        executionSequence: beforeSequence + 1,
+        state: "paused",
+        pauseReason: "explicit",
+        PC: 0x6000,
+      }),
+    }))
+    expect(breakpointMap.get(retainedBreakpoint.address)).toBe(retainedBreakpoint)
+    expect(() => restoreExternalSessionSnapshot("session-snapshot:other"))
+      .toThrow("Session snapshot not found")
+
+    createExternalSessionSnapshot("session-snapshot:replacement")
+    expect(() => restoreExternalSessionSnapshot("session-snapshot:one"))
+      .toThrow("Session snapshot not found")
+
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    expect(() => createExternalSessionSnapshot("session-snapshot:running"))
+      .toThrow("Session snapshots can be created only while the emulator is paused")
+    expect(() => restoreExternalSessionSnapshot("session-snapshot:one"))
+      .toThrow("Session snapshots can be restored only while the emulator is paused")
+  } finally {
+    passMachineState.mockRestore()
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    memory.set(previousBytes, 0x0800)
+    Object.assign(s6502, previousCpu)
+    doSetBreakpoints(previousBreakpoints)
+    doSetSpeedMode(previousState.speedMode)
+    doSetRunMode(previousState.runMode, false)
+    resetCpuSpeedForTesting()
   }
 })
 

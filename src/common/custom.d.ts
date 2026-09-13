@@ -421,6 +421,11 @@ type EmulatorSaveState = {
   snapshots: Array<EmulatorSaveState> | null
 }
 
+type SessionSnapshotReceipt = {
+  snapshotId: string,
+  cycleCount: number,
+}
+
 type TimeTravelThumbnail = {
   s6502: STATE6502,
   thumbnail: string

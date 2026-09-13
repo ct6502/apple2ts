@@ -45,6 +45,8 @@ import {
   passSetRunMode,
   requestSetRunMode,
   requestLoadBinary,
+  requestCreateSessionSnapshot,
+  requestRestoreSessionSnapshot,
   setExecutionStateCallback,
 } from "../main2worker"
 import { getBinaryLoadError, runBinary } from "../binaryload"
@@ -555,6 +557,18 @@ export const executeCommand = async (action: string, payload: Record<string, unk
     case "getSnapshots":
       return {
         snapshots: collectSnapshots(),
+      }
+
+    case "createSessionSnapshot":
+      return {
+        snapshot: await requestCreateSessionSnapshot(String(payload.snapshotId || "")),
+        status: collectStatus(),
+      }
+
+    case "restoreSessionSnapshot":
+      return {
+        snapshot: await requestRestoreSessionSnapshot(String(payload.snapshotId || "")),
+        status: collectStatus(),
       }
 
     case "createSnapshot":
