@@ -50,6 +50,7 @@ const resultFor = (
   cyclesElapsed: Math.max(0, cycleCount - sequence.startCycles),
   ...(outcome === "timeout" ? {timeout: sequence.timeout} : {}),
   ...(outcome === "condition_triggered" ? {stopCondition: sequence.stopCondition} : {}),
+  ...(sequence.stopConditions.length ? {stopConditionsArmed: sequence.stopConditions.length} : {}),
 })
 
 const validateRequest = (request: ConditionalKeySequenceRequest) => {

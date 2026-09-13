@@ -57,6 +57,7 @@ test("first matching stop takes priority over phase delivery and completion", as
     await expect(result).resolves.toMatchObject({
       outcome: "condition_triggered", completedPhases: completePhase ? 1 : 0,
       stopCondition: {name: "danger", matchedBytes: [[1]]},
+      stopConditionsArmed: 2,
     })
     predicateState.clear()
   }

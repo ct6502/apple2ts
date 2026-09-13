@@ -150,6 +150,7 @@ type ConditionalKeySequenceResult = {
   keyDeliveries: ConditionalKeyDelivery[],
   cyclesElapsed: number,
   stopCondition?: {name: string, matchedBytes: number[][]},
+  stopConditionsArmed?: number,
   timeout?: {
     waitingFor: "condition" | "key_consumption",
     actualBytes: number[][],
