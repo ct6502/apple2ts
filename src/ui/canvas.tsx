@@ -29,6 +29,7 @@ import { KeyboardControl } from "./controls/keyboardcontrol"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
 import { toggleScanlines } from "./ui_utilities"
+import { getReleasedMouseButtons } from "./mouseevent"
 
 let resizeTimer = 0
 let resizeFrame = 0
@@ -530,6 +531,14 @@ const Apple2Canvas = (props: DisplayProps) => {
     passMouseEvent(evt)
   }
 
+  const handleMouseEnter = (event: ReactMouseEvent<HTMLCanvasElement>) => {
+    setFocus()
+    if (isTouchDevice) return
+    for (const buttons of getReleasedMouseButtons(event.buttons)) {
+      passMouseEvent({ x: 0, y: 0, buttons })
+    }
+  }
+
   const handleCanvasResize = (canvas: HTMLCanvasElement | null) => {
     if (!canvas) return "0px"
 
@@ -662,7 +671,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
-        onMouseEnter={setFocus}
+        onMouseEnter={handleMouseEnter}
         onMouseDown={isTouchDevice ? setFocus : (e) => { setFocus(); handleMouseDown(e) }}
         onMouseUp={isTouchDevice ? undefined : handleMouseUp}
         onMouseMove={isTouchDevice ? undefined : handleMouseMove}
