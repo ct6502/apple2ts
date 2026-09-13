@@ -1,58 +1,63 @@
+import { ProcessDisplay } from "../graphics"
 import { captureRenderedScreen } from "./remotecontrol_screen"
+
+jest.mock("../graphics", () => ({ ProcessDisplay: jest.fn() }))
 
 afterEach(() => {
   document.body.replaceChildren()
-  jest.useRealTimers()
   jest.restoreAllMocks()
+  jest.resetAllMocks()
 })
 
-test("captures the rendered screen after its next display refresh", async () => {
-  const callbacks: FrameRequestCallback[] = []
-  jest.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-    callbacks.push(callback)
-    return callbacks.length
-  })
-  jest.spyOn(performance, "now").mockReturnValue(100)
-
+const createScreen = () => {
   const canvas = document.createElement("canvas")
   canvas.id = "apple2canvas"
   canvas.width = 560
   canvas.height = 384
-  jest.spyOn(canvas, "toDataURL").mockReturnValue("data:image/png;base64,AQID")
-  document.body.append(canvas)
-
-  const capture = captureRenderedScreen()
-  expect(canvas.toDataURL).not.toHaveBeenCalled()
-
-  callbacks.shift()?.(110)
-  callbacks.shift()?.(125)
-
-  await expect(capture).resolves.toEqual({
-    mimeType: "image/png",
-    dataBase64: "AQID",
-    width: 560,
-    height: 384,
+  const hidden = document.createElement("canvas")
+  hidden.id = "hiddenCanvas"
+  const ctx = {} as CanvasRenderingContext2D
+  const hiddenCtx = {} as CanvasRenderingContext2D
+  jest.spyOn(canvas, "getContext").mockReturnValue(ctx)
+  jest.spyOn(hidden, "getContext").mockReturnValue(hiddenCtx)
+  const encode = jest.spyOn(canvas, "toDataURL").mockImplementation(() => {
+    expect(ProcessDisplay).toHaveBeenCalledWith(ctx, hiddenCtx, 560, 384)
+    return "data:image/png;base64,AQID"
   })
-  expect(canvas.toDataURL).toHaveBeenCalledWith("image/png")
+  document.body.append(canvas, hidden)
+  return { canvas, hidden, encode }
+}
+
+test("draws before capture without waiting for animation callbacks", async () => {
+  const frame = jest.spyOn(window, "requestAnimationFrame").mockReturnValue(17)
+  const timer = jest.spyOn(window, "setTimeout")
+  const { encode } = createScreen()
+  await expect(captureRenderedScreen()).resolves.toEqual({
+    mimeType: "image/png", dataBase64: "AQID", width: 560, height: 384,
+  })
+  expect(ProcessDisplay).toHaveBeenCalledTimes(1)
+  expect(encode).toHaveBeenCalledWith("image/png")
+  expect(frame).not.toHaveBeenCalled()
+  expect(timer).not.toHaveBeenCalled()
 })
 
-test("rejects when the rendered screen is unavailable", async () => {
+test.each(["apple2canvas", "hiddenCanvas"])("rejects a missing %s", async (id) => {
+  createScreen()
+  document.getElementById(id)?.remove()
   await expect(captureRenderedScreen()).rejects.toThrow("screen is unavailable")
+  expect(ProcessDisplay).not.toHaveBeenCalled()
 })
 
-test("rejects when the rendered screen does not refresh", async () => {
-  jest.useFakeTimers()
-  const frameId = 17
-  jest.spyOn(window, "requestAnimationFrame").mockReturnValue(frameId)
-  const cancelFrame = jest.spyOn(window, "cancelAnimationFrame").mockImplementation()
+test.each(["canvas", "hidden"] as const)("rejects an unavailable %s context", async (name) => {
+  const screen = createScreen()
+  jest.spyOn(screen[name], "getContext").mockReturnValue(null)
+  await expect(captureRenderedScreen()).rejects.toThrow("screen is unavailable")
+  expect(screen.encode).not.toHaveBeenCalled()
+})
 
-  const canvas = document.createElement("canvas")
-  canvas.id = "apple2canvas"
-  document.body.append(canvas)
-
-  const capture = captureRenderedScreen()
-  jest.advanceTimersByTime(1000)
-
-  await expect(capture).rejects.toThrow("screen did not refresh")
-  expect(cancelFrame).toHaveBeenCalledWith(frameId)
+test("does not return stale pixels after a drawing failure", async () => {
+  const { encode } = createScreen()
+  jest.mocked(ProcessDisplay).mockImplementation(() => { throw new Error("draw failed") })
+  await expect(captureRenderedScreen()).rejects.toThrow("draw failed")
+  expect(encode).not.toHaveBeenCalled()
 })
