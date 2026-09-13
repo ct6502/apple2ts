@@ -1,30 +1,16 @@
-const SLOWEST_RENDER_INTERVAL_MS = 1000 / 45
-const SCREEN_CAPTURE_TIMEOUT_MS = 1000
-
-const waitForDisplayRefresh = () => {
-  const requestedAt = performance.now()
-  return new Promise<void>((resolve, reject) => {
-    let frameId = 0
-    const timeoutId = window.setTimeout(() => {
-      window.cancelAnimationFrame(frameId)
-      reject(new Error("Rendered Apple II screen did not refresh"))
-    }, SCREEN_CAPTURE_TIMEOUT_MS)
-    const checkFrame = (timestamp: number) => {
-      if (timestamp - requestedAt >= SLOWEST_RENDER_INTERVAL_MS) {
-        window.clearTimeout(timeoutId)
-        resolve()
-      } else {
-        frameId = window.requestAnimationFrame(checkFrame)
-      }
-    }
-    frameId = window.requestAnimationFrame(checkFrame)
-  })
-}
+import { ProcessDisplay } from "../graphics"
 
 export const captureRenderedScreen = async () => {
   const canvas = document.getElementById("apple2canvas") as HTMLCanvasElement | null
-  if (!canvas) throw new Error("Rendered Apple II screen is unavailable")
-  await waitForDisplayRefresh()
+  const hiddenCanvas = document.getElementById("hiddenCanvas") as HTMLCanvasElement | null
+  if (!canvas || !hiddenCanvas) throw new Error("Rendered Apple II screen is unavailable")
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })
+  const hiddenCtx = hiddenCanvas.getContext("2d", { willReadFrequently: true })
+  if (!ctx || !hiddenCtx) throw new Error("Rendered Apple II screen is unavailable")
+
+  // Draw the latest received display state even when animation frames are suspended.
+  // Do not run the animation loop's gamepad polling or execution controls.
+  ProcessDisplay(ctx, hiddenCtx, canvas.width, canvas.height)
 
   const dataUrl = canvas.toDataURL("image/png")
   const prefix = "data:image/png;base64,"
