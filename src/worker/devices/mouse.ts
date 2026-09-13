@@ -538,6 +538,8 @@ let basicString = ""
 let CSWHSave = 0
 let CSWLSave = 0
 
+// Mode and clamp values are already preserved in C000 memory. Save the
+// remaining runtime state in the interest of full fidelity.
 const getMouseSaveState = () => ({
   mousex, mousey, clampidx, bstatus,
   istatus, lastbstatus, lastmousex, lastmousey,
