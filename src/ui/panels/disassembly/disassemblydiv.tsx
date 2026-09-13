@@ -37,7 +37,7 @@ const DisassemblyDiv = (props: {
   // This function gets used in disassemblyview_singleline but we
   // define it here so it can access our local variables.
   const onJumpClick = (addr: number) => {
-    setDisassemblyAddress(addr)
+    setDisassemblyAddress(addr, true)
     props.refresh()
   }
 

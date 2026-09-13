@@ -39,7 +39,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const doUpdateAddress = (addr: number) => {
-    setDisassemblyAddress(addr)
+    setDisassemblyAddress(addr, true)
     setAddress(addr.toString(16).toUpperCase())
     props.refresh()
   }

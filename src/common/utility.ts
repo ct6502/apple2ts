@@ -221,6 +221,7 @@ export const default6502State = (): STATE6502 => {
     cycleCount: 0,
     PStatus: 0,
     PC: 0,
+    prevPC: 0,
     Accum: 0,
     XReg: 0,
     YReg: 0,

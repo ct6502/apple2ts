@@ -150,6 +150,7 @@ type STATE6502 = {
   cycleCount: number,
   PStatus: number,
   PC: number,
+  prevPC: number,
   Accum: number,
   XReg: number,
   YReg: number,

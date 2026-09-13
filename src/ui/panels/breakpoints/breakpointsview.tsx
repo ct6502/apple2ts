@@ -31,7 +31,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
     if (handleGetRunMode() !== RUN_MODE.PAUSED) return
     const addr = parseInt(event.currentTarget.getAttribute("data-key") || "-1")
     if (addr >= 0) {
-      setDisassemblyAddress(addr)
+      setDisassemblyAddress(addr, true)
       setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.ADDRESS)
       props.updateDisplay()
     }
@@ -119,8 +119,8 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
 
   return (
     <div className="round-rect-border short-panel" style={{ width: "calc(100% - 20px)" }}>
-      <div className="bigger-font column-gap">Breakpoints</div>
-      <div className="flex-column-gap">
+      <div className="flex-row-space-between" style={{ marginBottom: "8px" }}>
+        <div className="bigger-font">Breakpoints</div>
         <div className="flex-row">
           <button className="push-button tight-button"
             title="Add new breakpoint"
@@ -135,10 +135,12 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
             <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: "0.8em" }} />
           </button>
         </div>
+      </div>
+      <div className="flex-column-gap">
         <div className="debug-panel mono-text thin-border"
           style={{
             width: "calc(100% - 12pt)",
-            height: "83pt",
+            height: "98pt",
             overflow: "auto",
             paddingLeft: "5pt",
             cursor: "default"

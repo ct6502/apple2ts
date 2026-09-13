@@ -19,13 +19,40 @@ export const setDisassemblyVisibleMode = (mode: DISASSEMBLE_VISIBLE) => {
   visibleMode = mode
 }
 
+
 let disassemblyAddress = -1
+let visitedAddresses: number[] = [1000]
+let currentAddressIndex: number = 1
+
 export const getDisassemblyAddress = () => {
   return disassemblyAddress
 }
-export const setDisassemblyAddress = (addr: number) => {
+export const setDisassemblyAddress = (addr: number, updateVisitedAddresses = false) => {
   // console.log("setDisassemblyAddress ", addr.toString(16))
   disassemblyAddress = addr
+  if (updateVisitedAddresses) {
+    if (addr !== visitedAddresses[currentAddressIndex]) {
+      visitedAddresses = visitedAddresses.slice(0, currentAddressIndex + 1)
+      visitedAddresses.push(addr)
+      currentAddressIndex = visitedAddresses.length - 1
+    }
+  }
+}
+
+export const getVisitedAddresses = () => {
+  return visitedAddresses
+}
+
+export const getCurrentAddressIndex = () => {
+  return currentAddressIndex
+}
+
+export const setVisitedAddresses = (addresses: number[]) => {
+  visitedAddresses = addresses
+}
+
+export const setCurrentAddressIndex = (index: number) => {
+  currentAddressIndex = index
 }
 
 const memGetRaw = (addr: number): number => {
