@@ -1,14 +1,30 @@
 import { isKeyboardInputBusy, sendKeySequence } from "./devices/keyboard"
 import { createMemoryPredicateMatcher } from "./memory_view"
+import { s6502 } from "./instructions"
+
+const compileCondition = (condition: MemoryCondition) => {
+  const predicates = condition && "all" in condition ? condition.all : [condition]
+  if (!Array.isArray(predicates) || predicates.length < 1 || predicates.length > 8
+    || predicates.some(predicate => !predicate || "all" in predicate)
+    || (condition && "all" in condition && Object.keys(condition).length !== 1)) {
+    throw new Error("Memory condition all must contain 1 to 8 non-nested predicates")
+  }
+  const matchers = predicates.map(createMemoryPredicateMatcher)
+  return {
+    matches: () => matchers.every(matches => matches()),
+    read: () => matchers.map(matcher => matcher.read()),
+  }
+}
 
 type PendingSequence = {
-  phases: Array<{matches: (() => boolean) | null, keys: string}>,
-  finalMatches: () => boolean,
+  phases: Array<{condition: ReturnType<typeof compileCondition> | null, keys: string}>,
+  finalCondition: ReturnType<typeof compileCondition>,
   phase: number,
   keyInFlight: boolean,
   keyDeliveries: ConditionalKeyDelivery[],
   deadline: number,
   startCycles: number,
+  timeout?: ConditionalKeySequenceResult["timeout"],
   resolve: (result: ConditionalKeySequenceResult) => void,
 }
 
@@ -30,6 +46,7 @@ const resultFor = (
   failurePhase: outcome === "completed" ? null : sequence.phase,
   keyDeliveries: sequence.keyDeliveries,
   cyclesElapsed: Math.max(0, cycleCount - sequence.startCycles),
+  ...(outcome === "timeout" ? {timeout: sequence.timeout} : {}),
 })
 
 const validateRequest = (request: ConditionalKeySequenceRequest) => {
@@ -54,12 +71,12 @@ const validateRequest = (request: ConditionalKeySequenceRequest) => {
     if (keyCount < 1 || keyCount > 32) throw new Error("Each phase must contain 1 to 32 keys")
     totalKeys += keyCount
     return {
-      matches: phase.when ? createMemoryPredicateMatcher(phase.when) : null,
+      condition: phase.when === undefined ? null : compileCondition(phase.when),
       keys: phase.keys,
     }
   })
   if (totalKeys > 64) throw new Error("Conditional input sequence cannot contain more than 64 keys")
-  return {phases, finalMatches: createMemoryPredicateMatcher(request.final)}
+  return {phases, finalCondition: compileCondition(request.final)}
 }
 
 export const hasConditionalInputSequence = () => pendingSequence !== null
@@ -95,29 +112,40 @@ export const advanceConditionalInputSequence = () => {
   const sequence = pendingSequence
   if (!sequence || pendingTerminal || sequence.keyInFlight) return pendingTerminal
   if (performance.now() >= sequence.deadline) {
+    const condition = sequence.phase < sequence.phases.length
+      ? sequence.phases[sequence.phase].condition : sequence.finalCondition
+    sequence.timeout = {waitingFor: "condition", actualBytes: condition?.read() ?? []}
     pendingTerminal = "timeout"
     return pendingTerminal
   }
 
   if (sequence.phase === sequence.phases.length) {
-    if (sequence.finalMatches()) pendingTerminal = "completed"
+    if (sequence.finalCondition.matches()) pendingTerminal = "completed"
     return pendingTerminal
   }
 
   const phase = sequence.phases[sequence.phase]
-  if (phase.matches && !phase.matches()) return null
+  if (phase.condition && !phase.condition.matches()) return null
+  const predicateMatchCycle = phase.condition ? s6502.cycleCount : null
+  const matchedBytes = phase.condition?.read() ?? []
+  const keyConsumptionCycles: number[] = []
   sequence.keyInFlight = true
   const timeoutMs = Math.max(1, Math.ceil(sequence.deadline - performance.now()))
   void sendKeySequence({keys: phase.keys, timeoutMs}, (delivery) => {
     if (pendingSequence !== sequence) return
     sequence.keyInFlight = false
-    sequence.keyDeliveries.push({...delivery, phase: sequence.phase})
+    sequence.keyDeliveries.push({
+      ...delivery, phase: sequence.phase, predicateMatchCycle, matchedBytes, keyConsumptionCycles,
+    })
+    if (delivery.outcome === "timeout") {
+      sequence.timeout = {waitingFor: "key_consumption", actualBytes: phase.condition?.read() ?? []}
+    }
     if (delivery.outcome === "completed") {
       sequence.phase++
     } else if (!pendingTerminal) {
       pendingTerminal = delivery.outcome === "timeout" ? "timeout" : "cancelled"
     }
-  }).catch(() => {
+  }, () => keyConsumptionCycles.push(s6502.cycleCount)).catch(() => {
     if (pendingSequence === sequence) {
       sequence.keyInFlight = false
       pendingTerminal ??= "cancelled"

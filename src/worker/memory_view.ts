@@ -117,12 +117,12 @@ export const getMemoryView = (request: MemoryViewRequest): MemoryView => {
 }
 
 export const createMemoryPredicateMatcher = (predicate: MemoryPredicate) => {
-  const pattern = predicate.bytes
-  const mask = predicate.mask ?? pattern.map(() => 0xFF)
+  const pattern = predicate?.bytes
   if (!Array.isArray(pattern) || pattern.length < 1 || pattern.length > 32
     || pattern.some((byte) => !Number.isInteger(byte) || byte < 0 || byte > 0xFF)) {
     throw new Error("Memory predicate must contain 1 to 32 byte values")
   }
+  const mask = predicate.mask ?? pattern.map(() => 0xFF)
   if (!Array.isArray(mask) || mask.length !== pattern.length
     || mask.some((byte) => !Number.isInteger(byte) || byte < 0 || byte > 0xFF)) {
     throw new Error("Memory predicate mask must match the byte pattern")
@@ -142,16 +142,18 @@ export const createMemoryPredicateMatcher = (predicate: MemoryPredicate) => {
       ? RamWorksMemoryStart + resolved.auxBank * 0x10000 + resolved.address
       : null
 
-  return () => {
+  const readByte = (index: number) => {
+    const address = resolved.address + index
+    return memory[physicalOffset === null
+      ? addressGetTable[address >>> 8] + (address & 0xFF)
+      : physicalOffset + index]
+  }
+  return Object.assign(() => {
     for (const check of checks) {
-      const address = resolved.address + check.index
-      const offset = physicalOffset === null
-        ? addressGetTable[address >>> 8] + (address & 0xFF)
-        : physicalOffset + check.index
-      if ((memory[offset] & check.mask) !== check.expected) return false
+      if ((readByte(check.index) & check.mask) !== check.expected) return false
     }
     return true
-  }
+  }, {read: () => pattern.map((_, index) => readByte(index))})
 }
 
 export const findMemory = (request: MemorySearchRequest): MemorySearchResult => {

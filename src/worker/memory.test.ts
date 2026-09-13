@@ -643,12 +643,14 @@ describe("side-effect-free memory search", () => {
       SWITCHES.HIRES,
     ].map((softSwitch) => softSwitch.isSet)
 
-    expect(createMemoryPredicateMatcher({
+    const mainPredicate = createMemoryPredicateMatcher({
       address,
       space: "main",
       bytes: [0xA0],
       mask: [0xF0],
-    })()).toBe(true)
+    })
+    expect(mainPredicate()).toBe(true)
+    expect(mainPredicate.read()).toEqual([0xA5])
     expect(createMemoryPredicateMatcher({
       address,
       space: "aux",
@@ -691,11 +693,13 @@ describe("side-effect-free memory search", () => {
     })()).toBe(true)
 
     const systemByte = getMemoryView({address: 0xC000, length: 1, space: "active"}).bytes[0]
-    expect(createMemoryPredicateMatcher({
+    const systemPredicate = createMemoryPredicateMatcher({
       address: 0xC000,
       space: "active",
       bytes: [systemByte],
-    })()).toBe(true)
+    })
+    expect(systemPredicate()).toBe(true)
+    expect(systemPredicate.read()).toEqual([systemByte])
     expect([
       SWITCHES.RAMRD,
       SWITCHES.RAMWRT,

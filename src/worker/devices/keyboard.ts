@@ -25,6 +25,7 @@ type PendingKeySequence = {
   strobeCleared: boolean,
   timeout: ReturnType<typeof setTimeout>,
   onFinish?: (result: KeySequenceResult) => void,
+  onConsumed?: () => void,
   resolve: (result: KeySequenceResult) => void,
 }
 
@@ -64,6 +65,7 @@ export const interruptKeySequence = () => {
 export const sendKeySequence = async (
   {keys, timeoutMs}: KeySequenceRequest,
   onFinish?: (result: KeySequenceResult) => void,
+  onConsumed?: () => void,
 ) => {
   if (
     keys.length < 1
@@ -98,6 +100,7 @@ export const sendKeySequence = async (
       strobeCleared: false,
       timeout: setTimeout(() => finishKeySequence("timeout", true), timeoutMs),
       onFinish,
+      onConsumed,
       resolve,
     }
     setKeyStrobe(mappedKeys[0])
@@ -110,6 +113,7 @@ export const advanceKeySequence = () => {
 
   apple2KeyRelease()
   sequence.currentIndex += 1
+  sequence.onConsumed?.()
   if (sequence.currentIndex === sequence.keys.length) {
     finishKeySequence("completed", false)
     return

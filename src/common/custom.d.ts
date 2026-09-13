@@ -121,20 +121,25 @@ type MemoryPredicate = {
   mask?: number[],
 }
 
+type MemoryCondition = MemoryPredicate | {all: MemoryPredicate[]}
+
 type ConditionalKeyPhase = {
-  when?: MemoryPredicate,
+  when?: MemoryCondition,
   keys: string,
 }
 
 type ConditionalKeySequenceRequest = {
   phases: ConditionalKeyPhase[],
-  final: MemoryPredicate,
+  final: MemoryCondition,
   timeoutMs: number,
   startExecution?: boolean,
 }
 
 type ConditionalKeyDelivery = KeySequenceResult & {
   phase: number,
+  predicateMatchCycle: number | null,
+  matchedBytes: number[][],
+  keyConsumptionCycles: number[],
 }
 
 type ConditionalKeySequenceResult = {
@@ -143,6 +148,10 @@ type ConditionalKeySequenceResult = {
   failurePhase: number | null,
   keyDeliveries: ConditionalKeyDelivery[],
   cyclesElapsed: number,
+  timeout?: {
+    waitingFor: "condition" | "key_consumption",
+    actualBytes: number[][],
+  },
 }
 
 type HiresScreenshotSet = {
