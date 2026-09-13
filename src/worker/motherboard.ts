@@ -42,7 +42,6 @@ import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
-import { setSiriusJoyport } from "./devices/sirius_joyport"
 import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails } from "./save_restore"
 import { SoftCard } from "./devices/softcard"
 import { setSlotIOCallback } from "./memory"
@@ -71,9 +70,6 @@ let machineName: MACHINE_NAME = "APPLE2EE"
 let veraSlot: VERA_SLOT = 0
 let takeSnapshot = false
 let gameSetupTimerID: NodeJS.Timeout | number = 0
-let siriusJoyportMode = false
-let siriusJoyportResetCycle: number | null = null
-let siriusJoyportResetTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
 let speedTracker: Array<{time: number, cycles: number}> = []
 
@@ -120,36 +116,6 @@ export const doClearMemoryWriteWatchpoint = () => {
     throw new Error("Memory write watchpoints can be changed only while the emulator is paused")
   }
   return {cleared: setCpuMemoryWriteWatchpoint(null)}
-}
-
-const startSiriusJoyportResetTimer = () => {
-  if (siriusJoyportResetTimerID) return
-  const resetTimerID: NodeJS.Timeout | number = setInterval(() => {
-    if (resetTimerID !== siriusJoyportResetTimerID) return
-    if (siriusJoyportResetCycle !== null
-      && (s6502.cycleCount - siriusJoyportResetCycle) > 1000) {
-      setSiriusJoyport(siriusJoyportMode)
-      clearInterval(resetTimerID)
-      siriusJoyportResetCycle = null
-      siriusJoyportResetTimerID = 0
-    }
-  }, 50)
-  siriusJoyportResetTimerID = resetTimerID
-}
-
-export const doSetSiriusJoyport = (mode: boolean) => {
-  siriusJoyportMode = mode
-  clearInterval(siriusJoyportResetTimerID)
-  siriusJoyportResetTimerID = 0
-  setSiriusJoyport(false)
-  if (!mode) return
-  if (siriusJoyportResetCycle !== null
-    && (s6502.cycleCount - siriusJoyportResetCycle) <= 1000) {
-    startSiriusJoyportResetTimer()
-    return
-  }
-  siriusJoyportResetCycle = null
-  setSiriusJoyport(true)
 }
 
 export const setTracing = (doTracing: boolean) => {
@@ -402,13 +368,6 @@ export const doReset = () => {
   resetMachine()
   // Force the help text panel back to default on reset/reboot paths.
   handleGameSetup(true)
-  clearInterval(siriusJoyportResetTimerID)
-  siriusJoyportResetTimerID = 0
-  siriusJoyportResetCycle = s6502.cycleCount
-  setSiriusJoyport(false)
-  if (siriusJoyportMode) {
-    startSiriusJoyportResetTimer()
-  }
 }
 
 // The theoretical maximum speed is about 66 MHz if we completely disable

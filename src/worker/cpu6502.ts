@@ -6,6 +6,7 @@ import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, Breakpoi
 import { RUN_MODE } from "../common/utility"
 import { MEMORY_BANKS } from "../common/memorybanks"
 import { getInstructionString } from "../common/util_disassemble"
+import { getSiriusJoyport } from "./devices/sirius_joyport"
 
 let breakpointSkipOnce = false
 let pendingWatchpoint: {address: number, memoryWrite: MemoryWriteEvent | null} | null = null
@@ -433,9 +434,22 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
     breakpointSkipOnce = false
   }
 
+  // This is used for peripheral cards that need to do some extra work.
+  // Do not trigger the special function if we are using internal ROM.
   const fn = specialJumpTable.get(PC1)
   if (fn && (!SWITCHES.INTCXROM.isSet || (PC1 & 0xF000) !== 0xC000)) {
     fn()
+  }
+
+  // This is a hack - the Sirius joyport uses "button low" for its button input.
+  // Since the buttons are held high, this can falsely trigger the IIe self test.
+  // Look for the self test entry points in the IIe ROM and ignore them
+  // if the Sirius joyport is present.
+  if ((PC1 === 0xC2BE || PC1 === 0xC797) && getSiriusJoyport()) {
+    // Turn off the false pushbutton readings.
+    // $C2BE looks at the negative flag, $C797 looks at the accumulator.
+    s6502.Accum = s6502.Accum & 0x7F
+    s6502.PStatus = s6502.PStatus & 0b01111111
   }
 
   // *** EXECUTE A SINGLE INSTRUCTION ***
@@ -472,6 +486,7 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
     }
   }
 
+  s6502.prevPC = PC1
   incrementPC(code.bytes)
   setCycleCount(s6502.cycleCount + cycles)
   processCycleCountCallbacks()

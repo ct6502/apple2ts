@@ -12,7 +12,6 @@ import { doSetRunMode, doSetSpeedMode,
   doSetCycleCount,
   doSetShowDebugTab,
   doSetAppMode,
-  doSetSiriusJoyport,
   setTracing,
   doExecuteBasicCommand,
   doSetCyclesToRun,
@@ -30,6 +29,7 @@ import { receiveCommData } from "./devices/superserial/serial"
 import { setTraceSettings } from "./tracelog"
 import { getMemoryDump } from "./memory"
 import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState } from "./save_restore"
+import { setSiriusJoyport } from "./devices/sirius_joyport"
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -401,7 +401,7 @@ if (typeof self !== "undefined") {
         forceVideo7Override(e.data.payload as Video7Override)
         break
       case MSG_MAIN.SIRIUS_JOYPORT:
-        doSetSiriusJoyport(e.data.payload)
+        setSiriusJoyport(e.data.payload)
         break
       case MSG_MAIN.EXECUTE_BASIC_COMMAND: {
         const command = e.data.payload as string
