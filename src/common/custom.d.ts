@@ -133,6 +133,7 @@ type ConditionalKeySequenceRequest = {
   final: MemoryCondition,
   timeoutMs: number,
   startExecution?: boolean,
+  stopConditions?: Array<{name: string, when: MemoryCondition}>,
 }
 
 type ConditionalKeyDelivery = KeySequenceResult & {
@@ -143,11 +144,12 @@ type ConditionalKeyDelivery = KeySequenceResult & {
 }
 
 type ConditionalKeySequenceResult = {
-  outcome: "completed" | "timeout" | "cancelled" | "unexpected_stop" | "not_running" | "input_busy",
+  outcome: "completed" | "timeout" | "cancelled" | "unexpected_stop" | "not_running" | "input_busy" | "condition_triggered",
   completedPhases: number,
   failurePhase: number | null,
   keyDeliveries: ConditionalKeyDelivery[],
   cyclesElapsed: number,
+  stopCondition?: {name: string, matchedBytes: number[][]},
   timeout?: {
     waitingFor: "condition" | "key_consumption",
     actualBytes: number[][],

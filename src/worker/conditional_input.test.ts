@@ -1,5 +1,6 @@
 import {
   advanceConditionalInputSequence,
+  checkConditionalInputStop,
   finishConditionalInputSequence,
   requestConditionalInputTermination,
   runConditionalInputSequence,
@@ -37,6 +38,59 @@ const predicate = (address: number): MemoryPredicate => ({
   address,
   space: "main",
   bytes: [1],
+})
+
+test("first matching stop takes priority over phase delivery and completion", async () => {
+  for (const completePhase of [false, true]) {
+    const result = runConditionalInputSequence({
+      phases: [{keys: "A"}], final: predicate(2), timeoutMs: 5000,
+      stopConditions: [{name: "danger", when: predicate(1)}, {name: "other", when: predicate(2)}],
+    }, 0)
+    if (completePhase) advanceConditionalInputSequence()
+    jest.mocked(sendKeySequence).mockClear()
+    predicateState.set(1, true)
+    predicateState.set(2, true)
+    expect(checkConditionalInputStop()).toBe("condition_triggered")
+    expect(advanceConditionalInputSequence()).toBe("condition_triggered")
+    expect(sendKeySequence).not.toHaveBeenCalled()
+    finishConditionalInputSequence(10)
+    await expect(result).resolves.toMatchObject({
+      outcome: "condition_triggered", completedPhases: completePhase ? 1 : 0,
+      stopCondition: {name: "danger", matchedBytes: [[1]]},
+    })
+    predicateState.clear()
+  }
+})
+
+test("stop conditions remain active while waiting for key consumption", async () => {
+  let finish: ((result: KeySequenceResult) => void) | undefined
+  jest.mocked(sendKeySequence).mockImplementationOnce(async (_request, onFinish) => new Promise(resolve => {
+    finish = result => {onFinish?.(result); resolve(result)}
+  }))
+  const result = runConditionalInputSequence({
+    phases: [{keys: "AZ"}], final: predicate(2), timeoutMs: 5000,
+    stopConditions: [{name: "danger", when: {all: [predicate(1), predicate(2)]}}],
+  }, 0)
+  advanceConditionalInputSequence()
+  predicateState.set(1, true)
+  expect(checkConditionalInputStop()).toBeNull()
+  predicateState.set(2, true)
+  expect(checkConditionalInputStop()).toBe("condition_triggered")
+  finish?.({outcome: "interrupted", keysDelivered: 0, keyMayHaveBeenObserved: true})
+  finishConditionalInputSequence(10)
+  await expect(result).resolves.toMatchObject({
+    outcome: "condition_triggered", stopCondition: {name: "danger", matchedBytes: [[1], [1]]},
+    keyDeliveries: [{outcome: "interrupted", keysDelivered: 0}],
+  })
+})
+
+test("rejects oversized or ambiguous stop lists before arming", () => {
+  const stop = {name: "danger", when: predicate(1)}
+  for (const stopConditions of [[stop, stop], Array(9).fill(stop), [{...stop, name: ""}]]) {
+    expect(() => runConditionalInputSequence({
+      phases: [{keys: "A"}], final: predicate(2), timeoutMs: 10, stopConditions,
+    }, 0)).toThrow("uniquely named")
+  }
 })
 
 afterEach(() => {
