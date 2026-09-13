@@ -103,8 +103,8 @@ const CodeMirrorEditor = (props: EditorProps) => {
     }
   }, [])
 
-  return <div ref={editorRef} style={{
-    height: "760px", width: "693px",
+  return <div ref={editorRef} className="editor-content" style={{
+    width: "693px",
     overflowY: "hidden"
   }} />
 }

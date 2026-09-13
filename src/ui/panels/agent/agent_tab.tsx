@@ -256,11 +256,8 @@ const AgentTab = () => {
         </div>
       ))
 
-  const isLandscape = (window.innerWidth > window.innerHeight)
-  const height = isLandscape ? Math.max((window.innerHeight - 170), 600) : 560
-
   return (
-    <div className="flex-column-gap debug-section agent-container" style={{ height: `${height}px` }}>
+    <div className="flex-column-gap debug-section agent-container editor-workspace">
       <div className="agent-messages" ref={messagesContainerRef}>
         {initialMessage}
         

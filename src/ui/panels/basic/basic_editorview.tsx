@@ -234,11 +234,8 @@ const BasicEditor = (props: EditorProps) => {
     }
   }, [props.breakpoints, handleBreakpointToggle])
 
-  const isLandscape = (window.innerWidth > window.innerHeight)
-  const height = isLandscape ? Math.max((window.innerHeight - 270), 350) : 560
-
-  return <div ref={editorRef} style={{
-    height: `${height}px`, width: "693px",
+  return <div ref={editorRef} className="editor-content" style={{
+    width: "693px",
     overflowY: "hidden"
   }} />
 }

@@ -267,9 +267,9 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
 
   return (
     <div className="flex-column-gap debug-section">
+      <div className="flex-column-gap editor-workspace">
       <BasicEditor value={programText} setValue={setProgramText}
         highlightLine={highlightLine} readOnly={running} />
-      <BasicDebugView/>
       <div className="flex-row">
         <div className="flex-row">
           <button
@@ -377,6 +377,8 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
         style={{ gridColumn: "span 2" }}
         title={programError}
         className="dbg-program-error">❌ {programError}</div>}
+      </div>
+      <BasicDebugView/>
     </div>
   )
 }
