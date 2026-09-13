@@ -43,7 +43,7 @@ const IER = [0xE, 0x8E]
 
 // these are not part of 6522 registers, but store them in our ROM
 // so they get saved with the state.
-const T2LL = [0x10, 0x91]
+const T2LL = [0x10, 0x90]
 const REG_LATCH = [0x11, 0x91]
 const TIMER_FIRED = [0x12, 0x92]
 const TIMER_STARTED = [0x13, 0x93]
