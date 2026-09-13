@@ -408,6 +408,12 @@ export const requestSetMemoryWriteWatchpoint = (
 export const requestClearMemoryWriteWatchpoint = (timeoutMs = 5000) =>
   requestWorkerOperation<{cleared: boolean}>(MSG_MAIN.CLEAR_MEMORY_WRITE_WATCHPOINT, {}, timeoutMs)
 
+export const requestCreateSessionSnapshot = (snapshotId: string, timeoutMs = 5000) =>
+  requestWorkerOperation<SessionSnapshotReceipt>(MSG_MAIN.CREATE_SESSION_SNAPSHOT, snapshotId, timeoutMs)
+
+export const requestRestoreSessionSnapshot = (snapshotId: string, timeoutMs = 5000) =>
+  requestWorkerOperation<SessionSnapshotReceipt>(MSG_MAIN.RESTORE_SESSION_SNAPSHOT, snapshotId, timeoutMs)
+
 // This is a cached memory dump, updated whenever the main requests a new one.
 // Currently only used by the AI Agent, since it may want to look at memory
 // even when the emulator is not paused.

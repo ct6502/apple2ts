@@ -12,6 +12,7 @@ import { getSlotCardSaveState, restoreSlotCardSaveState } from "./devices/slot_c
 
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
+let sessionSnapshot: {id: string, state: EmulatorSaveState} | null = null
 
 export const getTempStateIndex = () => iTempState
 
@@ -68,12 +69,16 @@ export const getApple2State = (): Apple2SaveState => {
   }
 }
 
-export const setApple2State = (newState: Apple2SaveState, version: number) => {
+export const setApple2State = (
+  newState: Apple2SaveState,
+  version: number,
+  publishState = true,
+) => {
   const new6502: STATE6502 = JSON.parse(JSON.stringify(newState.s6502))
   memoryReset()
   // Machine name might not be in older save states, so use a default in that case.
   const machineName = newState.machineName || "APPLE2EE"
-  doSetMachineName(machineName, false)
+  doSetMachineName(machineName, false, publishState)
   configureMachine()
   setState6502(new6502)
   const softSwitches: { [name: string]: boolean } = newState.softSwitches
@@ -166,12 +171,15 @@ export const doGetSaveStateWithSnapshots = (): EmulatorSaveState => {
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
 
-export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = false) => {
+export const doRestoreSaveState = (
+  sState: EmulatorSaveState,
+  eraseSnapshots = false,
+  publishState = true,
+  version = sState.emulator?.version || 0.9,
+) => {
   doReset()
-  // There was never a version 0.9 (it was before the version was saved),
-  // but this gives us a number to key off of.
-  const version = sState.emulator?.version ? sState.emulator.version : 0.9
-  setApple2State(sState.state6502, version)
+  // Versionless save files predate version 1 and use the legacy memory layout.
+  setApple2State(sState.state6502, version, publishState)
   restoreDriveSaveState(sState.driveState)
   if (eraseSnapshots) {
     saveStates.length = 0
@@ -182,7 +190,24 @@ export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = f
     saveStates.push(...sState.snapshots)
     iTempState = saveStates.length
   }
-  updateExternalMachineState()
+  if (publishState) updateExternalMachineState()
+}
+
+export const createSessionSnapshot = (snapshotId: string): SessionSnapshotReceipt => {
+  if (!snapshotId) throw new Error("Invalid session snapshot id")
+  const snapshot = doGetSaveState(false)
+  sessionSnapshot = {id: snapshotId, state: snapshot}
+  return {snapshotId, cycleCount: snapshot.state6502.s6502.cycleCount}
+}
+
+export const restoreSessionSnapshot = (snapshotId: string): SessionSnapshotReceipt => {
+  if (!sessionSnapshot || sessionSnapshot.id !== snapshotId) {
+    throw new Error("Session snapshot not found")
+  }
+  const snapshot = sessionSnapshot.state
+  // Worker-local snapshots use v2 memory without the UI's version metadata.
+  doRestoreSaveState(snapshot, false, false, 2)
+  return {snapshotId, cycleCount: snapshot.state6502.s6502.cycleCount}
 }
 
 export const getGoBackwardIndex = () => {

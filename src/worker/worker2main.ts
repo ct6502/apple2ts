@@ -17,7 +17,9 @@ import { doSetRunMode, doSetSpeedMode,
   doSetCyclesToRun,
   getCpuRunMode,
   getExternalMemoryView,
-  findExternalMemory} from "./motherboard"
+  findExternalMemory,
+  createExternalSessionSnapshot,
+  restoreExternalSessionSnapshot} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
@@ -304,6 +306,23 @@ if (typeof self !== "undefined") {
             e.data.operationId,
             undefined,
             doClearMemoryWriteWatchpoint(),
+          )
+        } catch (error) {
+          passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
+          )
+        }
+        break
+      case MSG_MAIN.CREATE_SESSION_SNAPSHOT:
+      case MSG_MAIN.RESTORE_SESSION_SNAPSHOT:
+        try {
+          passWorkerOperationResult(
+            e.data.operationId,
+            undefined,
+            e.data.msg === MSG_MAIN.CREATE_SESSION_SNAPSHOT
+              ? createExternalSessionSnapshot(String(e.data.payload))
+              : restoreExternalSessionSnapshot(String(e.data.payload)),
           )
         } catch (error) {
           passWorkerOperationResult(

@@ -42,7 +42,7 @@ import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
-import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails } from "./save_restore"
+import { createSessionSnapshot, doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails, restoreSessionSnapshot } from "./save_restore"
 import { SoftCard } from "./devices/softcard"
 import { setSlotIOCallback } from "./memory"
 import { hasHardDriveMounted } from "./devices/drivestate"
@@ -89,6 +89,22 @@ export const findExternalMemory = (request: MemorySearchRequest) => {
     throw new Error("Memory is available only while the emulator is paused")
   }
   return findMemory(request)
+}
+
+export const createExternalSessionSnapshot = (snapshotId: string) => {
+  if (cpuRunMode !== RUN_MODE.PAUSED) {
+    throw new Error("Session snapshots can be created only while the emulator is paused")
+  }
+  return createSessionSnapshot(snapshotId)
+}
+
+export const restoreExternalSessionSnapshot = (snapshotId: string) => {
+  if (cpuRunMode !== RUN_MODE.PAUSED) {
+    throw new Error("Session snapshots can be restored only while the emulator is paused")
+  }
+  const receipt = restoreSessionSnapshot(snapshotId)
+  doSetRunMode(RUN_MODE.PAUSED, false, undefined, {reason: "explicit"})
+  return receipt
 }
 
 export const doSetMemoryWriteWatchpoint = (request: MemoryViewRequest) => {
@@ -480,7 +496,7 @@ export const doLoadBinary = (
   }
 }
 
-export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
+export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState = true) => {
   machineName = name
   if (name === "APPLE2P") {
     if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "videoterm" && currentSlotConfig[3] !== "vidhd") {
@@ -495,7 +511,7 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
   doSetRom(machineName)
   configureMachine()
   if (reset) doReset()
-  updateExternalMachineState()
+  if (publishState) updateExternalMachineState()
 }
 
 export const doSetVeraSlot = (slot: VERA_SLOT) => {

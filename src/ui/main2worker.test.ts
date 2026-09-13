@@ -12,6 +12,8 @@ import {
   requestMemoryView,
   requestSetMemoryWriteWatchpoint,
   requestClearMemoryWriteWatchpoint,
+  requestCreateSessionSnapshot,
+  requestRestoreSessionSnapshot,
   setExecutionStateCallback,
   requestWriteMemory,
   setMain2Worker,
@@ -154,6 +156,32 @@ describe("worker operations", () => {
     expect(message).toEqual(expect.objectContaining({msg: MSG_MAIN.FIND_MEMORY, payload: request}))
     sendOperationResult(message.operationId, undefined, value)
     await expect(operation).resolves.toEqual(value)
+  })
+
+  test("creates and restores session snapshots as confirmed worker operations", async () => {
+    const created = requestCreateSessionSnapshot("session-snapshot:one")
+    const createMessage = worker.postMessage.mock.calls.at(-1)[0]
+    expect(createMessage).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.CREATE_SESSION_SNAPSHOT,
+      payload: "session-snapshot:one",
+    }))
+    sendOperationResult(createMessage.operationId, undefined, {
+      snapshotId: "session-snapshot:one",
+      cycleCount: 123,
+    })
+    await expect(created).resolves.toEqual({snapshotId: "session-snapshot:one", cycleCount: 123})
+
+    const restored = requestRestoreSessionSnapshot("session-snapshot:one")
+    const restoreMessage = worker.postMessage.mock.calls.at(-1)[0]
+    expect(restoreMessage).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.RESTORE_SESSION_SNAPSHOT,
+      payload: "session-snapshot:one",
+    }))
+    sendOperationResult(restoreMessage.operationId, undefined, {
+      snapshotId: "session-snapshot:one",
+      cycleCount: 123,
+    })
+    await expect(restored).resolves.toEqual({snapshotId: "session-snapshot:one", cycleCount: 123})
   })
 
   test("sets and clears a write watchpoint as confirmed worker operations", async () => {
