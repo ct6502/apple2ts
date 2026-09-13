@@ -37,6 +37,8 @@
 }
 
 .hgr-view {
+  align-items: flex-start;
+  width: max-content;
   position: absolute;
   user-select: none;
   pointer-events: none;
