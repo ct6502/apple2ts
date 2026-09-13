@@ -42,6 +42,8 @@ import {
   passSetShowDebugTab,
   requestKeyboardState,
   requestKeySequence,
+  requestConditionalKeySequence,
+  requestCancelConditionalKeySequence,
   passSetRunMode,
   requestSetRunMode,
   requestLoadBinary,
@@ -487,6 +489,18 @@ export const executeCommand = async (action: string, payload: Record<string, unk
         keys: String(payload.keys ?? ""),
         timeoutMs: Number(payload.timeoutMs),
       })
+      return {...result, status: collectStatus()}
+    }
+
+    case "runInputSequence": {
+      const result = await requestConditionalKeySequence(
+        payload as unknown as ConditionalKeySequenceRequest,
+      )
+      return {...result, status: collectStatus()}
+    }
+
+    case "cancelInputSequence": {
+      const result = await requestCancelConditionalKeySequence()
       return {...result, status: collectStatus()}
     }
 

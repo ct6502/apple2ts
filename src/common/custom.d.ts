@@ -113,6 +113,47 @@ type KeySequenceResult = {
   keyMayHaveBeenObserved: boolean,
 }
 
+type MemoryPredicate = {
+  address: number,
+  space: MemorySpace,
+  auxBank?: number,
+  bytes: number[],
+  mask?: number[],
+}
+
+type MemoryCondition = MemoryPredicate | {all: MemoryPredicate[]}
+
+type ConditionalKeyPhase = {
+  when?: MemoryCondition,
+  keys: string,
+}
+
+type ConditionalKeySequenceRequest = {
+  phases: ConditionalKeyPhase[],
+  final: MemoryCondition,
+  timeoutMs: number,
+  startExecution?: boolean,
+}
+
+type ConditionalKeyDelivery = KeySequenceResult & {
+  phase: number,
+  predicateMatchCycle: number | null,
+  matchedBytes: number[][],
+  keyConsumptionCycles: number[],
+}
+
+type ConditionalKeySequenceResult = {
+  outcome: "completed" | "timeout" | "cancelled" | "unexpected_stop" | "not_running" | "input_busy",
+  completedPhases: number,
+  failurePhase: number | null,
+  keyDeliveries: ConditionalKeyDelivery[],
+  cyclesElapsed: number,
+  timeout?: {
+    waitingFor: "condition" | "key_consumption",
+    actualBytes: number[][],
+  },
+}
+
 type HiresScreenshotSet = {
   plain: Uint8Array,
   keyboard: Uint8Array,
@@ -263,6 +304,7 @@ type ExecutionPauseReason =
   "explicit" |
   "breakpoint" |
   "watchpoint" |
+  "input-sequence" |
   "step" |
   "cycle-limit"
 

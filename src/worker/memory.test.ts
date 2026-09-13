@@ -19,7 +19,7 @@ import { setIsTesting } from "./worker2main"
 import { getApple2State, setApple2State } from "./save_restore"
 import { SWITCHES } from "./softswitches"
 import { setKeyboardState } from "./devices/keyboard"
-import { findMemory, getMemoryView } from "./memory_view"
+import { createMemoryPredicateMatcher, findMemory, getMemoryView } from "./memory_view"
 
 type ExpectValue = (i: number) => void
 
@@ -628,6 +628,100 @@ describe("side-effect-free memory search", () => {
       .toThrow("Memory pattern must contain 1 to 32 byte values")
     expect(() => findMemory({address: 0, length: 1, space: "main", bytes: [0], maxMatches: 65}))
       .toThrow("Maximum matches must be between 1 and 64")
+  })
+
+  test("matches masked physical bytes without changing mapping", () => {
+    const address = 0x03A4
+    memory[address] = 0xA5
+    memory[RamWorksMemoryStart + address] = 0x5A
+    const beforeSwitches = [
+      SWITCHES.RAMRD,
+      SWITCHES.RAMWRT,
+      SWITCHES.ALTZP,
+      SWITCHES.STORE80,
+      SWITCHES.PAGE2,
+      SWITCHES.HIRES,
+    ].map((softSwitch) => softSwitch.isSet)
+
+    const mainPredicate = createMemoryPredicateMatcher({
+      address,
+      space: "main",
+      bytes: [0xA0],
+      mask: [0xF0],
+    })
+    expect(mainPredicate()).toBe(true)
+    expect(mainPredicate.read()).toEqual([0xA5])
+    expect(createMemoryPredicateMatcher({
+      address,
+      space: "aux",
+      auxBank: 0,
+      bytes: [0xA5],
+    })()).toBe(false)
+    memory[RamWorksMemoryStart + 0x10000 + address] = 0x33
+    expect(createMemoryPredicateMatcher({
+      address,
+      space: "aux",
+      auxBank: 1,
+      bytes: [0x33],
+    })()).toBe(true)
+    expect([
+      SWITCHES.RAMRD,
+      SWITCHES.RAMWRT,
+      SWITCHES.ALTZP,
+      SWITCHES.STORE80,
+      SWITCHES.PAGE2,
+      SWITCHES.HIRES,
+    ].map((softSwitch) => softSwitch.isSet)).toEqual(beforeSwitches)
+
+    SWITCHES.STORE80.isSet = true
+    SWITCHES.PAGE2.isSet = true
+    updateAddressTables()
+    const activeSwitches = [
+      SWITCHES.RAMRD,
+      SWITCHES.RAMWRT,
+      SWITCHES.ALTZP,
+      SWITCHES.STORE80,
+      SWITCHES.PAGE2,
+      SWITCHES.HIRES,
+    ].map((softSwitch) => softSwitch.isSet)
+    memory[0x03FF] = 0x11
+    memory[RamWorksMemoryStart + 0x0400] = 0x22
+    expect(createMemoryPredicateMatcher({
+      address: 0x03FF,
+      space: "active",
+      bytes: [0x11, 0x22],
+    })()).toBe(true)
+
+    const systemByte = getMemoryView({address: 0xC000, length: 1, space: "active"}).bytes[0]
+    const systemPredicate = createMemoryPredicateMatcher({
+      address: 0xC000,
+      space: "active",
+      bytes: [systemByte],
+    })
+    expect(systemPredicate()).toBe(true)
+    expect(systemPredicate.read()).toEqual([systemByte])
+    expect([
+      SWITCHES.RAMRD,
+      SWITCHES.RAMWRT,
+      SWITCHES.ALTZP,
+      SWITCHES.STORE80,
+      SWITCHES.PAGE2,
+      SWITCHES.HIRES,
+    ].map((softSwitch) => softSwitch.isSet)).toEqual(activeSwitches)
+  })
+
+  test("validates predicate masks and physical boundaries", () => {
+    expect(() => createMemoryPredicateMatcher({
+      address: 0x1000,
+      space: "main",
+      bytes: [1, 2],
+      mask: [0xFF],
+    })).toThrow("mask must match")
+    expect(() => createMemoryPredicateMatcher({
+      address: 0xBFFF,
+      space: "main",
+      bytes: [1, 2],
+    })).toThrow("Physical memory range")
   })
 })
 

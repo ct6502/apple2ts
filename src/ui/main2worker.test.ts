@@ -4,6 +4,8 @@ import {
   requestLoadBinary,
   requestKeyboardState,
   requestKeySequence,
+  requestConditionalKeySequence,
+  requestCancelConditionalKeySequence,
   requestSetDriveNewData,
   requestSetState6502,
   requestSetRunMode,
@@ -282,6 +284,36 @@ describe("worker operations", () => {
     } finally {
       jest.useRealTimers()
     }
+  })
+
+  test("sends conditional input sequences as one bounded worker operation", async () => {
+    const request: ConditionalKeySequenceRequest = {
+      phases: [{keys: "A"}, {when: {address: 0x0200, space: "main", bytes: [1]}, keys: "Z"}],
+      final: {address: 0x0201, space: "main", bytes: [2]},
+      timeoutMs: 5000,
+    }
+    const operation = requestConditionalKeySequence(request)
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    expect(message).toEqual(expect.objectContaining({
+      msg: MSG_MAIN.CONDITIONAL_KEY_SEQUENCE,
+      payload: request,
+    }))
+
+    const result: ConditionalKeySequenceResult = {
+      outcome: "completed",
+      completedPhases: 2,
+      failurePhase: null,
+      keyDeliveries: [],
+      cyclesElapsed: 200,
+    }
+    sendOperationResult(message.operationId, undefined, result)
+    await expect(operation).resolves.toEqual(result)
+
+    const cancellation = requestCancelConditionalKeySequence()
+    const cancelMessage = worker.postMessage.mock.calls.at(-1)[0]
+    expect(cancelMessage.msg).toBe(MSG_MAIN.CANCEL_CONDITIONAL_KEY_SEQUENCE)
+    sendOperationResult(cancelMessage.operationId, undefined, {cancelled: true})
+    await expect(cancellation).resolves.toEqual({cancelled: true})
   })
 
   test("sends drive data as a confirmed worker operation", async () => {
