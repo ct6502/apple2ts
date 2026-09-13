@@ -88,14 +88,20 @@ test("rejects a key sequence without changing a stopped emulator", () => {
   postMessage.mockRestore()
 })
 
-test("reports malformed key sequences without waiting for a timeout", async () => {
+test.each([MSG_MAIN.KEY_SEQUENCE, MSG_MAIN.CONDITIONAL_KEY_SEQUENCE])("reports invalid sequence %s promptly", async (msg) => {
   const postMessage = jest.spyOn(self, "postMessage").mockImplementation()
   const runMode = jest.spyOn(motherboard, "getCpuRunMode").mockReturnValue(RUN_MODE.RUNNING)
-  jest.mocked(sendKeySequence).mockRejectedValueOnce(new Error("Invalid key sequence"))
+  if (msg === MSG_MAIN.KEY_SEQUENCE) {
+    jest.mocked(sendKeySequence).mockRejectedValueOnce(new Error("Invalid key sequence"))
+  } else {
+    jest.mocked(runConditionalInputSequence).mockImplementationOnce(() => {
+      throw new Error("Invalid key sequence")
+    })
+  }
 
   self.onmessage?.({
     data: {
-      msg: MSG_MAIN.KEY_SEQUENCE,
+      msg,
       payload: {keys: "", timeoutMs: 5000},
       operationId: 20,
     },

@@ -254,7 +254,7 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.CONDITIONAL_KEY_SEQUENCE:
         if (e.data.operationId === undefined) break
-        {
+        try {
           const request = e.data.payload as ConditionalKeySequenceRequest
           const runMode = getCpuRunMode()
           if (runMode !== RUN_MODE.RUNNING && !(runMode === RUN_MODE.PAUSED && request.startExecution)) {
@@ -277,6 +277,11 @@ if (typeof self !== "undefined") {
               e.data.operationId,
               error instanceof Error ? error.message : String(error),
             ),
+          )
+        } catch (error) {
+          passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
           )
         }
         break
