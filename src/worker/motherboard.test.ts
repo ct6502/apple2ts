@@ -19,7 +19,6 @@ const getExecutionSnapshot = () => {
   return execution
 }
 
-// Make sure we don't accidentally leave debug mode on.
 test("conditional stop releases its in-flight key and preserves debugger configuration", async () => {
   setIsTesting()
   const previousRunMode = getExternalMachineState().runMode
@@ -52,6 +51,7 @@ test("conditional stop releases its in-flight key and preserves debugger configu
   }
 })
 
+// Make sure we don't accidentally leave debug mode on.
 test("debugMode", () => {
   expect(TEST_DEBUG).toEqual(false)
   expect(TEST_GRAPHICS).toEqual(false)
