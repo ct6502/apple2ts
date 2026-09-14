@@ -19,6 +19,8 @@ const compileCondition = (condition: MemoryCondition) => {
 type PendingSequence = {
   phases: Array<{condition: ReturnType<typeof compileCondition> | null, keys: string}>,
   finalCondition: ReturnType<typeof compileCondition>,
+  stopConditions: Array<{name: string, condition: ReturnType<typeof compileCondition>}>,
+  stopCondition?: ConditionalKeySequenceResult["stopCondition"],
   phase: number,
   keyInFlight: boolean,
   keyDeliveries: ConditionalKeyDelivery[],
@@ -30,7 +32,7 @@ type PendingSequence = {
 
 type TerminalOutcome = Extract<
   ConditionalKeySequenceResult["outcome"],
-  "completed" | "timeout" | "cancelled" | "unexpected_stop"
+  "completed" | "timeout" | "cancelled" | "unexpected_stop" | "condition_triggered"
 >
 
 let pendingSequence: PendingSequence | null = null
@@ -47,6 +49,8 @@ const resultFor = (
   keyDeliveries: sequence.keyDeliveries,
   cyclesElapsed: Math.max(0, cycleCount - sequence.startCycles),
   ...(outcome === "timeout" ? {timeout: sequence.timeout} : {}),
+  ...(outcome === "condition_triggered" ? {stopCondition: sequence.stopCondition} : {}),
+  ...(sequence.stopConditions.length ? {stopConditionsArmed: sequence.stopConditions.length} : {}),
 })
 
 const validateRequest = (request: ConditionalKeySequenceRequest) => {
@@ -76,7 +80,14 @@ const validateRequest = (request: ConditionalKeySequenceRequest) => {
     }
   })
   if (totalKeys > 64) throw new Error("Conditional input sequence cannot contain more than 64 keys")
-  return {phases, finalCondition: compileCondition(request.final)}
+  const stops = request.stopConditions === undefined ? [] : request.stopConditions
+  if (!Array.isArray(stops) || stops.length > 8
+    || stops.some(stop => typeof stop?.name !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(stop.name))
+    || new Set(stops.map(stop => stop.name)).size !== stops.length) {
+    throw new Error("stopConditions must contain at most 8 uniquely named conditions (1 to 64 letters, digits, _ or -)")
+  }
+  const stopConditions = stops.map(stop => ({name: stop.name, condition: compileCondition(stop.when)}))
+  return {phases, finalCondition: compileCondition(request.final), stopConditions}
 }
 
 export const hasConditionalInputSequence = () => pendingSequence !== null
@@ -106,6 +117,18 @@ export const runConditionalInputSequence = (
       resolve,
     }
   })
+}
+
+// Called before keyboard advancement so a matching stop cannot queue another key.
+export const checkConditionalInputStop = () => {
+  const sequence = pendingSequence
+  if (!sequence || pendingTerminal) return pendingTerminal
+  const stop = sequence.stopConditions.find(stop => stop.condition.matches())
+  if (stop) {
+    sequence.stopCondition = {name: stop.name, matchedBytes: stop.condition.read()}
+    pendingTerminal = "condition_triggered"
+  }
+  return pendingTerminal
 }
 
 export const advanceConditionalInputSequence = () => {

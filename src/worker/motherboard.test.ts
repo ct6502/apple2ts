@@ -10,13 +10,46 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { getCurrentDriveState } from "./devices/drivestate"
 import * as worker2main from "./worker2main"
 import { getApple2State, setApple2State } from "./save_restore"
-import { advanceConditionalInputSequence, runConditionalInputSequence } from "./conditional_input"
+import { advanceConditionalInputSequence, checkConditionalInputStop, runConditionalInputSequence } from "./conditional_input"
+import { isKeyboardInputBusy } from "./devices/keyboard"
 
 const getExecutionSnapshot = () => {
   const execution = getExternalMachineState().execution
   if (!execution) throw new Error("Expected an execution snapshot")
   return execution
 }
+
+test("conditional stop releases its in-flight key and preserves debugger configuration", async () => {
+  setIsTesting()
+  const previousRunMode = getExternalMachineState().runMode
+  const previousByte = memory[0x0200]
+  const previousBreakpoints = breakpointMap
+  try {
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    memory[0x0200] = 0
+    const result = runConditionalInputSequence({
+      phases: [{keys: "AZ"}], final: {address: 0x0200, space: "main", bytes: [2]}, timeoutMs: 5000,
+      stopConditions: [{name: "danger", when: {address: 0x0200, space: "main", bytes: [1]}}],
+    }, s6502.cycleCount)
+    advanceConditionalInputSequence()
+    expect(isKeyboardInputBusy()).toBe(true)
+    memory[0x0200] = 1
+    expect(checkConditionalInputStop()).toBe("condition_triggered")
+    doSetRunMode(RUN_MODE.PAUSED, false, undefined, {reason: "input-sequence"})
+    await expect(result).resolves.toMatchObject({
+      outcome: "condition_triggered", stopCondition: {name: "danger", matchedBytes: [[1]]},
+      keyDeliveries: [{outcome: "interrupted"}],
+    })
+    expect(isKeyboardInputBusy()).toBe(false)
+    expect(getExecutionSnapshot()).toMatchObject({state: "paused", pauseReason: "input-sequence"})
+    expect(breakpointMap).toBe(previousBreakpoints)
+  } finally {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    memory[0x0200] = previousByte
+    doSetRunMode(previousRunMode, false)
+    resetCpuSpeedForTesting()
+  }
+})
 
 // Make sure we don't accidentally leave debug mode on.
 test("debugMode", () => {

@@ -40,6 +40,7 @@ import { enableDiskDrive } from "./devices/diskdata"
 import { advanceKeySequence, interruptKeySequence, pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
 import {
   advanceConditionalInputSequence,
+  checkConditionalInputStop,
   finishConditionalInputSequence,
   requestConditionalInputTermination,
 } from "./conditional_input"
@@ -923,7 +924,7 @@ const doAdvance6502 = () => {
     } else {
       cycles = processInstruction(tracing ? updateTrace : null)
     }
-    advanceKeySequence()
+    if (!checkConditionalInputStop()) advanceKeySequence()
     if (advanceConditionalInputSequence()) {
       doSetRunMode(RUN_MODE.PAUSED, false, undefined, {reason: "input-sequence"})
       break
