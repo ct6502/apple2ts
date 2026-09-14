@@ -7,7 +7,7 @@
   column-gap: 0px;
   margin: 0px;
   width: 99.8%;
-  height: 65vh;
+  height: auto;
   max-height: 75vh;
   overflow-y: auto;
   padding-top: 6px;
@@ -16,6 +16,10 @@
   padding-right: 0px;
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+.disk-collection-panel-small {
+  grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
 }
 
 body.dark-mode .disk-collection-panel {
@@ -28,8 +32,11 @@ body.dark-mode .disk-collection-panel {
   align-items: stretch;
   margin-left: -2px;
   margin-right: 0;
-  padding: 8px 12px 0px 12px;
-  height: 52px;
+  padding-top: 8px;
+  padding-right: 12px;
+  padding-bottom: 0px;
+  padding-left: 12px;
+  height: auto;
   box-sizing: border-box;
   border-bottom: 1px solid black;
 }
@@ -100,6 +107,8 @@ body.dark-mode .disk-collection-panel {
 .dcp-tab .svg-inline--fa {
   width: 1.25em;
   height: 1.25em;
+  padding-top: 2px;
+  padding-bottom: 2px;
   vertical-align: middle;
 }
 
@@ -332,8 +341,8 @@ body.dark-mode .dcp-tab-active {
 
 .dcp-item-icon-top-right {
   position: absolute;
-  top: 12px;
-  right: 8px;
+  top: 5px;
+  right: 4px;
   display: grid;
   grid-auto-flow: column;
   gap: 4px;
@@ -359,15 +368,15 @@ body.dark-mode .dcp-tab-active {
   justify-self: end;
 }
 
-.dcp-item-new,
-.dcp-item-a2ts,
-.dcp-item-cloud,
-.dcp-item-export-badge,
-.dcp-item-report {
+.dcp-item-icon {
   position: relative;
-  width: 24px;
-  height: 24px;
+  height: 100%;
+  width: 20px;
   pointer-events: auto;
+}
+
+.dcp-item-smallicon {
+  width: 15px;
 }
 
 .dcp-item-bookmark,
@@ -411,8 +420,6 @@ body.dark-mode .dcp-tab-active {
 .dcp-item-bookmark-icon {
   position: relative;
   display: block;
-  width: 100%;
-  height: 100%;
   color: yellow;
   z-index: 1;
 }
@@ -424,8 +431,8 @@ body.dark-mode .dcp-tab-active {
 .dcp-item-select-icon {
   position: relative;
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 44px;
+  height: 44px;
   color: greenyellow;
   z-index: 1;
 }
@@ -443,8 +450,8 @@ body.dark-mode .dcp-tab-active {
 
 .dcp-item-a2ts-icon {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
   color: gainsboro;
   z-index: 1;
 }
@@ -462,16 +469,12 @@ body.dark-mode .dcp-tab-active {
 .dcp-item-ia-icon {
   position: relative;
   display: block;
-  width: 100%;
-  height: 100%;
   color: gainsboro;
   z-index: 1;
 }
 
 .dcp-item-ia-icon-bg {
   position: absolute;
-  width: 16px;
-  height: 16px;
   left: 4px;
   bottom: 4px;
   background-color: black;

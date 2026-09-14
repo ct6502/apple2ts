@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./touchjoystick.css"
 import { clearCustomGamepad, setCustomGamepad } from "../devices/gamepad"
-import { getTouchJoyStickMode, getTouchJoystickSensitivity, getUIStateBoolean } from "../ui_settings"
+import { getUIStateBoolean } from "../ui_settings"
 
 
 let oldBeta = 0
@@ -13,12 +13,10 @@ let oldAxis1 = 0
 
 export const TouchJoystick = () => {
 
-  const touchjoystickMode = getTouchJoyStickMode()
-  const isSouthpaw = touchjoystickMode === "left"
   const [eventCounter, setEventCounter] = useState<number>(0)
 
   const doSetCustomGamepad = (buttons: boolean[] | null, axes: number[] | null) => {
-    if (getTouchJoyStickMode() === "off") {
+    if (!getUIStateBoolean("touchJoystick")) {
       clearCustomGamepad()
       return
     }
@@ -63,7 +61,7 @@ export const TouchJoystick = () => {
     const button = document.getElementById(`tj-button${buttonNumber}`) as HTMLElement
     // Make the button look "pressed"
     if (button) {
-      const tx = enabled ? (isSouthpaw ? -5 : 5) : 0
+      const tx = enabled ? 5 : 0
       button.style.transform = `translateX(${tx}px) scale(${enabled ? 0.95 : 1})`
     }
   }
@@ -76,14 +74,12 @@ export const TouchJoystick = () => {
     event.preventDefault()
 
     setEventCounter(eventCounter + 1)
-    if (eventCounter % getTouchJoystickSensitivity() != 0)
-      return
 
     const currentTarget = event.currentTarget as HTMLElement
     const rect = currentTarget.getBoundingClientRect()
 
-    const stickLeft = isSouthpaw ? (rect.left + 20) : 25
-    const stickRight = isSouthpaw ? (window.outerWidth - 25) : (rect.right - 20)
+    const stickLeft = 25
+    const stickRight = (rect.right - 20)
     const stickTop = rect.top + rect.width * 0.12
     const stickBottom = rect.top + rect.height - rect.width * 0.12
     
@@ -155,24 +151,24 @@ export const TouchJoystick = () => {
   const isLandscape = (window.innerWidth > window.innerHeight)
 
   return (
-    touchjoystickMode !== "off"
+    getUIStateBoolean("touchJoystick")
       ? <div
         className="tj-container"
         draggable="false">
         <div
-          className={`tj-base-position tj-base-${isSouthpaw ? "right" : "left"} ${isLandscape ? "" : "tj-base-portrait"}`}
+          className={`tj-base-position tj-base-left ${isLandscape ? "" : "tj-base-portrait"}`}
           onTouchMove={(event: React.TouchEvent) => event.preventDefault()}
           onPointerEnter={handlePointerEnter}
           onPointerMove={handlePointerMove}
           onPointerLeave={handleStickPointerLeave}>
           <div>
             <img
-              className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
+              className={"tj-base-image-right"}
               src="/tj-base.png" />
           </div>
           <div
             id="touchjoystick-stick"
-            className={`tj-stick tj-stick-${isSouthpaw ? "right" : "left"}`}
+            className={"tj-stick tj-stick-left"}
           >
             <img
               className="tj-stick-image"
@@ -180,17 +176,17 @@ export const TouchJoystick = () => {
           </div>
         </div>
         <div
-          className={`tj-base-position tj-buttons-${isSouthpaw ? "left" : "right"} ${isLandscape ? "" : "tj-base-portrait"}`}
+          className={`tj-base-position tj-buttons-right ${isLandscape ? "" : "tj-base-portrait"}`}
           onTouchStart={handleButtonsTouchStart}
           onTouchEnd={handleButtonsTouchEnd}>
           <img
-            className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
+            className={"tj-base-image-right"}
             src="/tj-base.png" />
           <img id="tj-button0"
-            className={`tj-buttons-all tj-buttons-button0-${isSouthpaw ? "left" : "right"}`}
+            className={"tj-buttons-all tj-buttons-button0-right"}
             src="/tj-button0.png" />
           <img id="tj-button1"
-            className={`tj-buttons-all tj-buttons-button1-${isSouthpaw ? "left" : "right"}`}
+            className={"tj-buttons-all tj-buttons-button1-right"}
             src="/tj-button1.png" />
         </div>
       </div>

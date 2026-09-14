@@ -3,7 +3,6 @@ import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCommentDots, faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 import { svgDemoZooLogo } from "../img/icon_demozoo"
 import PopupMenu from "../controls/popupmenu"
 import { DISK_DRIVE_LABELS } from "../devices/disk/diskdrive"
@@ -28,13 +27,9 @@ import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_C
 import { DiskItemTitle } from "./diskitemtitle"
 import { DiskPanelVtoc } from "./diskpanel_vtoc"
 import { isHardDriveImage } from "../../common/utility"
+import { faInternetArchive } from "@fortawesome/free-brands-svg-icons"
 
 const maxHdvBytes = 33554432
-
-// Fixed rendered height (px) of one auth notification bar. The disk collection
-// panel's height is reduced by this amount per visible bar so the overall dialog
-// height stays constant. Must match .dcp-auth-bar height in the CSS.
-const AUTH_BAR_HEIGHT = 32
 
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -533,6 +528,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     ]]
   }
 
+  const isSmallDevice = window.innerWidth <= 768 || window.innerHeight <= 600
+
   return (
     <Flyout
       icon={faFloppyDisk}
@@ -550,7 +547,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           setIsFlyoutOpen(true)
         }
       }}
-      width={`max( ${isMinimalTheme() ? "55vw" : "75vw"}, 348px )`}
+      width={`max( ${isMinimalTheme() ? "95%" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
       position="bottom-right">
       <div onContextMenuCapture={(e) => e.preventDefault()}>
@@ -580,10 +577,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
               }}>{t("collection.signIn") || "Sign in"}</button>
           </div>
         ))}
-        <div className="disk-collection-panel"
-          style={cloudProvidersNeedingAuth.length > 0
-            ? { height: `calc(65vh - ${cloudProvidersNeedingAuth.length * AUTH_BAR_HEIGHT}px)` }
-            : undefined}
+        <div className={`disk-collection-panel ${isSmallDevice ? "disk-collection-panel-small" : ""}`}
+          style={{ minHeight: isSmallDevice ? "150px" : "300px" }}
           onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
           {tabs[activeTab].disks.map((diskCollectionItem, index) => {
             const isExportTab = activeTab == TAB_INDEX.EXPORT
@@ -660,7 +655,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                       }
                     }} />
                 </div>
-                {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
+                {(diskCollectionItem.lastUpdated > minDate && !isSmallDevice) && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
                 <div
                   className="dcp-item-image-box"
                   title={activeTab == TAB_INDEX.EXPORT
@@ -706,7 +701,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                   }}
                 >
                   <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
-                  <div className="dcp-item-icon-top-right">
+                  <div className={`dcp-item-icon-top-right ${isSmallDevice ? "dcp-item-smallicon" : ""}`}>
                     {activeTab == 2 && diskCollectionItem.bookmarkId &&
                       <div
                         className="dcp-item-bookmark"
@@ -748,7 +743,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                   <div className="dcp-item-icon-row">
                     <div className="dcp-item-icon-left-group">
                       {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
-                        <div className="dcp-item-new" title={t("collection.diskIsNewRelease")}>
+                        <div className={`dcp-item-icon ${isSmallDevice ? "dcp-item-smallicon" : ""}`}
+                          title={t("collection.diskIsNewRelease")}>
                           <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => {
                             if (activeTab != TAB_INDEX.EXPORT) {
                               event.stopPropagation()
@@ -757,29 +753,29 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                           <div className="dcp-item-new-icon-bg">&nbsp;</div>
                         </div>}
                       {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
-                        <div className="dcp-item-a2ts" title={t("collection.diskIsApple2TSCollection")}>
-                          <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => {
-                            if (activeTab != TAB_INDEX.EXPORT) {
-                              event.stopPropagation()
-                            }
-                          }} />
-                          <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
-                        </div>}
-                      {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
-                        <div className="dcp-item-ia" title={t("collection.diskIsInternetArchive")}>
-                          <svg
-                            className="dcp-item-ia-icon"
+                        <div className={`dcp-item-icon ${isSmallDevice ? "dcp-item-smallicon" : ""}`} title={t("collection.diskIsApple2TSCollection")}>
+                          <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon"
                             onClick={(event) => {
                               if (activeTab != TAB_INDEX.EXPORT) {
                                 event.stopPropagation()
                               }
-                            }}
-                            fill="#ffffff"
-                            viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
+                            }} />
+                          <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
+                        </div>}
+                      {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
+                        <div className={`dcp-item-icon ${isSmallDevice ? "dcp-item-smallicon" : ""}`}
+                          title={t("collection.diskIsInternetArchive")}>
+                          <FontAwesomeIcon icon={faInternetArchive} size="lg" className="dcp-item-a2ts-icon"
+                            onClick={(event) => {
+                              if (activeTab != TAB_INDEX.EXPORT) {
+                                event.stopPropagation()
+                              }
+                            }} />
                           <div className="dcp-item-ia-icon-bg">&nbsp;</div>
                         </div>}
                       {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.DEMOZOO &&
-                        <div className="dcp-item-ia" title={t("collection.diskIsDemoZoo")}>
+                        <div className={`dcp-item-ia ${isSmallDevice ? "dcp-item-smallicon" : ""}`}
+                          title={t("collection.diskIsDemoZoo")}>
                           <span
                             className="dcp-item-ia-icon"
                             onClick={(event) => {
@@ -792,7 +788,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                           <div className="dcp-item-ia-icon-bg">&nbsp;</div>
                         </div>}
                       {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
-                        <div className="dcp-item-cloud" title={`${t("collection.diskIsSyncedVia")} ${diskCollectionItem.cloudData?.providerName}`}>
+                        <div className={`dcp-item-icon ${isSmallDevice ? "dcp-item-smallicon" : ""}`}
+                          title={`${t("collection.diskIsSyncedVia")} ${diskCollectionItem.cloudData?.providerName}`}>
                           <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => {
                             if (activeTab != TAB_INDEX.EXPORT) {
                               event.stopPropagation()
@@ -810,7 +807,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                             : ""
                         return (
                           <div
-                            className={`dcp-item-export-badge${badgeStateClass}`}
+                            className={`dcp-item-icon ${badgeStateClass} ${isSmallDevice ? "dcp-item-smallicon" : ""}`}
                             title={exportBadge.title}
                             onMouseDown={(e) => e.stopPropagation()}
                             onMouseUp={(e) => e.stopPropagation()}
@@ -827,7 +824,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                     <div className="dcp-item-icon-right-group">
                       {activeTab == TAB_INDEX.EXPORT &&
                         <div
-                          className="dcp-item-report"
+                          className={`dcp-item-icon ${isSmallDevice ? "dcp-item-smallicon" : ""}`}
                           title={t("collection.reportExportIssue") || "Report an export issue"}
                           onClick={(event) => {
                             event.stopPropagation()

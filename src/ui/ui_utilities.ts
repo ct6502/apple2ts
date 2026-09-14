@@ -3,7 +3,7 @@ import { getPreferenceRetroSkin, RETRO_SKIN } from "./localstorage"
 import { isMinimalTheme } from "./ui_settings"
 
 export const handleSetTheme = (theme: UI_THEME) => {
-  if (theme == UI_THEME.DARK) {
+  if (theme == UI_THEME.DARK || theme == UI_THEME.MINIMAL) {
     document.body.classList.add("dark-mode")
   } else {
     document.body.classList.remove("dark-mode")

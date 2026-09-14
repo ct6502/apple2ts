@@ -246,8 +246,6 @@ type Video7Override = {
   enabled: boolean,
 }
 
-type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
-
 type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "videoterm" | "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "smartport" | "vidhd"
 
 type SlotConfig = {
@@ -356,8 +354,7 @@ type UIState = {
   tabView: number,
   theme: UI_THEME,
   tiltSensorJoystick: boolean,
-  touchJoystickMode: TOUCH_JOYSTICK_MODE,
-  touchJoystickSensitivity: number,
+  touchJoystick: boolean,
   useOpenAppleKey: boolean,
 }
 

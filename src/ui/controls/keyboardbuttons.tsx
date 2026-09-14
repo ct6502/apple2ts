@@ -5,8 +5,8 @@ import {
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
 import LanguageSwitch from "./languageswitch"
-import { setPreferenceBoolean, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
-import { getTouchJoyStickMode, getTouchJoystickSensitivity, getUIStateBoolean } from "../ui_settings"
+import { setPreferenceBoolean } from "../localstorage"
+import { getUIStateBoolean } from "../ui_settings"
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
@@ -54,36 +54,9 @@ const KeyboardButtons = (props: DisplayProps) => {
       menuItems={[[
         {
           label: "Disabled",
-          isSelected: () => { return getTouchJoyStickMode() === "off" },
-          onClick: () => { setPreferenceTouchJoystickMode("off"); props.updateDisplay() }
+          isSelected: () => { return !getUIStateBoolean("touchJoystick") },
+          onClick: () => { setPreferenceBoolean("touchJoystick", false); props.updateDisplay() }
         },
-        {
-          label: "Enabled: Right-Handed",
-          isSelected: () => { return getTouchJoyStickMode() === "right" },
-          onClick: () => { setPreferenceTouchJoystickMode("right"); props.updateDisplay() }
-        },
-        {
-          label: "Enabled: Left-Handed",
-          isSelected: () => { return getTouchJoyStickMode() === "left" },
-          onClick: () => { setPreferenceTouchJoystickMode("left"); props.updateDisplay() }
-        },
-        { label: "-" },
-        {
-          label: "Sensitivity: High",
-          isSelected: () => { return getTouchJoystickSensitivity() == 1 },
-          onClick: () => { setPreferenceTouchJoystickSensitivity(1) }
-        },
-        {
-          label: "Sensitivity: Normal",
-          isSelected: () => { return getTouchJoystickSensitivity() == 2 },
-          onClick: () => { setPreferenceTouchJoystickSensitivity(2) }
-        },
-        {
-          label: "Sensitivity: Low",
-          isSelected: () => { return getTouchJoystickSensitivity() == 3 },
-          onClick: () => { setPreferenceTouchJoystickSensitivity(3) }
-        },
-        { label: "-" },
         {
           label: "Use Tilt Sensor as Joystick",
           isSelected: () => { return getUIStateBoolean("tiltSensorJoystick") },

@@ -1124,6 +1124,14 @@ msgctxt "disk.syncedAt"
 msgid "Synced {{date}}"
 msgstr ""
 
+msgctxt "disk.clickToHide"
+msgid "Click to hide"
+msgstr ""
+
+msgctxt "disk.clickToShow"
+msgid "Click to show"
+msgstr ""
+
 msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image"
 msgstr ""

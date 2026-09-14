@@ -3,7 +3,7 @@ import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
-import { getTheme, getUIState, setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf, setMonitorMode } from "./ui_settings"
+import { getTheme, getUIState, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
 
@@ -18,7 +18,7 @@ const booleanUIKeys: BooleanKeyOf<UIState>[] = ["arrowKeysAsJoystick",
   "debugMode", "ghosting", "hotReload", "lowercaseMode",
   "manualNumbering",
   "reverseYAxis", "showScanlines", "siriusJoyport",
-  "tiltSensorJoystick", "useOpenAppleKey"]
+  "tiltSensorJoystick", "touchJoystick", "useOpenAppleKey"]
 
 export const PREFERENCES_RESET_EVENT = "apple2ts-preferences-reset"
 
@@ -31,6 +31,7 @@ const booleanControlIds: Partial<Record<BooleanKeyOf<UIState>, string>> = {
   reverseYAxis: "keyboard.joystick.reverseYAxis",
   showScanlines: "display.scanlines",
   siriusJoyport: "keyboard.joystick.siriusJoyport",
+  touchJoystick: "keyboard.joystick.touchJoystick",
   useOpenAppleKey: "keyboard.openApple",
 }
 
@@ -343,24 +344,6 @@ export const setPreferenceDiskCollectionSort = (tabIndex: number, mode: DiskColl
   localStorage.setItem(`diskCollectionSort.${tabIndex}`, JSON.stringify(mode))
 }
 
-export const setPreferenceTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE = "off") => {
-  if (mode === "off") {
-    localStorage.removeItem("touchJoystickMode")
-  } else {
-    localStorage.setItem("touchJoystickMode", JSON.stringify(mode))
-  }
-  setTouchJoystickMode(mode)
-}
-
-export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) => {
-  if (sensitivity == 2) {
-    localStorage.removeItem("touchJoystickSensitivity")
-  } else {
-    localStorage.setItem("touchJoystickSensitivity", JSON.stringify(sensitivity))
-  }
-  setTouchJoystickSensitivity(sensitivity)
-}
-
 export const setPreferenceTraceSettings = (traceSettings: TraceSettings =
   TraceSettingsDefault) => {
   const { numLines, collapseLoops, ignoreRegisters } = traceSettings
@@ -569,24 +552,6 @@ export const loadPreferences = () => {
 
   passSetVeraSlot(getPreferenceVeraSlot())
 
-  const touchJoystickMode = localStorage.getItem("touchJoystickMode")
-  if (touchJoystickMode !== "off") {
-    try {
-      setTouchJoystickMode(JSON.parse(touchJoystickMode || ""))
-    } catch {
-      localStorage.removeItem("touchJoystickMode")
-    }
-  }
-
-  const touchJoystickSensitivity = localStorage.getItem("touchJoystickSensitivity")
-  if (touchJoystickSensitivity) {
-    try {
-      setTouchJoystickSensitivity(JSON.parse(touchJoystickSensitivity))
-    } catch {
-      localStorage.removeItem("touchJoystickSensitivity")
-    }
-  }
-
   const traceSettings = getPreferenceTraceSettings()
   if (JSON.stringify(traceSettings) !== JSON.stringify(TraceSettingsDefault)) {
     passSetTraceSettings(traceSettings)
@@ -614,8 +579,6 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceMockingboardMode(0, origin)
   setPreferenceMachineName("APPLE2EE", origin)
   setPreferenceRamWorks(64, origin)
-  setPreferenceTouchJoystickMode()
-  setPreferenceTouchJoystickSensitivity()
   setPreferenceNewReleasesChecked()
   toggleScanlines(false)
   window.dispatchEvent(new CustomEvent(PREFERENCES_RESET_EVENT))

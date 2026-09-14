@@ -43,7 +43,15 @@
   overflow-wrap: break-word;
   white-space: pre-wrap;
   margin-right: 10px;
-  font-size: 1em;
+  font-size: 10pt;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (max-width: 600px) {
+  .help-text {
+    font-size: 9pt;
+  }
 }
 
 .help-shortcuts {
@@ -82,7 +90,7 @@
   border: 0;
 }
 
-.help-shortcut-row > .help-shortcut-label:nth-last-child(2) {
+.help-shortcut-row>.help-shortcut-label:nth-last-child(2) {
   padding-right: 0;
 }
 

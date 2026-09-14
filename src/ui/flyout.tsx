@@ -2,8 +2,9 @@ import "./flyout.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCircleArrowDown, faCircleArrowUp, IconDefinition } from "@fortawesome/free-solid-svg-icons"
 import { isMinimalTheme } from "./ui_settings"
+import { useTranslation } from "../i18n/useTranslation"
 
-const flyoutButtonWidth = "max( 8vw, 72px )"
+const flyoutButtonWidth = "40px"
 
 const Flyout = (props: {
   icon: IconDefinition,
@@ -22,6 +23,7 @@ const Flyout = (props: {
   const className = `flyout-${props.position}`
   const isFlyoutOpen = props.isOpen && props.isOpen()
   const useMinimalPresentation = props.minimalPresentation || isMinimalTheme()
+  const { t } = useTranslation()
 
   if (useMinimalPresentation) {
     import("./flyout.minimal.css")
@@ -44,6 +46,7 @@ const Flyout = (props: {
   }
 
   const isTouchDevice = "ontouchstart" in document.documentElement
+
   let left = "auto"
   if (useMinimalPresentation) {
     if (props.position.indexOf("left") >= 0) {
@@ -59,14 +62,16 @@ const Flyout = (props: {
       style={{
         left: left,
         width: useMinimalPresentation && !isFlyoutOpen ? flyoutButtonWidth : props.width,
-        opacity: "100%",
+        maxHeight: "100%",
+        overflowY: "auto",
+        overflowX: "hidden",
         zIndex: props.minimalPresentation ? 10001 : undefined,
       }}>
       {isTopPosition() && (isFlyoutOpen || !useMinimalPresentation) ? props.children : ""}
       <div
         id={props.buttonId ?? ""}
         className="flyout-button"
-        title={!isTouchDevice ? `Click to ${isFlyoutOpen ? "hide" : "show"} ${props.title}` : ""}
+        title={!isTouchDevice ? `${isFlyoutOpen ? t("disk.clickToHide") : t("disk.clickToShow")} ${props.title}` : ""}
         onClick={() => {
           if (props.onClick) {
             props.onClick()

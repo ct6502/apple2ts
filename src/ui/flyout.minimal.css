@@ -20,9 +20,11 @@
 
 .flyout.flyout-minimal {
   position: fixed;
-  background-color: #aba7a2;
-  padding-left: 2px;
-  padding-right: 7px;
+  background-color: #181818;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   user-select: none;
   z-index: 10002;
 }
@@ -33,9 +35,6 @@
   left: 48px;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
-  border-color: #000000;
-  border-width: 1px;
-  border-style: solid;
   border-top-style: none;
   padding-bottom: 0px;
 }
@@ -46,10 +45,6 @@
   left: calc((100vw/2));
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
-  border-color: #000000;
-  border-width: 1px;
-  border-style: solid;
-  border-top-style: none;
   padding-bottom: 0px;
 }
 
@@ -59,10 +54,6 @@
   right: 14px;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
-  border-color: #000000;
-  border-width: 1px;
-  border-style: solid;
-  border-top-style: none;
   padding-bottom: 0px;
 }
 
@@ -72,9 +63,6 @@
   left: 48px;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
-  border-width: 1px;
-  border-style: solid;
-  border-bottom-style: none;
   padding-top: 0px;
 }
 
@@ -83,20 +71,17 @@
   right: 14px;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
-  border-width: 1px;
-  border-style: solid;
-  border-bottom-style: none;
   padding-top: 0px;
 }
 
 .flyout.flyout-minimal .flyout-button {
   display: block;
-  color: #000000;
-  padding-top: 2px;
-  padding-bottom: 2px;
-  padding-left: 4px;
+  color: #fff;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 0px;
   padding-right: 0px;
-  font-size: 18pt;
+  font-size: 24pt;
   cursor: pointer;
   width: 100%;
   text-align: center;

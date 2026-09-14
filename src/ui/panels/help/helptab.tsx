@@ -32,8 +32,9 @@ const HelpTab = (props: HelpPanelProps) => {
   return (
     <div className="help-parent" translate="no"
       style={{
-        width: narrow || useMinimalPresentation ? "687px" : 500,
-        height: narrow || useMinimalPresentation ? "" : height,
+        width: (narrow || useMinimalPresentation) ? "100%" : 500,
+        maxWidth: "100%",
+        height: (narrow || useMinimalPresentation) ? "" : height,
         overflow: (narrow ? "visible" : "auto")
       }}>
       <div className={isDarkMode ? "" : "help-paper"}>

@@ -57,7 +57,7 @@ describe("VidHD Expansion Card Emulation", () => {
     const rgba = new Uint8ClampedArray(560 * 384 * 4)
     card.decodeShrTo560x384(shrData, rgba)
 
-    // Check that decoded RGBA has red pixel (R=255, G=0, B=0, A=255) in top-left
+    // Check that decoded RGBA has red pixel (R=255, G=0, B=0, A=255) in top left
     expect(rgba[0]).toBe(255) // R
     expect(rgba[1]).toBe(0)   // G
     expect(rgba[2]).toBe(0)   // B
@@ -82,7 +82,7 @@ describe("VidHD Expansion Card Emulation", () => {
     const rgba = new Uint8ClampedArray(560 * 384 * 4)
     card.decodeShrTo560x384(shrData, rgba)
 
-    // Check that decoded RGBA has green pixel (R=0, G=255, B=0, A=255) in top-left
+    // Check that decoded RGBA has green pixel (R=0, G=255, B=0, A=255) in top left
     expect(rgba[0]).toBe(0)   // R
     expect(rgba[1]).toBe(255) // G
     expect(rgba[2]).toBe(0)   // B

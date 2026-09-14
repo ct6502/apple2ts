@@ -24,8 +24,7 @@ const uiState: UIState = {
   tabView: 0,
   theme: UI_THEME.CLASSIC,
   tiltSensorJoystick: false,
-  touchJoystickMode: "off",
-  touchJoystickSensitivity: 2,
+  touchJoystick: false,
   useOpenAppleKey: false,
 }
 
@@ -45,8 +44,7 @@ export const setUIState = (state: UIState) => {
   uiState.monitorMode = state?.monitorMode ?? MONITOR_MODE.NTSC
   uiState.showScanlines = state?.showScanlines ?? false
   uiState.theme = state?.theme ?? UI_THEME.CLASSIC
-  uiState.touchJoystickMode = state?.touchJoystickMode ?? "off"
-  uiState.touchJoystickSensitivity = state?.touchJoystickSensitivity ?? 2
+  uiState.touchJoystick = state?.touchJoystick ?? false
   uiState.useOpenAppleKey = state?.useOpenAppleKey ?? false
 }
 
@@ -86,14 +84,6 @@ export const setTabView = (tabView: number) => {
 
 export const setTheme = (theme: UI_THEME) => {
   uiState.theme = theme
-}
-
-export const setTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE) => {
-  uiState.touchJoystickMode = mode
-}
-
-export const setTouchJoystickSensitivity = (sensitivity: number) => {
-  uiState.touchJoystickSensitivity = sensitivity
 }
 
 //------------------------------------------------------
@@ -158,10 +148,6 @@ export const getTabView = () => {
   return uiState.tabView
 }
 
-export const getTouchJoyStickMode = () => {
-  return uiState.touchJoystickMode
-}
-
 export const getTheme = () => {
   return uiState.theme
 }
@@ -171,8 +157,4 @@ export const isMinimalTheme = () => {
 }
 export const isCanvasOnlyTheme = () => {
   return isMinimalTheme()
-}
-
-export const getTouchJoystickSensitivity = () => {
-  return uiState.touchJoystickSensitivity
 }

@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
 import { faStar as faStarSolid } from "@fortawesome/free-solid-svg-icons"
 import { DiskBookmarks } from "./diskbookmarks"
-import { svgInternetArchiveSoftware, svgInternetArchiveViews, svgInternetArchiveFavorites, svgInternetArchiveReviews, svgInternetArchiveLogo, svgInternetArchiveTitle } from "../../img/icon_internetarchive"
+import { svgInternetArchiveSoftware, svgInternetArchiveViews, svgInternetArchiveFavorites, svgInternetArchiveReviews, svgInternetArchiveTitle } from "../../img/icon_internetarchive"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { generateUrlFromInternetArchiveId } from "./internetarchive_utils"
@@ -18,6 +18,7 @@ import {
   type InternetArchiveCollection,
   type InternetArchiveResult,
 } from "./internetarchive"
+import { faInternetArchive } from "@fortawesome/free-brands-svg-icons"
 
 function formatNumber(num: number, precision = 1) {
   if (num < 1000) {
@@ -244,7 +245,12 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     <div className="modal-overlay" onClick={handleClose}>
       <div className="internet-archive-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="iad-header">
-          <svg fill="#ffffff" viewBox="0 0 55 55" className="iad-logo">{svgInternetArchiveLogo}</svg>
+          <FontAwesomeIcon icon={faInternetArchive} size="lg"
+            style={{ color: "#ffffff",
+              height: "30px",
+              marginBottom: "5px",
+              marginRight: "5px",
+             }} />
           <svg className="iad-title">{svgInternetArchiveTitle}</svg>
         </div>
         <div style={{ overflowY: "auto" }}>
