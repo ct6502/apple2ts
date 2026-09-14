@@ -9,6 +9,8 @@ import { vera_spi_init, vera_spi_step, sdcard_select } from "./sdcard"
 
 let slot: number = 5
 let curInter: boolean = false
+let prevCycleCount = 0
+let pendingCycles = 0
 
 const interrupt = (onoff: boolean): void => {
   if (onoff != curInter) {
@@ -26,12 +28,30 @@ const veraInit = (): boolean => {
   return result
 }
 
+export const syncVera = (): void => {
+  if (pendingCycles > 0) {
+    const cycleDelta = pendingCycles
+    pendingCycles = 0
+    const newFrame = video_step(1, cycleDelta, false)
+    vera_spi_step(cycleDelta)
+    if (newFrame)
+      video_update()
+
+    // maintain interrupt state
+    interrupt(video_get_irq_out())
+  }
+}
+
 export const initVera = () => {
+  pendingCycles = 0
+  prevCycleCount = 0
   video_reset()
   sdcard_select(false)
 }
 
 export const resetVera = () => {
+  pendingCycles = 0
+  prevCycleCount = 0
   video_reset()
 }
 
@@ -49,21 +69,15 @@ export const enableVera = (enable = true, aslot = 3) => {
   registerCycleCountCallback(cycleCountCallback, slot)
 }
 
-let prevCycleCount = 0
-
 const cycleCountCallback = (_slot: number) => {
   void _slot
   if (prevCycleCount)
   {
     const cycleDelta = s6502.cycleCount - prevCycleCount
-    // 1mhz, nm 
-    const newFrame = video_step(1, cycleDelta, false)
-    vera_spi_step(cycleDelta)
-    if (newFrame)
-      video_update()
-
-    // maintain interrupt state
-    interrupt(video_get_irq_out())
+    pendingCycles += cycleDelta
+    if (pendingCycles >= 16) {
+      syncVera()
+    }
   }
   prevCycleCount = s6502.cycleCount
 }
@@ -71,6 +85,7 @@ const cycleCountCallback = (_slot: number) => {
 const handleVeraIO = (addr: number, val = -1): number => {
   // We dont have any ROM, but we have vera regs starting at Cx00
   if (addr >= 0xc100) {
+    syncVera()
     if (val >= 0) {
       video_write(addr&0xff, val)
       return 0

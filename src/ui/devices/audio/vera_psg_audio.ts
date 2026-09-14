@@ -28,6 +28,25 @@ const initVeraPsgAudio = async () => {
   return initPromise
 }
 
+let hasLoggedAudioWorkletError = false
+
+export const playVeraPsgBatch = async (events: VeraPsgWrite[]) => {
+  if (!isAudioEnabled() || events.length === 0) return
+
+  try {
+    await initVeraPsgAudio()
+    if (veraPsgContext.state !== "running") {
+      await veraPsgContext.resume()
+    }
+    veraPsgNode.port.postMessage(events)
+  } catch {
+    if (!hasLoggedAudioWorkletError) {
+      hasLoggedAudioWorkletError = true
+      console.error("VERA PSG audioWorklet not available - must run on https")
+    }
+  }
+}
+
 export const playVeraPsgWrite = async (event: VeraPsgWrite) => {
   if (!isAudioEnabled()) return
 
@@ -38,7 +57,10 @@ export const playVeraPsgWrite = async (event: VeraPsgWrite) => {
     }
     veraPsgNode.port.postMessage(event)
   } catch {
-    console.error("VERA PSG audioWorklet not available - must run on https")
+    if (!hasLoggedAudioWorkletError) {
+      hasLoggedAudioWorkletError = true
+      console.error("VERA PSG audioWorklet not available - must run on https")
+    }
   }
 }
 
