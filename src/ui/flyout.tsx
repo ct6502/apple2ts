@@ -63,8 +63,6 @@ const Flyout = (props: {
         left: left,
         width: useMinimalPresentation && !isFlyoutOpen ? flyoutButtonWidth : props.width,
         maxHeight: "100%",
-        overflowY: "auto",
-        overflowX: "hidden",
         zIndex: props.minimalPresentation ? 10001 : undefined,
       }}>
       {isTopPosition() && (isFlyoutOpen || !useMinimalPresentation) ? props.children : ""}
