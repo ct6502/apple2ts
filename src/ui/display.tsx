@@ -64,12 +64,6 @@ const DisplayApple2 = () => {
     if (speed && speed !== currentSpeed) {
       setCurrentSpeed(speed)
     }
-    // ***** This is critical to make this update be a function.
-    // That way React is forced to pass in the actual previous value,
-    // rather than a cached value (thru a closure).
-    // If you do setRenderCount(renderCount + 1), renderCount will always be
-    // zero and NOTHING will update.
-    setRenderCount(prevRenderCount => prevRenderCount + 1)
   }
 
   if (!myInit) {
@@ -109,6 +103,11 @@ const DisplayApple2 = () => {
 
     // Listen for binary data from VS Code extension
     window.addEventListener("message", messagelistener)
+
+    const handleResize = () => {
+      setRenderCount(prevRenderCount => prevRenderCount + 1)
+    }
+    window.addEventListener("resize", handleResize)
 
     if (TEST_DEBUG) {
       passSetRunMode(RUN_MODE.NEED_BOOT)

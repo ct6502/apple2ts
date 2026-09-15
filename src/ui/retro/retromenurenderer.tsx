@@ -1219,7 +1219,6 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     isOpen,
     manualMenuStack,
     manualSelectedIndex,
-    now,
     rootMenu,
   ])
   const submenuTitleValue = selectedItem?.contextualSubmenuTitleValue

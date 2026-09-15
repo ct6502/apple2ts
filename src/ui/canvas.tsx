@@ -604,7 +604,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     mainCanvas.addEventListener("copy", () => { handleCopyToClipboard() })
     const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
     mainCanvas.addEventListener("paste", paste)
-    window.addEventListener("resize", handleResize)
     window.addEventListener("blur", handleWindowBlur)
     document.addEventListener("visibilitychange", handleVisibilityChange)
     const handleFullscreenChange = () => {
