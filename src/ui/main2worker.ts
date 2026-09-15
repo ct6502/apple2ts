@@ -429,6 +429,9 @@ export const requestClearMemoryWriteWatchpoint = (timeoutMs = 5000) =>
 export const requestCreateSessionSnapshot = (snapshotId: string, timeoutMs = 5000) =>
   requestWorkerOperation<SessionSnapshotReceipt>(MSG_MAIN.CREATE_SESSION_SNAPSHOT, snapshotId, timeoutMs)
 
+export const requestSessionMemoryComparison = (request: SessionMemoryComparisonRequest, timeoutMs = 5000) =>
+  requestWorkerOperation<SessionMemoryComparison>(MSG_MAIN.COMPARE_SESSION_MEMORY, request, timeoutMs)
+
 export const requestRestoreSessionSnapshot = (snapshotId: string, timeoutMs = 5000) =>
   requestWorkerOperation<SessionSnapshotReceipt>(MSG_MAIN.RESTORE_SESSION_SNAPSHOT, snapshotId, timeoutMs)
 

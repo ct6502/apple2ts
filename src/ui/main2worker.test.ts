@@ -15,6 +15,7 @@ import {
   requestSetMemoryWriteWatchpoint,
   requestClearMemoryWriteWatchpoint,
   requestCreateSessionSnapshot,
+  requestSessionMemoryComparison,
   requestRestoreSessionSnapshot,
   setExecutionStateCallback,
   requestWriteMemory,
@@ -158,6 +159,19 @@ describe("worker operations", () => {
     expect(message).toEqual(expect.objectContaining({msg: MSG_MAIN.FIND_MEMORY, payload: request}))
     sendOperationResult(message.operationId, undefined, value)
     await expect(operation).resolves.toEqual(value)
+  })
+
+  test("compares session memory through the existing correlated worker operation", async () => {
+    const request = {snapshotId: "session-snapshot:one", address: 0x800, length: 2, space: "main" as const}
+    const comparison = requestSessionMemoryComparison(request)
+    const message = worker.postMessage.mock.calls.at(-1)[0]
+    expect(message).toEqual(expect.objectContaining({msg: MSG_MAIN.COMPARE_SESSION_MEMORY, payload: request}))
+    const value = {snapshotId: request.snapshotId, changes: [], totalChangeCount: 0, truncated: false}
+    sendOperationResult(message.operationId, undefined, value)
+    await expect(comparison).resolves.toEqual(value)
+    const rejected = requestSessionMemoryComparison(request)
+    sendOperationResult(worker.postMessage.mock.calls.at(-1)[0].operationId, "Session snapshot not found")
+    await expect(rejected).rejects.toThrow("Session snapshot not found")
   })
 
   test("creates and restores session snapshots as confirmed worker operations", async () => {

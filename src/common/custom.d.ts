@@ -468,6 +468,21 @@ type SessionSnapshotReceipt = {
   cycleCount: number,
 }
 
+type SessionMemoryComparisonRequest = MemoryViewRequest & {
+  snapshotId: string,
+  maxChanges?: number,
+}
+
+type SessionMemoryComparison = Omit<MemoryView, "bytes" | "mapping"> & {
+  snapshotId: string,
+  baselineCycleCount: number,
+  currentCycleCount: number,
+  currentMapping: MemoryMappingState,
+  changes: {address: number, before: number, after: number}[],
+  totalChangeCount: number,
+  truncated: boolean,
+}
+
 type TimeTravelThumbnail = {
   s6502: STATE6502,
   thumbnail: string
