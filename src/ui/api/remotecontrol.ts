@@ -48,6 +48,7 @@ import {
   requestSetRunMode,
   requestLoadBinary,
   requestCreateSessionSnapshot,
+  requestSessionMemoryComparison,
   requestRestoreSessionSnapshot,
   setExecutionStateCallback,
 } from "../main2worker"
@@ -434,6 +435,16 @@ export const executeCommand = async (action: string, payload: Record<string, unk
     case "findMemory": {
       return findRemoteMemory(payload)
     }
+
+    case "compareSessionMemory":
+      return requestSessionMemoryComparison({
+        snapshotId: String(payload.snapshotId || ""),
+        address: Number(payload.address),
+        length: Number(payload.length),
+        space: (payload.space ?? "main") as MemorySpace,
+        ...(payload.auxBank === undefined ? {} : {auxBank: Number(payload.auxBank)}),
+        ...(payload.maxChanges === undefined ? {} : {maxChanges: Number(payload.maxChanges)}),
+      })
 
     case "setMemoryWriteWatchpoint":
       return setRemoteMemoryWriteWatchpoint(payload)

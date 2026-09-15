@@ -3,16 +3,17 @@ import { MAX_SNAPSHOTS, RamWorksMemoryStart, ROMmemoryStart, RUN_MODE } from "..
 import { getDriveSaveState, restoreDriveSaveState } from "./devices/drivestate"
 import { handleGameSetup } from "./games/game_mappings"
 import { s6502, getStackDump, setState6502, setStackDump } from "./instructions"
-import { memory, memoryReset, RamWorksMaxBank, setRamWorks, updateAddressTables } from "./memory"
-import { configureMachine, doReset, doSetMachineName, doSetRunMode, getMachineName, getSoftSwitches, updateExternalMachineState } from "./motherboard"
+import { getAuxCardEnabled, memory, memoryReset, RamWorksMaxBank, setRamWorks, updateAddressTables } from "./memory"
+import { configureMachine, doReset, doSetMachineName, doSetRunMode, getMachineName, getSlotConfig, getSoftSwitches, updateExternalMachineState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { vidhd } from "./devices/vidhd"
 import { passRequestThumbnail } from "./worker2main"
 import { getSlotCardSaveState, restoreSlotCardSaveState } from "./devices/slot_card_state"
+import { getMemoryView } from "./memory_view"
 
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
-let sessionSnapshot: {id: string, state: EmulatorSaveState} | null = null
+let sessionSnapshot: {id: string, state: EmulatorSaveState, auxCardEnabled: boolean, auxCard: SLOT_CARD_ID} | null = null
 
 export const getTempStateIndex = () => iTempState
 
@@ -196,7 +197,7 @@ export const doRestoreSaveState = (
 export const createSessionSnapshot = (snapshotId: string): SessionSnapshotReceipt => {
   if (!snapshotId) throw new Error("Invalid session snapshot id")
   const snapshot = doGetSaveState(false)
-  sessionSnapshot = {id: snapshotId, state: snapshot}
+  sessionSnapshot = {id: snapshotId, state: snapshot, auxCardEnabled: getAuxCardEnabled(), auxCard: getSlotConfig()[3]}
   return {snapshotId, cycleCount: snapshot.state6502.s6502.cycleCount}
 }
 
@@ -208,6 +209,71 @@ export const restoreSessionSnapshot = (snapshotId: string): SessionSnapshotRecei
   // Worker-local snapshots use v2 memory without the UI's version metadata.
   doRestoreSaveState(snapshot, false, false, 2)
   return {snapshotId, cycleCount: snapshot.state6502.s6502.cycleCount}
+}
+
+export const compareSessionMemory = (request: SessionMemoryComparisonRequest): SessionMemoryComparison => {
+  if (!sessionSnapshot || sessionSnapshot.id !== request.snapshotId) {
+    throw new Error("Session snapshot not found")
+  }
+  if (request.space !== "main" && request.space !== "aux") {
+    throw new Error("Session memory comparison requires physical main or auxiliary RAM")
+  }
+  const maxChanges = request.maxChanges ?? 32
+  if (!Number.isInteger(maxChanges) || maxChanges < 1 || maxChanges > 64) {
+    throw new Error("Maximum changes must be between 1 and 64")
+  }
+  const baseline = sessionSnapshot.state.state6502
+  if (baseline.machineName !== getMachineName()) {
+    throw new Error("Session snapshot machine configuration has changed")
+  }
+  const {bytes, mapping, ...view} = getMemoryView(request)
+  const bank = view.effectiveAuxBank
+  if (request.space === "aux" && (!sessionSnapshot.auxCardEnabled
+    || sessionSnapshot.auxCard !== getSlotConfig()[3]
+    || bank === null || bank >= baseline.extraRamSize / 64)) {
+    throw new Error("Auxiliary bank is unavailable in the session snapshot")
+  }
+  // Private snapshots use v2 sparse pages. Missing pages represent $FF.
+  // Decode only requested pages; never restore or perform CPU reads.
+  const valid = baseline.memvalid
+  const firstPage = (bank === null ? 0 : 256 + bank * 256) + (request.address >>> 8)
+  const lastPage = firstPage + (((request.address & 255) + request.length - 1) >>> 8)
+  const before = new Uint8Array(request.length).fill(0xFF)
+  let packedPage = 0
+  for (let page = 0; page <= lastPage; page++) {
+    if (valid[page] !== "1") continue
+    if (page >= firstPage) {
+      // Base64 boundaries must be multiples of three bytes.
+      const packedStart = packedPage * 256
+      const alignedStart = Math.floor(packedStart / 3) * 3
+      const encoded = baseline.memory.slice(alignedStart / 3 * 4, Math.ceil((packedStart + 256) / 3) * 4)
+      const decoded = Buffer.from(encoded, "base64").subarray(packedStart - alignedStart, packedStart - alignedStart + 256)
+      const rangeOffset = (page - firstPage) * 256 - (request.address & 255)
+      const start = Math.max(0, -rangeOffset)
+      const end = Math.min(256, request.length - rangeOffset)
+      before.set(decoded.subarray(start, end), rangeOffset + start)
+    }
+    packedPage++
+  }
+  const changes: SessionMemoryComparison["changes"] = []
+  let totalChangeCount = 0
+  for (let index = 0; index < bytes.length; index++) {
+    if (before[index] === bytes[index]) continue
+    totalChangeCount++
+    if (changes.length < maxChanges) {
+      changes.push({address: request.address + index, before: before[index], after: bytes[index]})
+    }
+  }
+  return {
+    ...view,
+    snapshotId: request.snapshotId,
+    baselineCycleCount: baseline.s6502.cycleCount,
+    currentCycleCount: s6502.cycleCount,
+    currentMapping: mapping,
+    changes,
+    totalChangeCount,
+    truncated: totalChangeCount > changes.length,
+  }
 }
 
 export const getGoBackwardIndex = () => {

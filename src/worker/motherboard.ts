@@ -48,7 +48,7 @@ import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
-import { createSessionSnapshot, doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails, restoreSessionSnapshot } from "./save_restore"
+import { compareSessionMemory, createSessionSnapshot, doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails, restoreSessionSnapshot } from "./save_restore"
 import { SoftCard } from "./devices/softcard"
 import { setSlotIOCallback } from "./memory"
 import { hasHardDriveMounted } from "./devices/drivestate"
@@ -102,6 +102,13 @@ export const createExternalSessionSnapshot = (snapshotId: string) => {
     throw new Error("Session snapshots can be created only while the emulator is paused")
   }
   return createSessionSnapshot(snapshotId)
+}
+
+export const compareExternalSessionMemory = (request: SessionMemoryComparisonRequest) => {
+  if (cpuRunMode !== RUN_MODE.PAUSED) {
+    throw new Error("Memory is available only while the emulator is paused")
+  }
+  return compareSessionMemory(request)
 }
 
 export const restoreExternalSessionSnapshot = (snapshotId: string) => {

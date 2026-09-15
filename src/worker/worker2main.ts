@@ -19,6 +19,7 @@ import { doSetRunMode, doSetSpeedMode,
   getExternalMemoryView,
   findExternalMemory,
   createExternalSessionSnapshot,
+  compareExternalSessionMemory,
   restoreExternalSessionSnapshot} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
@@ -330,12 +331,15 @@ if (typeof self !== "undefined") {
           )
         }
         break
+      case MSG_MAIN.COMPARE_SESSION_MEMORY:
       case MSG_MAIN.FIND_MEMORY:
         try {
           passWorkerOperationResult(
             e.data.operationId,
             undefined,
-            findExternalMemory(e.data.payload as MemorySearchRequest),
+            e.data.msg === MSG_MAIN.COMPARE_SESSION_MEMORY
+              ? compareExternalSessionMemory(e.data.payload as SessionMemoryComparisonRequest)
+              : findExternalMemory(e.data.payload as MemorySearchRequest),
           )
         } catch (error) {
           passWorkerOperationResult(
