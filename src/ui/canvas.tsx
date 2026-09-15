@@ -458,8 +458,10 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     if (elapsed >= targetInterval) {
       if (mainCanvas && hiddenCanvas.current) {
-        const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d", { willReadFrequently: true })
-        const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d", { willReadFrequently: true })
+        // Note: Do not add { willReadFrequently: true }, as it increased CPU
+        // usage by about 20% in Chrome.
+        const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d")
+        const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
         if (ctx && hiddenCtx) {
           const [w, h] = getCanvasSize()   // always current
           ProcessDisplay(ctx, hiddenCtx, w, h)
