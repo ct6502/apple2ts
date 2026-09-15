@@ -50,6 +50,21 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
     this.pcmCurR = 0
     this.pcmPhase = 0
     this.port.onmessage = (e) => {
+      if (Array.isArray(e.data)) {
+        for (let i = 0; i < e.data.length; i++) {
+          const item = e.data[i]
+          if (item.reg === "ctrl") {
+            this.writePcmCtrl(item.value)
+          } else if (item.reg === "rate") {
+            this.writePcmRate(item.value)
+          } else if (item.reg === "fifo") {
+            this.writePcmFifo(item.value)
+          } else {
+            this.writeReg(item.reg, item.value)
+          }
+        }
+        return
+      }
       const { reg, value } = e.data
       if (reg === "ctrl") {
         this.writePcmCtrl(value)

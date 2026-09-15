@@ -73,6 +73,10 @@ export const passVeraPsgWrite = (event: VeraPsgWrite) => {
   doPostMessage(MSG_WORKER.VERA_PSG_WRITE, event)
 }
 
+export const passVeraPsgBatch = (events: VeraPsgWrite[]) => {
+  doPostMessage(MSG_WORKER.VERA_PSG_BATCH, events)
+}
+
 export const passVeraPcmWrite = (event: VeraPcmWrite) => {
   doPostMessage(MSG_WORKER.VERA_PCM_WRITE, event)
 }

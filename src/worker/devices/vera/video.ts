@@ -9,7 +9,7 @@ import { vera_spi_read, vera_spi_write } from "./sdcard"
   // @ts-ignore
 import { pcm_reset, pcm_is_fifo_almost_empty, pcm_read_ctrl, pcm_read_rate, pcm_write_ctrl, pcm_write_rate, pcm_write_fifo, pcm_render } from "./pcm"
 import { s6502 } from "../../instructions"
-import { passVeraFramebuffer, passVeraPcmWrite, passVeraPsgWrite } from "../../worker2main"
+import { passVeraFramebuffer, passVeraPcmWrite, passVeraPsgBatch } from "../../worker2main"
 
 const VERA_VERSION_MAJOR = 47
 const VERA_VERSION_MINOR = 0
@@ -152,6 +152,12 @@ let ntsc_half_cnt: number = 0
 let ntsc_scan_pos_y: number = 0
 let frame_count: number = 0
 const framebuffer = new Uint8ClampedArray(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+const framebuffer32 = new Uint32Array(framebuffer.buffer)
+const scanline_tile_bytes = new Uint8Array(512) // Shared zero-allocation scanline buffer
+const static_ram_wrdata = new Uint8Array(4)
+const static_nibble_mask = new Uint8Array(4)
+const static_cache_to_use = new Uint8Array(4)
+const psg_pending_writes: Array<VeraPsgWrite> = []
 const default_palette = new Uint16Array([
 0x000,0xfff,0x800,0xafe,0xc4c,0x0c5,0x00a,0xee7,0xd85,0x640,0xf77,0x333,0x777,0xaf6,0x08f,0xbbb,0x000,0x111,0x222,0x333,0x444,0x555,0x666,0x777,0x888,0x999,0xaaa,0xbbb,0xccc,0xddd,0xeee,0xfff,0x211,0x433,0x644,0x866,0xa88,0xc99,0xfbb,0x211,0x422,0x633,0x844,0xa55,0xc66,0xf77,0x200,0x411,0x611,0x822,0xa22,0xc33,0xf33,0x200,0x400,0x600,0x800,0xa00,0xc00,0xf00,0x221,0x443,0x664,0x886,0xaa8,0xcc9,0xfeb,0x211,0x432,0x653,0x874,0xa95,0xcb6,0xfd7,0x210,0x431,0x651,0x862,0xa82,0xca3,0xfc3,0x210,0x430,0x640,0x860,0xa80,0xc90,0xfb0,0x121,0x343,0x564,0x786,0x9a8,0xbc9,0xdfb,0x121,0x342,0x463,0x684,0x8a5,0x9c6,0xbf7,0x120,0x241,0x461,0x582,0x6a2,0x8c3,0x9f3,0x120,0x240,0x360,0x480,0x5a0,0x6c0,0x7f0,0x121,0x343,0x465,0x686,0x8a8,0x9ca,0xbfc,0x121,0x242,0x364,0x485,0x5a6,0x6c8,0x7f9,0x020,0x141,0x162,0x283,0x2a4,0x3c5,0x3f6,0x020,0x041,0x061,0x082,0x0a2,0x0c3,0x0f3,0x122,0x344,0x466,0x688,0x8aa,0x9cc,0xbff,0x122,0x244,0x366,0x488,0x5aa,0x6cc,0x7ff,0x022,0x144,0x166,0x288,0x2aa,0x3cc,0x3ff,0x022,0x044,0x066,0x088,0x0aa,0x0cc,0x0ff,0x112,0x334,0x456,0x668,0x88a,0x9ac,0xbcf,0x112,0x224,0x346,0x458,0x56a,0x68c,0x79f,0x002,0x114,0x126,0x238,0x24a,0x35c,0x36f,0x002,0x014,0x016,0x028,0x02a,0x03c,0x03f,0x112,0x334,0x546,0x768,0x98a,0xb9c,0xdbf,0x112,0x324,0x436,0x648,0x85a,0x96c,0xb7f,0x102,0x214,0x416,0x528,0x62a,0x83c,0x93f,0x102,0x204,0x306,0x408,0x50a,0x60c,0x70f,0x212,0x434,0x646,0x868,0xa8a,0xc9c,0xfbe,0x211,0x423,0x635,0x847,0xa59,0xc6b,0xf7d,0x201,0x413,0x615,0x826,0xa28,0xc3a,0xf3c,0x201,0x403,0x604,0x806,0xa08,0xc09,0xf0b
 ])
@@ -167,6 +173,7 @@ export const video_reset = (): void => {
 	ien = 0
 	isr = 0
 	irq_line = 0
+	psg_pending_writes.length = 0
 	// init Layer registers
 	reg_layer.forEach(arr => arr.fill(0))
 	// init composer registers
@@ -230,6 +237,7 @@ export const video_reset = (): void => {
 	vga_scan_pos_y = 0
 	ntsc_half_cnt = 0
 	ntsc_scan_pos_y = 0
+	max_active_sprite_index = -1
 	pcm_reset()
 	audio_last_cycle = s6502.cycleCount
 	audio_sample_frac = 0
@@ -365,6 +373,37 @@ const refresh_layer_properties = (layer: number): void => {
 	props.color_fields_max = (8 >> props.color_depth) - 1
 }
 
+const copy_layer_properties = (dest: video_layer_properties, src: video_layer_properties): void => {
+	dest.color_depth = src.color_depth
+	dest.map_base = src.map_base
+	dest.tile_base = src.tile_base
+	dest.text_mode = src.text_mode
+	dest.text_mode_256c = src.text_mode_256c
+	dest.tile_mode = src.tile_mode
+	dest.bitmap_mode = src.bitmap_mode
+	dest.hscroll = src.hscroll
+	dest.vscroll = src.vscroll
+	dest.mapw_log2 = src.mapw_log2
+	dest.maph_log2 = src.maph_log2
+	dest.tilew = src.tilew
+	dest.tileh = src.tileh
+	dest.tilew_log2 = src.tilew_log2
+	dest.tileh_log2 = src.tileh_log2
+	dest.mapw_max = src.mapw_max
+	dest.maph_max = src.maph_max
+	dest.tilew_max = src.tilew_max
+	dest.tileh_max = src.tileh_max
+	dest.layerw_max = src.layerw_max
+	dest.layerh_max = src.layerh_max
+	dest.tile_size_log2 = src.tile_size_log2
+	dest.min_eff_x = src.min_eff_x
+	dest.max_eff_x = src.max_eff_x
+	dest.bits_per_pixel = src.bits_per_pixel
+	dest.first_color_pos = src.first_color_pos
+	dest.color_mask = src.color_mask
+	dest.color_fields_max = src.color_fields_max
+}
+
 interface video_sprite_properties {
 	sprite_zdepth: number
 	sprite_collision_mask: number
@@ -406,6 +445,26 @@ const refresh_sprite_properties = (sprite: number): void => {
 	props.color_mode     = (sprite_data[sprite][1] >> 7) & 1
 	props.sprite_address = sprite_data[sprite][0] << 5 | (sprite_data[sprite][1] & 0xf) << 13
 	props.palette_offset = (sprite_data[sprite][7] & 0x0f) << 4
+	update_max_active_sprite(sprite)
+}
+
+let max_active_sprite_index: number = -1
+
+const update_max_active_sprite = (sprite: number): void => {
+	if (sprite_properties[sprite].sprite_zdepth > 0) {
+		if (sprite > max_active_sprite_index) {
+			max_active_sprite_index = sprite
+		}
+	} else if (sprite === max_active_sprite_index) {
+		let next_max = -1
+		for (let s = sprite - 1; s >= 0; s--) {
+			if (sprite_properties[s].sprite_zdepth > 0) {
+				next_max = s
+				break
+			}
+		}
+		max_active_sprite_index = next_max
+	}
 }
 
 interface video_palette {
@@ -436,7 +495,8 @@ const refresh_palette = (): void => {
 			}
 		}
 
-		video_palette.entries[i] = Number(r << 16) | (Number(g) << 8) | (Number(b))
+		// Store precomputed 32-bit RGBA integer (little-endian: AARRGGBB in memory)
+		video_palette.entries[i] = ((0xFF000000) | ((b & 0xFF) << 16) | ((g & 0xFF) << 8) | (r & 0xFF)) >>> 0
 	}
 	video_palette.dirty = false
 }
@@ -456,8 +516,11 @@ const render_sprite_line = (y: number): void => {
 	memset(sprite_line_col, 0, SCREEN_WIDTH)
 	memset(sprite_line_z, 0, SCREEN_WIDTH)
 	memset(sprite_line_mask, 0, SCREEN_WIDTH)
+	if (max_active_sprite_index < 0) {
+		return
+	}
 	let sprite_budget: number = 800 + 1
-	for (let i: number = 0; i < NUM_SPRITES; i++) {
+	for (let i: number = 0; i <= max_active_sprite_index; i++) {
 		// one clock per lookup
 		sprite_budget--; if (sprite_budget == 0) break
 		const props: video_sprite_properties = sprite_properties[i]
@@ -527,7 +590,7 @@ const render_layer_line_text = (layer: number, y: number): void => {
 	const map_addr_begin: number = calc_layer_map_addr_base2(props, props.min_eff_x, eff_y)
 	const map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
 	const size: number = (map_addr_end - map_addr_begin) + 2
-	const tile_bytes = new Uint8Array(512) // max 256 tiles, 2 bytes each.
+	const tile_bytes = scanline_tile_bytes // Reused static buffer: zero GC allocations
   // @ts-ignore
 	video_space_read_range(tile_bytes, map_addr_begin, size)
 	let tile_start: number = 0
@@ -608,7 +671,7 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 	const map_addr_begin: number = calc_layer_map_addr_base2(props, props.min_eff_x, eff_y)
 	const map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
 	const size: number = (map_addr_end - map_addr_begin) + 2
-	const tile_bytes = new Uint8Array(512) // max 256 tiles, 2 bytes each.
+	const tile_bytes = scanline_tile_bytes // Reused static buffer: zero GC allocations
   // @ts-ignore
 	video_space_read_range(tile_bytes, map_addr_begin, size)
 	let palette_offset: number = 0
@@ -768,12 +831,13 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		// render but delayed until the next line, or applied mid-line
 		// at scan-out
 
-		memcpy(prev_reg_composer[1], prev_reg_composer[0], 1 * COMPOSER_SLOTS)
-		memcpy(prev_reg_composer[0], reg_composer, 1 * COMPOSER_SLOTS)
+		prev_reg_composer[1].set(prev_reg_composer[0])
+		prev_reg_composer[0].set(reg_composer)
 		// Same with the layer properties
-
-		memcpy(prev_layer_properties[1], prev_layer_properties[0], 1 * NUM_LAYERS)
-		memcpy(prev_layer_properties[0], layer_properties, 1 * NUM_LAYERS)
+		copy_layer_properties(prev_layer_properties[1][0], prev_layer_properties[0][0])
+		copy_layer_properties(prev_layer_properties[1][1], prev_layer_properties[0][1])
+		copy_layer_properties(prev_layer_properties[0][0], layer_properties[0])
+		copy_layer_properties(prev_layer_properties[0][1], layer_properties[1])
 		if ((dc_video & 3) > 1) { // 480i or 240p
 			if ((y >> 1) == 0) {
 				eff_y_fp = y*(prev_reg_composer[1][2] << 9)
@@ -910,21 +974,11 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		}
 	}
 
-	// Look up all color indices.
+	// Look up all color indices via direct 32-bit array stores
 	{
-  // @ts-ignore
-		let fb_idx: number = (y * SCREEN_WIDTH + s_pos_x_p) * 4
-  // @ts-ignore
+		let fb32_idx: number = y * SCREEN_WIDTH + s_pos_x_p
 		for (let x: number = s_pos_x_p; x < s_pos_x; x++) {
-			const entry = video_palette.entries[col_line[x]]
-			
-			// Note: The original C emulator rendered pixels in BGRA order with an empty Alpha channel 
-			// because it was using SDL_PIXELFORMAT_ARGB8888. 
-			// For HTML5 Canvas ImageData, we must use strict RGBA order and set Alpha to 255 (opaque).
-			framebuffer[fb_idx++] = (entry >> 16) & 0xFF // Red
-			framebuffer[fb_idx++] = (entry >> 8) & 0xFF  // Green
-			framebuffer[fb_idx++] = entry & 0xFF         // Blue
-			framebuffer[fb_idx++] = 0xFF                 // Alpha (255 = fully opaque)
+			framebuffer32[fb32_idx++] = video_palette.entries[col_line[x]]
 		}
 	}
 
@@ -972,21 +1026,23 @@ export const video_step = (mhz: number, steps: number, midline: boolean): boolea
 	const ntsc_mode: boolean = reg_composer[0] & 2
 	let new_frame: boolean = false
 	vga_scan_pos_x += PIXEL_FREQ * steps / mhz
-	if (vga_scan_pos_x > VGA_SCAN_WIDTH) {
-		vga_scan_pos_x -= VGA_SCAN_WIDTH
-		if (!ntsc_mode) {
-			render_line(vga_scan_pos_y - VGA_Y_OFFSET, VGA_SCAN_WIDTH)
-		}
-		vga_scan_pos_y++
-		if (vga_scan_pos_y == SCAN_HEIGHT) {
-			vga_scan_pos_y = 0
+	if (vga_scan_pos_x >= VGA_SCAN_WIDTH) {
+		while (vga_scan_pos_x >= VGA_SCAN_WIDTH) {
+			vga_scan_pos_x -= VGA_SCAN_WIDTH
 			if (!ntsc_mode) {
-				new_frame = true
-				frame_count++
+				render_line(vga_scan_pos_y - VGA_Y_OFFSET, VGA_SCAN_WIDTH)
 			}
-		}
-		if (!ntsc_mode) {
-			update_isr_and_coll(vga_scan_pos_y - VGA_Y_OFFSET, irq_line)
+			vga_scan_pos_y++
+			if (vga_scan_pos_y == SCAN_HEIGHT) {
+				vga_scan_pos_y = 0
+				if (!ntsc_mode) {
+					new_frame = true
+					frame_count++
+				}
+			}
+			if (!ntsc_mode) {
+				update_isr_and_coll(vga_scan_pos_y - VGA_Y_OFFSET, irq_line)
+			}
 		}
 	} else if (midline) {
 		if (!ntsc_mode) {
@@ -994,43 +1050,45 @@ export const video_step = (mhz: number, steps: number, midline: boolean): boolea
 		}
 	}
 	ntsc_half_cnt += PIXEL_FREQ * steps / mhz
-	if (ntsc_half_cnt > NTSC_HALF_SCAN_WIDTH) {
-		ntsc_half_cnt -= NTSC_HALF_SCAN_WIDTH
-		if (ntsc_mode) {
-			if (ntsc_scan_pos_y < SCAN_HEIGHT) {
-				y = ntsc_scan_pos_y - NTSC_Y_OFFSET_LOW
-				if ((y & 1) == 0) {
-					render_line(y, NTSC_HALF_SCAN_WIDTH)
-				}
-			} else {
-				y = ntsc_scan_pos_y - NTSC_Y_OFFSET_HIGH
-				if ((y & 1) == 0) {
-					render_line(y | 1, NTSC_HALF_SCAN_WIDTH)
-				}
-			}
-		}
-		ntsc_scan_pos_y++
-		if (ntsc_scan_pos_y == SCAN_HEIGHT) {
-			reg_composer[0] |= 0x80
+	if (ntsc_half_cnt >= NTSC_HALF_SCAN_WIDTH) {
+		while (ntsc_half_cnt >= NTSC_HALF_SCAN_WIDTH) {
+			ntsc_half_cnt -= NTSC_HALF_SCAN_WIDTH
 			if (ntsc_mode) {
-				new_frame = true
-				frame_count++
+				if (ntsc_scan_pos_y < SCAN_HEIGHT) {
+					y = ntsc_scan_pos_y - NTSC_Y_OFFSET_LOW
+					if ((y & 1) == 0) {
+						render_line(y, NTSC_HALF_SCAN_WIDTH)
+					}
+				} else {
+					y = ntsc_scan_pos_y - NTSC_Y_OFFSET_HIGH
+					if ((y & 1) == 0) {
+						render_line(y | 1, NTSC_HALF_SCAN_WIDTH)
+					}
+				}
 			}
-		}
-		if (ntsc_scan_pos_y == SCAN_HEIGHT*2) {
-			reg_composer[0] &= ~0x80
-			ntsc_scan_pos_y = 0
+			ntsc_scan_pos_y++
+			if (ntsc_scan_pos_y == SCAN_HEIGHT) {
+				reg_composer[0] |= 0x80
+				if (ntsc_mode) {
+					new_frame = true
+					frame_count++
+				}
+			}
+			if (ntsc_scan_pos_y == SCAN_HEIGHT*2) {
+				reg_composer[0] &= ~0x80
+				ntsc_scan_pos_y = 0
+				if (ntsc_mode) {
+					new_frame = true
+					frame_count++
+				}
+			}
 			if (ntsc_mode) {
-				new_frame = true
-				frame_count++
-			}
-		}
-		if (ntsc_mode) {
-			// this is correct enough for even screen heights
-			if (ntsc_scan_pos_y < SCAN_HEIGHT) {
-				update_isr_and_coll(ntsc_scan_pos_y - NTSC_Y_OFFSET_LOW, irq_line & ~1)
-			} else {
-				update_isr_and_coll(ntsc_scan_pos_y - NTSC_Y_OFFSET_HIGH, irq_line & ~1)
+				// this is correct enough for even screen heights
+				if (ntsc_scan_pos_y < SCAN_HEIGHT) {
+					update_isr_and_coll(ntsc_scan_pos_y - NTSC_Y_OFFSET_LOW, irq_line & ~1)
+				} else {
+					update_isr_and_coll(ntsc_scan_pos_y - NTSC_Y_OFFSET_HIGH, irq_line & ~1)
+				}
 			}
 		}
 	} else if (midline) {
@@ -1053,7 +1111,7 @@ export const video_step = (mhz: number, steps: number, midline: boolean): boolea
 }
 
 export const video_get_irq_out = (): boolean => {
-	audio_render()
+	if (pcm_read_rate() !== 0) audio_render()
 	const tmp_isr: number = isr | (pcm_is_fifo_almost_empty() ? 8 : 0)
 	return (tmp_isr & ien) != 0
 }
@@ -1079,6 +1137,11 @@ export const video_update = (): boolean => {
 //			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 3] = 0xFF
 //		}
 //	}
+
+  // flush any batched PSG writes from this frame in a single IPC message
+  if (psg_pending_writes.length > 0) {
+    passVeraPsgBatch(psg_pending_writes.splice(0))
+  }
 
   // inform the renderer here that framebuffer is updated
   passVeraFramebuffer(framebuffer, reg_composer[0])
@@ -1229,7 +1292,7 @@ const video_space_read_range = (dest: Uint8Array, address: number, size: number)
 const write_psg = (address: number, value: number): void => {
 	const reg = address & 0x3f
 	audio_render()
-	passVeraPsgWrite({
+	psg_pending_writes.push({
 		cycle: s6502.cycleCount,
 		reg,
 		value,
@@ -1510,7 +1573,9 @@ export const video_read = (reg: number, debugOn: boolean): number => {
 		}
 		case 0x05: return (io_dcsel << 1) | io_addrsel
 		case 0x06: return ((irq_line & 0x100) >> 1) | ((scanline & 0x100) >> 2) | (ien & 0xF)
-		case 0x07: audio_render(); return isr | (pcm_is_fifo_almost_empty() ? 8 : 0)
+		case 0x07:
+			if (pcm_read_rate() !== 0) audio_render()
+			return isr | (pcm_is_fifo_almost_empty() ? 8 : 0)
 		case 0x08: return scanline & 0xFF
 		case 0x09:
 		case 0x0A:
@@ -1637,10 +1702,16 @@ export const video_write = (reg: number, value: number): void => {
 				printf("WRITE video_space[$%X] = $%02X\n", address, value)
 			}
 
+			if (!fx_cache_write && !fx_multiplier && !fx_cache_byte_cycling) {
+				fx_video_space_write(address, nibble, value)
+				io_rddata[reg - 3] = video_space_read(io_addr[reg - 3])
+				break
+			}
+
 			let wrdata_to_use: number = 0
-			const ram_wrdata = new Uint8Array(4)
-			const nibble_mask = new Uint8Array(4)
-			const cache_to_use = new Uint8Array(4)
+			const ram_wrdata = static_ram_wrdata
+			const nibble_mask = static_nibble_mask
+			const cache_to_use = static_cache_to_use
 			if (fx_multiplier) {
 				let m_result: number = (((fx_cache[1] << 8) | fx_cache[0]) << 16 >> 16) * (((fx_cache[3] << 8) | fx_cache[2]) << 16 >> 16)
 				if (fx_subtract)
