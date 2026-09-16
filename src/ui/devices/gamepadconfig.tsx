@@ -4,7 +4,6 @@ import {
   faGamepad,
 } from "@fortawesome/free-solid-svg-icons"
 import PopupMenu from "../controls/popupmenu"
-import { getArrowKeysAsJoystick } from "../ui_settings"
 import { getPreferenceBoolean, setPreferenceBoolean } from "../localstorage"
 
 import { useTranslation } from "../../i18n/useTranslation"
@@ -14,14 +13,16 @@ import { controlsToPopupItems } from "../controls/controlpopup"
 import { controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
 const joystickSettings = [
-  ["keyboard.joystick.arrowKeys", "arrowKeysAsJoystick", getArrowKeysAsJoystick],
-  ["keyboard.joystick.reverseYAxis", "reverseYAxis", () => getPreferenceBoolean("reverseYAxis")],
-  ["keyboard.joystick.siriusJoyport", "siriusJoyport", () => getPreferenceBoolean("siriusJoyport")],
+  ["keyboard.joystick.arrowKeys", "arrowKeysAsJoystick"],
+  ["keyboard.joystick.reverseYAxis", "reverseYAxis"],
+  ["keyboard.joystick.siriusJoyport", "siriusJoyport"],
+  ["keyboard.joystick.touchJoystick", "touchJoystick"],
+  ["keyboard.joystick.tiltSensorJoystick", "tiltSensorJoystick"]
 ] as const
 
 const gamepadBindings: RetroControlBindings = Object.fromEntries(
-  joystickSettings.map(([id, preference, getter]) => [id, toggleBinding({
-    enabled: getter,
+  joystickSettings.map(([id, preference]) => [id, toggleBinding({
+    enabled: () => getPreferenceBoolean(preference),
     setEnabled: (context, enabled) =>
       setPreferenceBoolean(preference, enabled, context.settingsOrigin),
   })]),

@@ -549,7 +549,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       }}
       width={`max( ${isMinimalTheme() ? "95%" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
-      position="bottom-right">
+      shift={true}
+      position="top-right">
       <div onContextMenuCapture={(e) => e.preventDefault()}>
         <div className="flex-row dcp-tab-row"
           onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>

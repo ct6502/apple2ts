@@ -34,7 +34,7 @@ const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
   const [renderCount, setRenderCount] = useState(0)
   const [currentSpeed, setCurrentSpeed] = useState(1.02)
-  const [avgFPS, setAvgFPS] = useState(0)
+  const [avgFPS, setAvgFPS] = useState("")
   const [ctrlKeyMode, setCtrlKeyMode] = useState(0)
   const [openAppleKeyMode, setOpenAppleKeyMode] = useState(0)
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
@@ -186,7 +186,7 @@ const DisplayApple2 = () => {
   const mem = isApple2Plus ? 64 : (hasAuxCard ? (handleGetMemSize() + 64) : 64)
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = (isTouchDevice && isLandscape) ? <></> : <div className="default-font footer-item" translate="no">
-    <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
+    <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS}</>
   </div>
 
   if (isEmbedMode()) {
@@ -208,7 +208,8 @@ const DisplayApple2 = () => {
         {!isGameMode() && <DebugSection updateDisplay={updateDisplay} narrow={narrow} />}
       </div>
       {isMinimalTheme() && <DiskCollectionPanel {...props} />}
-      {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
+      {isMinimalTheme() && <TouchJoystick />}
+      {/* {isMinimalTheme() && isTouchDevice && <TouchJoystick />} */}
       <FileInput {...props} />
       <RetroMenuRenderer displayProps={props} />
     </>

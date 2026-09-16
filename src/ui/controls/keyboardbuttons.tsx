@@ -2,14 +2,8 @@ import {
   handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress,
   passAppleCommandKeyRelease
   } from "../main2worker"
-import PopupMenu from "./popupmenu"
-import { useState } from "react"
 import LanguageSwitch from "./languageswitch"
-import { setPreferenceBoolean } from "../localstorage"
-import { getUIStateBoolean } from "../ui_settings"
 const KeyboardButtons = (props: DisplayProps) => {
-  const [popupLocation, setPopupLocation] = useState<[number, number]>()
-
 
   const isTouchDevice = "ontouchstart" in document.documentElement
 
@@ -48,35 +42,6 @@ const KeyboardButtons = (props: DisplayProps) => {
       </>}
       <LanguageSwitch />
     </span>
-    <PopupMenu
-      location={popupLocation}
-      onClose={() => { setPopupLocation(undefined) }}
-      menuItems={[[
-        {
-          label: "Disabled",
-          isSelected: () => { return !getUIStateBoolean("touchJoystick") },
-          onClick: () => { setPreferenceBoolean("touchJoystick", false); props.updateDisplay() }
-        },
-        {
-          label: "Use Tilt Sensor as Joystick",
-          isSelected: () => { return getUIStateBoolean("tiltSensorJoystick") },
-          onClick: () => {
-            let turningOn = !getUIStateBoolean("tiltSensorJoystick")
-            if (turningOn) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              if (typeof ((DeviceOrientationEvent as any).requestPermission) === "function") {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const permissionState = (DeviceOrientationEvent as any).requestPermission()
-                if (permissionState === "denied") {
-                  turningOn = false
-                }
-              }
-            }
-            setPreferenceBoolean("tiltSensorJoystick", turningOn)
-          }
-        },
-      ]]}
-    />
   </span >
 }
 

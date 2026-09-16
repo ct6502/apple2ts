@@ -61,8 +61,7 @@ export const TouchJoystick = () => {
     const button = document.getElementById(`tj-button${buttonNumber}`) as HTMLElement
     // Make the button look "pressed"
     if (button) {
-      const tx = enabled ? 5 : 0
-      button.style.transform = `translateX(${tx}px) scale(${enabled ? 0.95 : 1})`
+      button.style.opacity = `${enabled ? 0.95 : 0.25}`
     }
   }
 
@@ -148,49 +147,40 @@ export const TouchJoystick = () => {
     doSetCustomGamepad([false, false], null)
   }
 
-  const isLandscape = (window.innerWidth > window.innerHeight)
+  if (!getUIStateBoolean("touchJoystick")) {
+    return <div></div>
+  }
 
   return (
-    getUIStateBoolean("touchJoystick")
-      ? <div
+    <div
         className="tj-container"
         draggable="false">
         <div
-          className={`tj-base-position tj-base-left ${isLandscape ? "" : "tj-base-portrait"}`}
+          className="tj-base-position"
           onTouchMove={(event: React.TouchEvent) => event.preventDefault()}
           onPointerEnter={handlePointerEnter}
           onPointerMove={handlePointerMove}
           onPointerLeave={handleStickPointerLeave}>
-          <div>
-            <img
-              className={"tj-base-image-right"}
-              src="/tj-base.png" />
-          </div>
           <div
             id="touchjoystick-stick"
-            className={"tj-stick tj-stick-left"}
           >
             <img
-              className="tj-stick-image"
-              src="/tj-stick.png" />
+              className="tj-joystick-image"
+              src="/tj-joystick.png" />
           </div>
         </div>
         <div
-          className={`tj-base-position tj-buttons-right ${isLandscape ? "" : "tj-base-portrait"}`}
+          className="tj-buttons-base"
           onTouchStart={handleButtonsTouchStart}
           onTouchEnd={handleButtonsTouchEnd}>
-          <img
-            className={"tj-base-image-right"}
-            src="/tj-base.png" />
           <img id="tj-button0"
-            className={"tj-buttons-all tj-buttons-button0-right"}
-            src="/tj-button0.png" />
+            className={"tj-buttons-both tj-buttons-button0"}
+            src="/tj-button.png" />
           <img id="tj-button1"
-            className={"tj-buttons-all tj-buttons-button1-right"}
-            src="/tj-button1.png" />
+            className={"tj-buttons-both tj-buttons-button1"}
+            src="/tj-button.png" />
         </div>
-      </div>
-      : <div></div>
+    </div>
   )
 }
 

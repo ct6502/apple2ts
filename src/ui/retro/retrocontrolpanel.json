@@ -159,6 +159,24 @@
       "defaultIndex": 0
     },
     {
+      "group": "gamepad",
+      "id": "keyboard.joystick.touchJoystick",
+      "kind": "toggle",
+      "parentId": "keyboard.joystick",
+      "order": 3,
+      "labelKey": "gamepad.touchJoystick",
+      "defaultIndex": 0
+    },
+    {
+      "group": "gamepad",
+      "id": "keyboard.joystick.tiltSensorJoystick",
+      "kind": "toggle",
+      "parentId": "keyboard.joystick",
+      "order": 3,
+      "labelKey": "gamepad.tiltSensorJoystick",
+      "defaultIndex": 0
+    },
+    {
       "group": "config",
       "id": "options.theme",
       "binding": "options.theme",

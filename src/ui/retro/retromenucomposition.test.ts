@@ -820,6 +820,8 @@ describe("Retro menu metadata structure", () => {
       "keyboard.joystick.arrowKeys",
       "keyboard.joystick.reverseYAxis",
       "keyboard.joystick.siriusJoyport",
+      "keyboard.joystick.touchJoystick",
+      "keyboard.joystick.tiltSensorJoystick",
     ])
     expect(retroMenuRegistry.getIds("printerPort")).toEqual([])
     expect(retroMenuRegistry.getIds("printer.imageWriterII")).toEqual([])

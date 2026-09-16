@@ -54,7 +54,14 @@ const VeraTab = () => {
   const isHalf = viewSize === "320"
 
   return (
-    <div className="flex-column-gap debug-section" style={{ display: "flex", flexDirection: "column", height: "100%", width: "fit-content", alignItems: "flex-start", marginLeft: 0, paddingLeft: 0 }}>
+    <div className="flex-column-gap debug-section"
+      style={{ display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        width: "693px", /* should be a better way to do this, but needs to match other debug tabs! */
+        alignItems: "flex-start",
+        marginLeft: 0,
+        paddingLeft: 0 }}>
       <div style={{
         display: "inline-flex",
         justifyContent: "flex-start",

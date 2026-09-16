@@ -473,7 +473,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       lastFPSLogRef.current++
       if (lastFPSLogRef.current >= maxFrameSamples) {
         const avgFPS = (lastFPSLogRef.current / (timestamp - startTimeForMaxFramesRef.current)) * 1000
-        props.setAvgFPS(avgFPS)
+        const fps = avgFPS.toFixed(1)
+        props.setAvgFPS(fps)
         lastFPSLogRef.current = 0
         startTimeForMaxFramesRef.current = timestamp
       }
@@ -562,7 +563,7 @@ const Apple2Canvas = (props: DisplayProps) => {
               const appleScreenWidth = width //- 2 * width * xmargin //+ 20
               const appleScreenHeight = height //- 2 * height * ymargin
               marginLeft = (window.innerWidth - appleScreenWidth) / 2
-              marginTop = (window.innerHeight - appleScreenHeight) / 2
+              marginTop = Math.min((window.innerHeight - appleScreenHeight) / 2, 75)
               const debugSection = document.getElementsByClassName("flyout-top-right")[0] as HTMLElement
               if (debugSection && debugSection.offsetWidth > 200) {
                 marginLeft = Math.max(Math.min(marginLeft, (debugSection.offsetLeft - appleScreenWidth) / 2), 0)

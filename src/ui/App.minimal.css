@@ -62,6 +62,8 @@ body.iigs-minimal-surround::after {
   text-align: center;
   font-size: max(0.66cqw, 7pt);
   user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
 }
 
 #reportIssue {

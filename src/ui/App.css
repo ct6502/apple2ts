@@ -375,6 +375,8 @@ body.dark-mode .centered-title {
   margin-right: 0.5em;
   white-space: nowrap;
   user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
 }
 
 .modal-overlay {

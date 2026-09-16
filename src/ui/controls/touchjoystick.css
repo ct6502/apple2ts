@@ -1,11 +1,7 @@
 .tj-container {
   position: fixed;
-  top: 0px;
-  left: 0px;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 997;
-  pointer-events: none;
 }
 
 .tj-container * {
@@ -16,98 +12,45 @@
   -ms-user-select: none;
 }
 
-.tj-base-image-left {
-  width: 100%;
-  height: auto;
-  transform: scaleX(-1);
-  user-select: none;
-  pointer-events: none;
-}
-
-.tj-base-image-right {
-  width: 100%;
-  height: auto;
-  user-select: none;
-  pointer-events: none;
-}
-
+/* env(safe-area-inset-right) avoids the home indicator and rounded screen edges on phones */
 .tj-base-position {
   position: absolute;
-  top: 85%;
+  left: 20mm;
+  bottom: 20mm;
   width: 33%;
   height: auto;
-  transform: translateY(-100%);
   opacity: 25%;
   pointer-events: all;
 }
 
-.tj-base-portrait {
-  width: 45%;
-}
-
-.tj-base-left {
-  left: -14.5%;
-}
-
-.tj-base-right {
-  right: -14.5%;
-}
-
-.tj-stick {
-  position: absolute;
-  top: -9%;
-  width: 30%;
-  transform-origin: 50% 65%;
-}
-
-.tj-stick-left {
-  left: 55%;
-}
-
-.tj-stick-right {
-  right: 55%;
-}
-
-.tj-stick-image {
-  width: 100%;
+.tj-joystick-image {
+  width: 48pt;
   height: auto;
   user-select: none;
 }
 
-.tj-buttons-left {
-  left: -20%;
-}
-
-.tj-buttons-right {
-  right: -20%;
-}
-
-.tj-buttons-all {
+.tj-buttons-base {
   position: absolute;
+  right: 0;
+  bottom: 0;
+  opacity: 25%;
+}
+
+.tj-buttons-both {
   user-select: none;
-  width: 13.5%;
+  width: 20mm;
   height: auto;
   pointer-events: none;
 }
 
-.tj-buttons-button0-left {
-  top: 63.5%;
-  right: 10.5%;
-  transform: scaleX(-1);
+.tj-buttons-button0 {
+  position: relative;
+  bottom: 0;
+  right: 5mm;
 }
 
-.tj-buttons-button1-left {
-  top: 16.2%;
-  right: 10.2%;
-  transform: scaleX(-1);
-}
-
-.tj-buttons-button0-right {
-  top: 63.5%;
-  left: 11%;
-}
-
-.tj-buttons-button1-right {
-  top: 16.3%;
-  left: 10.5%;
+.tj-buttons-button1 {
+  position: relative;
+  bottom: 25mm;
+  right: 0;
 }

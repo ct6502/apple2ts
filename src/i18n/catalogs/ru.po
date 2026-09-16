@@ -2251,6 +2251,14 @@ msgctxt "gamepad.reverseYAxis"
 msgid "Reverse Y-Axis for Joystick"
 msgstr ""
 
+msgctxt "gamepad.touchJoystick"
+msgid "Touch Screen Joystick"
+msgstr ""
+
+msgctxt "gamepad.tiltSensorJoystick"
+msgid "Use Tilt Sensor as Joystick"
+msgstr ""
+
 #, fuzzy
 msgctxt "traceSettings.title"
 msgid "Trace Settings"

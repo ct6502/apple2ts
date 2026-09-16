@@ -715,7 +715,8 @@ const DiskInterface = (props: DisplayProps) => {
         title={t("disk.diskDrivesAndDevices")}
         isOpen={() => { return isFlyoutOpen && !allSlotsDisabled }}
         onClick={() => { if (!allSlotsDisabled) setIsFlyoutOpen(!isFlyoutOpen) }}
-        position="bottom-left">
+        shift={true}
+        position="top-left">
         <div className={`${isMinimalTheme() && isScreenNarrow ? "flex-column" : "flex-row"} flexwrap`}>
           <span className="flex-row">
             {!isMinimalTheme() && <DiskImageChooser {...props} />}

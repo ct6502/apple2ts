@@ -92,7 +92,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
         if (!nextIsOpen) {
           window.dispatchEvent(new Event(INFO_PANEL_COLLAPSED_EVENT))
         }
-        props.updateDisplay()
+        forceRefresh()
       }}>
       <div id="debug-section" className={`${props.narrow ? "flex-column" : "flex-row"}${useMinimalPresentation ? " minimal-presentation" : ""}`}>
         {!isSmall && <div className={`${props.narrow ? "flex-row" : "flex-column"} dbg-tab-row dbg-tab-row-${tabOrientation}`}>
