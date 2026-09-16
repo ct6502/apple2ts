@@ -1267,6 +1267,77 @@ export const video_step = (mhz: number, steps: number, midline: boolean): boolea
 	return new_frame
 }
 
+const cyclesUntilRasterPosition = (
+	currentPosition: number,
+	currentPixel: number,
+	targetPosition: number,
+	positionCount: number,
+	pixelsPerPosition: number,
+): number => {
+	let positions = (targetPosition - currentPosition + positionCount) % positionCount
+	if (positions === 0) positions = positionCount
+	return Math.max(1, Math.ceil((positions * pixelsPerPosition - currentPixel) / PIXEL_FREQ))
+}
+
+export const video_cycles_until_next_event = (): number => {
+	// Frame publication is always an observable event, even when no VERA IRQs
+	// are enabled. Register accesses synchronize separately before touching VERA.
+	const ntscMode = (reg_composer[0] & 2) !== 0
+	let cycles: number
+
+	if (!ntscMode) {
+		const untilLine = (line: number) => cyclesUntilRasterPosition(
+			vga_scan_pos_y,
+			vga_scan_pos_x,
+			line,
+			SCAN_HEIGHT,
+			VGA_SCAN_WIDTH,
+		)
+
+		cycles = untilLine(0)
+		if (ien & 0x02) cycles = Math.min(cycles, untilLine(irq_line))
+		if (ien & 0x05) cycles = Math.min(cycles, untilLine(SCREEN_HEIGHT))
+	} else {
+		const NTSC_POSITIONS = SCAN_HEIGHT * 2
+		const untilPosition = (position: number) => cyclesUntilRasterPosition(
+			ntsc_scan_pos_y,
+			ntsc_half_cnt,
+			position,
+			NTSC_POSITIONS,
+			NTSC_HALF_SCAN_WIDTH,
+		)
+
+		// NTSC publishes once per field.
+		cycles = Math.min(untilPosition(SCAN_HEIGHT), untilPosition(0))
+		if (ien & 0x05) {
+			cycles = Math.min(
+				cycles,
+				untilPosition(SCREEN_HEIGHT + NTSC_Y_OFFSET_LOW),
+				untilPosition(SCREEN_HEIGHT + NTSC_Y_OFFSET_HIGH),
+			)
+		}
+		if (ien & 0x02) {
+			const compare = irq_line & ~1
+			const lowFieldPosition = compare + NTSC_Y_OFFSET_LOW
+			const highFieldPosition = compare + NTSC_Y_OFFSET_HIGH
+			if (lowFieldPosition < SCAN_HEIGHT) {
+				cycles = Math.min(cycles, untilPosition(lowFieldPosition))
+			}
+			if (highFieldPosition < NTSC_POSITIONS) {
+				cycles = Math.min(cycles, untilPosition(highFieldPosition))
+			}
+		}
+	}
+
+	// FIFO consumption is sample-driven rather than raster-driven. Keep the
+	// existing conservative cadence while an enabled PCM IRQ can transition.
+	if ((ien & 0x08) && pcm_read_rate() !== 0 && !pcm_is_fifo_almost_empty()) {
+		cycles = Math.min(cycles, 16)
+	}
+
+	return cycles
+}
+
 export const video_get_irq_out = (): boolean => {
 	if (pcm_read_rate() !== 0) audio_render()
 	const tmp_isr: number = isr | (pcm_is_fifo_almost_empty() ? 8 : 0)

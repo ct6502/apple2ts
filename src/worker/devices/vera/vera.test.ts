@@ -1,6 +1,7 @@
 import fs from "fs"
-import { enableVera, resetVera, initVera, sdcard_attach_image, sdcard_detach_image, sdcard_get_status } from "./vera"
-import { video_step, video_get_framebuffer, video_reset } from "./video"
+import { enableVera, resetVera, initVera, sdcard_attach_image, sdcard_detach_image, sdcard_get_status, syncVera } from "./vera"
+import * as video from "./video"
+import { video_cycles_until_next_event, video_step, video_get_framebuffer, video_reset, video_write } from "./video"
 import { vera_spi_step, sdcard_set_write_protected, sdcard_clear_changes, sdcard_get_write_seq } from "./sdcard"
 import { memGet, memSet } from "../../memory"
 import { doBoot } from "../../motherboard"
@@ -39,6 +40,79 @@ describe("VERA Graphics & Sound Card Emulation on Apple II", () => {
     // 21 * 25 MHz / 512 / 128 samples per second.
     expect(freed).toBeGreaterThanOrEqual(2002)
     expect(freed).toBeLessThanOrEqual(2003)
+  })
+
+  test("resynchronizes after the CPU cycle counter moves backward", () => {
+    const step = jest.spyOn(video, "video_step")
+
+    setCycleCount(100)
+    syncVera()
+    step.mockClear()
+
+    setCycleCount(10)
+    syncVera()
+    expect(step).not.toHaveBeenCalled()
+
+    setCycleCount(42)
+    syncVera()
+    expect(step).toHaveBeenCalledWith(1, 32, false)
+
+    step.mockRestore()
+  })
+
+  test("schedules an idle VGA scene at the next frame boundary", () => {
+    expect(video_cycles_until_next_event()).toBe(16800)
+
+    video_step(1, 100, false)
+    expect(video_cycles_until_next_event()).toBe(16700)
+  })
+
+  test("shortens the deadline for enabled raster interrupts", () => {
+    video_write(0x08, 5)
+    video_write(0x06, 0x02)
+    expect(video_cycles_until_next_event()).toBe(160)
+
+    video_write(0x06, 0x04)
+    expect(video_cycles_until_next_event()).toBe(15360)
+  })
+
+  test("schedules NTSC field and collision boundaries", () => {
+    video_write(0x09, 0x02)
+    expect(video_cycles_until_next_event()).toBe(16674)
+
+    video_write(0x06, 0x04)
+    expect(video_cycles_until_next_event()).toBe(16579)
+  })
+
+  test("does not step an idle VERA before its scheduled event", () => {
+    const step = jest.spyOn(video, "video_step")
+    const startCycle = s6502.cycleCount
+    memSet(0x2000, 0xEA)
+    setPC(0x2000)
+
+    setCycleCount(startCycle + 100)
+    processInstruction()
+    expect(step).not.toHaveBeenCalled()
+
+    setCycleCount(startCycle + 16799)
+    processInstruction()
+    expect(step).toHaveBeenCalledTimes(1)
+
+    step.mockRestore()
+  })
+
+  test("asserts a line interrupt at its scheduled raster deadline", () => {
+    memSet(0xC208, 5)
+    memSet(0xC206, 0x02)
+    const startCycle = s6502.cycleCount
+    memSet(0x2000, 0xEA)
+    setPC(0x2000)
+
+    setCycleCount(startCycle + 159)
+    processInstruction()
+
+    expect(s6502.flagIRQ & (1 << 2)).not.toBe(0)
+    expect(memGet(0xC207, false) & 0x02).toBe(0x02)
   })
 
   test("I/O registers map correctly to Slot 2 ($C200-$C21F)", () => {

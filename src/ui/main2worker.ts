@@ -707,7 +707,6 @@ export type VeraUiFrame = {
   fb?: Uint8ClampedArray<ArrayBuffer>,
   dcVideo: number,
   sequence: number,
-  postMs: number,
 }
 
 let latestVeraFrame: VeraUiFrame | null = null
