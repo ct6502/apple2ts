@@ -897,16 +897,16 @@ const DiskInterface = (props: DisplayProps) => {
               setShowFileOpenDialog={props.setShowFileOpenDialog} />
             <DiskDrive key={1} index={1} renderCount={props.renderCount}
               setShowFileOpenDialog={props.setShowFileOpenDialog} />
-            {(isMinimalTheme() && isScreenNarrow) && <ImageWriter />}
             {(isMinimalTheme() && isScreenNarrow) && <VeraSdIcon renderCount={props.renderCount} />}
+            {(isMinimalTheme() && isScreenNarrow) && <ImageWriter />}
           </span>
           <span className="flex-row">
             <DiskDrive key={2} index={2} renderCount={props.renderCount}
               setShowFileOpenDialog={props.setShowFileOpenDialog} />
             <DiskDrive key={3} index={3} renderCount={props.renderCount}
               setShowFileOpenDialog={props.setShowFileOpenDialog} />
-            {(!isMinimalTheme() || !isScreenNarrow) && <ImageWriter />}
             {(!isMinimalTheme() || !isScreenNarrow) && <VeraSdIcon renderCount={props.renderCount} />}
+            {(!isMinimalTheme() || !isScreenNarrow) && <ImageWriter />}
           </span>
         </div>
       </Flyout>

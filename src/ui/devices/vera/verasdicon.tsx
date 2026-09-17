@@ -31,6 +31,13 @@ import { toHex, VeraSdStatus } from "../../../common/utility"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { OneDriveCloudDrive } from "../disk/onedriveclouddrive"
 import { GoogleDrive } from "../disk/googledrive"
+import { handleSetDiskOrFileFromBuffer } from "../disk/driveprops"
+
+export const isAppleDiskImage = (filename: string): boolean => {
+  const lower = filename.toLowerCase()
+  const diskExts = [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".nib"]
+  return diskExts.some(ext => lower.endsWith(ext))
+}
 
 export interface VeraSdIconProps {
   renderCount?: number
@@ -73,9 +80,9 @@ export const openSdFilePicker = async () => {
       const [fileHandle] = await window.showOpenFilePicker({
         types: [
           {
-            description: "SD Card Images (*.img, *.bin, *.sd, *.iso, *.raw, *.dsk)",
+            description: "SD Card & Disk Images (*.img, *.raw, *.sd, *.bin, *.dsk, *.woz)",
             accept: {
-              "application/octet-stream": [".img", ".bin", ".sd", ".iso", ".raw", ".dsk"]
+              "application/octet-stream": [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"]
             }
           }
         ],
@@ -83,9 +90,13 @@ export const openSdFilePicker = async () => {
         multiple: false
       })
       if (fileHandle) {
-        setVeraSdFileHandle(fileHandle)
         const file = await fileHandle.getFile()
         const buffer = await file.arrayBuffer()
+        if (isAppleDiskImage(file.name)) {
+          handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, fileHandle)
+          return
+        }
+        setVeraSdFileHandle(fileHandle)
         handleSetVeraSdImage(new Uint8Array(buffer), file.name)
         return
       }
@@ -100,7 +111,7 @@ export const openSdFilePicker = async () => {
   // Fallback for browsers without File System Access API
   const input = document.createElement("input")
   input.type = "file"
-  input.accept = ".img,.bin,.sd,.iso,.raw,.dsk"
+  input.accept = ".img,.raw,.sd,.bin,.iso,.dsk,.woz,.po,.do,.2mg,.hdv"
   input.style.position = "fixed"
   input.style.left = "-9999px"
   input.style.top = "-9999px"
@@ -112,6 +123,10 @@ export const openSdFilePicker = async () => {
       const file = input.files?.[0]
       if (file) {
         const buffer = await file.arrayBuffer()
+        if (isAppleDiskImage(file.name)) {
+          handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, null)
+          return
+        }
         handleSetVeraSdImage(new Uint8Array(buffer), file.name)
       }
     } finally {
@@ -202,10 +217,14 @@ export const saveVeraSdToDevice = async () => {
 
 export const loadVeraSdFromCloud = async (cloudProvider: CloudProvider) => {
   try {
-    const result = await cloudProvider.download(".img,.bin,.sd,.iso,.raw,.dsk")
+    const result = await cloudProvider.download(".img,.raw,.sd,.bin,.iso,.dsk,.woz,.po,.do,.2mg,.hdv")
     if (result) {
       const [blob, data] = result
       const buffer = await new Response(blob).arrayBuffer()
+      if (isAppleDiskImage(data.fileName)) {
+        handleSetDiskOrFileFromBuffer(0, buffer, data.fileName, data, null)
+        return
+      }
       handleSetVeraSdImage(new Uint8Array(buffer), data.fileName)
       setVeraSdCloudData(data)
     }
@@ -359,6 +378,10 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     const file = e.dataTransfer.files?.[0]
     if (file) {
       const buffer = await file.arrayBuffer()
+      if (isAppleDiskImage(file.name)) {
+        handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, null)
+        return
+      }
       handleSetVeraSdImage(new Uint8Array(buffer), file.name)
     }
   }
@@ -376,7 +399,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
 
   const titleText = status.attached
     ? `VERA SD: ${status.name}${status.hasChanges ? ` (${t("disk.modified")})` : ""}${status.writeProtected ? ` [${t("disk.writeProtectDisk")}]` : ""} (${sizeFormatted})${status.lba !== undefined ? ` [LBA ${toHex(status.lba, status.lba > 0xFFFF ? 6 : 4)}]` : ""} - Click for options`
-    : "VERA SD: No card inserted - Click to load SD Image"
+    : "VERA SD: Raw SPI mass storage card (*.img, *.raw, *.bin, *.sd) - Click to load or drop file (Floppy/HDD images .dsk/.woz/.po/.hdv auto-boot)"
 
   const lbaFormatted = status.lba !== undefined
     ? ` ${toHex(status.lba, status.lba > 0xFFFF ? 6 : 4)}`

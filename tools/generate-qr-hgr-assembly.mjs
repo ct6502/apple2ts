@@ -43,7 +43,7 @@ const formatSegment = name => {
 const generated = `// Generated from qr_hgr.asm by tools/generate-qr-hgr-assembly.mjs.\n// Do not edit directly.\n\n${["PATCHES", "SHIMS", "TRAMPOLINE", "RENDERER"].map(formatSegment).join("\n\n")}\n`
 
 if (argv.includes("--check")) {
-  const current = readFileSync(outputPath, "utf8")
+  const current = readFileSync(outputPath, "utf8").replace(/\r\n/g, "\n")
   if (current !== generated) {
     throw new Error("Generated QR HGR assembly is stale; run npm run generate-qr-hgr-assembly")
   }
