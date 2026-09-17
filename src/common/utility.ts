@@ -50,6 +50,17 @@ export enum MSG_WORKER {
   VERA_PSG_WRITE,
   VERA_PSG_BATCH,
   OPERATION_RESULT,
+  VERA_SD_STATUS,
+  VERA_SD_IMAGE_DATA,
+}
+
+export interface VeraSdStatus {
+  attached: boolean
+  name: string
+  size: number
+  lba?: number
+  writeProtected?: boolean
+  hasChanges?: boolean
 }
 
 export enum MSG_MAIN {
@@ -112,6 +123,10 @@ export enum MSG_MAIN {
   COMPARE_SESSION_MEMORY,
   CONDITIONAL_KEY_SEQUENCE,
   CANCEL_CONDITIONAL_KEY_SEQUENCE,
+  VERA_SD_IMAGE,
+  VERA_SD_GET_IMAGE,
+  VERA_SD_WRITE_PROTECT,
+  VERA_SD_CLEAR_CHANGES,
 }
 
 export const DEFAULT_SLOT_CONFIG: SlotConfig = {

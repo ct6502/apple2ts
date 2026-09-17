@@ -265,6 +265,37 @@ describe("Retro menu metadata structure", () => {
     ])
   })
 
+  test("shows VERA SD drive items and controls", () => {
+    const veraDrive = retroDiskControls.find(control => control.id === "diskDrives.vera")
+    expect(veraDrive).toBeDefined()
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    const items = veraDrive?.dynamicChildren?.(context) ?? []
+    expect(items.map(item => item.id)).toEqual([
+      "diskDrives.vera.load.device",
+      "diskDrives.vera.load.from",
+      "diskDrives.vera.diskSeparator",
+      "diskDrives.vera.writeProtected",
+      "diskDrives.vera.downloadSeparator",
+      "diskDrives.vera.download",
+      "diskDrives.vera.downloadAndEject",
+      "diskDrives.vera.eject",
+      "diskDrives.vera.saveSeparator",
+      "diskDrives.vera.saveToDevice",
+      "diskDrives.vera.saveTo",
+      "diskDrives.vera.pauseSyncing",
+      "diskDrives.vera.syncNow",
+    ])
+    expect(items.filter(item => item.separator).map(item => item.label)).toEqual([
+      "Disk", "Download", "Save",
+    ])
+
+    const loadFromItems = items[1].dynamicChildren?.(context) ?? []
+    expect(loadFromItems.map(item => item.id)).toEqual([
+      "diskDrives.vera.load.oneDrive",
+      "diskDrives.vera.load.googleDrive",
+    ])
+  })
+
   test("keeps disk load items on the loaded disk screen", () => {
     const drive = retroDiskControls.find(control => control.id === "diskDrives.0")
     const context = createControlContext(undefined, key => key, "en", () => undefined)
@@ -781,6 +812,7 @@ describe("Retro menu metadata structure", () => {
       "diskDrives.1",
       "diskDrives.2",
       "diskDrives.3",
+      "diskDrives.vera",
     ])
     expect(retroMenuRegistry.getIds("options")).toEqual([
       "options.speed",

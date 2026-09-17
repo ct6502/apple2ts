@@ -550,7 +550,10 @@ export const loadPreferences = () => {
     }
   }
 
-  passSetVeraSlot(getPreferenceVeraSlot())
+  const slotConfig = getPreferenceSlotConfig()
+  passSetSlotConfig(slotConfig)
+  const veraSlot = slotConfig[2] === "vera" ? 2 : slotConfig[4] === "vera" ? 4 : 0
+  setPreferenceVeraSlot(veraSlot)
 
   const traceSettings = getPreferenceTraceSettings()
   if (JSON.stringify(traceSettings) !== JSON.stringify(TraceSettingsDefault)) {

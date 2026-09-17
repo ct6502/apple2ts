@@ -20,7 +20,8 @@ import { SETTINGS_CHANGED_EVENT } from "../settingschange"
 const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, minimalPresentation?: boolean }) => {
 
   const [activeTab, setActiveTab] = useState<number>(getTabView())
-  const isFlyoutOpen = getInfoPanel()
+  const [flyoutOpen, setFlyoutOpen] = useState<boolean>(getInfoPanel())
+  const isFlyoutOpen = flyoutOpen
   const useMinimalPresentation = props.minimalPresentation || isMinimalTheme()
 
   if (useMinimalPresentation) {
@@ -58,6 +59,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
 
   if (handleGetShowDebugTab()) {
     setUIStateBoolean("infoPanel", true)
+    setFlyoutOpen(true)
     setActiveTab(1)
     passSetShowDebugTab(false)
   }
@@ -69,6 +71,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
   useEffect(() => {
     const handleSettingsChanged = () => {
       setActiveTab(getTabView())
+      setFlyoutOpen(getInfoPanel())
     }
     window.addEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
     return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
@@ -89,6 +92,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
       onClick={() => {
         const nextIsOpen = !isFlyoutOpen
         setUIStateBoolean("infoPanel", nextIsOpen)
+        setFlyoutOpen(nextIsOpen)
         if (!nextIsOpen) {
           window.dispatchEvent(new Event(INFO_PANEL_COLLAPSED_EVENT))
         }

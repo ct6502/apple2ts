@@ -30,7 +30,8 @@ import {
 } from "./conditional_input"
 import { s6502 } from "./instructions"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
-import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
+import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE, VeraSdStatus } from "../common/utility"
+import { sdcard_attach_image, sdcard_detach_image, sdcard_get_status, set_sdcard_status_listener, sdcard_get_image, sdcard_set_write_protected, sdcard_clear_changes } from "./devices/vera/sdcard"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
 import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
@@ -81,6 +82,11 @@ export const passVeraPsgBatch = (events: VeraPsgWrite[]) => {
 export const passVeraPcmWrite = (event: VeraPcmWrite) => {
   doPostMessage(MSG_WORKER.VERA_PCM_WRITE, event)
 }
+
+export const passVeraSdStatus = (status: VeraSdStatus) => {
+  doPostMessage(MSG_WORKER.VERA_SD_STATUS, status)
+}
+set_sdcard_status_listener(passVeraSdStatus)
 
 export const passMachineState = (state: MachineState) => {
   doPostMessage(MSG_WORKER.MACHINE_STATE, state)
@@ -476,6 +482,30 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.SLOT_CONFIG:
         doSetSlotConfig(e.data.payload as SlotConfig)
         break
+      case MSG_MAIN.VERA_SD_IMAGE: {
+        const payload = e.data.payload as { data: Uint8Array | null, name: string } | null
+        if (!payload || !payload.data) {
+          sdcard_detach_image()
+        } else {
+          sdcard_attach_image(payload.data, payload.name)
+        }
+        passVeraSdStatus(sdcard_get_status())
+        break
+      }
+      case MSG_MAIN.VERA_SD_GET_IMAGE: {
+        const data = sdcard_get_image()
+        const status = sdcard_get_status()
+        doPostMessage(MSG_WORKER.VERA_SD_IMAGE_DATA, data ? { data, name: status.name } : null)
+        break
+      }
+      case MSG_MAIN.VERA_SD_WRITE_PROTECT: {
+        sdcard_set_write_protected(e.data.payload as boolean)
+        break
+      }
+      case MSG_MAIN.VERA_SD_CLEAR_CHANGES: {
+        sdcard_clear_changes()
+        break
+      }
       case MSG_MAIN.REVERSE_YAXIS:
         setReverseYAxis(e.data.payload)
         break
