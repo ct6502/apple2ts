@@ -14,7 +14,6 @@ import { playVeraPcmWrite, playVeraPsgWrite, playVeraPsgBatch } from "./devices/
 import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
-import { getHelpText } from "./ui_settings"
 import { Buffer } from "buffer"
 
 let worker: Worker | null = null
@@ -502,8 +501,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
         lastExecutionSequence = execution.executionSequence
         executionStateCallback?.(execution)
       }
-      const helpText = getHelpText()
-      return {speed: machineState.cpuSpeed, helptext: helpText}
+      return {speed: machineState.cpuSpeed, helptext: ""}
     }
     case MSG_WORKER.OPERATION_RESULT:
       resolveWorkerOperation(e.data.payload as WorkerOperationResult)
