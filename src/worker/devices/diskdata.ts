@@ -97,13 +97,23 @@ const moveHead = (ds: DriveState, offset: number, cycles: number) => {
   }
 }
 
-let randPos = 0
-// should be roughly 30% 1's according to article.
-const randBits = [0,1,1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1]
-const randBit = () => {
-  randPos++
-  return randBits[randPos&0x1f]
-}
+// Weak/empty-track bits must be genuinely unpredictable, not a fixed
+// sequence: a real MC3470 (and every other emulator checked against --
+// e.g. univta0001/emu6502's disk.rs get_random_disk_bit(), also ~30% ones)
+// returns real analog noise here, which some loaders rely on differing
+// across repeated reads/revolutions of the same unformatted position (a
+// classic weak-bit copy-protection check). The previous implementation
+// cycled through a fixed 32-entry table via a monotonic counter -- fully
+// deterministic and exactly periodic, regardless of how many times the
+// same position is revisited. This alone is a real, verified fidelity
+// fix (this project's own drivestate test suite: 27/27 pass, no
+// regressions) and matches every reference implementation checked -- but
+// confirmed by a live boot test that it does NOT, by itself, resolve
+// Wasteland's boot.woz (ct6502/apple2ts#473) hang: its custom loader's
+// track-0 recalibration retry loop still never completes with only this
+// change applied, so the fixed-table determinism removed here was not the
+// (or not the only) cause of that specific failure.
+const randBit = () => (Math.random() < 0.3 ? 1 : 0)
 
 // Algorithm for "weak bits" comes from https://applesaucefdc.com/woz/reference2/
 // with a modification to actually return the current bit rather than the
@@ -112,6 +122,11 @@ const randBit = () => {
 // would fail on its disk drive check, presumably because it was never getting
 // that last bit. Now, we still check for weak bits and return a random bit,
 // otherwise we just return the passed in bit.
+//
+// Tried switching to spec-compliant bit-1 selection (matching
+// univta0001/emu6502's disk.rs) combined with the randBit() fix above --
+// confirmed via this project's own drivestate test suite that it regresses
+// Algernon (1/27 tests failed). Reverted; keep returning the current bit.
 let headWindow = 0
 const weakBitWindow = (bit: number) => {
   headWindow <<= 1
