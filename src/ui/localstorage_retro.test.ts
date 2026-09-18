@@ -5,6 +5,7 @@ jest.mock("./ui_settings", () => ({
   getTheme: jest.fn(),
   setTheme: jest.fn(),
   setUIStateBoolean: jest.fn(),
+  isDefaultTrueBooleanKey: jest.fn(),
 }))
 jest.mock("./devices/audio/mockingboard_audio", () => ({}))
 

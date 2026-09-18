@@ -3,7 +3,7 @@ import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
-import { getTheme, getUIState, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode } from "./ui_settings"
+import { getTheme, getUIState, initialBooleanUIKeys, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode, isDefaultTrueBooleanKey } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
 
@@ -12,13 +12,6 @@ export {
   SETTINGS_CHANGED_EVENT,
   type SettingsChangedDetail,
 } from "./settingschange"
-
-const booleanUIKeys: BooleanKeyOf<UIState>[] = ["arrowKeysAsJoystick",
-  "capitalizeBasic", "crtDistortion",
-  "debugMode", "ghosting", "hotReload", "lowercaseMode",
-  "manualNumbering",
-  "reverseYAxis", "showScanlines", "siriusJoyport",
-  "tiltSensorJoystick", "touchJoystick", "useOpenAppleKey"]
 
 export const PREFERENCES_RESET_EVENT = "apple2ts-preferences-reset"
 
@@ -98,21 +91,24 @@ export const setPreferenceRetroSkin = (skin: RETRO_SKIN = RETRO_SKIN.APPLE_IIE) 
   }
 }
 
-type BooleanKeys = typeof booleanUIKeys[number]
+type BooleanKeys = typeof initialBooleanUIKeys[number]
 
 export const setPreferenceBoolean = (
   key: BooleanKeys,
   value: boolean,
   origin: SettingsChangeOrigin = "external",
 ) => {
-  if (value) {
+  // Make sure we have the correct "sign" for the boolean key
+  if (isDefaultTrueBooleanKey(key) ? !value : value) {
     localStorage.setItem(key, JSON.stringify(value))
   } else {
     localStorage.removeItem(key)
   }
   setUIStateBoolean(key as BooleanKeyOf<UIState>, value)
+  if (key === "debugMode") passSetShowDebugTab(value)
+  if (key === "reverseYAxis") passReverseYAxis(value)
   if (key === "siriusJoyport") passSiriusJoyport(value)
-  const controlId = booleanControlIds[key]
+    const controlId = booleanControlIds[key]
   if (controlId) notifySettingsChanged([controlId], origin)
 }
 
@@ -125,7 +121,7 @@ export const getPreferenceBoolean = (key: BooleanKeys): boolean => {
       localStorage.removeItem(key)
     }
   }
-  return false
+  return isDefaultTrueBooleanKey(key) ? true : false
 }
 
 export const setPreferenceBasicProgram = (program: string | null) => {
@@ -446,7 +442,7 @@ export const loadPreferences = () => {
     }
   }
 
-  booleanUIKeys.forEach(key => {
+  initialBooleanUIKeys.forEach(key => {
     const item = localStorage.getItem(key)
     if (item) {
       try {
@@ -559,9 +555,9 @@ export const loadPreferences = () => {
 }
 
 export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
-  booleanUIKeys.forEach(key => {
+  initialBooleanUIKeys.forEach(key => {
     localStorage.removeItem(key)
-    setUIStateBoolean(key, false)
+    setUIStateBoolean(key, isDefaultTrueBooleanKey(key) ? true : false)
   })
   // Extra processing for certain boolean prefs
   passReverseYAxis(false)

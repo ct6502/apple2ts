@@ -164,7 +164,7 @@ const ConfigButtons = (props: DisplayProps) => {
       </>
       }
 
-      {!isTouchDevice && <GamepadConfig />}
+      <GamepadConfig />
     </div>
 
     {!isGameMode() && <AudioConfig {...props} />}

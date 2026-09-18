@@ -12,20 +12,25 @@ import { ControlRegistry } from "../controls/controlregistry"
 import { controlsToPopupItems } from "../controls/controlpopup"
 import { controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
+const isTouchDevice = "ontouchstart" in document.documentElement
+
 const joystickSettings = [
-  ["keyboard.joystick.arrowKeys", "arrowKeysAsJoystick"],
-  ["keyboard.joystick.reverseYAxis", "reverseYAxis"],
-  ["keyboard.joystick.siriusJoyport", "siriusJoyport"],
-  ["keyboard.joystick.touchJoystick", "touchJoystick"],
-  ["keyboard.joystick.tiltSensorJoystick", "tiltSensorJoystick"]
+  ["keyboard.joystick.arrowKeys", "arrowKeysAsJoystick", true],
+  ["keyboard.joystick.reverseYAxis", "reverseYAxis", true],
+  ["keyboard.joystick.siriusJoyport", "siriusJoyport", true],
+  ["keyboard.joystick.touchJoystick", "touchJoystick", isTouchDevice],
+  ["keyboard.joystick.tiltSensorJoystick", "tiltSensorJoystick", isTouchDevice]
 ] as const
 
 const gamepadBindings: RetroControlBindings = Object.fromEntries(
-  joystickSettings.map(([id, preference]) => [id, toggleBinding({
+  joystickSettings.map(([id, preference, selectable]) => [id, {...toggleBinding({
     enabled: () => getPreferenceBoolean(preference),
     setEnabled: (context, enabled) =>
       setPreferenceBoolean(preference, enabled, context.settingsOrigin),
-  })]),
+  }),
+  selectable: selectable,
+  },
+  ]),
 )
 
 export const retroGamepadControls = controlsFromJson("gamepad", gamepadBindings)

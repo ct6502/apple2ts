@@ -4,7 +4,8 @@ import { handleGetMachineName } from "./main2worker"
 export const INFO_PANEL_COLLAPSED_EVENT = "apple2ts-info-panel-collapsed"
 export const DISK_LOAD_SUCCESS_EVENT = "apple2ts-disk-load-success"
 
-const uiState: UIState = {
+// Unmodifiable initial UI state
+const initialUIState: Readonly<UIState> = Object.freeze({
   appMode: "",
   arrowKeysAsJoystick: true,
   manualNumbering: true,
@@ -24,28 +25,34 @@ const uiState: UIState = {
   tabView: 0,
   theme: UI_THEME.CLASSIC,
   tiltSensorJoystick: false,
-  touchJoystick: false,
+  touchJoystick: true,
   useOpenAppleKey: false,
-}
+})
+
+// This is the copy that gets modified during runtime
+const uiState: UIState = { ...initialUIState }
 
 export const getUIState = () => {
   return {...uiState}
 }
 
-export const setUIState = (state: UIState) => {
-  uiState.appMode = state?.appMode ?? ""
-  uiState.arrowKeysAsJoystick = state?.arrowKeysAsJoystick ?? false
-  uiState.lowercaseMode = state?.lowercaseMode ?? false
-  uiState.colorMode = state?.colorMode ?? COLOR_MODE.COLOR
-  uiState.crtDistortion = state?.crtDistortion ?? false
-  uiState.helpText = state?.helpText ?? ""
-  uiState.hotReload = state?.hotReload ?? false
-  uiState.infoPanel = state?.infoPanel ?? false
-  uiState.monitorMode = state?.monitorMode ?? MONITOR_MODE.NTSC
-  uiState.showScanlines = state?.showScanlines ?? false
-  uiState.theme = state?.theme ?? UI_THEME.CLASSIC
-  uiState.touchJoystick = state?.touchJoystick ?? false
-  uiState.useOpenAppleKey = state?.useOpenAppleKey ?? false
+// Auto generate the list of boolean keys
+export const initialBooleanUIKeys: BooleanKeyOf<UIState>[] = Object.keys(initialUIState).filter(key =>
+  typeof initialUIState[key as keyof UIState] === "boolean"
+) as BooleanKeyOf<UIState>[]
+
+// Auto generate the list of "initial true" boolean keys
+export const isDefaultTrueBooleanKey = (key: string) => {
+  return Object.prototype.hasOwnProperty.call(initialUIState, key) &&
+    initialUIState[key as keyof UIState] === true
+}
+
+export const setUIState = (state: Partial<UIState> = {}) => {
+  for (const key of Object.keys(uiState) as Array<keyof UIState>) {
+    if (key in state) {
+      Object.assign(uiState, { [key]: state[key] })
+    }
+  }
 }
 
 //------------------------------------------------------
