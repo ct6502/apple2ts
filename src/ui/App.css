@@ -37,6 +37,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background-color);
+  color: var(--text-color);
   margin: 10px;
   /* Subtract left + right margin */
   min-width: calc(100vw - 20px);
@@ -44,6 +45,7 @@ body {
 
 body.dark-mode {
   background-color: var(--background-color-dark);
+  color: var(--text-color-dark);
 }
 
 a:link,

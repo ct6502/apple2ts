@@ -214,6 +214,7 @@ let currentSlotConfig: SlotConfig = { ...DEFAULT_SLOT_CONFIG }
 export const doSetSlotConfig = (config: SlotConfig) => {
   currentSlotConfig = { ...config }
   didConfiguration = false
+  configureMachine()
   updateExternalMachineState()
 }
 
@@ -531,7 +532,18 @@ export const doSetVeraSlot = (slot: VERA_SLOT) => {
   if (slot !== 0 && slot !== 2 && slot !== 4) return
   if (veraSlot === slot) return
   veraSlot = slot
+  if (slot === 2) {
+    currentSlotConfig[2] = "vera"
+    if (currentSlotConfig[4] === "vera") currentSlotConfig[4] = "none"
+  } else if (slot === 4) {
+    currentSlotConfig[4] = "vera"
+    if (currentSlotConfig[2] === "vera") currentSlotConfig[2] = "none"
+  } else {
+    if (currentSlotConfig[2] === "vera") currentSlotConfig[2] = "none"
+    if (currentSlotConfig[4] === "vera") currentSlotConfig[4] = "none"
+  }
   didConfiguration = false
+  configureMachine()
   updateExternalMachineState()
 }
 

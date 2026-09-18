@@ -486,13 +486,14 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     menuStackRef.current = manualMenuStack
   }, [manualMenuStack])
   useEffect(() => () => setDisplayOverride(null), [])
-  const close = () => {
+  const close = useCallback(() => {
     const frame = menuStackRef.current.at(-1)
     menuStackRef.current = []
     leaveMenuFrame(frame)
     setCanvasRenderState("native")
     setIsOpen(false)
-  }
+    displayProps.updateDisplay()
+  }, [displayProps])
   const {
     activeVtocCheckKey,
     authRefresh,
@@ -817,7 +818,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     const handleDiskLoadSuccess = () => close()
     window.addEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
     return () => window.removeEventListener(DISK_LOAD_SUCCESS_EVENT, handleDiskLoadSuccess)
-  }, [])
+  }, [close])
 
   useEffect(() => {
     const handleBookmarksChanged = () => {
@@ -861,7 +862,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     }
     window.addEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
     return () => window.removeEventListener(OPEN_RETRO_CONTROL_PANEL_EVENT, handleOpen)
-  }, [isOpen, menuStack, open])
+  }, [close, isOpen, menuStack, open])
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -1150,6 +1151,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     window.addEventListener("keydown", handleKeyDown, true)
     return () => window.removeEventListener("keydown", handleKeyDown, true)
   }, [
+    close,
     currentFrame,
     currentMenu,
     hasOpenDialog,
