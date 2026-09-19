@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-09-19 18:05+0000\n"
+"PO-Revision-Date: 2026-09-19 18:06+0000\n"
 "Last-Translator: Daniel Nylander <yeagersthlm@gmail.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/apple2ts/browser-"
 "emulator/sv/>\n"
@@ -954,32 +954,26 @@ msgstr ""
 "Du kan också söka efter hexadecimala värden eller ASCII-strängar och spara "
 "minnet till en fil."
 
-#, fuzzy
 msgctxt "tour.back"
 msgid "Back"
 msgstr "Tillbaka"
 
-#, fuzzy
 msgctxt "tour.close"
 msgid "Close"
 msgstr "Stäng"
 
-#, fuzzy
 msgctxt "tour.last"
 msgid "Finish"
 msgstr "Slutför"
 
-#, fuzzy
 msgctxt "tour.next"
 msgid "Next"
 msgstr "Nästa"
 
-#, fuzzy
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
-msgstr "Nästa (Steg {step} av {steps})"
+msgstr "Nästa (steg {step} av {steps})"
 
-#, fuzzy
 msgctxt "tour.skip"
 msgid "Close"
 msgstr "Stäng"
@@ -1004,78 +998,65 @@ msgctxt "tour.debugLabel"
 msgid "Guided Tours: Debug"
 msgstr "Guidad tur: Felsökning"
 
-#, fuzzy
 msgctxt "disk.drive1"
 msgid "Drive 1"
 msgstr "Enhet 1"
 
-#, fuzzy
 msgctxt "disk.drive2"
 msgid "Drive 2"
 msgstr "Enhet 2"
 
-#, fuzzy
 msgctxt "disk.hardDisk"
 msgid "Hard Disk"
 msgstr "Hårddisk"
 
-#, fuzzy
 msgctxt "disk.eject"
 msgid "Eject Disk"
-msgstr "Mata Ut Disk"
+msgstr "Mata ut disk"
 
-#, fuzzy
 msgctxt "disk.insert"
 msgid "Insert Disk"
-msgstr "Sätt In Disk"
+msgstr "Sätt in disk"
 
-#, fuzzy
 msgctxt "disk.writeProtected"
 msgid "Write Protected"
 msgstr "Skrivskyddad"
 
-#, fuzzy
 msgctxt "disk.readWrite"
 msgid "Read/Write"
-msgstr "Läs/Skriv"
+msgstr "Läs/skriv"
 
-#, fuzzy
 msgctxt "disk.empty"
 msgid "Empty"
 msgstr "Tom"
 
-#, fuzzy
 msgctxt "disk.loading"
 msgid "Loading..."
-msgstr "Laddar..."
+msgstr "Läser in…"
 
-#, fuzzy
 msgctxt "disk.selectDisk"
 msgid "Select Disk Image"
-msgstr "Välj Diskavbildning"
+msgstr "Välj diskavbildning"
 
-#, fuzzy
 msgctxt "disk.browse"
 msgid "Browse"
 msgstr "Bläddra"
 
 msgctxt "disk.internetArchive"
 msgid "Internet Archive"
-msgstr ""
+msgstr "Internet Archive"
 
 msgctxt "disk.totalReplay"
 msgid "Total Replay"
-msgstr ""
+msgstr "Total Replay"
 
-#, fuzzy
 msgctxt "disk.newReleases"
 msgid "New Releases"
-msgstr "Nya Versioner"
+msgstr "Nya utgåvor"
 
-#, fuzzy
 msgctxt "disk.writeProtectDisk"
 msgid "Write Protect Disk"
-msgstr "Disk Skrivskydd"
+msgstr "Skrivskydda disk"
 
 msgctxt "disk.saveDiskToDevice"
 msgid "Save Disk"
@@ -1093,39 +1074,33 @@ msgctxt "disk.addToFavorites"
 msgid "Add to Favorites"
 msgstr "Lägg till i Favoriter"
 
-#, fuzzy
 msgctxt "disk.downloadDisk"
 msgid "Download Disk"
-msgstr "Ladda Ner Disk"
+msgstr "Hämta disk"
 
 msgctxt "disk.downloadWoz"
 msgid "Download WOZ Disk Image"
 msgstr ""
 
-#, fuzzy
 msgctxt "disk.downloadAndEjectDisk"
 msgid "Download and Eject Disk"
-msgstr "Ladda Ner och Mata Ut Disk"
+msgstr "Hämta och mata ut disk"
 
-#, fuzzy
 msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
-msgstr "Mata Ut Disk"
+msgstr "Mata ut disk"
 
-#, fuzzy
 msgctxt "disk.saveDiskToOneDrive"
 msgid "Save Disk to OneDrive"
-msgstr "Spara Disk till OneDrive"
+msgstr "Spara disk på OneDrive"
 
-#, fuzzy
 msgctxt "disk.saveDiskToGoogleDrive"
 msgid "Save Disk to Google Drive"
-msgstr "Spara Disk till Google Drive"
+msgstr "Spara disk på Google Drive"
 
-#, fuzzy
 msgctxt "disk.loadDisk"
 msgid "Load Disk"
-msgstr "Ladda disk"
+msgstr "Läs in disk"
 
 msgctxt "disk.loadDiskFrom"
 msgid "Load Disk from"
@@ -1135,20 +1110,17 @@ msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
 msgstr "Ladda Disk från >"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDevice"
 msgid "Load Disk"
-msgstr "Ladda Disk"
+msgstr "Läs in disk"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDeviceReadOnly"
 msgid "Load Disk from Device (Read-Only)"
-msgstr "Ladda Disk från Enhet (Endast Läsning)"
+msgstr "Läs in disk från enhet (skrivskyddat)"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDeviceReadWrite"
 msgid "Load Disk from Device (Read/Write)"
-msgstr "Ladda Disk från Enhet (Läs/Skriv)"
+msgstr "Läs in disk från enhet (läs/skriv)"
 
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
@@ -1166,66 +1138,54 @@ msgctxt "disk.GoogleDrive"
 msgid "Google Drive"
 msgstr ""
 
-#, fuzzy
 msgctxt "disk.loadDiskFromInternetArchive"
 msgid "Load Disk from Internet Archive"
-msgstr "Ladda Disk från Internet Archive"
+msgstr "Läs in disk från Internet Archive"
 
 msgctxt "disk.loadDiskFromDemoZoo"
 msgid "Load Disk from DemoZoo"
-msgstr ""
+msgstr "Läs in disk från DemoZoo"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromOneDrive"
 msgid "Load Disk from OneDrive"
-msgstr "Ladda Disk från OneDrive"
+msgstr "Läs in disk från OneDrive"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
-msgstr "Ladda Disk från Google Drive"
+msgstr "Läs in disk från Google Drive"
 
-#, fuzzy
 msgctxt "disk.syncEveryMinute"
 msgid "Sync Every Minute"
-msgstr "Synkronisera Varje Minut"
+msgstr "Synkronisera varje minut"
 
-#, fuzzy
 msgctxt "disk.syncEvery5Minutes"
 msgid "Sync Every 5 Minutes"
-msgstr "Synkronisera Var 5:e Minut"
+msgstr "Synkronisera var femte minut"
 
-#, fuzzy
 msgctxt "disk.pauseSyncing"
 msgid "Pause Syncing"
-msgstr "Pausa Synkronisering"
+msgstr "Pausa synkronisering"
 
-#, fuzzy
 msgctxt "disk.syncNow"
 msgid "Sync Now"
-msgstr "Synkronisera Nu"
+msgstr "Synkronisera nu"
 
-#, fuzzy
 msgctxt "disk.modified"
 msgid "modified"
-msgstr "modifierad"
+msgstr "ändrad"
 
-#, fuzzy
 msgctxt "disk.synced"
 msgid "Synced"
-msgstr "synkroniserad"
+msgstr "Synkroniserad"
 
-#, fuzzy
 msgctxt "disk.diskImage"
 msgid "Disk Image"
 msgstr "Diskavbildning"
 
-#, fuzzy
 msgctxt "disk.diskDrivesAndDevices"
 msgid "disk drives and devices"
-msgstr "diskstationer och enheter"
+msgstr "diskenheter och enheter"
 
-#, fuzzy
 msgctxt "disk.syncedAt"
 msgid "Synced {{date}}"
 msgstr "Synkroniserad {{date}}"
@@ -1238,31 +1198,26 @@ msgctxt "disk.clickToShow"
 msgid "Click to show"
 msgstr ""
 
-#, fuzzy
 msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image"
-msgstr "Klicka för att ladda diskavbildning"
+msgstr "Klicka för att läsa in diskavbildning"
 
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"
-msgstr ""
+msgstr "Hämtar disk"
 
-#, fuzzy
 msgctxt "disk.clickToRemoveFromDiskCollection"
 msgid "Click to remove from disk collection"
-msgstr "Klicka för att ta bort från disksamling"
+msgstr "Klicka för att ta bort från disksamlingen"
 
-#, fuzzy
 msgctxt "disk.clickToAddToDiskCollection"
 msgid "Click to add to disk collection"
-msgstr "Klicka för att lägga till i disksamling"
+msgstr "Klicka för att lägga till i disksamlingen"
 
-#, fuzzy
 msgctxt "disk.byCreator"
 msgid "by {{creator}}"
 msgstr "av {{creator}}"
 
-#, fuzzy
 msgctxt "disk.clickToViewDetails"
 msgid "Click to view details"
 msgstr "Klicka för att visa detaljer"
@@ -1273,14 +1228,13 @@ msgstr "Apple2TS"
 
 msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
-msgstr ""
+msgstr "Apple IIe-emulator i TypeScript"
 
 #, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
 msgstr "(c) {{year}} Chris Torrence och Apple2TS-bidragsgivarna"
 
-#, fuzzy
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
 msgstr "Kortkommandon"
@@ -1295,68 +1249,58 @@ msgstr ""
 "används som Open Apple. Med Ctrl+0 till Ctrl+5 kan du fortfarande välja "
 "emulatorns hastighet."
 
-#, fuzzy
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr "Diskavbildningar:"
 
-#, fuzzy
 msgctxt "help.urlParameters"
 msgid "Optional URL Parameters"
 msgstr "Valfria URL-parametrar"
 
-#, fuzzy
 msgctxt "help.examples"
 msgid "Examples"
 msgstr "Exempel"
 
-#, fuzzy
 msgctxt "help.mobileInstructions"
 msgid "Mobile platforms:"
 msgstr "Mobila plattformar:"
 
-#, fuzzy
 msgctxt "help.tapScreen"
 msgid "Tap the screen to show the keyboard."
 msgstr "Tryck på skärmen för att visa tangentbordet."
 
-#, fuzzy
 msgctxt "help.arrowKeys"
 msgid ""
 "Press the arrow keys, esc, or tab buttons to send those keys to the emulator."
 msgstr ""
-"Tryck på piltangenterna, esc eller tab-knapparna för att skicka dessa "
-"tangenter till emulatorn."
+"Tryck på piltangenterna, Esc eller Tab för att skicka tangenterna till "
+"emulatorn."
 
-#, fuzzy
 msgctxt "help.ctrlKey"
 msgid ""
 "To send a control character, press the ctrl button once. Then tap the screen "
 "to show the keyboard and press the desired key. The ctrl button will "
 "automatically be released."
 msgstr ""
-"För att skicka ett kontrolltecken, tryck på ctrl-knappen en gång. Tryck "
-"sedan på skärmen för att visa tangentbordet och tryck på önskad tangent. "
-"Ctrl-knappen kommer automatiskt att släppas."
+"Skicka ett kontrolltecken genom att trycka en gång på Ctrl. Tryck sedan på "
+"skärmen för att visa tangentbordet och välj önskad tangent. Ctrl släpps "
+"automatiskt."
 
-#, fuzzy
 msgctxt "help.ctrlLock"
 msgid ""
 "To send multiple control characters, press the ctrl button twice to lock it "
 "on (indicated by a green dot). Then tap the screen to show the keyboard and "
 "press the desired keys. Press the ctrl button again to release it."
 msgstr ""
-"För att skicka flera kontrolltecken, tryck på ctrl-knappen två gånger för "
-"att låsa den (visas med en grön prick). Tryck sedan på skärmen för att visa "
-"tangentbordet och tryck på önskade tangenter. Tryck på ctrl-knappen igen för "
-"att släppa den."
+"Skicka flera kontrolltecken genom att trycka två gånger på Ctrl för att låsa "
+"den (visas med en grön punkt). Tryck sedan på skärmen för att visa "
+"tangentbordet och välj önskade tangenter. Tryck på Ctrl igen för att släppa "
+"den."
 
-#, fuzzy
 msgctxt "help.appleKeys"
 msgid "The open apple and closed apple keys behave the same as the ctrl key."
 msgstr ""
-"Open apple och closed apple tangenterna beter sig på samma sätt som ctrl-"
-"tangenten."
+"Tangenterna Open Apple och Closed Apple fungerar på samma sätt som Ctrl."
 
 msgctxt "help.controlPanelShortcut"
 msgid "SHIFT-ESC: display the Apple2TS control panel"
@@ -1386,16 +1330,15 @@ msgstr ""
 "För skärmtangentbordet, CTRL eller ESC:\n"
 "trycka en gång för att aktivera sedan önskad tangent."
 
-#, fuzzy
 msgctxt "help.urlParametersBody"
 msgid ""
 "For optional URL parameters, append them to the URL after a question mark "
 "(?) and separate multiple parameters with an ampersand (&). Use # to specify "
 "the disk image. See the Link Builder dialog for examples."
 msgstr ""
-"För valfria URL-parametrar, lägg till dem i URL:en efter ett frågetecken (?) "
-"och separera flera parametrar med ett et-tecken (&). Använd # för att ange "
-"skivavbildningen. Se dialogrutan Länkbyggaren för exempel."
+"Lägg till valfria URL-parametrar efter frågetecknet (?) i URL:en och skilj "
+"flera parametrar åt med et-tecknet (&). Använd # för att ange "
+"diskavbildningen. Se dialogrutan Länkbyggare för exempel."
 
 #, fuzzy
 msgctxt "help.exampleLinks.totalReplayDebugging"
@@ -1422,7 +1365,6 @@ msgctxt "help.exampleLinks.binaryHexAddress"
 msgid "Binary File with Hex Address"
 msgstr "Binärfil med Hex-adress"
 
-#, fuzzy
 msgctxt "help.links"
 msgid "Links"
 msgstr "Länkar"
@@ -1442,78 +1384,65 @@ msgctxt "help.resourceLinks.silverCjkFont"
 msgid "Silver CJK Pixel Font"
 msgstr "Silver CJK Pixel Font"
 
-#, fuzzy
 msgctxt "messages.loading"
 msgid "Loading..."
-msgstr "Laddar..."
+msgstr "Läser in…"
 
 msgctxt "messages.fetchingCloudData"
 msgid "Fetching cloud data"
 msgstr ""
 
-#, fuzzy
 msgctxt "messages.error"
 msgid "Error"
 msgstr "Fel"
 
-#, fuzzy
 msgctxt "messages.success"
 msgid "Success"
-msgstr "Framgång"
+msgstr "Lyckades"
 
-#, fuzzy
 msgctxt "messages.confirm"
 msgid "Confirm"
 msgstr "Bekräfta"
 
-#, fuzzy
 msgctxt "messages.cancel"
 msgid "Cancel"
 msgstr "Avbryt"
 
 msgctxt "messages.ok"
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
-#, fuzzy
 msgctxt "messages.on"
 msgid "on"
 msgstr "på"
 
-#, fuzzy
 msgctxt "messages.off"
 msgid "off"
 msgstr "av"
 
-#, fuzzy
 msgctxt "messages.confirmTheme"
 msgid "Reload the emulator and apply this theme now?"
-msgstr "Ladda om emulatorn och tillämpa detta tema nu?"
+msgstr "Läs in emulatorn på nytt och tillämpa det här temat nu?"
 
-#, fuzzy
 msgctxt "messages.confirmReset"
 msgid "Reset all settings to default values?"
 msgstr "Återställa alla inställningar till standardvärden?"
 
-#, fuzzy
 msgctxt "messages.fileNotFound"
 msgid "File not found"
-msgstr "Fil hittades inte"
+msgstr "Filen hittades inte"
 
-#, fuzzy
 msgctxt "messages.invalidFile"
 msgid "Invalid file format"
 msgstr "Ogiltigt filformat"
 
-#, fuzzy
 msgctxt "messages.diskInserted"
 msgid "Disk inserted"
-msgstr "Disk insatt"
+msgstr "Disk har satts in"
 
-#, fuzzy
 msgctxt "messages.diskEjected"
 msgid "Disk ejected"
-msgstr "Disk utmatad"
+msgstr "Disk har matats ut"
 
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
