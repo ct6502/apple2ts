@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-09-19 18:07+0000\n"
+"PO-Revision-Date: 2026-09-19 18:10+0000\n"
 "Last-Translator: Daniel Nylander <yeagersthlm@gmail.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/apple2ts/browser-"
 "emulator/sv/>\n"
@@ -1775,25 +1775,21 @@ msgctxt "debugControls.goForwardInTime"
 msgid "Go Forward in Time"
 msgstr "Gå framåt i tiden"
 
-#, fuzzy
 msgctxt "debugControls.saveStateWithSnapshots"
 msgid "Save State with Snapshots"
-msgstr "Spara Tillstånd med Ögonblicksbilder"
+msgstr "Spara tillstånd med ögonblicksbilder"
 
-#, fuzzy
 msgctxt "debugControls.resume"
 msgid "Resume"
 msgstr "Återuppta"
 
-#, fuzzy
 msgctxt "debugControls.pause"
 msgid "Pause"
 msgstr "Pausa"
 
-#, fuzzy
 msgctxt "debugControls.hotReloadEnabled"
 msgid "Hot Reload Enabled"
-msgstr "Hot Reload Aktiverad"
+msgstr "Snabb omläsning aktiverad"
 
 #, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
@@ -1802,104 +1798,97 @@ msgstr "Hot Reload Inaktiverad"
 
 msgctxt "debugControls.trace"
 msgid "Trace"
-msgstr ""
+msgstr "Spårning"
 
-#, fuzzy
 msgctxt "debugControls.tracing"
 msgid "Tracing"
-msgstr "Tracing pågår"
+msgstr "Spårning pågår"
 
-#, fuzzy
 msgctxt "debugControls.downloadTraceLog"
 msgid "Download Trace Log"
-msgstr "Ladda ner trace-logg"
+msgstr "Hämta spårningslogg"
 
-#, fuzzy
 msgctxt "fullscreen.fullScreen"
 msgid "Full Screen"
 msgstr "Helskärm"
 
-#, fuzzy
 msgctxt "internetArchive.searchPlaceholder"
 msgid "Type the name of a software title or click one of the categories above"
 msgstr ""
-"Skriv in namnet på en programvarutitel eller klicka på en av kategorierna "
-"ovan"
+"Skriv namnet på en programtitel eller klicka på någon av kategorierna ovan"
 
-#, fuzzy
 msgctxt "internetArchive.go"
 msgid "GO"
 msgstr "SÖK"
 
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
-msgstr ""
+msgstr "Sök i DemoZoo (titel, upphovsperson)…"
 
 msgctxt "demoZoo.go"
 msgid "GO"
-msgstr ""
+msgstr "SÖK"
 
 msgctxt "demoZoo.all"
 msgid "All"
-msgstr ""
+msgstr "Alla"
 
 msgctxt "demoZoo.demo"
 msgid "Demo"
-msgstr ""
+msgstr "Demo"
 
 msgctxt "demoZoo.intro"
 msgid "Intro"
-msgstr ""
+msgstr "Intro"
 
 msgctxt "demoZoo.cracktro"
 msgid "Cracktro"
-msgstr ""
+msgstr "Cracktro"
 
 msgctxt "demoZoo.music"
 msgid "Music"
-msgstr ""
+msgstr "Musik"
 
 msgctxt "demoZoo.previous"
 msgid "Previous"
-msgstr ""
+msgstr "Föregående"
 
 msgctxt "demoZoo.next"
 msgid "Next"
-msgstr ""
+msgstr "Nästa"
 
 msgctxt "demoZoo.firstPage"
 msgid "First page"
-msgstr ""
+msgstr "Första sidan"
 
 msgctxt "demoZoo.lastPage"
 msgid "Last page"
-msgstr ""
+msgstr "Sista sidan"
 
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
-msgstr ""
+msgstr "Sidnummer"
 
 msgctxt "demoZoo.pageOf"
 msgid "Page {{page}} of {{pages}}"
-msgstr ""
+msgstr "Sida {{page}} av {{pages}}"
 
 msgctxt "demoZoo.noProductions"
 msgid "No DemoZoo productions found."
-msgstr ""
+msgstr "Inga DemoZoo-produktioner hittades."
 
 msgctxt "demoZoo.youtubeOnly"
 msgid "This production only has a YouTube video link available:"
-msgstr ""
+msgstr "Den här produktionen har bara en YouTube-videolänk:"
 
 msgctxt "demoZoo.externalOnly"
 msgid "This production only has an external DemoZoo link available:"
-msgstr ""
+msgstr "Den här produktionen har bara en extern DemoZoo-länk:"
 
 msgctxt "demoZoo.openInNewTab"
 msgid "Open in New Tab"
-msgstr ""
+msgstr "Öppna i ny flik"
 
-#, fuzzy
 msgctxt "basic.newProgram"
 msgid "New Program"
 msgstr "Nytt program"
@@ -1909,140 +1898,116 @@ msgid ""
 "This will clear the current program. You will lose any unsaved changes. Are "
 "you sure?"
 msgstr ""
+"Detta rensar det aktuella programmet. Alla osparade ändringar går förlorade. "
+"Är du säker?"
 
-#, fuzzy
 msgctxt "basic.runFromBeginning"
 msgid "Run from Beginning"
 msgstr "Kör från början"
 
-#, fuzzy
 msgctxt "basic.break"
 msgid "Break"
-msgstr "Avbryt"
+msgstr "Avbrott"
 
-#, fuzzy
 msgctxt "basic.continueRunning"
 msgid "Continue Running"
 msgstr "Fortsätt köra"
 
-#, fuzzy
 msgctxt "basic.stepProgram"
 msgid "Step Program"
-msgstr "Stega i programmet"
+msgstr "Stega programmet"
 
-#, fuzzy
 msgctxt "basic.resumeOutput"
 msgid "Resume Output"
 msgstr "Återuppta utdata"
 
-#, fuzzy
 msgctxt "basic.freezeOutput"
 msgid "Freeze Output"
 msgstr "Frys utdata"
 
-#, fuzzy
 msgctxt "basic.importProgram"
 msgid "Import Program..."
-msgstr "Importera program..."
+msgstr "Importera program…"
 
-#, fuzzy
 msgctxt "basic.exportProgram"
 msgid "Export Program..."
-msgstr "Exportera program..."
+msgstr "Exportera program…"
 
-#, fuzzy
 msgctxt "basic.renumberProgram"
 msgid "Renumber Program"
 msgstr "Numrera om program"
 
-#, fuzzy
 msgctxt "basic.rebuildProgram"
 msgid "Rebuild Program from Memory"
-msgstr "Återställ program från minnet"
+msgstr "Bygg om program från minnet"
 
-#, fuzzy
 msgctxt "basic.displaySettings"
 msgid "Display Settings"
 msgstr "Skärminställningar"
 
-#, fuzzy
 msgctxt "basic.autoLineNumbering"
 msgid "Auto Line Numbering"
 msgstr "Automatisk radnumrering"
 
-#, fuzzy
 msgctxt "basic.capitalizeKeywords"
 msgid "Capitalize Keywords"
 msgstr "Skriv nyckelord med versaler"
 
-#, fuzzy
 msgctxt "basic.rebuildWarning"
 msgid ""
 "This will replace the current program with a version rebuilt from the Apple "
 "II memory. You will lose any unsaved changes. Are you sure?"
 msgstr ""
-"Detta kommer att ersätta det aktuella programmet med en version återställd "
-"från Apple II-minnet. Du kommer att förlora alla eventuella osparade "
-"ändringar. Är du säker?"
+"Detta ersätter det aktuella programmet med en version som byggts om från "
+"Apple II-minnet. Alla osparade ändringar går förlorade. Är du säker?"
 
-#, fuzzy
 msgctxt "basic.variable"
 msgid "Variable"
 msgstr "Variabel"
 
-#, fuzzy
 msgctxt "basic.value"
 msgid "Value"
 msgstr "Värde"
 
-#, fuzzy
 msgctxt "expectin.runScript"
 msgid "Run Script"
 msgstr "Kör skript"
 
-#, fuzzy
 msgctxt "expectin.stopScript"
 msgid "Stop Script"
 msgstr "Stoppa skript"
 
-#, fuzzy
 msgctxt "saveDisassembly.title"
 msgid "Save Disassembly"
-msgstr "Spara deassemblering"
+msgstr "Spara avassemblering"
 
-#, fuzzy
 msgctxt "saveDisassembly.startAddress"
 msgid "Start address $"
 msgstr "Startadress $"
 
-#, fuzzy
 msgctxt "saveDisassembly.endAddress"
 msgid "End address $"
 msgstr "Slutadress $"
 
-#, fuzzy
 msgctxt "saveDisassembly.includeLabels"
 msgid "Include symbol labels"
-msgstr "Inkludera symboliketiketter"
+msgstr "Inkludera symbolbeteckningar"
 
-#, fuzzy
 msgctxt "saveDisassembly.separatorLines"
 msgid "Separator lines after JMP, RTS"
 msgstr "Skiljelinjer efter JMP, RTS"
 
-#, fuzzy
 msgctxt "gamepad.useArrowKeys"
 msgid "Use Arrow Keys as Joystick"
-msgstr "Piltangenter som joystick"
+msgstr "Använd piltangenter som styrspak"
 
-#, fuzzy
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Sirius Joyport-läge"
 
 msgctxt "gamepad.reverseYAxis"
 msgid "Reverse Y-Axis for Joystick"
-msgstr ""
+msgstr "Invertera Y-axeln för styrspaken"
 
 msgctxt "gamepad.touchJoystick"
 msgid "Touch Screen Joystick"
@@ -2052,47 +2017,45 @@ msgctxt "gamepad.tiltSensorJoystick"
 msgid "Use Tilt Sensor as Joystick"
 msgstr ""
 
-#, fuzzy
 msgctxt "traceSettings.title"
 msgid "Trace Settings"
 msgstr "Spårningsinställningar"
 
 msgctxt "traceSettings.numLines"
 msgid "Number of lines to keep:"
-msgstr ""
+msgstr "Antal rader att behålla:"
 
 msgctxt "traceSettings.rangeWarning"
 msgid "Must be between 100 and 100000"
-msgstr ""
+msgstr "Måste vara mellan 100 och 100000"
 
 msgctxt "traceSettings.collapseLoops"
 msgid "Find repeating lines and collapse loops"
-msgstr ""
+msgstr "Hitta upprepade rader och fäll ihop slingor"
 
 msgctxt "traceSettings.ignoreRegisters"
 msgid "Ignore register values when finding repeating lines"
-msgstr ""
+msgstr "Ignorera registervärden när upprepade rader hittas"
 
-#, fuzzy
 msgctxt "traceSettings.settings"
 msgid "Settings"
 msgstr "Inställningar"
 
 msgctxt "keyboardControl.hideKeyboard"
 msgid "Hide Keyboard"
-msgstr ""
+msgstr "Dölj tangentbord"
 
 msgctxt "keyboardControl.showKeyboard"
 msgid "Show Keyboard"
-msgstr ""
+msgstr "Visa tangentbord"
 
 msgctxt "linkBuilder.title"
 msgid "Link Builder"
-msgstr ""
+msgstr "Länkbyggare"
 
 msgctxt "linkBuilder.buttonTitle"
 msgid "Link Builder"
-msgstr ""
+msgstr "Länkbyggare"
 
 msgctxt "linkBuilder.userInterface"
 msgid "User interface:"
@@ -2120,11 +2083,11 @@ msgstr ""
 
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
-msgstr ""
+msgstr "Visa felsökningsflik"
 
 msgctxt "linkBuilder.sound"
 msgid "Sound"
-msgstr ""
+msgstr "Ljud"
 
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
@@ -2132,15 +2095,15 @@ msgstr ""
 
 msgctxt "linkBuilder.loadDiskImage"
 msgid "Load Disk Image"
-msgstr ""
+msgstr "Läs in diskavbildning"
 
 msgctxt "linkBuilder.loadBasicProgram"
 msgid "Load BASIC Program"
-msgstr ""
+msgstr "Läs in BASIC-program"
 
 msgctxt "linkBuilder.loadHexCode"
 msgid "Load Hex Code"
-msgstr ""
+msgstr "Läs in hexkod"
 
 msgctxt "linkBuilder.diskImageToLoad"
 msgid "Disk image to load on startup:"
@@ -2148,7 +2111,7 @@ msgstr ""
 
 msgctxt "linkBuilder.customDiskUrl"
 msgid "Custom disk image URL:"
-msgstr ""
+msgstr "Anpassad URL för diskavbildning:"
 
 msgctxt "linkBuilder.textToType"
 msgid "Text to type after loading disk:"
@@ -2156,107 +2119,107 @@ msgstr ""
 
 msgctxt "linkBuilder.enterTextPlaceholder"
 msgid "Enter Text or BASIC code here"
-msgstr ""
+msgstr "Ange text eller BASIC-kod här"
 
 msgctxt "linkBuilder.runBasicAfterLoading"
 msgid "Run BASIC program after loading"
-msgstr ""
+msgstr "Kör BASIC-programmet efter inläsning"
 
 msgctxt "linkBuilder.enterHexPlaceholder"
 msgid "Enter hexadecimal code here, e.g. A9 01 8D 00 03"
-msgstr ""
+msgstr "Ange hexadecimal kod här, t.ex. A9 01 8D 00 03"
 
 msgctxt "linkBuilder.hexLoadAddress"
 msgid "Hex load address: $"
-msgstr ""
+msgstr "Hexadecimal inläsningsadress: $"
 
 msgctxt "linkBuilder.runHexAfterLoading"
 msgid "Run Hex program after loading"
-msgstr ""
+msgstr "Kör hexprogrammet efter inläsning"
 
 msgctxt "linkBuilder.finalUrl"
 msgid "Final URL:"
-msgstr ""
+msgstr "Slutlig URL:"
 
 msgctxt "linkBuilder.copyToClipboard"
 msgid "Copy to Clipboard"
-msgstr ""
+msgstr "Kopiera till urklipp"
 
 msgctxt "linkBuilder.tryIt"
 msgid "Try It"
-msgstr ""
+msgstr "Prova"
 
 msgctxt "linkBuilder.reset"
 msgid "Reset"
-msgstr ""
+msgstr "Återställ"
 
 msgctxt "linkBuilder.close"
 msgid "Close"
-msgstr ""
+msgstr "Stäng"
 
 msgctxt "linkBuilder.customDiskUrlOption"
 msgid "Custom URL"
-msgstr ""
+msgstr "Anpassad URL"
 
 msgctxt "linkBuilder.gameModes.normal"
 msgid "Normal"
-msgstr ""
+msgstr "Normal"
 
 msgctxt "linkBuilder.gameModes.game"
 msgid "Game (no drives or tabs)"
-msgstr ""
+msgstr "Spel (inga enheter eller flikar)"
 
 msgctxt "linkBuilder.gameModes.embed"
 msgid "Embed (hide all controls)"
-msgstr ""
+msgstr "Bädda in (dölj alla reglage)"
 
 msgctxt "linkBuilder.colorNames.color"
 msgid "Color"
-msgstr ""
+msgstr "Färg"
 
 msgctxt "linkBuilder.colorNames.nofringe"
 msgid "Color (no fringing)"
-msgstr ""
+msgstr "Färg (utan fransar)"
 
 msgctxt "linkBuilder.colorNames.green"
 msgid "Green Screen"
-msgstr ""
+msgstr "Grön skärm"
 
 msgctxt "linkBuilder.colorNames.amber"
 msgid "Amber Screen"
-msgstr ""
+msgstr "Bärnstensskärm"
 
 msgctxt "linkBuilder.colorNames.white"
 msgid "White Screen"
-msgstr ""
+msgstr "Vit skärm"
 
 msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
-msgstr ""
+msgstr "Inverterat vitt"
 
 msgctxt "linkBuilder.speedNames.snail"
 msgid "Snail"
-msgstr ""
+msgstr "Snigel"
 
 msgctxt "linkBuilder.speedNames.slow"
 msgid "Slow"
-msgstr ""
+msgstr "Långsam"
 
 msgctxt "linkBuilder.speedNames.normal"
 msgid "1 MHz (default)"
-msgstr ""
+msgstr "1 MHz (standard)"
 
 msgctxt "linkBuilder.speedNames.two"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 MHz"
 
 msgctxt "linkBuilder.speedNames.three"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 MHz"
 
 msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
-msgstr ""
+msgstr "4 MHz"
 
 #, fuzzy
 #| msgid "Warp"
@@ -2266,27 +2229,27 @@ msgstr "Löjlig"
 
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"
-msgstr ""
+msgstr "Apple IIe utökad"
 
 msgctxt "linkBuilder.machines.unenhanced"
 msgid "Apple IIe unenhanced"
-msgstr ""
+msgstr "Apple IIe utan utökning"
 
 msgctxt "linkBuilder.machines.apple2p"
 msgid "Apple II+"
-msgstr ""
+msgstr "Apple II+"
 
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
-msgstr ""
+msgstr "Klassisk"
 
 msgctxt "linkBuilder.themes.dark"
 msgid "Dark"
-msgstr ""
+msgstr "Mörk"
 
 msgctxt "linkBuilder.themes.minimal"
 msgid "Minimal"
-msgstr ""
+msgstr "Minimal"
 
 msgctxt "linkBuilder.ramDiskSizes.512"
 msgid "512"
@@ -2306,7 +2269,7 @@ msgstr "8192"
 
 msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
-msgstr ""
+msgstr "64 (standard)"
 
 msgctxt "linkBuilder.slots.configure"
 msgid "Configure slot cards"
@@ -2322,105 +2285,107 @@ msgstr "Ingen (tom)"
 
 msgctxt "agent.tabTitle"
 msgid "Agent"
-msgstr ""
+msgstr "Agent"
 
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
-msgstr ""
+msgstr "🤖 Konfigurera AI-agent"
 
 msgctxt "agent.setupInstruction"
 msgid "Click the gear icon below to configure your AI assistant."
-msgstr ""
+msgstr "Klicka på kugghjulsikonen nedan för att konfigurera din AI-assistent."
 
 msgctxt "agent.welcomeTitle"
 msgid "Welcome to the Apple II assistant! I can help you with:"
-msgstr ""
+msgstr "Välkommen till Apple II-assistenten! Jag kan hjälpa dig med:"
 
 msgctxt "agent.welcomeItem1"
 msgid "Inspecting CPU registers and memory"
-msgstr ""
+msgstr "Kontroll av CPU-register och minne"
 
 msgctxt "agent.welcomeItem2"
 msgid "Controlling execution (boot, reset, step, breakpoints)"
-msgstr ""
+msgstr "Styrning av körning (start, återställning, stegning, brytpunkter)"
 
 msgctxt "agent.welcomeItem3"
 msgid "Loading programs and managing disks"
-msgstr ""
+msgstr "Inläsning av program och hantering av diskar"
 
 msgctxt "agent.welcomeItem4"
 msgid "Debugging 6502 assembly code"
-msgstr ""
+msgstr "Felsökning av 6502-assemblerkod"
 
 msgctxt "agent.welcomeItem5"
 msgid "Reading screen content and system state"
-msgstr ""
+msgstr "Läsning av skärminnehåll och systemtillstånd"
 
 msgctxt "agent.welcomePrompt"
 msgid "Just ask me anything!"
-msgstr ""
+msgstr "Fråga mig vad som helst!"
 
 msgctxt "agent.userRole"
 msgid "You"
-msgstr ""
+msgstr "Du"
 
 msgctxt "agent.assistantRole"
 msgid "🤖 Assistant"
-msgstr ""
+msgstr "🤖 Assistent"
 
 msgctxt "agent.inputPlaceholder"
 msgid ""
 "Ask me anything about the Apple II emulator... (Press Enter to send, Shift"
 "+Enter for new line)"
 msgstr ""
+"Fråga mig vad som helst om Apple II-emulatorn… (tryck på Retur för att "
+"skicka, Skift+Retur för ny rad)"
 
 msgctxt "agent.stop"
 msgid "Stop"
-msgstr ""
+msgstr "Stoppa"
 
 msgctxt "agent.send"
 msgid "Send"
-msgstr ""
+msgstr "Skicka"
 
 msgctxt "agent.changeConfiguration"
 msgid "Change configuration"
-msgstr ""
+msgstr "Ändra konfiguration"
 
 msgctxt "agent.processing"
 msgid "Processing..."
-msgstr ""
+msgstr "Bearbetar…"
 
 msgctxt "agent.tokens"
 msgid "• {{input}} in / {{output}} out"
-msgstr ""
+msgstr "• {{input}} in / {{output}} ut"
 
 msgctxt "agent.configTitle"
 msgid "Configure AI Agent"
-msgstr ""
+msgstr "Konfigurera AI-agent"
 
 msgctxt "agent.provider"
 msgid "Provider:"
-msgstr ""
+msgstr "Leverantör:"
 
 msgctxt "agent.model"
 msgid "Model:"
-msgstr ""
+msgstr "Modell:"
 
 msgctxt "agent.apiKey"
 msgid "API Key:"
-msgstr ""
+msgstr "API-nyckel:"
 
 msgctxt "agent.ollamaUrl"
 msgid "Ollama URL:"
-msgstr ""
+msgstr "Ollama-URL:"
 
 msgctxt "agent.save"
 msgid "Save"
-msgstr ""
+msgstr "Spara"
 
 msgctxt "agent.clear"
 msgid "Clear"
-msgstr ""
+msgstr "Rensa"
 
 msgctxt "agent.storageWarning"
 msgid ""
