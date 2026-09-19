@@ -1,9 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-08-25 03:05+0000\n"
-"Last-Translator: GitHub webhook <noreply-webhook-github-integration@weblate."
-"org>\n"
+"PO-Revision-Date: 2026-09-19 18:01+0000\n"
+"Last-Translator: Daniel Nylander <yeagersthlm@gmail.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/apple2ts/browser-"
 "emulator/sv/>\n"
 "Language: sv\n"
@@ -11,67 +10,57 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.9.dev0\n"
+"X-Generator: Weblate 2026.10.dev0\n"
 
-#, fuzzy
 msgctxt "controls.boot"
 msgid "Boot"
 msgstr "Starta"
 
-#, fuzzy
 msgctxt "controls.reset"
 msgid "Reset"
 msgstr "Återställ"
 
-#, fuzzy
 msgctxt "controls.copyScreen"
 msgid "Copy Screen"
-msgstr "Kopiera Skärm"
+msgstr "Kopiera skärm"
 
-#, fuzzy
 msgctxt "controls.copyText"
 msgid "Copy Text"
 msgstr "Kopiera text"
 
-#, fuzzy
 msgctxt "controls.pasteText"
 msgid "Paste Text"
-msgstr "Klistra Text"
+msgstr "Klistra in text"
 
-#, fuzzy
 msgctxt "controls.saveState"
 msgid "Save State"
-msgstr "Spara Tillstånd"
+msgstr "Spara tillstånd"
 
-#, fuzzy
 msgctxt "controls.restoreState"
 msgid "Restore State"
-msgstr "Återställ Tillstånd"
+msgstr "Återställ tillstånd"
 
-#, fuzzy
 msgctxt "controls.toggleSound"
 msgid "Toggle Sound"
-msgstr "Växla Ljud"
+msgstr "Växla ljud"
 
 msgctxt "controls.retrySound"
 msgid "Sound unavailable. Retry sound."
 msgstr ""
 
-#, fuzzy
 msgctxt "controls.settings"
 msgid "Settings"
 msgstr "Inställningar"
 
 msgctxt "controls.debugPanel"
 msgid "Debug Panel"
-msgstr ""
+msgstr "Felsökningspanel"
 
 #, fuzzy
 msgctxt "controls.infoPanel"
 msgid "Info Panel"
 msgstr "Informationspanel"
 
-#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Rapportera ett problem"
@@ -81,17 +70,14 @@ msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Integritetspolicy"
 
-#, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"
-msgstr "Hastighet"
+msgstr "Emulatorhastighet"
 
-#, fuzzy
 msgctxt "config.display"
 msgid "Display Settings"
 msgstr "Skärminställningar"
 
-#, fuzzy
 msgctxt "config.theme"
 msgid "Theme"
 msgstr "Tema"
@@ -100,55 +86,45 @@ msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
 msgstr "Kontrollpanel"
 
-#, fuzzy
 msgctxt "config.resetSettings"
 msgid "Reset All Settings"
-msgstr "Återställ Alla Inställningar"
+msgstr "Återställ alla inställningar"
 
 msgctxt "config.capsLock"
 msgid "Caps Lock"
-msgstr ""
+msgstr "Caps Lock"
 
-#, fuzzy
-#| msgid "Use as Open Apple key"
 msgctxt "config.useOpenApple"
 msgid "Use {{modKey}} key for Open Apple"
-msgstr "Använd {{modKey}}-tangenten för Open Apple"
+msgstr "Använd tangenten {{modKey}} för Open Apple"
 
-#, fuzzy
-#| msgid "Use for keyboard shortcuts"
 msgctxt "config.useShortcuts"
 msgid "Use {{modKey}} key for Keyboard Shortcuts"
-msgstr "Använd {{modKey}}-tangenten för kortkommandon"
+msgstr "Använd tangenten {{modKey}} för kortkommandon"
 
-#, fuzzy
 msgctxt "config.useArrowKeys"
 msgid "Use Arrow Keys as Joystick"
-msgstr "Använd Piltangenter som Joystick"
+msgstr "Använd piltangenter som styrspak"
 
-#, fuzzy
 msgctxt "config.scanlines"
 msgid "CRT Scanlines"
-msgstr "CRT Skanningslinjer"
+msgstr "CRT-skanningslinjer"
 
-#, fuzzy
 msgctxt "config.ghosting"
 msgid "Phosphor Ghosting"
-msgstr "Skärmefterlysning"
+msgstr "Fosforefterlysning"
 
-#, fuzzy
 msgctxt "config.crtDistortion"
 msgid "CRT Distortion"
 msgstr "CRT-förvrängning"
 
-#, fuzzy
 msgctxt "config.joystick"
 msgid "Joystick Configuration"
-msgstr "Joystickkonfiguration"
+msgstr "Styrspakskonfiguration"
 
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
-msgstr ""
+msgstr "Maskinkonfiguration"
 
 msgctxt "machine.slotConfigurator"
 msgid "Slot Configuration"
@@ -156,222 +132,192 @@ msgstr "Kortplatskonfiguration"
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
-msgstr ""
+msgstr "Apple II+"
 
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
-msgstr ""
+msgstr "Apple IIe (utan utökning)"
 
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
-msgstr ""
+msgstr "Apple IIe (utökad)"
 
 msgctxt "machine.ram.64kb_aux"
 msgid "64 KB (AUX)"
-msgstr ""
+msgstr "64 KB (AUX)"
 
 msgctxt "machine.ram.512kb"
 msgid "512 KB"
-msgstr ""
+msgstr "512 KB"
 
 msgctxt "machine.ram.1024kb"
 msgid "1024 KB"
-msgstr ""
+msgstr "1 024 KB"
 
 msgctxt "machine.ram.4mb"
 msgid "4 MB"
-msgstr ""
+msgstr "4 MB"
 
 msgctxt "machine.ram.8mb"
 msgid "8 MB"
-msgstr ""
+msgstr "8 MB"
 
-#, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
-msgstr "Snigelfart (0.1 MHz)"
+msgstr "Snigelhastighet (0,1 MHz)"
 
-#, fuzzy
 msgctxt "speed.slow"
 msgid "Slow Speed (0.5 MHz)"
-msgstr "Långsam (0.5 MHz)"
+msgstr "Långsam hastighet (0,5 MHz)"
 
-#, fuzzy
 msgctxt "speed.normal"
 msgid "Normal Speed (1 MHz)"
-msgstr "Normal (1 MHz)"
+msgstr "Normal hastighet (1 MHz)"
 
 msgctxt "speed.two"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 MHz"
 
 msgctxt "speed.three"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 MHz"
 
-#, fuzzy
 msgctxt "speed.fast"
 msgid "Fast Speed (4 MHz)"
-msgstr "Snabb (4 MHz)"
+msgstr "Snabb hastighet (4 MHz)"
 
 #, fuzzy
 msgctxt "speed.warp"
 msgid "Ludicrous Speed"
 msgstr "Löjlig hastighet"
 
-#, fuzzy
 msgctxt "colors.color"
 msgid "Color"
 msgstr "Färg"
 
-#, fuzzy
 msgctxt "colors.nofringe"
 msgid "Color (no fringe)"
-msgstr "Färg (utan kanter)"
+msgstr "Färg (utan fransar)"
 
-#, fuzzy
 msgctxt "colors.green"
 msgid "Green"
 msgstr "Grön"
 
-#, fuzzy
 msgctxt "colors.amber"
 msgid "Amber"
 msgstr "Bärnsten"
 
-#, fuzzy
 msgctxt "colors.white"
 msgid "Black and White"
-msgstr "Svart och Vit"
+msgstr "Svartvitt"
 
-#, fuzzy
 msgctxt "colors.inverse"
 msgid "Black and White (inverse)"
-msgstr "Svart och Vit (omvänd)"
+msgstr "Svartvitt (inverterat)"
 
-#, fuzzy
 msgctxt "themes.classic"
 msgid "Classic"
 msgstr "Klassisk"
 
-#, fuzzy
 msgctxt "themes.dark"
 msgid "Dark"
 msgstr "Mörk"
 
 msgctxt "themes.minimal"
 msgid "Minimal"
-msgstr ""
+msgstr "Minimal"
 
-#, fuzzy
 msgctxt "debug.helpPanel"
 msgid "Show help panel"
 msgstr "Visa hjälppanel"
 
-#, fuzzy
 msgctxt "debug.debugPanel"
 msgid "Show debugging panel"
-msgstr "Visa debug panel"
+msgstr "Visa felsökningspanel"
 
-#, fuzzy
 msgctxt "debug.expectinPanel"
 msgid "Show Apple exPectin panel"
-msgstr "Visa Apple exPectin panel"
+msgstr "Visa panelen Apple exPectin"
 
-#, fuzzy
 msgctxt "debug.helpTab"
 msgid "Help"
 msgstr "Hjälp"
 
-#, fuzzy
 msgctxt "debug.debugTab"
 msgid "Debugging"
 msgstr "Felsökning"
 
 msgctxt "debug.basicTab"
 msgid "Applesoft BASIC"
-msgstr ""
+msgstr "Applesoft BASIC"
 
 msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
-msgstr ""
+msgstr "Apple exPectin"
 
-#, fuzzy
 msgctxt "debug.breakpoints"
 msgid "Breakpoints"
 msgstr "Brytpunkter"
 
-#, fuzzy
 msgctxt "debug.memory"
 msgid "Memory"
 msgstr "Minne"
 
 msgctxt "debug.stack"
 msgid "Stack"
-msgstr ""
+msgstr "Stack"
 
-#, fuzzy
 msgctxt "debug.state"
 msgid "CPU State"
-msgstr "CPU Tillstånd"
+msgstr "CPU-tillstånd"
 
-#, fuzzy
 msgctxt "debug.registers"
 msgid "Registers"
 msgstr "Register"
 
-#, fuzzy
 msgctxt "debug.flags"
 msgid "Flags"
 msgstr "Flaggor"
 
-#, fuzzy
 msgctxt "debug.step"
 msgid "Step"
-msgstr "Steg"
+msgstr "Stega"
 
-#, fuzzy
 msgctxt "debug.stepOver"
 msgid "Step Over"
 msgstr "Stega över"
 
-#, fuzzy
 msgctxt "debug.stepInto"
 msgid "Step Into"
 msgstr "Stega in"
 
-#, fuzzy
 msgctxt "debug.stepOut"
 msgid "Step Out"
 msgstr "Stega ut"
 
-#, fuzzy
 msgctxt "debug.resume"
 msgid "Resume"
 msgstr "Återuppta"
 
-#, fuzzy
 msgctxt "debug.pause"
 msgid "Pause"
-msgstr "Paus"
+msgstr "Pausa"
 
-#, fuzzy
 msgctxt "debug.loadSymbolTable"
 msgid "Load Symbol Table"
-msgstr "Ladda symboltabell"
+msgstr "Läs in symboltabell"
 
 msgctxt "debug.agentTab"
 msgid "Agent"
-msgstr ""
+msgstr "Agent"
 
-#, fuzzy
 msgctxt "debug.disassembly"
 msgid "Disassembly"
-msgstr "Disassemblering"
+msgstr "Avassemblering"
 
 msgctxt "debug.breakOnce"
 msgid "Break once then remove"
-msgstr ""
+msgstr "Gör ett avbrott och ta sedan bort"
 
 msgctxt "debug.basicLineNumber"
 msgid "BASIC Line Number:"
