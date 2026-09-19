@@ -119,6 +119,12 @@ input:focus {
   flex-wrap: wrap;
 }
 
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
 .push-button {
   display: flex;
   justify-content: center;

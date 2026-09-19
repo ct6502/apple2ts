@@ -2,11 +2,14 @@
   position: fixed;
   inset: 0;
   z-index: 997;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
 }
 
 .tj-container * {
   cursor: default;
-  pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
@@ -15,42 +18,79 @@
 /* env(safe-area-inset-right) avoids the home indicator and rounded screen edges on phones */
 .tj-base-position {
   position: absolute;
-  left: 20mm;
-  bottom: 20mm;
-  width: 33%;
-  height: auto;
-  opacity: 25%;
+  left: 0;
+  bottom: 0;
   pointer-events: all;
+  touch-action: none;
+  border-radius: 10px;
+  border-style: solid;
+  border-width: 8px;
+  border-color: rgba(255, 255, 255, 0.25);
+  width: 40mm;
+  height: 40mm;
+  margin-left: 4mm;
+  margin-bottom: 8mm;
+}
+
+#touchjoystick-stick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  --touch-stick-offset-x: 0px;
+  --touch-stick-offset-y: 0px;
+  transform: translate(calc(-50% + var(--touch-stick-offset-x)), calc(-50% + var(--touch-stick-offset-y)));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tj-joystick-image {
   width: 48pt;
   height: auto;
   user-select: none;
-}
-
-.tj-buttons-base {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  opacity: 25%;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
+  display: block;
 }
 
 .tj-buttons-both {
+  position: absolute;
+  pointer-events: all;
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+.tj-buttons-button0 {
+  bottom: 8mm;
+  right: 25mm;
+}
+
+.tj-buttons-button1 {
+  bottom: 27mm;
+  right: 2mm;
+}
+
+.tj-button-image {
   width: 20mm;
   height: auto;
   pointer-events: none;
 }
 
-.tj-buttons-button0 {
-  position: relative;
-  bottom: 0;
-  right: 5mm;
-}
-
-.tj-buttons-button1 {
-  position: relative;
-  bottom: 25mm;
-  right: 0;
+.tj-button-number {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8em;
+  font-weight: 700;
+  color: rgba(50, 0, 0, 0.9);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
