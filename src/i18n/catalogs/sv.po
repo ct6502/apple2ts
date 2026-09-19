@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-09-19 18:06+0000\n"
+"PO-Revision-Date: 2026-09-19 18:07+0000\n"
 "Last-Translator: Daniel Nylander <yeagersthlm@gmail.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/apple2ts/browser-"
 "emulator/sv/>\n"
@@ -1446,296 +1446,252 @@ msgstr "Disk har matats ut"
 
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
-msgstr ""
+msgstr "Caps Lock"
 
 msgctxt "keyboard.shift"
 msgid "Shift"
-msgstr ""
+msgstr "Skift"
 
 msgctxt "keyboard.ctrl"
 msgid "Ctrl"
-msgstr ""
+msgstr "Ctrl"
 
 msgctxt "keyboard.alt"
 msgid "Alt"
-msgstr ""
+msgstr "Alt"
 
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
-msgstr ""
+msgstr "Open Apple"
 
 msgctxt "keyboard.closedApple"
 msgid "Closed Apple"
-msgstr ""
+msgstr "Closed Apple"
 
 msgctxt "keyboard.escape"
 msgid "Escape"
-msgstr ""
+msgstr "Esc"
 
 msgctxt "keyboard.tab"
 msgid "Tab"
-msgstr ""
+msgstr "Tabb"
 
 msgctxt "keyboard.enter"
 msgid "Enter"
-msgstr ""
+msgstr "Retur"
 
-#, fuzzy
 msgctxt "keyboard.space"
 msgid "Space"
 msgstr "Mellanslag"
 
 msgctxt "keyboard.backspace"
 msgid "Backspace"
-msgstr ""
+msgstr "Backsteg"
 
 msgctxt "keyboard.delete"
 msgid "Delete"
-msgstr ""
+msgstr "Ta bort"
 
-#, fuzzy
 msgctxt "keyboard.return"
 msgid "Return"
 msgstr "Retur"
 
-#, fuzzy
 msgctxt "audio.speaker"
 msgid "Speaker"
 msgstr "Högtalare"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
 msgctxt "audio.midi"
 msgid "MIDI"
 msgstr "MIDI"
 
-#, fuzzy
 msgctxt "audio.configuration"
 msgid "Audio Configuration"
 msgstr "Ljudkonfiguration"
 
-#, fuzzy
 msgctxt "audio.volume"
 msgid "Volume"
 msgstr "Volym"
 
-#, fuzzy
 msgctxt "audio.mute"
 msgid "Mute"
 msgstr "Tysta"
 
-#, fuzzy
 msgctxt "audio.waveform"
 msgid "Waveform"
 msgstr "Vågform"
 
-#, fuzzy
 msgctxt "print.printer"
 msgid "Printer"
 msgstr "Skrivare"
 
 msgctxt "print.imageWriter"
 msgid "ImageWriter"
-msgstr ""
+msgstr "ImageWriter"
 
 msgctxt "print.imageWriterII"
 msgid "ImageWriter II (Slot 1)"
-msgstr ""
+msgstr "ImageWriter II (kortplats 1)"
 
-#, fuzzy
 msgctxt "print.print"
 msgid "Print"
 msgstr "Skriv ut"
 
-#, fuzzy
 msgctxt "print.clear"
 msgid "Clear"
 msgstr "Rensa"
 
-#, fuzzy
 msgctxt "print.save"
 msgid "Save Output"
-msgstr "Spara Utdata"
+msgstr "Spara utdata"
 
-#, fuzzy
 msgctxt "print.dumpScreen"
 msgid "Dump Current Screen to Printer"
-msgstr "Dumpa aktuell skärm till skrivaren"
+msgstr "Skriv ut aktuell skärm på skrivaren"
 
-#, fuzzy
 msgctxt "print.dumpScreenInverse"
 msgid "Dump Current Screen (Inverse)"
-msgstr "Dumpa aktuell skärm (Inverterad)"
+msgstr "Skriv ut aktuell skärm (inverterad)"
 
-#, fuzzy
 msgctxt "print.sendToPrinter"
 msgid "Send to Printer"
 msgstr "Skicka till skrivaren"
 
-#, fuzzy
 msgctxt "print.tearOff"
 msgid "Tear off Page and Reset"
 msgstr "Riv av sidan och återställ"
 
-#, fuzzy
 msgctxt "print.printedPage"
 msgid "Printed page"
 msgstr "Utskriven sida"
 
-#, fuzzy
 msgctxt "print.printerConfig"
 msgid "Printer Configuration"
 msgstr "Skrivarkonfiguration"
 
-#, fuzzy
 msgctxt "print.pageLength"
 msgid "Page Length"
 msgstr "Sidlängd"
 
-#, fuzzy
 msgctxt "print.pageLengthLetter"
 msgid "11 inch (Letter)"
 msgstr "11 tum (Letter)"
 
-#, fuzzy
 msgctxt "print.pageLengthA4"
 msgid "11.7 inch (A4)"
 msgstr "11,7 tum (A4)"
 
-#, fuzzy
 msgctxt "print.pageLengthTwelve"
 msgid "12 inch"
 msgstr "12 tum"
 
-#, fuzzy
 msgctxt "device.machineConfiguration"
 msgid "Machine Configuration"
 msgstr "Maskinkonfiguration"
 
-#, fuzzy
 msgctxt "device.midiDeviceSelect"
 msgid "MIDI Device Select"
-msgstr "MIDI-enhetsval"
+msgstr "Välj MIDI-enhet"
 
-#, fuzzy
 msgctxt "device.serialPortSelect"
 msgid "Serial Port Select"
-msgstr "Serieportval"
+msgstr "Välj serieport"
 
-#, fuzzy
 msgctxt "device.mockingboardWaveform"
 msgid "Mockingboard wave form"
-msgstr "Mockingboard Vågform"
+msgstr "Mockingboard-vågform"
 
-#, fuzzy
 msgctxt "collection.showApple2TSCollection"
 msgid "Show Apple2TS Collection"
-msgstr "Visa Apple2TS Samling"
+msgstr "Visa Apple2TS-samlingen"
 
-#, fuzzy
 msgctxt "collection.showNewReleases"
 msgid "Show new releases"
-msgstr "Visa Nya Versioner"
+msgstr "Visa nya utgåvor"
 
-#, fuzzy
 msgctxt "collection.showFavorites"
 msgid "Show favorites"
-msgstr "Visa Favoriter"
+msgstr "Visa favoriter"
 
-#, fuzzy
 msgctxt "collection.chooseDiskImage"
 msgid "Choose disk image"
 msgstr "Välj diskavbildning"
 
-#, fuzzy
 msgctxt "collection.diskCollection"
 msgid "Disk collection"
 msgstr "Disksamling"
 
-#, fuzzy
 msgctxt "collection.clickToShowDetails"
 msgid "Click to show details for"
 msgstr "Klicka för att visa detaljer för"
 
-#, fuzzy
 msgctxt "collection.clickToLoadDisk"
 msgid "Click to load disk"
-msgstr "Klicka för att ladda disk"
+msgstr "Klicka för att läsa in disk"
 
-#, fuzzy
 msgctxt "collection.diskIsNewRelease"
 msgid "Disk is a new release"
-msgstr "Disk är en ny version"
+msgstr "Disken är en ny utgåva"
 
-#, fuzzy
 msgctxt "collection.diskIsApple2TSCollection"
 msgid "Disk is part of the Apple2TS collection"
-msgstr "Disk är del av Apple2TS-samlingen"
+msgstr "Disken ingår i Apple2TS-samlingen"
 
-#, fuzzy
 msgctxt "collection.diskIsInternetArchive"
 msgid "Disk is part of the Internet Archive"
-msgstr "Disk är del av Internet Archive"
+msgstr "Disken ingår i Internet Archive"
 
 msgctxt "collection.diskIsDemoZoo"
 msgid "Disk is part of DemoZoo"
-msgstr ""
+msgstr "Disken ingår i DemoZoo"
 
-#, fuzzy
 msgctxt "collection.clickToRemoveFromCollection"
 msgid "Click to remove from disk collection"
-msgstr "Klicka för att ta bort från disksamling"
+msgstr "Klicka för att ta bort från disksamlingen"
 
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
-msgstr ""
+msgstr "Klicka för att behålla i disksamlingen"
 
-#, fuzzy
 msgctxt "collection.clickToAddToCollection"
 msgid "Click to add to disk collection"
-msgstr "Klicka för att lägga till i skivsamlingen"
+msgstr "Klicka för att lägga till i disksamlingen"
 
-#, fuzzy
 msgctxt "collection.diskIsSyncedVia"
 msgid "Disk is synced via"
-msgstr "Disk är synkroniserad via"
+msgstr "Disken synkroniseras via"
 
-#, fuzzy
 msgctxt "collection.loadDiskIntoDrive"
 msgid "Load Disk into Drive"
-msgstr "Ladda Disk i Enhet"
+msgstr "Läs in disk i enhet"
 
 msgctxt "collection.cloudAuthRequired"
 msgid "auth required"
-msgstr ""
+msgstr "Autentisering krävs"
 
 msgctxt "collection.signIn"
 msgid "Sign in"
-msgstr ""
+msgstr "Logga in"
 
-#, fuzzy
 msgctxt "collection.exportDisksToHdv"
 msgid "Export disks to HDV"
 msgstr "Exportera diskar till HDV"
 
-#, fuzzy
 msgctxt "collection.export"
 msgid "Export"
 msgstr "Exportera"
 
-#, fuzzy
 msgctxt "collection.clickToRemoveFromSelected"
 msgid "Click to remove from selected disks"
 msgstr "Klicka för att ta bort från valda diskar"
 
-#, fuzzy
 msgctxt "collection.clickToAddToSelected"
 msgid "Click to add to selected disks"
 msgstr "Klicka för att lägga till i valda diskar"
 
-#, fuzzy
 msgctxt "collection.reportExportIssue"
 msgid "Report an export issue"
 msgstr "Rapportera ett exportproblem"
@@ -1807,20 +1763,17 @@ msgctxt "collection.clearDiskSelection"
 msgid "Clear disk selection"
 msgstr ""
 
-#, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
-msgstr "Gå Tillbaka i Tiden"
+msgstr "Gå tillbaka i tiden"
 
-#, fuzzy
 msgctxt "debugControls.takeSnapshot"
 msgid "Take a Snapshot"
-msgstr "Ta Ögonblicksbild"
+msgstr "Ta en ögonblicksbild"
 
-#, fuzzy
 msgctxt "debugControls.goForwardInTime"
 msgid "Go Forward in Time"
-msgstr "Gå Framåt i Tiden"
+msgstr "Gå framåt i tiden"
 
 #, fuzzy
 msgctxt "debugControls.saveStateWithSnapshots"
