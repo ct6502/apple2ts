@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-09-19 18:10+0000\n"
+"PO-Revision-Date: 2026-09-19 18:12+0000\n"
 "Last-Translator: Daniel Nylander <yeagersthlm@gmail.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/apple2ts/browser-"
 "emulator/sv/>\n"
@@ -46,7 +46,7 @@ msgstr "Växla ljud"
 
 msgctxt "controls.retrySound"
 msgid "Sound unavailable. Retry sound."
-msgstr ""
+msgstr "Ljud är inte tillgängligt. Försök med ljud igen."
 
 msgctxt "controls.settings"
 msgid "Settings"
@@ -56,7 +56,6 @@ msgctxt "controls.debugPanel"
 msgid "Debug Panel"
 msgstr "Felsökningspanel"
 
-#, fuzzy
 msgctxt "controls.infoPanel"
 msgid "Info Panel"
 msgstr "Informationspanel"
@@ -65,7 +64,6 @@ msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Rapportera ett problem"
 
-#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "Integritetspolicy"
@@ -186,7 +184,6 @@ msgctxt "speed.fast"
 msgid "Fast Speed (4 MHz)"
 msgstr "Snabb hastighet (4 MHz)"
 
-#, fuzzy
 msgctxt "speed.warp"
 msgid "Ludicrous Speed"
 msgstr "Löjlig hastighet"
@@ -321,7 +318,7 @@ msgstr "Gör ett avbrott och ta sedan bort"
 
 msgctxt "debug.basicLineNumber"
 msgid "BASIC Line Number:"
-msgstr ""
+msgstr "BASIC-radnummer:"
 
 msgctxt "debug.any"
 msgid "Any"
@@ -742,7 +739,7 @@ msgstr "Klicka här för att starta emulatorn."
 
 msgctxt "tour.retroBootButton"
 msgid "Select this option to start the emulator."
-msgstr ""
+msgstr "Välj det här alternativet för att starta emulatorn."
 
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
@@ -754,6 +751,8 @@ msgctxt "tour.retroResetButton"
 msgid ""
 "Select this option to reset the Apple II and either reboot or enter BASIC."
 msgstr ""
+"Välj det här alternativet för att återställa Apple II och antingen starta om "
+"eller gå in i BASIC."
 
 msgctxt "tour.diskImages"
 msgid "Choose one of the installed disk images."
@@ -767,7 +766,7 @@ msgstr ""
 
 msgctxt "tour.retroFloppyDisks"
 msgid "Or select a disk drive to load a disk image."
-msgstr ""
+msgstr "Eller välj en diskenhet för att läsa in en diskavbildning."
 
 msgctxt "tour.saveRestore"
 msgid ""
@@ -781,6 +780,8 @@ msgid ""
 "You can save and restore the complete state of the emulator using these "
 "options."
 msgstr ""
+"Du kan spara och återställa emulatorns hela tillstånd med de här "
+"alternativen."
 
 msgctxt "tour.themeButton"
 msgid "Click here to change the emulator UI theme."
@@ -788,7 +789,7 @@ msgstr "Klicka här för att ändra emulatorns gränssnittstema."
 
 msgctxt "tour.retroThemeButton"
 msgid "Use the arrow keys to change the emulator UI theme."
-msgstr ""
+msgstr "Använd piltangenterna för att ändra emulatorns gränssnittstema."
 
 msgctxt "tour.endTour"
 msgid "You have reached the end of the tour."
@@ -807,6 +808,8 @@ msgid ""
 "Select a menu item to try one of the other tours, or press Finish to start "
 "using the emulator."
 msgstr ""
+"Välj ett menyalternativ för att prova någon av de andra genomgångarna, eller "
+"tryck på Slutför för att börja använda emulatorn."
 
 msgctxt "tour.settingsWelcome"
 msgid ""
@@ -861,6 +864,8 @@ msgid ""
 "The Options menu controls the state of the Apple II, starting with the "
 "emulator speed, the screen color, and muting the sound."
 msgstr ""
+"Alternativmenyn styr Apple II:s tillstånd: emulatorhastighet, skärmfärg och "
+"ljudavstängning."
 
 msgctxt "tour.keyboardButtons"
 msgid ""
@@ -891,6 +896,9 @@ msgid ""
 "Apple2TS automatically saves the current emulator settings as browser "
 "cookies. Select this option to reset these settings and delete the cookies."
 msgstr ""
+"Apple2TS sparar automatiskt de aktuella emulatorinställningarna som "
+"webbläsarkakor. Välj det här alternativet för att återställa inställningarna "
+"och ta bort kakorna."
 
 msgctxt "tour.debugWelcome"
 msgid ""
@@ -978,25 +986,21 @@ msgctxt "tour.skip"
 msgid "Close"
 msgstr "Stäng"
 
-#, fuzzy
 msgctxt "tour.guidedTour"
 msgid "Tours"
-msgstr "Guidad Tur"
+msgstr "Genomgångar"
 
-#, fuzzy
 msgctxt "tour.mainLabel"
 msgid "Guided Tours: Main"
-msgstr "Guidad tur: Huvudmeny"
+msgstr "Guidad genomgång: huvudmeny"
 
-#, fuzzy
 msgctxt "tour.settingsLabel"
 msgid "Guided Tours: Settings"
-msgstr "Guidad tur: Inställningar"
+msgstr "Guidad genomgång: inställningar"
 
-#, fuzzy
 msgctxt "tour.debugLabel"
 msgid "Guided Tours: Debug"
-msgstr "Guidad tur: Felsökning"
+msgstr "Guidad genomgång: felsökning"
 
 msgctxt "disk.drive1"
 msgid "Drive 1"
@@ -1080,7 +1084,7 @@ msgstr "Hämta disk"
 
 msgctxt "disk.downloadWoz"
 msgid "Download WOZ Disk Image"
-msgstr ""
+msgstr "Hämta WOZ-diskavbildning"
 
 msgctxt "disk.downloadAndEjectDisk"
 msgid "Download and Eject Disk"
@@ -1124,19 +1128,19 @@ msgstr "Läs in disk från enhet (läs/skriv)"
 
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
-msgstr ""
+msgstr "Internet Archive"
 
 msgctxt "disk.DemoZoo"
 msgid "DemoZoo"
-msgstr ""
+msgstr "DemoZoo"
 
 msgctxt "disk.OneDrive"
 msgid "OneDrive"
-msgstr ""
+msgstr "OneDrive"
 
 msgctxt "disk.GoogleDrive"
 msgid "Google Drive"
-msgstr ""
+msgstr "Google Drive"
 
 msgctxt "disk.loadDiskFromInternetArchive"
 msgid "Load Disk from Internet Archive"
@@ -1192,11 +1196,11 @@ msgstr "Synkroniserad {{date}}"
 
 msgctxt "disk.clickToHide"
 msgid "Click to hide"
-msgstr ""
+msgstr "Klicka för att dölja"
 
 msgctxt "disk.clickToShow"
 msgid "Click to show"
-msgstr ""
+msgstr "Klicka för att visa"
 
 msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image"
@@ -1230,24 +1234,22 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr "Apple IIe-emulator i TypeScript"
 
-#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr "(c) {{year}} Chris Torrence och Apple2TS-bidragsgivarna"
+msgstr "© {{year}} Chris Torrence och Apple2TS-bidragsgivarna"
 
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
 msgstr "Kortkommandon"
 
-#, fuzzy
 msgctxt "help.shortcutsUnavailable"
 msgid ""
 "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to "
 "Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
 msgstr ""
 "Emulatorns kortkommandon med {{keyMod}} är inte tillgängliga när tangenten "
-"används som Open Apple. Med Ctrl+0 till Ctrl+5 kan du fortfarande välja "
-"emulatorns hastighet."
+"är tilldelad Open Apple. Ctrl+0 till Ctrl+5 väljer fortfarande "
+"emulatorhastighet."
 
 msgctxt "help.diskImages"
 msgid "Disk images:"
@@ -1304,31 +1306,28 @@ msgstr ""
 
 msgctxt "help.controlPanelShortcut"
 msgid "SHIFT-ESC: display the Apple2TS control panel"
-msgstr ""
+msgstr "SKIFT+ESC: visa Apple2TS-kontrollpanelen"
 
-#, fuzzy
 msgctxt "help.openAppleKey"
 msgid "Open Apple: press Left Alt/Option"
-msgstr "Open Apple: tryck på Vänster Alt/Option"
+msgstr "Open Apple: tryck på vänster Alt/Option"
 
-#, fuzzy
 msgctxt "help.closedAppleKey"
 msgid "Closed Apple: press Right Alt/Option"
-msgstr "Closed Apple: Höger Alt/Option"
+msgstr "Closed Apple: tryck på höger Alt/Option"
 
-#, fuzzy
 msgctxt "help.joystickKeys"
 msgid "Joystick Keys: Numpad 8/2/4/6 (7/9/1/3), 0/5, ./Enter"
-msgstr "Joystick-tangenter: Numeriska 8/2/4/6 (7/9/1/3), 0/5, ./Enter"
+msgstr ""
+"Styrspakstangenter: numeriskt tangentbord 8/2/4/6 (7/9/1/3), 0/5, ./Retur"
 
-#, fuzzy
 msgctxt "help.onScreenKeyboard"
 msgid ""
 "For the on-screen keyboard, to use CTRL or ESC keys,\n"
 "touch key once to enable it then touch the desired letter key."
 msgstr ""
-"För skärmtangentbordet, CTRL eller ESC:\n"
-"trycka en gång för att aktivera sedan önskad tangent."
+"För skärmtangentbordet: använd CTRL eller ESC genom att trycka en gång på "
+"tangenten för att aktivera den och sedan på önskad bokstavstangent."
 
 msgctxt "help.urlParametersBody"
 msgid ""
@@ -1340,49 +1339,41 @@ msgstr ""
 "flera parametrar åt med et-tecknet (&). Använd # för att ange "
 "diskavbildningen. Se dialogrutan Länkbyggare för exempel."
 
-#, fuzzy
 msgctxt "help.exampleLinks.totalReplayDebugging"
 msgid "Total Replay with debugging"
 msgstr "Total Replay med felsökning"
 
-#, fuzzy
 msgctxt "help.exampleLinks.totalReplayChoplifter"
 msgid "Total Replay, load Choplifter, embedded mode"
-msgstr "Total Replay, ladda Choplifter, inbäddat läge"
+msgstr "Total Replay, läs in Choplifter, inbäddat läge"
 
-#, fuzzy
 msgctxt "help.exampleLinks.a2Desktop"
 msgid "A2Desktop 2MG with fast speed and white color"
 msgstr "A2Desktop 2MG med snabb hastighet och vit färg"
 
-#, fuzzy
 msgctxt "help.exampleLinks.embeddedBasic"
 msgid "Embedded Applesoft BASIC Program"
-msgstr "Inbäddat Applesoft BASIC Program"
+msgstr "Inbäddat Applesoft BASIC-program"
 
-#, fuzzy
 msgctxt "help.exampleLinks.binaryHexAddress"
 msgid "Binary File with Hex Address"
-msgstr "Binärfil med Hex-adress"
+msgstr "Binärfil med hexadecimal adress"
 
 msgctxt "help.links"
 msgid "Links"
 msgstr "Länkar"
 
-#, fuzzy
 msgctxt "help.resourceLinks.desktopApp"
 msgid "Apple2TS Desktop App"
 msgstr "Apple2TS skrivbordsapp"
 
-#, fuzzy
 msgctxt "help.resourceLinks.corsProxy"
 msgid "CORS Proxy by Corsfix"
-msgstr "CORS-proxy av Corsfix"
+msgstr "CORS-proxy från Corsfix"
 
-#, fuzzy
 msgctxt "help.resourceLinks.silverCjkFont"
 msgid "Silver CJK Pixel Font"
-msgstr "Silver CJK Pixel Font"
+msgstr "Silver CJK-pixeltypsnitt"
 
 msgctxt "messages.loading"
 msgid "Loading..."
@@ -1390,7 +1381,7 @@ msgstr "Läser in…"
 
 msgctxt "messages.fetchingCloudData"
 msgid "Fetching cloud data"
-msgstr ""
+msgstr "Hämtar molndata"
 
 msgctxt "messages.error"
 msgid "Error"
@@ -1698,39 +1689,39 @@ msgstr "Rapportera ett exportproblem"
 
 msgctxt "collection.hdvExportTitleUnavailable"
 msgid "Apple2TS could not include \"{{title}}\" in the HDV."
-msgstr ""
+msgstr "Apple2TS kunde inte ta med ”{{title}}” i HDV-filen."
 
 msgctxt "collection.continueHdvExportWithoutUnavailableTitles"
 msgid "Continue creating the HDV and skip unavailable titles?"
-msgstr ""
+msgstr "Fortsätt skapa HDV-filen och hoppa över otillgängliga titlar?"
 
 msgctxt "collection.exportUnavailable"
 msgid "This disk cannot be exported"
-msgstr ""
+msgstr "Den här disken kan inte exporteras"
 
 msgctxt "collection.exportTooLarge"
 msgid "This disk is too large to export"
-msgstr ""
+msgstr "Den här disken är för stor för att exporteras"
 
 msgctxt "collection.exportCopyProtected"
 msgid "Copy protection prevents exporting this disk"
-msgstr ""
+msgstr "Kopieringsskydd hindrar export av den här disken"
 
 msgctxt "collection.exportDosMasterIncompatible"
 msgid "This disk is incompatible with DOS.MASTER"
-msgstr ""
+msgstr "Den här disken är inte kompatibel med DOS.MASTER"
 
 msgctxt "collection.exportStatusPending"
 msgid "Checking whether this disk can be exported"
-msgstr ""
+msgstr "Kontrollerar om disken kan exporteras"
 
 msgctxt "collection.exportAvailable"
 msgid "This disk can be exported"
-msgstr ""
+msgstr "Disken kan exporteras"
 
 msgctxt "collection.creatingHdv"
 msgid "Creating the HDV image"
-msgstr ""
+msgstr "Skapar HDV-avbildningen"
 
 msgctxt "collection.hdvCreatedWithOmissions"
 msgid ""
@@ -1738,30 +1729,33 @@ msgid ""
 "\n"
 "{{details}}"
 msgstr ""
+"Apple2TS skapade HDV-filen men utelämnade några titlar:\n"
+"\n"
+"{{details}}"
 
 msgctxt "collection.hdvCreationFailed"
 msgid "Apple2TS could not create the HDV: {{message}}"
-msgstr ""
+msgstr "Apple2TS kunde inte skapa HDV-filen: {{message}}"
 
 msgctxt "collection.hdvDownloadFailed"
 msgid "Apple2TS could not download the disk, so HDV creation was canceled."
-msgstr ""
+msgstr "Apple2TS kunde inte hämta disken, så skapandet av HDV-filen avbröts."
 
 msgctxt "collection.fetchingDisk"
 msgid "Fetching disk {{current}} of {{total}}"
-msgstr ""
+msgstr "Hämtar disk {{current}} av {{total}}"
 
 msgctxt "collection.checkingDiskForExport"
 msgid "Checking disk {{current}} of {{total}} for export"
-msgstr ""
+msgstr "Kontrollerar disk {{current}} av {{total}} för export"
 
 msgctxt "collection.selectAllDisks"
 msgid "Select all disks"
-msgstr ""
+msgstr "Markera alla diskar"
 
 msgctxt "collection.clearDiskSelection"
 msgid "Clear disk selection"
-msgstr ""
+msgstr "Rensa diskmarkering"
 
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
@@ -1791,10 +1785,9 @@ msgctxt "debugControls.hotReloadEnabled"
 msgid "Hot Reload Enabled"
 msgstr "Snabb omläsning aktiverad"
 
-#, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
 msgid "Hot Reload"
-msgstr "Hot Reload Inaktiverad"
+msgstr "Snabb omläsning"
 
 msgctxt "debugControls.trace"
 msgid "Trace"
@@ -2011,11 +2004,11 @@ msgstr "Invertera Y-axeln för styrspaken"
 
 msgctxt "gamepad.touchJoystick"
 msgid "Touch Screen Joystick"
-msgstr ""
+msgstr "Styrspak för pekskärm"
 
 msgctxt "gamepad.tiltSensorJoystick"
 msgid "Use Tilt Sensor as Joystick"
-msgstr ""
+msgstr "Använd lutningssensor som styrspak"
 
 msgctxt "traceSettings.title"
 msgid "Trace Settings"
@@ -2059,27 +2052,27 @@ msgstr "Länkbyggare"
 
 msgctxt "linkBuilder.userInterface"
 msgid "User interface:"
-msgstr ""
+msgstr "Användargränssnitt:"
 
 msgctxt "linkBuilder.machine"
 msgid "Machine:"
-msgstr ""
+msgstr "Maskin:"
 
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
-msgstr ""
+msgstr "Färgläge:"
 
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb):"
-msgstr ""
+msgstr "RAM-diskens storlek (KB):"
 
 msgctxt "linkBuilder.emulatorSpeed"
 msgid "Speed of emulator:"
-msgstr ""
+msgstr "Emulatorns hastighet:"
 
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
-msgstr ""
+msgstr "Tema för användargränssnittet:"
 
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
@@ -2091,7 +2084,7 @@ msgstr "Ljud"
 
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
-msgstr ""
+msgstr "Vid start:"
 
 msgctxt "linkBuilder.loadDiskImage"
 msgid "Load Disk Image"
@@ -2107,7 +2100,7 @@ msgstr "Läs in hexkod"
 
 msgctxt "linkBuilder.diskImageToLoad"
 msgid "Disk image to load on startup:"
-msgstr ""
+msgstr "Diskavbildning att läsa in vid start:"
 
 msgctxt "linkBuilder.customDiskUrl"
 msgid "Custom disk image URL:"
@@ -2115,7 +2108,7 @@ msgstr "Anpassad URL för diskavbildning:"
 
 msgctxt "linkBuilder.textToType"
 msgid "Text to type after loading disk:"
-msgstr ""
+msgstr "Text att skriva efter att disken lästs in:"
 
 msgctxt "linkBuilder.enterTextPlaceholder"
 msgid "Enter Text or BASIC code here"
@@ -2221,8 +2214,6 @@ msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
 msgstr "4 MHz"
 
-#, fuzzy
-#| msgid "Warp"
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Ludicrous"
 msgstr "Löjlig"
@@ -2392,58 +2383,62 @@ msgid ""
 "Your API key is stored locally in your browser and never sent to apple2ts."
 "com. Get your {{provider}} API key at"
 msgstr ""
+"Din API-nyckel lagras lokalt i webbläsaren och skickas aldrig till "
+"apple2ts.com. Hämta API-nyckeln för {{provider}} på"
 
 msgctxt "agent.ollamaWarning"
 msgid ""
 "Ollama runs locally on your machine. Make sure you have Ollama installed and "
 "running. Download from"
 msgstr ""
+"Ollama körs lokalt på datorn. Kontrollera att Ollama är installerat och "
+"körs. Hämta det från"
 
 msgctxt "agent.providerNotConfigured"
 msgid "Provider not configured - click the gear icon to set up your AI agent"
 msgstr ""
+"Leverantören är inte konfigurerad – klicka på kugghjulsikonen för att ställa "
+"in AI-agenten"
 
 msgctxt "agent.providerConfigured"
 msgid "Provider: {{provider}} ({{model}})"
-msgstr ""
+msgstr "Leverantör: {{provider}} ({{model}})"
 
 msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
-msgstr ""
+msgstr "Ogiltigt API-nyckelformat för {{provider}}"
 
-#, fuzzy
 msgctxt "startup.welcome"
 msgid "Welcome to Apple2TS"
 msgstr "Välkommen till Apple2TS"
 
-#, fuzzy
 msgctxt "startup.subtitle"
 msgid "TypeScript Apple II Emulator"
 msgstr "Apple II-emulator i TypeScript"
 
-#, fuzzy
 msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
-msgstr "(c) {{year}} C.Torrence + medarbetare"
+msgstr "© {{year}} C. Torrence och medarbetare"
 
-#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
 "Klicka på ikonen Disksamling\n"
-"för att ladda ett inbyggt spel."
+"för att läsa in en inbyggd disk eller ett spel."
 
 msgctxt "startup.retroControlPanel"
 msgid ""
 "Press SHIFT+ESC to display\n"
 "the control panel."
 msgstr ""
+"Tryck på SKIFT+ESC för att visa\n"
+"kontrollpanelen."
 
 msgctxt "retroControl.ariaLabel"
 msgid "Apple2TS control panel"
-msgstr ""
+msgstr "Apple2TS-kontrollpanel"
 
 msgctxt "retroControl.machine"
 msgid "Machine"
@@ -2575,7 +2570,7 @@ msgstr "Tangentbord"
 
 msgctxt "retroControl.input"
 msgid "Input"
-msgstr ""
+msgstr "Indata"
 
 msgctxt "retroControl.joystick"
 msgid "Joystick"
@@ -2655,51 +2650,51 @@ msgstr "Färg"
 
 msgctxt "retroControl.colorNoFringe"
 msgid "Color (no fringe)"
-msgstr ""
+msgstr "Färg (utan fransar)"
 
 msgctxt "retroControl.green"
 msgid "Green"
-msgstr ""
+msgstr "Grön"
 
 msgctxt "retroControl.amber"
 msgid "Amber"
-msgstr ""
+msgstr "Bärnsten"
 
 msgctxt "retroControl.white"
 msgid "White"
-msgstr ""
+msgstr "Vit"
 
 msgctxt "retroControl.inverse"
 msgid "Inverse"
-msgstr ""
+msgstr "Inverterad"
 
 msgctxt "retroControl.snail"
 msgid "Snail"
-msgstr ""
+msgstr "Snigel"
 
 msgctxt "retroControl.slow"
 msgid "Slow"
-msgstr ""
+msgstr "Långsam"
 
 msgctxt "retroControl.normal"
 msgid "Normal"
-msgstr ""
+msgstr "Normal"
 
 msgctxt "retroControl.twoMhz"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 MHz"
 
 msgctxt "retroControl.threeMhz"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 MHz"
 
 msgctxt "retroControl.fast"
 msgid "Fast"
-msgstr ""
+msgstr "Snabb"
 
 msgctxt "retroControl.warp"
 msgid "Warp"
-msgstr ""
+msgstr "Warp"
 
 msgctxt "retroControl.systemSpeed"
 msgid "System Speed"
@@ -2723,19 +2718,19 @@ msgstr "Språk"
 
 msgctxt "retroControl.port"
 msgid "Port"
-msgstr ""
+msgstr "Port"
 
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
-msgstr ""
+msgstr "Inbyggd ImageWriter"
 
 msgctxt "retroControl.selectExternalPort"
 msgid "Select External Port"
-msgstr ""
+msgstr "Välj extern port"
 
 msgctxt "retroControl.externalPort"
 msgid "External Port"
-msgstr ""
+msgstr "Extern port"
 
 msgctxt "retroControl.retroTheme"
 msgid "Retro"
@@ -2747,7 +2742,7 @@ msgstr "Inmatning med gemener"
 
 msgctxt "retroControl.lowercase"
 msgid "Lowercase"
-msgstr ""
+msgstr "Gemener"
 
 msgctxt "retroControl.openAppleKey"
 msgid "Open Apple key"
@@ -2759,19 +2754,19 @@ msgstr "Sortera"
 
 msgctxt "retroControl.slot"
 msgid "Slot {{slot}}"
-msgstr ""
+msgstr "Kortplats {{slot}}"
 
 msgctxt "retroControl.drive"
 msgid "{{drive}}: {{disk}}"
-msgstr ""
+msgstr "{{drive}}: {{disk}}"
 
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
-msgstr ""
+msgstr "{{count}} konfigurerad"
 
 msgctxt "retroControl.saveDisk"
 msgid "Save Disk"
-msgstr ""
+msgstr "Spara disk"
 
 msgctxt "retroControl.card.empty"
 msgid "Empty"
@@ -2779,19 +2774,19 @@ msgstr "Tom"
 
 msgctxt "retroControl.card.ssc"
 msgid "Super Serial Card"
-msgstr ""
+msgstr "Super Serial Card"
 
 msgctxt "retroControl.card.softcard"
 msgid "Z-80 SoftCard"
-msgstr ""
+msgstr "Z-80 SoftCard"
 
 msgctxt "retroControl.card.aux"
 msgid "Auxiliary memory"
-msgstr ""
+msgstr "Extraminne"
 
 msgctxt "retroControl.card.videoterm"
 msgid "Videx VideoTerm"
-msgstr ""
+msgstr "Videx VideoTerm"
 
 msgctxt "retroControl.card.mockingboard"
 msgid "Mockingboard"
@@ -2799,32 +2794,32 @@ msgstr "Mockingboard"
 
 msgctxt "retroControl.card.mouse"
 msgid "Mouse card"
-msgstr ""
+msgstr "Muskort"
 
 msgctxt "retroControl.card.vera"
 msgid "VERA graphics"
-msgstr ""
+msgstr "VERA-grafik"
 
 msgctxt "retroControl.card.passport"
 msgid "Passport MIDI"
-msgstr ""
+msgstr "Passport MIDI"
 
 msgctxt "retroControl.card.disk2"
 msgid "Disk II controller"
-msgstr ""
+msgstr "Disk II-styrenhet"
 
 msgctxt "retroControl.card.smartport"
 msgid "SmartPort drive"
-msgstr ""
+msgstr "SmartPort-enhet"
 
 msgctxt "retroControl.fetchingDisk"
 msgid "Fetching disk {{current}}/{{total}}"
-msgstr ""
+msgstr "Hämtar disk {{current}}/{{total}}"
 
 msgctxt "retroControl.downloadFailed"
 msgid "Unable to download {{title}}"
-msgstr ""
+msgstr "Kunde inte hämta {{title}}"
 
 msgctxt "retroControl.exportFailed"
 msgid "Export to HDV failed: {{message}}"
-msgstr ""
+msgstr "Export till HDV misslyckades: {{message}}"
