@@ -193,6 +193,11 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   if (cycleRemainder < 0) {
     cycleRemainder = 0
   }
+  // Small per-byte decay so leftover fractional timing doesn't compound
+  // across an entire boot. Needed for Wasteland's boot.woz (issue #473),
+  // and 0.99 is the largest decay that doesn't regress the existing test
+  // roster -- see drivestate.test.ts.
+  cycleRemainder *= 0.99
   dataRegister &= 0xFF
   result = dataRegister
 
