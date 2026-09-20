@@ -189,6 +189,16 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
     // For example, for Paul Whitehead Teaches Chess.woz, optimalTiming = 31.
     // This is actually okay and seems to work fine.
     cycleRemainder -= (ds.optimalTiming / 8)
+
+    // See https://github.com/ct6502/apple2ts/issues/473
+    // Electronic Arts copy protection (used for Wasteland and Chuck Yeager)
+    // does a checksum off of a 256-byte chunk on track 0. Repeated reads of
+    // this track cause the cycleRemainder to accumulate slightly more than expected.
+    // To avoid this, subtract a tiny amount. This is a hack, and we're limiting
+    // it to track 0 only, to minimize the risk of messing up other disks.
+    if (ds.quarterTrack === 0) {
+      cycleRemainder = Math.max(cycleRemainder - 0.0001, 0)
+    }
   }
   if (cycleRemainder < 0) {
     cycleRemainder = 0
