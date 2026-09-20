@@ -78,6 +78,8 @@ jest.mock("../savestate", () => ({ RestoreSaveState: jest.fn() }))
 jest.mock("../ui_settings", () => ({ getUIState: () => ({}) }))
 jest.mock("../devices/audio/mockingboard_audio", () => ({ getMockingboardMode: () => 0 }))
 jest.mock("../devices/audio/speaker", () => ({ isAudioEnabled: () => false }))
+// graphics.ts touches canvas.getContext at module load time, which jsdom doesn't implement
+jest.mock("../graphics", () => ({ ProcessDisplay: jest.fn() }))
 
 jest.mock("../devices/disk/driveprops", () => ({
   handleGetFilename: () => null,

@@ -39,6 +39,8 @@ afterEach(() => jest.restoreAllMocks())
 
 test("rejects invalid non-empty media and forces the empty canonical drive to the UI", () => {
   const passDriveProps = jest.spyOn(workerMessages, "passDriveProps")
+  // decodeDiskData logs an error for the invalid media exercised below
+  jest.spyOn(console, "error").mockImplementation(() => undefined)
   const result = doSetEmuDriveNewData({
     index: 2,
     hardDrive: false,
