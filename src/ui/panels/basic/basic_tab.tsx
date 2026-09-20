@@ -151,7 +151,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const handleRunButtonClick = async () => {
     // Run program
     if (handleGetRunMode() === RUN_MODE.IDLE) {
-      handleSetDiskFromURL("blank.po", props.updateDisplay)
+      handleSetDiskFromURL("blank.woz", props.updateDisplay)
       bootAndRunProgram("NEW\n" + programText + "\n")
     } else {
       if (handleGetRunMode() === RUN_MODE.PAUSED) {

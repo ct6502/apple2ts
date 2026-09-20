@@ -1202,8 +1202,9 @@ msgid "Save Disk to Google Drive"
 msgstr "Google Driveにディスクを保存"
 
 #, fuzzy
+#| msgid "Load Disk"
 msgctxt "disk.loadDisk"
-msgid "Load Disk"
+msgid "Load Disk..."
 msgstr "ディスクを読み込む"
 
 msgctxt "disk.loadDiskFrom"
@@ -1263,6 +1264,10 @@ msgstr "OneDriveからディスクを読み込み"
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
 msgstr "Google Driveからディスクを読み込み"
+
+msgctxt "disk.insertBlankDisk"
+msgid "Insert Blank Disk"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.syncEveryMinute"

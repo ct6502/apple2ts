@@ -1202,8 +1202,9 @@ msgid "Save Disk to Google Drive"
 msgstr "Disk Opslaan op Google Drive"
 
 #, fuzzy
+#| msgid "Load Disk"
 msgctxt "disk.loadDisk"
-msgid "Load Disk"
+msgid "Load Disk..."
 msgstr "Disk laden"
 
 msgctxt "disk.loadDiskFrom"
@@ -1263,6 +1264,10 @@ msgstr "Disk Laden van OneDrive"
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
 msgstr "Disk Laden van Google Drive"
+
+msgctxt "disk.insertBlankDisk"
+msgid "Insert Blank Disk"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.syncEveryMinute"

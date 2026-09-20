@@ -1033,7 +1033,7 @@ msgid "Save Disk to Google Drive"
 msgstr ""
 
 msgctxt "disk.loadDisk"
-msgid "Load Disk"
+msgid "Load Disk..."
 msgstr ""
 
 msgctxt "disk.loadDiskFrom"
@@ -1086,6 +1086,10 @@ msgstr ""
 
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
+msgstr ""
+
+msgctxt "disk.insertBlankDisk"
+msgid "Insert Blank Disk"
 msgstr ""
 
 msgctxt "disk.syncEveryMinute"

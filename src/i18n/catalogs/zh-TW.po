@@ -1190,8 +1190,9 @@ msgid "Save Disk to Google Drive"
 msgstr "儲存磁碟到 Google Drive"
 
 #, fuzzy
+#| msgid "Load Disk"
 msgctxt "disk.loadDisk"
-msgid "Load Disk"
+msgid "Load Disk..."
 msgstr "載入磁碟"
 
 msgctxt "disk.loadDiskFrom"
@@ -1252,6 +1253,10 @@ msgstr "從 OneDrive 載入磁碟"
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
 msgstr "從 Google Drive 載入磁碟"
+
+msgctxt "disk.insertBlankDisk"
+msgid "Insert Blank Disk"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.syncEveryMinute"

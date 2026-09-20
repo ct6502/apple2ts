@@ -1149,8 +1149,10 @@ msgctxt "disk.saveDiskToGoogleDrive"
 msgid "Save Disk to Google Drive"
 msgstr "Stash Disk in Google Drive"
 
+#, fuzzy
+#| msgid "Load Disk"
 msgctxt "disk.loadDisk"
-msgid "Load Disk"
+msgid "Load Disk..."
 msgstr "Load Disk Aboard"
 
 msgctxt "disk.loadDiskFrom"
@@ -1204,6 +1206,10 @@ msgstr "Load from OneDrive"
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
 msgstr "Load from Google Drive"
+
+msgctxt "disk.insertBlankDisk"
+msgid "Insert Blank Disk"
+msgstr ""
 
 msgctxt "disk.syncEveryMinute"
 msgid "Sync Every Minute"

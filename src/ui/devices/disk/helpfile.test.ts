@@ -23,7 +23,7 @@ describe("findCatalogHelpFile", () => {
   })
 
   it("finds the Help file declared for the internal blank disk", () => {
-    expect(findCatalogHelpFile("blank.po")).toBe("blank.txt")
+    expect(findCatalogHelpFile("blank.woz")).toBe("blank.txt")
   })
 
   it("finds Help when a direct loader uses the bundled-disk URL prefix", () => {

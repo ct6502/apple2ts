@@ -165,7 +165,7 @@ export const diskImages: DiskCollectionItem[] = [
 
 export const internalDiskResources = [
   {
-    diskUrl: "blank.po",
+    diskUrl: "blank.woz",
     helpFile: "blank.txt"
   }
 ]

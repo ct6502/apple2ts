@@ -4,7 +4,8 @@ import {
   handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer,
   handleSaveWritableFile,
   prepWritableFile,
-  doSetUIDriveProps
+  doSetUIDriveProps,
+  handleSetDiskFromFile
 } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
@@ -410,6 +411,12 @@ const DiskDrive = (props: DiskDriveProps) => {
             label: t("disk.loadDiskFrom"),
             icon: faGlobe,
             subMenu: loadDiskSubMenu
+          },
+          {
+            label: t("disk.insertBlankDisk"),
+            icon: faFloppyDisk,
+            isDisabled: dprops.hardDrive,
+            onClick: () => { handleSetDiskFromFile("blank.woz", null, dprops.index) }
           },
           {
             label: "-"

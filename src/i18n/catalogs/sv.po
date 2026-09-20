@@ -1102,8 +1102,10 @@ msgctxt "disk.saveDiskToGoogleDrive"
 msgid "Save Disk to Google Drive"
 msgstr "Spara disk på Google Drive"
 
+#, fuzzy
+#| msgid "Load Disk"
 msgctxt "disk.loadDisk"
-msgid "Load Disk"
+msgid "Load Disk..."
 msgstr "Läs in disk"
 
 msgctxt "disk.loadDiskFrom"
@@ -1157,6 +1159,10 @@ msgstr "Läs in disk från OneDrive"
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
 msgstr "Läs in disk från Google Drive"
+
+msgctxt "disk.insertBlankDisk"
+msgid "Insert Blank Disk"
+msgstr ""
 
 msgctxt "disk.syncEveryMinute"
 msgid "Sync Every Minute"
@@ -2384,8 +2390,8 @@ msgid ""
 "Your API key is stored locally in your browser and never sent to apple2ts."
 "com. Get your {{provider}} API key at"
 msgstr ""
-"Din API-nyckel lagras lokalt i webbläsaren och skickas aldrig till "
-"apple2ts.com. Hämta API-nyckeln för {{provider}} på"
+"Din API-nyckel lagras lokalt i webbläsaren och skickas aldrig till apple2ts."
+"com. Hämta API-nyckeln för {{provider}} på"
 
 msgctxt "agent.ollamaWarning"
 msgid ""

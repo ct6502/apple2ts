@@ -1198,8 +1198,9 @@ msgid "Save Disk to Google Drive"
 msgstr "Google Drive에 디스크 저장"
 
 #, fuzzy
+#| msgid "Load Disk"
 msgctxt "disk.loadDisk"
-msgid "Load Disk"
+msgid "Load Disk..."
 msgstr "디스크 로드"
 
 msgctxt "disk.loadDiskFrom"
@@ -1259,6 +1260,10 @@ msgstr "OneDrive에서 디스크 로드"
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
 msgstr "Google Drive에서 디스크 로드"
+
+msgctxt "disk.insertBlankDisk"
+msgid "Insert Blank Disk"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.syncEveryMinute"
