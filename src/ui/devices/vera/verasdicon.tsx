@@ -75,6 +75,7 @@ export const downloadSdImage = (diskData: Uint8Array, filename: string) => {
 }
 
 export const openSdFilePicker = async () => {
+  if (isVeraSdSyncing()) return
   if (isFileSystemApiSupported()) {
     try {
       const [fileHandle] = await window.showOpenFilePicker({
@@ -96,6 +97,7 @@ export const openSdFilePicker = async () => {
           handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, fileHandle)
           return
         }
+        setVeraSdCloudData(null)
         setVeraSdFileHandle(fileHandle)
         handleSetVeraSdImage(new Uint8Array(buffer), file.name)
         return
@@ -127,6 +129,8 @@ export const openSdFilePicker = async () => {
           handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, null)
           return
         }
+        setVeraSdFileHandle(null)
+        setVeraSdCloudData(null)
         handleSetVeraSdImage(new Uint8Array(buffer), file.name)
       }
     } finally {
@@ -181,18 +185,19 @@ export const showSdSaveFilePicker = async () => {
       ]
     })
     if (writableFileHandle) {
+      setVeraSdCloudData(null)
       setVeraSdFileHandle(writableFileHandle)
       const writable = await writableFileHandle.createWritable()
       const blob = new Blob([result.data] as BlobPart[], { type: "application/octet-stream" })
       await writable.write(blob)
       await writable.close()
-      handleClearVeraSdChanges()
+      handleClearVeraSdChanges(result.writeSeq)
     }
   } catch (err: unknown) {
     if (err instanceof Error && err.name !== "AbortError") {
       console.warn("Save file picker error, falling back to download:", err)
       downloadSdImage(result.data, fileName)
-      handleClearVeraSdChanges()
+      handleClearVeraSdChanges(result.writeSeq)
     }
   }
 }
@@ -206,7 +211,7 @@ export const saveVeraSdToDevice = async () => {
       const blob = new Blob([result.data] as BlobPart[], { type: "application/octet-stream" })
       await writable.write(blob)
       await writable.close()
-      handleClearVeraSdChanges()
+      handleClearVeraSdChanges(result.writeSeq)
       return
     } catch (err) {
       console.warn("Direct write to file handle failed, falling back to picker:", err)
@@ -216,6 +221,7 @@ export const saveVeraSdToDevice = async () => {
 }
 
 export const loadVeraSdFromCloud = async (cloudProvider: CloudProvider) => {
+  if (isVeraSdSyncing()) return
   try {
     const result = await cloudProvider.download(".img,.raw,.sd,.bin,.iso,.dsk,.woz,.po,.do,.2mg,.hdv")
     if (result) {
@@ -225,8 +231,9 @@ export const loadVeraSdFromCloud = async (cloudProvider: CloudProvider) => {
         handleSetDiskOrFileFromBuffer(0, buffer, data.fileName, data, null)
         return
       }
-      handleSetVeraSdImage(new Uint8Array(buffer), data.fileName)
+      setVeraSdFileHandle(null)
       setVeraSdCloudData(data)
+      handleSetVeraSdImage(new Uint8Array(buffer), data.fileName)
     }
   } catch (err) {
     console.warn("Cloud download failed:", err)
@@ -242,8 +249,9 @@ export const saveVeraSdToCloud = async (cloudProvider: CloudProvider) => {
     const blob = new Blob([result.data] as BlobPart[], { type: "application/octet-stream" })
     const uploaded = await cloudProvider.upload(result.name || "sd.img", blob)
     if (uploaded) {
+      setVeraSdFileHandle(null)
       setVeraSdCloudData(uploaded)
-      handleClearVeraSdChanges()
+      handleClearVeraSdChanges(result.writeSeq)
     }
   } catch (err) {
     console.warn("Cloud upload failed:", err)
@@ -269,7 +277,7 @@ export const syncVeraSdNow = async () => {
         const blob = new Blob([result.data] as BlobPart[], { type: "application/octet-stream" })
         await writable.write(blob)
         await writable.close()
-        handleClearVeraSdChanges()
+        handleClearVeraSdChanges(result.writeSeq)
         return
       } catch (err) {
         console.warn("Sync to local file failed, trying cloud/picker fallback:", err)
@@ -281,7 +289,7 @@ export const syncVeraSdNow = async () => {
       const provider = currentVeraSdCloudData.providerName === "OneDrive" ? new OneDriveCloudDrive() : new GoogleDrive()
       const success = await provider.sync(blob, currentVeraSdCloudData)
       if (success) {
-        handleClearVeraSdChanges()
+        handleClearVeraSdChanges(result.writeSeq)
         return
       }
     }
@@ -304,17 +312,20 @@ export const downloadVeraSd = async () => {
 }
 
 export const ejectVeraSd = () => {
+  if (isVeraSdSyncing()) return
   setVeraSdFileHandle(null)
+  setVeraSdCloudData(null)
   setVeraSdSyncPaused(false)
   setVeraSdSyncing(false)
   handleSetVeraSdImage(null)
 }
 
 export const downloadAndEjectVeraSd = async () => {
+  if (isVeraSdSyncing()) return
   const result = await requestVeraSdImage()
   if (result && result.data) {
     downloadSdImage(result.data, result.name)
-    handleClearVeraSdChanges()
+    handleClearVeraSdChanges(result.writeSeq)
   }
   ejectVeraSd()
 }
@@ -375,6 +386,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (isVeraSdSyncing()) return
     const file = e.dataTransfer.files?.[0]
     if (file) {
       const buffer = await file.arrayBuffer()
@@ -382,6 +394,8 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
         handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, null)
         return
       }
+      setVeraSdFileHandle(null)
+      setVeraSdCloudData(null)
       handleSetVeraSdImage(new Uint8Array(buffer), file.name)
     }
   }
@@ -425,7 +439,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
           const blob = new Blob([result.data] as BlobPart[], { type: "application/octet-stream" })
           await writable.write(blob)
           await writable.close()
-          handleClearVeraSdChanges()
+          handleClearVeraSdChanges(result.writeSeq)
         }
       } catch (err) {
         console.warn("Auto-save to local file failed:", err)
@@ -445,6 +459,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
       {
         label: t("disk.OneDrive"),
         icon: faCloud,
+        isDisabled: isSyncing,
         isVisible: () => !isElectron,
         onClick: () => {
           setPopupLocation(undefined)
@@ -454,6 +469,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
       {
         label: t("disk.GoogleDrive"),
         icon: faCloud,
+        isDisabled: isSyncing,
         isVisible: () => !isElectron,
         onClick: () => {
           setPopupLocation(undefined)
@@ -466,6 +482,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
       {
         label: t("disk.OneDrive"),
         icon: faCloud,
+        isDisabled: isSyncing,
         onClick: () => {
           setPopupLocation(undefined)
           void saveVeraSdToCloud(new OneDriveCloudDrive())
@@ -474,6 +491,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
       {
         label: t("disk.GoogleDrive"),
         icon: faCloud,
+        isDisabled: isSyncing,
         onClick: () => {
           setPopupLocation(undefined)
           void saveVeraSdToCloud(new GoogleDrive())
@@ -486,6 +504,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     {
       label: t("disk.loadDisk"),
       icon: faFolderOpen,
+      isDisabled: isSyncing,
       onClick: () => {
         setPopupLocation(undefined)
         setTimeout(() => {
@@ -497,6 +516,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     {
       label: t("disk.loadDiskFrom"),
       icon: faGlobe,
+      isDisabled: isSyncing,
       subMenu: loadDiskSubMenu
     },
     {
@@ -542,7 +562,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     {
       label: t("disk.downloadAndEjectDisk"),
       icon: faDownload,
-      isDisabled: !status.attached,
+      isDisabled: !status.attached || isSyncing,
       onClick: async () => {
         setPopupLocation(undefined)
         downloadAndEjectVeraSd()
@@ -552,7 +572,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     {
       label: t("disk.ejectDisk"),
       icon: faEject,
-      isDisabled: !status.attached,
+      isDisabled: !status.attached || isSyncing,
       onClick: () => {
         setPopupLocation(undefined)
         ejectVeraSd()
@@ -565,7 +585,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     {
       label: t("disk.saveDiskToDevice"),
       icon: faFloppyDisk,
-      isDisabled: !status.attached,
+      isDisabled: !status.attached || isSyncing,
       isVisible: () => isFileSystemApiSupported(),
       onClick: () => {
         saveVeraSdToDevice()
@@ -575,7 +595,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     {
       label: t("disk.saveDiskTo"),
       icon: faGlobe,
-      isDisabled: !status.attached,
+      isDisabled: !status.attached || isSyncing,
       isVisible: () => !isElectron,
       subMenu: saveDiskSubMenu
     },

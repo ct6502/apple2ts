@@ -575,7 +575,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       break
     }
     case MSG_WORKER.VERA_SD_IMAGE_DATA: {
-      const payload = e.data.payload as { data: Uint8Array, name: string } | null
+      const payload = e.data.payload as { data: Uint8Array, name: string, writeSeq?: number } | null
       const resolver = veraSdImageResolvers.shift()
       if (resolver) resolver(payload)
       break
@@ -823,7 +823,7 @@ export const handleSetVeraSdImage = (data: Uint8Array | null, name: string = "sd
   doPostMessage(MSG_MAIN.VERA_SD_IMAGE, data ? { data, name } : null)
 }
 
-export const requestVeraSdImage = (): Promise<{ data: Uint8Array, name: string } | null> => {
+export const requestVeraSdImage = (): Promise<{ data: Uint8Array, name: string, writeSeq?: number } | null> => {
   return new Promise((resolve) => {
     veraSdImageResolvers.push(resolve)
     doPostMessage(MSG_MAIN.VERA_SD_GET_IMAGE, null)
@@ -834,6 +834,6 @@ export const handleSetVeraSdWriteProtected = (wp: boolean) => {
   doPostMessage(MSG_MAIN.VERA_SD_WRITE_PROTECT, wp)
 }
 
-export const handleClearVeraSdChanges = () => {
-  doPostMessage(MSG_MAIN.VERA_SD_CLEAR_CHANGES, null)
+export const handleClearVeraSdChanges = (writeSeq?: number) => {
+  doPostMessage(MSG_MAIN.VERA_SD_CLEAR_CHANGES, writeSeq ?? null)
 }

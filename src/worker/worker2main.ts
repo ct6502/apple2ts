@@ -31,7 +31,7 @@ import {
 import { s6502 } from "./instructions"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE, VeraSdStatus } from "../common/utility"
-import { sdcard_attach_image, sdcard_detach_image, sdcard_get_status, set_sdcard_status_listener, sdcard_get_image, sdcard_set_write_protected, sdcard_clear_changes } from "./devices/vera/sdcard"
+import { sdcard_attach_image, sdcard_detach_image, sdcard_get_status, set_sdcard_status_listener, sdcard_get_image, sdcard_set_write_protected, sdcard_clear_changes, sdcard_get_write_seq } from "./devices/vera/sdcard"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
 import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
@@ -495,7 +495,7 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.VERA_SD_GET_IMAGE: {
         const data = sdcard_get_image()
         const status = sdcard_get_status()
-        doPostMessage(MSG_WORKER.VERA_SD_IMAGE_DATA, data ? { data, name: status.name } : null)
+        doPostMessage(MSG_WORKER.VERA_SD_IMAGE_DATA, data ? { data, name: status.name, writeSeq: sdcard_get_write_seq() } : null)
         break
       }
       case MSG_MAIN.VERA_SD_WRITE_PROTECT: {
@@ -503,7 +503,7 @@ if (typeof self !== "undefined") {
         break
       }
       case MSG_MAIN.VERA_SD_CLEAR_CHANGES: {
-        sdcard_clear_changes()
+        sdcard_clear_changes(typeof e.data.payload === "number" ? e.data.payload : undefined)
         break
       }
       case MSG_MAIN.REVERSE_YAXIS:

@@ -1,7 +1,7 @@
 import fs from "fs"
 import { enableVera, resetVera, initVera, sdcard_attach_image, sdcard_detach_image, sdcard_get_status } from "./vera"
 import { video_step, video_get_framebuffer, video_reset } from "./video"
-import { vera_spi_step, sdcard_set_write_protected, sdcard_clear_changes } from "./sdcard"
+import { vera_spi_step, sdcard_set_write_protected, sdcard_clear_changes, sdcard_get_write_seq } from "./sdcard"
 import { memGet, memSet } from "../../memory"
 import { doBoot } from "../../motherboard"
 import { s6502, setPC } from "../../instructions"
@@ -480,7 +480,8 @@ describe("VERA Graphics & Sound Card Emulation on Apple II", () => {
     spiSend(0xFE) // start token
     for (let i = 0; i < 512; i++) spiSend(0x77)
     spiSend(0x00); spiSend(0x00) // CRC
-    spiRead() // data response
+    const rejectToken = spiRead() // data response
+    expect(rejectToken).toBe(0x0D) // 0x0D: Data rejected due to write error / write protection
 
     // Sector 0 should NOT be modified because writeProtected is true
     expect(testImg[0]).toBe(0x00)
@@ -490,21 +491,108 @@ describe("VERA Graphics & Sound Card Emulation on Apple II", () => {
     sdcard_set_write_protected(false)
     expect(sdcard_get_status().writeProtected).toBe(false)
 
+    const seqBefore = sdcard_get_write_seq()
+
     // Perform CMD24 write
     spiSend(0x58); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x01)
     spiRead()
     spiSend(0xFE)
     for (let i = 0; i < 512; i++) spiSend(0x88)
     spiSend(0x00); spiSend(0x00)
-    spiRead()
+    const acceptToken = spiRead()
+    expect(acceptToken).toBe(0x05) // 0x05: Data accepted token
 
     // Sector 0 is modified and hasChanges is true
     expect(testImg[0]).toBe(0x88)
     expect(sdcard_get_status().hasChanges).toBe(true)
+    expect(sdcard_get_write_seq()).toBeGreaterThan(seqBefore)
 
-    // Clear changes
-    sdcard_clear_changes()
+    // Clearing changes with an obsolete writeSeq does NOT clear changes
+    sdcard_clear_changes(seqBefore)
+    expect(sdcard_get_status().hasChanges).toBe(true)
+
+    // Clearing changes with matching writeSeq clears changes
+    sdcard_clear_changes(sdcard_get_write_seq())
     expect(sdcard_get_status().hasChanges).toBe(false)
+
+    sdcard_detach_image()
+  })
+
+  test("VERA SD Card - CMD58 returns 5-byte R3 response (R1 + OCR[31:0]) before and after initialization", () => {
+    const testImg = new Uint8Array(1024 * 1024)
+    sdcard_attach_image(testImg, "test.img")
+
+    const spiSend = (val: number) => {
+      memSet(0xC21E, val)
+      vera_spi_step(4)
+    }
+    const spiRead = (): number => {
+      memSet(0xC21E, 0xFF)
+      vera_spi_step(4)
+      return memGet(0xC21E, false)
+    }
+
+    // Select SD Card
+    memSet(0xC21F, 0x01)
+
+    // CMD0 (GO_IDLE_STATE)
+    spiSend(0x40); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x95)
+    const r1_idle = spiRead()
+    expect(r1_idle).toBe(0x01)
+
+    // CMD58 (READ_OCR) before ACMD41: should return 01 C0 FF 80 00
+    spiSend(0x7A); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x01)
+    const r3_before = [spiRead(), spiRead(), spiRead(), spiRead(), spiRead()]
+    expect(r3_before).toEqual([0x01, 0xC0, 0xFF, 0x80, 0x00])
+
+    // CMD8
+    spiSend(0x48); spiSend(0x00); spiSend(0x00); spiSend(0x01); spiSend(0xAA); spiSend(0x87)
+    for (let i = 0; i < 5; i++) spiRead()
+
+    // CMD55 + ACMD41 to initialize card
+    spiSend(0x77); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x01); spiRead()
+    spiSend(0x69); spiSend(0x40); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x01); spiRead()
+
+    // CMD58 (READ_OCR) after ACMD41: should return 00 C0 FF 80 00
+    spiSend(0x7A); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x01)
+    const r3_after = [spiRead(), spiRead(), spiRead(), spiRead(), spiRead()]
+    expect(r3_after).toEqual([0x00, 0xC0, 0xFF, 0x80, 0x00])
+
+    sdcard_detach_image()
+  })
+
+  test("VERA SD Card - detaching or changing media resets SPI state", () => {
+    const testImg1 = new Uint8Array(1024 * 1024)
+    sdcard_attach_image(testImg1, "card1.img")
+
+    const spiSend = (val: number) => {
+      memSet(0xC21E, val)
+      vera_spi_step(4)
+    }
+    const spiRead = (): number => {
+      memSet(0xC21E, 0xFF)
+      vera_spi_step(4)
+      return memGet(0xC21E, false)
+    }
+
+    memSet(0xC21F, 0x01)
+
+    // Send partial command bytes (simulate interrupted transfer)
+    spiSend(0x40); spiSend(0x00); spiSend(0x00)
+
+    // Detach card in the middle of transfer
+    sdcard_detach_image()
+    expect(sdcard_get_status().attached).toBe(false)
+
+    // Attach second card
+    const testImg2 = new Uint8Array(1024 * 1024)
+    sdcard_attach_image(testImg2, "card2.img")
+    expect(sdcard_get_status().attached).toBe(true)
+
+    // SD Card should be cleanly reset and accept a fresh CMD0
+    memSet(0xC21F, 0x01)
+    spiSend(0x40); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x00); spiSend(0x95)
+    expect(spiRead()).toBe(0x01)
 
     sdcard_detach_image()
   })

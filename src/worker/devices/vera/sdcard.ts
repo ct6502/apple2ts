@@ -36,11 +36,27 @@ let selected = false
 let current_lba: number | undefined = undefined
 let sdcard_write_protected: boolean = false
 let sdcard_has_changes: boolean = false
+let write_seq: number = 0
 let status_listener: ((status: VeraSdStatus) => void) | null = null
+let last_status_notify_time = 0
+
+const notify_status_now = (): void => {
+  last_status_notify_time = Date.now()
+  if (status_listener) status_listener(sdcard_get_status())
+}
+
+const notify_status_throttled = (): void => {
+  const now = Date.now()
+  if (now - last_status_notify_time >= 100) {
+    notify_status_now()
+  }
+}
 
 export const set_sdcard_status_listener = (listener: ((status: VeraSdStatus) => void) | null): void => {
   status_listener = listener
 }
+
+export const sdcard_get_write_seq = (): number => write_seq
 
 export const sdcard_get_status = (): VeraSdStatus => ({
   attached: sdcard_attached && sdcard_data !== null,
@@ -53,16 +69,37 @@ export const sdcard_get_status = (): VeraSdStatus => ({
 
 export const sdcard_set_write_protected = (wp: boolean): void => {
   sdcard_write_protected = wp
-  if (status_listener) status_listener(sdcard_get_status())
+  notify_status_now()
 }
 
-export const sdcard_clear_changes = (): void => {
-  sdcard_has_changes = false
-  if (status_listener) status_listener(sdcard_get_status())
+export const sdcard_clear_changes = (seq?: number): void => {
+  if (seq === undefined || seq === write_seq) {
+    sdcard_has_changes = false
+    notify_status_now()
+  }
 }
 
 export const sdcard_get_image = (): Uint8Array | null => {
   return sdcard_data
+}
+
+const reset_spi_state = (): void => {
+  rxbuf_idx = 0
+  last_cmd = 0
+  response = null
+  response_length = 0
+  response_counter = 0
+  ongoing_multiblock_read = false
+  is_acmd = false
+  busy = false
+  sending_byte = 0xff
+  received_byte = 0xff
+  is_idle = true
+  is_initialized = false
+  selected = false
+  ss = false
+  autotx = false
+  outcounter = 0
 }
 
 export const sdcard_attach_image = (data: Uint8Array | null, name: string = "sd.img"): void => {
@@ -73,11 +110,10 @@ export const sdcard_attach_image = (data: Uint8Array | null, name: string = "sd.
     sdcard_attached = true
     sdcard_has_changes = false
     sdcard_write_protected = false
-    is_initialized = false
-    is_idle = true
     current_lba = undefined
+    write_seq = 0
     console.log(`[VERA SD] Attached image '${name}' (${data.length} bytes, ${Math.floor(data.length / 512)} sectors)`)
-    if (status_listener) status_listener(sdcard_get_status())
+    notify_status_now()
   }
 }
 
@@ -86,20 +122,7 @@ export const sdcard_detach_image = (): void => {
 }
 
 export const vera_spi_init = (): void => {
-  ss = false
-  busy = false
-  autotx = false
-  received_byte = 0xff
-
-  is_acmd = false
-  is_idle = true
-  is_initialized = false
-  ongoing_multiblock_read = false
-
-  response_length = 0
-  response_counter = 0
-
-  selected = false
+  reset_spi_state()
 }
 
 export const vera_spi_step = (clocks: number): void => {
@@ -185,9 +208,10 @@ const WriteBlock = (blockLba: number, src: Uint8Array): boolean => {
   const offset = blockLba * 512
   if (offset + 512 > sdcard_data.length) return false
   sdcard_data.set(src.subarray(0, 512), offset)
+  write_seq++
   if (!sdcard_has_changes) {
     sdcard_has_changes = true
-    if (status_listener) status_listener(sdcard_get_status())
+    notify_status_now()
   }
   return true
 }
@@ -197,17 +221,16 @@ export const sdcard_set_path = (path: string): void => {
 }
 
 export const sdcard_detach = (): void => {
+  reset_spi_state()
   if (sdcard_attached || sdcard_data) {
     sdcard_data = null
     sdcard_name = ""
     sdcard_attached = false
     sdcard_has_changes = false
     sdcard_write_protected = false
-    is_initialized = false
-    is_idle = true
     current_lba = undefined
     console.log("[VERA SD] Detached image")
-    if (status_listener) status_listener(sdcard_get_status())
+    notify_status_now()
   }
 }
 
@@ -268,7 +291,8 @@ const set_response_r2 = (): void => {
 }
 
 const set_response_r3 = (): void => {
-  const r3 = new Uint8Array([0xC0, 0xFF, 0x80, 0x00])
+  const r1 = is_idle ? 0x01 : 0x00
+  const r3 = new Uint8Array([r1, 0xC0, 0xFF, 0x80, 0x00])
   response = r3
   response_length = r3.length
 }
@@ -307,17 +331,19 @@ const sdcard_handle = (inbyte: number): number => {
           // Prepare next multiblock reply
           lba++
           current_lba = lba
-          if (status_listener) status_listener(sdcard_get_status())
+          notify_status_throttled()
           response_length = loadBlock(read_multiblock_next_response)
           // Stop multiblock read if error
           if (response_length == 1) {
             ongoing_multiblock_read = false
+            notify_status_now()
           }
           response = read_multiblock_next_response
           response_counter = 0
         } else {
           response = null
           ongoing_multiblock_read = false
+          notify_status_now()
         }
       }
     }
@@ -369,6 +395,7 @@ const sdcard_handle = (inbyte: number): number => {
         case CMD12: {
           // STOP_TRANSMISSION: Abort ongoing multiple block read
           ongoing_multiblock_read = false
+          notify_status_now()
           set_response_r1()
           break
         }
@@ -388,7 +415,7 @@ const sdcard_handle = (inbyte: number): number => {
           ongoing_multiblock_read = true
           lba = ((rxbuf[1] << 24) | (rxbuf[2] << 16) | (rxbuf[3] << 8) | rxbuf[4]) >>> 0
           current_lba = lba
-          if (status_listener) status_listener(sdcard_get_status())
+          notify_status_now()
           const read_block_response = new Uint8Array(2 + 512 + 2)
           read_block_response[0] = 0 // R1 response to command
           response_length = 1 + loadBlock(read_block_response.subarray(1))
@@ -402,7 +429,7 @@ const sdcard_handle = (inbyte: number): number => {
           // READ_SINGLE_BLOCK
           lba = ((rxbuf[1] << 24) | (rxbuf[2] << 16) | (rxbuf[3] << 8) | rxbuf[4]) >>> 0
           current_lba = lba
-          if (status_listener) status_listener(sdcard_get_status())
+          notify_status_now()
           const read_block_response = new Uint8Array(2 + 512 + 2)
           read_block_response[0] = 0 // R1 response to command
           response_length = 1 + loadBlock(read_block_response.subarray(1))
@@ -417,7 +444,7 @@ const sdcard_handle = (inbyte: number): number => {
           // WRITE_BLOCK
           lba = ((rxbuf[1] << 24) | (rxbuf[2] << 16) | (rxbuf[3] << 8) | rxbuf[4]) >>> 0
           current_lba = lba
-          if (status_listener) status_listener(sdcard_get_status())
+          notify_status_now()
           if (rxbuf_idx > 4 && lba * 512 >= FileSizeBytes()) {
             const bad_lba = new Uint8Array([0x00, 0x08])
             response = bad_lba
@@ -453,8 +480,9 @@ const sdcard_handle = (inbyte: number): number => {
       // Check for 'start block' byte
       if (last_cmd == CMD24 && rxbuf[0] == 0xFE) {
         if (lba * 512 < FileSizeBytes()) {
-          WriteBlock(lba, rxbuf.subarray(1, 513))
-          response = new Uint8Array([0x05]) // Data accepted token
+          const written = WriteBlock(lba, rxbuf.subarray(1, 513))
+          // 0x05 = Data accepted, 0x0D = Data rejected due to write error / write protection
+          response = new Uint8Array([written ? 0x05 : 0x0D])
           response_length = 1
           response_counter = 0
         }
