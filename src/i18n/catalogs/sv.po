@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-09-19 18:13+0000\n"
-"Last-Translator: Daniel Nylander <yeagersthlm@gmail.com>\n"
+"PO-Revision-Date: 2026-09-20 10:51+0000\n"
+"Last-Translator: bittin1ddc447d824349b2 <bittin@reimu.nl>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/apple2ts/browser-"
 "emulator/sv/>\n"
 "Language: sv\n"
@@ -1102,11 +1102,9 @@ msgctxt "disk.saveDiskToGoogleDrive"
 msgid "Save Disk to Google Drive"
 msgstr "Spara disk på Google Drive"
 
-#, fuzzy
-#| msgid "Load Disk"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
-msgstr "Läs in disk"
+msgstr "Läs in disk..."
 
 msgctxt "disk.loadDiskFrom"
 msgid "Load Disk from"
@@ -1162,7 +1160,7 @@ msgstr "Läs in disk från Google Drive"
 
 msgctxt "disk.insertBlankDisk"
 msgid "Insert Blank Disk"
-msgstr ""
+msgstr "Sätt i en tom diskett"
 
 msgctxt "disk.syncEveryMinute"
 msgid "Sync Every Minute"
