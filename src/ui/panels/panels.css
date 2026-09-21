@@ -190,11 +190,13 @@ body.dark-mode .dragbar:hover::before {
   margin: 2px;
   border-color: var(--text-color);
   background-color: var(--panel-background);
+  color: var(--text-color);
 }
 
 body.dark-mode .round-rect-border {
   background-color: var(--panel-background-dark);
   border-color: var(--text-color-dark);
+  color: var(--text-color-dark);
 }
 
 .tight-button {

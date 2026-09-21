@@ -49,7 +49,7 @@ export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blo
     const crc = crc32(diskData, 12)
     diskData.set(uint32toBytes(crc), 8)
   }
-  return new Blob([diskData] as BlobPart[])
+  return new Blob([diskData] as BlobPart[], { type: "application/octet-stream" })
 }
 
 const downloadDisk = (diskData: Uint8Array, filename: string, isHardDrive: boolean, downloadWoz: boolean) => {
@@ -70,7 +70,12 @@ const downloadDisk = (diskData: Uint8Array, filename: string, isHardDrive: boole
   link.style.visibility = "hidden"
   document.body.appendChild(link)
   link.click()
-  document.body.removeChild(link)
+  setTimeout(() => {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link)
+    }
+    URL.revokeObjectURL(url)
+  }, 10000)
 }
 
 export const downloadDiskToDevice = (index: number, downloadWoz = false) => {
@@ -367,7 +372,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         if (!isSlotDisabled) handleMenuClick(event)
       }}>
       <span className="flex-row">
-        <span className="flex-column">
+        <span className="flex-column" style={{ position: "relative" }}>
           <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
@@ -379,7 +384,7 @@ const DiskDrive = (props: DiskDriveProps) => {
             }}
             onClick={(event) => { if (!isSlotDisabled) handleMenuClick(event) }} />
           <FontAwesomeIcon
-            icon={faRotate}
+            icon={cloudDriveStatusClassName === "disk-clouddrive-paused" ? faPause : faRotate}
             className={`fa-fw disk-clouddrive ${cloudDriveStatusClassName}`}>
           </FontAwesomeIcon>
         </span>
@@ -519,7 +524,8 @@ const DiskDrive = (props: DiskDriveProps) => {
               if (dprops.cloudData) {
                 const dpropsTmp: DriveProps = { ...dprops }
                 if (dpropsTmp.cloudData) {
-                  dpropsTmp.cloudData.syncInterval = Number.MAX_VALUE
+                  const isCurrentlyPaused = dpropsTmp.cloudData.syncInterval === Number.MAX_VALUE
+                  dpropsTmp.cloudData.syncInterval = isCurrentlyPaused ? 60000 : Number.MAX_VALUE
                   doSetUIDriveProps(dpropsTmp)
                 }
               }

@@ -690,6 +690,13 @@
       "order": 4
     },
     {
+      "group": "disk",
+      "id": "diskDrives.vera",
+      "binding": "diskDrives.vera",
+      "parentId": "diskDrives",
+      "order": 5
+    },
+    {
       "group": "diskTemplates",
       "id": "diskDrives.{{driveIndex}}.load.device",
       "binding": "diskDrives.load.device",

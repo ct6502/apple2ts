@@ -1,5 +1,5 @@
 import { DiskCollectionSortMode, setPreferenceDiskCollectionSort } from "../../localstorage"
-import { handleGetSlotConfig, passSetDriveProps } from "../../main2worker"
+import { handleGetSlotConfig, handleGetVeraSdStatus, handleSetVeraSdWriteProtected, passSetDriveProps } from "../../main2worker"
 import { CLOUD_SYNC, getDefaultDiskDriveIndex } from "../../../common/utility"
 import {
   DISK_COLLECTION_ITEM_TYPE,
@@ -52,9 +52,22 @@ import "./diskinterface.css"
 import DiskDrive from "./diskdrive"
 import { DiskImageChooser } from "./diskimagechooser"
 import { faHdd } from "@fortawesome/free-solid-svg-icons"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Flyout from "../../flyout"
 import ImageWriter from "../printer/imagewriter"
+import VeraSdIcon, {
+  downloadAndEjectVeraSd,
+  downloadVeraSd,
+  ejectVeraSd,
+  isVeraSdSyncing,
+  isVeraSdSyncPaused,
+  loadVeraSdFromCloud,
+  openSdFilePicker,
+  saveVeraSdToCloud,
+  saveVeraSdToDevice,
+  syncVeraSdNow,
+  toggleVeraSdSyncPaused,
+} from "../vera/verasdicon"
 import { isMinimalTheme } from "../../ui_settings"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { choiceBinding, controlFromJson, controlsFromJson, toggleBinding, type RetroControlBindings } from "../../retro/retrocontrolmetadata"
@@ -416,17 +429,145 @@ const diskLoadItems = (driveIndex: number): RetroControlMetadata[] => [
   },
 ]
 
-const diskMenuSeparator = (driveIndex: number, id: string): RetroControlMetadata =>
+const diskMenuSeparator = (driveIndex: number | string, id: string): RetroControlMetadata =>
   controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.{{separatorId}}", diskTemplateBindings, { driveIndex, separatorId: id })
 
 const diskMenuGroup = (
-  driveIndex: number,
+  driveIndex: number | string,
   id: string,
   label: string,
   items: RetroControlMetadata[],
 ): RetroControlMetadata[] => items.length > 0
     ? [{ ...diskMenuSeparator(driveIndex, id), label }, ...items]
     : []
+
+const veraSdLoadItems = (): RetroControlMetadata[] => [
+  controlFromJson(
+    "diskTemplates",
+    "diskDrives.{{driveIndex}}.load.device",
+    {
+      "diskDrives.load.device": {
+        action: () => {
+          void openSdFilePicker()
+        },
+      },
+    },
+    { driveIndex: "vera" },
+  ),
+  {
+    ...controlFromJson(
+      "diskTemplates",
+      "diskDrives.{{driveIndex}}.load.from",
+      {},
+      { driveIndex: "vera" },
+    ),
+    dynamicChildren: () => [
+      {
+        ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.load.oneDrive", {}, { driveIndex: "vera" }),
+        action: () => { void loadVeraSdFromCloud(new OneDriveCloudDrive()) },
+      },
+      {
+        ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.load.googleDrive", {}, { driveIndex: "vera" }),
+        action: () => { void loadVeraSdFromCloud(new GoogleDrive()) },
+      },
+    ],
+  },
+]
+
+const veraSdInsertedItems = (): RetroControlMetadata[] => {
+  const status = handleGetVeraSdStatus()
+  const hasDisk = Boolean(status.attached)
+  const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron")
+
+  const diskItems: RetroControlMetadata[] = [
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.writeProtected", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk,
+      ...toggleBinding({
+        enabled: () => Boolean(handleGetVeraSdStatus().writeProtected),
+        setEnabled: (context, enabled) => {
+          handleSetVeraSdWriteProtected(enabled)
+          context.displayProps.updateDisplay()
+        },
+      }),
+    },
+  ]
+
+  const downloadItems: RetroControlMetadata[] = [
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.download", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk,
+      action: () => { void downloadVeraSd() },
+    },
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.downloadAndEject", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk,
+      action: (currentContext: RetroMenuContext) => {
+        void downloadAndEjectVeraSd()
+        currentContext.displayProps.updateDisplay()
+      },
+    },
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.eject", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk,
+      action: (currentContext: RetroMenuContext) => {
+        ejectVeraSd()
+        currentContext.displayProps.updateDisplay()
+      },
+    },
+  ]
+
+  const saveToItems: RetroControlMetadata[] = [
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.saveToOneDrive", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk && !isElectron,
+      action: () => { void saveVeraSdToCloud(new OneDriveCloudDrive()) },
+    },
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.saveToGoogleDrive", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk && !isElectron,
+      action: () => { void saveVeraSdToCloud(new GoogleDrive()) },
+    },
+  ]
+
+  const saveItems: RetroControlMetadata[] = [
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.saveToDevice", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk && isFileSystemApiSupported(),
+      action: () => { void saveVeraSdToDevice() },
+    },
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.saveTo", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk && !isElectron,
+      dynamicChildren: () => saveToItems,
+    },
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.pauseSyncing", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk,
+      indicator: () => isVeraSdSyncPaused() ? "*" : undefined,
+      action: (currentContext: RetroMenuContext) => {
+        toggleVeraSdSyncPaused()
+        currentContext.displayProps.updateDisplay()
+      },
+    },
+    {
+      ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.syncNow", {}, { driveIndex: "vera" }),
+      selectable: () => hasDisk && !isVeraSdSyncing(),
+      action: () => { void syncVeraSdNow() },
+    },
+  ]
+
+  return [
+    ...diskMenuGroup("vera", "diskSeparator", "Disk", diskItems),
+    ...diskMenuGroup("vera", "downloadSeparator", "Download", downloadItems),
+    ...diskMenuGroup("vera", "saveSeparator", "Save", saveItems),
+  ]
+}
+
+const veraSdRetroItems = (): RetroControlMetadata[] => [
+  ...veraSdLoadItems(),
+  ...veraSdInsertedItems(),
+]
 
 const getCurrentDiskScreenshotUrl = () => {
   const canvas = document.getElementById("hiddenCanvas") as HTMLCanvasElement | null
@@ -666,7 +807,32 @@ const diskBindings: RetroControlBindings = {
     } satisfies Partial<RetroControlMetadata>,
   ])),
   "diskDrives.none": {
-    isVisible: () => diskDrives.every(({ slot }) => handleGetSlotConfig()[slot] === "none"),
+    isVisible: () => diskDrives.every(({ slot }) => handleGetSlotConfig()[slot] === "none")
+      && handleGetSlotConfig()[2] !== "vera" && handleGetSlotConfig()[4] !== "vera",
+  },
+  "diskDrives.vera": {
+    label: (context: RetroMenuContext) => {
+      const cfg = handleGetSlotConfig()
+      const slot = cfg[2] === "vera" ? 2 : (cfg[4] === "vera" ? 4 : 2)
+      const status = handleGetVeraSdStatus()
+      return context.t("retroControl.drive", {
+        drive: `S${slot},SD`,
+        disk: status.attached
+          ? `${status.hasChanges ? "*" : ""}${decodeDiskTitle(status.name)}`
+          : context.t("retroControl.card.empty"),
+      })
+    },
+    isVisible: () => {
+      const cfg = handleGetSlotConfig()
+      return cfg[2] === "vera" || cfg[4] === "vera"
+    },
+    dynamicChildren: () => veraSdRetroItems(),
+    actionLabel: (context: RetroMenuContext) => context.t(handleGetVeraSdStatus().attached
+      ? "retroControl.select"
+      : "retroControl.load"),
+    contextualActionLabel: (context: RetroMenuContext) => handleGetVeraSdStatus().attached
+      ? context.t("retroControl.options")
+      : context.t("retroControl.load"),
   },
   ...Object.fromEntries(diskDrives.map(({ index, slot }) => [
     `diskDrives.${index}`,
@@ -705,8 +871,15 @@ const DiskInterface = (props: DisplayProps) => {
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
   const isScreenNarrow = width < height
 
-  const slotConfig = handleGetSlotConfig()
-  const allSlotsDisabled = slotConfig[1] === "none" && slotConfig[6] === "none" && slotConfig[7] === "none"
+  const [slotConfig, setSlotConfig] = useState(handleGetSlotConfig)
+  useEffect(() => {
+    const handleSlotChange = () => setSlotConfig({ ...handleGetSlotConfig() })
+    window.addEventListener("apple2ts-slot-config-changed", handleSlotChange)
+    return () => window.removeEventListener("apple2ts-slot-config-changed", handleSlotChange)
+  }, [])
+
+  const isVeraInstalled = slotConfig[2] === "vera" || slotConfig[4] === "vera"
+  const allSlotsDisabled = slotConfig[1] === "none" && slotConfig[6] === "none" && slotConfig[7] === "none" && !isVeraInstalled
 
   return (
     <span style={{ opacity: allSlotsDisabled ? 0.4 : 1, filter: allSlotsDisabled ? "grayscale(100%)" : "none", pointerEvents: allSlotsDisabled ? "none" : "auto", cursor: allSlotsDisabled ? "not-allowed" : "pointer" }}>
@@ -724,6 +897,7 @@ const DiskInterface = (props: DisplayProps) => {
               setShowFileOpenDialog={props.setShowFileOpenDialog} />
             <DiskDrive key={1} index={1} renderCount={props.renderCount}
               setShowFileOpenDialog={props.setShowFileOpenDialog} />
+            {(isMinimalTheme() && isScreenNarrow) && <VeraSdIcon renderCount={props.renderCount} />}
             {(isMinimalTheme() && isScreenNarrow) && <ImageWriter />}
           </span>
           <span className="flex-row">
@@ -731,6 +905,7 @@ const DiskInterface = (props: DisplayProps) => {
               setShowFileOpenDialog={props.setShowFileOpenDialog} />
             <DiskDrive key={3} index={3} renderCount={props.renderCount}
               setShowFileOpenDialog={props.setShowFileOpenDialog} />
+            {(!isMinimalTheme() || !isScreenNarrow) && <VeraSdIcon renderCount={props.renderCount} />}
             {(!isMinimalTheme() || !isScreenNarrow) && <ImageWriter />}
           </span>
         </div>

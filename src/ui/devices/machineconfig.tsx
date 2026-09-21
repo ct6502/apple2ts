@@ -3,6 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGear } from "@fortawesome/free-solid-svg-icons"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../main2worker"
 import { setPreferenceMachineName, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
+import { setUIStateBoolean, setTabView } from "../ui_settings"
+import { notifySettingsChanged } from "../settingschange"
 import PopupMenu from "../controls/popupmenu"
 import { useTranslation } from "../../i18n/useTranslation"
 import { DEFAULT_SLOT_CONFIG, RUN_MODE } from "../../common/utility"
@@ -85,6 +87,9 @@ const selectRetroSlotCard = (context: RetroMenuContext, slot: SlotNumber, option
   }
   if (card === "vera") {
     setPreferenceVeraSlot(slot as VERA_SLOT)
+    setUIStateBoolean("infoPanel", true)
+    setTabView(4)
+    notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
   } else if (currentConfig[slot] === "vera") {
     setPreferenceVeraSlot(0)
   }
@@ -203,6 +208,9 @@ export const MachineConfig = (props: DisplayProps) => {
 
     if (cardId === "vera") {
       setPreferenceVeraSlot(slot as VERA_SLOT)
+      setUIStateBoolean("infoPanel", true)
+      setTabView(4)
+      notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
     } else if (currentConfig[slot] === "vera") {
       setPreferenceVeraSlot(0)
     }

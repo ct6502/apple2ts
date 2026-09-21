@@ -1,6 +1,6 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
-  DISASSEMBLE_VISIBLE, DEFAULT_SLOT_CONFIG} from "../common/utility"
+  DISASSEMBLE_VISIBLE, DEFAULT_SLOT_CONFIG, VeraSdStatus } from "../common/utility"
 import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -31,6 +31,10 @@ const pendingWorkerOperations = new Map<number, {
   reject: (error: Error) => void,
   timeout: ReturnType<typeof setTimeout>,
 }>()
+
+let veraSdStatus: VeraSdStatus = { attached: false, name: "", size: 0 }
+const veraSdStatusListeners = new Set<(status: VeraSdStatus) => void>()
+const veraSdImageResolvers: Array<(result: { data: Uint8Array, name: string } | null) => void> = []
 
 const requestWorkerOperation = <T = void>(
   msg: MSG_MAIN,
@@ -359,6 +363,7 @@ export const passSetVeraSlot = (slot: VERA_SLOT) => {
 export const passSetSlotConfig = (config: SlotConfig) => {
   doPostMessage(MSG_MAIN.SLOT_CONFIG, config)
   machineState.slotConfig = config
+  window.dispatchEvent(new CustomEvent("apple2ts-slot-config-changed", { detail: config }))
 }
 
 export const passSetSoftSwitches = (addresses: Array<number> | null) => {
@@ -560,6 +565,17 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     case MSG_WORKER.VERA_PCM_WRITE: {
       const pcmWrite = e.data.payload as VeraPcmWrite
       playVeraPcmWrite(pcmWrite)
+      break
+    }
+    case MSG_WORKER.VERA_SD_STATUS: {
+      veraSdStatus = e.data.payload as VeraSdStatus
+      veraSdStatusListeners.forEach(fn => fn(veraSdStatus))
+      break
+    }
+    case MSG_WORKER.VERA_SD_IMAGE_DATA: {
+      const payload = e.data.payload as { data: Uint8Array, name: string, writeSeq?: number } | null
+      const resolver = veraSdImageResolvers.shift()
+      if (resolver) resolver(payload)
       break
     }
     case MSG_WORKER.COMM_DATA: {
@@ -787,4 +803,35 @@ export const handleGetTracelog = () => {
 
 export const handleGetBasicMemory = () => {
   return machineState.basicMemory
+}
+
+export const handleGetVeraSdStatus = (): VeraSdStatus => {
+  return veraSdStatus
+}
+
+export const subscribeVeraSdStatus = (listener: (status: VeraSdStatus) => void) => {
+  veraSdStatusListeners.add(listener)
+  listener(veraSdStatus)
+  return () => {
+    veraSdStatusListeners.delete(listener)
+  }
+}
+
+export const handleSetVeraSdImage = (data: Uint8Array | null, name: string = "sd.img") => {
+  doPostMessage(MSG_MAIN.VERA_SD_IMAGE, data ? { data, name } : null)
+}
+
+export const requestVeraSdImage = (): Promise<{ data: Uint8Array, name: string, writeSeq?: number } | null> => {
+  return new Promise((resolve) => {
+    veraSdImageResolvers.push(resolve)
+    doPostMessage(MSG_MAIN.VERA_SD_GET_IMAGE, null)
+  })
+}
+
+export const handleSetVeraSdWriteProtected = (wp: boolean) => {
+  doPostMessage(MSG_MAIN.VERA_SD_WRITE_PROTECT, wp)
+}
+
+export const handleClearVeraSdChanges = (writeSeq?: number) => {
+  doPostMessage(MSG_MAIN.VERA_SD_CLEAR_CHANGES, writeSeq ?? null)
 }

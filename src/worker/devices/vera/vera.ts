@@ -59,6 +59,8 @@ export const enableVera = (enable = true, aslot = 3) => {
   if (!enable)
     return
 
+  resetVera()
+
   if (!veraInit())
     return
 
@@ -85,6 +87,11 @@ const cycleCountCallback = (_slot: number) => {
 const handleVeraIO = (addr: number, val = -1): number => {
   // We dont have any ROM, but we have vera regs starting at Cx00
   if (addr >= 0xc100) {
+    if (prevCycleCount) {
+      const cycleDelta = s6502.cycleCount - prevCycleCount
+      pendingCycles += cycleDelta
+    }
+    prevCycleCount = s6502.cycleCount
     syncVera()
     if (val >= 0) {
       video_write(addr&0xff, val)
@@ -95,3 +102,5 @@ const handleVeraIO = (addr: number, val = -1): number => {
   }
   return 0
 }
+
+export { sdcard_attach_image, sdcard_detach_image, sdcard_get_status, sdcard_get_image, set_sdcard_status_listener } from "./sdcard"

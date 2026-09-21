@@ -157,6 +157,11 @@ export const handleInputParams = (paramString = "") => {
       nextSlotConfig[slotNum as 1 | 2 | 3 | 4 | 5 | 6 | 7] = card
       if (card === "vera") {
         setPreferenceVeraSlot(slotNum as VERA_SLOT)
+        if (!params.get("tab")) {
+          setUIStateBoolean("infoPanel", true)
+          setTabView(4)
+          notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
+        }
       } else if (currentSlotConfig[slotNum as 1 | 2 | 3 | 4 | 5 | 6 | 7] === "vera") {
         setPreferenceVeraSlot(0)
       }
@@ -176,6 +181,11 @@ export const handleInputParams = (paramString = "") => {
         }
         nextSlotConfig[vSlot as 2 | 4] = "vera"
         slotConfigChanged = true
+        if (!params.get("tab")) {
+          setUIStateBoolean("infoPanel", true)
+          setTabView(4)
+          notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
+        }
       }
     }
   }
