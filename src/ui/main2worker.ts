@@ -140,7 +140,7 @@ export const passBasicStep = () => {
   doPostMessage(MSG_MAIN.BASIC_STEP, true)
 }
 
-export const passSetDebug = (doDebug: boolean) => {
+export const passSetIsDebugging = (doDebug: boolean) => {
   doPostMessage(MSG_MAIN.DEBUG, doDebug)
   // Force the state right away, so the UI can update.
   machineState.isDebugging = doDebug
@@ -457,6 +457,9 @@ let machineState: MachineState = {
   cout: 0,
   cpuSpeed: 0,
   extraRamSize: 64,
+  heatMapCPU: new Float64Array(),
+  heatMapMemGet: new Float64Array(),
+  heatMapMemSet: new Float64Array(),
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
   isTracing: TEST_DEBUG,
@@ -676,6 +679,18 @@ export const handleGetState6502 = () => {
 
 export const handleGetExecution = () => {
   return machineState.execution
+}
+
+export const handleGetHeatMapCPU = () => {
+  return machineState.heatMapCPU
+}
+
+export const handleGetHeatMapMemGet = () => {
+  return machineState.heatMapMemGet
+}
+
+export const handleGetHeatMapMemSet = () => {
+  return machineState.heatMapMemSet
 }
 
 export const handleGetTextPage = () => {

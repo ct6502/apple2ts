@@ -23,10 +23,12 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   exportMemoryToHiresLine,
   getDataBlock,
   setSlotDriver,
-  clearSlot} from "./memory"
+  clearSlot,
+  getHeatMapMemGet,
+  getHeatMapMemSet} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
-import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, processInstruction, resetCycleCountCallbacks, setStepOut } from "./cpu6502"
+import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, processInstruction, resetCycleCountCallbacks, setStepOut, getHeatMapCPU } from "./cpu6502"
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
@@ -848,6 +850,9 @@ export const getExternalMachineState = () => {
         ramWorksKb: 64 * (RamWorksMaxBank + 1),
       },
     },
+    heatMapCPU: getHeatMapCPU(),
+    heatMapMemGet: getHeatMapMemGet(),
+    heatMapMemSet: getHeatMapMemSet(),
     hires: getHires(),
     iTempState: getTempStateIndex(),
     isDebugging: isDebugging,

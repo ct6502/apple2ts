@@ -49,7 +49,7 @@ jest.mock("../main2worker", () => ({
   passKeypress: jest.fn(),
   passMouseEvent: jest.fn(),
   passPasteText: jest.fn(),
-  passSetDebug: jest.fn(),
+  passSetIsDebugging: jest.fn(),
   passSetBinaryBlock: jest.fn(),
   requestSetState6502: jest.fn(),
   passSetMemory: jest.fn(),

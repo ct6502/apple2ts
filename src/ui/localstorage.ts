@@ -105,7 +105,6 @@ export const setPreferenceBoolean = (
     localStorage.removeItem(key)
   }
   setUIStateBoolean(key as BooleanKeyOf<UIState>, value)
-  if (key === "debugMode") passSetShowDebugTab(value)
   if (key === "reverseYAxis") passReverseYAxis(value)
   if (key === "siriusJoyport") passSiriusJoyport(value)
     const controlId = booleanControlIds[key]
@@ -454,9 +453,6 @@ export const loadPreferences = () => {
   })
 
   // Extra processing for certain boolean prefs
-  if (getUIState().debugMode) {
-    passSetShowDebugTab(true)
-  }
   if (getUIState().reverseYAxis) {
     passReverseYAxis(true)
   }

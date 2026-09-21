@@ -607,6 +607,10 @@ body.dark-mode .icon-text {
   padding-top: 0px;
 }
 
+.debug-tab {
+  width: 900px;
+}
+
 /* Keep editor controls below the scrolling content, above BASIC variables. */
 .debug-section .editor-workspace,
 .debug-section.editor-workspace {
@@ -617,12 +621,12 @@ body.dark-mode .icon-text {
   height: max(200px, calc(100dvh - 20px));
 }
 
-.editor-workspace > * {
+.editor-workspace>* {
   flex-shrink: 0;
 }
 
-.editor-workspace > .editor-content,
-.editor-workspace > .agent-messages {
+.editor-workspace>.editor-content,
+.editor-workspace>.agent-messages {
   flex: 1;
   min-height: 0;
 }

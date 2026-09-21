@@ -1,6 +1,6 @@
 import { COLOR_MODE, MONITOR_MODE, RUN_MODE, UI_THEMES } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetIsDebugging } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
 import { isOneDriveMsalAuthCallback } from "./devices/disk/onedrive_authredirect"
@@ -29,7 +29,7 @@ export const handleInputParams = (paramString = "") => {
     if (tabNum >= 0) {
       setUIStateBoolean("infoPanel", true)
       setTabView(tabNum)
-      passSetDebug(tabNum === 1)
+      passSetIsDebugging(tabNum === 1)
       passSetShowDebugTab(tabNum === 1)
       notifySettingsChanged(["panels.tab"], "external")
     }
@@ -37,7 +37,7 @@ export const handleInputParams = (paramString = "") => {
 
   if (params.get("debug") === "on") {
     setTabView(tabNames.indexOf("debug"))
-    passSetDebug(true)
+    passSetIsDebugging(true)
     passSetShowDebugTab(true)
     notifySettingsChanged(["panels.tab"], "external")
   }

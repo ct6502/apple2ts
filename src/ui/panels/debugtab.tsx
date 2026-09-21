@@ -1,4 +1,4 @@
-import "./panels.css"
+import HeatMapPanel from "./memory/heatmap_panel"
 import DisassemblyPanel from "./disassembly/disassemblypanel"
 import TimeTravelPanel from "./timetravelpanel"
 import State6502Controls from "./state6502controls"
@@ -61,7 +61,8 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
   const isShort = !isMinimalTheme() && window.innerHeight < 900
 
   return (
-    <div className="flex-column-gap debug-section">
+  <div className="flex-row-gap debug-section debug-tab">
+    <div className="flex-column-gap">
       <State6502Controls />
       <div className="flex-row" ref={containerRef}>
         <div 
@@ -86,6 +87,10 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
         </div>
       </div>
     </div>
+    <div className="flex-column-gap">
+      <HeatMapPanel/>
+    </div>
+  </div>
   )
 }
 
