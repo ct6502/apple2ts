@@ -412,6 +412,11 @@ export const getHeatMapCPU = () => {
   return new Float64Array()
 }
 
+export const resetHeatMapCPU = () => {
+  heatMapCPU.fill(0)
+}
+
+
 export const processInstruction = (updateTrace: ((str: string) => void) | null = null) => {
   let cycles = 0
   const PC1 = s6502.PC

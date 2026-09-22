@@ -330,7 +330,7 @@ export const checkSoftSwitches = (addr: number,
           const scanline = Math.floor(modCycles / 65)
           const pixelInLine = cycleCount % 65
           const hgrAddr = hgrAddress(scanline, pixelInLine)
-          value = memGet(hgrAddr)
+          value = memGet(hgrAddr, false)
         } else {
           value = fullrand()
         }

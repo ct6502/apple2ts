@@ -78,6 +78,14 @@ export const getHeatMapMemSet = (): Float64Array => {
   return new Float64Array()
 }
 
+export const resetHeatMapMemGet = () => {
+  heatMapMemGet.fill(0)
+}
+
+export const resetHeatMapMemSet = () => {
+  heatMapMemSet.fill(0)
+}
+
 export const getCurrentMachineName = () => {
   return currentMachineName
 }

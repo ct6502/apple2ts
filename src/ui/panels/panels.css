@@ -760,3 +760,19 @@ body.dark-mode .link-builder-textarea {
   border-color: var(--text-color-dark);
   color: var(--text-color-dark);
 }
+
+.heatmap-address-column {
+  overflow-y: hidden;
+  overflow-x: hidden;
+  width: 4em;
+  height: 512px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  align-items: flex-end;
+  transform: translateY(-6.5px);
+  padding-right: 0rem;
+  line-height: 16px;
+  font-size: 8px;
+}

@@ -19,31 +19,19 @@ const HeatMapControls = (props: { state: HEATMAP_STATE, setState: React.Dispatch
         <FontAwesomeIcon icon={faMicrochip} />
       </button>
       <button className={`push-button
-        ${props.state === HEATMAP_STATE.GETMEM || props.state === HEATMAP_STATE.GETSET ? "button-active" : ""}`}
+        ${props.state === HEATMAP_STATE.GETMEM ? "button-active" : ""}`}
         title="Get Memory Calls"
         onClick={() => {
-          if (props.state === HEATMAP_STATE.SETMEM) {
-            props.setState(HEATMAP_STATE.GETSET)
-          } else if (props.state === HEATMAP_STATE.GETSET) {
-            props.setState(HEATMAP_STATE.SETMEM)
-          } else if (props.state === HEATMAP_STATE.CPU) {
-            props.setState(HEATMAP_STATE.GETMEM)
-          }
+          props.setState(HEATMAP_STATE.GETMEM)
         }}
         disabled={runMode === RUN_MODE.IDLE}>
         <FontAwesomeIcon icon={faUpRightFromSquare} />
       </button>
       <button className={`push-button
-        ${props.state === HEATMAP_STATE.SETMEM || props.state === HEATMAP_STATE.GETSET ? "button-active" : ""}`}
+        ${props.state === HEATMAP_STATE.SETMEM ? "button-active" : ""}`}
         title="Set Memory Calls"
         onClick={() => {
-          if (props.state === HEATMAP_STATE.GETMEM) {
-            props.setState(HEATMAP_STATE.GETSET)
-          } else if (props.state === HEATMAP_STATE.GETSET) {
-            props.setState(HEATMAP_STATE.GETMEM)
-          } else if (props.state === HEATMAP_STATE.CPU) {
-            props.setState(HEATMAP_STATE.SETMEM)
-          }
+          props.setState(HEATMAP_STATE.SETMEM)
         }}
         disabled={runMode === RUN_MODE.IDLE}>
         <FontAwesomeIcon icon={faPenToSquare} />
