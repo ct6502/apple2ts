@@ -607,10 +607,6 @@ body.dark-mode .icon-text {
   padding-top: 0px;
 }
 
-.debug-tab {
-  width: 900px;
-}
-
 /* Keep editor controls below the scrolling content, above BASIC variables. */
 .debug-section .editor-workspace,
 .debug-section.editor-workspace {
@@ -761,18 +757,24 @@ body.dark-mode .link-builder-textarea {
   color: var(--text-color-dark);
 }
 
-.heatmap-address-column {
-  overflow-y: hidden;
+.heatmap-address-row {
   overflow-x: hidden;
+  overflow-y: hidden;
+  width: 256px;
+  height: 12px;
+  transform: translateX(3.3em);
+  font-size: 8px;
+}
+
+.heatmap-address-column {
+  overflow-x: hidden;
+  overflow-y: hidden;
   width: 4em;
-  height: 512px;
+  height: 256px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   box-sizing: border-box;
   align-items: flex-end;
-  transform: translateY(-6.5px);
-  padding-right: 0rem;
-  line-height: 16px;
+  transform: translateY(-5px);
   font-size: 8px;
 }

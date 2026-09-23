@@ -2,7 +2,6 @@ import HeatMapPanel from "./memory/heatmap_panel"
 import DisassemblyPanel from "./disassembly/disassemblypanel"
 import TimeTravelPanel from "./timetravelpanel"
 import State6502Controls from "./state6502controls"
-import MemoryDump from "./memory/memorydump"
 import BreakpointsView from "./breakpoints/breakpointsview"
 import MemoryMap from "./memory/memorymap"
 import StackDump from "./stackdump"
@@ -82,14 +81,15 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
             <StackDump />
             <MemoryMap updateDisplay={props.updateDisplay} />
           </div>
-          <MemoryDump />
+          <HeatMapPanel/>
+          {/* <MemoryDump /> */}
           <TimeTravelPanel />
         </div>
       </div>
     </div>
-    <div className="flex-column-gap">
+    {/* <div className="flex-column-gap">
       <HeatMapPanel/>
-    </div>
+    </div> */}
   </div>
   )
 }
