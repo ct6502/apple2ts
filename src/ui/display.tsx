@@ -74,6 +74,19 @@ const DisplayApple2 = () => {
     setRenderCount(prevRenderCount => prevRenderCount + 1)
   }
 
+  const checkContentHeight = () => {
+    const body = document.body
+    const html = document.documentElement
+    const contentHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight)
+    const viewportHeight = window.innerHeight
+
+    if (contentHeight <= viewportHeight) {
+      document.body.classList.add("no-scroll")
+    } else {
+      document.body.classList.remove("no-scroll")
+    }
+  }
+
   if (!myInit) {
     setMyInit(true)
 
@@ -113,6 +126,7 @@ const DisplayApple2 = () => {
     window.addEventListener("message", messagelistener)
 
     const handleResize = () => {
+      checkContentHeight()
       setRenderCount(prevRenderCount => prevRenderCount + 1)
     }
     window.addEventListener("resize", handleResize)

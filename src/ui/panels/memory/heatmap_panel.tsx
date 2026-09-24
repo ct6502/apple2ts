@@ -11,7 +11,10 @@ export enum HEATMAP_STATE {
 
 const HeatMapPanel = () => {
   const [state, setState] = useState<HEATMAP_STATE>(HEATMAP_STATE.CPU)
-
+  const [showMagnifier, setShowMagnifier] = useState(false)
+  const doSetShowMagnifier = (value: boolean) => {
+    setShowMagnifier(value)
+  }
   // const isLandscape = (window.innerWidth > window.innerHeight)
   // const height = isLandscape ? Math.max((window.innerHeight - 270), 435) : 590
 
@@ -22,8 +25,8 @@ const HeatMapPanel = () => {
       <div className="flex-row-space-between" style={{ marginBottom: "2px" }}>
         <div className="bigger-font">Heat Map</div>
       </div>
-      <HeatMapControls state={state} setState={setState}/>
-      <HeatMapView state={state}/>
+      <HeatMapControls state={state} setState={setState} setShowMagnifier={doSetShowMagnifier}/>
+      <HeatMapView state={state} showMagnifier={showMagnifier} setShowMagnifier={doSetShowMagnifier} />
     </div>
   )
 }

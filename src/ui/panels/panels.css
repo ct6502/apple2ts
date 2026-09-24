@@ -423,6 +423,7 @@ body.dark-mode .disassembly-separator {
   display: block;
   border-collapse: collapse;
   overflow: auto;
+  overscroll-behavior: none;
   width: calc(100% - 5px);
   height: calc(100% - 10px);
   margin-top: 7px;

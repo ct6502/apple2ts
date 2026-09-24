@@ -1,10 +1,13 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPenToSquare, faUpRightFromSquare, faMicrochip } from "@fortawesome/free-solid-svg-icons"
+import { faPenToSquare, faUpRightFromSquare, faMicrochip, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../../common/utility"
 import { handleGetRunMode } from "../../main2worker"
 import { HEATMAP_STATE } from "./heatmap_panel"
 
-const HeatMapControls = (props: { state: HEATMAP_STATE, setState: React.Dispatch<React.SetStateAction<HEATMAP_STATE>> }) => {
+const HeatMapControls = (props: {
+  state: HEATMAP_STATE,
+  setState: React.Dispatch<React.SetStateAction<HEATMAP_STATE>>,
+  setShowMagnifier: (value: boolean) => void }) => {
   // const { t } = useTranslation() 
   const runMode = handleGetRunMode()
 
@@ -35,6 +38,12 @@ const HeatMapControls = (props: { state: HEATMAP_STATE, setState: React.Dispatch
         }}
         disabled={runMode === RUN_MODE.IDLE}>
         <FontAwesomeIcon icon={faPenToSquare} />
+      </button>
+      <button className="push-button"
+        title="Show Magnifier"
+        onClick={() => {props.setShowMagnifier(true)}}
+        disabled={runMode === RUN_MODE.IDLE}>
+        <FontAwesomeIcon icon={faMagnifyingGlass} />
       </button>
     </span>
   )

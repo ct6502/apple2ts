@@ -780,7 +780,7 @@ export const doSetPastedText = (text: string) => {
 }
 
 const getMemoryDump = () => {
-  if (cpuRunMode === RUN_MODE.PAUSED) {
+  if (isDebugging && cpuRunMode !== RUN_MODE.IDLE) {
     return getBasePlusAuxMemory()
   }
   return new Uint8Array()
@@ -859,9 +859,9 @@ export const getExternalMachineState = () => {
         ramWorksKb: 64 * (RamWorksMaxBank + 1),
       },
     },
-    heatMapCPU: getHeatMapCPU(),
-    heatMapMemGet: getHeatMapMemGet(),
-    heatMapMemSet: getHeatMapMemSet(),
+    heatMapCPU: cpuRunMode === RUN_MODE.IDLE ? new Float64Array() : getHeatMapCPU(),
+    heatMapMemGet: cpuRunMode === RUN_MODE.IDLE ? new Float64Array() : getHeatMapMemGet(),
+    heatMapMemSet: cpuRunMode === RUN_MODE.IDLE ? new Float64Array() : getHeatMapMemSet(),
     hires: getHires(),
     iTempState: getTempStateIndex(),
     isDebugging: isDebugging,
