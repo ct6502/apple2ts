@@ -124,7 +124,7 @@ export const advanceKeySequence = () => {
 
 export const setKeyboardState = (state: KeyboardState) => {
   interruptKeySequence()
-  if (!state.isDown || state.key <= 0) {
+  if (!state.isDown || state.key < 0) {
     keyboardIsDown = false
     keyboardRepeatKey = 0
     apple2KeyRelease()
