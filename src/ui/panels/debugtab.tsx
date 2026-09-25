@@ -1,4 +1,3 @@
-import HeatMapPanel from "./memory/heatmap_panel"
 import DisassemblyPanel from "./disassembly/disassemblypanel"
 import TimeTravelPanel from "./timetravelpanel"
 import State6502Controls from "./state6502controls"
@@ -8,6 +7,10 @@ import StackDump from "./stackdump"
 import { isMinimalTheme } from "../ui_settings"
 import { useRef, useState, useEffect } from "react"
 import { getPreferenceDebugTabLeftWidth, setPreferenceDebugTabLeftWidth } from "../localstorage"
+import MemoryDump from "./memory/memorydump"
+import HeatMapPanel from "./memory/heatmap_panel"
+import TabBase from "../tabbase"
+import Tab from "../tab"
 
 const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
 
@@ -81,15 +84,14 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
             <StackDump />
             <MemoryMap updateDisplay={props.updateDisplay} />
           </div>
-          <HeatMapPanel/>
-          {/* <MemoryDump /> */}
+          <TabBase>
+            <Tab title="Heat Map"><HeatMapPanel /></Tab>
+            <Tab title="Memory Dump"><MemoryDump /></Tab>
+          </TabBase>
           <TimeTravelPanel />
         </div>
       </div>
     </div>
-    {/* <div className="flex-column-gap">
-      <HeatMapPanel/>
-    </div> */}
   </div>
   )
 }

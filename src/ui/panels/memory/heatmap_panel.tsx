@@ -19,9 +19,9 @@ const HeatMapPanel = () => {
   // const height = isLandscape ? Math.max((window.innerHeight - 270), 435) : 590
 
   return (
-    <div className="round-rect-border tall-panel"
+    <div className="tall-panel"
       style={{ width: "calc(100% - 20px)",
-        height: "auto" }}>
+        height: "100%" }}>
       <div className="flex-row-space-between" style={{ marginBottom: "2px" }}>
         <div className="bigger-font">Heat Map</div>
       </div>

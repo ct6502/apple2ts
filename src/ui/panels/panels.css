@@ -352,9 +352,11 @@ body.dark-mode .warning-text-help {
   border-width: 1px;
   border-style: solid;
   border-color: var(--text-color);
-  border-radius: 5px;
+  border-radius: 10px 10px 0 0;
+  border-bottom: none;
   width: 120px;
   color: var(--text-color);
+  margin-left: 2px;
 }
 
 body.dark-mode .tab-button {
@@ -371,6 +373,32 @@ body.dark-mode .tab-button {
 body.dark-mode .tab-active {
   background-color: var(--button-active-dark);
   color: var(--text-color-dark);
+}
+
+.tab-base-header {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+}
+
+.tab-base-body {
+  display: grid;
+}
+
+.tab-base-panel {
+  grid-column: 1;
+  grid-row: 1;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid #000;
+  border-radius: 0 0 10px 10px;
+  padding: 7px;
+  margin-top: 0;
+  margin-left: 2px;
+  margin-right: 2px;
+  border-color: var(--text-color);
+  background-color: var(--panel-background);
+  color: var(--text-color);
 }
 
 .disassembly-opcode {
