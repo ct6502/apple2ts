@@ -39,7 +39,7 @@ let currentCommand = ""
 const recallBuffer: string[] = []
 let recallIndex = 99
 
-type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
+type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>  | KeyboardEvent<HTMLBodyElement> | KeyboardEvent<HTMLButtonElement>
 type ArrowKeyCode = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown" | "Numpad4" | "Numpad6" | "Numpad8" | "Numpad2"
 let mainCanvas: HTMLCanvasElement | null = null
 
@@ -61,6 +61,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const myCanvas = useRef<HTMLCanvasElement>(null)
   const hiddenCanvas = useRef<HTMLCanvasElement>(null)
   const hardwareKeyboardKey = useRef<{ code: string, key: number } | null>(null)
+  const didNavigateWithKeyboard = useRef(false)
 
   const pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById("apple2canvas")
@@ -599,6 +600,36 @@ const Apple2Canvas = (props: DisplayProps) => {
     return canvas.style.marginLeft
   }
 
+  const handleBodyKey = (
+    type: "keydown" | "keyup",
+    handler: (event: keyEvent) => void
+  ) => {
+    const listener: EventListener = (event) => {
+      const modal = document.getElementsByClassName("modal-overlay")
+      const target = event.target as HTMLElement
+
+      if (
+        type === "keydown" &&
+        target.tagName !== "CANVAS" &&
+        (event as unknown as keyEvent).code === "Tab"
+      ) {
+        didNavigateWithKeyboard.current = true
+      }
+
+      if (
+        !didNavigateWithKeyboard.current &&
+        !modal.length &&
+        (target.tagName === "BODY" || target.tagName === "BUTTON")
+      ) {
+        handler(event as unknown as keyEvent)
+      }
+    }
+
+    window.addEventListener(type, listener)
+
+    return listener
+  }
+
   // To make sure this only gets called once, do not add dependencies such as RenderCanvas.
   useEffect(() => {
     mainCanvas = document.getElementById("apple2canvas") as HTMLCanvasElement
@@ -625,6 +656,19 @@ const Apple2Canvas = (props: DisplayProps) => {
     toggleScanlines(getShowScanlines())
 
     renderCanvasRef.current(0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Add listener to handle keys when canvas is not in focus.
+  // Remove listeners when hot-reloading.
+  useEffect(() => {
+    const keyDownListener = handleBodyKey("keydown", handleKeyDown)
+    const keyUpListener = handleBodyKey("keyup", handleKeyUp)
+
+    return () => {
+      window.removeEventListener("keydown", keyDownListener)
+      window.removeEventListener("keyup", keyUpListener)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -676,6 +720,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         onMouseDown={isTouchDevice ? setFocus : (e) => { setFocus(); handleMouseDown(e) }}
         onMouseUp={isTouchDevice ? undefined : handleMouseUp}
         onMouseMove={isTouchDevice ? undefined : handleMouseMove}
+        onFocus={() => { didNavigateWithKeyboard.current = false }}
       />
       {/* Use hidden canvas/context so image rescaling works in iOS < 15.
           See graphics.ts drawImage() */}
