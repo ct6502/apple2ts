@@ -268,7 +268,7 @@ export const toHex = (value: number, ndigits = 2) => {
 
 export const convertAppleKey = (e: KeyboardEvent, lowercase: boolean,
   ctrlKeyMode: number, cout: number) => {
-  let key = 0
+  let key = -1
   if (e.altKey && e.key !== "Alt") {
     e.key = String.fromCharCode(e.keyCode)
   }
@@ -278,7 +278,7 @@ export const convertAppleKey = (e: KeyboardEvent, lowercase: boolean,
       if (key >= 0x40 && key <= 0x7E) {
         key &= 0b00011111
       } else {
-        return 0
+        return -1
       }
     } else if (!lowercase) {
       key = String.fromCharCode(key).toUpperCase().charCodeAt(0)

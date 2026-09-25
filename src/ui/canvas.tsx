@@ -127,7 +127,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const startHardwareKeyboard = (code: string, key: number) => {
-    if (key <= 0) return
+    if (key < 0) return
     if (hardwareKeyboardKey.current?.code === code) return
     stopHardwareKeyboard()
     hardwareKeyboardKey.current = { code: code, key }
@@ -336,7 +336,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     const lowercaseMode = getLowercaseMode()
     const key = convertAppleKey(e, lowercaseMode, props.ctrlKeyMode, handleGetCout())
-    if (key > 0) {
+    if (key >= 0) {
       if (e.repeat) {
         e.preventDefault()
         e.stopPropagation()
