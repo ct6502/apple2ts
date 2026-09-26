@@ -79,6 +79,7 @@ export enum MSG_MAIN {
   GET_MEMORY,
   GET_SAVE_STATE,
   GET_SAVE_STATE_SNAPSHOTS,
+  HEATMAP_STATE,
   KEYBOARD_STATE,
   KEY_SEQUENCE,
   KEYPRESS,
@@ -185,6 +186,13 @@ export type MouseEventSimple = {
   //  0x01:  button 1 up
   //  0x11:  button 1 down
   buttons : number;
+}
+
+export enum HEATMAP_STATE {
+  CPU = 0,
+  GETMEM = 1,
+  SETMEM = 2,
+  GETSET = 3
 }
 
 export const colorToName = (mode: COLOR_MODE) => {

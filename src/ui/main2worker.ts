@@ -1,6 +1,7 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
-  DISASSEMBLE_VISIBLE, DEFAULT_SLOT_CONFIG, VeraSdStatus } from "../common/utility"
+  DISASSEMBLE_VISIBLE, DEFAULT_SLOT_CONFIG, VeraSdStatus, 
+  HEATMAP_STATE} from "../common/utility"
 import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -408,6 +409,10 @@ export const passRequestMemoryDump = () => {
   doPostMessage(MSG_MAIN.GET_MEMORY, true)
 }
 
+export const passHeatMapState = (state: HEATMAP_STATE) => {
+  doPostMessage(MSG_MAIN.HEATMAP_STATE, state)
+}
+  
 export const requestMemoryView = (
   request: MemoryViewRequest,
   timeoutMs = 5000,
@@ -457,9 +462,7 @@ let machineState: MachineState = {
   cout: 0,
   cpuSpeed: 0,
   extraRamSize: 64,
-  heatMapCPU: new Float64Array(),
-  heatMapMemGet: new Float64Array(),
-  heatMapMemSet: new Float64Array(),
+  heatMap: new Float64Array(),
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
   isTracing: TEST_DEBUG,
@@ -681,16 +684,8 @@ export const handleGetExecution = () => {
   return machineState.execution
 }
 
-export const handleGetHeatMapCPU = () => {
-  return machineState.heatMapCPU
-}
-
-export const handleGetHeatMapMemGet = () => {
-  return machineState.heatMapMemGet
-}
-
-export const handleGetHeatMapMemSet = () => {
-  return machineState.heatMapMemSet
+export const handleGetHeatMap = () => {
+  return machineState.heatMap
 }
 
 export const handleGetTextPage = () => {

@@ -68,7 +68,7 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
       <State6502Controls />
       <div className="flex-row" ref={containerRef}>
         <div 
-          className="flex-column" 
+          className="flex-column-gap" 
           ref={leftColumnRef}
           style={{ width: leftWidth > 0 ? `${leftWidth}px` : undefined, flexShrink: 0 }}
         >
@@ -79,7 +79,7 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
           className="dragbar" 
           onMouseDown={handleMouseDown}
         />
-        <div className="flex-column">
+        <div className="flex-column-gap">
           <div className="flex-row-gap round-rect-border" id="tour-debug-info">
             <StackDump />
             <MemoryMap updateDisplay={props.updateDisplay} />

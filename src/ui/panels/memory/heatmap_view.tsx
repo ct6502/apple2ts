@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react"
-import { HEATMAP_STATE } from "./heatmap_panel"
 import { colormap_inferno } from "./heatmap_colormap_inferno"
-import { handleGetHeatMapCPU, handleGetHeatMapMemGet, handleGetHeatMapMemSet, handleGetRunMode } from "../../main2worker"
-import { RUN_MODE, toHex } from "../../../common/utility"
+import { handleGetHeatMap, handleGetRunMode } from "../../main2worker"
+import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
 import HeatMapMagnifier from "./heatmap_magnifier"
 
 const BASE_HEATMAP_WIDTH = 256
@@ -44,17 +43,6 @@ const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setS
     props.setShowMagnifier(false)
   }
 
-  const getHeatMap = () => {
-    if (props.state === HEATMAP_STATE.CPU) {
-      return handleGetHeatMapCPU()
-    } else if (props.state === HEATMAP_STATE.GETMEM) {
-      return handleGetHeatMapMemGet()
-    } else if (props.state === HEATMAP_STATE.SETMEM) {
-      return handleGetHeatMapMemSet()
-    }
-    return new Float64Array()
-  }
-
     // const drawGrid = (rgba: Uint8ClampedArray) => {
     //   for (let i = 0; i < BASE_HEATMAP_WIDTH; i += 16) {
     //     for (let j = 0; j < BASE_HEATMAP_HEIGHT; j++) {
@@ -80,7 +68,7 @@ const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setS
     const canvas = heatMapRef.current
     const ctx = canvas?.getContext("2d")
     if (!ctx) return
-    const heatMap = getHeatMap()
+    const heatMap = handleGetHeatMap()
     if (heatMap.length === 0) {
       ctx.clearRect(0, 0, BASE_HEATMAP_WIDTH, BASE_HEATMAP_HEIGHT)
       return

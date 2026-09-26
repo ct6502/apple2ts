@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
-import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG } from "../common/utility"
+import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, HEATMAP_STATE } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
@@ -75,6 +75,7 @@ let executionState: "running" | "paused" = "paused"
 let executionPauseReason: ExecutionPauseReason | null = "idle"
 let executionBreakpointAddress: number | null = null
 let executionMemoryWrite: MemoryWriteEvent | null = null
+let heatMapState: HEATMAP_STATE = HEATMAP_STATE.CPU
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
 let veraSlot: VERA_SLOT = 0
@@ -83,6 +84,10 @@ let gameSetupTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
 let speedTracker: Array<{time: number, cycles: number}> = []
 
+export const setHeatMapState = (state: HEATMAP_STATE) => {
+  heatMapState = state
+}
+  
 export const resetCpuSpeedForTesting = () => {
   cpuSpeed = 0
 }
@@ -187,6 +192,22 @@ const resetHeatMapCounts = () => {
   resetHeatMapCPU()
   resetHeatMapMemGet()
   resetHeatMapMemSet()
+}
+
+const getHeatMap = () => {
+  if (cpuRunMode === RUN_MODE.IDLE) {
+    return new Float64Array()
+  }
+  switch (heatMapState) {
+    case HEATMAP_STATE.CPU:
+      return getHeatMapCPU()
+    case HEATMAP_STATE.GETMEM:
+      return getHeatMapMemGet()
+    case HEATMAP_STATE.SETMEM:
+      return getHeatMapMemSet()
+    default:
+      return new Float64Array()
+  }
 }
 
 export const doSetCycleCount = (count: number) => {
@@ -859,9 +880,7 @@ export const getExternalMachineState = () => {
         ramWorksKb: 64 * (RamWorksMaxBank + 1),
       },
     },
-    heatMapCPU: cpuRunMode === RUN_MODE.IDLE ? new Float64Array() : getHeatMapCPU(),
-    heatMapMemGet: cpuRunMode === RUN_MODE.IDLE ? new Float64Array() : getHeatMapMemGet(),
-    heatMapMemSet: cpuRunMode === RUN_MODE.IDLE ? new Float64Array() : getHeatMapMemSet(),
+    heatMap: getHeatMap(),
     hires: getHires(),
     iTempState: getTempStateIndex(),
     isDebugging: isDebugging,

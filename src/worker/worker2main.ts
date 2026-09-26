@@ -20,7 +20,8 @@ import { doSetRunMode, doSetSpeedMode,
   findExternalMemory,
   createExternalSessionSnapshot,
   compareExternalSessionMemory,
-  restoreExternalSessionSnapshot} from "./motherboard"
+  restoreExternalSessionSnapshot,
+  setHeatMapState} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import {
@@ -30,7 +31,7 @@ import {
 } from "./conditional_input"
 import { s6502 } from "./instructions"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
-import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE, VeraSdStatus } from "../common/utility"
+import { DRIVE, HEATMAP_STATE, MSG_MAIN, MSG_WORKER, RUN_MODE, VeraSdStatus } from "../common/utility"
 import { sdcard_attach_image, sdcard_detach_image, sdcard_get_status, set_sdcard_status_listener, sdcard_get_image, sdcard_set_write_protected, sdcard_clear_changes, sdcard_get_write_seq } from "./devices/vera/sdcard"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
 import { MouseCardEvent } from "./devices/mouse"
@@ -528,6 +529,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.TRACE_SETTINGS:
         setTraceSettings(e.data.payload)
+        break
+      case MSG_MAIN.HEATMAP_STATE:
+        setHeatMapState(e.data.payload as HEATMAP_STATE)
         break
       default:
         console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)

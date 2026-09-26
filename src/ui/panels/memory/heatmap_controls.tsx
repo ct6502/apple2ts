@@ -1,12 +1,11 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPenToSquare, faUpRightFromSquare, faMicrochip, faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons"
-import { RUN_MODE } from "../../../common/utility"
-import { handleGetRunMode } from "../../main2worker"
-import { HEATMAP_STATE } from "./heatmap_panel"
+import { faPenToSquare, faUpRightFromSquare, faMicrochip, faMagnifyingGlass, faSync } from "@fortawesome/free-solid-svg-icons"
+import { HEATMAP_STATE, RUN_MODE } from "../../../common/utility"
+import { handleGetRunMode, passSetCycleCount } from "../../main2worker"
 
 const HeatMapControls = (props: {
   state: HEATMAP_STATE,
-  setState: React.Dispatch<React.SetStateAction<HEATMAP_STATE>>,
+  setState: (value: HEATMAP_STATE) => void,
   setShowMagnifier: (value: boolean) => void }) => {
   // const { t } = useTranslation() 
   const runMode = handleGetRunMode()
@@ -44,6 +43,12 @@ const HeatMapControls = (props: {
         onClick={() => {props.setShowMagnifier(true)}}
         disabled={runMode === RUN_MODE.IDLE}>
         <FontAwesomeIcon icon={faMagnifyingGlass} />
+      </button>
+      <button className="push-button"
+        title="Reset cycle count and heat maps"
+        onClick={() => { passSetCycleCount(0) }}
+        disabled={runMode === RUN_MODE.IDLE}>
+        <FontAwesomeIcon icon={faSync}/>
       </button>
     </span>
   )

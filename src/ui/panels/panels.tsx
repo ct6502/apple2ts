@@ -75,10 +75,6 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
   const tabOrientation = props.narrow ? "horizontal" : "vertical"
   const tabClass = `dbg-tab-${tabOrientation}`
 
-  if (activeTab === 0) {
-    console.log("why?!")
-  }
-
   return (
     <Flyout
       icon={faInfoCircle}

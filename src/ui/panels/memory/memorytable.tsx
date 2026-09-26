@@ -24,7 +24,7 @@ const MemoryTable = (props: MemoryTableProps) => {
   const hgrMagnifierLocal = useRef([-1, -1])
   const cellValue = useRef("")
   const isLandscape = (window.innerWidth > window.innerHeight)
-  const height = isLandscape ? Math.max((window.innerHeight - 655), 100) : 250
+  const height = isLandscape ? Math.max((window.innerHeight - 647), 100) : 250
 
   const clearSelection = (table: HTMLTableElement) => {
     if (!table || !table.rows) return
