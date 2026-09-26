@@ -30,6 +30,14 @@ import { CRTStartup } from "./graphics"
 import { startRemoteControlBridge } from "./api/remotecontrol"
 import RetroMenuRenderer from "./retro/retromenurenderer"
 
+const isHeadlessRemoteControl = () => {
+  try {
+    return new URLSearchParams(window.location.search).get("remoteControlMinimal") === "1"
+  } catch {
+    return false
+  }
+}
+
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
   const [renderCount, setRenderCount] = useState(0)
@@ -211,7 +219,7 @@ const DisplayApple2 = () => {
     <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS}</>
   </div>
 
-  if (isEmbedMode()) {
+  if (isEmbedMode() || isHeadlessRemoteControl()) {
     return <Apple2Canvas {...props} />
   }
   return (
