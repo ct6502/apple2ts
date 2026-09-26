@@ -94,6 +94,9 @@ export const siriusJoyportButtons: GamePadMapping = (button: number,
       if (isJoystick2) joy2button = true
       break
     case 1:
+      // Also treat gamepad button B as the fire button
+      if (isJoystick1) joy1button = true
+      if (isJoystick2) joy2button = true
       break
     case 12:   // D-pad Up
       if (isJoystick1) joy1up = true
