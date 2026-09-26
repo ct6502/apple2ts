@@ -565,10 +565,10 @@ const restoreMouseSaveState = (state: MouseSaveState) => {
 const handleBasic = () => {
   const SLH = 0xC0 + slot
 
-  if (memGet(CSWH) === SLH && memGet(CSWL) === 0x00) {
+  if (memGet(CSWH, false) === SLH && memGet(CSWL, false) === 0x00) {
     // if CSW hook is set (or both are set), it was from PR#N, and is output
     basicWrite()
-  } else if (memGet(KSWH) === SLH && memGet(KSWL) === 0x00) {
+  } else if (memGet(KSWH, false) === SLH && memGet(KSWL, false) === 0x00) {
     // if KSW hook is set, it was from IN#N, and wants input
     basicRead()
   }
@@ -581,8 +581,8 @@ const basicRead = () => {
     // which will just drop the incoming characters until the end of the 
     // string when we restore it.
     const SLH = 0xC0 + slot
-    CSWHSave = memGet(CSWH)
-    CSWLSave = memGet(CSWL)
+    CSWHSave = memGet(CSWH, false)
+    CSWLSave = memGet(CSWL, false)
     memSet(CSWH, SLH) 
     memSet(CSWL, 0x03)
     const changed = (bstatus & IRQ_STATUS.BUTTON0_CURR) !== (lastbstatus & IRQ_STATUS.BUTTON0_CURR)

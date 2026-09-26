@@ -28,7 +28,7 @@ import {
   passKeypress,
   passMouseEvent,
   passPasteText,
-  passSetDebug,
+  passSetIsDebugging,
   passSetBinaryBlock,
   requestSetState6502,
   passSetMemory,
@@ -484,7 +484,7 @@ export const executeCommand = async (action: string, payload: Record<string, unk
       return collectStatus()
 
     case "setDebug":
-      passSetDebug(Boolean(payload.enabled))
+      passSetIsDebugging(Boolean(payload.enabled))
       return collectStatus()
 
     case "setShowDebugTab":

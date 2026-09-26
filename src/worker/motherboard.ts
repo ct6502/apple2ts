@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
-import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG } from "../common/utility"
+import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, HEATMAP_STATE } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
@@ -23,10 +23,14 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   exportMemoryToHiresLine,
   getDataBlock,
   setSlotDriver,
-  clearSlot} from "./memory"
+  clearSlot,
+  getHeatMapMemGet,
+  getHeatMapMemSet,
+  resetHeatMapMemSet,
+  resetHeatMapMemGet} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
-import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, processInstruction, resetCycleCountCallbacks, setStepOut } from "./cpu6502"
+import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, processInstruction, resetCycleCountCallbacks, setStepOut, getHeatMapCPU, resetHeatMapCPU } from "./cpu6502"
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
@@ -71,6 +75,7 @@ let executionState: "running" | "paused" = "paused"
 let executionPauseReason: ExecutionPauseReason | null = "idle"
 let executionBreakpointAddress: number | null = null
 let executionMemoryWrite: MemoryWriteEvent | null = null
+let heatMapState: HEATMAP_STATE = HEATMAP_STATE.CPU
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
 let veraSlot: VERA_SLOT = 0
@@ -79,6 +84,10 @@ let gameSetupTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
 let speedTracker: Array<{time: number, cycles: number}> = []
 
+export const setHeatMapState = (state: HEATMAP_STATE) => {
+  heatMapState = state
+}
+  
 export const resetCpuSpeedForTesting = () => {
   cpuSpeed = 0
 }
@@ -179,8 +188,31 @@ export const doSetState6502 = (newState: STATE6502, operationId?: number) => {
   if (operationId !== undefined) passWorkerOperationResult(operationId)
 }
 
+const resetHeatMapCounts = () => {
+  resetHeatMapCPU()
+  resetHeatMapMemGet()
+  resetHeatMapMemSet()
+}
+
+const getHeatMap = () => {
+  if (cpuRunMode === RUN_MODE.IDLE) {
+    return new Float64Array()
+  }
+  switch (heatMapState) {
+    case HEATMAP_STATE.CPU:
+      return getHeatMapCPU()
+    case HEATMAP_STATE.GETMEM:
+      return getHeatMapMemGet()
+    case HEATMAP_STATE.SETMEM:
+      return getHeatMapMemSet()
+    default:
+      return new Float64Array()
+  }
+}
+
 export const doSetCycleCount = (count: number) => {
   setCycleCount(count)
+  resetHeatMapCounts()
   updateExternalMachineState()
 }
 
@@ -193,7 +225,7 @@ export const doSetShowDebugTab = (show: boolean) => {
 //   let t0 = performance.now()
 //   for (let j = 0; j < 10000; j++) {
 //     for (let i = 0; i < 0xBFFF; i++) {
-//       memGet(i)    
+//       memGet(i, false)    
 //     }
 //   }
 //   let tdiff = performance.now() - t0
@@ -393,7 +425,7 @@ export const doReset = () => {
   clearInterrupts()
   resetSoftSwitches()
   // Reset banked RAM
-  memGet(0xC082)
+  memGet(0xC082, false)
   reset6502()
   resetMachine()
   // Force the help text panel back to default on reset/reboot paths.
@@ -769,7 +801,7 @@ export const doSetPastedText = (text: string) => {
 }
 
 const getMemoryDump = () => {
-  if (cpuRunMode === RUN_MODE.PAUSED) {
+  if (isDebugging && cpuRunMode !== RUN_MODE.IDLE) {
     return getBasePlusAuxMemory()
   }
   return new Uint8Array()
@@ -848,6 +880,7 @@ export const getExternalMachineState = () => {
         ramWorksKb: 64 * (RamWorksMaxBank + 1),
       },
     },
+    heatMap: getHeatMap(),
     hires: getHires(),
     iTempState: getTempStateIndex(),
     isDebugging: isDebugging,

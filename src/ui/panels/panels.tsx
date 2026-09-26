@@ -2,8 +2,8 @@ import "./panels.css"
 import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faCode, faRobot, faDesktop } from "@fortawesome/free-solid-svg-icons"
 import { faApple } from "@fortawesome/free-brands-svg-icons"
-import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
-import { getHelpText, getInfoPanel, getTabView, getTheme, getUIStateBoolean, INFO_PANEL_COLLAPSED_EVENT, isMinimalTheme, setUIStateBoolean } from "../ui_settings"
+import { handleGetShowDebugTab, passSetIsDebugging, passSetShowDebugTab } from "../main2worker"
+import { getHelpText, getInfoPanel, getTabView, getTheme, getUIStateBoolean, INFO_PANEL_COLLAPSED_EVENT, isMinimalTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import DebugTab from "./debugtab"
@@ -13,7 +13,6 @@ import BasicTab from "./basic/basic_tab"
 import { useTranslation } from "../../i18n/useTranslation"
 import AgentTab from "./agent/agent_tab"
 import VeraTab from "./vera/veratab"
-import { setPreferenceBoolean } from "../localstorage"
 import { isDefaultHelp } from "./help/helpselection"
 import { SETTINGS_CHANGED_EVENT } from "../settingschange"
 
@@ -43,15 +42,10 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
       tabIndex = -1
     }
     setActiveTab(tabIndex)
+    setTabView(tabIndex)
     event.stopPropagation()
     forceRefresh()
-    if (tabIndex == 1) {
-      setPreferenceBoolean("debugMode", true)
-      passSetDebug(true)
-    } else {
-      setPreferenceBoolean("debugMode", false)
-      passSetDebug(false)
-    }
+    passSetIsDebugging(tabIndex == 1)
   }
 
   // Do not allow debug panels to be shown in minimal theme on small devices
@@ -60,6 +54,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
   if (handleGetShowDebugTab()) {
     setUIStateBoolean("infoPanel", true)
     setFlyoutOpen(true)
+    passSetIsDebugging(true)
     setActiveTab(1)
     passSetShowDebugTab(false)
   }

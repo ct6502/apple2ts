@@ -342,10 +342,9 @@ const MemoryDump = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ascii, hexsearch, memory.length, runMode])
 
-  // The marginTop: auto makes the memory dump panel drift to the bottom of its parent.
   return (
-    <div className="flex-column round-rect-border" id="tour-debug-memorydump"
-      style={{marginTop: "auto"}}>
+    <div className="flex-column" id="tour-debug-memorydump"
+      style={{height: "100%", boxSizing: "border-box"}}>
       <span className="flex-row"
         style={{
           alignItems: "center",

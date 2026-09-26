@@ -352,9 +352,12 @@ body.dark-mode .warning-text-help {
   border-width: 1px;
   border-style: solid;
   border-color: var(--text-color);
-  border-radius: 5px;
+  border-radius: 10px 10px 0 0;
+  border-bottom: none;
   width: 120px;
+  height: 28px;
   color: var(--text-color);
+  margin-left: 2px;
 }
 
 body.dark-mode .tab-button {
@@ -371,6 +374,32 @@ body.dark-mode .tab-button {
 body.dark-mode .tab-active {
   background-color: var(--button-active-dark);
   color: var(--text-color-dark);
+}
+
+.tab-base-header {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+}
+
+.tab-base-body {
+  display: grid;
+}
+
+.tab-base-panel {
+  grid-column: 1;
+  grid-row: 1;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid #000;
+  border-radius: 0 0 10px 10px;
+  padding: 7px;
+  margin-top: 0;
+  margin-left: 2px;
+  margin-right: 2px;
+  border-color: var(--text-color);
+  background-color: var(--panel-background);
+  color: var(--text-color);
 }
 
 .disassembly-opcode {
@@ -423,6 +452,7 @@ body.dark-mode .disassembly-separator {
   display: block;
   border-collapse: collapse;
   overflow: auto;
+  overscroll-behavior: none;
   width: calc(100% - 5px);
   height: calc(100% - 10px);
   margin-top: 7px;
@@ -617,12 +647,12 @@ body.dark-mode .icon-text {
   height: max(200px, calc(100dvh - 20px));
 }
 
-.editor-workspace > * {
+.editor-workspace>* {
   flex-shrink: 0;
 }
 
-.editor-workspace > .editor-content,
-.editor-workspace > .agent-messages {
+.editor-workspace>.editor-content,
+.editor-workspace>.agent-messages {
   flex: 1;
   min-height: 0;
 }
@@ -755,4 +785,26 @@ body.dark-mode .link-builder-textarea {
   background-color: var(--input-background-dark);
   border-color: var(--text-color-dark);
   color: var(--text-color-dark);
+}
+
+.heatmap-address-row {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  width: 256px;
+  height: 12px;
+  transform: translateX(3.3em);
+  font-size: 8px;
+}
+
+.heatmap-address-column {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  width: 4em;
+  height: 256px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  align-items: flex-end;
+  transform: translateY(-5px);
+  font-size: 8px;
 }

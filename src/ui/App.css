@@ -27,6 +27,7 @@ html {
 body.no-scroll {
   /* Prevent scrollbars from appearing */
   overflow: hidden;
+  overscroll-behavior-y: none;
 }
 
 body {

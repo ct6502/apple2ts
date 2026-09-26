@@ -176,7 +176,7 @@ const handleSmartPortDeviceInformationBlock = (unitNumber: number, bufferAddr: n
 
 
 const handleSmartPortStatus = (spParamList: number, unitNumber: number, bufferAddr: number) => {
-  if (memGet(spParamList) !== 3) {
+  if (memGet(spParamList, false) !== 3) {
     console.error(`Incorrect SmartPort parameter count at address ${spParamList}`)
     setAccumulator(4)  // bad parameter count
     setCarry()
@@ -226,7 +226,7 @@ const processSmartPortAccess = () => {
       return
     }
     case 1: {
-      if (memGet(spParamList) !== 0x03) {
+      if (memGet(spParamList, false) !== 0x03) {
         console.error(`Incorrect SmartPort parameter count at address ${spParamList}`)
         setCarry()
         return

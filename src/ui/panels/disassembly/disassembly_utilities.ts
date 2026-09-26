@@ -67,7 +67,6 @@ export const getDisassembly = (startAddress = -1, endAddress = -1) => {
   if (addr < 0 || addr > 0xFFFF) return ""
   const lines = endAddress !== -1 ? 0xFFFF : nlines
   // console.log("getDisassembly ", disassemblyAddress.toString(16), handleGetState6502().PC.toString(16))
-  if (startAddress === -1) addr = Math.min(addr, 0xFFFF - lines + 1)
   let r = ""
   for (let i = 0; i < lines; i++) {
     if (addr > 0xFFFF) {

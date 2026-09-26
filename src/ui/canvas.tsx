@@ -406,19 +406,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const checkContentHeight = () => {
-    const body = document.body
-    const html = document.documentElement
-    const contentHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight)
-    const viewportHeight = window.innerHeight
-
-    if (contentHeight <= viewportHeight) {
-      document.body.classList.add("no-scroll")
-    } else {
-      document.body.classList.remove("no-scroll")
-    }
-  }
-
   const releaseBlurredModifierState = () => {
     stopHardwareKeyboard()
     passAppleCommandKeyRelease(true)
@@ -438,7 +425,6 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleResize = () => {
     if (mainCanvas) {
-      checkContentHeight()
       handleCanvasResize(mainCanvas)
       props.updateDisplay()
     }

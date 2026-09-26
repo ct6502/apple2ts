@@ -1,6 +1,6 @@
 import { clearInterruptEntry, doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, isInterruptDisabled, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
-import { doSetRunMode, doTakeSnapshot, runOnlyMode } from "./motherboard"
+import { doSetRunMode, doTakeSnapshot, isDebugging, runOnlyMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
@@ -320,7 +320,7 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
   if (breakpointMap.size === 0 || breakpointSkipOnce) return BREAKPOINT_RESULT.NO_BREAK
   if (s6502.PC === 0xD805) {
     // Look for BASIC breakpoints
-    const lineNum = memGet(0x75) + (memGet(0x76) << 8)
+    const lineNum = memGet(0x75, false) + (memGet(0x76, false) << 8)
     const bp = breakpointMap.get(lineNum)
     if (bp?.basic && !bp.disabled) {
       if (bp.once) breakpointMap.delete(lineNum)
@@ -404,16 +404,29 @@ const pauseForBreakpointResult = (result: BREAKPOINT_RESULT) => {
   return true
 }
 
+const heatMapCPU = new Float64Array(0x10000)
+export const getHeatMapCPU = () => {
+  if (isDebugging) {
+    return heatMapCPU
+  }
+  return new Float64Array()
+}
+
+export const resetHeatMapCPU = () => {
+  heatMapCPU.fill(0)
+}
+
+
 export const processInstruction = (updateTrace: ((str: string) => void) | null = null) => {
   let cycles = 0
   const PC1 = s6502.PC
   // Do not trigger watchpoints. Those should only trigger on true read/writes.
-  const instr = memGet(s6502.PC, false)
+  const instr = memGet(PC1, false)
   const code =  pcodes[instr]
   // Make sure we only get these instruction bytes if necessary.
   // Do not trigger watchpoints. Those should only trigger on true read/writes.
-  const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : -1
-  const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2, false) : 0
+  const vLo = (code.bytes > 1) ? memGet(PC1 + 1, false) : -1
+  const vHi = (code.bytes > 2) ? memGet(PC1 + 2, false) : 0
 
   if (!runOnlyMode()) {
     const bpResult = hitBreakpoint(instr, vLo, vHi, code)
@@ -466,6 +479,11 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
   }
   if (code.pcode === 0x40) interruptDisabled = isInterruptDisabled()
 
+  if (isDebugging) {
+    heatMapCPU[PC1] = heatMapCPU[PC1] + 1
+    if (code.bytes > 1) heatMapCPU[PC1 + 1] = heatMapCPU[PC1 + 1] + 1
+    if (code.bytes > 2) heatMapCPU[PC1 + 2] = heatMapCPU[PC1 + 2] + 1
+  }
   if (updateTrace) {
     // Do not output during the Apple II's WAIT subroutine
     if ((PC1 < 0xFCA8 || PC1 > 0xFCB3)) {

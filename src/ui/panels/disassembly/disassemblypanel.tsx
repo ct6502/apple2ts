@@ -15,7 +15,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
   }
 
   const isLandscape = (window.innerWidth > window.innerHeight)
-  const height = isLandscape ? Math.max((window.innerHeight - 270), 435) : 590
+  const height = isLandscape ? Math.max((window.innerHeight - 280), 435) : 590
   
   const props: DisassemblyProps = {
     update: update,

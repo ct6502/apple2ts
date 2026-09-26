@@ -275,6 +275,7 @@ type MachineState = {
   cpuSpeed: number,
   extraRamSize: number,
   execution?: ExecutionSnapshot,
+  heatMap: Float64Array,
   hires: Uint8Array,
   iTempState: number,
   isDebugging: boolean,

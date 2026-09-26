@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Step } from "react-joyride"
-import { handleGetRunMode, passSetDebug, passSetRunMode, passSetShowDebugTab } from "../main2worker"
+import { handleGetRunMode, passSetIsDebugging, passSetRunMode, passSetShowDebugTab } from "../main2worker"
 import { RUN_MODE } from "../../common/utility"
 
 let neededToBoot = false
@@ -10,7 +10,7 @@ const callbackInDebugMode: StepCallbackFunction = () => {
   const runMode = handleGetRunMode()
   neededToBoot = runMode === RUN_MODE.IDLE
   didBoot = false
-  passSetDebug(true)
+  passSetIsDebugging(true)
   passSetShowDebugTab(true)
   // Continue processing tour commands
   return false

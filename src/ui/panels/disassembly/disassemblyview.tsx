@@ -149,6 +149,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
         style={{
           overflowY: "scroll",
           overflowX: "hidden",
+          overscrollBehavior: "none",
           width: "100%",
           top: "0px",
           height: `${height}px`,

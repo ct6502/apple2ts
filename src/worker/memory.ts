@@ -11,6 +11,7 @@ import { isWatchpoint, observeMemoryWrite, setWatchpointBreak } from "./cpu6502"
 import { noSlotClock } from "./nsc"
 import { videoTerm } from "./devices/videoterm"
 import { vidhd } from "./devices/vidhd"
+import { isDebugging } from "./motherboard"
 
 // 0x00000: main memory
 // 0x10000...13FFF: ROM (including page $C0 soft switches)
@@ -59,6 +60,31 @@ const RamWorksBankSet = (bank: number) => {
 export const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
 let currentMachineName: MACHINE_NAME = "APPLE2EE"
+
+export const heatMapMemGet = new Float64Array(0x10000)
+export const heatMapMemSet = new Float64Array(0x10000)
+
+export const getHeatMapMemGet = (): Float64Array => {
+  if (isDebugging) {
+    return heatMapMemGet
+  }
+  return new Float64Array()
+}
+
+export const getHeatMapMemSet = (): Float64Array => {
+  if (isDebugging) {
+    return heatMapMemSet
+  }
+  return new Float64Array()
+}
+
+export const resetHeatMapMemGet = () => {
+  heatMapMemGet.fill(0)
+}
+
+export const resetHeatMapMemSet = () => {
+  heatMapMemSet.fill(0)
+}
 
 export const getCurrentMachineName = () => {
   return currentMachineName
@@ -472,6 +498,9 @@ export const debugSlot = (slot: number, addr: number, oldvalue: number, value = 
 export const memGet = (addr: number, checkWatchpoints = true): number => {
   let value = 0
   const page = addr >>> 8
+  if (isDebugging && checkWatchpoints) {
+    heatMapMemGet[addr] = heatMapMemGet[addr] + 1
+  }
   // debugSlot(4, addr)
   if (page === 0xC0) {
     value = memGetSoftSwitch(addr)
@@ -563,6 +592,9 @@ const memSetSoftSwitch = (addr: number, value: number) => {
 
 export const memSet = (addr: number, value: number) => {
   const page = addr >>> 8
+  if (isDebugging) {
+    heatMapMemSet[addr] = heatMapMemSet[addr] + 1
+  }
   // debugSlot(4, addr, value)
   if (page === 0xC0) {
     observeMemoryWrite(addr, value, "system", null)

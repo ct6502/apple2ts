@@ -11,7 +11,7 @@ import {
   handleGetStackString,
   handleGetTracing,
   handleGetTracelog,
-  passSetDebug,
+  passSetIsDebugging,
   passBreakpoints,
   passSetTracing,
   handleGetRunMode,
@@ -113,7 +113,7 @@ export function toolStepInto(count = 1): MCPToolResult {
   try {
     // Ensure we're in debug mode and paused
     if (!handleGetIsDebugging()) {
-      passSetDebug(true)
+      passSetIsDebugging(true)
     }
     if (handleGetRunMode() !== RUN_MODE.PAUSED) {
       passSetRunMode(RUN_MODE.PAUSED)
@@ -149,7 +149,7 @@ export function toolStepInto(count = 1): MCPToolResult {
 export function toolStepOver(): MCPToolResult {
   try {
     if (!handleGetIsDebugging()) {
-      passSetDebug(true)
+      passSetIsDebugging(true)
     }
     if (handleGetRunMode() !== RUN_MODE.PAUSED) {
       passSetRunMode(RUN_MODE.PAUSED)
@@ -179,7 +179,7 @@ export function toolStepOver(): MCPToolResult {
 export function toolStepOut(): MCPToolResult {
   try {
     if (!handleGetIsDebugging()) {
-      passSetDebug(true)
+      passSetIsDebugging(true)
     }
     if (handleGetRunMode() !== RUN_MODE.PAUSED) {
       passSetRunMode(RUN_MODE.PAUSED)
@@ -250,7 +250,7 @@ export function toolSetBreakpoint(address: number, condition?: string): MCPToolR
 
     // Enable debugging if not already enabled
     if (!handleGetIsDebugging()) {
-      passSetDebug(true)
+      passSetIsDebugging(true)
     }
 
     return {
@@ -349,7 +349,7 @@ export function toolSetWatchpoint(address: number, mode: "r" | "w" | "rw" = "rw"
 
     // Enable debugging if not already enabled
     if (!handleGetIsDebugging()) {
-      passSetDebug(true)
+      passSetIsDebugging(true)
     }
 
     return {
