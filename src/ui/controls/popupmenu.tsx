@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCaretRight } from "@fortawesome/free-solid-svg-icons"
+import { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
 type PopupMenuProps = {
   location: [number, number] | undefined
@@ -99,6 +100,9 @@ const PopupMenu = (props: PopupMenuProps) => {
                 } else {
                   setActiveSubMenu(null)
                 }
+                if (menuItem.hover) {
+                  menuItem.hover()
+                }
               }
             }}
             onMouseOut={() => {
@@ -126,8 +130,10 @@ const PopupMenu = (props: PopupMenuProps) => {
               <span className="popup-selection-marker">
                 {menuItem.isSelected?.() ? "\u2713" : ""}
               </span>
-              <span className="popup-item-label">
-                {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
+              <span className="popup-item-label flex-row-gap">
+                {menuItem.icon &&
+                  (typeof menuItem.icon === "object" && "prefix" in menuItem.icon && "iconName" in menuItem.icon) ?
+                  <FontAwesomeIcon icon={menuItem.icon as IconDefinition} style={{ width: "24px" }} /> : menuItem.icon}
                 {menuItem.svg && menuItem.svg}
                 {menuItem.label}
               </span>

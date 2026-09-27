@@ -88,7 +88,7 @@ const PullDownMenu = (props: PullDownProps) => {
                 key={index}
                 onClick={() => handleChooseItem(index)}
               >
-                {`${description}`}
+                {description}
               </div>))
             }
           </div>

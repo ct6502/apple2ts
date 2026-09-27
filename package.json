@@ -70,7 +70,8 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-joyride": "^3.2.0",
-    "smplr": "^1.0.0"
+    "smplr": "^1.0.0",
+    "viridis": "^1.7.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",

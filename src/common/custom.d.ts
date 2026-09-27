@@ -649,11 +649,12 @@ type PopupMenuItem = {
   label: string,
   isDisabled?: boolean | (() => boolean),
   isHeading?: boolean,
-  icon?: IconDefinition,
+  icon?: IconDefinition | JSX.Element,
   svg?: JSX.Element,
   isVisible?: () => boolean,
   isSelected?: () => boolean,
   onClick?: () => void,
+  hover?: () => void,
   subMenu?: Array<PopupMenuItem>
 }
 
