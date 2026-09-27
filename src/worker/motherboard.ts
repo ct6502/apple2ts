@@ -834,7 +834,7 @@ const getMemoryDump = () => {
   // more with RamWorks expansion) - only pay for it while the Memory Dump
   // sub-tab is actually the one visible, not just because the Debug tab
   // (isDebugging) is open on some other sub-tab.
-  if (isDebugging && memoryDumpVisible && cpuRunMode !== RUN_MODE.IDLE) {
+  if (isDebugging && (memoryDumpVisible || cpuRunMode === RUN_MODE.PAUSED) && cpuRunMode !== RUN_MODE.IDLE) {
     return getBasePlusAuxMemory()
   }
   return new Uint8Array()
