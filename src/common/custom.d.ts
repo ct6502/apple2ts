@@ -276,6 +276,7 @@ type MachineState = {
   extraRamSize: number,
   execution?: ExecutionSnapshot,
   heatMap: Float64Array,
+  heatMapMax: { value: number, index: number },
   hires: Uint8Array,
   iTempState: number,
   isDebugging: boolean,

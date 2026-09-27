@@ -1,10 +1,10 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import HeatMapControls from "./heatmap_controls"
 import HeatMapView from "./heatmap_view"
 import { HEATMAP_STATE } from "../../../common/utility"
 import { passHeatMapState } from "../../main2worker"
 
-const HeatMapPanel = () => {
+const HeatMapPanel = (props: { isActive: boolean }) => {
   const [state, setState] = useState<HEATMAP_STATE>(HEATMAP_STATE.CPU)
   const [showMagnifier, setShowMagnifier] = useState(false)
   const doSetShowMagnifier = (value: boolean) => {
@@ -12,8 +12,14 @@ const HeatMapPanel = () => {
   }
   const doSetState = (value: HEATMAP_STATE) => {
     setState(value)
-    passHeatMapState(value)
   }
+
+  // Only ask the worker to build/send the heat map while this tab is the
+  // one actually visible; otherwise tell it HEATMAP_STATE.NONE so the
+  // 64K-entry array stops being computed and posted every frame.
+  useEffect(() => {
+    passHeatMapState(props.isActive ? state : HEATMAP_STATE.NONE)
+  }, [props.isActive, state])
   // const isLandscape = (window.innerWidth > window.innerHeight)
   // const height = isLandscape ? Math.max((window.innerHeight - 270), 435) : 590
 

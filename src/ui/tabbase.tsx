@@ -23,18 +23,24 @@ const TabBase = (props: TabBaseProps) => {
         ))}
       </div>
       <div className="tab-base-body">
-        {tabs.map((tab, i) => (
-          <div
-            key={tab.props.title}
-            className="tab-base-panel"
-            // Keep inactive panels in the layout (so height reflects the tallest tab)
-            // but hide them visually and from interaction/screen readers.
-            style={{ visibility: i === activeIndex ? "visible" : "hidden" }}
-            inert={i === activeIndex ? undefined : true}
-          >
-            {tab.props.children}
-          </div>
-        ))}
+        {tabs.map((tab, i) => {
+          const isActive = i === activeIndex
+          const content = typeof tab.props.children === "function"
+            ? tab.props.children(isActive)
+            : tab.props.children
+          return (
+            <div
+              key={tab.props.title}
+              className="tab-base-panel"
+              // Keep inactive panels in the layout (so height reflects the tallest tab)
+              // but hide them visually and from interaction/screen readers.
+              style={{ visibility: isActive ? "visible" : "hidden" }}
+              inert={isActive ? undefined : true}
+            >
+              {content}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

@@ -21,7 +21,7 @@ import { doSetRunMode, doSetSpeedMode,
   createExternalSessionSnapshot,
   compareExternalSessionMemory,
   restoreExternalSessionSnapshot,
-  setHeatMapState} from "./motherboard"
+  setHeatMapState, setMemoryDumpVisible} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import {
@@ -532,6 +532,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.HEATMAP_STATE:
         setHeatMapState(e.data.payload as HEATMAP_STATE)
+        break
+      case MSG_MAIN.MEMORY_DUMP_VISIBLE:
+        setMemoryDumpVisible(e.data.payload as boolean)
         break
       default:
         console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)

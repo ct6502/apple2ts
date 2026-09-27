@@ -26,11 +26,13 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   clearSlot,
   getHeatMapMemGet,
   getHeatMapMemSet,
+  getHeatMapMemGetMax,
+  getHeatMapMemSetMax,
   resetHeatMapMemSet,
   resetHeatMapMemGet} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
-import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, processInstruction, resetCycleCountCallbacks, setStepOut, getHeatMapCPU, resetHeatMapCPU } from "./cpu6502"
+import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, processInstruction, resetCycleCountCallbacks, setStepOut, getHeatMapCPU, getHeatMapCPUMax, resetHeatMapCPU } from "./cpu6502"
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
@@ -76,6 +78,7 @@ let executionPauseReason: ExecutionPauseReason | null = "idle"
 let executionBreakpointAddress: number | null = null
 let executionMemoryWrite: MemoryWriteEvent | null = null
 let heatMapState: HEATMAP_STATE = HEATMAP_STATE.CPU
+let memoryDumpVisible = false
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
 let veraSlot: VERA_SLOT = 0
@@ -86,6 +89,10 @@ let speedTracker: Array<{time: number, cycles: number}> = []
 
 export const setHeatMapState = (state: HEATMAP_STATE) => {
   heatMapState = state
+}
+
+export const setMemoryDumpVisible = (visible: boolean) => {
+  memoryDumpVisible = visible
 }
   
 export const resetCpuSpeedForTesting = () => {
@@ -195,6 +202,8 @@ const resetHeatMapCounts = () => {
 }
 
 const getHeatMap = () => {
+  // Idle, or the Heat Map tab isn't the visible tab (HEATMAP_STATE.NONE):
+  // skip building/sending the 64K-entry array every frame.
   if (cpuRunMode === RUN_MODE.IDLE) {
     return new Float64Array()
   }
@@ -205,8 +214,28 @@ const getHeatMap = () => {
       return getHeatMapMemGet()
     case HEATMAP_STATE.SETMEM:
       return getHeatMapMemSet()
+    case HEATMAP_STATE.GETSET:
+    case HEATMAP_STATE.NONE:
     default:
       return new Float64Array()
+  }
+}
+
+const getHeatMapMax = () => {
+  if (cpuRunMode === RUN_MODE.IDLE) {
+    return { value: 0, index: 0 }
+  }
+  switch (heatMapState) {
+    case HEATMAP_STATE.CPU:
+      return getHeatMapCPUMax()
+    case HEATMAP_STATE.GETMEM:
+      return getHeatMapMemGetMax()
+    case HEATMAP_STATE.SETMEM:
+      return getHeatMapMemSetMax()
+    case HEATMAP_STATE.GETSET:
+    case HEATMAP_STATE.NONE:
+    default:
+      return { value: 0, index: 0 }
   }
 }
 
@@ -801,7 +830,11 @@ export const doSetPastedText = (text: string) => {
 }
 
 const getMemoryDump = () => {
-  if (isDebugging && cpuRunMode !== RUN_MODE.IDLE) {
+  // getBasePlusAuxMemory() copies the entire base+aux memory space (128KB+,
+  // more with RamWorks expansion) - only pay for it while the Memory Dump
+  // sub-tab is actually the one visible, not just because the Debug tab
+  // (isDebugging) is open on some other sub-tab.
+  if (isDebugging && memoryDumpVisible && cpuRunMode !== RUN_MODE.IDLE) {
     return getBasePlusAuxMemory()
   }
   return new Uint8Array()
@@ -881,6 +914,7 @@ export const getExternalMachineState = () => {
       },
     },
     heatMap: getHeatMap(),
+    heatMapMax: getHeatMapMax(),
     hires: getHires(),
     iTempState: getTempStateIndex(),
     isDebugging: isDebugging,

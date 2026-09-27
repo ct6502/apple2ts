@@ -15,6 +15,7 @@ jest.mock("../../main2worker", () => ({
   handleGetBreakpoints: () => new Map(),
   handleGetMemoryDump: () => new Uint8Array(),
   handleGetRunMode: () => 0,
+  passMemoryDumpVisible: jest.fn(),
   passSetMemory: jest.fn(),
 }))
 jest.mock("../../graphics", () => ({ overrideHires: jest.fn() }))

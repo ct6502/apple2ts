@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine, ROMmemoryStart } from "../../../common/utility"
-import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passSetMemory } from "../../main2worker"
+import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passMemoryDumpVisible, passSetMemory } from "../../main2worker"
 import React from "react"
 import { Droplist } from "../droplist"
 import { overrideHires } from "../../graphics"
@@ -25,7 +25,8 @@ enum MEMORY_RANGE {
 
 let lastMemoryRange = `${MEMORY_RANGE.CURRENT}`
 
-const MemoryDump = () => {
+const MemoryDump = (props: { isActive?: boolean }) => {
+  const isActive = props.isActive ?? true
   const { updateBreakpoint, setUpdateBreakpoint, memdumpAddress, setMemdumpAddress } = useGlobalContext()
   const memoryDumpRef = useRef(null)
   const [address, setAddress] = useState("")
@@ -39,6 +40,14 @@ const MemoryDump = () => {
   const [matchIndex, setMatchIndex] = useState(0)
   const [highAscii, setHighAscii] = useState(false)
   const previousMemLengthRef = useRef(0)
+
+  // Only ask the worker to build/send the full memoryDump (a copy of the
+  // entire base+aux memory space, every frame) while this tab is the one
+  // actually visible.
+  useEffect(() => {
+    passMemoryDumpVisible(isActive)
+    return () => passMemoryDumpVisible(false)
+  }, [isActive])
 
   useEffect(() => {
     switch (memoryRange) {
