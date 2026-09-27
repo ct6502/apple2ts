@@ -1,8 +1,11 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { hiresLineToAddress, toHex, UI_THEME } from "../../../common/utility"
 import { useGlobalContext } from "../../globalcontext"
 import { nColsHgrMagnifier, nRowsHgrMagnifier } from "../../graphics"
 import { getTheme } from "../../ui_settings"
+
+// Rows rendered beyond the visible area, so scrolling doesn't reveal blank gaps.
+const OVERSCAN_ROWS = 12
 
 type MemoryTableProps = {
   memory: Uint8Array
@@ -26,20 +29,83 @@ const MemoryTable = (props: MemoryTableProps) => {
   const isLandscape = (window.innerWidth > window.innerHeight)
   const height = isLandscape ? Math.max((window.innerHeight - 647), 100) : 250
 
-  const clearSelection = (table: HTMLTableElement) => {
-    if (!table || !table.rows) return
-    for (let i = 0; i < table.rows.length; i++) {
-      for (let j = 0; j < table.rows[i].cells.length; j++) {
-        table.rows[i].cells[j].classList.remove("selected")
-      }
+  const nrows = props.isHGR ? 192 : 4096
+  const ncols = props.isHGR ? 40 : 16
+  // Address column + hex columns + the ASCII column (which HGR mode omits).
+  const tableColumns = ncols + 1 + (props.isHGR ? 0 : 1)
+
+  const tableRef = useRef<HTMLTableElement>(null)
+  const [rowHeight, setRowHeight] = useState(14)
+  const [scrollTop, setScrollTop] = useState(0)
+  const [viewportHeight, setViewportHeight] = useState(height)
+
+  // The table is its own scroll container (.memtable is display:block; overflow:auto),
+  // so measure it directly. Both setState calls are guarded, so this can't loop.
+  useLayoutEffect(() => {
+    const table = tableRef.current
+    if (!table) return
+    if (table.clientHeight !== viewportHeight) setViewportHeight(table.clientHeight)
+    const probe = table.querySelector<HTMLTableRowElement>("tr[data-row]")
+    if (probe) {
+      const measured = probe.getBoundingClientRect().height
+      if (measured > 0 && Math.abs(measured - rowHeight) > 0.5) setRowHeight(measured)
+    }
+  }, [scrollTop, viewportHeight, rowHeight, props.isHGR])
+
+  // Only these rows get built and mounted.
+  let firstRow = Math.max(0, Math.floor(scrollTop / rowHeight) - OVERSCAN_ROWS)
+  const lastRow = Math.min(nrows, Math.ceil((scrollTop + viewportHeight) / rowHeight) + OVERSCAN_ROWS)
+  firstRow = Math.min(firstRow, Math.max(0, lastRow - 1))
+
+  const handleScroll = (e: React.UIEvent<HTMLTableElement>) => {
+    const el = e.currentTarget
+    const nextFirst = Math.max(0, Math.floor(el.scrollTop / rowHeight) - OVERSCAN_ROWS)
+    // Skip re-rendering while the window hasn't actually shifted.
+    if (nextFirst !== firstRow || el.clientHeight !== viewportHeight) {
+      setScrollTop(el.scrollTop)
+      setViewportHeight(el.clientHeight)
     }
   }
 
+  const findRenderedRow = (table: HTMLTableElement, row: number) =>
+    table.querySelector<HTMLTableRowElement>(`tr[data-row="${row}"]`)
+
+  // A row outside the window isn't mounted, so move the scroll position to bring it
+  // into range and then run the action once the re-render has landed. Callers pass a
+  // <tbody>, which isn't the scroll container - always use the table ref for that.
+  const withRenderedRow = (row: number, fn: (tr: HTMLTableRowElement) => void) => {
+    const table = tableRef.current
+    if (!table) return
+    const rendered = findRenderedRow(table, row)
+    if (rendered) {
+      fn(rendered)
+      return
+    }
+    const maxScroll = Math.max(0, rowHeight * nrows - table.clientHeight)
+    table.scrollTop = Math.max(0, Math.min(row * rowHeight - table.clientHeight / 2, maxScroll))
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const current = tableRef.current
+      const late = current ? findRenderedRow(current, row) : null
+      if (late) fn(late)
+    }))
+  }
+
+  const applyHighlightAnimation = (element: HTMLElement) => {
+    const isDarkMode = getTheme() == UI_THEME.DARK
+    const animationName = isDarkMode ? "highlight-anim-dark" : "highlight-anim"
+    element.style.animation = `${animationName} 3s 0.5s`
+  }
+
+  const clearSelection = (table: HTMLTableElement) => {
+    table?.querySelectorAll("td.selected").forEach((cell) => cell.classList.remove("selected"))
+  }
+
   const setSelection = (offset: number[], table: HTMLTableElement) => {
-    for (let j = offset[1] + 1; j <= offset[1] + nRowsHgrMagnifier; j++) {
+    for (let row = offset[1]; row < offset[1] + nRowsHgrMagnifier; row++) {
+      const tr = findRenderedRow(table, row)
+      if (!tr) continue
       for (let i = offset[0] + 1; i <= offset[0] + nColsHgrMagnifier; i++) {
-        const cell = table?.rows[j]?.cells[i]
-        cell?.classList.add("selected")
+        tr.cells[i]?.classList.add("selected")
       }
     }
   }
@@ -67,26 +133,46 @@ const MemoryTable = (props: MemoryTableProps) => {
     // }
 
     if (props.isHGR) {
-      if ((hgrMagnifierLoc[0] >= 0) &&
-        (hgrMagnifierLocal.current[0] !== hgrMagnifierLoc[0] ||
-          hgrMagnifierLocal.current[1] !== hgrMagnifierLoc[1])) {
-        hgrMagnifierLocal.current[0] = hgrMagnifierLoc[0]
-        hgrMagnifierLocal.current[1] = hgrMagnifierLoc[1]
-        setTimeout(() => {
-          const table = document.querySelector("#memory-table") as HTMLTableElement
-          if (!table) return
-          clearSelection(table)
-          setSelection(hgrMagnifierLoc, table)
-          // scrollHgrIntoView(table)
-        }, 10)
-      }
+      if (hgrMagnifierLoc[0] < 0) return
+      const locChanged = hgrMagnifierLocal.current[0] !== hgrMagnifierLoc[0] ||
+        hgrMagnifierLocal.current[1] !== hgrMagnifierLoc[1]
+      // The selection is applied to mounted cells, so re-apply it when the window shifts.
+      const windowChanged = hgrMagnifierLocal.current[2] !== firstRow
+      if (!locChanged && !windowChanged) return
+      hgrMagnifierLocal.current = [hgrMagnifierLoc[0], hgrMagnifierLoc[1], firstRow]
+      setTimeout(() => {
+        const table = document.querySelector("#memory-table") as HTMLTableElement
+        if (!table) return
+        clearSelection(table)
+        setSelection(hgrMagnifierLoc, table)
+        // scrollHgrIntoView(table)
+      }, 10)
     } else {
       setTimeout(() => {
         const table = document.querySelector("#memory-table") as HTMLTableElement
         clearSelection(table)
       }, 10)
     }
-  }, [hgrMagnifierLoc, props.isHGR])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hgrMagnifierLoc, props.isHGR, firstRow])
+
+  // MemoryDump sets scrollRow to scroll to (and flash) a specific row. This has to be
+  // an effect rather than render-time code because it touches the table ref.
+  useEffect(() => {
+    if (props.scrollRow < 0) return
+    withRenderedRow(props.scrollRow, (row) => {
+      row.scrollIntoView({ block: "center", inline: "nearest" })
+      applyHighlightAnimation(row)
+      // Tried to also highlight the address column, but it does strange things
+      // in HGR mode where it draws some of the columns on top of each other...
+      //    applyHighlightAnimation(row.cells[0])
+      setTimeout(() => {
+        row.style.animation = ""
+        // row.cells[0].style.animation = ''
+      }, 3500)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.scrollRow])
 
   if (props.memory.length <= 1) return <div
       style={{ height: `${height}px` }}>
@@ -98,18 +184,18 @@ const MemoryTable = (props: MemoryTableProps) => {
     return String.fromCharCode(byte)
   }
 
-  const convertMemoryToArray = () => {
-    const rows = []
-    const nrows = props.isHGR ? 192 : 4096
-    const ncols = props.isHGR ? 40 : 16
-    for (let l = 0; l < nrows; l++) {
+  // Only builds the rows currently in (or near) the viewport.
+  const convertMemoryToArray = (from: number, to: number) => {
+    const rows: string[][] = []
+    for (let l = from; l < to; l++) {
       const addr = props.isHGR ?
         (hiresLineToAddress(props.offset, l) - props.offset) : 16 * l
       const mem = props.memory.slice(addr, addr + ncols)
-      const cells = [toHex(props.isHGR ? addr + props.offset : addr, 4) + ":"]
+      const cells = new Array<string>(ncols + 1)
+      cells[0] = toHex(props.isHGR ? addr + props.offset : addr, 4) + ":"
       let ascii = ""
       for (let b = 0; b < ncols; b++) {
-        cells.push(toHex(mem[b]))
+        cells[b + 1] = toHex(mem[b])
         ascii += convertByteToAscii(mem[b])
       }
       if (!props.isHGR) {
@@ -121,22 +207,22 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   const getMemoryOffset = (cell: HTMLTableCellElement): [number, number] => {
-    const row = cell.parentNode
-    const table = cell.parentNode?.parentNode as HTMLTableElement
-    if (table && table.rows && row && row.parentNode) {
-      const nrows = table.rows.length
-      const ncols = table.rows[0].cells.length
-      // The header row doesn't count as a real row, so just find the row index.
-      const rawRow = Array.from(row.parentNode.children).indexOf(row as Element)
-      // However, for the column, subtract 1 to get rid of the address column.
+    const row = cell.parentNode as HTMLTableRowElement | null
+    const table = row?.parentNode?.parentNode as HTMLTableElement | undefined
+    if (table && row) {
+      // Spacer rows have no data-row, so clicks on them are ignored.
+      const rawRow = Number(row.dataset.row)
+      if (Number.isNaN(rawRow)) return [-1, -1]
+      const headerCols = table.rows[0]?.cells.length ?? (ncols + 1)
+      // Subtract 1 to get rid of the address column.
       const rawCol = Array.from(row.children).indexOf(cell) - 1
       let cellIndex = -1
       let rowIndex = -1
       if (props.isHGR) {
-        cellIndex = Math.min(rawCol, 40 - nColsHgrMagnifier)
+        cellIndex = Math.min(rawCol, ncols - nColsHgrMagnifier)
         rowIndex = Math.min(rawRow, nrows - nRowsHgrMagnifier)
       } else {
-        cellIndex = Math.min(rawCol, ncols - 3)
+        cellIndex = Math.min(rawCol, headerCols - 3)
         rowIndex = Math.min(rawRow, nrows - 8)
       }
       if (rowIndex >= 0 && cellIndex >= 0) {
@@ -176,42 +262,22 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   const getVisibleRows = () => {
-    const table = document.querySelector("#memory-table") as HTMLTableElement
-    let topVisibleRowIndex = -1
-    let bottomVisibleRowIndex = -1
-
-    for (let i = 0; i < table.rows.length; i++) {
-      const rect = table.rows[i].getBoundingClientRect()
-      // Check if the row is within the viewport
-      if (rect.top < window.innerHeight && rect.bottom >= 0) {
-        // If it's the first visible row we've found, set it as the top
-        if (topVisibleRowIndex === -1) {
-          topVisibleRowIndex = i
-        }
-        // Keep updating the bottom visible row index as we go
-        bottomVisibleRowIndex = i
-      } else if (topVisibleRowIndex !== -1) {
-        // We've found the last visible row
-        break
-      }
-    }
-    return { top: topVisibleRowIndex, bottom: bottomVisibleRowIndex }
+    const top = Math.max(0, Math.floor(scrollTop / rowHeight))
+    const bottom = Math.min(nrows - 1, Math.ceil((scrollTop + viewportHeight) / rowHeight) - 1)
+    return { top, bottom }
   }
 
   props.doGetVisibleRows(getVisibleRows)
 
-  const setNewFocus = (table: HTMLTableElement, col: number, row: number) => {
-    const nextCell = table.rows[row].cells[col]
-//    nextCell?.scrollIntoView({ behavior: "auto", block: "center", inline: "center" })
-    nextCell?.focus()
+  const setNewFocus = (col: number, row: number) => {
+    withRenderedRow(row, (tr) => {
+      (tr.cells[col] as HTMLElement | undefined)?.focus()
+    })
   }
 
   const handleKeyDown = (col: number, row: number, e: React.KeyboardEvent<HTMLDivElement>) => {
     // Use arrow keys to move from cell to cell
-    const cell = e.currentTarget
-    const table = cell.parentNode?.parentNode as HTMLTableElement
-    const nrows = table.rows.length
-    const lastCol = props.isHGR ? 40 : 16
+    const lastCol = ncols
     if (e.key.startsWith("Arrow")) {
       e.preventDefault()
       cellValue.current = ""
@@ -240,7 +306,7 @@ const MemoryTable = (props: MemoryTableProps) => {
           return
         }
       }
-      setNewFocus(table, col, row)
+      setNewFocus(col, row)
     } else if (e.key === "Escape") {
       e.preventDefault()
       const cell = e.currentTarget
@@ -258,7 +324,7 @@ const MemoryTable = (props: MemoryTableProps) => {
       }
       if (col < (lastCol - 1)) {
         col++
-        setNewFocus(table, col, row)
+        setNewFocus(col, row)
       }
     }
   }
@@ -308,16 +374,14 @@ const MemoryTable = (props: MemoryTableProps) => {
       // We're done editing. Set the new memory value and advance to next cell.
       setNewValue(col, row, cell, newvalue)
       // Advance the selection to the next cell
-      const table = cell.parentNode?.parentNode as HTMLTableElement
-      const nrows = table.rows.length
-      const lastCol = props.isHGR ? 40 : 16
+      const lastCol = ncols
       if (col <= (lastCol - 1)) {
         col++
       } else if (row < (nrows - 1)) {
         row++
         col = 1
       }
-      setNewFocus(table, col, row)
+      setNewFocus(col, row)
     }
   }
 
@@ -325,37 +389,16 @@ const MemoryTable = (props: MemoryTableProps) => {
   // by clicking on the canvas.
   // (useEffect moved above early return to satisfy rules-of-hooks)
 
-  const width = props.isHGR ? 40 : 16
-  const rows = convertMemoryToArray()
+  const width = ncols
+  const rows = convertMemoryToArray(firstRow, lastRow)
+  // Blank filler rows keep the scrollbar proportional to the full table.
+  const topSpacerHeight = firstRow * rowHeight
+  const bottomSpacerHeight = Math.max(0, (nrows - lastRow) * rowHeight)
   const isEditable = (col: number, row: number) => {
     if (col === 0 || col === (width + 1)) return false
     if (!props.addressGetTable) return true
     const index = props.addressGetTable[Math.floor(row / width)]
     return (index < 0x10000) || (index >= 0x17F00)
-  }
-
-  const applyHighlightAnimation = (element: HTMLElement) => {
-    const isDarkMode = getTheme() == UI_THEME.DARK
-    const animationName = isDarkMode ? "highlight-anim-dark" : "highlight-anim"
-    element.style.animation = `${animationName} 3s 0.5s`
-  }
-
-  // This scrolling code is used by the higher-level MemoryDump component to
-  // scroll to a specific row when the address field is changed.
-  if (props.scrollRow >= 0) {
-    const table = document.querySelector("#memory-table") as HTMLTableElement
-    const row = table.rows[props.scrollRow + 1]
-    if (row) {
-      row.scrollIntoView({ block: "center", inline: "nearest" })
-      applyHighlightAnimation(row)
-      // Tried to also highlight the address column, but it does strange things
-      // in HGR mode where it draws some of the columns on top of each other...
-      //    applyHighlightAnimation(row.cells[0])
-      setTimeout(() => {
-        row.style.animation = ""
-        // row.cells[0].style.animation = ''
-      }, 3500)
-    }
   }
 
   const cellClass = (col: number, row: number) => {
@@ -367,8 +410,10 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   return (
     <table className="memtable" id="memory-table"
+      ref={tableRef}
       style={{ cursor: props.pickWatchpoint ? "crosshair" : "default",
         lineHeight: "10pt", height: `${height}px` }}
+      onScroll={handleScroll}
       onMouseDown={onMouseDown}
       onMouseOver={onMouseOver}>
       <thead>
@@ -378,21 +423,30 @@ const MemoryTable = (props: MemoryTableProps) => {
         </tr>
       </thead>
       <tbody>
-        {rows.map((row, j) => (
-          <tr key={j}>
-            {row.map((cell, i) => (
-              <td key={i}
-                contentEditable={isEditable(i, j)}
-                suppressContentEditableWarning={true}
-                onKeyDown={(e) => handleKeyDown(i, j, e)}
-                onInput={(e) => handleInput(i, j, e.currentTarget)}
-                onFocus={(e) => handleFocus(e.currentTarget)}
-                className={cellClass(i, j)}>
-                {cell}
-              </td>
-            ))}
-          </tr>
-        ))}
+        {topSpacerHeight > 0 && <tr key="top-spacer" style={{ height: `${topSpacerHeight}px` }}>
+          <td colSpan={tableColumns} />
+        </tr>}
+        {rows.map((row, i) => {
+          const j = firstRow + i
+          return (
+            <tr key={j} data-row={j}>
+              {row.map((cell, i) => (
+                <td key={i}
+                  contentEditable={isEditable(i, j)}
+                  suppressContentEditableWarning={true}
+                  onKeyDown={(e) => handleKeyDown(i, j, e)}
+                  onInput={(e) => handleInput(i, j, e.currentTarget)}
+                  onFocus={(e) => handleFocus(e.currentTarget)}
+                  className={cellClass(i, j)}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          )
+        })}
+        {bottomSpacerHeight > 0 && <tr key="bottom-spacer" style={{ height: `${bottomSpacerHeight}px` }}>
+          <td colSpan={tableColumns} />
+        </tr>}
       </tbody>
     </table>
   )

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react"
-import { colormap_inferno } from "./heatmap_colormap_inferno"
-import { handleGetHeatMap, handleGetHeatMapMax, handleGetRunMode, handleGetState6502 } from "../../main2worker"
+import { handleGetHeatMap, handleGetRunMode } from "../../main2worker"
 import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
 import HeatMapMagnifier from "./heatmap_magnifier"
+import { getViridisColorsRGB } from "../../ui_utilities"
 
 const BASE_HEATMAP_WIDTH = 256
 const BASE_HEATMAP_HEIGHT = 256
@@ -22,7 +22,10 @@ let lastDrawnCycleCount = -1
 // necessarily advancing cycleCount, so that alone must also force a redraw.
 let lastDrawnState: HEATMAP_STATE | null = null
 
-const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setShowMagnifier: (value: boolean) => void }) => {
+const HeatMapView = (props: { state: HEATMAP_STATE,
+  colorTable: string,
+  showMagnifier: boolean,
+  setShowMagnifier: (value: boolean) => void }) => {
   const heatMapRef = useRef<HTMLCanvasElement>(null)
   const x = window.outerWidth - 600
   const y = window.outerHeight - 700
@@ -107,10 +110,22 @@ const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setS
     maxIndex = heatMapMax.index
     const heatMax = Math.log10(Math.max(1, 0.9 * heatMapMax.value))
     const heatMapBottom = 75
+    // const colorTable = Palette.Plasma
+    const colorTable = getViridisColorsRGB(props.colorTable, 16)
+
+    let heatMax = 0
+    for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
+      if (heatMap[i] > heatMax) {
+        heatMax = heatMap[i]
+        maxIndex = i
+      }
+    }
+    heatMax = Math.log10(Math.max(1, 0.9 * heatMax))
+    // const heatMapBottom = 75
     for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
       const logscale = Math.log10(Math.max(1, heatMap[i])) / heatMax
-      const value = Math.min(255, heatMapBottom + 12 * Math.floor(16 * logscale))
-      if (value > heatMapBottom) {
+      const value = Math.floor(16 * logscale) - 1
+      if (value >= 0) {
         const [r, g, b] = colorTable[value]
         rgba[4 * i] = r
         rgba[4 * i + 1] = g

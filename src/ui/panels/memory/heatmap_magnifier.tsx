@@ -45,6 +45,7 @@ const HeatMapMagnifier = (props: {
 
   const handleTitleBarMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (dragging && dialogRef.current) {
+      e.preventDefault()
       const div = dialogRef.current as HTMLDivElement
       const left = e.clientX - offset[0]
       const top = e.clientY - offset[1]
@@ -90,6 +91,7 @@ const HeatMapMagnifier = (props: {
 
   useEffect(() => {
     if (!magnifierCanvasRef.current || !props.heatCanvas.current || !magnifierScrollRef.current) return
+    if (dragging) return
     const heatCanvas = props.heatCanvas.current
     const magnifierCanvas = magnifierCanvasRef.current
     const magnifierCtx = magnifierCanvas?.getContext("2d")
@@ -129,6 +131,10 @@ const HeatMapMagnifier = (props: {
       // Add in the local assembly code if CPU heatmap
       if (props.state === HEATMAP_STATE.CPU) {
         const disassembly = getDisassembly(heatMapAddress - 15, heatMapAddress + 15).split("\n")
+        // If disassembly is all $00 or $FF then skip
+        if (disassembly.every(line => line.includes(": 00") || line.includes(": FF") || line.length === 0)) {
+          return
+        }
         const leftEdge = magnifierScrollRef.current.scrollLeft
         const topEdge = magnifierScrollRef.current.scrollTop
         magnifierCtx.fillStyle = "#ffff00"
@@ -145,9 +151,16 @@ const HeatMapMagnifier = (props: {
   })
 
   return (
+    <div className="modal-overlay"
+      style={{ pointerEvents: dragging ? "auto" : "none",
+        backgroundColor: "transparent" }}
+      onMouseMove={dragging ? (e) => handleTitleBarMouseMove(e) : undefined}
+      onMouseUp={dragging ? () => handleTitleBarMouseUp() : undefined}>
     <div className="floating-dialog flex-column"
       ref={dialogRef}
       style={{
+        // The overlay is pointer-events: none when idle, so the dialog must opt back in.
+        pointerEvents: "auto",
         left: `${props.dialogPositionX}px`, top: `${props.dialogPositionY}px`,
       }}
     >
@@ -200,6 +213,7 @@ const HeatMapMagnifier = (props: {
         height={MAGNIFIER_HEIGHT}
         style={{ borderRight: "1px solid rgba(0, 0, 0, 0.4)" }}
       /> */}
+    </div>
     </div>
     </div>
   )
