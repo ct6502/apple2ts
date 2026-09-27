@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react"
-import { colormap_inferno } from "./heatmap_colormap_inferno"
 import { handleGetHeatMap, handleGetRunMode } from "../../main2worker"
 import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
 import HeatMapMagnifier from "./heatmap_magnifier"
+import { getViridisColorsRGB } from "../../ui_utilities"
 
 const BASE_HEATMAP_WIDTH = 256
 const BASE_HEATMAP_HEIGHT = 256
@@ -11,7 +11,10 @@ const BASE_HEATMAP_HEIGHT = 256
 let heatMapValue = 0
 let maxIndex = 0
 
-const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setShowMagnifier: (value: boolean) => void }) => {
+const HeatMapView = (props: { state: HEATMAP_STATE,
+  colorTable: string,
+  showMagnifier: boolean,
+  setShowMagnifier: (value: boolean) => void }) => {
   const heatMapRef = useRef<HTMLCanvasElement>(null)
   const x = window.outerWidth - 600
   const y = window.outerHeight - 700
@@ -70,7 +73,9 @@ const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setS
     if (!ctx) return
     const heatMap = handleGetHeatMap()
     if (heatMap.length === 0) {
-      ctx.clearRect(0, 0, BASE_HEATMAP_WIDTH, BASE_HEATMAP_HEIGHT)
+      if (handleGetRunMode() === RUN_MODE.IDLE) {
+        ctx.clearRect(0, 0, BASE_HEATMAP_WIDTH, BASE_HEATMAP_HEIGHT)
+      }
       return
     }
     if (heatMapAddress >= 0) {
@@ -79,7 +84,9 @@ const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setS
     ctx.imageSmoothingEnabled = false
     const rgba = new Uint8ClampedArray(4 * BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT)
     // drawGrid(rgba)
-    const colorTable = colormap_inferno
+    // const colorTable = Palette.Plasma
+    const colorTable = getViridisColorsRGB(props.colorTable, 16)
+
     let heatMax = 0
     for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
       if (heatMap[i] > heatMax) {
@@ -88,11 +95,11 @@ const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setS
       }
     }
     heatMax = Math.log10(Math.max(1, 0.9 * heatMax))
-    const heatMapBottom = 75
+    // const heatMapBottom = 75
     for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
       const logscale = Math.log10(Math.max(1, heatMap[i])) / heatMax
-      const value = Math.min(255, heatMapBottom + 12 * Math.floor(16 * logscale))
-      if (value > heatMapBottom) {
+      const value = Math.floor(16 * logscale) - 1
+      if (value >= 0) {
         const [r, g, b] = colorTable[value]
         rgba[4 * i] = r
         rgba[4 * i + 1] = g
