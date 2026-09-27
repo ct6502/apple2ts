@@ -135,6 +135,18 @@ export const getPreferenceBasicProgram = (): string | null => {
   return localStorage.getItem("basicProgram")
 }
 
+export const getPreferenceByString = (key: string, defaultValue = ""): string => {
+  return localStorage.getItem(key) ?? defaultValue
+}
+
+export const setPreferenceByString = (key: string, value: string, defaultValue = "") => {
+  if (value === defaultValue) {
+    localStorage.removeItem(key)
+  } else {
+    localStorage.setItem(key, value)
+  }
+}
+
 export const setPreferenceColorMode = (
   mode: COLOR_MODE = COLOR_MODE.COLOR,
   origin: SettingsChangeOrigin = "external",

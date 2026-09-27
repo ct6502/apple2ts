@@ -1,7 +1,8 @@
 import { UI_THEME } from "../common/utility"
 import { getPreferenceRetroSkin, RETRO_SKIN } from "./localstorage"
 import { isMinimalTheme } from "./ui_settings"
-import { Color, Gradient, Palette } from "viridis"
+import { Color, Palette } from "viridis"
+import type { PaletteName } from "viridis"
 
 export const handleSetTheme = (theme: UI_THEME) => {
   if (theme == UI_THEME.DARK || theme == UI_THEME.MINIMAL) {
@@ -33,26 +34,11 @@ export const toggleScanlines = (enabled: boolean) => {
   document.body.style.setProperty("--scanlines-display", (enabled && !useIIGSscanlines) ? "block" : "none")
 }
 
+// Color tables offered by the heat map picker. The order drives the picker menu.
+export const HEATMAP_PALETTES = ["Spectral", "Plasma", "Sunset", "Warm", "Cool", "Parula", "Viridis", "Grayscale"] as const
 
-export const getViridisColorsRGB = (colorTable: string, count: number): [number, number, number][] => {
-  let gradient: Gradient
-  switch (colorTable) {
-    case "Viridis":
-      gradient = Palette.Viridis
-      break
-    case "Plasma":
-      gradient = Palette.Plasma
-      break
-    case "Inferno":
-      gradient = Palette.Inferno
-      break
-    case "Magma":
-      gradient = Palette.Magma
-      break
-    default:
-      gradient = Palette.Viridis
-      break
-  }
+export const getViridisColorsRGB = (colorTable: PaletteName, count: number): [number, number, number][] => {
+  const gradient = Palette[colorTable]
   const rgbColors: [number, number, number][] = []
   // Sample 'count' points evenly distributed between 1/count and 1
   for (let i = 0; i < count; i++) {
