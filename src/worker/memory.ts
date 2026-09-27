@@ -57,8 +57,10 @@ const RamWorksBankSet = (bank: number) => {
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
 // Include one extra slot, to avoid needing memory checks for > 65535.
-export const addressGetTable = (new Array<number>(257)).fill(0)
-const addressSetTable = (new Array<number>(257)).fill(0)
+export const addressGetTable = new Uint32Array(257)
+const addressSetTable = new Uint32Array(257)
+const ADDRESS_GUARD = 0xFFFFFF
+
 let currentMachineName: MACHINE_NAME = "APPLE2EE"
 
 export const heatMapMemGet = new Float64Array(0x10000)
@@ -242,7 +244,7 @@ const updateWriteBankSwitchedRamTable = () => {
   const writeRAM = SWITCHES.BSR_WRITE.isSet
   // Start out with Slot ROM and regular ROM as not writeable
   for (let i = 0xC0; i <= 0xFF; i++) {
-    addressSetTable[i] = -1
+    addressSetTable[i] = ADDRESS_GUARD
   }
   if (writeRAM) {
     for (let i = 0xD0; i <= 0xFF; i++) {
@@ -654,7 +656,7 @@ export const memSet = (addr: number, value: number) => {
     }
     const shifted = addressSetTable[page]
     // This will prevent us from setting slot ROM or motherboard ROM
-    if (shifted < 0) return
+    if (shifted >= ADDRESS_GUARD) return
     const offset = shifted + (addr & 255)
     const effectiveSpace = offset < 0x10000
       ? "main" as const
@@ -822,7 +824,9 @@ export const getDataBlock = (addr: number) => {
 export const setMemoryBlock = (addr: number, data: Uint8Array) => {
   // The addr & 255 handles data blocks that span page boundaries.
   // This assumes that the second half of the block is within the same memory table range.
-  const offset = addressSetTable[addr >>> 8] + (addr & 255)
+  const vHi = addr >>> 8
+  if (addressSetTable[vHi] >= ADDRESS_GUARD) return
+  const offset = addressSetTable[vHi] + (addr & 255)
   memory.set(data, offset)
 }
 

@@ -6,7 +6,7 @@ import { getTheme } from "../../ui_settings"
 
 type MemoryTableProps = {
   memory: Uint8Array
-  addressGetTable: number[] | null
+  addressGetTable: Uint32Array | null
   isHGR: boolean
   offset: number
   highAscii: boolean

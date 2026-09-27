@@ -367,12 +367,25 @@ body.dark-mode .tab-button {
 }
 
 .tab-active {
+  /* background-color is kept as a fallback; background-image paints over it. */
   background-color: var(--button-active);
+  background-image: linear-gradient(to bottom, var(--button-active), var(--panel-background));
   color: var(--text-color);
+  /* Grow 1px taller to cover the panel's top border, then pull that 1px back out of the
+     layout so the tab row keeps its size. Unlike translateY, this leaves the top edge -
+     and therefore the tab's apparent height - aligned with the other tabs. */
+  height: 29px;
+  /* .tab-button height + 1 */
+  margin-bottom: -1px;
+  /* Without the transform there's no stacking-context promotion, so the panel would
+     paint its border over this overlap. */
+  position: relative;
+  z-index: 1;
 }
 
 body.dark-mode .tab-active {
   background-color: var(--button-active-dark);
+  background-image: linear-gradient(to bottom, var(--button-active-dark), var(--panel-background-dark));
   color: var(--text-color-dark);
 }
 
@@ -658,7 +671,17 @@ body.dark-mode .icon-text {
 }
 
 .dbg-tab-row {
+  margin-right: 2px;
   padding-bottom: 0px;
+  border-right: 1px solid black;
+  /* Stop stretching to the content pane; hug the buttons so the border matches their length. */
+  align-self: flex-start;
+}
+
+/* Narrow layout stacks the row above the content, so the divider belongs on the bottom edge. */
+.dbg-tab-row-horizontal {
+  border-right: none;
+  border-bottom: 1px solid black;
 }
 
 .dbg-tab {
@@ -684,13 +707,45 @@ body.dark-mode .dbg-tab {
 
 .dbg-tab-active {
   background-color: var(--button-active);
-  border-bottom-style: none;
+  /* The color the shade fades into. Redeclared for dark mode below. */
+  --dbg-tab-fade: var(--background-color);
 }
 
 body.dark-mode .dbg-tab:hover,
 body.dark-mode .dbg-tab-active {
   background-color: var(--button-active);
   color: var(--text-color);
+  --dbg-tab-fade: var(--background-color-dark);
+}
+
+/* Shade the active tab so it blends into the content it belongs to, matching the tab
+   strip above the Memory Dump. The tabs live under #debug-section (an id - the
+   .debug-section class is on the content panes), and that element is the one carrying
+   minimal-presentation, so scope off it. */
+#debug-section:not(.minimal-presentation) .dbg-tab-active {
+  background-image: linear-gradient(to bottom, var(--button-active), var(--dbg-tab-fade));
+}
+
+/* Vertical tabs sit to the left of their content, so the fade runs the other way - from
+   the outer edge toward the panel on the right. */
+#debug-section:not(.minimal-presentation) .dbg-tab-vertical.dbg-tab-active {
+  background-image: linear-gradient(to right, var(--button-active), var(--dbg-tab-fade));
+}
+
+/* Extend the active tab 1px over the tab row's border so the dividing line disappears
+   behind it. Padding rather than width/height grows only the content-facing edge, so the
+   label stays centered where it was; the negative margin cancels the growth in layout,
+   otherwise the row would just grow 1px and carry the border out of reach. */
+#debug-section:not(.minimal-presentation) .dbg-tab-vertical.dbg-tab-active {
+  padding-right: 7px;
+  /* .dbg-tab padding + 1 */
+  margin-right: -1px;
+}
+
+#debug-section:not(.minimal-presentation) .dbg-tab-horizontal.dbg-tab-active {
+  padding-bottom: 7px;
+  /* .dbg-tab padding + 1 */
+  margin-bottom: -1px;
 }
 
 .dbg-tab-horizontal {
@@ -699,6 +754,8 @@ body.dark-mode .dbg-tab-active {
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
   margin-right: 4px;
+  /* Drop the border facing the content; the tab row's border supplies that line. */
+  border-bottom: 0;
 }
 
 .dbg-tab-vertical {
@@ -707,6 +764,8 @@ body.dark-mode .dbg-tab-active {
   border-top-left-radius: 12px;
   border-bottom-left-radius: 12px;
   margin-bottom: 4px;
+  /* Drop the border facing the content; the tab row's border supplies that line. */
+  border-right: 0;
 }
 
 .dbg-program-error {

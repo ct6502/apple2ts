@@ -457,7 +457,7 @@ export const requestRestoreSessionSnapshot = (snapshotId: string, timeoutMs = 50
 let memoryResource: Uint8Array<ArrayBufferLike> = new Uint8Array()
 
 let machineState: MachineState = {
-  addressGetTable: [],
+  addressGetTable: new Uint32Array(),
   altChar: true,
   basicMemory: new Uint8Array(),
   breakpoints: new BreakpointMap(),

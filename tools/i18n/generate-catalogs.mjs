@@ -83,8 +83,16 @@ if (arguments_.length > 1 || (arguments_.length === 1 && arguments_[0] !== "--ch
         }
       }
     } else {
-      await writeFile(registryPath, registry)
-      process.stdout.write(`Generated language registry: ${registryPath}\n`)
+      let current
+      try {
+        current = await readFile(registryPath, "utf8")
+      } catch {
+        current = undefined
+      }
+      if (current !== registry) {
+        await writeFile(registryPath, registry)
+        process.stdout.write(`Generated language registry: ${registryPath}\n`)
+      }
 
       for (const file of await readdir(outputDirectory)) {
         if (file.endsWith(".ts") && !expected.has(file)) {

@@ -262,7 +262,7 @@ type SlotConfig = {
 }
 
 type MachineState = {
-  addressGetTable: number[],
+  addressGetTable: Uint32Array,
   altChar: boolean,
   basicMemory: Uint8Array,
   breakpoints: BreakpointMap,
