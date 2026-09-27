@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { handleGetHeatMap, handleGetRunMode } from "../../main2worker"
+import { handleGetHeatMap, handleGetHeatMapMax, handleGetRunMode, handleGetState6502 } from "../../main2worker"
 import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
 import HeatMapMagnifier from "./heatmap_magnifier"
 import { getViridisColorsRGB } from "../../ui_utilities"
@@ -102,25 +102,13 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     ctx.imageSmoothingEnabled = false
     const rgba = new Uint8ClampedArray(4 * BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT)
     // drawGrid(rgba)
-    const colorTable = colormap_inferno
     // The peak value/address is tracked incrementally by the producer
     // (cpu6502.ts / memory.ts) as it writes the heat map, instead of being
     // rescanned across all 65536 entries here on every redraw.
     const heatMapMax = handleGetHeatMapMax()
     maxIndex = heatMapMax.index
     const heatMax = Math.log10(Math.max(1, 0.9 * heatMapMax.value))
-    const heatMapBottom = 75
-    // const colorTable = Palette.Plasma
     const colorTable = getViridisColorsRGB(props.colorTable, 16)
-
-    let heatMax = 0
-    for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
-      if (heatMap[i] > heatMax) {
-        heatMax = heatMap[i]
-        maxIndex = i
-      }
-    }
-    heatMax = Math.log10(Math.max(1, 0.9 * heatMax))
     // const heatMapBottom = 75
     for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
       const logscale = Math.log10(Math.max(1, heatMap[i])) / heatMax
