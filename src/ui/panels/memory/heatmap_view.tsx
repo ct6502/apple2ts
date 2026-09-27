@@ -113,7 +113,13 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     // const heatMapBottom = 75
     for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
       const logscale = Math.log10(Math.max(1, heatMap[i])) / heatMax
-      const value = Math.floor(16 * logscale) - 1
+      // Math.log10(1) is exactly 0, so a cell touched exactly once always
+      // computed value === -1 here, same as a cell never touched at all --
+      // e.g. code copied into place by a single denibblizing pass and never
+      // rewritten was indistinguishable from memory nothing ever wrote to.
+      // Floor any actually-touched cell at bucket 0 instead of letting it
+      // fall through.
+      const value = heatMap[i] > 0 ? Math.max(0, Math.floor(16 * logscale) - 1) : -1
       if (value >= 0) {
         const [r, g, b] = colorTable[value]
         rgba[4 * i] = r
