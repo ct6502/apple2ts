@@ -605,7 +605,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       if (
         !didNavigateWithKeyboard.current &&
         !modal.length &&
-        (target.tagName === "BODY" || target.tagName === "BUTTON")
+        (target.tagName === "BODY" || target.tagName === "BUTTON" || target.id === "veraCanvas")
       ) {
         handler(event as unknown as keyEvent)
       }
