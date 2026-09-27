@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { colormap_inferno } from "./heatmap_colormap_inferno"
-import { handleGetHeatMap, handleGetRunMode } from "../../main2worker"
+import { handleGetHeatMap, handleGetHeatMapMax, handleGetRunMode, handleGetState6502 } from "../../main2worker"
 import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
 import HeatMapMagnifier from "./heatmap_magnifier"
 
@@ -10,6 +10,17 @@ const BASE_HEATMAP_HEIGHT = 256
 // let isMouseDown = false
 let heatMapValue = 0
 let maxIndex = 0
+// s6502.cycleCount the canvas was actually redrawn for. The worker posts
+// machine state ~60x/sec regardless of whether new instructions/memory
+// accesses happened; skip the expensive per-pixel redraw when nothing has
+// changed since the last paint. (execution.executionSequence is NOT this
+// signal - it only bumps on running/paused/idle transitions, so it never
+// changes while the emulator runs continuously.)
+let lastDrawnCycleCount = -1
+// Which HEATMAP_STATE (CPU/GETMEM/SETMEM) the canvas currently reflects.
+// Switching sub-tabs swaps to a different underlying array without
+// necessarily advancing cycleCount, so that alone must also force a redraw.
+let lastDrawnState: HEATMAP_STATE | null = null
 
 const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setShowMagnifier: (value: boolean) => void }) => {
   const heatMapRef = useRef<HTMLCanvasElement>(null)
@@ -71,23 +82,30 @@ const HeatMapView = (props: { state: HEATMAP_STATE, showMagnifier: boolean, setS
     const heatMap = handleGetHeatMap()
     if (heatMap.length === 0) {
       ctx.clearRect(0, 0, BASE_HEATMAP_WIDTH, BASE_HEATMAP_HEIGHT)
+      lastDrawnCycleCount = -1
+      lastDrawnState = null
       return
     }
+    // Keep the magnifier's live value readout responsive even while paused
+    // (e.g. hovering to inspect a frozen heat map), before the "did
+    // anything change" bail-out below.
     if (heatMapAddress >= 0) {
       heatMapValue = heatMap[heatMapAddress]
     }
+    const cycleCount = handleGetState6502().cycleCount
+    if (cycleCount === lastDrawnCycleCount && props.state === lastDrawnState) return
+    lastDrawnCycleCount = cycleCount
+    lastDrawnState = props.state
     ctx.imageSmoothingEnabled = false
     const rgba = new Uint8ClampedArray(4 * BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT)
     // drawGrid(rgba)
     const colorTable = colormap_inferno
-    let heatMax = 0
-    for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
-      if (heatMap[i] > heatMax) {
-        heatMax = heatMap[i]
-        maxIndex = i
-      }
-    }
-    heatMax = Math.log10(Math.max(1, 0.9 * heatMax))
+    // The peak value/address is tracked incrementally by the producer
+    // (cpu6502.ts / memory.ts) as it writes the heat map, instead of being
+    // rescanned across all 65536 entries here on every redraw.
+    const heatMapMax = handleGetHeatMapMax()
+    maxIndex = heatMapMax.index
+    const heatMax = Math.log10(Math.max(1, 0.9 * heatMapMax.value))
     const heatMapBottom = 75
     for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
       const logscale = Math.log10(Math.max(1, heatMap[i])) / heatMax

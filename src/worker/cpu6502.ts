@@ -405,6 +405,20 @@ const pauseForBreakpointResult = (result: BREAKPOINT_RESULT) => {
 }
 
 const heatMapCPU = new Float64Array(0x10000)
+// Tracked incrementally as heatMapCPU is written, so the UI never has to
+// rescan all 65536 entries per frame just to find the peak.
+let heatMapCPUMaxValue = 0
+let heatMapCPUMaxIndex = 0
+
+const bumpHeatMapCPU = (address: number) => {
+  const count = heatMapCPU[address] + 1
+  heatMapCPU[address] = count
+  if (count > heatMapCPUMaxValue) {
+    heatMapCPUMaxValue = count
+    heatMapCPUMaxIndex = address
+  }
+}
+
 export const getHeatMapCPU = () => {
   if (isDebugging) {
     return heatMapCPU
@@ -412,8 +426,17 @@ export const getHeatMapCPU = () => {
   return new Float64Array()
 }
 
+export const getHeatMapCPUMax = () => {
+  if (isDebugging) {
+    return { value: heatMapCPUMaxValue, index: heatMapCPUMaxIndex }
+  }
+  return { value: 0, index: 0 }
+}
+
 export const resetHeatMapCPU = () => {
   heatMapCPU.fill(0)
+  heatMapCPUMaxValue = 0
+  heatMapCPUMaxIndex = 0
 }
 
 
@@ -480,9 +503,9 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
   if (code.pcode === 0x40) interruptDisabled = isInterruptDisabled()
 
   if (isDebugging) {
-    heatMapCPU[PC1] = heatMapCPU[PC1] + 1
-    if (code.bytes > 1) heatMapCPU[PC1 + 1] = heatMapCPU[PC1 + 1] + 1
-    if (code.bytes > 2) heatMapCPU[PC1 + 2] = heatMapCPU[PC1 + 2] + 1
+    bumpHeatMapCPU(PC1)
+    if (code.bytes > 1) bumpHeatMapCPU(PC1 + 1)
+    if (code.bytes > 2) bumpHeatMapCPU(PC1 + 2)
   }
   if (updateTrace) {
     // Do not output during the Apple II's WAIT subroutine

@@ -63,6 +63,12 @@ let currentMachineName: MACHINE_NAME = "APPLE2EE"
 
 export const heatMapMemGet = new Float64Array(0x10000)
 export const heatMapMemSet = new Float64Array(0x10000)
+// Tracked incrementally as the heat maps are written, so the UI never has to
+// rescan all 65536 entries per frame just to find the peak.
+let heatMapMemGetMaxValue = 0
+let heatMapMemGetMaxIndex = 0
+let heatMapMemSetMaxValue = 0
+let heatMapMemSetMaxIndex = 0
 
 export const getHeatMapMemGet = (): Float64Array => {
   if (isDebugging) {
@@ -78,12 +84,30 @@ export const getHeatMapMemSet = (): Float64Array => {
   return new Float64Array()
 }
 
+export const getHeatMapMemGetMax = () => {
+  if (isDebugging) {
+    return { value: heatMapMemGetMaxValue, index: heatMapMemGetMaxIndex }
+  }
+  return { value: 0, index: 0 }
+}
+
+export const getHeatMapMemSetMax = () => {
+  if (isDebugging) {
+    return { value: heatMapMemSetMaxValue, index: heatMapMemSetMaxIndex }
+  }
+  return { value: 0, index: 0 }
+}
+
 export const resetHeatMapMemGet = () => {
   heatMapMemGet.fill(0)
+  heatMapMemGetMaxValue = 0
+  heatMapMemGetMaxIndex = 0
 }
 
 export const resetHeatMapMemSet = () => {
   heatMapMemSet.fill(0)
+  heatMapMemSetMaxValue = 0
+  heatMapMemSetMaxIndex = 0
 }
 
 export const getCurrentMachineName = () => {
@@ -499,7 +523,12 @@ export const memGet = (addr: number, checkWatchpoints = true): number => {
   let value = 0
   const page = addr >>> 8
   if (isDebugging && checkWatchpoints) {
-    heatMapMemGet[addr] = heatMapMemGet[addr] + 1
+    const count = heatMapMemGet[addr] + 1
+    heatMapMemGet[addr] = count
+    if (count > heatMapMemGetMaxValue) {
+      heatMapMemGetMaxValue = count
+      heatMapMemGetMaxIndex = addr
+    }
   }
   // debugSlot(4, addr)
   if (page === 0xC0) {
@@ -593,7 +622,12 @@ const memSetSoftSwitch = (addr: number, value: number) => {
 export const memSet = (addr: number, value: number) => {
   const page = addr >>> 8
   if (isDebugging) {
-    heatMapMemSet[addr] = heatMapMemSet[addr] + 1
+    const count = heatMapMemSet[addr] + 1
+    heatMapMemSet[addr] = count
+    if (count > heatMapMemSetMaxValue) {
+      heatMapMemSetMaxValue = count
+      heatMapMemSetMaxIndex = addr
+    }
   }
   // debugSlot(4, addr, value)
   if (page === 0xC0) {

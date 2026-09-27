@@ -85,6 +85,7 @@ export enum MSG_MAIN {
   KEYPRESS,
   KEYRELEASE,
   MACHINE_NAME,
+  MEMORY_DUMP_VISIBLE,
   MIDI_DATA,
   MOUSEEVENT,
   PASTE_TEXT,
@@ -192,7 +193,10 @@ export enum HEATMAP_STATE {
   CPU = 0,
   GETMEM = 1,
   SETMEM = 2,
-  GETSET = 3
+  GETSET = 3,
+  // Heat Map tab is not the visible tab: producers stop sending heatmap
+  // data and the panel skips its redraw work entirely.
+  NONE = 4
 }
 
 export const colorToName = (mode: COLOR_MODE) => {

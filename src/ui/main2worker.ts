@@ -412,6 +412,13 @@ export const passRequestMemoryDump = () => {
 export const passHeatMapState = (state: HEATMAP_STATE) => {
   doPostMessage(MSG_MAIN.HEATMAP_STATE, state)
 }
+
+// Lets the worker skip building/sending the full memoryDump (a copy of the
+// entire base+aux memory space, every frame) while the Memory Dump sub-tab
+// isn't the one actually visible.
+export const passMemoryDumpVisible = (visible: boolean) => {
+  doPostMessage(MSG_MAIN.MEMORY_DUMP_VISIBLE, visible)
+}
   
 export const requestMemoryView = (
   request: MemoryViewRequest,
@@ -463,6 +470,7 @@ let machineState: MachineState = {
   cpuSpeed: 0,
   extraRamSize: 64,
   heatMap: new Float64Array(),
+  heatMapMax: { value: 0, index: 0 },
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
   isTracing: TEST_DEBUG,
@@ -686,6 +694,10 @@ export const handleGetExecution = () => {
 
 export const handleGetHeatMap = () => {
   return machineState.heatMap
+}
+
+export const handleGetHeatMapMax = () => {
+  return machineState.heatMapMax
 }
 
 export const handleGetTextPage = () => {

@@ -85,8 +85,8 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
             <MemoryMap updateDisplay={props.updateDisplay} />
           </div>
           <TabBase>
-            <Tab title="Heat Map"><HeatMapPanel /></Tab>
-            <Tab title="Memory Dump"><MemoryDump /></Tab>
+            <Tab title="Heat Map">{(isActive) => <HeatMapPanel isActive={isActive} />}</Tab>
+            <Tab title="Memory Dump">{(isActive) => <MemoryDump isActive={isActive} />}</Tab>
           </TabBase>
           <TimeTravelPanel />
         </div>
