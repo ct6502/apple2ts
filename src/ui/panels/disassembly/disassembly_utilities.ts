@@ -1,6 +1,6 @@
 import { getInstructionString } from "../../../common/util_disassemble"
-import { DISASSEMBLE_VISIBLE, getSymbolTables, ROMmemoryStart } from "../../../common/utility"
-import { handleGetAddressGetTable, handleGetMachineName, handleGetMemoryDump, handleGetSoftSwitches, handleGetState6502 } from "../../main2worker"
+import { DISASSEMBLE_VISIBLE, getSymbolTables } from "../../../common/utility"
+import { handleGetCurrentMemory, handleGetMachineName, handleGetSoftSwitches, handleGetState6502 } from "../../main2worker"
 
 let instructions: Array<PCodeInstr1> = []
 export const set6502Instructions = (instr: Array<PCodeInstr1>) => {
@@ -55,12 +55,6 @@ export const setCurrentAddressIndex = (index: number) => {
   currentAddressIndex = index
 }
 
-const memGetRaw = (addr: number): number => {
-  const page = addr >>> 8
-  const shifted = handleGetAddressGetTable()[page]
-  return handleGetMemoryDump()[shifted + (addr & 255)]
-}
-
 export const getDisassembly = (startAddress = -1, endAddress = -1) => {
   let addr = (startAddress !== -1) ? startAddress :
     disassemblyAddress >= 0 ? disassemblyAddress : handleGetState6502().PC
@@ -68,6 +62,7 @@ export const getDisassembly = (startAddress = -1, endAddress = -1) => {
   const lines = endAddress !== -1 ? 0xFFFF : nlines
   // console.log("getDisassembly ", disassemblyAddress.toString(16), handleGetState6502().PC.toString(16))
   let r = ""
+  const memory = handleGetCurrentMemory()
   for (let i = 0; i < lines; i++) {
     if (addr > 0xFFFF) {
       r += "\n"
@@ -75,13 +70,13 @@ export const getDisassembly = (startAddress = -1, endAddress = -1) => {
     }
     if (addr >> 8 === 0xC0) {
       // Retrieve $C0xx soft switch values
-      const instr = (handleGetMemoryDump())[ROMmemoryStart + addr - 0xC000]
+      const instr = memory[addr]
       const code =  instructions[instr]
       r += getInstructionString(addr, code, 0x00, 0x00, -1) + "\n"
       addr++
       continue
     }
-    const instr = memGetRaw(addr)
+    const instr = memory[addr]
     if (instr === null) {
       r += "\n"
       continue
@@ -90,8 +85,8 @@ export const getDisassembly = (startAddress = -1, endAddress = -1) => {
     if (!code) {
       return r
     }
-    const vLo = memGetRaw((addr + 1) % 0x10000)
-    const vHi = memGetRaw((addr + 2) % 0x10000)
+    const vLo = memory[(addr + 1) % 0x10000]
+    const vHi = memory[(addr + 2) % 0x10000]
     // Do not want the branch to be marked as taken or not taken here
     r += getInstructionString(addr, code, vLo, vHi, -1) + "\n"
     addr += code.bytes
@@ -145,7 +140,7 @@ const getJumpAsPlaintext = (opcode: string, operand: string) => {
   if (ops.length === 3 && addr >= 0) {
     const s6502 = handleGetState6502()
     if (ops[2].includes(")")) {
-      const memory = handleGetMemoryDump()
+      const memory = handleGetCurrentMemory()
       if (memory.length > 1) {
         // pre-indexing: add X to the address before finding the JMP address
         if (ops[2].includes(",X")) addr += s6502.XReg
@@ -157,7 +152,6 @@ const getJumpAsPlaintext = (opcode: string, operand: string) => {
   }
   return ""
 }
-
 
 const getOperandPlaintext = (opcode: string, operand: string) => {
   if (["BPL", "BMI", "BVC", "BVS", "BCC",

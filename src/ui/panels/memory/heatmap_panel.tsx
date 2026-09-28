@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import HeatMapControls from "./heatmap_controls"
 import HeatMapView from "./heatmap_view"
-import { HEATMAP_STATE } from "../../../common/utility"
-import { passHeatMapState } from "../../main2worker"
+import { HEATMAP_STATE, RUN_MODE } from "../../../common/utility"
+import { handleGetRunMode, passHeatMapState } from "../../main2worker"
 import type { PaletteName } from "viridis"
 import { getPreferenceByString, setPreferenceByString } from "../../localstorage"
 
@@ -26,9 +26,13 @@ const HeatMapPanel = (props: { isActive: boolean }) => {
   // Only ask the worker to build/send the heat map while this tab is the
   // one actually visible; otherwise tell it HEATMAP_STATE.NONE so the
   // 64K-entry array stops being computed and posted every frame.
+  // No refresh is needed after this: setHeatMapState posts a fresh machine state
+  // from inside the worker's message handler, and the reply carries back the state
+  // it was built for, which is what HeatMapView repaints on.
   useEffect(() => {
-    passHeatMapState(props.isActive ? state : HEATMAP_STATE.NONE)
+    passHeatMapState((props.isActive || handleGetRunMode() === RUN_MODE.PAUSED) ? state : HEATMAP_STATE.NONE)
   }, [props.isActive, state])
+
   // const isLandscape = (window.innerWidth > window.innerHeight)
   // const height = isLandscape ? Math.max((window.innerHeight - 270), 435) : 590
 

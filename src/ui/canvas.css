@@ -42,6 +42,7 @@
   position: absolute;
   user-select: none;
   pointer-events: none;
+  z-index: 10011;
 }
 
 .hgr-view-box {
@@ -49,7 +50,6 @@
 }
 
 .hgr-view-text {
-  z-index: 9999;
   background-color: var(--input-background);
   color: var(--text-color);
   user-select: none;

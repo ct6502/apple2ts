@@ -87,17 +87,11 @@ export const getHeatMapMemSet = (): Float64Array => {
 }
 
 export const getHeatMapMemGetMax = () => {
-  if (isDebugging) {
-    return { value: heatMapMemGetMaxValue, index: heatMapMemGetMaxIndex }
-  }
-  return { value: 0, index: 0 }
+  return { value: heatMapMemGetMaxValue, index: heatMapMemGetMaxIndex }
 }
 
 export const getHeatMapMemSetMax = () => {
-  if (isDebugging) {
-    return { value: heatMapMemSetMaxValue, index: heatMapMemSetMaxIndex }
-  }
-  return { value: 0, index: 0 }
+  return { value: heatMapMemSetMaxValue, index: heatMapMemSetMaxIndex }
 }
 
 export const resetHeatMapMemGet = () => {
@@ -324,7 +318,7 @@ const manageC800 = (slot: number) => {
 
 const updateSlotRomTable = () => {
   // ROM ($C000...$CFFF) is in 0x100...0x10F
-  addressGetTable[0xC0] = ROMpage - 0xC0
+  addressGetTable[0xC0] = ROMpage
   for (let slot = 1; slot <= 7; slot++) {
     const page = 0xC0 + slot
     addressGetTable[page] = slot +
@@ -866,13 +860,29 @@ export const getBasePlusAuxMemory = () => {
   return memory.slice(0, RamWorksMemoryStart + 0x10000)
 }
 
-export const getMemoryDump = () => {
+export const getCurrentMemory = () => {
   const dump = new Uint8Array(0x10000)
   for (let page = 0; page < 256; page++) {
     const offset = addressGetTable[page]
     dump.set(memory.slice(offset, offset + 256), page * 256)
   }
   return dump
+}
+
+export const getMainMemory = () => {
+  return memory.slice(0, 0x10000)
+}
+
+export const getAuxMemory = () => {
+  return memory.slice(RamWorksMemoryStart, RamWorksMemoryStart + 0x10000)
+}
+
+export const getHgr1Memory = () => {
+  return memory.slice(0x2000, 0x4000)
+}
+
+export const getHgr2Memory = () => {
+  return memory.slice(0x4000, 0x6000)
 }
 
 export const getShr = (): Uint8Array => {

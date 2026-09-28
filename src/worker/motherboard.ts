@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
-import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, HEATMAP_STATE } from "../common/utility"
+import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, HEATMAP_STATE, MEMORY_DUMP_STATE } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
@@ -10,7 +10,6 @@ import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable,
   loadMainMemoryBlock,
-  getBasePlusAuxMemory,
   setRamWorks,
   setAuxCardEnabled,
   RamWorksMaxBank,
@@ -29,7 +28,12 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   getHeatMapMemGetMax,
   getHeatMapMemSetMax,
   resetHeatMapMemSet,
-  resetHeatMapMemGet} from "./memory"
+  resetHeatMapMemGet,
+  getCurrentMemory,
+  getMainMemory,
+  getAuxMemory,
+  getHgr1Memory,
+  getHgr2Memory} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
 import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, processInstruction, resetCycleCountCallbacks, setStepOut, getHeatMapCPU, getHeatMapCPUMax, resetHeatMapCPU } from "./cpu6502"
@@ -78,7 +82,7 @@ let executionPauseReason: ExecutionPauseReason | null = "idle"
 let executionBreakpointAddress: number | null = null
 let executionMemoryWrite: MemoryWriteEvent | null = null
 let heatMapState: HEATMAP_STATE = HEATMAP_STATE.CPU
-let memoryDumpVisible = false
+let memoryDumpState: MEMORY_DUMP_STATE = MEMORY_DUMP_STATE.NONE
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
 let veraSlot: VERA_SLOT = 0
@@ -89,10 +93,12 @@ let speedTracker: Array<{time: number, cycles: number}> = []
 
 export const setHeatMapState = (state: HEATMAP_STATE) => {
   heatMapState = state
+  updateExternalMachineState()
 }
 
-export const setMemoryDumpVisible = (visible: boolean) => {
-  memoryDumpVisible = visible
+export const setMemoryDumpState = (state: MEMORY_DUMP_STATE) => {
+  memoryDumpState = state
+  updateExternalMachineState()
 }
   
 export const resetCpuSpeedForTesting = () => {
@@ -204,7 +210,7 @@ const resetHeatMapCounts = () => {
 const getHeatMap = () => {
   // Idle, or the Heat Map tab isn't the visible tab (HEATMAP_STATE.NONE):
   // skip building/sending the 64K-entry array every frame.
-  if (cpuRunMode === RUN_MODE.IDLE) {
+  if (cpuRunMode === RUN_MODE.IDLE || !isDebugging) {
     return new Float64Array()
   }
   switch (heatMapState) {
@@ -222,9 +228,6 @@ const getHeatMap = () => {
 }
 
 const getHeatMapMax = () => {
-  if (cpuRunMode === RUN_MODE.IDLE) {
-    return { value: 0, index: 0 }
-  }
   switch (heatMapState) {
     case HEATMAP_STATE.CPU:
       return getHeatMapCPUMax()
@@ -830,14 +833,32 @@ export const doSetPastedText = (text: string) => {
 }
 
 const getMemoryDump = () => {
-  // getBasePlusAuxMemory() copies the entire base+aux memory space (128KB+,
-  // more with RamWorks expansion) - only pay for it while the Memory Dump
-  // sub-tab is actually the one visible, not just because the Debug tab
-  // (isDebugging) is open on some other sub-tab.
-  if (isDebugging && (memoryDumpVisible || cpuRunMode === RUN_MODE.PAUSED) && cpuRunMode !== RUN_MODE.IDLE) {
-    return getBasePlusAuxMemory()
+  if (cpuRunMode === RUN_MODE.IDLE || !isDebugging) {
+    return new Uint8Array()
   }
-  return new Uint8Array()
+  // Only get the memory relevant to the current memory dump state.
+  switch (memoryDumpState) {
+    case MEMORY_DUMP_STATE.CURRENT:
+      return getCurrentMemory()
+    case MEMORY_DUMP_STATE.MAIN:
+      return getMainMemory()
+    case MEMORY_DUMP_STATE.AUX:
+      return getAuxMemory()
+    case MEMORY_DUMP_STATE.HGR1:
+      return getHgr1Memory()
+    case MEMORY_DUMP_STATE.HGR2:
+      return getHgr2Memory()
+    case MEMORY_DUMP_STATE.NONE:
+    default:
+      return new Uint8Array()
+  }
+}
+
+const getCurrentMemoryIfNeeded = () => {
+  if (cpuRunMode === RUN_MODE.IDLE || !isDebugging || memoryDumpState === MEMORY_DUMP_STATE.CURRENT) {
+    return new Uint8Array()
+  }
+  return getCurrentMemory()
 }
 
 const getBasicMemory = () => {
@@ -891,6 +912,7 @@ export const getExternalMachineState = () => {
     c800Slot: C800SlotGet(),
     cout: memGet(0x0039, false) << 8 | memGet(0x0038, false),
     cpuSpeed: cpuSpeed,
+    currentMemory: getCurrentMemoryIfNeeded(),
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     execution: {
       executionSequence,
@@ -915,6 +937,7 @@ export const getExternalMachineState = () => {
     },
     heatMap: getHeatMap(),
     heatMapMax: getHeatMapMax(),
+    heatMapState: heatMapState,
     hires: getHires(),
     iTempState: getTempStateIndex(),
     isDebugging: isDebugging,

@@ -15,7 +15,7 @@ jest.mock("../../main2worker", () => ({
   handleGetBreakpoints: () => new Map(),
   handleGetMemoryDump: () => new Uint8Array(),
   handleGetRunMode: () => 0,
-  passMemoryDumpVisible: jest.fn(),
+  passMemoryDumpState: jest.fn(),
   passSetMemory: jest.fn(),
 }))
 jest.mock("../../graphics", () => ({ overrideHires: jest.fn() }))
@@ -28,7 +28,7 @@ jest.mock("../droplist", () => ({
 it("restores the selected HGR override when the memory view remounts", () => {
   const container = document.createElement("div")
   const firstRoot = createRoot(container)
-  act(() => firstRoot.render(<MemoryDump />))
+  act(() => firstRoot.render(<MemoryDump isActive={true} />))
   expect(overrideHires).not.toHaveBeenCalled()
 
   act(() => container.querySelector("button")?.click())
@@ -38,7 +38,7 @@ it("restores the selected HGR override when the memory view remounts", () => {
   expect(overrideHires).toHaveBeenLastCalledWith(false, false)
 
   const secondRoot = createRoot(container)
-  act(() => secondRoot.render(<MemoryDump />))
+  act(() => secondRoot.render(<MemoryDump isActive={true} />))
   expect(container.querySelector("button")?.textContent)
     .toBe("HGR page 1 (screen order)")
   expect(overrideHires).toHaveBeenLastCalledWith(true, false)

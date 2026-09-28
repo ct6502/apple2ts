@@ -21,7 +21,8 @@ import { doSetRunMode, doSetSpeedMode,
   createExternalSessionSnapshot,
   compareExternalSessionMemory,
   restoreExternalSessionSnapshot,
-  setHeatMapState, setMemoryDumpVisible} from "./motherboard"
+  setHeatMapState,
+  setMemoryDumpState} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import {
@@ -31,16 +32,16 @@ import {
 } from "./conditional_input"
 import { s6502 } from "./instructions"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
-import { DRIVE, HEATMAP_STATE, MSG_MAIN, MSG_WORKER, RUN_MODE, VeraSdStatus } from "../common/utility"
+import { DRIVE, HEATMAP_STATE, MEMORY_DUMP_STATE, MSG_MAIN, MSG_WORKER, RUN_MODE, VeraSdStatus } from "../common/utility"
 import { sdcard_attach_image, sdcard_detach_image, sdcard_get_status, set_sdcard_status_listener, sdcard_get_image, sdcard_set_write_protected, sdcard_clear_changes, sdcard_get_write_seq } from "./devices/vera/sdcard"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
 import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
 import { receiveCommData } from "./devices/superserial/serial"
 import { setTraceSettings } from "./tracelog"
-import { getMemoryDump } from "./memory"
 import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState } from "./save_restore"
 import { setSiriusJoyport } from "./devices/sirius_joyport"
+import { getCurrentMemory } from "./memory"
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -325,8 +326,8 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.APPLE_RELEASE:
         pressAppleCommandKey(false, e.data.payload)
         break
-      case MSG_MAIN.GET_MEMORY:
-        passMemory(getMemoryDump())
+      case MSG_MAIN.GET_MEMORY_REQUEST:
+        passMemory(getCurrentMemory())
         break
       case MSG_MAIN.GET_MEMORY_VIEW:
         try {
@@ -533,8 +534,8 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.HEATMAP_STATE:
         setHeatMapState(e.data.payload as HEATMAP_STATE)
         break
-      case MSG_MAIN.MEMORY_DUMP_VISIBLE:
-        setMemoryDumpVisible(e.data.payload as boolean)
+      case MSG_MAIN.MEMORY_DUMP_STATE:
+        setMemoryDumpState(e.data.payload as MEMORY_DUMP_STATE)
         break
       default:
         console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)

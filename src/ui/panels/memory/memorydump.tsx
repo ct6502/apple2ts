@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
-import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine, ROMmemoryStart } from "../../../common/utility"
-import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passMemoryDumpVisible, passSetMemory } from "../../main2worker"
+import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine, MEMORY_DUMP_STATE } from "../../../common/utility"
+import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passMemoryDumpState, passSetMemory } from "../../main2worker"
 import React from "react"
 import { Droplist } from "../droplist"
 import { overrideHires } from "../../graphics"
@@ -15,22 +15,30 @@ import { useGlobalContext } from "../../globalcontext"
 import { BreakpointMap, BreakpointNew } from "../../../common/breakpoint"
 import { setPreferenceBreakpoints } from "../../localstorage"
 
-enum MEMORY_RANGE {
-  CURRENT = "Current memory",
-  MAIN = "Main RAM",
-  AUX = "Auxiliary RAM",
-  HGR1 = "HGR page 1 (screen order)",
-  HGR2 = "HGR page 2 (screen order)",
+const dumpNames = [
+  "Current memory",
+  "Main RAM",
+  "Auxiliary RAM",
+  "HGR page 1 (screen order)",
+  "HGR page 2 (screen order)",
+  "None"
+]
+
+const memoryDumpOptionToName = (state: MEMORY_DUMP_STATE) => {
+  return dumpNames[state]
 }
 
-let lastMemoryRange = `${MEMORY_RANGE.CURRENT}`
+const memoryDumpNameToOption = (name: string) => {
+  return dumpNames.indexOf(name) as MEMORY_DUMP_STATE
+}
+
+let lastMemoryRange = MEMORY_DUMP_STATE.CURRENT
 
 const MemoryDump = (props: { isActive?: boolean }) => {
-  const isActive = props.isActive ?? true
   const { updateBreakpoint, setUpdateBreakpoint, memdumpAddress, setMemdumpAddress } = useGlobalContext()
   const memoryDumpRef = useRef(null)
   const [address, setAddress] = useState("")
-  const [memoryRange, setMemoryRange] = useState(lastMemoryRange)
+  const [memoryDumpState, setMemoryDumpState] = useState(lastMemoryRange)
   const [scrollRow, setScrollRow] = useState(-1)
   const [pickWatchpoint, setPickWatchpoint] = useState(false)
   const [ascii, setAscii] = useState("")
@@ -41,24 +49,23 @@ const MemoryDump = (props: { isActive?: boolean }) => {
   const [highAscii, setHighAscii] = useState(false)
   const previousMemLengthRef = useRef(0)
 
-  // Only ask the worker to build/send the full memoryDump (a copy of the
-  // entire base+aux memory space, every frame) while this tab is the one
+  // Only ask the worker to build/send the memory while this tab is the one
   // actually visible.
   useEffect(() => {
-    passMemoryDumpVisible(isActive)
-    return () => passMemoryDumpVisible(false)
-  }, [isActive])
+    passMemoryDumpState((props.isActive || handleGetRunMode() === RUN_MODE.PAUSED) ?
+      memoryDumpState : MEMORY_DUMP_STATE.NONE)
+  }, [props.isActive, memoryDumpState])
 
   useEffect(() => {
-    switch (memoryRange) {
-      case MEMORY_RANGE.HGR1:
+    switch (memoryDumpState) {
+      case MEMORY_DUMP_STATE.HGR1:
         overrideHires(true, false)
         return () => overrideHires(false, false)
-      case MEMORY_RANGE.HGR2:
+      case MEMORY_DUMP_STATE.HGR2:
         overrideHires(true, true)
         return () => overrideHires(false, false)
     }
-  }, [memoryRange])
+  }, [memoryDumpState])
 
   const doSetScrollRow = (row: number) => {
     if (row < 0) return
@@ -68,44 +75,14 @@ const MemoryDump = (props: { isActive?: boolean }) => {
     setTimeout(() => { setScrollRow(-1) }, 100)
   }
 
-  const getMemoryRange = () => {
-    const memory = handleGetMemoryDump()
-    if (memory.length < 0x10000) return new Uint8Array()
-    switch (memoryRange) {
-      case MEMORY_RANGE.CURRENT:
-        {
-          const addressGetTable = handleGetAddressGetTable()
-          const lookup = addressGetTable.slice(0, 256)
-          const result = memory.slice(0, 0x10000)
-          for (let i = 0; i < lookup.length; i++) {
-            if (lookup[i] !== (i * 256)) {
-              result.set(memory.slice(lookup[i], lookup[i] + 256), i * 256)
-            }
-          }
-          // Retrieve $C0xx soft switch values
-          result.set(memory.slice(ROMmemoryStart, ROMmemoryStart + 0x100), 0xC000)
-          return result
-        }
-      case MEMORY_RANGE.AUX:
-        return memory.slice(RamWorksMemoryStart, RamWorksMemoryStart + 0x10000)
-      case MEMORY_RANGE.HGR1:
-        return memory.slice(0x2000, 0x4000)
-      case MEMORY_RANGE.HGR2:
-        return memory.slice(0x4000, 0x6000)
-      default:  // MAIN
-        return memory.slice(0, 0x10000)
-    }
-
-  }
-
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase().substring(0, 4)
     setAddress(newvalue)
   }
 
   const addrToRow = (addr: number) => {
-    if (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2) {
-      const memLow = (memoryRange === MEMORY_RANGE.HGR1) ? 0x2000 : 0x4000
+    if (memoryDumpState === MEMORY_DUMP_STATE.HGR1 || memoryDumpState === MEMORY_DUMP_STATE.HGR2) {
+      const memLow = (memoryDumpState === MEMORY_DUMP_STATE.HGR1) ? 0x2000 : 0x4000
       if (addr < memLow || addr >= memLow + 0x2000) return -1
       return hiresAddressToLine(addr)
     }
@@ -113,7 +90,7 @@ const MemoryDump = (props: { isActive?: boolean }) => {
   }
 
   // const rowToAddress = (row: number) => {
-  //   if (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2) {
+  //   if (memoryRange === MEMORY_DUMP_STATE.HGR1 || memoryRange === MEMORY_DUMP_STATE.HGR2) {
   //     return hiresLineToAddress(0, row)
   //   }
   //   return Math.floor(row * 16)
@@ -261,19 +238,14 @@ const MemoryDump = (props: { isActive?: boolean }) => {
     doSetScrollRow(addrToRow(matches[newmatchIndex]))
   }
 
-  // let getVisibleRows = (): { top: number, bottom: number } => {
-  //   return { top: 0, bottom: 0 }
-  // }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const doGetVisibleRows = (gvr: () => { top: number, bottom: number }) => {
-    //    getVisibleRows = gvr
-  }
-
   const handleSetMemoryRange = (value: string) => {
     setAddress("")
-    lastMemoryRange = value
-    setMemoryRange(value)
+    // Map value to memoryDumpState
+    const newState = memoryDumpNameToOption(value)
+    // Save the new selection so a remount of this panel restores it.
+    lastMemoryRange = newState
+    setMemoryDumpState(newState)
+    // setMemoryDumpState(value)
   }
 
   const doPickWatchpoint = (addr: number) => {
@@ -288,8 +260,8 @@ const MemoryDump = (props: { isActive?: boolean }) => {
   }
 
   const doSetMemory = (addr: number, value: number) => {
-    switch (memoryRange) {
-      case MEMORY_RANGE.CURRENT:
+    switch (memoryDumpState) {
+      case MEMORY_DUMP_STATE.CURRENT:
         {
           const page = addr >>> 8
           const addressGetTable = handleGetAddressGetTable()
@@ -300,7 +272,7 @@ const MemoryDump = (props: { isActive?: boolean }) => {
           }
         }
         break
-      case MEMORY_RANGE.AUX:
+      case MEMORY_DUMP_STATE.AUX:
         addr += RamWorksMemoryStart
         break
       default:
@@ -313,7 +285,8 @@ const MemoryDump = (props: { isActive?: boolean }) => {
   }
 
   const saveMemory = () => {
-    const blob = new Blob([getMemoryRange()])
+    const memory = handleGetMemoryDump()
+    const blob = new Blob([memory])
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
@@ -326,19 +299,19 @@ const MemoryDump = (props: { isActive?: boolean }) => {
 
   const runMode = handleGetRunMode()
   const ready = runMode === RUN_MODE.RUNNING || runMode === RUN_MODE.PAUSED
-  const isHGR = (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2)
-  const offset = isHGR ? (memoryRange === MEMORY_RANGE.HGR1 ? 0x2000 : 0x4000) : 0
-  const memory = getMemoryRange()
+  const isHGR = (memoryDumpState === MEMORY_DUMP_STATE.HGR1 || memoryDumpState === MEMORY_DUMP_STATE.HGR2)
+  const offset = isHGR ? (memoryDumpState === MEMORY_DUMP_STATE.HGR1 ? 0x2000 : 0x4000) : 0
+  const memory = handleGetMemoryDump()
   const decoder = new TextDecoder()
   const memAscii = decoder.decode(memory.map((value) => (value & 0x7F)))
-  const addressGetTable = memoryRange === MEMORY_RANGE.CURRENT ? handleGetAddressGetTable() : null
+  const addressGetTable = memoryDumpState === MEMORY_DUMP_STATE.CURRENT ? handleGetAddressGetTable() : null
+
   useEffect(() => {
     const justPaused = memory.length > 0 && previousMemLengthRef.current === 0 && runMode === RUN_MODE.PAUSED
     previousMemLengthRef.current = memory.length
     if (!justPaused) {
       return
     }
-
     if (ascii.length > 0) {
       setTimeout(() => {
         doSearchAscii(ascii)
@@ -368,8 +341,8 @@ const MemoryDump = (props: { isActive?: boolean }) => {
           onKeyDown={handleAddressKeyDown}
         />
         <Droplist name=" "
-          value={memoryRange}
-          values={Object.values(MEMORY_RANGE)}
+          value={memoryDumpOptionToName(memoryDumpState)}
+          values={dumpNames}
           setValue={handleSetMemoryRange}
           userdata={0}
           isDisabled={() => false} />
@@ -439,15 +412,14 @@ const MemoryDump = (props: { isActive?: boolean }) => {
         }}
         ref={memoryDumpRef}
       >
-        <MemoryTable memory={memory} isHGR={isHGR}
+        <MemoryTable isHGR={isHGR}
           addressGetTable={addressGetTable}
           highAscii={highAscii}
           offset={offset} scrollRow={scrollRow}
           highlight={highlight}
           pickWatchpoint={pickWatchpoint}
           doPickWatchpoint={doPickWatchpoint}
-          doSetMemory={doSetMemory}
-          doGetVisibleRows={doGetVisibleRows} />
+          doSetMemory={doSetMemory} />
       </div>
     </div>
   )

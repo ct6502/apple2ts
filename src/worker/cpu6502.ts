@@ -427,10 +427,7 @@ export const getHeatMapCPU = () => {
 }
 
 export const getHeatMapCPUMax = () => {
-  if (isDebugging) {
-    return { value: heatMapCPUMaxValue, index: heatMapCPUMaxIndex }
-  }
-  return { value: 0, index: 0 }
+  return { value: heatMapCPUMaxValue, index: heatMapCPUMaxIndex }
 }
 
 export const resetHeatMapCPU = () => {

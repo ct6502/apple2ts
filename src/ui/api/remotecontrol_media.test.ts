@@ -30,7 +30,7 @@ jest.mock("../main2worker", () => ({
   handleGetIsDebugging: () => false,
   handleGetMachineName: () => "APPLE2EE",
   handleGetMemSize: () => 64,
-  handleGetMemoryDump: () => new Uint8Array(),
+  handleGetCurrentMemory: () => new Uint8Array(),
   handleGetRunMode: () => 0,
   handleGetSaveState: jest.fn(),
   handleGetShowDebugTab: () => false,

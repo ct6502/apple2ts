@@ -76,7 +76,7 @@ export enum MSG_MAIN {
   DRIVE_PROPS,
   EXECUTE_BASIC_COMMAND,
   GAMEPAD,
-  GET_MEMORY,
+  GET_MEMORY_REQUEST,
   GET_SAVE_STATE,
   GET_SAVE_STATE_SNAPSHOTS,
   HEATMAP_STATE,
@@ -85,7 +85,7 @@ export enum MSG_MAIN {
   KEYPRESS,
   KEYRELEASE,
   MACHINE_NAME,
-  MEMORY_DUMP_VISIBLE,
+  MEMORY_DUMP_STATE,
   MIDI_DATA,
   MOUSEEVENT,
   PASTE_TEXT,
@@ -189,14 +189,23 @@ export type MouseEventSimple = {
   buttons : number;
 }
 
+export enum MEMORY_DUMP_STATE {
+  CURRENT,
+  MAIN,
+  AUX,
+  HGR1,
+  HGR2,
+  NONE,
+}
+
 export enum HEATMAP_STATE {
-  CPU = 0,
-  GETMEM = 1,
-  SETMEM = 2,
-  GETSET = 3,
+  CPU,
+  GETMEM,
+  SETMEM,
+  GETSET,   // Not currently used
   // Heat Map tab is not the visible tab: producers stop sending heatmap
   // data and the panel skips its redraw work entirely.
-  NONE = 4
+  NONE
 }
 
 export const colorToName = (mode: COLOR_MODE) => {

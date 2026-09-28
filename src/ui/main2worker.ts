@@ -1,7 +1,8 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
   DISASSEMBLE_VISIBLE, DEFAULT_SLOT_CONFIG, VeraSdStatus, 
-  HEATMAP_STATE} from "../common/utility"
+  HEATMAP_STATE,
+  MEMORY_DUMP_STATE} from "../common/utility"
 import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -406,18 +407,15 @@ export const passSetTraceSettings = (traceSettings: TraceSettings) => {
 }
 
 export const passRequestMemoryDump = () => {
-  doPostMessage(MSG_MAIN.GET_MEMORY, true)
+  doPostMessage(MSG_MAIN.GET_MEMORY_REQUEST, true)
 }
 
 export const passHeatMapState = (state: HEATMAP_STATE) => {
   doPostMessage(MSG_MAIN.HEATMAP_STATE, state)
 }
 
-// Lets the worker skip building/sending the full memoryDump (a copy of the
-// entire base+aux memory space, every frame) while the Memory Dump sub-tab
-// isn't the one actually visible.
-export const passMemoryDumpVisible = (visible: boolean) => {
-  doPostMessage(MSG_MAIN.MEMORY_DUMP_VISIBLE, visible)
+export const passMemoryDumpState = (state: MEMORY_DUMP_STATE) => {
+  doPostMessage(MSG_MAIN.MEMORY_DUMP_STATE, state)
 }
   
 export const requestMemoryView = (
@@ -454,7 +452,7 @@ export const requestRestoreSessionSnapshot = (snapshotId: string, timeoutMs = 50
 // This is a cached memory dump, updated whenever the main requests a new one.
 // Currently only used by the AI Agent, since it may want to look at memory
 // even when the emulator is not paused.
-let memoryResource: Uint8Array<ArrayBufferLike> = new Uint8Array()
+let memoryResource: Uint8Array<ArrayBuffer> = new Uint8Array()
 
 let machineState: MachineState = {
   addressGetTable: new Uint32Array(),
@@ -468,9 +466,11 @@ let machineState: MachineState = {
   canGoForward: true,
   cout: 0,
   cpuSpeed: 0,
+  currentMemory: new Uint8Array(),
   extraRamSize: 64,
   heatMap: new Float64Array(),
   heatMapMax: { value: 0, index: 0 },
+  heatMapState: HEATMAP_STATE.NONE,
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
   isTracing: TEST_DEBUG,
@@ -626,8 +626,8 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       break
     }
     case MSG_WORKER.GET_MEMORY_RESPONSE:
-      // This is a response to a GET_MEMORY request. Update the memory dump in the state.
-      memoryResource = e.data.payload as Uint8Array
+      // This is a response to a GET_MEMORY_REQUEST. Update the memory dump in the state.
+      memoryResource = e.data.payload as Uint8Array<ArrayBuffer>
       break
     case MSG_WORKER.SERIAL_CONFIG_CHANGE: {
       const serialConfig = e.data.payload as SerialConfig
@@ -700,6 +700,12 @@ export const handleGetHeatMapMax = () => {
   return machineState.heatMapMax
 }
 
+// The state the last heatMap payload was built for. Lags behind the state the UI
+// last requested by one round-trip.
+export const handleGetHeatMapState = () => {
+  return machineState.heatMapState
+}
+
 export const handleGetTextPage = () => {
   // Always return the intial start page if we're idle
   return(machineState.runMode === RUN_MODE.IDLE) ? getStartupTextPage(machineState.machineName) : machineState.textPage
@@ -751,6 +757,10 @@ export const handleGetRamWorksBank = () => {
 
 export const handleGetMemoryResource = () => {
   return memoryResource
+}
+
+export const handleGetCurrentMemory = () => {
+  return machineState.currentMemory.length > 0 ? machineState.currentMemory : machineState.memoryDump
 }
 
 export const handleGetMemoryDump = () => {

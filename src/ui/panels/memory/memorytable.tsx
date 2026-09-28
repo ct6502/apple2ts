@@ -3,9 +3,9 @@ import { hiresLineToAddress, toHex, UI_THEME } from "../../../common/utility"
 import { useGlobalContext } from "../../globalcontext"
 import { nColsHgrMagnifier, nRowsHgrMagnifier } from "../../graphics"
 import { getTheme } from "../../ui_settings"
+import { handleGetMemoryDump } from "../../main2worker"
 
 type MemoryTableProps = {
-  memory: Uint8Array
   addressGetTable: Uint32Array | null
   isHGR: boolean
   offset: number
@@ -15,7 +15,6 @@ type MemoryTableProps = {
   pickWatchpoint: boolean
   doPickWatchpoint: (addr: number) => void
   doSetMemory: (address: number, value: number) => void
-  doGetVisibleRows: (gvr: () => { top: number, bottom: number }) => void
 }
 
 const MemoryTable = (props: MemoryTableProps) => {
@@ -88,10 +87,6 @@ const MemoryTable = (props: MemoryTableProps) => {
     }
   }, [hgrMagnifierLoc, props.isHGR])
 
-  if (props.memory.length <= 1) return <div
-      style={{ height: `${height}px` }}>
-    </div>
-
   const convertByteToAscii = (byte: number) => {
     if (props.highAscii) byte &= 0x7F
     if (byte < 32 || byte > 126) return "·" // Non-printable
@@ -100,12 +95,14 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   const convertMemoryToArray = () => {
     const rows = []
-    const nrows = props.isHGR ? 192 : 4096
+    const memory = handleGetMemoryDump()
+    if (memory.length <= 1) return []
     const ncols = props.isHGR ? 40 : 16
+    const nrows = props.isHGR ? 192 : (memory.length / ncols)
     for (let l = 0; l < nrows; l++) {
       const addr = props.isHGR ?
         (hiresLineToAddress(props.offset, l) - props.offset) : 16 * l
-      const mem = props.memory.slice(addr, addr + ncols)
+      const mem = memory.slice(addr, addr + ncols)
       const cells = [toHex(props.isHGR ? addr + props.offset : addr, 4) + ":"]
       let ascii = ""
       for (let b = 0; b < ncols; b++) {
@@ -174,31 +171,6 @@ const MemoryTable = (props: MemoryTableProps) => {
       onMouseDown(e)
     }
   }
-
-  const getVisibleRows = () => {
-    const table = document.querySelector("#memory-table") as HTMLTableElement
-    let topVisibleRowIndex = -1
-    let bottomVisibleRowIndex = -1
-
-    for (let i = 0; i < table.rows.length; i++) {
-      const rect = table.rows[i].getBoundingClientRect()
-      // Check if the row is within the viewport
-      if (rect.top < window.innerHeight && rect.bottom >= 0) {
-        // If it's the first visible row we've found, set it as the top
-        if (topVisibleRowIndex === -1) {
-          topVisibleRowIndex = i
-        }
-        // Keep updating the bottom visible row index as we go
-        bottomVisibleRowIndex = i
-      } else if (topVisibleRowIndex !== -1) {
-        // We've found the last visible row
-        break
-      }
-    }
-    return { top: topVisibleRowIndex, bottom: bottomVisibleRowIndex }
-  }
-
-  props.doGetVisibleRows(getVisibleRows)
 
   const setNewFocus = (table: HTMLTableElement, col: number, row: number) => {
     const nextCell = table.rows[row].cells[col]

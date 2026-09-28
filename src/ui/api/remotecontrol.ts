@@ -9,7 +9,6 @@ import {
   handleGetIsDebugging,
   handleGetMachineName,
   handleGetMemSize,
-  handleGetMemoryDump,
   handleGetRunMode,
   handleGetSaveState,
   handleGetShowDebugTab,
@@ -51,6 +50,7 @@ import {
   requestSessionMemoryComparison,
   requestRestoreSessionSnapshot,
   setExecutionStateCallback,
+  handleGetCurrentMemory,
 } from "../main2worker"
 import { getBinaryLoadError, runBinary } from "../binaryload"
 import {
@@ -225,7 +225,7 @@ const collectMemory = () => {
   return {
     timestamp: Date.now(),
     machineState: handleGetState6502(),
-    memoryDump: toByteArray(handleGetMemoryDump()),
+    memoryDump: toByteArray(handleGetCurrentMemory()),
   }
 }
 

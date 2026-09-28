@@ -50,7 +50,7 @@ const HgrInfoCanvas = ({ pixels }: { pixels: number[][] }) => {
   }, [pixels])
 
   return <canvas ref={canvasRef} id="hgr-info-canvas"
-    style={{ zIndex: "9999", border: "2px solid red" }}
+    style={{ border: "2px solid red" }}
     width={`${77 * nColsHgrMagnifier}pt`} height={`${11 * nRowsHgrMagnifier}pt`} />
 }
 
@@ -63,7 +63,7 @@ const HgrMagnifier = (props: MagnifyProps) => {
   let x = 0, y = 0
   if (props.mainCanvas) {
     const nHalf = nRowsHgrMagnifier / 2
-    let [cx, cy] = canvasCoordToNormScreenCoord(props.mainCanvas, props.mouseLoc[0] - 30, props.mouseLoc[1] - 25)
+    let [cx, cy] = canvasCoordToNormScreenCoord(props.mainCanvas, props.mouseLoc[0] - 26, props.mouseLoc[1] - 21)
     cx = Math.floor(cx * 280)
     cy = Math.floor(cy * 192)
     // Make sure the showHgrMagnifier doesn't go off the edge of the screen.
@@ -111,8 +111,8 @@ const HgrMagnifier = (props: MagnifyProps) => {
   const col = 7 * displayX
   const row = displayY
   let [xPos, yPos] = screenCoordToCanvasCoord(props.mainCanvas, col, row)
-  xPos -= 2
-  yPos -= 2
+  xPos -= 12
+  yPos -= 12
   return <div className="hgr-view flex-row"
     style={{ left: `${xPos}px`, top: `${yPos}px` }}>
     <div className="hgr-view-box" style={{ width: `${dx}px`, height: `${dy}px` }}>&nbsp;</div>

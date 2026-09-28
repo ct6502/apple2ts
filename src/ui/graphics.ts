@@ -31,27 +31,42 @@ export const setDisplayOverride = (canvas: HTMLCanvasElement | null) => {
   displayOverrideRevision++
 }
 
+// The canvas bitmap size is also its CSS content-box size (no CSS width/height is set
+// on it), so anything the border box adds beyond that is the border. Deriving the border
+// beats assuming 2px: the canvas has no border on touch devices, in fullscreen, in the
+// canvas-only theme, and on the Apple II+.
+const canvasMetrics = (current: HTMLCanvasElement) => {
+  const rect = current.getBoundingClientRect()
+  const width = current.width
+  const height = current.height
+  return {
+    rect,
+    width,
+    height,
+    borderX: (rect.width - width) / 2,
+    borderY: (rect.height - height) / 2,
+  }
+}
+
 // Convert canvas coordinates (absolute to the entire browser window)
 // to normalized HGR screen coordinates.
 export const canvasCoordToNormScreenCoord = (current: HTMLCanvasElement, x: number, y: number) => {
-  const rect = current.getBoundingClientRect()
-  // The -4 subtracts out the border on all 4 sides of the canvas.
-  const xmarginPx = xmargin * (rect.width - 4)
-  const ymarginPx = ymargin * (rect.height - 4)
-  x = (x - rect.left - xmarginPx - 2) / (rect.width - 2 * xmarginPx - 4)
-  y = (y - rect.top - ymarginPx - 2) / (rect.height - 2 * ymarginPx - 4)
+  const { rect, width, height, borderX, borderY } = canvasMetrics(current)
+  const screenWidth = width * (1 - 2 * xmargin)
+  const screenHeight = height * (1 - 2 * ymargin)
+  x = (x - rect.left - borderX - xmargin * width) / screenWidth
+  y = (y - rect.top - borderY - ymargin * height) / screenHeight
   return [x, y]
 }
 
 // Convert HGR pixel screen coordinates to canvas coordinates (absolute to
 // the entire browser window).
 export const screenCoordToCanvasCoord = (current: HTMLCanvasElement, x: number, y: number) => {
-  const rect = current.getBoundingClientRect()
-  // The -4 subtracts out the border on all 4 sides of the canvas.
-  const xmarginPx = xmargin * (rect.width - 4)
-  const ymarginPx = ymargin * (rect.height - 4)
-  x = x * (rect.width - 2 * xmarginPx - 4) / 280 + xmarginPx + 2 + rect.left
-  y = y * (rect.height - 2 * ymarginPx - 4) / 192 + ymarginPx + 2 + rect.top
+  const { rect, width, height, borderX, borderY } = canvasMetrics(current)
+  const screenWidth = width * (1 - 2 * xmargin)
+  const screenHeight = height * (1 - 2 * ymargin)
+  x = x * screenWidth / 280 + xmargin * width + borderX + rect.left
+  y = y * screenHeight / 192 + ymargin * height + borderY + rect.top
   return [x, y]
 }
 

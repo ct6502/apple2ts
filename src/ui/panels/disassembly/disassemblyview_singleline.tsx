@@ -2,8 +2,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { isBranchInstruction, ROMmemoryStart, toHex } from "../../../common/utility"
 import {
   handleGetAddressGetTable,
+  handleGetCurrentMemory,
   handleGetMachineName,
-  handleGetMemoryDump,
   handleGetState6502,
 } from "../../main2worker"
 import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons"
@@ -34,7 +34,7 @@ const borderStyle = (opcode: string) => {
 
 const getShiftedMemoryValue = (addr: number) => {
   if (addr >= 0) {
-    const memory = handleGetMemoryDump()
+    const memory = handleGetCurrentMemory()
     if (memory.length > 1) {
       const addressGetTable = handleGetAddressGetTable()
       const page = addr >>> 8
@@ -141,7 +141,7 @@ const getJumpLink = (opcode: string, operand: string, onJumpClick: (addr: number
   if (ops.length === 3 && addr >= 0) {
     const s6502 = handleGetState6502()
     if (ops[2].includes(")")) {
-      const memory = handleGetMemoryDump()
+      const memory = handleGetCurrentMemory()
       if (memory.length > 1) {
         // pre-indexing: add X to the address before finding the JMP address
         if (ops[2].includes(",X")) addr += s6502.XReg

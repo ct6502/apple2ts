@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { handleGetHeatMap, handleGetHeatMapMax, handleGetRunMode, handleGetState6502 } from "../../main2worker"
+import { handleGetHeatMap, handleGetHeatMapMax, handleGetHeatMapState, handleGetRunMode, handleGetState6502 } from "../../main2worker"
 import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
 import HeatMapMagnifier from "./heatmap_magnifier"
 import { getViridisColorsRGB } from "../../ui_utilities"
@@ -18,10 +18,13 @@ let maxIndex = 0
 // signal - it only bumps on running/paused/idle transitions, so it never
 // changes while the emulator runs continuously.)
 let lastDrawnCycleCount = -1
-// Which HEATMAP_STATE (CPU/GETMEM/SETMEM) the canvas currently reflects.
-// Switching sub-tabs swaps to a different underlying array without
-// necessarily advancing cycleCount, so that alone must also force a redraw.
-let lastDrawnState: HEATMAP_STATE | null = null
+// Which HEATMAP_STATE (CPU/GETMEM/SETMEM) the canvas currently reflects, as
+// reported by the worker for the data it actually sent. This is deliberately NOT
+// props.state: clicking a sub-tab re-renders us immediately, but the new array only
+// arrives a round-trip later. Stamping props.state would paint the stale array and
+// then skip the repaint when the real data showed up - and while paused, that
+// round-trip is the only thing that ever changes.
+let lastDrawnHeatMapState: HEATMAP_STATE | null = null
 
 const HeatMapView = (props: { state: HEATMAP_STATE,
   colorTable: PaletteName,
@@ -87,7 +90,7 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     if (heatMap.length === 0) {
       ctx.clearRect(0, 0, BASE_HEATMAP_WIDTH, BASE_HEATMAP_HEIGHT)
       lastDrawnCycleCount = -1
-      lastDrawnState = null
+      lastDrawnHeatMapState = null
       return
     }
     // Keep the magnifier's live value readout responsive even while paused
@@ -97,9 +100,10 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
       heatMapValue = heatMap[heatMapAddress]
     }
     const cycleCount = handleGetState6502().cycleCount
-    if (cycleCount === lastDrawnCycleCount && props.state === lastDrawnState) return
+    const heatMapState = handleGetHeatMapState()
+    if (cycleCount === lastDrawnCycleCount && heatMapState === lastDrawnHeatMapState) return
     lastDrawnCycleCount = cycleCount
-    lastDrawnState = props.state
+    lastDrawnHeatMapState = heatMapState
     ctx.imageSmoothingEnabled = false
     const rgba = new Uint8ClampedArray(4 * BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT)
     // drawGrid(rgba)
