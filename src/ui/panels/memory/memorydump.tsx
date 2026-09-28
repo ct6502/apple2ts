@@ -21,7 +21,6 @@ const dumpNames = [
   "Auxiliary RAM",
   "HGR page 1 (screen order)",
   "HGR page 2 (screen order)",
-  "None"
 ]
 
 const memoryDumpOptionToName = (state: MEMORY_DUMP_STATE) => {
@@ -265,11 +264,8 @@ const MemoryDump = (props: { isActive?: boolean }) => {
         {
           const page = addr >>> 8
           const addressGetTable = handleGetAddressGetTable()
-          // Set $C0xx soft switch value
-          if (page !== 0xC0) {
-            const shifted = addressGetTable[page]
-            addr = shifted + (addr & 255)
-          }
+          const shifted = addressGetTable[page]
+          addr = shifted + (addr & 255)
         }
         break
       case MEMORY_DUMP_STATE.AUX:

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { hiresLineToAddress, toHex, UI_THEME } from "../../../common/utility"
 import { useGlobalContext } from "../../globalcontext"
 import { nColsHgrMagnifier, nRowsHgrMagnifier } from "../../graphics"
@@ -17,11 +17,29 @@ type MemoryTableProps = {
   doSetMemory: (address: number, value: number) => void
 }
 
+// Above this many rows we stop materializing the whole table and render only the rows
+// inside the scroll window. The HGR view is exactly 192 rows and its cells double as the
+// magnifier's selection target, so it is deliberately left alone.
+const VIRTUALIZE_ABOVE_ROWS = 192
+// Rows rendered beyond each edge of the window, so a single arrow-key step does not
+// immediately run off the end of the rendered rows.
+const OVERSCAN_ROWS = 4
+// Only used until a real row has been measured, which happens before the first paint,
+// so the error can never be seen.
+const ASSUMED_ROW_HEIGHT = 16
+
 const MemoryTable = (props: MemoryTableProps) => {
   const { hgrMagnifierLoc: hgrMagnifierLoc, setHgrMagnifierLoc: setHgrMagnifierLoc,
     setUpdateHgrMagnifier: setUpdateHgrMagnifier } = useGlobalContext()
   const hgrMagnifierLocal = useRef([-1, -1])
   const cellValue = useRef("")
+  const tableRef = useRef<HTMLTableElement>(null)
+  // Set when keyboard navigation targets a row that is not currently rendered.
+  const pendingFocus = useRef<[number, number] | null>(null)
+  const [scrollTop, setScrollTop] = useState(0)
+  // Measured from a real row; stays 0 until the first layout pass.
+  const [rowHeightPx, setRowHeightPx] = useState(0)
+  const rowHeight = rowHeightPx > 0 ? rowHeightPx : ASSUMED_ROW_HEIGHT
   const isLandscape = (window.innerWidth > window.innerHeight)
   const height = isLandscape ? Math.max((window.innerHeight - 647), 100) : 250
 
@@ -93,28 +111,24 @@ const MemoryTable = (props: MemoryTableProps) => {
     return String.fromCharCode(byte)
   }
 
-  const convertMemoryToArray = () => {
-    const rows = []
-    const memory = handleGetMemoryDump()
-    if (memory.length <= 1) return []
-    const ncols = props.isHGR ? 40 : 16
-    const nrows = props.isHGR ? 192 : (memory.length / ncols)
-    for (let l = 0; l < nrows; l++) {
-      const addr = props.isHGR ?
-        (hiresLineToAddress(props.offset, l) - props.offset) : 16 * l
-      const mem = memory.slice(addr, addr + ncols)
-      const cells = [toHex(props.isHGR ? addr + props.offset : addr, 4) + ":"]
-      let ascii = ""
-      for (let b = 0; b < ncols; b++) {
-        cells.push(toHex(mem[b]))
-        ascii += convertByteToAscii(mem[b])
-      }
-      if (!props.isHGR) {
-        cells.push(ascii)
-      }
-      rows.push(cells)
+  const width = props.isHGR ? 40 : 16
+  const memory = handleGetMemoryDump()
+  const nrows = memory.length <= 1 ? 0 : (props.isHGR ? 192 : Math.floor(memory.length / width))
+
+  const makeRow = (row: number) => {
+    const addr = props.isHGR ?
+      (hiresLineToAddress(props.offset, row) - props.offset) : 16 * row
+    const mem = memory.slice(addr, addr + width)
+    const cells = [toHex(props.isHGR ? addr + props.offset : addr, 4) + ":"]
+    let ascii = ""
+    for (let b = 0; b < width; b++) {
+      cells.push(toHex(mem[b]))
+      ascii += convertByteToAscii(mem[b])
     }
-    return rows
+    if (!props.isHGR) {
+      cells.push(ascii)
+    }
+    return cells
   }
 
   const getMemoryOffset = (cell: HTMLTableCellElement): [number, number] => {
@@ -173,9 +187,15 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   const setNewFocus = (table: HTMLTableElement, col: number, row: number) => {
-    const nextCell = table.rows[row].cells[col]
-//    nextCell?.scrollIntoView({ behavior: "auto", block: "center", inline: "center" })
-    nextCell?.focus()
+    const nextCell = table.rows[row]?.cells[col]
+    if (nextCell) {
+      nextCell.focus()
+      return
+    }
+    // The target row is outside the rendered window. Scroll it in; it turns into a
+    // real row on the next render, and the layout effect below focuses it then.
+    pendingFocus.current = [col, row]
+    table.scrollTop = Math.max(0, (row + 0.5) * rowHeight - table.clientHeight / 2)
   }
 
   const handleKeyDown = (col: number, row: number, e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -297,8 +317,6 @@ const MemoryTable = (props: MemoryTableProps) => {
   // by clicking on the canvas.
   // (useEffect moved above early return to satisfy rules-of-hooks)
 
-  const width = props.isHGR ? 40 : 16
-  const rows = convertMemoryToArray()
   const isEditable = (col: number, row: number) => {
     if (col === 0 || col === (width + 1)) return false
     if (!props.addressGetTable) return true
@@ -337,8 +355,66 @@ const MemoryTable = (props: MemoryTableProps) => {
     return (isEditable(col, row) ? "" : "memtable-readonly") + highlight
   }
 
+  // Materialize only the rows inside the scroll window; every other row becomes an empty
+  // placeholder <tr>, one per logical row. Keeping one <tr> per row (rather than just
+  // collapsing the gap) means table.rows[row] still refers to the same line, which is what
+  // the keyboard navigation, the magnifier selection and the scroll-to-row code all
+  // assume, and the scrollbar keeps its true range because a placeholder takes its height
+  // from exactly the same CSS as a real row.
+  const virtualize = nrows > VIRTUALIZE_ABOVE_ROWS
+  const windowStart = virtualize
+    ? Math.max(0, Math.floor(scrollTop / rowHeight) - OVERSCAN_ROWS) : 0
+  const windowEnd = virtualize
+    ? Math.min(nrows, windowStart + Math.ceil(height / rowHeight) + 2 * OVERSCAN_ROWS)
+    : nrows
+  const rows: Array<Array<string> | null> = []
+  for (let row = 0; row < nrows; row++) {
+    rows.push((row >= windowStart && row < windowEnd) ? makeRow(row) : null)
+  }
+
+  // Height comes from the real row that was measured, so a placeholder is exactly as tall
+  // as the row it stands in for whatever the cell CSS does. padding/border are zeroed so
+  // the specified height is the whole box, with no box-sizing ambiguity. One shared object
+  // for every placeholder keeps React's diff cheap.
+  const placeholderStyle = useMemo(() => ({
+    height: `${rowHeight}px`, padding: 0, border: 0,
+  }), [rowHeight])
+
+  // The <table> is its own scroll container (display: block + overflow: auto), so that
+  // is where the scroll position lives.
+  useEffect(() => {
+    const table = tableRef.current
+    if (!table) return
+    const onScroll = () => setScrollTop(table.scrollTop)
+    table.addEventListener("scroll", onScroll, { passive: true })
+    return () => table.removeEventListener("scroll", onScroll)
+  }, [])
+
+  // Placeholders already render at the right height, so this measurement is only needed
+  // to turn scrollTop into a row index. It runs before paint and only stores a changed
+  // value, so it settles after one pass instead of looping.
+  useLayoutEffect(() => {
+    if (!virtualize) return
+    const row = tableRef.current?.rows[windowStart + 1]
+    if (!row || row.cells.length < 2) return
+    const measured = Math.round(row.getBoundingClientRect().height * 10) / 10
+    if (measured > 0 && measured !== rowHeightPx) setRowHeightPx(measured)
+  }, [virtualize, windowStart, rowHeightPx])
+
+  // Navigation can aim at a row that is currently a placeholder. setNewFocus scrolls it
+  // into the window and parks the target here; once that scroll has re-rendered with the
+  // row materialized, the cell finally exists and can take focus.
+  useLayoutEffect(() => {
+    const pending = pendingFocus.current
+    if (!pending) return
+    const cell = tableRef.current?.rows[pending[1] + 1]?.cells[pending[0]]
+    if (!cell) return
+    pendingFocus.current = null
+    cell.focus()
+  }, [scrollTop, windowStart])
+
   return (
-    <table className="memtable" id="memory-table"
+    <table className="memtable" id="memory-table" ref={tableRef}
       style={{ cursor: props.pickWatchpoint ? "crosshair" : "default",
         lineHeight: "10pt", height: `${height}px` }}
       onMouseDown={onMouseDown}
@@ -351,19 +427,21 @@ const MemoryTable = (props: MemoryTableProps) => {
       </thead>
       <tbody>
         {rows.map((row, j) => (
-          <tr key={j}>
-            {row.map((cell, i) => (
-              <td key={i}
-                contentEditable={isEditable(i, j)}
-                suppressContentEditableWarning={true}
-                onKeyDown={(e) => handleKeyDown(i, j, e)}
-                onInput={(e) => handleInput(i, j, e.currentTarget)}
-                onFocus={(e) => handleFocus(e.currentTarget)}
-                className={cellClass(i, j)}>
-                {cell}
-              </td>
-            ))}
-          </tr>
+          row === null
+            ? <tr key={j}><td colSpan={props.isHGR ? width + 1 : width + 2} style={placeholderStyle} /></tr>
+            : <tr key={j}>
+              {row.map((cell, i) => (
+                <td key={i}
+                  contentEditable={isEditable(i, j)}
+                  suppressContentEditableWarning={true}
+                  onKeyDown={(e) => handleKeyDown(i, j, e)}
+                  onInput={(e) => handleInput(i, j, e.currentTarget)}
+                  onFocus={(e) => handleFocus(e.currentTarget)}
+                  className={cellClass(i, j)}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
         ))}
       </tbody>
     </table>
