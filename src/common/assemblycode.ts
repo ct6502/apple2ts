@@ -9,6 +9,7 @@ LOOPY   INY
         INX
         BNE   LOOPX  ; do inner Y loop again, 256 times
         INC
+        STA   $315
         BNE   LOOPA  ; do inner X loop again, 256 times
         JMP   OVER   ; do outer loop forever
         RTS

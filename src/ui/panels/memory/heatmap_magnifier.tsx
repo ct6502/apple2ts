@@ -132,6 +132,9 @@ const HeatMapMagnifier = (props: {
       if (props.state === HEATMAP_STATE.CPU) {
         const disassembly = getDisassembly(heatMapAddress - 15, heatMapAddress + 15).split("\n")
         // If disassembly is all $00 or $FF then skip
+        if ((heatMapAddress & 0xFF00) === 0xC000) {
+          return
+        }
         if (disassembly.every(line => line.includes(": 00") || line.includes(": FF") || line.length === 0)) {
           return
         }
