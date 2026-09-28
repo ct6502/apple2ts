@@ -460,6 +460,11 @@ export const doReset = () => {
   memGet(0xC082, false)
   reset6502()
   resetMachine()
+  // Otherwise Heat Map data survives a reset/reboot indefinitely (it was
+  // previously cleared only by doSetCycleCount, a time-travel-only path),
+  // so PC/memory activity from before this reboot stays mixed in with the
+  // new run.
+  resetHeatMapCounts()
   // Force the help text panel back to default on reset/reboot paths.
   handleGameSetup(true)
 }
