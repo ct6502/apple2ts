@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react"
-import { handleGetVeraFrame } from "../../main2worker"
+import { handleGetVeraFrame, handleGetShowAppleMouse, passMouseEvent } from "../../main2worker"
+import { MouseEventSimple } from "../../../common/utility"
+import { getMouseButtonReleaseEvents } from "../../mouseevent"
 
 const VeraTab = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [withinScreen, setWithinScreen] = useState(false)
   const [viewSize, setViewSize] = useState<"320" | "640">(() => {
     try {
       return (localStorage.getItem("vera_view_size") as "320" | "640") || "640"
@@ -10,6 +13,72 @@ const VeraTab = () => {
       return "640"
     }
   })
+
+  const isTouchDevice = false
+
+  const setFocus = () => {
+    const mainCanvas = document.getElementById("apple2canvas") as HTMLCanvasElement | null
+    if (mainCanvas) {
+      mainCanvas.focus({ preventScroll: true })
+    }
+  }
+
+  const scaleMouseEvent = (e: React.MouseEvent<HTMLCanvasElement>): MouseEventSimple | null => {
+    const canvas = canvasRef.current
+    if (!canvas) return null
+    const rect = canvas.getBoundingClientRect()
+    if (rect.width <= 0 || rect.height <= 0) return null
+    const x = (e.clientX - rect.left) / rect.width
+    const y = (e.clientY - rect.top) / rect.height
+    if (x < 0 || x > 1 || y < 0 || y > 1) return null
+    return { x, y, buttons: -1 }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setFocus()
+    const evt = scaleMouseEvent(e)
+    if (!evt) return
+    evt.buttons = e.button === 0 ? 0x10 : 0x11
+    passMouseEvent(evt)
+  }
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const evt = scaleMouseEvent(e)
+    if (!evt) return
+    evt.buttons = e.button === 0 ? 0x00 : 0x01
+    passMouseEvent(evt)
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const evt = scaleMouseEvent(e)
+    if (!evt) {
+      setWithinScreen(false)
+      return
+    }
+    setWithinScreen(true)
+    passMouseEvent(evt)
+  }
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setFocus()
+    setWithinScreen(true)
+    for (const release of getMouseButtonReleaseEvents(e.buttons, isTouchDevice)) {
+      passMouseEvent(release)
+    }
+  }
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setWithinScreen(false)
+    for (const release of getMouseButtonReleaseEvents(e.buttons, isTouchDevice)) {
+      passMouseEvent(release)
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (handleGetShowAppleMouse()) {
+      e.preventDefault()
+    }
+  }
 
   const handleSizeChange = (size: "320" | "640") => {
     setViewSize(size)
@@ -95,7 +164,26 @@ const VeraTab = () => {
     }
   }, [])
 
+  useEffect(() => {
+    const handleWindowMouseUp = (e: MouseEvent) => {
+      if (e.buttons === 0) {
+        for (const release of getMouseButtonReleaseEvents(0, isTouchDevice)) {
+          passMouseEvent(release)
+        }
+      }
+    }
+    window.addEventListener("mouseup", handleWindowMouseUp)
+    return () => {
+      window.removeEventListener("mouseup", handleWindowMouseUp)
+    }
+  }, [isTouchDevice])
+
   const isHalf = viewSize === "320"
+  const veraFrame = handleGetVeraFrame()
+  const isVeraActive = !!(veraFrame && veraFrame.fb && (veraFrame.dcVideo & 3) !== 0)
+  const cursor = (handleGetShowAppleMouse() && withinScreen && isVeraActive) ?
+    (window.assetRegistry?.dotCursor ? `url(${window.assetRegistry.dotCursor}), none` : "default") :
+    "default"
 
   return (
     <div className="flex-column-gap debug-section"
@@ -118,6 +206,7 @@ const VeraTab = () => {
       }}>
         <canvas 
           ref={canvasRef} 
+          id="veraCanvas"
           width={640} 
           height={480} 
           style={{ 
@@ -126,7 +215,14 @@ const VeraTab = () => {
             display: "block",
             backgroundColor: "#000",
             imageRendering: isHalf ? "auto" : "pixelated",
+            cursor: cursor,
           }} 
+          onMouseDown={(e) => { setFocus(); handleMouseDown(e) }}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onContextMenu={handleContextMenu}
         />
       </div>
       <div style={{ display: "flex", gap: "6px", width: "100%", justifyContent: "flex-start", paddingLeft: "4px", marginTop: "8px" }}>
