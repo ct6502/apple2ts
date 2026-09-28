@@ -1,5 +1,5 @@
 import { BREAKPOINT_RESULT, breakpointMap, doSetBreakpoints, hitBreakpoint, processInstruction } from "./cpu6502"
-import { getAuxCardEnabled, getHires, memGet, memSet, memory, RamWorksBankGet, setAuxCardEnabled, setRamWorks, updateAddressTables } from "./memory"
+import { getAuxCardEnabled, getHires, memGet, memoryReset, memSet, memory, RamWorksBankGet, setAuxCardEnabled, setRamWorks, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RamWorksMemoryStart, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
@@ -154,8 +154,10 @@ test.each([
     try {
       doSetRunMode(RUN_MODE.PAUSED, false)
       setRamWorks(128)
-      memory.fill(0xFF, 0, 0x10000)
-      memory.fill(0xFF, RamWorksMemoryStart)
+      // Establish the same "freshly reset" baseline production code
+      // produces, rather than hand-duplicating memoryReset()'s own fill
+      // logic here -- keeps this test correct if that logic ever changes.
+      memoryReset()
       const offsets = [0, RamWorksMemoryStart, RamWorksMemoryStart + 0x10000]
       const addresses = [0x0800, 0xC123, 0xD123, 0xE366, 0xFFFF]
       offsets.forEach((offset, bank) => addresses.forEach((address, index) => {

@@ -429,6 +429,27 @@ export const memoryReset = () => {
   memory.fill(0xFF, 0, 0x10000)
   // Everything past here is RamWorks memory
   memory.fill(0xFF, BaseMachineMemory)
+
+  // Real Apple II RAM does not power up as a uniform 0xFF: it settles into
+  // a repeating 0xFF,0xFF,0x00,0x00 byte pattern (see js/util.ts's
+  // allocMem(), borrowed from AppleWin). Applesoft's floating-point
+  // mantissa-shift routine (ROR $9E / ROR $9F / ROR $A0 / ROR $A1 / ROR
+  // $AC at $E891, confirmed by ROM disassembly) depends on this: under a
+  // uniform 0xFF fill, $9E and $9F hold unrealistic values that corrupt
+  // the first floating-point operation any auto-run program performs,
+  // raising a spurious "?OVERFLOW ERROR" for any program whose first
+  // statement evaluates a negative numeric literal (e.g. `CALL -936`).
+  // $A0/$A1/$AC already land on the pattern's 0xFF positions, so only
+  // these two bytes need correcting.
+  //
+  // This is deliberately narrow -- not a general switch to the realistic
+  // pattern for all of memory -- because getApple2State()/setApple2State()
+  // (save_restore.ts) use a uniform 0xFF as the sentinel "page not
+  // written" value for sparse session-snapshot encoding. Filling all of
+  // memory with the realistic pattern would defeat that optimization and
+  // corrupt restoring session snapshots saved before this fix.
+  memory[0x9E] = 0x00
+  memory[0x9F] = 0x00
   C800SlotSet(0)
   RamWorksBankSet(0)
   updateAddressTables()
