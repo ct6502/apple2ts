@@ -67,6 +67,7 @@ export enum MSG_MAIN {
   APPLE_PRESS,
   APPLE_RELEASE,
   APP_MODE,
+  AUTO_SNAPSHOT,
   BASIC_STEP,
   BREAKPOINTS,
   COMM_DATA,
@@ -139,6 +140,12 @@ export const DEFAULT_SLOT_CONFIG: SlotConfig = {
   5: "mouse",
   6: "disk2",
   7: "smartport",
+}
+
+export enum AUTO_SNAPSHOT {
+  AUTO_OFF,
+  AUTO_100K,
+  AUTO_1M,
 }
 
 export enum COLOR_MODE {

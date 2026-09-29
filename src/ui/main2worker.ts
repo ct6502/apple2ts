@@ -2,7 +2,8 @@ import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
   DISASSEMBLE_VISIBLE, DEFAULT_SLOT_CONFIG, VeraSdStatus, 
   HEATMAP_STATE,
-  MEMORY_DUMP_STATE} from "../common/utility"
+  MEMORY_DUMP_STATE,
+  AUTO_SNAPSHOT} from "../common/utility"
 import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -136,6 +137,10 @@ export const passStepOver = () => {
 
 export const passStepOut = () => {
   doPostMessage(MSG_MAIN.STEP_OUT, true)
+}
+
+export const passAutoSnapshot = (payload: AUTO_SNAPSHOT) => {
+  doPostMessage(MSG_MAIN.AUTO_SNAPSHOT, payload)
 }
 
 export const passBasicStep = () => {

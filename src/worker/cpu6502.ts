@@ -1,6 +1,6 @@
 import { clearInterruptEntry, doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, isInterruptDisabled, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
-import { doSetRunMode, doTakeSnapshot, isDebugging, runOnlyMode } from "./motherboard"
+import { doSetRunMode, requestSnapshot, isDebugging, runOnlyMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
@@ -287,7 +287,7 @@ const processBreakpointAction = (action: BreakpointAction,  vLo: number, vHi: nu
       break
     case "snapshot":
       // Signal the motherboard to do a snapshot at the next safe time
-      doTakeSnapshot()
+      requestSnapshot()
       break
   }
   return true

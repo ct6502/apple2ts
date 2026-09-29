@@ -1,4 +1,4 @@
-import { lockedKeyStyle, UI_THEME, UI_THEMES } from "../../common/utility"
+import { UI_THEME, UI_THEMES } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faVolumeHigh,
@@ -11,7 +11,6 @@ import { MachineConfig } from "../devices/machineconfig"
 import { notifySettingsChanged, resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
-import { appleOutline } from "../img/icon_appleoutline"
 import { useState, useSyncExternalStore } from "react"
 import PopupMenu from "./popupmenu"
 import {
@@ -21,7 +20,6 @@ import {
   retrySpeakerAudio,
   subscribeAudioStatus,
 } from "../devices/audio/speaker"
-import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
 import { getLowercaseMode, getTheme, getUIStateBoolean, isGameMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
@@ -34,6 +32,7 @@ import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
 import { choiceBinding, controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 import { openRetroControlPanel } from "../retro/retrocontrolevents"
+import { TimeTravelConfig } from "../devices/timetravelconfig"
 
 const themeLabels = (t: (key: string) => string) => [
   t("themes.classic"),
@@ -85,22 +84,13 @@ export const retroConfigControls: RetroControlMetadata[] = controlsFromJson("con
 
 const configControlRegistry = new ControlRegistry(retroConfigControls)
 
-const isTouchDevice = "ontouchstart" in document.documentElement
-const isMac = navigator.platform.startsWith("Mac")
-
 const ConfigButtons = (props: DisplayProps) => {
   const { t, language, changeLanguage } = useTranslation()
-  const lowercaseMode = getLowercaseMode()
-  const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
-  const modKey = (isMac ? "Cmd" : "Alt")
-  const modKeyDisplay = isMac ? "⌘" : "alt"
   const context = createControlContext(props, t, language, changeLanguage)
   const optionControls = configControlRegistry.resolve(context, "options")
-  const keyboardControls = configControlRegistry.resolve(context, "keyboard")
   const themeControl = optionControls.find(control => control.id === "options.theme")!
   const resetControl = optionControls.find(control => control.id === "settings.reset")!
-  const lowercaseControl = keyboardControls.find(control => control.id === "keyboard.lowercase")!
-  const openAppleControl = keyboardControls.find(control => control.id === "keyboard.openApple")!
+
   const getThemeName = (theme: UI_THEME) => themeControl.options?.[
     UI_THEMES.findIndex(option => option.value === theme)
   ]?.label ?? theme
@@ -111,9 +101,6 @@ const ConfigButtons = (props: DisplayProps) => {
     : t("controls.toggleSound")
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
-  const cmdKeyTitle = useOpenAppleKey
-    ? t("config.useOpenApple", { modKey })
-    : t("config.useShortcuts", { modKey })
 
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
@@ -145,33 +132,13 @@ const ConfigButtons = (props: DisplayProps) => {
       </button>
     </div>
 
-    <div className="flex-row" id="tour-keyboardbuttons">
-      {!isTouchDevice && <>
-        <button className={lockedKeyStyle(lowercaseMode ? 0 : 2)}
-          title={`${t("config.capsLock")} (${lowercaseMode ? t("messages.off") : t("messages.on")})`}
-          onClick={lowercaseControl.options?.[lowercaseControl.optionIndex === 1 ? 0 : 1]?.action}>
-          <span translate="no" className="text-key" style={{ fontSize: "18pt" }}>
-            {lowercaseMode ? "a" : "A"}
-          </span>
-        </button>
-        <button className="push-button"
-          title={cmdKeyTitle}
-          onClick={openAppleControl.options?.[openAppleControl.optionIndex === 1 ? 0 : 1]?.action}>
-          {useOpenAppleKey ?
-            <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
-            <span className={(modKey === "Alt") ? "text-key" : ""}>{modKeyDisplay}</span>}
-        </button>
-      </>
-      }
-
-      <GamepadConfig />
-    </div>
+    <GamepadConfig />
 
     {!isGameMode() && <AudioConfig {...props} />}
 
-    {!isGameMode() && <SerialPortSelect {...props} />}
-
     {!isGameMode() && <MachineConfig {...props} />}
+
+    {!isGameMode() && <TimeTravelConfig/>}
 
     <button className="push-button"
       id="tour-theme-button"

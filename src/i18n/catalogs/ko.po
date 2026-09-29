@@ -143,8 +143,9 @@ msgid "CRT Distortion"
 msgstr "CRT 왜곡"
 
 #, fuzzy
+#| msgid "Joystick Configuration"
 msgctxt "config.joystick"
-msgid "Joystick Configuration"
+msgid "Keyboard and Joystick Settings"
 msgstr "조이스틱 설정"
 
 msgctxt "machine.configuration"
@@ -249,6 +250,30 @@ msgstr "흑백"
 msgctxt "colors.inverse"
 msgid "Black and White (inverse)"
 msgstr "흑백 (역순)"
+
+msgctxt "timetravel.configuration"
+msgid "Time Travel Configuration"
+msgstr ""
+
+msgctxt "timetravel.snapshotOnKeyPress"
+msgid "Take Snapshot On Keypress"
+msgstr ""
+
+msgctxt "timetravel.autoSnapshot"
+msgid "Auto Snapshot"
+msgstr ""
+
+msgctxt "timetravel.auto_Off"
+msgid "Off"
+msgstr ""
+
+msgctxt "timetravel.auto_100k"
+msgid "Every 0.1s (100000 cycles)"
+msgstr ""
+
+msgctxt "timetravel.auto_1M"
+msgid "Every 1s (1M cycles)"
+msgstr ""
 
 #, fuzzy
 msgctxt "themes.classic"

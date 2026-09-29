@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
-import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, HEATMAP_STATE, MEMORY_DUMP_STATE } from "../common/utility"
+import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, HEATMAP_STATE, MEMORY_DUMP_STATE, AUTO_SNAPSHOT } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
@@ -86,6 +86,9 @@ let memoryDumpState: MEMORY_DUMP_STATE = MEMORY_DUMP_STATE.NONE
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
 let veraSlot: VERA_SLOT = 0
+let autoSnapshot: AUTO_SNAPSHOT = AUTO_SNAPSHOT.AUTO_OFF
+let autoSnapshotThreshold = 100000
+let cyclesSinceLastSnapshot = 0
 let takeSnapshot = false
 let gameSetupTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
@@ -245,6 +248,7 @@ const getHeatMapMax = () => {
 export const doSetCycleCount = (count: number) => {
   setCycleCount(count)
   resetHeatMapCounts()
+  cyclesSinceLastSnapshot = s6502.cycleCount
   updateExternalMachineState()
 }
 
@@ -465,6 +469,7 @@ export const doReset = () => {
   // so PC/memory activity from before this reboot stays mixed in with the
   // new run.
   resetHeatMapCounts()
+  cyclesSinceLastSnapshot = s6502.cycleCount
   // Force the help text panel back to default on reset/reboot paths.
   handleGameSetup(true)
 }
@@ -515,6 +520,24 @@ export const runOnlyMode = () => {
 export const doSetIsDebugging = (enable: boolean) => {
   isDebugging = enable
   updateExternalMachineState()
+}
+
+export const doSetAutoSnapshot = (autoSnapshotIn: AUTO_SNAPSHOT) => {
+  autoSnapshot = autoSnapshotIn
+  cyclesSinceLastSnapshot = s6502.cycleCount
+  switch (autoSnapshot) {
+    case AUTO_SNAPSHOT.AUTO_OFF:  // fall through
+    case AUTO_SNAPSHOT.AUTO_100K:
+      autoSnapshotThreshold = 100000
+      break
+    case AUTO_SNAPSHOT.AUTO_1M:
+      autoSnapshotThreshold = 1000000
+      break
+    default:
+      console.error(`Unknown auto snapshot mode: ${autoSnapshot}`)
+      autoSnapshotThreshold = 100000
+      break
+  }
 }
 
 export const doSetMemory = (addr: number, value: number) => {
@@ -653,18 +676,38 @@ export const doSetRamWorks = (size: number) => {
   updateExternalMachineState()
 }
 
+// Snapshots are requested from several directions - auto-repeat keystrokes, breakpoint
+// "snapshot" actions, and the Time Travel button - and each one needs to land at the end
+// of a display cycle rather than mid-instruction, so requests are collapsed into a single
+// trailing timeout.
+const SNAPSHOT_COLLAPSE_MS = 90
+// A trailing timeout with no floor can be starved: a caller that keeps firing more often
+// than SNAPSHOT_COLLAPSE_MS would reset the timer forever and the snapshot would never be
+// taken, silently. Once a burst has run this long, stop collapsing and take it anyway.
+const SNAPSHOT_MAX_WAIT_MS = 200
+
 let timeout: NodeJS.Timeout | null = null
+let firstRequestTime: number | null = null
 
 // Set a flag and save our slice at the end of the next 6502 display cycle.
 // Otherwise we risk saving in the middle of a keystroke.
-export const doTakeSnapshot = (collapseEvents = false) => {
+export const requestSnapshot = () => {
   if (timeout) {
     clearTimeout(timeout)
+    timeout = null
   }
-  if (collapseEvents) {
-    timeout = setTimeout(() => {takeSnapshot = true; timeout = null}, 100)
-  } else {
+  const now = performance.now()
+  if (firstRequestTime === null) firstRequestTime = now
+  // Have we waited too long?
+  if ((now - firstRequestTime) >= SNAPSHOT_MAX_WAIT_MS) {
+    firstRequestTime = null
     takeSnapshot = true
+  } else {
+    timeout = setTimeout(() => {
+      takeSnapshot = true
+      timeout = null
+      firstRequestTime = null
+    }, SNAPSHOT_COLLAPSE_MS)
   }
 }
 
@@ -1082,6 +1125,12 @@ const doAdvance6502 = () => {
   handleGamepads()
   pollKeyboardRepeat()
   updateExternalMachineState()
+  if (autoSnapshot !== AUTO_SNAPSHOT.AUTO_OFF) {
+    if ((s6502.cycleCount - cyclesSinceLastSnapshot) >= autoSnapshotThreshold) {
+      cyclesSinceLastSnapshot = s6502.cycleCount
+      requestSnapshot()
+    }
+  }
   if (takeSnapshot) {
     takeSnapshot = false
     doSnapshot()

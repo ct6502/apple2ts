@@ -100,6 +100,7 @@ type KeyboardState = {
   key: number,
   isDown: boolean,
   repeat: boolean,
+  saveSnapShot?: boolean,
 }
 
 type KeySequenceRequest = {
@@ -344,6 +345,7 @@ type ExecutionSnapshot = {
 type UIState = {
   appMode: string,
   arrowKeysAsJoystick: boolean,
+  autoSnapshot: AUTO_SNAPSHOT,
   manualNumbering: boolean,
   capitalizeBasic: boolean,
   lowercaseMode: boolean,
@@ -358,6 +360,7 @@ type UIState = {
   reverseYAxis: boolean,
   showScanlines: boolean,
   siriusJoyport: boolean,
+  snapshotOnKeyPress: boolean,
   tabView: number,
   theme: UI_THEME,
   tiltSensorJoystick: boolean,

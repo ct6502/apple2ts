@@ -1,13 +1,14 @@
-import { COLOR_MODE, MONITOR_MODE, UI_THEME } from "../common/utility"
+import { AUTO_SNAPSHOT, COLOR_MODE, MONITOR_MODE, UI_THEME } from "../common/utility"
 import { handleGetMachineName } from "./main2worker"
 
 export const INFO_PANEL_COLLAPSED_EVENT = "apple2ts-info-panel-collapsed"
 export const DISK_LOAD_SUCCESS_EVENT = "apple2ts-disk-load-success"
 
 // Unmodifiable initial UI state
-const initialUIState: Readonly<UIState> = Object.freeze({
+const initialUIState: Readonly<UIState> = {
   appMode: "",
   arrowKeysAsJoystick: true,
+  autoSnapshot: AUTO_SNAPSHOT.AUTO_OFF,
   manualNumbering: true,
   capitalizeBasic: true,
   lowercaseMode: false,
@@ -22,12 +23,13 @@ const initialUIState: Readonly<UIState> = Object.freeze({
   reverseYAxis: false,
   showScanlines: false,
   siriusJoyport: false,
+  snapshotOnKeyPress: false,
   tabView: 0,
   theme: UI_THEME.CLASSIC,
   tiltSensorJoystick: false,
   touchJoystick: true,
   useOpenAppleKey: false,
-})
+}
 
 // This is the copy that gets modified during runtime
 const uiState: UIState = { ...initialUIState }
@@ -71,6 +73,14 @@ export const getUIStateBoolean = (key: BooleanKeyOf<UIState>) => {
 
 export const setAppMode = (mode: string) => {
   uiState.appMode = mode
+}
+
+export const getAutoSnapshot = () => {
+  return uiState.autoSnapshot
+}
+
+export const setAutoSnapshot = (auto: AUTO_SNAPSHOT) => {
+  uiState.autoSnapshot = auto
 }
 
 export const setColorMode = (mode: COLOR_MODE) => {

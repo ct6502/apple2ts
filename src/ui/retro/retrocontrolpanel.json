@@ -133,6 +133,24 @@
     },
     {
       "group": "gamepad",
+      "id": "keyboard.capsLock",
+      "kind": "toggle",
+      "parentId": "keyboard.joystick",
+      "order": 0,
+      "labelKey": "config.capsLock",
+      "defaultIndex": 0
+    },
+    {
+      "group": "gamepad",
+      "id": "keyboard.useOpenAppleKey",
+      "kind": "toggle",
+      "parentId": "keyboard.joystick",
+      "order": 0,
+      "labelKey": "config.useOpenApple",
+      "defaultIndex": 0
+    },
+    {
+      "group": "gamepad",
       "id": "keyboard.joystick.arrowKeys",
       "kind": "toggle",
       "parentId": "keyboard.joystick",

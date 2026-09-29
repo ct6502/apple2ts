@@ -81,12 +81,20 @@ const hydrateTemplate = (value: unknown, params: RetroControlTemplateParams): un
   return value
 }
 
+const getModKeyName = () => navigator.platform.startsWith("Mac") ? "Cmd" : "Alt"
+
+// Messages such as config.useOpenApple and config.useShortcuts contain a
+// {{modKey}} placeholder, so every retro translation supplies it. Extra params
+// are harmless: the interpolator only substitutes the tokens a message uses.
 const toTranslateParams = (params: Record<string, unknown> | undefined) => {
-  if (!params) return undefined
-  const translated: Record<string, string> = {}
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) translated[key] = String(value)
-  })
+  const translated: Record<string, string> = { modKey: getModKeyName() }
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        translated[key] = String(value)
+      }
+    })
+  }
   return translated
 }
 

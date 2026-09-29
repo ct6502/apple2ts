@@ -136,6 +136,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       key,
       isDown: true,
       repeat: hardwareKeyboardRepeats(),
+      saveSnapShot: getUIStateBoolean("snapshotOnKeyPress"),
     })
   }
 

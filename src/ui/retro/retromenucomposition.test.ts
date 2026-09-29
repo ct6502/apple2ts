@@ -849,6 +849,8 @@ describe("Retro menu metadata structure", () => {
       "keyboard.openApple",
     ])
     expect(retroMenuRegistry.getIds("keyboard.joystick")).toEqual([
+      "keyboard.capsLock",
+      "keyboard.useOpenAppleKey",
       "keyboard.joystick.arrowKeys",
       "keyboard.joystick.reverseYAxis",
       "keyboard.joystick.siriusJoyport",

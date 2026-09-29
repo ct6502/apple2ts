@@ -1,9 +1,9 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
-import { COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
+import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
-import { getTheme, getUIState, initialBooleanUIKeys, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode, isDefaultTrueBooleanKey } from "./ui_settings"
+import { passAutoSnapshot, passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
+import { getTheme, getUIState, initialBooleanUIKeys, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode, isDefaultTrueBooleanKey, setAutoSnapshot } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
 
@@ -104,10 +104,11 @@ export const setPreferenceBoolean = (
   } else {
     localStorage.removeItem(key)
   }
+  // Make sure our UI state is kept in sync
   setUIStateBoolean(key as BooleanKeyOf<UIState>, value)
   if (key === "reverseYAxis") passReverseYAxis(value)
   if (key === "siriusJoyport") passSiriusJoyport(value)
-    const controlId = booleanControlIds[key]
+  const controlId = booleanControlIds[key]
   if (controlId) notifySettingsChanged([controlId], origin)
 }
 
@@ -145,6 +146,16 @@ export const setPreferenceByString = (key: string, value: string, defaultValue =
   } else {
     localStorage.setItem(key, value)
   }
+  }
+
+  export const setPreferenceAutoSnapshot = (auto: AUTO_SNAPSHOT = AUTO_SNAPSHOT.AUTO_OFF) => {
+  if (auto === AUTO_SNAPSHOT.AUTO_OFF) {
+    localStorage.removeItem("autoSnapshot")
+  } else {
+    localStorage.setItem("autoSnapshot", JSON.stringify(auto))
+  }
+  setAutoSnapshot(auto)
+  passAutoSnapshot(auto)
 }
 
 export const setPreferenceColorMode = (

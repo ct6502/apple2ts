@@ -1,10 +1,9 @@
-import React, { useRef } from "react"
+import React, { useEffect, useRef } from "react"
 import {
   handleGetTimeTravelThumbnails,
   handleGetTempStateIndex,
   passTimeTravelIndex,
-  passSetRunMode,
-  handleGetRunMode
+  passSetRunMode
 } from "../main2worker"
 import { RUN_MODE, toHex } from "../../common/utility"
 const clock = 1020488
@@ -26,27 +25,11 @@ const TimeTravelPanel = () => {
     const thumbImg = (iTempState >= 0 && thumbnails.length > 0) ?
       `${thumbnails[Math.min(iTempState, thumbnails.length - 1)].thumbnail}` : ""
     // The 170px is the width of the thumbnail images.
-    const thumbImage = (thumbImg != "") ? <img src={thumbImg} /> : <div style={{width: "170px"}}></div>
+    const thumbImage = (thumbImg != "") ? <img style={{width: "120px"}} src={thumbImg} /> : <div style={{width: "120px"}}></div>
     for (let i = 0; i < thumbnails.length; i++) {
       const time = convertTime(thumbnails[i].s6502.cycleCount)
-      thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC)}\n`
+      thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC)} Cycles=${thumbnails[i].s6502.cycleCount}\n`
     }
-    // Make sure our new snapshot is visible in the scroll range
-    setTimeout(() => {
-      const lineToScrollTo = document.getElementById("tempStateIndex")
-      if (lineToScrollTo && stateThumbRef && stateThumbRef.current) {
-        const div: HTMLDivElement = stateThumbRef.current
-        // Calculate the scroll position to make the paragraph visible
-        const containerRect = div.getBoundingClientRect()
-        const targetRect = lineToScrollTo.getBoundingClientRect()
-        const isTargetAboveViewport = targetRect.top < containerRect.top
-        const isTargetBelowViewport = targetRect.bottom > containerRect.bottom
-        if (isTargetAboveViewport || isTargetBelowViewport) {
-          const scrollTop = targetRect.top - containerRect.top + div.scrollTop
-          div.scrollTop = scrollTop
-        }
-      }
-    }, 50)
     return { iTempState, thumbnailStrings: thumbnailText.split("\n"), thumbImage }
   }
 
@@ -72,14 +55,30 @@ const TimeTravelPanel = () => {
     }
   }
 
-  let timeTravelThumbnails = <></>
-  let thumbImage = <div style={{width: "170px"}}></div>
-  let iTempState = -1
-  let thumbnailStrings: string[] = []
+  const { iTempState, thumbnailStrings, thumbImage } = getTimeTravelThumbnails()
 
-  if (handleGetRunMode() !== RUN_MODE.RUNNING) {
-    ({ iTempState, thumbnailStrings, thumbImage } = getTimeTravelThumbnails())
-  }
+  // Make sure our new snapshot is visible in the scroll range. This has to run
+  // after the highlighted line has been committed to the DOM, so it lives in an
+  // effect; getTimeTravelThumbnails() runs during render and must not touch a ref.
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const lineToScrollTo = document.getElementById("tempStateIndex")
+      if (lineToScrollTo && stateThumbRef.current) {
+        const div: HTMLDivElement = stateThumbRef.current
+        // Calculate the scroll position to make the line visible
+        const containerRect = div.getBoundingClientRect()
+        const targetRect = lineToScrollTo.getBoundingClientRect()
+        const isTargetAboveViewport = targetRect.top < containerRect.top
+        const isTargetBelowViewport = targetRect.bottom > containerRect.bottom
+        if (isTargetAboveViewport || isTargetBelowViewport) {
+          div.scrollTop = targetRect.top - containerRect.top + div.scrollTop
+        }
+      }
+    }, 50)
+    return () => clearTimeout(timeout)
+  }, [iTempState, thumbnailStrings.length])
+
+  let timeTravelThumbnails = <></>
 
   if (thumbnailStrings.length > 1) {
     timeTravelThumbnails = <>{thumbnailStrings.map((line, index) => (
@@ -104,7 +103,7 @@ const TimeTravelPanel = () => {
           onKeyDown={(e) => handleKeyDown(e)}
           tabIndex={-1}
           style={{
-            width: "15em",
+            width: "25em",
             height: "72pt",
             overflow: "auto",
             cursor: "pointer",

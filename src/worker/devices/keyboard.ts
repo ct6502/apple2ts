@@ -1,11 +1,11 @@
 import { handleKeyMapping } from "../games/game_mappings"
 import { memGetC000, memSetC000 } from "../memory"
-import { doTakeSnapshot } from "../motherboard"
+import { requestSnapshot } from "../motherboard"
 
 const setKeyStrobe = (key: number) => {
   // Sather, Understanding the Apple IIe p2-16, all addresses from $C000-$C01F
   // contain the ASCII key code in the low 7 bits, and the high bit is set
-  // to 1 to indicate a key press.
+  // to 1 to indicate a keypress.
   // $C000-$C00F will maintain that high bit.
   // $C010-$C01F will override that high bit with their own status flag
   // whenever they are read but there's no harm in setting it now.
@@ -133,6 +133,9 @@ export const setKeyboardState = (state: KeyboardState) => {
   keyboardIsDown = true
   keyboardRepeatKey = handleKeyMapping(String.fromCharCode(state.key)).charCodeAt(0)
   setKeyStrobe(keyboardRepeatKey)
+  if (state.saveSnapShot) {
+    requestSnapshot()
+  }
   if (!state.repeat) {
     keyboardRepeatKey = 0
     return
@@ -176,7 +179,6 @@ export const apple2KeyRelease = () => {
 // time to process
 let keyBuffer = ""
 let tPrevPop = 1000000000
-let tPrevSnapshot = 0
 
 // CT 6/27/2026: Added a tiny delay of a couple calls to avoid dropping keys when
 // Applesoft BASIC is processing them. This only seemed to be a problem when
@@ -193,12 +195,6 @@ export const popKey = () => {
     const key = keyBuffer.charCodeAt(0)
     setKeyStrobe(key)
     keyBuffer = keyBuffer.slice(1)
-    // Take a time travel snapshot if buffer is empty and it's been at least 500 ms.
-    // We don't want to overload the snapshots.
-    if (keyBuffer.length === 0 && (t - tPrevSnapshot) > 500) {
-      tPrevSnapshot = t
-      doTakeSnapshot(true)
-    }
   }
 }
 

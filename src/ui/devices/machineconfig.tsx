@@ -15,6 +15,7 @@ import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "../controls/controlregistry"
 import { controlOptionsToPopupItems } from "../controls/controlpopup"
 import { choiceBinding, controlsFromJson, type RetroControlBindings } from "../retro/retrocontrolmetadata"
+import { changeSerialMode, getSerialMode } from "./serial/serialhub"
 
 export const RAM_OPTIONS = [64, 512, 1024, 4096, 8192] as const
 
@@ -267,7 +268,20 @@ export const MachineConfig = (props: DisplayProps) => {
             }
           )),
           { label: "-" },
-          ...[{ label: t("machine.slotConfigurator"), isHeading: true }],
+          { label: t("retroControl.builtinImageWriter"),
+            isSelected: () => getSerialMode() === 0,
+            onClick: () => {
+              changeSerialMode(0)
+            }
+           },
+          { label: getSerialMode() === 0 ? t("retroControl.selectExternalPort") : t("retroControl.externalPort"),
+            isSelected: () => getSerialMode() !== 0,
+            onClick: () => {
+              changeSerialMode(1)
+            }
+          },
+          { label: "-" },
+          { label: t("machine.slotConfigurator"), isHeading: true },
           ...([1, 2, 3, 4, 5, 6, 7] as const).map((slot) => {
             const currentCard = slotConfig[slot]
             return {

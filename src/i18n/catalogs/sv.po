@@ -116,8 +116,10 @@ msgctxt "config.crtDistortion"
 msgid "CRT Distortion"
 msgstr "CRT-förvrängning"
 
+#, fuzzy
+#| msgid "Joystick Configuration"
 msgctxt "config.joystick"
-msgid "Joystick Configuration"
+msgid "Keyboard and Joystick Settings"
 msgstr "Styrspakskonfiguration"
 
 msgctxt "machine.configuration"
@@ -211,6 +213,30 @@ msgstr "Svartvitt"
 msgctxt "colors.inverse"
 msgid "Black and White (inverse)"
 msgstr "Svartvitt (inverterat)"
+
+msgctxt "timetravel.configuration"
+msgid "Time Travel Configuration"
+msgstr ""
+
+msgctxt "timetravel.snapshotOnKeyPress"
+msgid "Take Snapshot On Keypress"
+msgstr ""
+
+msgctxt "timetravel.autoSnapshot"
+msgid "Auto Snapshot"
+msgstr ""
+
+msgctxt "timetravel.auto_Off"
+msgid "Off"
+msgstr ""
+
+msgctxt "timetravel.auto_100k"
+msgid "Every 0.1s (100000 cycles)"
+msgstr ""
+
+msgctxt "timetravel.auto_1M"
+msgid "Every 1s (1M cycles)"
+msgstr ""
 
 msgctxt "themes.classic"
 msgid "Classic"
