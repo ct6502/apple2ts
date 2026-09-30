@@ -9,6 +9,7 @@ const initialUIState: Readonly<UIState> = {
   appMode: "",
   arrowKeysAsJoystick: true,
   autoSnapshot: AUTO_SNAPSHOT.AUTO_OFF,
+  cyclesToRun: 0,
   manualNumbering: true,
   capitalizeBasic: true,
   lowercaseMode: false,
@@ -69,6 +70,14 @@ export const setUIStateBoolean = (key: BooleanKeyOf<UIState>, value: boolean) =>
 
 export const getUIStateBoolean = (key: BooleanKeyOf<UIState>) => {
   return uiState[key]
+}
+
+export const getCyclesToRun = () => {
+  return uiState.cyclesToRun
+}
+
+export const setCyclesToRun = (cycles: number) => {
+  uiState.cyclesToRun = Math.max(0, cycles)
 }
 
 export const setAppMode = (mode: string) => {

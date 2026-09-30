@@ -14,7 +14,7 @@ const ExpressionControl = (props: ExpressionControlProps) => {
   //  const [triggerUpdate, setTriggerUpdate] = useState(false)
   const { t } = useTranslation()
   const [bpAddress, setBpAddress] = useState(toHex(props.expr.address))
-  const [bpValue, setBpValue] = useState(toHex(props.expr.value))
+  const [bpValue, setBpValue] = useState(props.expr.value.toString(props.expr.register === "@" ? 10 : 16).toUpperCase())
 
   const handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase()
@@ -32,18 +32,25 @@ const ExpressionControl = (props: ExpressionControlProps) => {
   }
 
   const handleValueChange = (value: string) => {
-    const maxlen = props.expr.register === "C" ? 4 : 2
-    value = value.replace(/[^0-9a-f]/gi, "").slice(0, maxlen).toUpperCase()
-    setBpValue(value)
-    props.setExpr({ ...props.expr, value: parseInt(value || "-1", 16) })
+    if (props.expr.register === "@") {
+      value = value.replace(/[^0-9]/gi, "").toUpperCase()
+      setBpValue(value)
+      props.setExpr({ ...props.expr, value: parseInt(value || "-1") })
+    } else {
+      const maxlen = props.expr.register === "C" ? 4 : 2
+      value = value.replace(/[^0-9a-f]/gi, "").slice(0, maxlen).toUpperCase()
+      setBpValue(value)
+      props.setExpr({ ...props.expr, value: parseInt(value || "-1", 16) })
+    }
   }
 
   const spaces = "\u00A0\u00A0\u00A0\u00A0\u00A0"
   const registers = [`_${spaces}(none)`, `$${spaces}Address`, `A${spaces}Accumulator`,
   `X${spaces}X Register`, `Y${spaces}Y Register`, `S${spaces}Stack Pointer`,
-  `P${spaces}Processor Status`, `C${spaces}Program Counter`]
-  const regmap = ["", "$", "A", "X", "Y", "S", "P", "C"]
+  `P${spaces}Processor Status`, `C${spaces}Program Counter`, `@${spaces}Cycle Count`]
+  const regmap = ["", "$", "A", "X", "Y", "S", "P", "C", "@"]
   const index = regmap.indexOf(props.expr.register)
+  const isCycleCount = props.expr.register === "@"
 
   return <span>
     <Droplist
@@ -69,14 +76,14 @@ const ExpressionControl = (props: ExpressionControlProps) => {
       value={props.expr.operator}
       values={["==", "!=", ">", ">=", "<", "<="]}
       setValue={(v: string) => handleOperatorChange(v as OperatorValues)} />
-    <span className="dialog-title" style={{ padding: 0 }}>$</span>
+    { (!isCycleCount) && <span className="dialog-title" style={{ padding: 0 }}>$</span>}
     <EditField
       disabled={props.disabled || index === 0}
       value={bpValue}
       setValue={handleValueChange}
       isHex={true}
-      placeholder="FF"
-      width="3em" />
+      placeholder={isCycleCount ? "100000" : "FF"}
+      width={isCycleCount ? "9em" : "3em"} />
   </span>
 }
 

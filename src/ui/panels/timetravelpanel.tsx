@@ -25,10 +25,11 @@ const TimeTravelPanel = () => {
     const thumbImg = (iTempState >= 0 && thumbnails.length > 0) ?
       `${thumbnails[Math.min(iTempState, thumbnails.length - 1)].thumbnail}` : ""
     // The 170px is the width of the thumbnail images.
-    const thumbImage = (thumbImg != "") ? <img style={{width: "120px"}} src={thumbImg} /> : <div style={{width: "120px"}}></div>
+    const thumbImage = (thumbImg != "") ? <img style={{width: "120px"}} src={thumbImg} /> :
+      <div style={{width: "120px"}}></div>
     for (let i = 0; i < thumbnails.length; i++) {
       const time = convertTime(thumbnails[i].s6502.cycleCount)
-      thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC)} Cycles=${thumbnails[i].s6502.cycleCount}\n`
+      thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC, 4)} Cycles=${thumbnails[i].s6502.cycleCount}\n`
     }
     return { iTempState, thumbnailStrings: thumbnailText.split("\n"), thumbImage }
   }
@@ -84,10 +85,9 @@ const TimeTravelPanel = () => {
     timeTravelThumbnails = <>{thumbnailStrings.map((line, index) => (
       <div key={index}
         id={index === iTempState ? "tempStateIndex" : ""}
-        className="stateLine"
+        className={"stateLine" + (index === iTempState ? " program-counter" : "")}
         onClick={() => selectStateLine(index)}>
         {line}
-        {(index === iTempState) && <div className="highlight-line"></div>}
       </div>
     ))}
     </>

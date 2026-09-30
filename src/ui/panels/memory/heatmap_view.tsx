@@ -169,9 +169,9 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
       <div style={{ position: "relative" }}>
         <canvas
           ref={heatMapRef}
+          className="heatmap-canvas"
           width={BASE_HEATMAP_WIDTH}
           height={BASE_HEATMAP_HEIGHT}
-          style={{ border: "1px solid black" }}
           onClick={(e) => handleHeatMapClick(e)}
         />
       </div>

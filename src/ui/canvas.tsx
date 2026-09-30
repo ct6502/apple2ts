@@ -178,6 +178,23 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const isMac = navigator.platform.startsWith("Mac")
 
+  // A non-collapsed selection outside the emulator screen means the user has selected
+  // text in the surrounding UI - the cycle count, the stack dump, disassembly, and so
+  // on. The Apple II screen is a canvas with no text nodes, so any selection like this
+  // belongs to the interface rather than the emulator.
+  const hasUITextSelection = () => {
+    const selection = window.getSelection()
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) return false
+    const canvas = document.getElementById("apple2canvas")
+    return !canvas || !canvas.contains(selection.getRangeAt(0).commonAncestorContainer)
+  }
+
+  // Copy is the one shortcut that genuinely collides: on a Mac Cmd+C is not an Apple II
+  // chord, so it is ours to give away, and on Windows Ctrl+C has to stay a real Apple II
+  // key - but only when the user is not sitting on a selection somewhere else in the UI.
+  const isCopyShortcut = (e: keyEvent) =>
+    e.key.toLowerCase() === "c" && (isMac ? e.metaKey : e.ctrlKey)
+
   const isOpenAppleDown = (e: keyEvent) => {
     const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
     return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft") || e.code === "Numpad0" || e.code === "Numpad5"
@@ -242,6 +259,12 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleKeyDown = (e: keyEvent) => {
+    // Let the browser copy the user's own selection instead of the Apple II screen.
+    // Returning without preventDefault leaves the native clipboard behaviour intact;
+    // bailing out here (rather than inside the meta-key handling) also avoids arming
+    // the Open/Closed Apple modifier state for a chord we are not going to send.
+    if (isCopyShortcut(e) && hasUITextSelection()) return
+
     let keyHandledLocal = false
     const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
     if (isOpenAppleDown(e)) {

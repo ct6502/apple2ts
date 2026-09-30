@@ -131,6 +131,14 @@ body.dark-mode .debug-panel {
   user-select: none;
 }
 
+body.dark-mode .breakpoint-pushbutton {
+  color: var(--text-color-dark);
+}
+
+body.dark-mode .breakpoint-pushbutton:active {
+  background-color: var(--button-active-dark);
+}
+
 .breakpoint-position {
   position: absolute;
   left: -14px;
@@ -361,15 +369,19 @@ body.dark-mode .warning-text-help {
 }
 
 body.dark-mode .tab-button {
-  background-color: var(--panel-background-dark);
-  border-color: var(--text-color-dark);
-  color: var(--text-color-dark);
+  background-color: var(--background-color-dark);
+  border-color: var(--button-active);
+  color: var(--button-active);
 }
 
 .tab-active {
   /* background-color is kept as a fallback; background-image paints over it. */
   background-color: var(--button-active);
-  background-image: linear-gradient(to bottom, var(--button-active), var(--panel-background));
+  /* The color the shade fades into. Redeclared for dark mode below. */
+  --tab-fade: var(--panel-background);
+  /* .tab-base-header lays these out in a row, so the tabs sit above their panel and the
+     shade runs downward. A vertical strip would need "to right" - see .dbg-tab-vertical. */
+  background-image: linear-gradient(to bottom, var(--button-active), var(--tab-fade));
   color: var(--text-color);
   /* Grow 1px taller to cover the panel's top border, then pull that 1px back out of the
      layout so the tab row keeps its size. Unlike translateY, this leaves the top edge -
@@ -383,10 +395,15 @@ body.dark-mode .tab-button {
   z-index: 1;
 }
 
+/* Match the dark treatment of .dbg-tab / .dbg-tab-active: the active tab keeps the shared
+   --button-active fill and fades into the panel below it, while the inactive tabs use the
+   recessed background with the accent color for their text and border. The panel tabs fade
+   to --background-color-dark because nothing paints a background behind them, whereas these
+   fade into their own panel's dark background so the seam disappears. */
 body.dark-mode .tab-active {
-  background-color: var(--button-active-dark);
-  background-image: linear-gradient(to bottom, var(--button-active-dark), var(--panel-background-dark));
-  color: var(--text-color-dark);
+  background-color: var(--button-active);
+  color: var(--text-color);
+  --tab-fade: var(--panel-background-dark);
 }
 
 .tab-base-header {
@@ -413,6 +430,12 @@ body.dark-mode .tab-active {
   border-color: var(--text-color);
   background-color: var(--panel-background);
   color: var(--text-color);
+}
+
+body.dark-mode .tab-base-panel {
+  border-color: var(--text-color-dark);
+  background-color: var(--panel-background-dark);
+  color: var(--text-color-dark);
 }
 
 .disassembly-opcode {
@@ -866,4 +889,15 @@ body.dark-mode .link-builder-textarea {
   align-items: flex-end;
   transform: translateY(-5px);
   font-size: 8px;
+}
+
+/* Kept in CSS rather than an inline style so the dark rule below can override it;
+   an inline border would always win. */
+.heatmap-canvas {
+  border: 1px solid black;
+}
+
+/* Black would disappear against the dark app background. */
+body.dark-mode .heatmap-canvas {
+  border-color: white;
 }

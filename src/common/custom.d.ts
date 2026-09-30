@@ -346,6 +346,7 @@ type UIState = {
   appMode: string,
   arrowKeysAsJoystick: boolean,
   autoSnapshot: AUTO_SNAPSHOT,
+  cyclesToRun: number,
   manualNumbering: boolean,
   capitalizeBasic: boolean,
   lowercaseMode: boolean,
@@ -578,7 +579,7 @@ interface MemoryBanks {
 }
 
 type ExpressionOperator = "" | "&&" | "||"
-type RegisterValues = "" | "$" | "A" | "X" | "Y" | "S" | "P" | "C"
+type RegisterValues = "" | "$" | "A" | "X" | "Y" | "S" | "P" | "C" | "@"
 type OperatorValues = "==" | "!=" | ">" | ">=" | "<" | "<="
 
 type BreakpointExpression = {

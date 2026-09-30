@@ -360,6 +360,13 @@ body.dark-mode .bigger-monospace {
   fill: var(--text-color-dark);
 }
 
+/* Separates the 3-digit groups of the cycle count. A margin rather than a space
+   character (even a thin one), so the digits stay one contiguous run of text and
+   copying the number yields no separators. */
+.cycle-count-group {
+  margin-left: 0.2em;
+}
+
 .column-gap {
   margin-bottom: 0.25em;
 }

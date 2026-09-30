@@ -6,6 +6,15 @@ import { faSync } from "@fortawesome/free-solid-svg-icons"
 
 type KEYS = "PC" | "Accum" | "XReg" | "YReg" | "StackPtr" | "flagIRQ"
 
+// Split a number into 3-digit groups so the gaps can be drawn with CSS margins.
+// Space characters (even thin ones) would live in the text, and copying the cycle
+// count would then yield "1 234 567" instead of "1234567".
+// Filtering matters: the split also matches at position 0 for lengths that are an
+// exact multiple of three ("1000" -> ["", "1000"]), and that empty leading group
+// would otherwise be the one to carry the separator margin.
+const cycleGroups = (value: number) =>
+  String(value).split(/(?=(?:\d{3})+$)/).filter(group => group !== "")
+
 const State6502Controls = () => {
   const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>, key: KEYS) => {
     const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase()
@@ -55,7 +64,7 @@ const State6502Controls = () => {
   const createCheckbox = (name: string, bitField: number, value: number, runMode: RUN_MODE) => {
     const checked = (value & (1 << bitField)) !== 0
     return <div className="flex-column">
-      <div className="bigger-font"
+      <div className={"default-font"}
         style={{marginLeft: "5px", marginRight: "5px", marginTop: "0", marginBottom: "0"}}>{name}</div>
       <input type="checkbox" id={name}
         className="debug-checkbox"
@@ -89,10 +98,14 @@ const State6502Controls = () => {
           {createCheckbox("C", 0, s6502.PStatus, runMode)}
           {createCheckbox("NMI", 0, s6502.flagNMI ? 1 : 0, runMode)}
         </div>
-        <div className="flex-row" style={{ marginLeft: "1em" }}>
+        <div className="flex-row" style={{ marginLeft: "0.5em" }}>
           <span className="bigger-font">Cycles:</span>
           <span className="bigger-monospace"
-            style={{ marginLeft: "2pt", marginRight: "2pt", marginTop: "1pt" }}> {s6502.cycleCount}</span>
+            style={{ marginLeft: "2pt", marginRight: "2pt", marginTop: "1pt" }}> {cycleGroups(s6502.cycleCount).map((group, index) => (
+              <span key={index}
+                className={index > 0 ? "cycle-count-group" : undefined}>{group}</span>
+            ))}
+          </span>
           <button className="push-button tight-button"
             title="Reset cycle count and heat maps"
             onClick={() => { passSetCycleCount(0) }}

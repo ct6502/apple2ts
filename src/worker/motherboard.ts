@@ -76,6 +76,7 @@ export const getCpuRunMode = () => cpuRunMode
 
 let pendingRunModeOperation: number | undefined
 let cyclesToRun = 0
+let cycleToRunStart = -1
 let executionSequence = 0
 let executionState: "running" | "paused" = "paused"
 let executionPauseReason: ExecutionPauseReason | null = "idle"
@@ -782,10 +783,10 @@ export const doSetRunMode = (
     executionPauseReason = null
     executionBreakpointAddress = null
     executionMemoryWrite = null
-  } else if (
-    cpuRunMode === RUN_MODE.PAUSED
-    && (executionState !== "paused" || stop !== undefined)
-  ) {
+    if (cyclesToRun > 0) {
+      cycleToRunStart = s6502.cycleCount
+    }
+  } else if (cpuRunMode === RUN_MODE.PAUSED && (executionState !== "paused" || stop !== undefined)) {
     executionSequence++
     executionState = "paused"
     executionPauseReason = stop?.reason ?? "explicit"
@@ -1047,8 +1048,6 @@ export const forceVideo7Override = (override: Video7Override) => {
   updateExternalMachineState()
 }
 
-//let quickReturn = 0
-let cycleToRunStart = -1
 
 const doAdvance6502 = () => {
   if (cpuRunMode === RUN_MODE.IDLE || cpuRunMode === RUN_MODE.PAUSED) {
@@ -1069,9 +1068,6 @@ const doAdvance6502 = () => {
   }
   let cycleTotal = 0
   let currentLine = -1
-  if (cyclesToRun > 0) {
-    cycleToRunStart = s6502.cycleCount
-  }
   for (;;) {
     let cycles = 0
     if (softCard.activeCpu === "Z80") {

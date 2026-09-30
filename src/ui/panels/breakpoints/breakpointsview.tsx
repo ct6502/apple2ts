@@ -3,7 +3,7 @@ import { handleGetBreakpoints, handleGetRunMode } from "../../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faPencil as iconBreakpointEdit,
-  faXmark as iconBreakpointDelete,
+  faTrash,
   faPlus as iconBreakpointAdd,
 } from "@fortawesome/free-solid-svg-icons"
 import {
@@ -132,7 +132,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
             title="Remove all breakpoints"
             onClick={removeAllBreakpoints}
             disabled={false}>
-            <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: "0.8em" }} />
+            <FontAwesomeIcon icon={faTrash} style={{ fontSize: "0.8em" }} />
           </button>
         </div>
       </div>
@@ -156,14 +156,16 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
               </button>
               <button className="breakpoint-pushbutton"
                 data-key={bp.address}
+                title="Edit breakpoint"
                 onClick={(e) => { handleBreakpointEdit(e) }}
                 disabled={false}>
                 <FontAwesomeIcon icon={iconBreakpointEdit} />
               </button>
               <button className="breakpoint-pushbutton"
                 data-key={bp.address}
+                title="Delete breakpoint"
                 onClick={(e) => { handleBreakpointDelete(e) }}>
-                <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: "1.3em" }} />
+                <FontAwesomeIcon icon={faTrash} style={{ fontSize: "1.3em" }} />
               </button>
               <span style={{cursor: handleGetRunMode() === RUN_MODE.PAUSED ? "pointer" : "default", userSelect: "none"}}
                 data-key={bp.address}

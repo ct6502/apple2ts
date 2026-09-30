@@ -13,6 +13,7 @@ import { useTranslation } from "../../../i18n/useTranslation"
 import TraceSettingsDialog from "./tracesettingsdialog"
 import { handleSetCPUState } from "../../controller"
 import EditField from "../editfield"
+import { getCyclesToRun, setCyclesToRun } from "../../ui_settings"
 
 const width = 400
 const height = 600
@@ -32,7 +33,7 @@ const TraceDialog = (props: {
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [cyclesToRun, setCyclesToRun] = useState(0)
+  const [cyclesStr, setCyclesStr] = useState(getCyclesToRun().toString())
   
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -107,21 +108,6 @@ const TraceDialog = (props: {
     }
   })
 
-  const doSetCyclesToRun = (value: string) => {
-    let numValue = parseInt(value)
-    if (isNaN(numValue) || numValue < 1) {
-      numValue = 0
-    }
-    setCyclesToRun(numValue)
-  }
-
-  const doGetCyclesToRun = () => {
-    if (cyclesToRun < 1) {
-      return ""
-    }
-    return cyclesToRun.toString()
-  }
-
   const runMode = handleGetRunMode()
   const currentTracelog = handleGetTracelog()
 
@@ -175,7 +161,9 @@ const TraceDialog = (props: {
             title={runMode === RUN_MODE.PAUSED ? "Run" : "Pause"}
             onClick={() => {
               if (runMode === RUN_MODE.PAUSED) {
+                const cyclesToRun = parseInt(cyclesStr)
                 passSetCyclesToRun(cyclesToRun)
+                setCyclesToRun(cyclesToRun)
               }
               handleSetCPUState(runMode === RUN_MODE.PAUSED ?
                 RUN_MODE.RUNNING : RUN_MODE.PAUSED)
@@ -186,12 +174,12 @@ const TraceDialog = (props: {
               <FontAwesomeIcon icon={faPause} />}
           </button>
           <EditField
-            value={doGetCyclesToRun()}
-            setValue={doSetCyclesToRun}
+            value={cyclesStr}
+            setValue={setCyclesStr}
             isNumber={true}
             placeholder="Unlimited"
             showSuggestions={false}
-            width="6em" />
+            width="8em" />
           <span className="bigger-font" style={{ alignSelf: "center" }}>&nbsp;cycles</span>
           </div>
           <button className="push-button"
