@@ -829,20 +829,42 @@ export const getHires = () => {
   return hiResCurrent.slice(0, 80 * hiResLines)
 }
 
-export const getDataBlock = (addr: number) => {
-  // The addr & 255 handles data blocks that span page boundaries.
-  // This assumes that the second half of the block is within the same memory table range.
-  const offset = addressGetTable[addr >>> 8] + (addr & 255)
-  return memory.slice(offset, offset + 512)
+// Read a block of memory (default 512 bytes = one ProDOS block) exactly as the
+// CPU would see it. Each page is looked up separately in the address table,
+// because consecutive Apple II pages are not always consecutive in our memory
+// array. For example, bank 1 of $D000-$DFFF is stored below bank 2, so a block
+// at $DF00 continues at $E000, not at the next offset in the array. The same
+// applies to ALTZP ($01xx vs $02xx), 80STORE text/hires pages, and $BFxx/$C0xx.
+export const getDataBlock = (addr: number, length = 512) => {
+  const data = new Uint8Array(length)
+  let dataOffset = 0
+  while (dataOffset < length) {
+    const currentAddress = (addr + dataOffset) & 0xFFFF
+    const pageOffset = currentAddress & 0xFF
+    const pageLength = Math.min(0x100 - pageOffset, length - dataOffset)
+    const memoryOffset = addressGetTable[currentAddress >>> 8] + pageOffset
+    data.set(memory.subarray(memoryOffset, memoryOffset + pageLength), dataOffset)
+    dataOffset += pageLength
+  }
+  return data
 }
 
+// Write a block of data into memory exactly as the CPU would, one page at a
+// time (see getDataBlock). Pages that are not writable (soft switches, slot
+// ROM, or $D000-$FFFF when bank-switched RAM is write protected) are skipped,
+// the same as memSet does for a single byte.
 export const setMemoryBlock = (addr: number, data: Uint8Array) => {
-  // The addr & 255 handles data blocks that span page boundaries.
-  // This assumes that the second half of the block is within the same memory table range.
-  const vHi = addr >>> 8
-  if (addressSetTable[vHi] >= ADDRESS_GUARD) return
-  const offset = addressSetTable[vHi] + (addr & 255)
-  memory.set(data, offset)
+  let dataOffset = 0
+  while (dataOffset < data.length) {
+    const currentAddress = (addr + dataOffset) & 0xFFFF
+    const pageOffset = currentAddress & 0xFF
+    const pageLength = Math.min(0x100 - pageOffset, data.length - dataOffset)
+    const shifted = addressSetTable[currentAddress >>> 8]
+    if (shifted < ADDRESS_GUARD) {
+      memory.set(data.subarray(dataOffset, dataOffset + pageLength), shifted + pageOffset)
+    }
+    dataOffset += pageLength
+  }
 }
 
 export const loadMainMemoryBlock = (addr: number, data: Uint8Array) => {
@@ -850,18 +872,6 @@ export const loadMainMemoryBlock = (addr: number, data: Uint8Array) => {
     throw new Error("Binary block must fit within main RAM at $0000-$BFFF")
   }
   memory.set(data, addr)
-}
-
-export const setMappedMemoryBlock = (addr: number, data: Uint8Array) => {
-  let dataOffset = 0
-  while (dataOffset < data.length) {
-    const currentAddress = addr + dataOffset
-    const pageOffset = currentAddress & 0xFF
-    const pageLength = Math.min(0x100 - pageOffset, data.length - dataOffset)
-    const memoryOffset = addressSetTable[currentAddress >>> 8] + pageOffset
-    memory.set(data.subarray(dataOffset, dataOffset + pageLength), memoryOffset)
-    dataOffset += pageLength
-  }
 }
 
 export const matchMemory = (addr: number, data: number[]) => {
