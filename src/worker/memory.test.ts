@@ -885,3 +885,37 @@ test("test Bank-Switched-Ram PRE-WRITE disable", () => {
     expect(memGet(LOC2)).toEqual(0x34)
   }
 })
+
+test("test Bank-Switched-Ram write to even switch disables writing", () => {
+  // Understanding the Apple IIe, p. 5-23: HRAMWRT' is set by any even access
+  // in the $C08X range, including a write (e.g. Total Replay's STA $C082).
+  // See https://github.com/ct6502/apple2ts/issues/474
+  for (let bank = 1; bank <= 2; bank++) {
+    for (const evenAddr of [0xC080, 0xC082, 0xC088, 0xC08A, 0xC084, 0xC086, 0xC08C, 0xC08E]) {
+      setupBSR()
+      const bankAddr = bank === 1 ? 0xC08B : 0xC083
+      const value = bank === 1 ? 0x11 : 0x22
+      memGet(bankAddr)
+      memGet(bankAddr)  // read/write RAM
+      memSet(LOC1, value + 1)
+      expect(memGet(LOC1)).toEqual(value + 1)
+      expect(SWITCHES.BSR_WRITE.isSet).toEqual(true)
+      memSet(evenAddr, 0)  // even write access: write-protect RAM
+      expect(SWITCHES.BSR_WRITE.isSet).toEqual(false)
+      memGet(bankAddr)  // read RAM again (one read only: pre-write)
+      memSet(LOC1, 0x99)
+      expect(memGet(LOC1)).toEqual(value + 1)
+    }
+  }
+})
+
+test("test Bank-Switched-Ram write to odd switch keeps write enable", () => {
+  for (const oddAddr of [0xC081, 0xC083, 0xC089, 0xC08B]) {
+    setupBSR()
+    memGet(0xC083)
+    memGet(0xC083)
+    memSet(oddAddr, 0)
+    expect(SWITCHES.BSR_WRITE.isSet).toEqual(true)
+    expect(SWITCHES.BSR_PREWRITE.isSet).toEqual(false)
+  }
+})
