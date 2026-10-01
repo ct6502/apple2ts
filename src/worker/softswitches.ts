@@ -77,7 +77,17 @@ export const handleBankedRAM = (addr: number, calledFromMemSet: boolean) => {
   addr &= 0b1011
   // These addresses need to be read twice in succession to activate write.
   if (calledFromMemSet) {
+    // Any write access resets PRE-WRITE. A write to an even address
+    // ($C080, $C082, $C088, $C08A) is still an "even access", so it also
+    // sets HRAMWRT' (i.e. disables writing to bank-switched RAM).
+    // A write to an odd address leaves HRAMWRT' unchanged.
+    // Without this, code like "STA $C082" (Total Replay's READ_ROM_NO_WRITE)
+    // would leave the language card write-enabled, so stray writes to
+    // $D000-$FFFF would corrupt RAM instead of hitting (read-only) ROM.
     SWITCHES.BSR_PREWRITE.isSet = false
+    if ((addr & 1) === 0) {
+      SWITCHES.BSR_WRITE.isSet = false
+    }
   } else {
     if (addr & 1) {
       if (SWITCHES.BSR_PREWRITE.isSet) {
