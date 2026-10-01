@@ -422,8 +422,8 @@ test("test RamWorks", () => {
 
 describe("side-effect-free memory views", () => {
   const mappingSwitches = [
-    SWITCHES.RAMRD,
-    SWITCHES.RAMWRT,
+    SWITCHES.AUXRAMREAD,
+    SWITCHES.AUXRAMWRITE,
     SWITCHES.ALTZP,
     SWITCHES.STORE80,
     SWITCHES.PAGE2,
@@ -471,7 +471,7 @@ describe("side-effect-free memory views", () => {
   })
 
   test("reports active segments where mapping changes", () => {
-    SWITCHES.RAMRD.isSet = false
+    SWITCHES.AUXRAMREAD.isSet = false
     SWITCHES.STORE80.isSet = true
     SWITCHES.PAGE2.isSet = true
     updateAddressTables()
@@ -606,7 +606,7 @@ describe("side-effect-free memory search", () => {
       bytes: [0x56],
     }).matches).toEqual([])
 
-    const beforeSwitches = [SWITCHES.RAMRD, SWITCHES.RAMWRT, SWITCHES.ALTZP]
+    const beforeSwitches = [SWITCHES.AUXRAMREAD, SWITCHES.AUXRAMWRITE, SWITCHES.ALTZP]
       .map((softSwitch) => softSwitch.isSet)
     const systemByte = getMemoryView({address: 0xC000, length: 1, space: "active"}).bytes[0]
     expect(findMemory({
@@ -615,7 +615,7 @@ describe("side-effect-free memory search", () => {
       space: "active",
       bytes: [systemByte],
     }).matches).toEqual([0xC000])
-    expect([SWITCHES.RAMRD, SWITCHES.RAMWRT, SWITCHES.ALTZP]
+    expect([SWITCHES.AUXRAMREAD, SWITCHES.AUXRAMWRITE, SWITCHES.ALTZP]
       .map((softSwitch) => softSwitch.isSet)).toEqual(beforeSwitches)
   })
 
@@ -635,8 +635,8 @@ describe("side-effect-free memory search", () => {
     memory[address] = 0xA5
     memory[RamWorksMemoryStart + address] = 0x5A
     const beforeSwitches = [
-      SWITCHES.RAMRD,
-      SWITCHES.RAMWRT,
+      SWITCHES.AUXRAMREAD,
+      SWITCHES.AUXRAMWRITE,
       SWITCHES.ALTZP,
       SWITCHES.STORE80,
       SWITCHES.PAGE2,
@@ -665,8 +665,8 @@ describe("side-effect-free memory search", () => {
       bytes: [0x33],
     })()).toBe(true)
     expect([
-      SWITCHES.RAMRD,
-      SWITCHES.RAMWRT,
+      SWITCHES.AUXRAMREAD,
+      SWITCHES.AUXRAMWRITE,
       SWITCHES.ALTZP,
       SWITCHES.STORE80,
       SWITCHES.PAGE2,
@@ -677,8 +677,8 @@ describe("side-effect-free memory search", () => {
     SWITCHES.PAGE2.isSet = true
     updateAddressTables()
     const activeSwitches = [
-      SWITCHES.RAMRD,
-      SWITCHES.RAMWRT,
+      SWITCHES.AUXRAMREAD,
+      SWITCHES.AUXRAMWRITE,
       SWITCHES.ALTZP,
       SWITCHES.STORE80,
       SWITCHES.PAGE2,
@@ -701,8 +701,8 @@ describe("side-effect-free memory search", () => {
     expect(systemPredicate()).toBe(true)
     expect(systemPredicate.read()).toEqual([systemByte])
     expect([
-      SWITCHES.RAMRD,
-      SWITCHES.RAMWRT,
+      SWITCHES.AUXRAMREAD,
+      SWITCHES.AUXRAMWRITE,
       SWITCHES.ALTZP,
       SWITCHES.STORE80,
       SWITCHES.PAGE2,

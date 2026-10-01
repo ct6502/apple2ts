@@ -6,7 +6,9 @@ import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/dr
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
   restoreSoftSwitches, getSoftSwitchDescriptions, 
-  syncSoftSwitchStatusFlags} from "./softswitches"
+  syncSoftSwitchStatusFlags,
+  SoftSwitchStates,
+  SoftSwitchName} from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable,
   loadMainMemoryBlock,
@@ -187,10 +189,10 @@ const endVBL = (): void => {
   SWITCHES.VBLINV.isSet = true
 }
 
-export const getSoftSwitches = () => {
-  const softSwitches: { [name: string]: boolean } = {}
+export const getSoftSwitches = (): SoftSwitchStates => {
+  const softSwitches = {} as SoftSwitchStates
   for (const key in SWITCHES) {
-    softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
+    softSwitches[key as SoftSwitchName] = SWITCHES[key as SoftSwitchName].isSet
   }
   return softSwitches
 }

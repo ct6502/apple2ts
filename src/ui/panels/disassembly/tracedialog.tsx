@@ -15,9 +15,9 @@ import { handleSetCPUState } from "../../controller"
 import EditField from "../editfield"
 import { getCyclesToRun, setCyclesToRun } from "../../ui_settings"
 
-const width = 400
+const width = 550
 const height = 600
-const header = " Cycle     PC            Instruction     A   X   Y   S   P   NVBDIZC"
+const header = "Cycle        PC             Instruction    A   X   Y   S   P   NVBDIZC  AUX  RAM  80STORE"
 
 const TraceDialog = (props: {
   cancelDialog: () => void,

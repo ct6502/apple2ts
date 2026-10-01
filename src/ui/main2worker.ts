@@ -490,7 +490,7 @@ let machineState: MachineState = {
   showDebugTab: false,
   slotConfig: { ...DEFAULT_SLOT_CONFIG },
   speedMode: 0,
-  softSwitches: {},
+  softSwitches: {} as unknown as MachineState["softSwitches"],
   stackString: "",
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),

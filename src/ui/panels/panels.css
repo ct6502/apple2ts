@@ -590,9 +590,17 @@ body.dark-mode .memtable-highlight {
   border-collapse: collapse;
 }
 
+.memory-map tr.memory-map-header td {
+  border-top-width: 0;
+  border-left-width: 0;
+  border-right-width: 0;
+  /* border-bottom left alone so the line under the header still comes from here */
+}
+
 .memory-map td {
-  padding-left: 6px;
-  padding-right: 6px;
+  text-align: center;
+  padding-left: 8px;
+  padding-right: 8px;
   padding-top: 1px;
   padding-bottom: 1px;
   border-width: 0.5px;
@@ -600,10 +608,6 @@ body.dark-mode .memtable-highlight {
   border-color: var(--text-color);
   cursor: default;
   user-select: none;
-}
-
-.memory-map td:nth-child(2) {
-  min-width: var(--memory-map-label-width);
 }
 
 body.dark-mode .memory-map td {

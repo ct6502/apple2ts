@@ -1,7 +1,7 @@
 import { clearInterruptEntry, doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, isInterruptDisabled, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
 import { doSetRunMode, requestSnapshot, isDebugging, runOnlyMode } from "./motherboard"
-import { SWITCHES } from "./softswitches"
+import { getSwitchState, SWITCHES } from "./softswitches"
 import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
 import { MEMORY_BANKS } from "../common/memorybanks"
@@ -87,8 +87,8 @@ export const observeMemoryWrite = (
     effectiveSpace,
     effectiveAuxBank,
     mapping: {
-      RAMRD: SWITCHES.RAMRD.isSet,
-      RAMWRT: SWITCHES.RAMWRT.isSet,
+      RAMRD: SWITCHES.AUXRAMREAD.isSet,
+      RAMWRT: SWITCHES.AUXRAMWRITE.isSet,
       ALTZP: SWITCHES.ALTZP.isSet,
       "80STORE": SWITCHES.STORE80.isSet,
       PAGE2: SWITCHES.PAGE2.isSet,
@@ -110,7 +110,7 @@ const fillInMemoryBankFunctions = () => {
       return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet
     } else if (addr >= 0x200) {
       // Just look at our regular Main/Aux switch
-      return !SWITCHES.RAMRD.isSet
+      return !SWITCHES.AUXRAMREAD.isSet
     }
     // For $0-$1FF, look at the AUX ALTZP switch
     return !SWITCHES.ALTZP.isSet
@@ -121,7 +121,7 @@ const fillInMemoryBankFunctions = () => {
       return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet
     } else if (addr >= 0x200) {
       // Just look at our regular Main/Aux switch
-      return SWITCHES.RAMRD.isSet
+      return SWITCHES.AUXRAMREAD.isSet
     }
     // For $0-$1FF, look at the AUX ALTZP switch
     return SWITCHES.ALTZP.isSet
@@ -510,8 +510,8 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
     if ((PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
 //      const index = ("000000" + instrTrailCount.toString()).slice(-7)
       const ins = getInstructionString(PC1, code, vLo, vHi, s6502.PStatus) + "          "
-      const count = ("00000000" + s6502.cycleCount.toString()).slice(-8)
-      let out = `${count}  ${ins.slice(0, 29)}  ${getProcessorStatus()}`
+      const count = ("0000000000" + s6502.cycleCount.toString()).slice(-10)
+      let out = `${count}  ${ins.slice(0, 29)}  ${getProcessorStatus()}  ${getSwitchState()}`
       let endsubroutine = out.indexOf("JMP")
       if (endsubroutine === -1) {
         endsubroutine = out.indexOf("RTS")

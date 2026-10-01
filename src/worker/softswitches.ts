@@ -70,13 +70,14 @@ const mirrorHighBitPlusRand = (addr: number) => {
 // can reset HRAMWRT'. PRE-WRITE is set by odd read access in the $C08Xrange.
 // It is reset by even read access or any write access in the $C08X range.
 // HRAMWRT' is reset by odd read access in the $C08X range when PRE-WRITE is set.
-// It is set by even access in the $C08X range. Any other type of access
-// causes HRAMWRT' to hold its current state.
+// It is set by even [CT: READ or WRITE] access in the $C08X range.
+// Any other type of access causes HRAMWRT' to hold its current state.
 export const handleBankedRAM = (addr: number, calledFromMemSet: boolean) => {
   // Only keep bits 0, 1, 3 of the 0xC08* number
   addr &= 0b1011
   // These addresses need to be read twice in succession to activate write.
-  if (calledFromMemSet) {
+  if (calledFromMemSet) {  // write access
+    // https://github.com/ct6502/apple2ts/issues/474
     // Any write access resets PRE-WRITE. A write to an even address
     // ($C080, $C082, $C088, $C08A) is still an "even access", so it also
     // sets HRAMWRT' (i.e. disables writing to bank-switched RAM).
@@ -85,11 +86,11 @@ export const handleBankedRAM = (addr: number, calledFromMemSet: boolean) => {
     // would leave the language card write-enabled, so stray writes to
     // $D000-$FFFF would corrupt RAM instead of hitting (read-only) ROM.
     SWITCHES.BSR_PREWRITE.isSet = false
-    if ((addr & 1) === 0) {
+    if ((addr & 1) === 0) {  // even
       SWITCHES.BSR_WRITE.isSet = false
     }
-  } else {
-    if (addr & 1) {
+  } else {  // read access
+    if (addr & 1) {  // odd
       if (SWITCHES.BSR_PREWRITE.isSet) {
         // PRE-WRITE is already set, so now we can enable write.
         SWITCHES.BSR_WRITE.isSet = true
@@ -97,7 +98,7 @@ export const handleBankedRAM = (addr: number, calledFromMemSet: boolean) => {
         // Set PRE-WRITE
         SWITCHES.BSR_PREWRITE.isSet = true
       }
-    } else {
+    } else {  // even
       // Reset PRE-WRITE and HRAMWRT by even read access or any write access in the $C08X range.
       SWITCHES.BSR_PREWRITE.isSet = false
       SWITCHES.BSR_WRITE.isSet = false
@@ -110,8 +111,8 @@ export const handleBankedRAM = (addr: number, calledFromMemSet: boolean) => {
 
 export const SWITCHES = {
   STORE80: NewSwitch(0xC000, 0xC001, 0xC018, true),
-  RAMRD: NewSwitch(0xC002, 0xC003, 0xC013, true),
-  RAMWRT: NewSwitch(0xC004, 0xC005, 0xC014, true),
+  AUXRAMREAD: NewSwitch(0xC002, 0xC003, 0xC013, true),
+  AUXRAMWRITE: NewSwitch(0xC004, 0xC005, 0xC014, true),
   INTCXROM: NewSwitch(0xC006, 0xC007, 0xC015, true),
   INTC8ROM: NewSwitch(0xC02A, 0, 0),  // Fake soft switch; add here so it is saved/restored
   ALTZP: NewSwitch(0xC008, 0xC009, 0xC016, true),
@@ -174,6 +175,9 @@ export const SWITCHES = {
   BSR_PREWRITE: NewSwitch(0xC080, 0, 0),
   BSR_WRITE: NewSwitch(0xC088, 0, 0),
 }
+
+export type SoftSwitchName = keyof typeof SWITCHES
+export type SoftSwitchStates = Record<SoftSwitchName, boolean>
 
 SWITCHES.TEXT.isSet = true
 
@@ -447,4 +451,15 @@ export const syncSoftSwitchStatusFlags = () => {
       memSetC000(sswitch.isSetAddr, sswitch.isSet ? (value | 0x80) : (value & 0x7F))
     }
   }
+}
+
+export const getSwitchState = () => {
+  const a0 = SWITCHES.ALTZP.isSet ? "0" : "-"
+  const ar = SWITCHES.AUXRAMREAD.isSet ? "R" : "-"
+  const aw = SWITCHES.AUXRAMWRITE.isSet ? "W" : "-"
+  const rr = SWITCHES.BSRREADRAM.isSet ? "R" : "-"
+  const rw = SWITCHES.BSR_WRITE.isSet ? "W" : "-"
+  const b2 = SWITCHES.BSRBANK2.isSet ? "2" : "1"
+  const s80 = SWITCHES.STORE80.isSet ? "  ✓" : ""
+  return `${a0}${ar}${aw}  ${rr}${rw}${b2}${s80}`
 }

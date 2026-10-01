@@ -105,8 +105,8 @@ export const getMemoryView = (request: MemoryViewRequest): MemoryView => {
       : null,
     effectiveSegments,
     mapping: {
-      RAMRD: SWITCHES.RAMRD.isSet,
-      RAMWRT: SWITCHES.RAMWRT.isSet,
+      RAMRD: SWITCHES.AUXRAMREAD.isSet,
+      RAMWRT: SWITCHES.AUXRAMWRITE.isSet,
       ALTZP: SWITCHES.ALTZP.isSet,
       "80STORE": SWITCHES.STORE80.isSet,
       PAGE2: SWITCHES.PAGE2.isSet,

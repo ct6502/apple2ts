@@ -185,8 +185,8 @@ export const setAuxCardEnabled = (enabled: boolean) => {
 export const getAuxCardEnabled = () => auxCardEnabled
 
 const updateMainAuxMemoryTable = () => {
-  const offsetAuxRead = (auxCardEnabled && SWITCHES.RAMRD.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  const offsetAuxWrite = (auxCardEnabled && SWITCHES.RAMWRT.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const offsetAuxRead = (auxCardEnabled && SWITCHES.AUXRAMREAD.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const offsetAuxWrite = (auxCardEnabled && SWITCHES.AUXRAMWRITE.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
   const offsetPage2 = (auxCardEnabled && SWITCHES.PAGE2.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
   const offsetTextPageRead = (auxCardEnabled && SWITCHES.STORE80.isSet) ? offsetPage2 : offsetAuxRead
   const offsetTextPageWrite = (auxCardEnabled && SWITCHES.STORE80.isSet) ? offsetPage2 : offsetAuxWrite
@@ -473,7 +473,7 @@ export const memorySetForTests = (aux = false) => {
 // rom[0xC288 - 0xC000] = 0x20
 
 export const readWriteAuxMem = (addr: number, write = false) => {
-  let useAux = write ? SWITCHES.RAMWRT.isSet : SWITCHES.RAMRD.isSet
+  let useAux = write ? SWITCHES.AUXRAMWRITE.isSet : SWITCHES.AUXRAMREAD.isSet
   if (addr <= 0x1FF || addr >= 0xC000) {
     useAux = SWITCHES.ALTZP.isSet
   } else if (addr >= 0x400 && addr <= 0x7FF) {

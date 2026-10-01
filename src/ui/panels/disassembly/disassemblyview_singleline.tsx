@@ -61,7 +61,7 @@ const getOperandTooltip = (
 ) => {
   const formatEffectiveAddressTooltip = (notation: string) =>
     formatMemoryTooltip("effectiveAddress", notation, translate)
-  let addressDescription = ""
+  let addressDescription = `$${toHex(addr)}`
   let effectiveAddress = addr
   let value = -1
   if (operand.includes(",X)")) {

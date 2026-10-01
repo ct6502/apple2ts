@@ -294,7 +294,7 @@ type MachineState = {
   showDebugTab: boolean,
   shr?: Uint8Array,
   slotConfig: SlotConfig,
-  softSwitches: {[name: string]: boolean},
+  softSwitches: import("../worker/softswitches").SoftSwitchStates,
   speedMode: number,
   stackString: string,
   textPage: Uint8Array,

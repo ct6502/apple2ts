@@ -334,14 +334,14 @@ test("load binary changes memory without changing execution or device state", ()
 test("load binary writes main RAM independently of auxiliary-memory mappings", () => {
   const previousAltZp = SWITCHES.ALTZP.isSet
   const previousPage2 = SWITCHES.PAGE2.isSet
-  const previousRamWrite = SWITCHES.RAMWRT.isSet
+  const previousRamWrite = SWITCHES.AUXRAMWRITE.isSet
   const previousStore80 = SWITCHES.STORE80.isSet
   const touchedAddresses = [0x01FF, RamWorksMemoryStart + 0x01FF, 0x0200, 0x03FF, RamWorksMemoryStart + 0x0400, 0x0400]
   const previousMemory = touchedAddresses.map((address) => memory[address])
 
   try {
     SWITCHES.ALTZP.isSet = true
-    SWITCHES.RAMWRT.isSet = false
+    SWITCHES.AUXRAMWRITE.isSet = false
     updateAddressTables()
     doLoadBinary(0x01FF, new Uint8Array([0xA1, 0xB2]))
     expect(memory[0x01FF]).toEqual(0xA1)
@@ -359,7 +359,7 @@ test("load binary writes main RAM independently of auxiliary-memory mappings", (
   } finally {
     SWITCHES.ALTZP.isSet = previousAltZp
     SWITCHES.PAGE2.isSet = previousPage2
-    SWITCHES.RAMWRT.isSet = previousRamWrite
+    SWITCHES.AUXRAMWRITE.isSet = previousRamWrite
     SWITCHES.STORE80.isSet = previousStore80
     touchedAddresses.forEach((address, index) => {
       memory[address] = previousMemory[index]
@@ -656,8 +656,8 @@ test("a bounded physical write watchpoint records the writer and coherent mappin
         effectiveSpace: "main",
         effectiveAuxBank: null,
         mapping: {
-          RAMRD: SWITCHES.RAMRD.isSet,
-          RAMWRT: SWITCHES.RAMWRT.isSet,
+          RAMRD: SWITCHES.AUXRAMREAD.isSet,
+          RAMWRT: SWITCHES.AUXRAMWRITE.isSet,
           ALTZP: SWITCHES.ALTZP.isSet,
           "80STORE": SWITCHES.STORE80.isSet,
           PAGE2: SWITCHES.PAGE2.isSet,
@@ -722,7 +722,7 @@ test.each([
 test("physical write watchpoints distinguish main from auxiliary mapping", () => {
   setIsTesting()
   const previousProgram = memory.slice(0x6000, 0x6003)
-  const previousRamWrite = SWITCHES.RAMWRT.isSet
+  const previousRamWrite = SWITCHES.AUXRAMWRITE.isSet
   const address = 0x2000
 
   try {
@@ -757,7 +757,7 @@ test("physical write watchpoints distinguish main from auxiliary mapping", () =>
   } finally {
     doSetRunMode(RUN_MODE.PAUSED, false)
     doClearMemoryWriteWatchpoint()
-    SWITCHES.RAMWRT.isSet = previousRamWrite
+    SWITCHES.AUXRAMWRITE.isSet = previousRamWrite
     updateAddressTables()
     memory.set(previousProgram, 0x6000)
   }
@@ -866,18 +866,18 @@ test("mapped memory writes use active soft switches before completing", () => {
   const auxAddress = RamWorksMemoryStart + address
   const previousMain = memory[address]
   const previousAux = memory[auxAddress]
-  const previousRamWrite = SWITCHES.RAMWRT.isSet
+  const previousRamWrite = SWITCHES.AUXRAMWRITE.isSet
   const passMachineState = jest.spyOn(worker2main, "passMachineState")
   const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
 
   try {
-    SWITCHES.RAMWRT.isSet = false
+    SWITCHES.AUXRAMWRITE.isSet = false
     updateAddressTables()
     memory[address] = 0x11
     memory[auxAddress] = 0x22
 
     doWriteMemory(0xC005, Uint8Array.of(0), 12)
-    expect(SWITCHES.RAMWRT.isSet).toEqual(true)
+    expect(SWITCHES.AUXRAMWRITE.isSet).toEqual(true)
     expect(passOperationResult).toHaveBeenCalledWith(12)
     passMachineState.mockClear()
     passOperationResult.mockClear()
@@ -890,7 +890,7 @@ test("mapped memory writes use active soft switches before completing", () => {
       passOperationResult.mock.invocationCallOrder[0],
     )
   } finally {
-    SWITCHES.RAMWRT.isSet = previousRamWrite
+    SWITCHES.AUXRAMWRITE.isSet = previousRamWrite
     updateAddressTables()
     memory[address] = previousMain
     memory[auxAddress] = previousAux
@@ -902,10 +902,10 @@ test("mapped memory writes use active soft switches before completing", () => {
 test("mapped memory writes report worker errors", () => {
   setIsTesting()
   const passOperationResult = jest.spyOn(worker2main, "passWorkerOperationResult")
-  const oldState = SWITCHES.RAMWRT.isSet
+  const oldState = SWITCHES.AUXRAMWRITE.isSet
 
   try {
-    Object.defineProperty(SWITCHES.RAMWRT, "isSet", {
+    Object.defineProperty(SWITCHES.AUXRAMWRITE, "isSet", {
       configurable: true,
       get: () => oldState,
       set: () => { throw new Error("switch failed") },
@@ -917,7 +917,7 @@ test("mapped memory writes report worker errors", () => {
       "Memory write processed 0 of 1 bytes; the next byte and earlier writes may have taken effect. switch failed",
     )
   } finally {
-    Object.defineProperty(SWITCHES.RAMWRT, "isSet", {
+    Object.defineProperty(SWITCHES.AUXRAMWRITE, "isSet", {
       configurable: true,
       writable: true,
       value: oldState,

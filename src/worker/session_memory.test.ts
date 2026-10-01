@@ -38,7 +38,7 @@ test("compares sparse pages in address order with exact truncation and no state 
   memory[0x300] = 4
   memory[0x301] = 5 // outside requested range
   s6502.cycleCount += 10
-  SWITCHES.RAMRD.isSet = true
+  SWITCHES.AUXRAMREAD.isSet = true
   const machine = getExternalMachineState()
   const state = getApple2State()
   const result = compareExternalSessionMemory({...request, maxChanges: 2})
@@ -70,7 +70,7 @@ test("uses the same selected physical aux bank at both ends regardless of RAMRD"
   memory[RamWorksMemoryStart + 0x10101] = 0x44
   memory[RamWorksMemoryStart + 0x101] = 0x66
   memSet(0xC073, 1)
-  SWITCHES.RAMRD.isSet = false
+  SWITCHES.AUXRAMREAD.isSet = false
   const auxRequest = {...request, address: 0x100, length: 2, space: "aux" as const}
   expect(compareExternalSessionMemory(auxRequest)).toMatchObject({
     requestedAuxBank: null, effectiveAuxBank: 1,

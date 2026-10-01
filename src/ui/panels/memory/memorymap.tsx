@@ -3,33 +3,19 @@
 import { RUN_MODE } from "../../../common/utility"
 import { handleGetC800Slot, handleGetRunMode, handleGetSoftSwitches,
   passSetSoftSwitches, passSetVideo7Override } from "../../main2worker"
-import type { CSSProperties } from "react"
 
 const MEMORY_MAP_LABELS = {
   zeroPage: "Zero Page",
-  stack: "6502 Stack",
+  stack: "Stack",
   text: "Text",
   hgr: "HGR",
   internalRom: "Internal ROM",
   slotRom: "Slot ROM",
-  rom: "ROM",
-  readWriteRam: "R/W RAM",
-  readRam: "Read RAM",
-  readRomWriteRam: "RdROM/WrRAM",
-  bank1: "Bank 1",
-  bank2: "Bank 2",
+  bank1: "1",
+  bank2: "2",
 } as const
 
 const formatSlotLabel = (slot: number) => `Slot ${slot}`
-
-const memoryMapLabelWidth = Math.max(
-  ...Object.values(MEMORY_MAP_LABELS).map(label => label.length),
-  formatSlotLabel(7).length,
-)
-
-const memoryMapStyle = {
-  "--memory-map-label-width": `${memoryMapLabelWidth}ch`,
-} as CSSProperties
 
 const CheckedBox = (props: {name: string, runMode: number, checked: boolean, func: () => void}) => {
   return <span style={{display: "inline-flex", userSelect: "none"}}>
@@ -49,31 +35,29 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
   const switches = handleGetSoftSwitches()
   if (Object.keys(switches).length <= 1) return (<div></div>)
   const altZP = switches.ALTZP
-  let bankSwitchedRam: string = MEMORY_MAP_LABELS.rom
-  let bankD000 = `${MEMORY_MAP_LABELS.rom}\n `
-  let classBSR = "mem-rom"
-  if (switches.BSRREADRAM || switches.BSR_WRITE) {
-    classBSR = altZP ? "mem-aux" : ""
-    if (switches.BSRREADRAM && switches.BSR_WRITE) {
-      bankSwitchedRam = MEMORY_MAP_LABELS.readWriteRam
-    } else {
-      bankSwitchedRam = switches.BSRREADRAM ?
-        MEMORY_MAP_LABELS.readRam : MEMORY_MAP_LABELS.readRomWriteRam
-    }
-    bankD000 = bankSwitchedRam + "\n" +
-      (switches.BSRBANK2 ? MEMORY_MAP_LABELS.bank2 : MEMORY_MAP_LABELS.bank1)
+  let bankD000read = ""
+  let bankD000write = ""
+  let classBSRread = "mem-rom"
+  let classBSRwrite = "mem-rom"
+  if (switches.BSRREADRAM) {
+    classBSRread = altZP ? "mem-aux" : ""
+    bankD000read = (switches.BSRBANK2 ? MEMORY_MAP_LABELS.bank2 : MEMORY_MAP_LABELS.bank1)
   }
-  const auxRead = switches.RAMRD
-  const auxWrite = switches.RAMWRT
-  const isAux = auxRead || auxWrite
+  if (switches.BSR_WRITE) {
+    classBSRwrite = altZP ? "mem-aux" : ""
+    bankD000write = (switches.BSRBANK2 ? MEMORY_MAP_LABELS.bank2 : MEMORY_MAP_LABELS.bank1)
+  }
+  const auxRead = switches.AUXRAMREAD
+  const auxWrite = switches.AUXRAMWRITE
   const store80 = switches.STORE80
   const page2 = switches.PAGE2
   const isHGR = switches.HIRES
-  const textIsAux = store80 ? page2 : isAux
+  const textIsAuxRead = store80 ? page2 : auxRead
+  const textIsAuxWrite = store80 ? page2 : auxWrite
   const videoIsPage2 = store80 ? false : page2
   // See Inside the Apple //e, p. 296-7
-  const hgrIsAux = store80 ? (isHGR ? page2 : isAux) : isAux
-  // if (is80column) {
+  const hgrIsAuxRead = store80 ? (isHGR ? page2 : auxRead) : auxRead
+  const hgrIsAuxWrite = store80 ? (isHGR ? page2 : auxWrite) : auxWrite
   //   // Only select second 80-column text page if STORE80 is also OFF
   //   const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? TEXT_PAGE2 : TEXT_PAGE1
   const internalCxRom = switches.INTCXROM
@@ -139,53 +123,56 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
     <div>
       <div className="bigger-font" style={{ marginBottom: "6px" }}>Memory Map</div>
       <div className="flex-row-gap">
-      <table className="memory-map mono-text" style={memoryMapStyle}>
+      <table className="memory-map mono-text">
         <tbody>
-          <tr>
-            <td>$0000</td><td className={altZP ? "mem-aux" : ""}>{MEMORY_MAP_LABELS.zeroPage}</td>
+          <tr className="memory-map-header">
+            <td>&nbsp;</td><td>Read</td><td>Write</td>
           </tr>
           <tr>
-            <td>$0100</td><td className={altZP ? "mem-aux" : ""}>{MEMORY_MAP_LABELS.stack}</td>
+            <td>$0000</td><td colSpan={2} className={altZP ? "mem-aux" : ""}>{MEMORY_MAP_LABELS.zeroPage}</td>
           </tr>
           <tr>
-            <td>$0200</td><td className={isAux ? "mem-aux" : ""}></td>
+            <td>$0100</td><td colSpan={2} className={altZP ? "mem-aux" : ""}>{MEMORY_MAP_LABELS.stack}</td>
           </tr>
           <tr>
-            <td>$0400</td><td className={textIsAux ? "mem-aux" : ""}>{videoIsPage2 ? "" : MEMORY_MAP_LABELS.text}</td>
+            <td>$0200</td><td className={auxRead ? "mem-aux" : ""}></td><td className={auxWrite ? "mem-aux" : ""}>&nbsp;&nbsp;&nbsp;&nbsp;</td>
           </tr>
           <tr>
-            <td>$0800</td><td className={isAux ? "mem-aux" : ""}>{videoIsPage2 ? MEMORY_MAP_LABELS.text : ""}</td>
+            <td>$0400</td><td className={textIsAuxRead ? "mem-aux" : ""}>{videoIsPage2 ? "" : MEMORY_MAP_LABELS.text}</td><td className={textIsAuxWrite ? "mem-aux" : ""}>&nbsp;</td>
           </tr>
           <tr>
-            <td>$2000</td><td className={hgrIsAux ? "mem-aux" : ""}>{videoIsPage2 ? "" : MEMORY_MAP_LABELS.hgr}</td>
+            <td>$0800</td><td className={auxRead ? "mem-aux" : ""}>{videoIsPage2 ? MEMORY_MAP_LABELS.text : ""}</td><td className={auxWrite ? "mem-aux" : ""}>&nbsp;</td>
           </tr>
           <tr>
-            <td>$4000</td><td className={isAux ? "mem-aux" : ""}>{videoIsPage2 ? MEMORY_MAP_LABELS.hgr : ""}</td>
+            <td>$2000</td><td className={hgrIsAuxRead ? "mem-aux" : ""}>{videoIsPage2 ? "" : MEMORY_MAP_LABELS.hgr}</td><td className={hgrIsAuxWrite ? "mem-aux" : ""}>&nbsp;</td>
           </tr>
           <tr>
-            <td>$C1-$C7</td><td className={internalCxRom ? "mem-rom" : ""}>{internalCxRom ? MEMORY_MAP_LABELS.internalRom : MEMORY_MAP_LABELS.slotRom}</td>
+            <td>$4000</td><td className={auxRead ? "mem-aux" : ""}>{videoIsPage2 ? MEMORY_MAP_LABELS.hgr : ""}</td><td className={auxWrite ? "mem-aux" : ""}>&nbsp;</td>
           </tr>
           <tr>
-            <td>$C300</td><td className={internalC3Rom ? "mem-rom" : ""}>{internalC3Rom ? MEMORY_MAP_LABELS.internalRom : MEMORY_MAP_LABELS.slotRom}</td>
+            <td>$C1-C7</td><td colSpan={2} className={internalCxRom ? "mem-rom" : ""}>{internalCxRom ? MEMORY_MAP_LABELS.internalRom : MEMORY_MAP_LABELS.slotRom}</td>
           </tr>
           <tr>
-            <td>$C800</td><td className={(c800Slot === 255) ? "mem-rom" : ""}>{c800SlotText}</td>
+            <td>$C300</td><td colSpan={2} className={internalC3Rom ? "mem-rom" : ""}>{internalC3Rom ? MEMORY_MAP_LABELS.internalRom : MEMORY_MAP_LABELS.slotRom}</td>
           </tr>
           <tr>
-            <td>$D000</td><td className={classBSR}>{bankD000}</td>
+            <td>$C800</td><td colSpan={2} className={(c800Slot === 255) ? "mem-rom" : ""}>{c800SlotText}</td>
           </tr>
           <tr>
-            <td>$E0-$FF</td><td className={classBSR}>{bankSwitchedRam}</td>
+            <td>$D000</td><td className={classBSRread}>{bankD000read}</td><td className={classBSRwrite}>{bankD000write}</td>
+          </tr>
+          <tr>
+            <td>$E0-FF</td><td className={classBSRread}>&nbsp;</td><td className={classBSRwrite}>&nbsp;</td>
           </tr>
         </tbody>
       </table>
       <div className="mono-text flex-column" style={{gap: "1px"}}>
-        <CheckedBox name="Aux ZP" runMode={runMode} checked={switches.ALTZP}
+        <CheckedBox name="Aux Bank" runMode={runMode} checked={switches.ALTZP}
           func={() => setSoftSwitches([switches.ALTZP ? 0xC008 : 0xC009])} />
-        <CheckedBox name="Aux Read" runMode={runMode} checked={switches.RAMRD}
-          func={() => setSoftSwitches([switches.RAMRD ? 0xC002 : 0xC003])} />
-        <CheckedBox name="Aux Write" runMode={runMode} checked={switches.RAMWRT}
-          func={() => setSoftSwitches([switches.RAMWRT ? 0xC004 : 0xC005])} />
+        <CheckedBox name="Aux Read" runMode={runMode} checked={switches.AUXRAMREAD}
+          func={() => setSoftSwitches([switches.AUXRAMREAD ? 0xC002 : 0xC003])} />
+        <CheckedBox name="Aux Write" runMode={runMode} checked={switches.AUXRAMWRITE}
+          func={() => setSoftSwitches([switches.AUXRAMWRITE ? 0xC004 : 0xC005])} />
         <CheckedBox name="80 Store" runMode={runMode} checked={switches.STORE80}
           func={() => setSoftSwitches([switches.STORE80 ? 0xC000 : 0xC001])} />
         <CheckedBox name="Text" runMode={runMode} checked={switches.TEXT}
