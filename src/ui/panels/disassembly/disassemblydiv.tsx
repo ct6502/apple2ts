@@ -129,7 +129,7 @@ const DisassemblyDiv = (props: {
   }, [foundLine, hasDisassembly, isPaused, props.disassemblyRef, props.setAllowScrollEvent])
 
   if (!isPaused) {
-    return <div className="noselect" style={{ marginTop: "30px", width: "24em" }}>Pause to view disassembly</div>
+    return <div className="noselect" style={{ marginTop: "30px", width: "24em" }}>{t("debug.pauseForDisassembly")}</div>
   }
 
   if (!hasDisassembly) {

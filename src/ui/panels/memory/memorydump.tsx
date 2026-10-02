@@ -14,26 +14,21 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { useGlobalContext } from "../../globalcontext"
 import { BreakpointMap, BreakpointNew } from "../../../common/breakpoint"
 import { setPreferenceBreakpoints } from "../../localstorage"
-
-const dumpNames = [
-  "Current memory",
-  "Main RAM",
-  "Auxiliary RAM",
-  "HGR page 1 (screen order)",
-  "HGR page 2 (screen order)",
-]
-
-const memoryDumpOptionToName = (state: MEMORY_DUMP_STATE) => {
-  return dumpNames[state]
-}
-
-const memoryDumpNameToOption = (name: string) => {
-  return dumpNames.indexOf(name) as MEMORY_DUMP_STATE
-}
+import { useTranslation } from "../../../i18n/useTranslation"
 
 let lastMemoryRange = MEMORY_DUMP_STATE.CURRENT
 
 const MemoryDump = (props: { isActive?: boolean }) => {
+  const { t } = useTranslation()
+  const dumpNames = [
+    t("debug.memoryDump.range.current"),
+    t("debug.memoryDump.range.mainRam"),
+    t("debug.memoryDump.range.auxiliaryRam"),
+    t("debug.memoryDump.range.hgr1"),
+    t("debug.memoryDump.range.hgr2"),
+  ]
+  const memoryDumpOptionToName = (state: MEMORY_DUMP_STATE) => dumpNames[state]
+  const memoryDumpNameToOption = (name: string) => dumpNames.indexOf(name) as MEMORY_DUMP_STATE
   const { updateBreakpoint, setUpdateBreakpoint, memdumpAddress, setMemdumpAddress } = useGlobalContext()
   const memoryDumpRef = useRef(null)
   const [address, setAddress] = useState("")
@@ -343,19 +338,19 @@ const MemoryDump = (props: { isActive?: boolean }) => {
           userdata={0}
           isDisabled={() => false} />
         <button className={"push-button" + (pickWatchpoint ? " button-active" : "")}
-          title="Pick Watchpoint"
+          title={t("debug.memoryDump.pickWatchpoint")}
           disabled={memory.length < 1}
           onClick={() => setPickWatchpoint(!pickWatchpoint)}>
           <FontAwesomeIcon icon={faCrosshairs} />
         </button>
         <button className="push-button"
-          title="Save Memory"
+          title={t("debug.memoryDump.saveMemory")}
           disabled={memory.length < 1}
           onClick={() => saveMemory()}>
           <FontAwesomeIcon icon={faSave} />
         </button>
         <button className={"push-button" + (highAscii ? " button-active" : "")}
-          title="High Bit ASCII"
+          title={t("debug.memoryDump.highBitAscii")}
           disabled={memory.length < 1}
           onClick={() => setHighAscii(!highAscii)}>
           <FontAwesomeIcon style={{ width: "16px" }} icon={faA} />
@@ -370,7 +365,7 @@ const MemoryDump = (props: { isActive?: boolean }) => {
           name="searchHex"
           style={{ width: "8em" }}
           type="text"
-          placeholder="Search Hex"
+          placeholder={t("debug.memoryDump.searchHex")}
           value={hexsearch}
           onKeyDown={handleHexKeyDown}
           onChange={handleSearchHex}
@@ -379,23 +374,28 @@ const MemoryDump = (props: { isActive?: boolean }) => {
           name="searchAscii"
           style={{ width: "8em" }}
           type="text"
-          placeholder="Search ASCII"
+          placeholder={t("debug.memoryDump.searchAscii")}
           value={ascii}
           autoComplete="off"
           onKeyDown={handleAsciiKeyDown}
           onChange={handleSearchAscii}
         />
         <span className="bigger-font" style={{ marginLeft: "5pt", width: "7em" }}>
-          {matches.length > 0 ? `${matchIndex + 1} of ${matches.length}` : "no match"}
+          {matches.length > 0
+            ? t("debug.memoryDump.matchCount", {
+              match: String(matchIndex + 1),
+              total: String(matches.length),
+            })
+            : t("debug.memoryDump.noMatch")}
         </span>
         <button className="push-button"
-          title="Previous Match"
+          title={t("debug.memoryDump.previousMatch")}
           disabled={matches.length < 1}
           onClick={previousMatch}>
           <FontAwesomeIcon icon={faArrowUp} />
         </button>
         <button className="push-button"
-          title="Next Match"
+          title={t("debug.memoryDump.nextMatch")}
           disabled={matches.length < 1}
           onClick={nextMatch}>
           <FontAwesomeIcon icon={faArrowDown} />

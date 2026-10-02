@@ -177,10 +177,10 @@ const TraceDialog = (props: {
             value={cyclesStr}
             setValue={setCyclesStr}
             isNumber={true}
-            placeholder="Unlimited"
+            placeholder={t("traceSettings.unlimited")}
             showSuggestions={false}
             width="8em" />
-          <span className="bigger-font" style={{ alignSelf: "center" }}>&nbsp;cycles</span>
+          <span className="bigger-font" style={{ alignSelf: "center" }}>&nbsp;{t("traceSettings.cyclesUnit")}</span>
           </div>
           <button className="push-button"
             title={t("traceSettings.settings")}

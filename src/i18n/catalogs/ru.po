@@ -3102,3 +3102,495 @@ msgstr ""
 msgctxt "retroControl.exportFailed"
 msgid "Export to HDV failed: {{message}}"
 msgstr ""
+
+msgctxt "binaryFile.title"
+msgid "Load Binary File"
+msgstr ""
+
+msgctxt "binaryFile.loadAtAddress"
+msgid "Load into memory at address $"
+msgstr ""
+
+msgctxt "binaryFile.runAfterLoading"
+msgid "Run code after loading"
+msgstr ""
+
+msgctxt "disk.importImageIntoEmulator"
+msgid "Import Disk Image into Emulator"
+msgstr ""
+
+msgctxt "disk.downloadDiskImage"
+msgid "Download Disk Image"
+msgstr ""
+
+msgctxt "demoZoo.snapshotBadge"
+msgid "Snapshot at {{date}}"
+msgstr ""
+
+msgctxt "demoZoo.snapshotCreated"
+msgid "DemoZoo snapshot created: {{date}}"
+msgstr ""
+
+msgctxt "agent.customModel"
+msgid "Custom Model..."
+msgstr ""
+
+msgctxt "agent.customModelName"
+msgid "Custom Model Name:"
+msgstr ""
+
+msgctxt "debug.stackDump"
+msgid "Stack Dump"
+msgstr ""
+
+msgctxt "debug.timeTravelSnapshots"
+msgid "Time Travel Snapshots"
+msgstr ""
+
+msgctxt "debug.heatMapTitle"
+msgid "Heat Map"
+msgstr ""
+
+msgctxt "debug.memoryDumpTitle"
+msgid "Memory Dump"
+msgstr ""
+
+msgctxt "debug.veraMonitor"
+msgid "VERA Monitor"
+msgstr ""
+
+msgctxt "debug.pauseForDisassembly"
+msgid "Pause to view disassembly"
+msgstr ""
+
+msgctxt "debug.cycles"
+msgid "Cycles:"
+msgstr ""
+
+msgctxt "debug.resetCycleCountAndHeatMaps"
+msgid "Reset cycle count and heat maps"
+msgstr ""
+
+msgctxt "debug.breakpointTitle"
+msgid "Edit Breakpoint"
+msgstr ""
+
+msgctxt "debug.breakpoint.breakAt"
+msgid "Break at:"
+msgstr ""
+
+msgctxt "debug.breakpoint.breakpoint"
+msgid "Breakpoint"
+msgstr ""
+
+msgctxt "debug.breakpoint.watchpoint"
+msgid "Watchpoint"
+msgstr ""
+
+msgctxt "debug.breakpoint.instruction"
+msgid "Instruction"
+msgstr ""
+
+msgctxt "debug.breakpoint.address"
+msgid "Address:"
+msgstr ""
+
+msgctxt "debug.breakpoint.hitCount"
+msgid "Hit Count:"
+msgstr ""
+
+msgctxt "debug.breakpoint.expression"
+msgid "Expression:"
+msgstr ""
+
+msgctxt "debug.breakpoint.memoryBank"
+msgid "Memory Bank:"
+msgstr ""
+
+msgctxt "debug.breakpoint.opcode"
+msgid "Opcode:"
+msgstr ""
+
+msgctxt "debug.breakpoint.addressingMode"
+msgid "Mode:"
+msgstr ""
+
+msgctxt "debug.breakpoint.value"
+msgid "Value:"
+msgstr ""
+
+msgctxt "debug.breakpoint.anyIllegal65C02"
+msgid "Any illegal 65C02 opcode"
+msgstr ""
+
+msgctxt "debug.breakpoint.anyIllegal6502"
+msgid "Any illegal 6502 opcode"
+msgstr ""
+
+msgctxt "debug.breakpoint.read"
+msgid "Read"
+msgstr ""
+
+msgctxt "debug.breakpoint.write"
+msgid "Write"
+msgstr ""
+
+msgctxt "debug.breakpoint.withHexValue"
+msgid "With hex value:"
+msgstr ""
+
+msgctxt "debug.breakpoint.actions"
+msgid "Actions:"
+msgstr ""
+
+msgctxt "debug.breakpoint.haltAfterActions"
+msgid "Halt execution after actions"
+msgstr ""
+
+msgctxt "debug.breakpoint.actionAddress"
+msgid "address"
+msgstr ""
+
+msgctxt "debug.breakpoint.actionToAddress"
+msgid "to address"
+msgstr ""
+
+msgctxt "debug.breakpoint.actionToValue"
+msgid "to value"
+msgstr ""
+
+msgctxt "debug.breakpoint.add"
+msgid "Add new breakpoint"
+msgstr ""
+
+msgctxt "debug.breakpoint.removeAll"
+msgid "Remove all breakpoints"
+msgstr ""
+
+msgctxt "debug.breakpoint.edit"
+msgid "Edit breakpoint"
+msgstr ""
+
+msgctxt "debug.breakpoint.delete"
+msgid "Delete breakpoint"
+msgstr ""
+
+msgctxt "debug.heatMap.cpuProgramCounter"
+msgid "6502 Program Counter"
+msgstr ""
+
+msgctxt "debug.heatMap.getMemoryCalls"
+msgid "Get Memory Calls"
+msgstr ""
+
+msgctxt "debug.heatMap.setMemoryCalls"
+msgid "Set Memory Calls"
+msgstr ""
+
+msgctxt "debug.heatMap.colorTable"
+msgid "Color Table"
+msgstr ""
+
+msgctxt "debug.heatMap.showMagnifier"
+msgid "Show Magnifier"
+msgstr ""
+
+msgctxt "debug.heatMap.jumpToProgramCounter"
+msgid "Jump to current program counter"
+msgstr ""
+
+msgctxt "debug.heatMap.jumpToMaximumValue"
+msgid "Jump to maximum heatmap value"
+msgstr ""
+
+msgctxt "debug.memoryDump.pickWatchpoint"
+msgid "Pick Watchpoint"
+msgstr ""
+
+msgctxt "debug.memoryDump.saveMemory"
+msgid "Save Memory"
+msgstr ""
+
+msgctxt "debug.memoryDump.highBitAscii"
+msgid "High Bit ASCII"
+msgstr ""
+
+msgctxt "debug.memoryDump.searchHex"
+msgid "Search Hex"
+msgstr ""
+
+msgctxt "debug.memoryDump.searchAscii"
+msgid "Search ASCII"
+msgstr ""
+
+msgctxt "debug.memoryDump.noMatch"
+msgid "no match"
+msgstr ""
+
+msgctxt "debug.memoryDump.matchCount"
+msgid "{{match}} of {{total}}"
+msgstr ""
+
+msgctxt "debug.memoryDump.previousMatch"
+msgid "Previous Match"
+msgstr ""
+
+msgctxt "debug.memoryDump.nextMatch"
+msgid "Next Match"
+msgstr ""
+
+msgctxt "debug.memoryDump.range.current"
+msgid "Current memory"
+msgstr ""
+
+msgctxt "debug.memoryDump.range.mainRam"
+msgid "Main RAM"
+msgstr ""
+
+msgctxt "debug.memoryDump.range.auxiliaryRam"
+msgid "Auxiliary RAM"
+msgstr ""
+
+msgctxt "debug.memoryDump.range.hgr1"
+msgid "HGR page 1 (screen order)"
+msgstr ""
+
+msgctxt "debug.memoryDump.range.hgr2"
+msgid "HGR page 2 (screen order)"
+msgstr ""
+
+msgctxt "debug.disassemblyPreviousLocation"
+msgid "Previous Location"
+msgstr ""
+
+msgctxt "debug.disassemblyNextLocation"
+msgid "Next Location"
+msgstr ""
+
+msgctxt "debug.memoryMap.title"
+msgid "Memory Map"
+msgstr ""
+
+msgctxt "debug.memoryMap.read"
+msgid "Read"
+msgstr ""
+
+msgctxt "debug.memoryMap.write"
+msgid "Write"
+msgstr ""
+
+msgctxt "debug.memoryMap.zeroPage"
+msgid "Zero Page"
+msgstr ""
+
+msgctxt "debug.memoryMap.stack"
+msgid "Stack"
+msgstr ""
+
+msgctxt "debug.memoryMap.text"
+msgid "Text"
+msgstr ""
+
+msgctxt "debug.memoryMap.hiresMode"
+msgid "Hires"
+msgstr ""
+
+msgctxt "debug.memoryMap.hires"
+msgid "HGR"
+msgstr ""
+
+msgctxt "debug.memoryMap.internalRom"
+msgid "Internal ROM"
+msgstr ""
+
+msgctxt "debug.memoryMap.slotRom"
+msgid "Slot ROM"
+msgstr ""
+
+msgctxt "debug.memoryMap.auxBank"
+msgid "Aux Bank"
+msgstr ""
+
+msgctxt "debug.memoryMap.auxRead"
+msgid "Aux Read"
+msgstr ""
+
+msgctxt "debug.memoryMap.auxWrite"
+msgid "Aux Write"
+msgstr ""
+
+msgctxt "debug.memoryMap.store80"
+msgid "80 Store"
+msgstr ""
+
+msgctxt "debug.memoryMap.mixed"
+msgid "Mixed"
+msgstr ""
+
+msgctxt "debug.memoryMap.page2"
+msgid "Page 2"
+msgstr ""
+
+msgctxt "debug.memoryMap.columns80"
+msgid "80 Column"
+msgstr ""
+
+msgctxt "debug.memoryMap.doubleHires"
+msgid "Dbl Hires"
+msgstr ""
+
+msgctxt "debug.memoryMap.video7Mono"
+msgid "V7 Mono"
+msgstr ""
+
+msgctxt "debug.memoryMap.video7160"
+msgid "V7 160x"
+msgstr ""
+
+msgctxt "debug.memoryMap.video7Mixed"
+msgid "V7 Mixed"
+msgstr ""
+
+msgctxt "debug.memoryMap.internalCxxxRom"
+msgid "Cxxx ROM"
+msgstr ""
+
+msgctxt "debug.memoryMap.internalC300Rom"
+msgid "C300 ROM"
+msgstr ""
+
+msgctxt "debug.memoryMap.readRam"
+msgid "Read RAM"
+msgstr ""
+
+msgctxt "debug.memoryMap.writeRam"
+msgid "Write RAM"
+msgstr ""
+
+msgctxt "debug.memoryMap.bank2Switch"
+msgid "Bank 2"
+msgstr ""
+
+msgctxt "collection.deleteAllBookmarks"
+msgid "Delete all bookmarks"
+msgstr ""
+
+msgctxt "collection.restoreAllBookmarks"
+msgid "Restore all bookmarks"
+msgstr ""
+
+msgctxt "collection.sort.nameAscending"
+msgid "A-Z"
+msgstr ""
+
+msgctxt "collection.sort.nameDescending"
+msgid "Z-A"
+msgstr ""
+
+msgctxt "collection.sort.newest"
+msgid "New"
+msgstr ""
+
+msgctxt "collection.sort.oldest"
+msgid "Old"
+msgstr ""
+
+msgctxt "traceSettings.unlimited"
+msgid "Unlimited"
+msgstr ""
+
+msgctxt "traceSettings.cyclesUnit"
+msgid "cycles"
+msgstr ""
+
+msgctxt "debug.breakpoint.action.none"
+msgid "(no action)"
+msgstr ""
+
+msgctxt "debug.breakpoint.action.set"
+msgid "Set"
+msgstr ""
+
+msgctxt "debug.breakpoint.action.jump"
+msgid "Jump to"
+msgstr ""
+
+msgctxt "debug.breakpoint.action.print"
+msgid "Print to console"
+msgstr ""
+
+msgctxt "debug.breakpoint.action.snapshot"
+msgid "Snapshot"
+msgstr ""
+
+msgctxt "debug.breakpoint.register.address"
+msgid "Address"
+msgstr ""
+
+msgctxt "debug.breakpoint.register.accumulator"
+msgid "Accumulator"
+msgstr ""
+
+msgctxt "debug.breakpoint.register.x"
+msgid "X Register"
+msgstr ""
+
+msgctxt "debug.breakpoint.register.y"
+msgid "Y Register"
+msgstr ""
+
+msgctxt "debug.breakpoint.register.stack"
+msgid "Stack Pointer"
+msgstr ""
+
+msgctxt "debug.breakpoint.register.status"
+msgid "Processor Status"
+msgstr ""
+
+msgctxt "debug.breakpoint.register.programCounter"
+msgid "Program Counter"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.implied"
+msgid "Implied"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.immediate"
+msgid "Immediate"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.zeroPageRelative"
+msgid "Zero page/Relative"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.zeroPageX"
+msgid "Zero page,X"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.zeroPageY"
+msgid "Zero page,Y"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.absolute"
+msgid "Absolute"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.absoluteX"
+msgid "Abs,X"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.absoluteY"
+msgid "Abs,Y"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.indirectX"
+msgid "Indirect,X"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.indirectY"
+msgid "Indirect,Y"
+msgstr ""
+
+msgctxt "debug.breakpoint.mode.indirect"
+msgid "Indirect"
+msgstr ""

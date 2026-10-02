@@ -67,7 +67,7 @@ const BPEdit_Breakpoint = (props: {
   return (
     <div>
       <div className="flex-row">
-        <EditField name="Address: $"
+        <EditField name={`${t("debug.breakpoint.address")}`}
           initialFocus={true}
           value={bpAddress}
           setValue={handleAddressChange}
@@ -77,13 +77,13 @@ const BPEdit_Breakpoint = (props: {
       </div>
       <div>
         <div style={{ marginTop: "16px" }}>
-          <EditField name="Hit&nbsp;Count: "
+          <EditField name={t("debug.breakpoint.hitCount")}
             value={props.breakpoint.hitcount.toString()}
             setValue={handleHitCountChange}
             isNumber={true}
             placeholder="1"
             width="5em" />
-          <span className="dialog-title">Expression:</span>
+          <span className="dialog-title">{t("debug.breakpoint.expression")}</span>
           <ExpressionControl expr={props.breakpoint.expression1}
             setExpr={handleExpressionChange1} />
           <span style={{ marginLeft: "1em", marginRight: "1em" }}>
@@ -99,7 +99,7 @@ const BPEdit_Breakpoint = (props: {
             disabled={props.breakpoint.expression1.register === "" || props.breakpoint.expressionOperator === ""}
           />
         </div>
-        <Droplist name="Memory&nbsp;Bank: "
+        <Droplist name={t("debug.breakpoint.memoryBank")}
           value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
           values={MemoryBankNames}
           setValue={handleMemoryBankChange}

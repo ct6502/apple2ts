@@ -8,6 +8,7 @@ import BPEdit_Watchpoint from "./bpedit_watchpoint"
 import BPEdit_Instruction from "./bpedit_instruction"
 import BPEdit_Basic from "./bpedit_basic"
 import { BRK_NOADDRESS, getBreakpointKey } from "../../../common/breakpoint"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const BreakpointEdit = (props: {
   breakpoint: Breakpoint,
@@ -18,6 +19,7 @@ const BreakpointEdit = (props: {
   dialogPositionY: number,
   setDialogPosition: (x: number, y: number) => void
 }) => {
+  const { t } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
@@ -85,7 +87,7 @@ const BreakpointEdit = (props: {
             onMouseDown={(e) => handleMouseDown(e)}
             onMouseMove={(e) => handleMouseMove(e)}
             onMouseUp={handleMouseUp}>
-            <div className="dialog-title">Edit Breakpoint</div>
+            <div className="dialog-title">{t("debug.breakpointTitle")}</div>
             <button className="push-button"
               onClick={props.cancelDialog}>
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
@@ -95,7 +97,7 @@ const BreakpointEdit = (props: {
         </div>
         <div className="flex-column">
           <div className="flex-row">
-            <div className="dialog-title">Break at: </div>
+            <div className="dialog-title">{t("debug.breakpoint.breakAt")}</div>
             <input type="radio"
               id="Address"
               name="breakAt"
@@ -104,7 +106,7 @@ const BreakpointEdit = (props: {
               className="check-radio-box"
               checked={isBreakpoint}
               onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Address" className="dialog-title flush-left">Breakpoint</label>
+            <label htmlFor="Address" className="dialog-title flush-left">{t("debug.breakpoint.breakpoint")}</label>
             <input type="radio"
               id="Watchpoint"
               name="watch"
@@ -113,7 +115,7 @@ const BreakpointEdit = (props: {
               className="check-radio-box"
               checked={props.breakpoint.watchpoint}
               onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Watchpoint" className="dialog-title flush-left">Watchpoint</label>
+            <label htmlFor="Watchpoint" className="dialog-title flush-left">{t("debug.breakpoint.watchpoint")}</label>
             <input type="radio"
               id="Instruction"
               name="instruction"
@@ -122,7 +124,7 @@ const BreakpointEdit = (props: {
               className="check-radio-box"
               checked={props.breakpoint.instruction}
               onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Instruction" className="dialog-title flush-left">Instruction</label>
+            <label htmlFor="Instruction" className="dialog-title flush-left">{t("debug.breakpoint.instruction")}</label>
             <input type="radio"
               id="Basic"
               name="basic"
@@ -151,7 +153,7 @@ const BreakpointEdit = (props: {
               </button>
               <button className="push-button text-button"
                 onClick={props.cancelDialog}>
-                <span className="centered-title">Cancel</span>
+                <span className="centered-title">{t("messages.cancel")}</span>
               </button>
             </div>
           </div>

@@ -8,25 +8,26 @@ import { opCodeNames, opCodes, opTable } from "../../../common/opcodes"
 import Breakpoint_Actions from "./breakpoint_actions"
 import CheckBox from "../checkbox"
 import Breakpoint_Once from "./breakpoint_once"
-
-const addressModes = [
-  "Implied",
-  "Immediate #$FF",
-  "Zero page/Relative",
-  "Zero page,X $FF,X",
-  "Zero page,Y $FF,Y",
-  "Absolute $1234",
-  "Abs,X $1234,X",
-  "Abs,Y $1234,Y",
-  "Indirect,X ($FF,X)",
-  "Indirect,Y ($FF),Y",
-  "Indirect ($FF)"
-]
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const BPEdit_Instruction = (props: {
   breakpoint: Breakpoint,
   setBreakpoint: (bp: Breakpoint) => void,
 }) => {
+  const { t } = useTranslation()
+  const addressModes = [
+    t("debug.breakpoint.mode.implied"),
+    t("debug.breakpoint.mode.immediate") + " #$FF",
+    t("debug.breakpoint.mode.zeroPageRelative"),
+    t("debug.breakpoint.mode.zeroPageX") + " $FF,X",
+    t("debug.breakpoint.mode.zeroPageY") + " $FF,Y",
+    t("debug.breakpoint.mode.absolute") + " $1234",
+    t("debug.breakpoint.mode.absoluteX") + " $1234,X",
+    t("debug.breakpoint.mode.absoluteY") + " $1234,Y",
+    t("debug.breakpoint.mode.indirectX") + " ($FF,X)",
+    t("debug.breakpoint.mode.indirectY") + " ($FF),Y",
+    t("debug.breakpoint.mode.indirect") + " ($FF)",
+  ]
   const [myInit, setMyInit] = useState(false)
   const [instruction, setInstruction] = useState("")
   const [popup, setPopup] = useState<string[]>([])
@@ -175,7 +176,7 @@ const BPEdit_Instruction = (props: {
     <div>
       <div className={"flex-row" + ((illegal65C02 || illegal6502) ? " disabled" : "")}
         style={{ alignItems: "baseline" }}>
-        <EditField name="Opcode:"
+        <EditField name={t("debug.breakpoint.opcode")}
           initialFocus={true}
           value={instruction}
           setValue={handleInstructionChange}
@@ -183,28 +184,28 @@ const BPEdit_Instruction = (props: {
           width="5em" />
         <PullDownMenu values={popup}
           setValue={handleInstructionFromPopup} />
-        <Droplist name="Mode:"
+        <Droplist name={t("debug.breakpoint.addressingMode")}
           value={addressMode}
           values={addressModes}
           setValue={handleAddressModeChange}
           userdata={props.breakpoint.address}
           isDisabled={isModeDisabledForOpcode} />
-        <EditField name="Value:"
+        <EditField name={t("debug.breakpoint.value")}
           value={hexvalue}
           setValue={handleHexValueChange}
           isHex={true}
-          placeholder="any"
+          placeholder={t("debug.any")}
           width="3em" />
       </div>
-      <CheckBox name="Any illegal 65c02 opcode"
+      <CheckBox name={t("debug.breakpoint.anyIllegal65C02")}
         checked={props.breakpoint.address === BRK_ILLEGAL_65C02}
         setChecked={handleIllegal65C02Change} />
-      <CheckBox name="Any illegal 6502 opcode"
+      <CheckBox name={t("debug.breakpoint.anyIllegal6502")}
         checked={props.breakpoint.address === BRK_ILLEGAL_6502}
         setChecked={handleIllegal6502Change}
         disabled={props.breakpoint.address === BRK_ILLEGAL_65C02} />
       <div className="dialog-title">{getInstructionBreakpointString()}</div>
-      <Droplist name="Memory&nbsp;Bank: "
+      <Droplist name={t("debug.breakpoint.memoryBank")}
         value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
         values={MemoryBankNames}
         setValue={handleMemoryBankChange}

@@ -741,8 +741,8 @@ const DemoZooDialog = (props: DemoZooDialogProps) => {
             </div>
           )}
           {snapshotDate && (
-            <div className="dzd-snapshot-badge" title={`DemoZoo snapshot created: ${snapshotDate}`}>
-              Snapshot at {snapshotDate}
+            <div className="dzd-snapshot-badge" title={t("demoZoo.snapshotCreated", { date: snapshotDate })}>
+              {t("demoZoo.snapshotBadge", { date: snapshotDate })}
             </div>
           )}
         </div>

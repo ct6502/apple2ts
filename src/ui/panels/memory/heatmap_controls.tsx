@@ -6,6 +6,7 @@ import PopupMenu from "../../controls/popupmenu"
 import { useState } from "react"
 import { getViridisColorsRGB, HEATMAP_PALETTES } from "../../ui_utilities"
 import { PaletteName } from "viridis"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const HeatMapControls = (props: {
   state: HEATMAP_STATE,
@@ -13,7 +14,7 @@ const HeatMapControls = (props: {
   colorTable: PaletteName,
   setColorTable: (value: PaletteName) => void,
   setShowMagnifier: (value: boolean) => void }) => {
-  // const { t } = useTranslation() 
+  const { t } = useTranslation()
   const runMode = handleGetRunMode()
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const handleClick = (event: React.MouseEvent) => {
@@ -49,7 +50,7 @@ const HeatMapControls = (props: {
   return (
     <span className="flex-row" style={{ marginBottom: "5px" }}>
       <button className={`push-button ${props.state === HEATMAP_STATE.CPU ? "button-active" : ""}`}
-        title="6502 Program Counter"
+        title={t("debug.heatMap.cpuProgramCounter")}
         onClick={() => {
           props.setState(HEATMAP_STATE.CPU)
         }}
@@ -58,7 +59,7 @@ const HeatMapControls = (props: {
       </button>
       <button className={`push-button
         ${props.state === HEATMAP_STATE.GETMEM ? "button-active" : ""}`}
-        title="Get Memory Calls"
+        title={t("debug.heatMap.getMemoryCalls")}
         onClick={() => {
           props.setState(HEATMAP_STATE.GETMEM)
         }}
@@ -67,7 +68,7 @@ const HeatMapControls = (props: {
       </button>
       <button className={`push-button
         ${props.state === HEATMAP_STATE.SETMEM ? "button-active" : ""}`}
-        title="Set Memory Calls"
+        title={t("debug.heatMap.setMemoryCalls")}
         onClick={() => {
           props.setState(HEATMAP_STATE.SETMEM)
         }}
@@ -75,7 +76,7 @@ const HeatMapControls = (props: {
         <FontAwesomeIcon icon={faPenToSquare} />
       </button>
       <span className={`flex-row ${runMode === RUN_MODE.IDLE ? "disabled" : ""}`}
-        title="Color Table"
+        title={t("debug.heatMap.colorTable")}
         style={{alignItems: "center",
         }}
         onClick={handleClick}
@@ -93,13 +94,13 @@ const HeatMapControls = (props: {
         ]}
       />
       <button className="push-button"
-        title="Show Magnifier"
+        title={t("debug.heatMap.showMagnifier")}
         onClick={() => {props.setShowMagnifier(true)}}
         disabled={runMode === RUN_MODE.IDLE}>
         <FontAwesomeIcon icon={faMagnifyingGlass} />
       </button>
       <button className="push-button"
-        title="Reset cycle count and heat maps"
+        title={t("debug.resetCycleCountAndHeatMaps")}
         onClick={() => { passSetCycleCount(0) }}
         disabled={runMode === RUN_MODE.IDLE}>
         <FontAwesomeIcon icon={faSync}/>

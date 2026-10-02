@@ -6,8 +6,10 @@ import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons"
 import { getCurrentAddressIndex, getVisitedAddresses, setCurrentAddressIndex, setDisassemblyAddress, setVisitedAddresses } from "./disassembly_utilities"
 import { handleGetRunMode, handleGetState6502 } from "../../main2worker"
 import { RUN_MODE, toHex } from "../../../common/utility"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
+  const { t } = useTranslation()
   const [update, setUpdate] = useState(0)
 
   const refresh = () => {
@@ -72,16 +74,16 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
   return (
     <div className="round-rect-border tall-panel" style={{ width: "calc(100% - 20px)", height: height }}>
       <div className="flex-row-space-between" style={{ marginBottom: "8px" }}>
-        <div className="bigger-font">Disassembly</div>
+        <div className="bigger-font">{t("debug.disassembly")}</div>
         <div className="flex-row">
           <button className="push-button tight-button"
-            title={`Previous Location ${prevAddr}`}
+            title={`${t("debug.disassemblyPreviousLocation")} ${prevAddr}`}
             onClick={previousLocation}
             disabled={!isPaused || !hasPrevious}>
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: "0.5em" }} />
           </button>
           <button className="push-button tight-button"
-            title={`Next Location ${nextAddr}`}
+            title={`${t("debug.disassemblyNextLocation")} ${nextAddr}`}
             onClick={nextLocation}
             disabled={!isPaused || !hasNext}>
             <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: "0.5em" }} />

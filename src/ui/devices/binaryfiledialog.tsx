@@ -6,6 +6,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../panels/editfield"
 import CheckBox from "../panels/checkbox"
+import { useTranslation } from "../../i18n/useTranslation"
 
 const BinaryFileDialog = (props:
   {
@@ -14,6 +15,7 @@ const BinaryFileDialog = (props:
     binaryBuffer: Uint8Array,
     onLoadSuccess?: () => void
   }) => {
+  const { t } = useTranslation()
   const [runCode, setRunCode] = useState(false)
   const [runAddress, setRunAddress] = useState(() => {
     const savedRunAddress = localStorage.getItem("binaryRunAddress")
@@ -55,7 +57,7 @@ const BinaryFileDialog = (props:
         style={{ left: "15%", top: "25%" }}>
         <div className="flex-column">
           <div className="flex-row-space-between">
-            <div className="dialog-title">Load Binary File</div>
+            <div className="dialog-title">{t("binaryFile.title")}</div>
             <button className="push-button"
               onClick={handleCancel}>
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
@@ -64,7 +66,7 @@ const BinaryFileDialog = (props:
           <div className="horiz-rule"></div>
         </div>
         <div className="flex-column" style={{ marginRight: "10px" }}>
-          <EditField name="Load into memory at address $"
+          <EditField name={t("binaryFile.loadAtAddress")}
             initialFocus={true}
             value={runAddress}
             setValue={handleSetRunAddress}
@@ -72,7 +74,7 @@ const BinaryFileDialog = (props:
             placeholder="0300"
             width="5em" />
         </div>
-        <CheckBox name="Run code after loading"
+        <CheckBox name={t("binaryFile.runAfterLoading")}
           checked={runCode}
           setChecked={setRunCode} />
         <div className="flex-row-space-between">
@@ -80,11 +82,11 @@ const BinaryFileDialog = (props:
           <div className="flex-row">
             <button className="push-button text-button"
               onClick={handleLoadBinary}>
-              <span className="centered-title">OK</span>
+              <span className="centered-title">{t("messages.ok")}</span>
             </button>
             <button className="push-button text-button"
               onClick={handleCancel}>
-              <span className="centered-title">Cancel</span>
+              <span className="centered-title">{t("messages.cancel")}</span>
             </button>
           </div>
         </div>

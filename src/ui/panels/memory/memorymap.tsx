@@ -3,19 +3,10 @@
 import { RUN_MODE } from "../../../common/utility"
 import { handleGetC800Slot, handleGetRunMode, handleGetSoftSwitches,
   passSetSoftSwitches, passSetVideo7Override } from "../../main2worker"
+import { useTranslation } from "../../../i18n/useTranslation"
 
-const MEMORY_MAP_LABELS = {
-  zeroPage: "Zero Page",
-  stack: "Stack",
-  text: "Text",
-  hgr: "HGR",
-  internalRom: "Internal ROM",
-  slotRom: "Slot ROM",
-  bank1: "1",
-  bank2: "2",
-} as const
-
-const formatSlotLabel = (slot: number) => `Slot ${slot}`
+const formatSlotLabel = (slot: number, t: (key: string, params?: Record<string, string>) => string) =>
+  t("retroControl.slot", { slot: String(slot) })
 
 const CheckedBox = (props: {name: string, runMode: number, checked: boolean, func: () => void}) => {
   return <span style={{display: "inline-flex", userSelect: "none"}}>
@@ -32,6 +23,17 @@ const CheckedBox = (props: {name: string, runMode: number, checked: boolean, fun
 }
 
 const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
+  const { t } = useTranslation()
+  const MEMORY_MAP_LABELS = {
+    zeroPage: t("debug.memoryMap.zeroPage"),
+    stack: t("debug.memoryMap.stack"),
+    text: t("debug.memoryMap.text"),
+    hgr: t("debug.memoryMap.hires"),
+    internalRom: t("debug.memoryMap.internalRom"),
+    slotRom: t("debug.memoryMap.slotRom"),
+    bank1: "1",
+    bank2: "2",
+  }
   const switches = handleGetSoftSwitches()
   if (Object.keys(switches).length <= 1) return (<div></div>)
   const altZP = switches.ALTZP
@@ -66,7 +68,7 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
   // 255 is our flag for internal C8ROM
   const c800Slot = internalCxRom ? 255 : handleGetC800Slot()
   const c800SlotText = (c800Slot < 255) ?
-    (c800Slot > 0 ? formatSlotLabel(c800Slot) : MEMORY_MAP_LABELS.slotRom) :
+    (c800Slot > 0 ? formatSlotLabel(c800Slot, t) : MEMORY_MAP_LABELS.slotRom) :
     MEMORY_MAP_LABELS.internalRom
   const runMode = handleGetRunMode()
 
@@ -121,12 +123,12 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
 
   return (
     <div>
-      <div className="bigger-font" style={{ marginBottom: "6px" }}>Memory Map</div>
+      <div className="bigger-font" style={{ marginBottom: "6px" }}>{t("debug.memoryMap.title")}</div>
       <div className="flex-row-gap">
       <table className="memory-map mono-text">
         <tbody>
           <tr className="memory-map-header">
-            <td>&nbsp;</td><td>Read</td><td>Write</td>
+            <td>&nbsp;</td><td>{t("debug.memoryMap.read")}</td><td>{t("debug.memoryMap.write")}</td>
           </tr>
           <tr>
             <td>$0000</td><td colSpan={2} className={altZP ? "mem-aux" : ""}>{MEMORY_MAP_LABELS.zeroPage}</td>
@@ -167,39 +169,39 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
         </tbody>
       </table>
       <div className="mono-text flex-column" style={{gap: "1px"}}>
-        <CheckedBox name="Aux Bank" runMode={runMode} checked={switches.ALTZP}
+        <CheckedBox name={t("debug.memoryMap.auxBank")} runMode={runMode} checked={switches.ALTZP}
           func={() => setSoftSwitches([switches.ALTZP ? 0xC008 : 0xC009])} />
-        <CheckedBox name="Aux Read" runMode={runMode} checked={switches.AUXRAMREAD}
+        <CheckedBox name={t("debug.memoryMap.auxRead")} runMode={runMode} checked={switches.AUXRAMREAD}
           func={() => setSoftSwitches([switches.AUXRAMREAD ? 0xC002 : 0xC003])} />
-        <CheckedBox name="Aux Write" runMode={runMode} checked={switches.AUXRAMWRITE}
+        <CheckedBox name={t("debug.memoryMap.auxWrite")} runMode={runMode} checked={switches.AUXRAMWRITE}
           func={() => setSoftSwitches([switches.AUXRAMWRITE ? 0xC004 : 0xC005])} />
-        <CheckedBox name="80 Store" runMode={runMode} checked={switches.STORE80}
+        <CheckedBox name={t("debug.memoryMap.store80")} runMode={runMode} checked={switches.STORE80}
           func={() => setSoftSwitches([switches.STORE80 ? 0xC000 : 0xC001])} />
-        <CheckedBox name="Text" runMode={runMode} checked={switches.TEXT}
+        <CheckedBox name={t("debug.memoryMap.text")} runMode={runMode} checked={switches.TEXT}
           func={() => setSoftSwitches([switches.TEXT ? 0xC050 : 0xC051])} />
-        <CheckedBox name="Hires" runMode={runMode} checked={switches.HIRES}
+        <CheckedBox name={t("debug.memoryMap.hiresMode")} runMode={runMode} checked={switches.HIRES}
           func={() => setSoftSwitches([switches.HIRES ? 0xC056 : 0xC057])} />
-        <CheckedBox name="Mixed" runMode={runMode} checked={switches.MIXED}
+        <CheckedBox name={t("debug.memoryMap.mixed")} runMode={runMode} checked={switches.MIXED}
           func={() => setSoftSwitches([switches.MIXED ? 0xC052 : 0xC053])} />
-        <CheckedBox name="Page 2" runMode={runMode} checked={switches.PAGE2}
+        <CheckedBox name={t("debug.memoryMap.page2")} runMode={runMode} checked={switches.PAGE2}
           func={() => setSoftSwitches([switches.PAGE2 ? 0xC054 : 0xC055])} />
-        <CheckedBox name="80 Column" runMode={runMode} checked={switches.COLUMN80}
+        <CheckedBox name={t("debug.memoryMap.columns80")} runMode={runMode} checked={switches.COLUMN80}
           func={() => setSoftSwitches([switches.COLUMN80 ? 0xC00C : 0xC00D])} />
-        <CheckedBox name="Dbl Hires" runMode={runMode} checked={switches.DHIRES}
+        <CheckedBox name={t("debug.memoryMap.doubleHires")} runMode={runMode} checked={switches.DHIRES}
           func={() => setSoftSwitches([switches.DHIRES ? 0xC05F : 0xC05E])} />
-        <CheckedBox name="V7 160x" runMode={runMode} checked={switches.VIDEO7_160}
+        <CheckedBox name={t("debug.memoryMap.video7160")} runMode={runMode} checked={switches.VIDEO7_160}
           func={() => setVideo7Override("160x192", !switches.VIDEO7_160)} />
-        <CheckedBox name="V7 Mono" runMode={runMode} checked={switches.VIDEO7_MONO}
+        <CheckedBox name={t("debug.memoryMap.video7Mono")} runMode={runMode} checked={switches.VIDEO7_MONO}
           func={() => setVideo7Override("monochrome", !switches.VIDEO7_MONO)} />
-        <CheckedBox name="V7 Mixed" runMode={runMode} checked={switches.VIDEO7_MIXED}
+        <CheckedBox name={t("debug.memoryMap.video7Mixed")} runMode={runMode} checked={switches.VIDEO7_MIXED}
           func={() => setVideo7Override("mixed", !switches.VIDEO7_MIXED)} />
-        <CheckedBox name="Cxxx ROM" runMode={runMode} checked={switches.INTCXROM}
+        <CheckedBox name={t("debug.memoryMap.internalCxxxRom")} runMode={runMode} checked={switches.INTCXROM}
           func={() => setSoftSwitches([switches.INTCXROM ? 0xC006 : 0xC007])} />
-        <CheckedBox name="C300 ROM" runMode={runMode} checked={switches.SLOTC3ROM}
+        <CheckedBox name={t("debug.memoryMap.internalC300Rom")} runMode={runMode} checked={switches.SLOTC3ROM}
           func={() => setSoftSwitches([switches.SLOTC3ROM ? 0xC00A : 0xC00B])} />
-        <CheckedBox name="Read RAM" runMode={runMode} checked={switches.BSRREADRAM} func={toggleReadRAM} />
-        <CheckedBox name="Write RAM" runMode={runMode} checked={switches.BSR_WRITE} func={toggleWriteRAM} />
-        <CheckedBox name="Bank 2" runMode={runMode} checked={switches.BSRBANK2} func={toggleBank2} />
+        <CheckedBox name={t("debug.memoryMap.readRam")} runMode={runMode} checked={switches.BSRREADRAM} func={toggleReadRAM} />
+        <CheckedBox name={t("debug.memoryMap.writeRam")} runMode={runMode} checked={switches.BSR_WRITE} func={toggleWriteRAM} />
+        <CheckedBox name={t("debug.memoryMap.bank2Switch")} runMode={runMode} checked={switches.BSRBANK2} func={toggleBank2} />
       </div>
       {/* <table className="memory-map mono-text" style={{height: "2em", marginBottom: "6px"}}>
         <tbody>

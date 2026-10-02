@@ -241,7 +241,7 @@ return (
                   </option>
                 ))
               )}
-              <option value="custom">Custom Model...</option>
+              <option value="custom">{t("agent.customModel")}</option>
             </select>
           ) : (
             <select 
@@ -259,7 +259,7 @@ return (
 
         {provider === "ollama" && isCustomModel && (
           <label style={{ marginTop: "10px" }}>
-            Custom Model Name:
+            {t("agent.customModelName")}
             <input
               type="text"
               value={model}

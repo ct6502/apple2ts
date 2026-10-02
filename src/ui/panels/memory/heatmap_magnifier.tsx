@@ -4,6 +4,7 @@ import { faBolt, faMountain, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { getDisassembly } from "../disassembly/disassembly_utilities"
 import { handleGetState6502 } from "../../main2worker"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const MAGNIFIER_ZOOM = 8
 const MAGNIFIER_WIDTH = 512
@@ -26,6 +27,7 @@ const HeatMapMagnifier = (props: {
   dialogPositionY: number,
   setDialogPosition: (x: number, y: number) => void,
 }) => {
+  const { t } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
@@ -173,7 +175,7 @@ const HeatMapMagnifier = (props: {
       onMouseUp={handleTitleBarMouseUp}>
       <div className="flex-row" style={{ marginLeft: "5px" }}>
         <button className="push-button"
-          title="Jump to current program counter"
+          title={t("debug.heatMap.jumpToProgramCounter")}
           onClick={() => {
             const addr = handleGetState6502().PC
             props.setHeatMapPosition(addr & 0xFF, addr >> 8)
@@ -181,7 +183,7 @@ const HeatMapMagnifier = (props: {
           <FontAwesomeIcon icon={faBolt} style={{ fontSize: "0.8em" }} />
         </button>
         <button className="push-button"
-          title="Jump to maximum heatmap value"
+          title={t("debug.heatMap.jumpToMaximumValue")}
           onClick={() => {
             const addr = props.maxIndex
             props.setHeatMapPosition(addr & 0xFF, addr >> 8)

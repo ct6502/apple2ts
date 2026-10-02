@@ -1,4 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { useTranslation } from "../../../i18n/useTranslation"
 import { getDiskImageFromLocalStorage, hasDiskImageInLocalStorage, setDiskImageToLocalStorage } from "../../localstorage"
 import { handleGetDriveProps, handleSetDiskFromURL } from "./driveprops"
 import {
@@ -10,6 +11,7 @@ import { handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { RUN_MODE } from "../../../common/utility"
 
 const DiskImportExport = () => {
+  const { t } = useTranslation()
   const dprops = handleGetDriveProps(0)
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
@@ -72,11 +74,11 @@ const DiskImportExport = () => {
 
   return (
     <span className="flex-row" style={{ alignItems: "center" }}>
-      <button className="push-button" title="Import Disk Image into Emulator"
+      <button className="push-button" title={t("disk.importImageIntoEmulator")}
         onClick={verifyImport}>
         <FontAwesomeIcon icon={faUpload} />
       </button>
-      <button className="push-button" title="Download Disk Image"
+      <button className="push-button" title={t("disk.downloadDiskImage")}
         disabled={!hasDiskImage}
         onClick={() => saveLocalStorageDiskImage(dprops.filename)}>
         <FontAwesomeIcon icon={faDownload} />

@@ -927,7 +927,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
               ]
               : [
                 {
-                  label: "Delete all bookmarks",
+                  label: t("collection.deleteAllBookmarks"),
                   icon: faStarOutline,
                   onClick: () => {
                     const allBookmarkIds = new Set<string>()
@@ -940,7 +940,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                   }
                 },
                 {
-                  label: "Restore all bookmarks",
+                  label: t("collection.restoreAllBookmarks"),
                   icon: faStar,
                   onClick: () => {
                     setPendingBookmarkRemovals(new Set())

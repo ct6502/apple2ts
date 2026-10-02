@@ -8,7 +8,10 @@ import {
 import { RUN_MODE, toHex } from "../../common/utility"
 const clock = 1020488
 
+import { useTranslation } from "../../i18n/useTranslation"
+
 const TimeTravelPanel = () => {
+  const { t } = useTranslation()
   const stateThumbRef = useRef(null)
 
   const convertTime = (cycleCount: number) => {
@@ -97,7 +100,7 @@ const TimeTravelPanel = () => {
   // Could change to tabIndex={0} to make the div part of the tab order.
   return (
     <div className="round-rect-border short-panel" style={{ height: "120px" }}>
-      <div className="bigger-font column-gap">Time Travel Snapshots</div>
+      <div className="bigger-font column-gap">{t("debug.timeTravelSnapshots")}</div>
       <div className="flex-row">
         <div ref={stateThumbRef} className="thin-border debug-panel mono-text"
           onKeyDown={(e) => handleKeyDown(e)}

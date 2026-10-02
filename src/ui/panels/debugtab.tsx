@@ -11,8 +11,10 @@ import MemoryDump from "./memory/memorydump"
 import HeatMapPanel from "./memory/heatmap_panel"
 import TabBase from "../tabbase"
 import Tab from "../tab"
+import { useTranslation } from "../../i18n/useTranslation"
 
 const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
+  const { t } = useTranslation()
 
   if (isMinimalTheme()) {
     import("./panels.minimal.css")
@@ -85,8 +87,8 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
             <MemoryMap updateDisplay={props.updateDisplay} />
           </div>
           <TabBase>
-            <Tab title="Heat Map">{(isActive) => <HeatMapPanel isActive={isActive} />}</Tab>
-            <Tab title="Memory Dump">{(isActive) => <MemoryDump isActive={isActive} />}</Tab>
+            <Tab title={t("debug.heatMapTitle")}>{(isActive) => <HeatMapPanel isActive={isActive} />}</Tab>
+            <Tab title={t("debug.memoryDumpTitle")}>{(isActive) => <MemoryDump isActive={isActive} />}</Tab>
           </TabBase>
           <TimeTravelPanel />
         </div>

@@ -8,11 +8,13 @@ import { handleGetSoftSwitchDescriptions } from "../../main2worker"
 import Breakpoint_Actions from "./breakpoint_actions"
 import CheckBox from "../checkbox"
 import Breakpoint_Once from "./breakpoint_once"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const BPEdit_Watchpoint = (props: {
   breakpoint: Breakpoint,
   setBreakpoint: (bp: Breakpoint) => void,
 }) => {
+  const { t } = useTranslation()
   const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
     toHex(props.breakpoint.address) : "")
 
@@ -73,7 +75,7 @@ const BPEdit_Watchpoint = (props: {
   return (
     <div>
       <div className="flex-row" style={{ alignItems: "baseline" }}>
-        <EditField name="Address: "
+        <EditField name={`${t("debug.breakpoint.address")}`}
           initialFocus={true}
           value={bpAddress}
           setValue={handleAddressChange}
@@ -83,22 +85,22 @@ const BPEdit_Watchpoint = (props: {
         <PullDownMenu values={handleGetSoftSwitchDescriptions()} setValue={handleAddressChange} />
       </div>
       <div className="flex-row" style={{ alignItems: "baseline" }}>
-        <CheckBox name="Read"
+        <CheckBox name={t("debug.breakpoint.read")}
           checked={props.breakpoint.memget}
           setChecked={(checked) => props.setBreakpoint({ ...props.breakpoint, memget: checked })} />
-        <CheckBox name="Write"
+        <CheckBox name={t("debug.breakpoint.write")}
           checked={props.breakpoint.memset}
           setChecked={(checked) => props.setBreakpoint({ ...props.breakpoint, memset: checked })} />
       </div>
       <div>
-        <EditField name="With hex value:"
+        <EditField name={t("debug.breakpoint.withHexValue")}
           value={hexvalue}
           setValue={handleHexValueChange}
           isHex={true}
-          placeholder="any"
+          placeholder={t("debug.any")}
           width="5em" />
       </div>
-      <Droplist name="Memory&nbsp;Bank: "
+      <Droplist name={t("debug.breakpoint.memoryBank")}
         value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
         values={MemoryBankNames}
         setValue={handleMemoryBankChange}

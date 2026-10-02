@@ -15,6 +15,7 @@ import { BreakpointMap, getBreakpointString, getBreakpointStyle } from "../../..
 import { useGlobalContext } from "../../globalcontext"
 import { DISASSEMBLE_VISIBLE, RUN_MODE } from "../../../common/utility"
 import { setPreferenceBreakpoints } from "../../localstorage"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const BreakpointListItem = (props: {updateDisplay: UpdateDisplay,
   bp: Breakpoint,
@@ -22,6 +23,7 @@ const BreakpointListItem = (props: {updateDisplay: UpdateDisplay,
   setBreakpointEditAddress: React.Dispatch<React.SetStateAction<number>>,
   setBreakpointEditValue: React.Dispatch<React.SetStateAction<Breakpoint>>,
 }) => {
+  const { t } = useTranslation()
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
 
   const handleAddressClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -93,14 +95,14 @@ const BreakpointListItem = (props: {updateDisplay: UpdateDisplay,
       </button>
       <button className="breakpoint-pushbutton"
         data-key={props.bp.address}
-        title="Edit breakpoint"
+        title={t("debug.breakpoint.edit")}
         onClick={(e) => { handleBreakpointEdit(e) }}
         disabled={false}>
         <FontAwesomeIcon icon={faPencil} />
       </button>
       <button className="breakpoint-pushbutton"
         data-key={props.bp.address}
-        title="Delete breakpoint"
+        title={t("debug.breakpoint.delete")}
         onClick={(e) => { handleBreakpointDelete(e) }}>
         <FontAwesomeIcon icon={faTrash} style={{ fontSize: "1.3em" }} />
       </button>

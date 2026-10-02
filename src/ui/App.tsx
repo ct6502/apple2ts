@@ -5,8 +5,10 @@ import DisplayApple2 from "./display"
 import { GlobalContext } from "./globalcontext"
 import { getTheme, isMinimalTheme } from "./ui_settings"
 import RunTour from "./tours/runtour"
+import { useTranslation } from "../i18n/useTranslation"
 
 const App = () => {
+  const { t } = useTranslation()
   const [updateHgrMagnifier, setUpdateHgrMagnifier] = useState(false)
   const [hgrMagnifierLoc, setHgrMagnifierLoc] = useState([-1, -1])
   const [lockHgrMagnifier, setLockHgrMagnifier] = useState(false)
@@ -31,7 +33,7 @@ const App = () => {
   }, 1)
 
   const progressModal = <div className="global-progress-modal-overlay">
-    <img src={window.assetRegistry.runningGuy} alt="Loading..." className="global-progress-spinner2" />
+    <img src={window.assetRegistry.runningGuy} alt={t("messages.loading")} className="global-progress-spinner2" />
     <div className="global-progress-message" />
   </div>
 

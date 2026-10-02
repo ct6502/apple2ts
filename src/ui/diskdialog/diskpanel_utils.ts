@@ -26,10 +26,10 @@ export enum TAB_INDEX {
 }
 
 export const diskCollectionSortOptions: Array<{ value: DiskCollectionSortMode; label: string }> = [
-  { value: "name-asc", label: "A-Z" },
-  { value: "name-desc", label: "Z-A" },
-  { value: "date-newest", label: "New" },
-  { value: "date-oldest", label: "Old" },
+  { value: "name-asc", label: i18n.t("collection.sort.nameAscending") },
+  { value: "name-desc", label: i18n.t("collection.sort.nameDescending") },
+  { value: "date-newest", label: i18n.t("collection.sort.newest") },
+  { value: "date-oldest", label: i18n.t("collection.sort.oldest") },
 ]
 
 const defaultDiskCollectionSortModeByTab: Record<number, DiskCollectionSortMode> = {

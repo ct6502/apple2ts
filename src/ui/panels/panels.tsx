@@ -122,7 +122,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 4 ? " dbg-tab-active" : ""}`}
-            title="VERA Monitor"
+            title={t("debug.veraMonitor")}
             onClick={handleTabClick(4)}>
             <FontAwesomeIcon icon={faDesktop} size="lg" />
           </div>

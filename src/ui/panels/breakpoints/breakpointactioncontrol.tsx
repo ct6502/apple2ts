@@ -35,7 +35,13 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
     props.setAction({ ...props.action, value: parseInt(value || "-1", 16) })
   }
 
-  const actionLabels = ["(no action)", "Set", "Jump to", "Print to console", "Snapshot"]
+  const actionLabels = [
+    t("debug.breakpoint.action.none"),
+    t("debug.breakpoint.action.set"),
+    t("debug.breakpoint.action.jump"),
+    t("debug.breakpoint.action.print"),
+    t("debug.breakpoint.action.snapshot"),
+  ]
   const actionValues: BPActions[] = ["", "set", "jump", "print", "snapshot"]
   const actionIndex = actionValues.indexOf(props.action.action)
 
@@ -50,9 +56,15 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
     }
   }
 
-  const registerLabels = ["Address", "Accumulator",
-  "X Register", "Y Register", "Stack Pointer",
-  "Processor Status", "Program Counter"]
+  const registerLabels = [
+    t("debug.breakpoint.register.address"),
+    t("debug.breakpoint.register.accumulator"),
+    t("debug.breakpoint.register.x"),
+    t("debug.breakpoint.register.y"),
+    t("debug.breakpoint.register.stack"),
+    t("debug.breakpoint.register.status"),
+    t("debug.breakpoint.register.programCounter"),
+  ]
   const registerValues = [ "$", "A", "X", "Y", "S", "P", "C"]
   const effectiveRegister = props.action.register || "A"
   const registerIndex = registerValues.indexOf(effectiveRegister)
@@ -76,7 +88,7 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
       setValue={handleDroplistActionChange} />
     {(!isSnapshot && !isPrint) &&
     <span>
-      {isJump ? <span className="dialog-title">address</span> :
+      {isJump ? <span className="dialog-title">{t("debug.breakpoint.actionAddress")}</span> :
         <Droplist
           disabled={actionIndex === 0}
           value={registerLabels[registerIndex]}
@@ -102,7 +114,8 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
           ...((actionIndex === 0) && {
           opacity: 0.4,
           pointerEvents: "none"
-          })}}>{(props.action.register === "C") ? " to address $" : " to value $"}</span>
+          })}}>{` ${(props.action.register === "C" ? t("debug.breakpoint.actionToAddress")
+            : t("debug.breakpoint.actionToValue"))} $`}</span>
           <EditField
             disabled={actionIndex === 0}
             value={bpValue}

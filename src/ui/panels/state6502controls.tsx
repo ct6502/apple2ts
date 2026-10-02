@@ -3,6 +3,7 @@ import { handleGetRunMode, handleGetState6502, passSetCycleCount, passSetState65
 import { RUN_MODE, toHex } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faSync } from "@fortawesome/free-solid-svg-icons"
+import { useTranslation } from "../../i18n/useTranslation"
 
 type KEYS = "PC" | "Accum" | "XReg" | "YReg" | "StackPtr" | "flagIRQ"
 
@@ -16,6 +17,7 @@ const cycleGroups = (value: number) =>
   String(value).split(/(?=(?:\d{3})+$)/).filter(group => group !== "")
 
 const State6502Controls = () => {
+  const { t } = useTranslation()
   const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>, key: KEYS) => {
     const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase()
     const nv = newvalue.slice(key === "PC" ? -4 : -2)
@@ -99,7 +101,7 @@ const State6502Controls = () => {
           {createCheckbox("NMI", 0, s6502.flagNMI ? 1 : 0, runMode)}
         </div>
         <div className="flex-row" style={{ marginLeft: "0.5em" }}>
-          <span className="bigger-font">Cycles:</span>
+          <span className="bigger-font">{t("debug.cycles")}</span>
           <span className="bigger-monospace"
             style={{ marginLeft: "2pt", marginRight: "2pt", marginTop: "1pt" }}> {cycleGroups(s6502.cycleCount).map((group, index) => (
               <span key={index}
@@ -107,7 +109,7 @@ const State6502Controls = () => {
             ))}
           </span>
           <button className="push-button tight-button"
-            title="Reset cycle count and heat maps"
+            title={t("debug.resetCycleCountAndHeatMaps")}
             onClick={() => { passSetCycleCount(0) }}
             disabled={runMode === RUN_MODE.IDLE}>
             <FontAwesomeIcon icon={faSync} style={{ fontSize: "0.7em" }}/>

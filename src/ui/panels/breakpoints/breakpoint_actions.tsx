@@ -1,10 +1,12 @@
 import BreakpointActionControl from "./breakpointactioncontrol"
 import CheckBox from "../checkbox"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const Breakpoint_Actions = (props: {
   breakpoint: Breakpoint,
   setBreakpoint: (bp: Breakpoint) => void,
 }) => {
+  const { t } = useTranslation()
 
   const handleActionChange1 = (action: BreakpointAction) => {
     props.setBreakpoint({ ...props.breakpoint, action1: action })
@@ -18,7 +20,7 @@ const Breakpoint_Actions = (props: {
 
   return <div style={{marginTop: "10px"}}>
     <div>
-      <span className="dialog-title">Actions:</span>
+      <span className="dialog-title">{t("debug.breakpoint.actions")}</span>
     </div>
     <div>
       <BreakpointActionControl action={props.breakpoint.action1}
@@ -29,7 +31,7 @@ const Breakpoint_Actions = (props: {
         setAction={handleActionChange2}
       />
     </div>
-    <CheckBox name="Halt execution after actions"
+    <CheckBox name={t("debug.breakpoint.haltAfterActions")}
       checked={props.breakpoint.halt}
       setChecked={(checked) => props.setBreakpoint({ ...props.breakpoint, halt: checked })}
       disabled={isDisabled} />

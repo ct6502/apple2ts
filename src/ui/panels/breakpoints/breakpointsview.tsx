@@ -10,8 +10,10 @@ import { BreakpointMap, BreakpointNew } from "../../../common/breakpoint"
 import { useGlobalContext } from "../../globalcontext"
 import { setPreferenceBreakpoints } from "../../localstorage"
 import BreakpointListItem from "./breakpointlist_item"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
+  const { t } = useTranslation()
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const x = window.outerWidth / 2 - 200
   const y = window.outerHeight / 2 - 200
@@ -60,16 +62,16 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   return (
     <div className="round-rect-border short-panel" style={{ width: "calc(100% - 20px)" }}>
       <div className="flex-row-space-between" style={{ marginBottom: "8px" }}>
-        <div className="bigger-font">Breakpoints</div>
+        <div className="bigger-font">{t("debug.breakpoints")}</div>
         <div className="flex-row">
           <button className="push-button tight-button"
-            title="Add new breakpoint"
+            title={t("debug.breakpoint.add")}
             onClick={addBreakpoint}
             disabled={false}>
             <FontAwesomeIcon icon={iconBreakpointAdd} style={{ fontSize: "0.7em" }} />
           </button>
           <button className="push-button tight-button"
-            title="Remove all breakpoints"
+            title={t("debug.breakpoint.removeAll")}
             onClick={removeAllBreakpoints}
             disabled={false}>
             <FontAwesomeIcon icon={faTrash} style={{ fontSize: "0.8em" }} />
