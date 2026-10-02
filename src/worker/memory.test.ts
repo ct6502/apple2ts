@@ -11,6 +11,8 @@ import {
   setRamWorks,
   setSlotDriver,
   loadMainMemoryBlock,
+  getDataBlock,
+  setMemoryBlock,
   setAuxCardEnabled,
   updateAddressTables,
 } from "./memory"
@@ -917,5 +919,150 @@ test("test Bank-Switched-Ram write to odd switch keeps write enable", () => {
     memSet(oddAddr, 0)
     expect(SWITCHES.BSR_WRITE.isSet).toEqual(true)
     expect(SWITCHES.BSR_PREWRITE.isSet).toEqual(false)
+  }
+})
+
+// Block transfers (hard drive reads/writes, binary loads) must map every page
+// separately, since consecutive Apple II pages are not always consecutive in
+// the emulator's memory array.
+const blockData = () => Uint8Array.from({length: 512}, (_, i) => (i < 256) ? (i ^ 0x5A) : (i ^ 0xC3) & 0xFF)
+
+const readAsCPU = (addr: number, length = 512) =>
+  Uint8Array.from({length}, (_, i) => memGet((addr + i) & 0xFFFF, false))
+
+const resetBlockSwitches = () => {
+  memSet(0xC000, 0)  // 80STORE off
+  memSet(0xC002, 0)  // RAMRD off
+  memSet(0xC004, 0)  // RAMWRT off
+  memSet(0xC008, 0)  // ALTZP off
+  memGet(0xC054)     // PAGE2 off
+  memGet(0xC082)     // ROM, bank-switched RAM write protected
+}
+
+test("memory block crossing $DFFF in bank 1 continues at $E000", () => {
+  memorySetForTests()
+  try {
+    memGet(0xC083)
+    memGet(0xC083)  // read/write RAM, bank 2
+    for (let i = 0; i < 256; i++) memSet(0xD000 + i, 0xA5)
+    memGet(0xC08B)
+    memGet(0xC08B)  // read/write RAM, bank 1
+    const data = blockData()
+    setMemoryBlock(0xDF00, data)
+    expect(readAsCPU(0xDF00)).toEqual(data)
+    expect(getDataBlock(0xDF00)).toEqual(data)
+    // Bank 2 of $D000 must not have received the second half of the block.
+    memGet(0xC083)
+    expect(readAsCPU(0xD000, 256)).toEqual(new Uint8Array(256).fill(0xA5))
+  } finally {
+    resetBlockSwitches()
+  }
+})
+
+test("memory block crossing $DFFF in bank 2 continues at $E000", () => {
+  memorySetForTests()
+  try {
+    memGet(0xC083)
+    memGet(0xC083)  // read/write RAM, bank 2
+    const data = blockData()
+    setMemoryBlock(0xDF00, data)
+    expect(readAsCPU(0xDF00)).toEqual(data)
+    expect(getDataBlock(0xDF00)).toEqual(data)
+  } finally {
+    resetBlockSwitches()
+  }
+})
+
+test("memory block at $BF00 does not spill into bank-switched RAM", () => {
+  memorySetForTests()
+  try {
+    memGet(0xC08B)
+    memGet(0xC08B)  // read/write RAM, bank 1
+    for (let i = 0; i < 256; i++) memSet(0xD000 + i, 0xA5)
+    const data = blockData()
+    setMemoryBlock(0xBF00, data)
+    expect(readAsCPU(0xBF00, 256)).toEqual(data.slice(0, 256))
+    expect(readAsCPU(0xD000, 256)).toEqual(new Uint8Array(256).fill(0xA5))
+  } finally {
+    resetBlockSwitches()
+  }
+})
+
+test("memory block honors ALTZP for $01xx and RAMWRT for $02xx", () => {
+  memorySetForTests()
+  try {
+    const aux200 = memory.slice(RamWorksMemoryStart + 0x200, RamWorksMemoryStart + 0x300)
+    memSet(0xC009, 0)  // ALTZP on, RAMRD/RAMWRT off
+    const data = blockData()
+    setMemoryBlock(0x0100, data)
+    expect(memory.slice(RamWorksMemoryStart + 0x100, RamWorksMemoryStart + 0x200)).toEqual(data.slice(0, 256))
+    expect(memory.slice(0x200, 0x300)).toEqual(data.slice(256))
+    expect(memory.slice(RamWorksMemoryStart + 0x200, RamWorksMemoryStart + 0x300)).toEqual(aux200)
+    expect(getDataBlock(0x0100)).toEqual(data)
+  } finally {
+    resetBlockSwitches()
+  }
+})
+
+test("memory block honors 80STORE/PAGE2 for the text page", () => {
+  memorySetForTests()
+  try {
+    const main400 = memory.slice(0x400, 0x500)
+    const aux800 = memory.slice(RamWorksMemoryStart + 0x800, RamWorksMemoryStart + 0x900)
+    memSet(0xC001, 0)  // 80STORE on
+    memGet(0xC055)     // PAGE2 on: $0400-$07FF is aux, everything else main
+    const data = blockData()
+    setMemoryBlock(0x0300, data)
+    expect(memory.slice(0x300, 0x400)).toEqual(data.slice(0, 256))
+    expect(memory.slice(RamWorksMemoryStart + 0x400, RamWorksMemoryStart + 0x500)).toEqual(data.slice(256))
+    expect(memory.slice(0x400, 0x500)).toEqual(main400)
+    expect(getDataBlock(0x0300)).toEqual(data)
+    setMemoryBlock(0x0700, data)
+    expect(memory.slice(RamWorksMemoryStart + 0x700, RamWorksMemoryStart + 0x800)).toEqual(data.slice(0, 256))
+    expect(memory.slice(0x800, 0x900)).toEqual(data.slice(256))
+    expect(memory.slice(RamWorksMemoryStart + 0x800, RamWorksMemoryStart + 0x900)).toEqual(aux800)
+    expect(getDataBlock(0x0700)).toEqual(data)
+  } finally {
+    resetBlockSwitches()
+  }
+})
+
+test("memory block skips pages that are not writable", () => {
+  memorySetForTests()
+  try {
+    memGet(0xC082)  // ROM, bank-switched RAM write protected
+    const before = memory.slice(0xC000, RamWorksMemoryStart)
+    const data = blockData()
+    // Unaligned block: only $BF80-$BFFF is RAM, the rest is $C0xx/$C1xx.
+    setMemoryBlock(0xBF80, data)
+    expect(memory.slice(0xBF80, 0xC000)).toEqual(data.slice(0, 128))
+    // Write-protected bank-switched RAM and ROM.
+    setMemoryBlock(0xDF00, data)
+    setMemoryBlock(0xFF00, data)
+    expect(memory.slice(0xC000, RamWorksMemoryStart)).toEqual(before)
+    // A block that starts in slot ROM still writes its RAM part.
+    memGet(0xC083)
+    memGet(0xC083)  // read/write RAM, bank 2
+    setMemoryBlock(0xCF00, data)
+    expect(readAsCPU(0xD000, 256)).toEqual(data.slice(256))
+  } finally {
+    resetBlockSwitches()
+  }
+})
+
+test("memory block wraps from $FFFF to $0000", () => {
+  memorySetForTests()
+  try {
+    memGet(0xC083)
+    memGet(0xC083)  // read/write RAM, bank 2
+    const romArea = memory.slice(0x10000, RamWorksMemoryStart)
+    const data = blockData()
+    setMemoryBlock(0xFF00, data)
+    expect(readAsCPU(0xFF00, 256)).toEqual(data.slice(0, 256))
+    expect(memory.slice(0, 0x100)).toEqual(data.slice(256))
+    expect(getDataBlock(0xFF00)).toEqual(data)
+    expect(memory.slice(0x10000, RamWorksMemoryStart)).toEqual(romArea)
+  } finally {
+    resetBlockSwitches()
   }
 })
