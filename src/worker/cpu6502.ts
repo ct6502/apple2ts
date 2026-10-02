@@ -2,7 +2,7 @@ import { clearInterruptEntry, doInterruptRequest, doNonMaskableInterrupt, getLas
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
 import { doSetRunMode, requestSnapshot, isDebugging, runOnlyMode } from "./motherboard"
 import { getSwitchState, SWITCHES } from "./softswitches"
-import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../common/breakpoint"
+import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew, getBreakpointKey, getNonAddressBreakpoints } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
 import { MEMORY_BANKS } from "../common/memorybanks"
 import { getInstructionString } from "../common/util_disassemble"
@@ -332,10 +332,6 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
   let breakpointKey = s6502.PC
   let bp = breakpointMap.get(breakpointKey)
   if (!bp) {
-    breakpointKey = -1
-    bp = breakpointMap.get(breakpointKey)
-  }
-  if (!bp) {
     breakpointKey = instr | BRK_INSTR
     bp = breakpointMap.get(breakpointKey)
   }
@@ -347,8 +343,20 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
     breakpointKey = BRK_ILLEGAL_6502
     bp = breakpointMap.get(breakpointKey)
   }
+  if (!bp) {
+    const bps = getNonAddressBreakpoints(breakpointMap)
+    for (const bptest of bps) {
+      if (bptest.expression1.register !== "") {
+        if (checkBreakpointExpression(bptest)) {
+          bp = bptest
+          breakpointKey = getBreakpointKey(bp)
+          break
+        }
+      }
+    }
+  }
 
-    if (!bp || bp.disabled || bp.watchpoint) return BREAKPOINT_RESULT.NO_BREAK
+  if (!bp || bp.disabled || bp.watchpoint) return BREAKPOINT_RESULT.NO_BREAK
 
   if (bp.instruction) {
     const hexvalue = (vHi << 8) + vLo

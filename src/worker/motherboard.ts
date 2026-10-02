@@ -794,9 +794,7 @@ export const doSetRunMode = (
     executionPauseReason = stop?.reason ?? "explicit"
     executionBreakpointAddress = stop?.breakpointAddress ?? null
     executionMemoryWrite = stop?.memoryWrite ?? null
-  } else if (
-    cpuRunMode === RUN_MODE.IDLE
-    && (executionState !== "paused" || executionPauseReason !== "idle")
+  } else if (cpuRunMode === RUN_MODE.IDLE && (executionState !== "paused" || executionPauseReason !== "idle")
   ) {
     executionSequence++
     executionState = "paused"

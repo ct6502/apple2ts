@@ -9,6 +9,7 @@ import { opCodes } from "./opcodes"
 export const BRK_INSTR = 0x10000
 export const BRK_ILLEGAL_65C02 = 0x10100
 export const BRK_ILLEGAL_6502 = 0x10200
+export const BRK_NOADDRESS = 0x20000
 
 export const getBreakpointIcon = (bp: Breakpoint) => {
   if (bp.disabled) {
@@ -23,6 +24,45 @@ export const getBreakpointIcon = (bp: Breakpoint) => {
 export const getBreakpointStyle = (bp: Breakpoint) => {
   return "breakpoint-style" + (bp.watchpoint ? " watch-point" : "") +
     (bp.instruction ? " break-instruction" : "")
+}
+
+const ExpressionNames = {
+  "": "(none)",
+  "$": "Address",
+  "A": "Accumulator",
+  "X": "X Register",
+  "Y": "Y Register",
+  "S": "Stack Pointer",
+  "P": "Processor Status",
+  "C": "Program Counter",
+  "@": "Cycle Count"
+}
+
+const ExpressionShortNames = {
+  "": "",
+  "$": "Address",
+  "A": "Accum",
+  "X": "X Reg",
+  "Y": "Y Reg",
+  "S": "Stack",
+  "P": "PStatus",
+  "C": "PCounter",
+  "@": "Cycles"
+}
+
+export const breakpointExpressionRegToName = (reg: RegisterValues) => {
+  return ExpressionNames[reg] || "???"
+}
+
+const breakpointExpressionRegToShortName = (reg: RegisterValues) => {
+  return ExpressionShortNames[reg] || "???"
+}
+
+const getExpressionString = (exp: BreakpointExpression) => {
+  const addr = exp.register === "$" ? " $" + toHex(exp.address, 4) : ""
+  const value = exp.register !== "@" ? "$" + toHex(exp.value) : exp.value.toString()
+  const registerName = breakpointExpressionRegToShortName(exp.register) || ""
+  return `(${registerName}${addr}${exp.operator}${value})`
 }
 
 export const getBreakpointString = (bp: Breakpoint) => {
@@ -56,7 +96,8 @@ export const getBreakpointString = (bp: Breakpoint) => {
         break
     }
   } else {
-    result = (bp.address >= 0) ? (bp.basic ? bp.address.toString() : `$${toHex(bp.address, 4)}`) : "Any"
+    result = (bp.address >= 0 && bp.address < BRK_NOADDRESS) ?
+      (bp.basic ? bp.address.toString() : `$${toHex(bp.address, 4)}`) : ""
   }
   if (bp.watchpoint) {
     if (bp.memget) result += " read"
@@ -69,7 +110,10 @@ export const getBreakpointString = (bp: Breakpoint) => {
       result += ` hit=${bp.hitcount}`
     }
     if (bp.expression1.register !== "") {
-      result += " (expression)"
+      result += (result ? " " : "") + getExpressionString(bp.expression1)
+      if (bp.expression2.register !== "") {
+        result += ` ${bp.expressionOperator} ${getExpressionString(bp.expression2)}`
+      }
     }
   }
   if (bp.action1.action !== "" || bp.action2.action !== "") {
@@ -122,11 +166,27 @@ export const BreakpointNew = (): Breakpoint => {
   }
 }
 
+export const getBreakpointKey = (bp: Breakpoint) => {
+  if (bp.address >= 0 && bp.address < BRK_NOADDRESS) {
+    return bp.address
+  }
+  let hash = 0
+  const input = getBreakpointString(bp).replace(/\s+/g, "")
+  for (let i = 0; i < input.length; i++) {
+    hash = (((hash << 5) - hash) + input.charCodeAt(i)) & 0xFFFF
+  }
+  return hash | BRK_NOADDRESS
+}
+
 export class BreakpointMap extends Map<number, Breakpoint> {
-  set(key: number, value: Breakpoint): this {
+  set(key: number, bp: Breakpoint): this {
     // Sort the keys each time we add a new entry
     const entries = [...this.entries()]
-    entries.push([key, value])
+    if (key < 0 || (key & BRK_NOADDRESS)) {
+      key = getBreakpointKey(bp)
+      bp.address = key
+    }
+    entries.push([key, bp])
     entries.sort((a, b) => a[0] - b[0])
     super.clear()
     for (const [k, v] of entries) {
@@ -135,6 +195,16 @@ export class BreakpointMap extends Map<number, Breakpoint> {
 
     return this
   }
+}
+
+export const getNonAddressBreakpoints = (breakpointMap: BreakpointMap): Breakpoint[] => {
+  const result: Breakpoint[] = []
+  for (const bp of breakpointMap.values()) {
+    if (bp.address & BRK_NOADDRESS) {
+      result.push(bp)
+    }
+  }
+  return result
 }
 
 // export type BreakpointMap = Map<number, Breakpoint>

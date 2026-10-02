@@ -673,6 +673,10 @@ export const handleGetBreakpoints = () => {
   return machineState.breakpoints
 }
 
+export const handleGetExecutionBreakpoint = () => {
+  return machineState.execution?.breakpoint?.address || -1
+}
+
 export const handleGetCout = () => {
   return machineState.cout
 }

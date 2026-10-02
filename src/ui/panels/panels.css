@@ -131,6 +131,27 @@ body.dark-mode .debug-panel {
   user-select: none;
 }
 
+@keyframes breakpoint-flash {
+  0% {
+    background-color: transparent;
+  }
+
+  100% {
+    background-color: var(--bp-hit-color, yellow);
+  }
+}
+
+.breakpoint-hit {
+  --bp-hit-color: yellow;
+  --bp-flash-color: rgb(243, 243, 174);
+  background-color: var(--bp-hit-color);
+  animation: breakpoint-flash 0.8s ease-out;
+}
+
+body.dark-mode .breakpoint-hit {
+  --bp-hit-color: var(--highlight-dark);
+}
+
 body.dark-mode .breakpoint-pushbutton {
   color: var(--text-color-dark);
 }

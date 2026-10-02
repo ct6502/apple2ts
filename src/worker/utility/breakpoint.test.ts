@@ -70,17 +70,6 @@ test("hitBreakpoint", () => {
   expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.BREAK)
 })
 
-test("hit-once any-address breakpoint removes its map entry", () => {
-  bpMap.clear()
-  const bp = BreakpointNew()
-  bp.once = true
-  bpMap.set(-1, bp)
-  setPC(0x2000)
-
-  expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.BREAK)
-  expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.NO_BREAK)
-})
-
 test("BASIC line lookup ignores a non-BASIC breakpoint with the same key", () => {
   bpMap.clear()
   const lineNumber = 100

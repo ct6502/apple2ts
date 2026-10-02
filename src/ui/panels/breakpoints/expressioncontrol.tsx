@@ -3,6 +3,7 @@ import EditField from "../editfield"
 import { toHex } from "../../../common/utility"
 import { useState } from "react"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { breakpointExpressionRegToName } from "../../../common/breakpoint"
 
 interface ExpressionControlProps {
   expr: BreakpointExpression;
@@ -45,10 +46,8 @@ const ExpressionControl = (props: ExpressionControlProps) => {
   }
 
   const spaces = "\u00A0\u00A0\u00A0\u00A0\u00A0"
-  const registers = [`_${spaces}(none)`, `$${spaces}Address`, `A${spaces}Accumulator`,
-  `X${spaces}X Register`, `Y${spaces}Y Register`, `S${spaces}Stack Pointer`,
-  `P${spaces}Processor Status`, `C${spaces}Program Counter`, `@${spaces}Cycle Count`]
-  const regmap = ["", "$", "A", "X", "Y", "S", "P", "C", "@"]
+  const regmap: Array<RegisterValues> = ["", "$", "A", "X", "Y", "S", "P", "C", "@"]
+  const registers = regmap.map((reg) => `${reg}${spaces}${breakpointExpressionRegToName(reg as RegisterValues)}`)
   const index = regmap.indexOf(props.expr.register)
   const isCycleCount = props.expr.register === "@"
 

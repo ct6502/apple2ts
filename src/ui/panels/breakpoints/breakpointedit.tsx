@@ -7,6 +7,7 @@ import BPEdit_Breakpoint from "./bpedit_breakpoint"
 import BPEdit_Watchpoint from "./bpedit_watchpoint"
 import BPEdit_Instruction from "./bpedit_instruction"
 import BPEdit_Basic from "./bpedit_basic"
+import { BRK_NOADDRESS, getBreakpointKey } from "../../../common/breakpoint"
 
 const BreakpointEdit = (props: {
   breakpoint: Breakpoint,
@@ -144,6 +145,7 @@ const BreakpointEdit = (props: {
             <div></div>
             <div className="flex-row">
               <button className="push-button text-button"
+                disabled={isBreakpoint && getBreakpointKey(props.breakpoint) === BRK_NOADDRESS}
                 onClick={props.saveBreakpoint}>
                 <span className="centered-title">OK</span>
               </button>

@@ -7,14 +7,15 @@ import ExpressionControl from "./expressioncontrol"
 import Breakpoint_Actions from "./breakpoint_actions"
 import Breakpoint_Once from "./breakpoint_once"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { BRK_NOADDRESS } from "../../../common/breakpoint"
 
 const BPEdit_Breakpoint = (props: {
   breakpoint: Breakpoint,
   setBreakpoint: (bp: Breakpoint) => void,
 }) => {
   const { t } = useTranslation()
-  const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
-    props.breakpoint.basic ? props.breakpoint.address.toString() : toHex(props.breakpoint.address) : "")
+  const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 && props.breakpoint.address < BRK_NOADDRESS ?
+    toHex(props.breakpoint.address) : "")
 
   const handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase()
@@ -66,16 +67,15 @@ const BPEdit_Breakpoint = (props: {
   return (
     <div>
       <div className="flex-row">
-        <EditField name={props.breakpoint.basic ? t("debug.basicLineNumber") : "Address: $"}
+        <EditField name="Address: $"
           initialFocus={true}
           value={bpAddress}
           setValue={handleAddressChange}
-          isHex={!props.breakpoint.basic}
-          isNumber={props.breakpoint.basic}
+          isHex={true}
           placeholder={t("debug.any")}
           width="5em" />
       </div>
-      {!props.breakpoint.basic && <div>
+      <div>
         <div style={{ marginTop: "16px" }}>
           <EditField name="Hit&nbsp;Count: "
             value={props.breakpoint.hitcount.toString()}
@@ -105,9 +105,8 @@ const BPEdit_Breakpoint = (props: {
           setValue={handleMemoryBankChange}
           userdata={props.breakpoint.address}
           isDisabled={isBankDisabledForAddress} />
-
         <Breakpoint_Actions breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
-      </div>}
+      </div>
       <Breakpoint_Once breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
     </div>
   )
