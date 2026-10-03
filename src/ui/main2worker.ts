@@ -772,6 +772,15 @@ export const handleGetCurrentMemory = () => {
   return machineState.currentMemory.length > 0 ? machineState.currentMemory : machineState.memoryDump
 }
 
+export const handleGetMemoryAtAddress = (addr: number) => {
+  if (machineState.currentMemory.length > 0) {
+    return machineState.currentMemory[addr % 0x10000]
+  } else if (machineState.memoryDump.length > 0) {
+    return machineState.memoryDump[addr % 0x10000]
+  }
+  return 0
+}
+
 export const handleGetMemoryDump = () => {
   return machineState.memoryDump
 }

@@ -3,7 +3,7 @@ import { HEATMAP_STATE, toHex } from "../../../common/utility"
 import { faBolt, faMountain, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { getDisassembly } from "../disassembly/disassembly_utilities"
-import { handleGetState6502 } from "../../main2worker"
+import { handleGetMemoryAtAddress, handleGetState6502 } from "../../main2worker"
 import { useTranslation } from "../../../i18n/useTranslation"
 
 const MAGNIFIER_ZOOM = 8
@@ -17,9 +17,10 @@ let heatMapAddress = -1
 const HeatMapMagnifier = (props: {
   state: HEATMAP_STATE,
   heatCanvas: React.RefObject<HTMLCanvasElement | null>,
-  heatMapValue: number,
+  heatMapCount: number,
   maxIndex: number,
   setHeatMapAddress: (address: number) => void,
+  setMagnifierViewport: (viewport: {x: number, y: number, width: number, height: number} | null) => void,
   heatMapPosition: [number, number],
   setHeatMapPosition: (x: number, y: number) => void
   closeDialog: () => void,
@@ -34,6 +35,18 @@ const HeatMapMagnifier = (props: {
   const magnifierCanvasRef = useRef<HTMLCanvasElement>(null)
   const magnifierScrollRef = useRef<HTMLDivElement>(null)
   const [mousePos, setMousePos] = useState<{ x: number, y: number }>({ x: -1, y: -1 })
+  const [mouseClicked, setMouseClicked] = useState(false)
+
+  const updateMagnifierViewport = () => {
+    const scroll = magnifierScrollRef.current
+    if (!scroll) return
+    props.setMagnifierViewport({
+      x: scroll.scrollLeft / MAGNIFIER_ZOOM,
+      y: scroll.scrollTop / MAGNIFIER_ZOOM,
+      width: scroll.clientWidth / MAGNIFIER_ZOOM,
+      height: scroll.clientHeight / MAGNIFIER_ZOOM,
+    })
+  }
 
   const handleTitleBarMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (dialogRef.current) {
@@ -63,6 +76,7 @@ const HeatMapMagnifier = (props: {
 
   const handleHeatMapMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (!magnifierCanvasRef.current || !props.heatCanvas.current) return
+    if (mouseClicked) return
     const canvas = magnifierCanvasRef.current
     const rect = canvas.getBoundingClientRect()
     const x = event.clientX - rect.left + canvas.scrollLeft - 2
@@ -72,8 +86,8 @@ const HeatMapMagnifier = (props: {
     const next = { x: magnifierX, y: magnifierY }
     if (mousePos.x === next.x && mousePos.y === next.y) return
     setMousePos(next)
-    const sourceX = Math.max(0, Math.min(Math.floor(mousePos.x / MAGNIFIER_ZOOM), BASE_HEATMAP_WIDTH - 1))
-    const sourceY = Math.max(0, Math.min(Math.floor(mousePos.y / MAGNIFIER_ZOOM), BASE_HEATMAP_HEIGHT - 1))
+    const sourceX = Math.max(0, Math.min(Math.floor(next.x / MAGNIFIER_ZOOM), BASE_HEATMAP_WIDTH - 1))
+    const sourceY = Math.max(0, Math.min(Math.floor(next.y / MAGNIFIER_ZOOM), BASE_HEATMAP_HEIGHT - 1))
     const addrY = Math.max(0, Math.min(sourceY * BASE_HEATMAP_WIDTH, 0xFFFF))
     const addrX = Math.max(0, Math.min(sourceX, BASE_HEATMAP_WIDTH - 1))
     heatMapAddress = addrY + addrX
@@ -86,6 +100,7 @@ const HeatMapMagnifier = (props: {
     if (props.heatMapPosition[0] >= 0 && props.heatMapPosition[1] >= 0) {
       magnifierScrollRef.current.scrollLeft = MAGNIFIER_ZOOM * props.heatMapPosition[0] - MAGNIFIER_WIDTH / 2
       magnifierScrollRef.current.scrollTop = MAGNIFIER_ZOOM * props.heatMapPosition[1] - MAGNIFIER_HEIGHT / 2
+      updateMagnifierViewport()
       props.setHeatMapPosition(-1, -1)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,28 +135,44 @@ const HeatMapMagnifier = (props: {
       magnifierCtx.stroke()
     }
     if (heatMapAddress >= 0) {
-      const heatmapInfo = `$${toHex(heatMapAddress, 4)} = ${props.heatMapValue}`
-      const visibleY = mousePos.y - magnifierScrollRef.current.scrollTop
-      const labelWidth = heatmapInfo.length * 8
-      const rightEdge = magnifierScrollRef.current.scrollLeft + magnifierScrollRef.current.clientWidth
-      const labelX = Math.min(mousePos.x, rightEdge - labelWidth - 5)
-      const labelY = visibleY > 20 ? mousePos.y - 10 : mousePos.y + 35
+      const memoryValue = toHex(handleGetMemoryAtAddress(heatMapAddress), 2)
+      const heatmapInfo = `$${toHex(heatMapAddress, 4)}($${memoryValue}) count=${props.heatMapCount}`
+      const scroll = magnifierScrollRef.current
+      const leftEdge = scroll.scrollLeft
+      const topEdge = scroll.scrollTop
+      const rightEdge = leftEdge + scroll.clientWidth
+      const labelWidth = heatmapInfo.length * 8.5
+      const labelX = Math.max(leftEdge + 5, Math.min(mousePos.x, rightEdge - labelWidth - 5))
+      const labelY = mousePos.y - topEdge > 20 ? mousePos.y - 10 : mousePos.y + 35
       magnifierCtx.font = "14px monospace"
       magnifierCtx.fillStyle = "#ffff00"
       magnifierCtx.fillText(heatmapInfo, labelX, labelY)
 
+      // Draw a small box locked on the pixel address
+      magnifierCtx.strokeStyle = "#fff"
+      magnifierCtx.lineWidth = 2
+      const pixelX = (heatMapAddress & 0xFF) * MAGNIFIER_ZOOM
+      const pixelY = (heatMapAddress >>> 8) * MAGNIFIER_ZOOM
+      magnifierCtx.strokeRect(pixelX - 1, pixelY - 1,
+        MAGNIFIER_ZOOM + 2, MAGNIFIER_ZOOM + 2)
+
       // Add in the local assembly code if CPU heatmap
       if (props.state === HEATMAP_STATE.CPU) {
         const disassembly = getDisassembly(heatMapAddress - 15, heatMapAddress + 15).split("\n")
-        // If disassembly is all $00 or $FF then skip
         if ((heatMapAddress & 0xFF00) === 0xC000) {
           return
         }
+        // If disassembly is all $00 or $FF then skip
         if (disassembly.every(line => line.includes(": 00") || line.includes(": FF") || line.length === 0)) {
           return
         }
         const leftEdge = magnifierScrollRef.current.scrollLeft
         const topEdge = magnifierScrollRef.current.scrollTop
+        const rightEdge = magnifierScrollRef.current.scrollLeft + magnifierScrollRef.current.clientWidth
+        const addressX = (heatMapAddress & 0xFF) * MAGNIFIER_ZOOM
+        const addressOnLeft = addressX - leftEdge <= magnifierScrollRef.current.clientWidth / 2
+        const leftPosition = addressOnLeft ? rightEdge - 200 : leftEdge + 5
+        const topPosition = topEdge + 15
         magnifierCtx.fillStyle = "#ffff00"
         const addresses = disassembly.map(line => parseInt(line, 16))
         addresses.push(0xFFFF)
@@ -149,7 +180,7 @@ const HeatMapMagnifier = (props: {
           const hit = addresses[i] <= heatMapAddress && addresses[i + 1] > heatMapAddress
           magnifierCtx.font = hit ? "bold 11px monospace" : "11px monospace"
           const xtra = hit ? "*" : " "
-          magnifierCtx.fillText(xtra + disassembly[i], leftEdge + 5, topEdge + 10 + i * 12)
+          magnifierCtx.fillText(xtra + disassembly[i], leftPosition, topPosition + i * 12)
         }
       }
     }
@@ -198,6 +229,7 @@ const HeatMapMagnifier = (props: {
     </div>
     <div
       ref={magnifierScrollRef}
+      onScroll={updateMagnifierViewport}
       style={{
         width: MAGNIFIER_WIDTH,
         height: MAGNIFIER_HEIGHT,
@@ -209,6 +241,7 @@ const HeatMapMagnifier = (props: {
         ref={magnifierCanvasRef}
         width={MAGNIFIER_ZOOM * 256}
         height={MAGNIFIER_ZOOM * 256}
+        onClick={() => setMouseClicked(prev => !prev)}
         onMouseMove={handleHeatMapMouseMove}
         style={{ display: "block", imageRendering: "auto" }}
       />

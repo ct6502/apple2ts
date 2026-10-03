@@ -9,7 +9,7 @@ const BASE_HEATMAP_WIDTH = 256
 const BASE_HEATMAP_HEIGHT = 256
 
 // let isMouseDown = false
-let heatMapValue = 0
+let heatMapCount = 0
 let maxIndex = 0
 // s6502.cycleCount the canvas was actually redrawn for. The worker posts
 // machine state ~60x/sec regardless of whether new instructions/memory
@@ -36,6 +36,13 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
   const [dialogPosition, setDialogPosition] = useState([x, y])
   const [heatMapAddress, setHeatMapAddressState] = useState<number>(-1)
   const [heatMapPosition, setHeatMapPosition] = useState<[number, number]>([x, y])
+  const [mouseDown, setMouseDown] = useState(false)
+  const [magnifierViewport, setMagnifierViewport] = useState<{
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  } | null>(null)
 
   const doSetDialogPosition = (x: number, y: number) => {
     setDialogPosition([x, y])
@@ -45,20 +52,45 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     setHeatMapPosition([x, y])
   }
 
-  const handleHeatMapClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (handleGetRunMode() === RUN_MODE.IDLE) return
-    // Show magnifier and scroll to event.clientX, event.clientY
-    props.setShowMagnifier(true)
+    if (!props.showMagnifier) props.setShowMagnifier(true)
     const rect = heatMapRef.current?.getBoundingClientRect()
     const offsetX = rect ? event.clientX - rect.left : 0
     const offsetY = rect ? event.clientY - rect.top : 0
     setHeatMapPosition([offsetX, offsetY])
+    setMouseDown(true)
+    event.preventDefault()
     // const [addr] = getAddressAtMouse(event)
     // if (addr < 0 || isNaN(addr)) return
   }
 
+  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!mouseDown) return
+    const rect = heatMapRef.current?.getBoundingClientRect()
+    const offsetX = rect ? event.clientX - rect.left : 0
+    const offsetY = rect ? event.clientY - rect.top : 0
+    setHeatMapPosition([offsetX, offsetY])
+  }
+
+  const handleMouseUp = () => {
+    setMouseDown(false)
+  }
+
+  useEffect(() => {
+    if (!mouseDown) return
+    const stopDragging = () => setMouseDown(false)
+    window.addEventListener("mouseup", stopDragging)
+    window.addEventListener("blur", stopDragging)
+    return () => {
+      window.removeEventListener("mouseup", stopDragging)
+      window.removeEventListener("blur", stopDragging)
+    }
+  }, [mouseDown])
+
   const closeMagnifier = () => {
     props.setShowMagnifier(false)
+    setMagnifierViewport(null)
   }
 
     // const drawGrid = (rgba: Uint8ClampedArray) => {
@@ -97,7 +129,7 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     // (e.g. hovering to inspect a frozen heat map), before the "did
     // anything change" bail-out below.
     if (heatMapAddress >= 0) {
-      heatMapValue = heatMap[heatMapAddress]
+      heatMapCount = heatMap[heatMapAddress]
     }
     const cycleCount = handleGetState6502().cycleCount
     const heatMapState = handleGetHeatMapState()
@@ -172,16 +204,32 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
           className="heatmap-canvas"
           width={BASE_HEATMAP_WIDTH}
           height={BASE_HEATMAP_HEIGHT}
-          onClick={(e) => handleHeatMapClick(e)}
+          onMouseMove={handleMouseMove}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
         />
+        {magnifierViewport && props.showMagnifier && <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: `${magnifierViewport.x + 1}px`,
+            top: `${magnifierViewport.y + 1}px`,
+            width: `${magnifierViewport.width}px`,
+            height: `${magnifierViewport.height}px`,
+            boxSizing: "border-box",
+            border: "1px solid red",
+            pointerEvents: "none",
+          }}
+        />}
       </div>
     </div>
     {props.showMagnifier && <HeatMapMagnifier
         state={props.state}
         heatCanvas={heatMapRef}
-        heatMapValue={heatMapValue}
+        heatMapCount={heatMapCount}
         maxIndex={maxIndex}
         setHeatMapAddress={doSetHeatMapAddress}
+        setMagnifierViewport={setMagnifierViewport}
         heatMapPosition={heatMapPosition}
         setHeatMapPosition={doSetHeatMapPosition}
         closeDialog={closeMagnifier}
