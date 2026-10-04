@@ -3,41 +3,51 @@ import { BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../../c
 import { RUN_MODE, DISASSEMBLE_VISIBLE, toHex } from "../../../common/utility"
 import { getPreferenceDebugTabLeftWidth, setPreferenceBreakpoints } from "../../localstorage"
 import { handleGetRunMode, handleGetState6502, handleGetBreakpoints } from "../../main2worker"
-import { getDisassembly, getDisassemblyVisibleMode, getDisassemblyAddress, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
+import { getDisassemblyVisibleMode,
+  getDisassembly, 
+  setLinesVisible,
+  ensureDisassemblyContainsAddress,
+  setDisassemblyVisibleMode} from "./disassembly_utilities"
 import { getChromacodedLine } from "./disassemblyview_singleline"
 import React, { useEffect, useRef } from "react"
 import { useGlobalContext } from "../../globalcontext"
 import { useTranslation } from "../../../i18n/useTranslation"
 
-let lastRepositionedAddress = -1
- 
-const DisassemblyDiv = (props: {
+type DisassemblyDivProps = {
   disassemblyRef: React.RefObject<HTMLDivElement | null>,
   hideFakePoint: () => void,
   setAllowScrollEvent: (value: boolean) => void,
   refresh: () => void,
   height: number
-}) => {
+}
+
+const DisassemblyDiv = (props: DisassemblyDivProps) => {
+  const { t } = useTranslation()
+  if (handleGetRunMode() !== RUN_MODE.PAUSED) {
+    return <div className="noselect" style={{ marginTop: "30px", width: "24em" }}>{t("debug.pauseForDisassembly")}</div>
+  }
+
+  return <PausedDisassemblyDiv {...props} />
+}
+
+const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
   const { updateBreakpoint, setUpdateBreakpoint, setMemdumpAddress } = useGlobalContext()
+  // const { refresh } = props
   const { t } = useTranslation()
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const scrollToRef = useRef<HTMLDivElement>(null)
   const lineHeightPx = 10 * (96 / 72)
-  const nlines = Math.max(15, Math.floor(props.height / lineHeightPx))
+  const nlines = Math.max(15, Math.floor(props.height / lineHeightPx + 0.5))
+  setLinesVisible(nlines)
 
   const getAddress = (line: string) => {
     return parseInt(line, 16)//.slice(0, line.indexOf(":")), 16)
   }
 
-  // const fWeight = (opcode: string) => {
-  //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
-  //   return ""
-  // }
-
   // This function gets used in disassemblyview_singleline but we
   // define it here so it can access our local variables.
   const onJumpClick = (addr: number) => {
-    setDisassemblyAddress(addr, true)
+    ensureDisassemblyContainsAddress(addr, true)
     props.refresh()
   }
 
@@ -63,74 +73,42 @@ const DisassemblyDiv = (props: {
     props.hideFakePoint()
   }
 
-  const isPaused = handleGetRunMode() === RUN_MODE.PAUSED
-
   // Calculate approximate width in characters
   // For 7pt monospace at line-height 10pt: char width ≈ 0.6 * height = 0.6 * 9.33px ≈ 5.6px
   const containerWidth = Math.max(getPreferenceDebugTabLeftWidth(), 260) - 36
   const width = Math.floor(containerWidth / 5.6)
   
-  let disArray = getDisassembly().split("\n").slice(0, nlines)
-  const hasDisassembly = disArray.length > 1
   const visibleMode = getDisassemblyVisibleMode()
-  const currentAddress = getDisassemblyAddress()
-  let foundLine = visibleMode === DISASSEMBLE_VISIBLE.RESET &&
-                  lastRepositionedAddress === currentAddress
-  if (isPaused && hasDisassembly && visibleMode !== DISASSEMBLE_VISIBLE.RESET) {
-    const visibleLine = (visibleMode === DISASSEMBLE_VISIBLE.CURRENT_PC) ?
-      handleGetState6502().PC : getDisassemblyAddress()
-    // console.log("visibleLine", visibleLine.toString(16))
-    for (let i = 0; i < disArray.length; i++) {
-      if (getAddress(disArray[i]) === visibleLine) {
-        foundLine = true
-        break
-      }
-    }
-    if (!foundLine) {
-      setDisassemblyAddress(visibleLine)
-      disArray = getDisassembly().split("\n").slice(0, nlines)
-    } else {
-      if (getDisassemblyAddress() === -1) {
-        setDisassemblyAddress(visibleLine)
-      }
-      setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.RESET)
-    }
+  if (visibleMode === DISASSEMBLE_VISIBLE.CURRENT_PC) {
+    ensureDisassemblyContainsAddress(handleGetState6502().PC, true)
   }
+  const disArray = getDisassembly().split("\n").slice(0, nlines)
+  const hasDisassembly = disArray.length > 1
+  const lineTop = hasDisassembly ? getAddress(disArray[0]) : -1
 
   useEffect(() => {
-    if (!isPaused) {
-      lastRepositionedAddress = -1
-    }
-
-    if (!isPaused || !hasDisassembly || foundLine) {
+    if (!hasDisassembly || getDisassemblyVisibleMode() === DISASSEMBLE_VISIBLE.RESET) {
       return
     }
-
+    setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.RESET)
     if (scrollTimeoutRef.current !== null) {
       clearTimeout(scrollTimeoutRef.current)
     }
-
     scrollTimeoutRef.current = setTimeout(() => {
       if (props.disassemblyRef?.current && scrollToRef.current) {
         const container = props.disassemblyRef.current
         const line = scrollToRef.current
         props.setAllowScrollEvent(false)
         container.scrollTop += line.getBoundingClientRect().top - container.getBoundingClientRect().top
-        lastRepositionedAddress = getDisassemblyAddress()
       }
-    }, 20)
-
+    }, 40)
     return () => {
       if (scrollTimeoutRef.current !== null) {
         clearTimeout(scrollTimeoutRef.current)
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [foundLine, hasDisassembly, isPaused, props.disassemblyRef, props.setAllowScrollEvent])
-
-  if (!isPaused) {
-    return <div className="noselect" style={{ marginTop: "30px", width: "24em" }}>{t("debug.pauseForDisassembly")}</div>
-  }
+  }, [hasDisassembly, props.disassemblyRef, props.setAllowScrollEvent])
 
   if (!hasDisassembly) {
     return <div
@@ -153,21 +131,22 @@ const DisassemblyDiv = (props: {
     }
   }
   const pc1 = handleGetState6502().PC
-  const lineTop = getAddress(disArray[0])
   const lineBottom = (disArray[nlines - 1] !== "") ? getAddress(disArray[nlines - 1]) : 65535
   const topHalf = Array.from({ length: Math.floor(lineTop / 16) }, (_, i) => (i * 16))
   for (let i = topHalf[topHalf.length - 1] + 1; i < lineTop; i++) {
     topHalf.push(i)
   }
-  // Construct an evenly-spaced array for the bottom but stop well before 65535.
-  // Then fill in all the remaining values up to 65535. This provides a smooth
-  // scrolling experience and allows you to drag the scrollbar all the way to the bottom.
-  const length = Math.max(Math.floor((65535 - lineBottom) / 16) - 2, 0)
-  const bottomHalf = Array.from({ length: length },
-    (_, i) => Math.min((i * 16) + lineBottom + 1, 65535))
-  const istart = (bottomHalf.length > 0) ? (bottomHalf[bottomHalf.length - 1] + 1) : (lineBottom + 1)
-  for (let i = istart; i <= 65535; i++) {
-    bottomHalf.push(i)
+  const denseEnd = Math.min(lineBottom + 100, 65450)
+  const bottomHalf: number[] = []
+  for (let address = lineBottom + 1; address <= denseEnd; address++) {
+    bottomHalf.push(address)
+  }
+  const strideStart = Math.max(lineBottom + 1, denseEnd + 1)
+  for (let address = strideStart; address < 65450; address += 16) {
+    bottomHalf.push(address)
+  }
+  for (let address = Math.max(65450, lineBottom + 1); address <= 65535; address++) {
+    bottomHalf.push(address)
   }
 
   return <div style={{ width: "24em", lineHeight: "10pt" }}>

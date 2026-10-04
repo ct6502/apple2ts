@@ -3,9 +3,9 @@ import DisassemblyControls from "./disassemblycontrols"
 import DisassemblyView from "./disassemblyview"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons"
-import { getCurrentAddressIndex, getVisitedAddresses, setCurrentAddressIndex, setDisassemblyAddress, setVisitedAddresses } from "./disassembly_utilities"
+import { ensureDisassemblyContainsAddress, getCurrentAddressIndex, getVisitedAddresses, setCurrentAddressIndex, setDisassemblyVisibleMode, setVisitedAddresses } from "./disassembly_utilities"
 import { handleGetRunMode, handleGetState6502 } from "../../main2worker"
-import { RUN_MODE, toHex } from "../../../common/utility"
+import { DISASSEMBLE_VISIBLE, RUN_MODE, toHex } from "../../../common/utility"
 import { useTranslation } from "../../../i18n/useTranslation"
 
 const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
@@ -33,7 +33,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
       const newIndex = currentAddressIndex - 1
       setCurrentAddressIndex(newIndex)
       const addr = visitedAddresses[newIndex]
-      setDisassemblyAddress(addr)
+      ensureDisassemblyContainsAddress(addr)
     }
   }
 
@@ -45,7 +45,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
       const newIndex = currentAddressIndex + 1
       setCurrentAddressIndex(newIndex)
       const addr = visitedAddresses[newIndex]
-      setDisassemblyAddress(addr)
+      ensureDisassemblyContainsAddress(addr)
     }
   }
 
@@ -57,6 +57,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
     // Detect transition from false -> true (not paused -> paused)
     if (!prevPausedRef.current && isPaused) {
       const state = handleGetState6502()
+      setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
       setVisitedAddresses([state.prevPC, state.PC])
       setCurrentAddressIndex(1)
     }
@@ -87,6 +88,16 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
             onClick={nextLocation}
             disabled={!isPaused || !hasNext}>
             <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: "0.5em" }} />
+          </button>
+          <button className="push-button tight-button"
+            title={t("debug.heatMap.jumpToProgramCounter")}
+            onClick={() => {
+              const state = handleGetState6502()
+              ensureDisassemblyContainsAddress(state.PC, true)            
+              // setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+            }}
+            disabled={!isPaused}>
+            <span className="default-font">PC</span>
           </button>
         </div>
       </div>

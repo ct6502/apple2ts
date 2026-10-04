@@ -18,7 +18,7 @@ import { handleSetCPUState } from "../../controller"
 import { bpStepInto } from "../../img/icon_stepinto"
 import { bpStepOut } from "../../img/icon_stepout"
 import { bpStepOver } from "../../img/icon_stepover"
-import { setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
+import { ensureDisassemblyContainsAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import SaveDisassemblyDialog from "./savedisassemblydialog"
 import TraceDialog from "./tracedialog"
 import { useTranslation } from "../../../i18n/useTranslation"
@@ -39,7 +39,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const doUpdateAddress = (addr: number) => {
-    setDisassemblyAddress(addr, true)
+    ensureDisassemblyContainsAddress(addr, true)
     setAddress(addr.toString(16).toUpperCase())
     props.refresh()
   }
@@ -104,9 +104,9 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       <button className="push-button" id="tour-debug-pause"
         title={runMode === RUN_MODE.PAUSED ? t("debug.resume") : t("debug.pause")}
         onClick={() => {
-          handleSetCPUState(runMode === RUN_MODE.PAUSED ?
-            RUN_MODE.RUNNING : RUN_MODE.PAUSED)
-          if (runMode === RUN_MODE.RUNNING) {
+          const newMode = (runMode === RUN_MODE.PAUSED) ? RUN_MODE.RUNNING : RUN_MODE.PAUSED
+          handleSetCPUState(newMode)
+          if (newMode === RUN_MODE.PAUSED) {
             setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
           }
         }}

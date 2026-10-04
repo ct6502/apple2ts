@@ -4,7 +4,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../../panels/editfield"
-import { getDisassembly, getDisassemblyAddress, getLineAsPlaintext } from "./disassembly_utilities"
+import { getDisassembly, getDisassemblyAddressStart, getLineAsPlaintext } from "./disassembly_utilities"
 import { toHex } from "../../../common/utility"
 import { handleGetState6502 } from "../../main2worker"
 import { useTranslation } from "../../../i18n/useTranslation"
@@ -18,7 +18,7 @@ const SaveDisassemblyDialog = (props:
   const [includeLabels, setIncludeLabels] = useState(true)
   const [includeSeparator, setIncludeSeparator] = useState(true)
   const [startAddress, setStartAddress] = useState(() => {
-    let value = getDisassemblyAddress()
+    let value = getDisassemblyAddressStart()
     if (value === -1) value = handleGetState6502().PC
     return toHex(value)
   })

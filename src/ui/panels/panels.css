@@ -83,12 +83,20 @@ body.dark-mode .debug-panel {
   outline: none;
 }
 
-.program-counter {
+.program-counterxxx {
   background-color: gray;
   opacity: 100%;
   margin-left: 0px;
   padding-left: 0px;
   margin-right: 0px;
+}
+
+.program-counter {
+  background-color: var(--highlight);
+}
+
+body.dark-mode .program-counter {
+  background-color: var(--highlight-dark);
 }
 
 .highlight-line {

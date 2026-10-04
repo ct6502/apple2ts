@@ -7,7 +7,11 @@ export const set6502Instructions = (instr: Array<PCodeInstr1>) => {
   instructions = instr
 }
 
-const nlines = 100  // should this be an argument?
+let nlines = 100  // should this be an argument?
+
+export const setLinesVisible = (lines: number) => {
+  nlines = lines
+}
 
 let visibleMode: DISASSEMBLE_VISIBLE = DISASSEMBLE_VISIBLE.RESET
 
@@ -19,23 +23,41 @@ export const setDisassemblyVisibleMode = (mode: DISASSEMBLE_VISIBLE) => {
   visibleMode = mode
 }
 
-
-let disassemblyAddress = -1
+let disassemblyAddressStart = -1
 let visitedAddresses: number[] = [1000]
 let currentAddressIndex: number = 1
 
-export const getDisassemblyAddress = () => {
-  return disassemblyAddress
+export const getDisassemblyAddressStart = () => {
+  return disassemblyAddressStart
 }
-export const setDisassemblyAddress = (addr: number, updateVisitedAddresses = false) => {
+
+export const setDisassemblyAddressStart = (addr: number, updateVisitedAddresses = false) => {
   // console.log("setDisassemblyAddress ", addr.toString(16))
-  disassemblyAddress = addr
+  disassemblyAddressStart = Math.max(0, Math.min(0xFFFF, addr))
   if (updateVisitedAddresses) {
     if (addr !== visitedAddresses[currentAddressIndex]) {
       visitedAddresses = visitedAddresses.slice(0, currentAddressIndex + 1)
       visitedAddresses.push(addr)
       currentAddressIndex = visitedAddresses.length - 1
     }
+  }
+}
+
+export const ensureDisassemblyContainsAddress = (addr: number, updateVisitedAddresses = false) => {
+  let containedWithin = false
+  if (addr >= disassemblyAddressStart && addr < disassemblyAddressStart + 3 * nlines) {
+    const disArray = getDisassembly().split("\n")
+    for (let i = 0; i < disArray.length; i++) {
+      const lineAddr = parseInt(disArray[i], 16)
+      if (lineAddr === addr) {
+        containedWithin = true
+        break
+      }
+    }
+  }
+  if (!containedWithin) {
+    visibleMode = DISASSEMBLE_VISIBLE.ADDRESS
+    setDisassemblyAddressStart(addr - Math.floor(nlines / 2), updateVisitedAddresses)
   }
 }
 
@@ -57,10 +79,9 @@ export const setCurrentAddressIndex = (index: number) => {
 
 export const getDisassembly = (startAddress = -1, endAddress = -1) => {
   let addr = (startAddress !== -1) ? startAddress :
-    disassemblyAddress >= 0 ? disassemblyAddress : handleGetState6502().PC
+    disassemblyAddressStart >= 0 ? disassemblyAddressStart : (handleGetState6502().PC - 10)
   if (addr < 0 || addr > 0xFFFF) return ""
   const lines = endAddress !== -1 ? 0xFFFF : nlines
-  // console.log("getDisassembly ", disassemblyAddress.toString(16), handleGetState6502().PC.toString(16))
   let r = ""
   const memory = handleGetCurrentMemory()
   for (let i = 0; i < lines; i++) {
