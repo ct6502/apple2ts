@@ -125,5 +125,15 @@ export const newReleases: DiskCollectionItem[] = [
     detailsUrl: "https://github.com/anomixer/Time-Pilot",
     params: "slot2=vera&tab=vera",
     fileSize: 819200
+  },
+  {
+    type: "new",
+    title: "Mine Rescue (H.E.R.O.) VERA",
+    lastUpdated: new Date("10/4/2026"),
+    imageUrl: "disks/minerescue.png",
+    diskUrl: "https://github.com/anomixer/x16-hero-vera/releases/latest/download/x16-hero-vera.hdv",
+    detailsUrl: "https://github.com/anomixer/x16-hero-vera",
+    params: "slot2=vera&tab=vera&theme=dark",
+    fileSize: 819200
   }
 ]
