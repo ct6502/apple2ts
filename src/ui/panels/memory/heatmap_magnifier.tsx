@@ -158,7 +158,7 @@ const HeatMapMagnifier = (props: {
 
       // Add in the local assembly code if CPU heatmap
       if (props.state === HEATMAP_STATE.CPU) {
-        const disassembly = getDisassembly(heatMapAddress - 15, heatMapAddress + 15).split("\n")
+        const disassembly = getDisassembly(heatMapAddress - 15, heatMapAddress + 15)
         if ((heatMapAddress & 0xFF00) === 0xC000) {
           return
         }

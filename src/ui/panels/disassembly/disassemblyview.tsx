@@ -55,7 +55,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
         setDisassemblyAddressStart(newAddress)
         props.refresh()
       }
-    }, 100)
+    }, 50)
   }
 
   const handleEnableScroll = () => {

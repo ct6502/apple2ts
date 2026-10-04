@@ -3,9 +3,10 @@ import DisassemblyControls from "./disassemblycontrols"
 import DisassemblyView from "./disassemblyview"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons"
-import { ensureDisassemblyContainsAddress, getCurrentAddressIndex, getVisitedAddresses, setCurrentAddressIndex, setDisassemblyVisibleMode, setVisitedAddresses } from "./disassembly_utilities"
+import { ensureDisassemblyContainsAddress, getCurrentAddressIndex,
+  getVisitedAddresses, setCurrentAddressIndex, setVisitedAddresses } from "./disassembly_utilities"
 import { handleGetRunMode, handleGetState6502 } from "../../main2worker"
-import { DISASSEMBLE_VISIBLE, RUN_MODE, toHex } from "../../../common/utility"
+import { RUN_MODE, toHex } from "../../../common/utility"
 import { useTranslation } from "../../../i18n/useTranslation"
 
 const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
@@ -57,7 +58,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
     // Detect transition from false -> true (not paused -> paused)
     if (!prevPausedRef.current && isPaused) {
       const state = handleGetState6502()
-      setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+      ensureDisassemblyContainsAddress(state.PC, true)
       setVisitedAddresses([state.prevPC, state.PC])
       setCurrentAddressIndex(1)
     }

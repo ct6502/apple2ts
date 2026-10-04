@@ -106,9 +106,6 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onClick={() => {
           const newMode = (runMode === RUN_MODE.PAUSED) ? RUN_MODE.RUNNING : RUN_MODE.PAUSED
           handleSetCPUState(newMode)
-          if (newMode === RUN_MODE.PAUSED) {
-            setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
-          }
         }}
         disabled={runMode === RUN_MODE.IDLE}>
         {runMode === RUN_MODE.PAUSED ?
@@ -141,7 +138,6 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onClick={() => {
           setTooltipOutShow(false)
           passStepOut()
-          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
         }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepOut}</svg>

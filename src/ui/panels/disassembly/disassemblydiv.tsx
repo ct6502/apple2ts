@@ -7,7 +7,8 @@ import { getDisassemblyVisibleMode,
   getDisassembly, 
   setLinesVisible,
   ensureDisassemblyContainsAddress,
-  setDisassemblyVisibleMode} from "./disassembly_utilities"
+  setDisassemblyVisibleMode,
+  getDisassemblyAddressStart} from "./disassembly_utilities"
 import { getChromacodedLine } from "./disassemblyview_singleline"
 import React, { useEffect, useRef } from "react"
 import { useGlobalContext } from "../../globalcontext"
@@ -73,21 +74,16 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
     props.hideFakePoint()
   }
 
-  // Calculate approximate width in characters
-  // For 7pt monospace at line-height 10pt: char width ≈ 0.6 * height = 0.6 * 9.33px ≈ 5.6px
-  const containerWidth = Math.max(getPreferenceDebugTabLeftWidth(), 260) - 36
-  const width = Math.floor(containerWidth / 5.6)
-  
   const visibleMode = getDisassemblyVisibleMode()
   if (visibleMode === DISASSEMBLE_VISIBLE.CURRENT_PC) {
     ensureDisassemblyContainsAddress(handleGetState6502().PC, true)
   }
-  const disArray = getDisassembly().split("\n").slice(0, nlines)
+  const disassemblyAddressStart = getDisassemblyAddressStart()
+  const disArray = getDisassembly(disassemblyAddressStart, disassemblyAddressStart + 4 * nlines)
   const hasDisassembly = disArray.length > 1
-  const lineTop = hasDisassembly ? getAddress(disArray[0]) : -1
 
   useEffect(() => {
-    if (!hasDisassembly || getDisassemblyVisibleMode() === DISASSEMBLE_VISIBLE.RESET) {
+    if (!hasDisassembly) { //} || getDisassemblyVisibleMode() === DISASSEMBLE_VISIBLE.RESET) {
       return
     }
     setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.RESET)
@@ -101,7 +97,7 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
         props.setAllowScrollEvent(false)
         container.scrollTop += line.getBoundingClientRect().top - container.getBoundingClientRect().top
       }
-    }, 40)
+    }, 30)
     return () => {
       if (scrollTimeoutRef.current !== null) {
         clearTimeout(scrollTimeoutRef.current)
@@ -130,12 +126,23 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
       bp[i] = bp1
     }
   }
+
+  // Calculate approximate width in characters
+  // For 7pt monospace at line-height 10pt: char width ≈ 0.6 * height = 0.6 * 9.33px ≈ 5.6px
+  const containerWidth = Math.max(getPreferenceDebugTabLeftWidth(), 260) - 36
+  const width = Math.max(Math.floor((containerWidth / 5.6 + 2) / 2), 24)
+  
   const pc1 = handleGetState6502().PC
-  const lineBottom = (disArray[nlines - 1] !== "") ? getAddress(disArray[nlines - 1]) : 65535
-  const topHalf = Array.from({ length: Math.floor(lineTop / 16) }, (_, i) => (i * 16))
-  for (let i = topHalf[topHalf.length - 1] + 1; i < lineTop; i++) {
-    topHalf.push(i)
+
+  const disBefore = getDisassembly(disassemblyAddressStart - 4 * nlines, disassemblyAddressStart - 1)
+  const lineTop = (disBefore[0] !== "") ? getAddress(disBefore[0]) : 0
+  const topHalf = Array.from({ length: Math.floor(lineTop / 16) }, (_, i) => toHex(i * 16, 4))
+  for (let i = parseInt(topHalf[topHalf.length - 1], 16) + 1; i < lineTop; i++) {
+    topHalf.push(toHex(i, 4))
   }
+  topHalf.push(...disBefore.map(line => line.slice(0, 16) + " ".repeat(width - 15) + line.slice(16)))
+
+  const lineBottom = (disArray[nlines - 1] !== "") ? getAddress(disArray[nlines - 1]) : 65535
   const denseEnd = Math.min(lineBottom + 100, 65450)
   const bottomHalf: number[] = []
   for (let address = lineBottom + 1; address <= denseEnd; address++) {
@@ -150,7 +157,7 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
   }
 
   return <div style={{ width: "24em", lineHeight: "10pt" }}>
-    {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
+    {topHalf.map((line) => (<div key={line}>{line}</div>))}
     {disArray.map((line, index) => (
       <div key={index}
         ref={index === 0 ? scrollToRef : null}

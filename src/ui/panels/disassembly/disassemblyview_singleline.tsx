@@ -224,7 +224,7 @@ export const getChromacodedLine = (
   const addr = parseInt(line.slice(0, 4), 16)
   let symbol = getSymbolForAddress(addr) || ""
   const hexcodes = line.slice(0, 14).trim()
-  const maxSymLengthWithoutShift = Math.max((width + 2) / 2, 24) - hexcodes.length
+  const maxSymLengthWithoutShift = width - hexcodes.length
   // Right justify the symbol but if it is too long then just shove over the
   // operand and don't add extra spaces after the hex codes.
   symbol = " ".repeat(Math.max(2, maxSymLengthWithoutShift - symbol.length)) + symbol + " "

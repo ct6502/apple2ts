@@ -46,7 +46,7 @@ export const setDisassemblyAddressStart = (addr: number, updateVisitedAddresses 
 export const ensureDisassemblyContainsAddress = (addr: number, updateVisitedAddresses = false) => {
   let containedWithin = false
   if (addr >= disassemblyAddressStart && addr < disassemblyAddressStart + 3 * nlines) {
-    const disArray = getDisassembly().split("\n")
+    const disArray = getDisassembly(disassemblyAddressStart)
     for (let i = 0; i < disArray.length; i++) {
       const lineAddr = parseInt(disArray[i], 16)
       if (lineAddr === addr) {
@@ -77,29 +77,28 @@ export const setCurrentAddressIndex = (index: number) => {
   currentAddressIndex = index
 }
 
-export const getDisassembly = (startAddress = -1, endAddress = -1) => {
-  let addr = (startAddress !== -1) ? startAddress :
-    disassemblyAddressStart >= 0 ? disassemblyAddressStart : (handleGetState6502().PC - 10)
-  if (addr < 0 || addr > 0xFFFF) return ""
-  const lines = endAddress !== -1 ? 0xFFFF : nlines
-  let r = ""
+export const getDisassembly = (startAddress: number, endAddress = -1) => {
+  let addr = (startAddress !== -1) ? startAddress : disassemblyAddressStart
+  if (addr < 0 || addr > 0xFFFF) return [""]
+  const lines = endAddress !== -1 ? Math.min(endAddress - addr + 1, 0xFFFF) : nlines
+  const r = Array<string>(lines)
   const memory = handleGetCurrentMemory()
   for (let i = 0; i < lines; i++) {
     if (addr > 0xFFFF) {
-      r += "\n"
+      r[i] = ""
       continue
     }
     if (addr >> 8 === 0xC0) {
       // Retrieve $C0xx soft switch values
       const instr = memory[addr]
       const code =  instructions[instr]
-      r += getInstructionString(addr, code, 0x00, 0x00, -1) + "\n"
+      r[i] = getInstructionString(addr, code, 0x00, 0x00, -1)
       addr++
       continue
     }
     const instr = memory[addr]
     if (instr === null) {
-      r += "\n"
+      r[i] = ""
       continue
     }
     const code = instructions[instr]
@@ -109,11 +108,16 @@ export const getDisassembly = (startAddress = -1, endAddress = -1) => {
     const vLo = memory[(addr + 1) % 0x10000]
     const vHi = memory[(addr + 2) % 0x10000]
     // Do not want the branch to be marked as taken or not taken here
-    r += getInstructionString(addr, code, vLo, vHi, -1) + "\n"
+    r[i] = getInstructionString(addr, code, vLo, vHi, -1)
     addr += code.bytes
     if (endAddress !== -1 && addr > endAddress) break
   }
   return r
+}
+
+export const getDisassemblyBeforeStart = (linesBefore: number) => {
+  const startAddress = Math.max(0, disassemblyAddressStart - linesBefore * 4)
+  return getDisassembly(startAddress, disassemblyAddressStart - 1)
 }
 
 // export const getLineOfDisassembly = (line: number) => {

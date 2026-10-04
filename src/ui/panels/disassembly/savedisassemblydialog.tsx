@@ -54,8 +54,7 @@ const SaveDisassemblyDialog = (props:
     const end = parseInt(endAddress, 16)
     let disassembly = getDisassembly(start, end)
     if (includeLabels || includeSeparator) {
-      const disLines = disassembly.split("\n")
-      disassembly = disLines.map((line: string) => {
+      disassembly = disassembly.map((line: string) => {
         if (includeLabels) {
           line = getLineAsPlaintext(line)
         }
@@ -65,9 +64,9 @@ const SaveDisassemblyDialog = (props:
           }
         }
         return line
-      }).join("\n")
+      })
     }
-    const blob = new Blob([disassembly], { type: "text/plain" })
+    const blob = new Blob([disassembly.join("\n")], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
