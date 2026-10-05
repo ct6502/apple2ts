@@ -22,16 +22,9 @@ export const getDisassemblyAddressStart = () => {
   return disassemblyAddressStart
 }
 
-export const setDisassemblyAddressStart = (addr: number, updateVisitedAddresses = false) => {
+export const setDisassemblyAddressStart = (addr: number) => {
   // console.log("setDisassemblyAddress ", addr.toString(16))
   disassemblyAddressStart = Math.max(0, Math.min(0xFFFF, addr))
-  if (updateVisitedAddresses) {
-    if (addr !== visitedAddresses[currentAddressIndex]) {
-      visitedAddresses = visitedAddresses.slice(0, currentAddressIndex + 1)
-      visitedAddresses.push(addr)
-      currentAddressIndex = visitedAddresses.length - 1
-    }
-  }
 }
 
 export const ensureDisassemblyContainsAddress = (addr: number, updateVisitedAddresses: boolean, highlightAddress = false) => {
@@ -49,8 +42,15 @@ export const ensureDisassemblyContainsAddress = (addr: number, updateVisitedAddr
       }
     }
   }
+  if (updateVisitedAddresses) {
+    if (addr !== visitedAddresses[currentAddressIndex]) {
+      visitedAddresses = visitedAddresses.slice(0, currentAddressIndex + 1)
+      visitedAddresses.push(addr)
+      currentAddressIndex = visitedAddresses.length - 1
+    }
+  }
   if (!containedWithin) {
-    setDisassemblyAddressStart(addr - Math.floor(nlines / 2), updateVisitedAddresses)
+    setDisassemblyAddressStart(addr - Math.floor(nlines / 2))
   }
 }
 

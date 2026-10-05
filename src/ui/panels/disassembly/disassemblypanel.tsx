@@ -35,6 +35,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
       setCurrentAddressIndex(newIndex)
       const addr = visitedAddresses[newIndex]
       ensureDisassemblyContainsAddress(addr, false, true)
+      refresh()
     }
   }
 
@@ -47,6 +48,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
       setCurrentAddressIndex(newIndex)
       const addr = visitedAddresses[newIndex]
       ensureDisassemblyContainsAddress(addr, false, true)
+      refresh()
     }
   }
 
@@ -94,7 +96,8 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
             title={t("debug.heatMap.jumpToProgramCounter")}
             onClick={() => {
               const state = handleGetState6502()
-              ensureDisassemblyContainsAddress(state.PC, true)            
+              ensureDisassemblyContainsAddress(state.PC, true)
+              refresh()
             }}
             disabled={!isPaused}>
             <span className="default-font">PC</span>
