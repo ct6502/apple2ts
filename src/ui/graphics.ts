@@ -304,6 +304,39 @@ const processLoRes = (hiddenContext: CanvasRenderingContext2D,
 const BLACK = 0
 const WHITE = 3
 
+/**
+ * From Apple IIe Technical Reference Manual, table 2-8:
+ *
+ * Black       0000
+ * Magenta     0001
+ * Brown       0010
+ * Orange      0011
+ * Dark Green  0100
+ * Gray 1      0101
+ * Green       0110
+ * Yellow      0111
+ * Dark Blue   1000
+ * Purple      1001
+ * Gray 2      1010
+ * Pink        1011
+ * Medium Blue 1100
+ * Light Blue  1101
+ * Aqua        1110
+ * White       1111
+ *
+ * Four bytes determine the color of seven pixels.
+ *
+ * ab0     mb0      ab1      mb1
+ * 0123 4560 1234 5601 2345 6012 3456
+ * -p0- -p1- -p2- -p3- -p4- -p5- -p6-
+ *
+ * ab = auxiliary memory bank
+ * mb = main memory bank
+ *
+ * @param hgrPage
+ * @param colorMode
+ * @returns
+ */
 const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   const nlines = hgrPage.length / 80
   const hgrColors = new Uint8Array(560 * nlines).fill(BLACK)
@@ -318,12 +351,18 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
       b = (b + 1) % 7
     }
     if (isColor) {
-      for (let i = 0; i < 560; i++) {
-        const colorValue = (bits[i + 3] << (3 - ((i + 3) % 4))) +
-          (bits[i + 2] << (3 - ((i + 2) % 4))) +
-          (bits[i + 1] << (3 - ((i + 1) % 4))) +
-          (bits[i] << (3 - (i % 4)))
-        hgrColors[joffset + i] = translateDHGR[colorValue]
+      for (let i = 0; i < 560; i += 4) {
+        // In double hires mode, the color is determined by 4 bits. Each "color
+        // pixel" is four (white) pixels wide. Note, the color is determined by
+        // 4 bits on a 4-bit boundary, not a sliding window of 4 bits.
+        const colorValue = bits[i + 3] + (bits[i + 2] << 1) +
+          (bits[i + 1] << 2) + (bits[i] << 3)
+        // Translate double hires color to lores color.
+        const translatedColor = translateDHGR[colorValue]
+        hgrColors[joffset + i] = translatedColor
+        hgrColors[joffset + i + 1] = translatedColor
+        hgrColors[joffset + i + 2] = translatedColor
+        hgrColors[joffset + i + 3] = translatedColor
       }
     } else {
       for (let i = 0; i < 560; i++) {
