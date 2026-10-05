@@ -1,14 +1,14 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../../common/breakpoint"
-import { RUN_MODE, DISASSEMBLE_VISIBLE, toHex } from "../../../common/utility"
+import { RUN_MODE, toHex } from "../../../common/utility"
 import { getPreferenceDebugTabLeftWidth, setPreferenceBreakpoints } from "../../localstorage"
 import { handleGetRunMode, handleGetState6502, handleGetBreakpoints } from "../../main2worker"
-import { getDisassemblyVisibleMode,
-  getDisassembly, 
+import {getDisassembly, 
   setLinesVisible,
   ensureDisassemblyContainsAddress,
-  setDisassemblyVisibleMode,
-  getDisassemblyAddressStart} from "./disassembly_utilities"
+  getDisassemblyAddressStart,
+  checkDisassemblyNeedUpdatePC,
+  getHighlightedAddress} from "./disassembly_utilities"
 import { getChromacodedLine } from "./disassemblyview_singleline"
 import React, { useEffect, useRef } from "react"
 import { useGlobalContext } from "../../globalcontext"
@@ -35,7 +35,6 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
   const { updateBreakpoint, setUpdateBreakpoint, setMemdumpAddress } = useGlobalContext()
   // const { refresh } = props
   const { t } = useTranslation()
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const scrollToRef = useRef<HTMLDivElement>(null)
   const lineHeightPx = 10 * (96 / 72)
   const nlines = Math.max(15, Math.floor(props.height / lineHeightPx + 0.5))
@@ -48,7 +47,7 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
   // This function gets used in disassemblyview_singleline but we
   // define it here so it can access our local variables.
   const onJumpClick = (addr: number) => {
-    ensureDisassemblyContainsAddress(addr, true)
+    ensureDisassemblyContainsAddress(addr, true, true)
     props.refresh()
   }
 
@@ -74,37 +73,25 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
     props.hideFakePoint()
   }
 
-  const visibleMode = getDisassemblyVisibleMode()
-  if (visibleMode === DISASSEMBLE_VISIBLE.CURRENT_PC) {
-    ensureDisassemblyContainsAddress(handleGetState6502().PC, true)
-  }
+  checkDisassemblyNeedUpdatePC()
   const disassemblyAddressStart = getDisassemblyAddressStart()
   const disArray = getDisassembly(disassemblyAddressStart, disassemblyAddressStart + 4 * nlines)
   const hasDisassembly = disArray.length > 1
 
   useEffect(() => {
-    if (!hasDisassembly) { //} || getDisassemblyVisibleMode() === DISASSEMBLE_VISIBLE.RESET) {
-      return
-    }
-    setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.RESET)
-    if (scrollTimeoutRef.current !== null) {
-      clearTimeout(scrollTimeoutRef.current)
-    }
-    scrollTimeoutRef.current = setTimeout(() => {
+    if (!hasDisassembly) return
+    const frame = requestAnimationFrame(() => {
       if (props.disassemblyRef?.current && scrollToRef.current) {
         const container = props.disassemblyRef.current
         const line = scrollToRef.current
         props.setAllowScrollEvent(false)
         container.scrollTop += line.getBoundingClientRect().top - container.getBoundingClientRect().top
       }
-    }, 30)
-    return () => {
-      if (scrollTimeoutRef.current !== null) {
-        clearTimeout(scrollTimeoutRef.current)
-      }
-    }
+    })
+    return () => cancelAnimationFrame(frame)
+  // The line ref points at the first decoded instruction for this address start.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasDisassembly, props.disassemblyRef, props.setAllowScrollEvent])
+  }, [disassemblyAddressStart, hasDisassembly])
 
   if (!hasDisassembly) {
     return <div
@@ -132,8 +119,6 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
   const containerWidth = Math.max(getPreferenceDebugTabLeftWidth(), 260) - 36
   const width = Math.max(Math.floor((containerWidth / 5.6 + 2) / 2), 24)
   
-  const pc1 = handleGetState6502().PC
-
   const disBefore = getDisassembly(disassemblyAddressStart - 4 * nlines, disassemblyAddressStart - 1)
   const lineTop = (disBefore[0] !== "") ? getAddress(disBefore[0]) : 0
   const topHalf = Array.from({ length: Math.floor(lineTop / 16) }, (_, i) => toHex(i * 16, 4))
@@ -156,13 +141,20 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
     bottomHalf.push(address)
   }
 
+  const pc1 = handleGetState6502().PC
+  const highlightedAddress = getHighlightedAddress()
+  const classLine = (line: string) => {
+    const addr = getAddress(line)
+    return addr === pc1 ? "program-counter" : addr === highlightedAddress ? "highlight-address" : ""
+  }
+
   return <div style={{ width: "24em", lineHeight: "10pt" }}>
     {topHalf.map((line) => (<div key={line}>{line}</div>))}
     {disArray.map((line, index) => (
       <div key={index}
         ref={index === 0 ? scrollToRef : null}
         style={{ position: "relative" }}
-        className={getAddress(line) === pc1 ? "program-counter" : ""}>
+        className={classLine(line)}>
         {(bp[index] && !bp[index].basic &&
           <FontAwesomeIcon icon={getBreakpointIcon(bp[index])}
             className={"breakpoint-position " + getBreakpointStyle(bp[index])}

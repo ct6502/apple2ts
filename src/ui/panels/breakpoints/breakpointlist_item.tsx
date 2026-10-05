@@ -30,7 +30,7 @@ const BreakpointListItem = (props: {updateDisplay: UpdateDisplay,
     if (handleGetRunMode() !== RUN_MODE.PAUSED) return
     const addr = parseInt(event.currentTarget.getAttribute("data-key") || "-1")
     if (addr >= 0) {
-      ensureDisassemblyContainsAddress(addr, true)
+      ensureDisassemblyContainsAddress(addr, true, true)
       props.updateDisplay()
     }
   }

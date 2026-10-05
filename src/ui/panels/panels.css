@@ -83,14 +83,6 @@ body.dark-mode .debug-panel {
   outline: none;
 }
 
-.program-counterxxx {
-  background-color: gray;
-  opacity: 100%;
-  margin-left: 0px;
-  padding-left: 0px;
-  margin-right: 0px;
-}
-
 .program-counter {
   background-color: var(--highlight);
 }
@@ -99,14 +91,8 @@ body.dark-mode .program-counter {
   background-color: var(--highlight-dark);
 }
 
-.highlight-line {
-  background-color: black;
-  opacity: 30%;
-  width: 95%;
-  height: 14px;
-  left: 2px;
-  margin-top: -14px;
-  pointer-events: none;
+.highlight-address {
+  background-color: gray;
 }
 
 .breakpoint-style {
@@ -145,19 +131,28 @@ body.dark-mode .program-counter {
   }
 
   100% {
-    background-color: var(--bp-hit-color, yellow);
+    background-color: var(--highlight);
   }
 }
 
 .breakpoint-hit {
-  --bp-hit-color: yellow;
-  --bp-flash-color: rgb(243, 243, 174);
-  background-color: var(--bp-hit-color);
+  background-color: var(--highlight);
   animation: breakpoint-flash 0.8s ease-out;
 }
 
+@keyframes breakpoint-flash-dark {
+  0% {
+    background-color: transparent;
+  }
+
+  100% {
+    background-color: var(--highlight-dark);
+  }
+}
+
 body.dark-mode .breakpoint-hit {
-  --bp-hit-color: var(--highlight-dark);
+  background-color: var(--highlight-dark);
+  animation: breakpoint-flash-dark 0.8s ease-out;
 }
 
 body.dark-mode .breakpoint-pushbutton {

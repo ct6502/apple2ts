@@ -1,5 +1,5 @@
 import { getInstructionString } from "../../../common/util_disassemble"
-import { DISASSEMBLE_VISIBLE, getSymbolTables } from "../../../common/utility"
+import { getSymbolTables } from "../../../common/utility"
 import { handleGetCurrentMemory, handleGetMachineName, handleGetSoftSwitches, handleGetState6502 } from "../../main2worker"
 
 let instructions: Array<PCodeInstr1> = []
@@ -13,17 +13,8 @@ export const setLinesVisible = (lines: number) => {
   nlines = lines
 }
 
-let visibleMode: DISASSEMBLE_VISIBLE = DISASSEMBLE_VISIBLE.RESET
-
-export const getDisassemblyVisibleMode = () => {
-  return visibleMode
-}
-
-export const setDisassemblyVisibleMode = (mode: DISASSEMBLE_VISIBLE) => {
-  visibleMode = mode
-}
-
 let disassemblyAddressStart = -1
+let highlightedAddress = -1
 let visitedAddresses: number[] = [1000]
 let currentAddressIndex: number = 1
 
@@ -43,7 +34,10 @@ export const setDisassemblyAddressStart = (addr: number, updateVisitedAddresses 
   }
 }
 
-export const ensureDisassemblyContainsAddress = (addr: number, updateVisitedAddresses = false) => {
+export const ensureDisassemblyContainsAddress = (addr: number, updateVisitedAddresses: boolean, highlightAddress = false) => {
+  if (highlightAddress) {
+    highlightedAddress = addr
+  }
   let containedWithin = false
   if (addr >= disassemblyAddressStart && addr < disassemblyAddressStart + 3 * nlines) {
     const disArray = getDisassembly(disassemblyAddressStart)
@@ -56,8 +50,27 @@ export const ensureDisassemblyContainsAddress = (addr: number, updateVisitedAddr
     }
   }
   if (!containedWithin) {
-    visibleMode = DISASSEMBLE_VISIBLE.ADDRESS
     setDisassemblyAddressStart(addr - Math.floor(nlines / 2), updateVisitedAddresses)
+  }
+}
+
+export const getHighlightedAddress = () => {
+  return highlightedAddress
+}
+
+// Flag that the next time the disassembly is rendered, it should update to the current PC.
+// The disassembly is required to call checkDisassemblyNeedUpdatePC first.
+let needUpdatePC = false
+
+export const setDisassemblyNeedUpdatePC = () => {
+  needUpdatePC = true
+}
+
+export const checkDisassemblyNeedUpdatePC = () => {
+  if (needUpdatePC) {
+    needUpdatePC = false
+    const pc = handleGetState6502().PC
+    ensureDisassemblyContainsAddress(pc, true)
   }
 }
 

@@ -34,7 +34,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
       const newIndex = currentAddressIndex - 1
       setCurrentAddressIndex(newIndex)
       const addr = visitedAddresses[newIndex]
-      ensureDisassemblyContainsAddress(addr)
+      ensureDisassemblyContainsAddress(addr, false, true)
     }
   }
 
@@ -46,7 +46,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
       const newIndex = currentAddressIndex + 1
       setCurrentAddressIndex(newIndex)
       const addr = visitedAddresses[newIndex]
-      ensureDisassemblyContainsAddress(addr)
+      ensureDisassemblyContainsAddress(addr, false, true)
     }
   }
 
@@ -95,7 +95,6 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
             onClick={() => {
               const state = handleGetState6502()
               ensureDisassemblyContainsAddress(state.PC, true)            
-              // setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
             }}
             disabled={!isPaused}>
             <span className="default-font">PC</span>

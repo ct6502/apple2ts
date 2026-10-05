@@ -13,12 +13,12 @@ import {
   faRoute,
 } from "@fortawesome/free-solid-svg-icons"
 import React from "react"
-import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE } from "../../../common/utility"
+import { loadUserSymbolTable, RUN_MODE } from "../../../common/utility"
 import { handleSetCPUState } from "../../controller"
 import { bpStepInto } from "../../img/icon_stepinto"
 import { bpStepOut } from "../../img/icon_stepout"
 import { bpStepOver } from "../../img/icon_stepover"
-import { ensureDisassemblyContainsAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
+import { ensureDisassemblyContainsAddress, setDisassemblyNeedUpdatePC } from "./disassembly_utilities"
 import SaveDisassemblyDialog from "./savedisassemblydialog"
 import TraceDialog from "./tracedialog"
 import { useTranslation } from "../../../i18n/useTranslation"
@@ -39,7 +39,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const doUpdateAddress = (addr: number) => {
-    ensureDisassemblyContainsAddress(addr, true)
+    ensureDisassemblyContainsAddress(addr, true, true)
     setAddress(addr.toString(16).toUpperCase())
     props.refresh()
   }
@@ -118,7 +118,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onClick={() => {
           setTooltipOverShow(false)
           passStepOver()
-          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+          setDisassemblyNeedUpdatePC()
         }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepOver}</svg>
@@ -128,7 +128,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onClick={() => {
           setTooltipIntoShow(false)
           passStepInto()
-          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+          setDisassemblyNeedUpdatePC()
         }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepInto}</svg>
@@ -138,6 +138,9 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onClick={() => {
           setTooltipOutShow(false)
           passStepOut()
+          // We do not need to call setDisassemblyNeedUpdatePC() because
+          // stepping out switches to run mode and will automatically update
+          // the disassembly to the current PC when pause is activated.
         }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepOut}</svg>

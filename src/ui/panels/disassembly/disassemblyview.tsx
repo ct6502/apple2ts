@@ -4,12 +4,11 @@ import {
 } from "../../main2worker"
 import { useGlobalContext } from "../../globalcontext"
 import { BreakpointMap, BreakpointNew } from "../../../common/breakpoint"
-import { getDisassemblyAddressStart, setDisassemblyAddressStart, setDisassemblyVisibleMode } from "./disassembly_utilities"
+import { getDisassemblyAddressStart, setDisassemblyAddressStart } from "./disassembly_utilities"
 import { setPreferenceBreakpoints } from "../../localstorage"
 import DisassemblyDiv from "./disassemblydiv"
 import { faCircle } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { DISASSEMBLE_VISIBLE } from "../../../common/utility"
 
 let allowScrollEvent = false
 let isMouseDown = false
@@ -50,8 +49,6 @@ const DisassemblyView = (props: DisassemblyProps) => {
         if (newAddress === getDisassemblyAddressStart() || Number.isNaN(newAddress)) {
           return
         }
-        // console.log("handleCodeScroll ", newAddress.toString(16))
-        setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.ADDRESS)
         setDisassemblyAddressStart(newAddress)
         props.refresh()
       }
@@ -91,7 +88,6 @@ const DisassemblyView = (props: DisassemblyProps) => {
     }
     newAddress = Math.max(Math.min(newAddress, 0xFFFF), 0)
     if (newAddress !== currentAddr) {
-      setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.ADDRESS)
       setDisassemblyAddressStart(newAddress)
       props.refresh()
     }
