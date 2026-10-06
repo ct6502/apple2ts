@@ -23,6 +23,26 @@ export const loresColors: number[][] = loresHex.map(hex => {
   return [red, green, blue]
 })
 
+/*
+ * From Apple IIe Technical Reference Manual, table 2-8:
+ *
+ * Black       0000
+ * Magenta     0001
+ * Brown       0010
+ * Orange      0011
+ * Dark Green  0100
+ * Gray 1      0101
+ * Green       0110
+ * Yellow      0111
+ * Dark Blue   1000
+ * Purple      1001
+ * Gray 2      1010
+ * Pink        1011
+ * Medium Blue 1100
+ * Light Blue  1101
+ * Aqua        1110
+ * White       1111
+ */
 export const translateDHGR = [0, 1, 8, 9, 4, 5, 12, 13, 2, 3, 10, 11, 6, 7, 14, 15]
 
 export const loresGreen: number[][] = loresColors.map(c => {
