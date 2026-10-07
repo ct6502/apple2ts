@@ -1,8 +1,8 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../../common/breakpoint"
-import { RUN_MODE, toHex } from "../../../common/utility"
-import { getPreferenceDebugTabLeftWidth, setPreferenceBreakpoints } from "../../localstorage"
-import { handleGetRunMode, handleGetState6502, handleGetBreakpoints } from "../../main2worker"
+import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
+import { getPreferenceByString, getPreferenceDebugTabLeftWidth, setPreferenceBreakpoints } from "../../localstorage"
+import { handleGetRunMode, handleGetState6502, handleGetBreakpoints, handleGetHeatMap, handleGetHeatMapState, handleGetHeatMapMax } from "../../main2worker"
 import {getDisassembly, 
   setLinesVisible,
   ensureDisassemblyContainsAddress,
@@ -13,6 +13,8 @@ import { getChromacodedLine } from "./disassemblyview_singleline"
 import React, { useEffect, useRef } from "react"
 import { useGlobalContext } from "../../globalcontext"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { PaletteName } from "viridis"
+import { getViridisColorsRGB } from "../../ui_utilities"
 
 type DisassemblyDivProps = {
   disassemblyRef: React.RefObject<HTMLDivElement | null>,
@@ -148,10 +150,16 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
     return addr === pc1 ? "program-counter" : addr === highlightedAddress ? "highlight-address" : ""
   }
 
+  const heatMapState = handleGetHeatMapState()
+  const heatMap = (heatMapState === HEATMAP_STATE.CPU) ? handleGetHeatMap() : new Float64Array()
+  const heatMapMax = handleGetHeatMapMax().value
+  const heatMapPalette = getPreferenceByString("heatMapColorTable", "Spectral") as PaletteName
+  const colorTable = getViridisColorsRGB(heatMapPalette, 16)
+  
   return <div style={{ width: "24em", lineHeight: "10pt" }}>
-    {topHalf.map((line) => (<div key={line}>{line}</div>))}
+    {topHalf.map((line, i) => (<div key={`before-${i}`}>{line}</div>))}
     {disArray.map((line, index) => (
-      <div key={index}
+      <div key={`addr-${index}`}
         ref={index === 0 ? scrollToRef : null}
         style={{ position: "relative" }}
         className={classLine(line)}>
@@ -160,10 +168,10 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
             className={"breakpoint-position " + getBreakpointStyle(bp[index])}
             data-key={bp[index].address}
             onClick={handleBreakpointClick} />)}
-        {getChromacodedLine(line, width, onJumpClick, onMemoryClick, t)}
+        {getChromacodedLine(line, width, onJumpClick, onMemoryClick, t, heatMap, heatMapMax, colorTable)}
       </div>
     ))}
-    {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
+    {bottomHalf.map((line, i) => (<div key={`after-${i}`}>{toHex(line, 4)}</div>))}
   </div>
 }
 

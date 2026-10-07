@@ -21,6 +21,7 @@ import {
   joinDisassemblyTooltipLines,
 } from "./disassembly_tooltips"
 import type { TooltipTranslator } from "./disassembly_tooltips"
+import { getHeatMapRGBValues } from "../../ui_utilities"
 
 // const fWeight = (opcode: string) => {
 //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
@@ -213,22 +214,49 @@ const getOperand = (
   return <span title={title} className={className}>{operand}</span>
 }
 
+const linearizeColor = (val: number) => {
+  const value = val / 255
+  return value <= 0.04045
+    ? value / 12.92
+    : ((value + 0.055) / 1.055) ** 2.4
+}
+
 export const getChromacodedLine = (
   line: string,
   width: number,
   onJumpClick: (addr: number) => void,
   onMemoryClick: (addr: number) => void,
   translate: TooltipTranslator,
+  heatMap: Float64Array,
+  heatMapMax: number,
+  colorTable: Array<[number, number, number]>,
 ) => {
   const opcode = line.slice(16, 19)
   const addr = parseInt(line.slice(0, 4), 16)
   let symbol = getSymbolForAddress(addr) || ""
   const hexcodes = line.slice(0, 14).trim()
   const maxSymLengthWithoutShift = width - hexcodes.length
+  const heatMapValue = heatMap[addr] || 0
+  const [r, g, b, a] = getHeatMapRGBValues(heatMapValue, heatMapMax, colorTable)
+  const alpha = (heatMapValue !== 0) ? a : 0
+  const luminance = (heatMapValue !== 0) ? 0.2126 * linearizeColor(r) + 0.7152 * linearizeColor(g) +
+    0.0722 * linearizeColor(b) : 1
+  const textColor = luminance > 0.179 ? "black" : "white"
   // Right justify the symbol but if it is too long then just shove over the
   // operand and don't add extra spaces after the hex codes.
   symbol = " ".repeat(Math.max(2, maxSymLengthWithoutShift - symbol.length)) + symbol + " "
-  return <span className={borderStyle(opcode)}>{hexcodes}{symbol}
+  const title = heatMapValue !== 0 ? `${translate("debug.heatMap.count")}=${heatMapValue}` : undefined
+  return <span className={borderStyle(opcode)}>
+    <span style={{
+      display: "inline-block",
+      height: "10pt",
+      lineHeight: "10pt",
+      verticalAlign: "top",
+      backgroundColor: `rgba(${r}, ${g}, ${b}, ${alpha})`,
+      color: textColor,
+    }}
+    title={title}>{hexcodes.slice(0, 4)}</span>
+    <span>{hexcodes.slice(4)}</span>{symbol}
     <span className="disassembly-opcode">{opcode} </span>
     {getOperand(opcode, line.slice(20), addr, onJumpClick, onMemoryClick, translate)}</span>
 }

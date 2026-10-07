@@ -130,7 +130,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
       fakePoint.style.display = "initial"
       fakePoint.style.top = `${mouseY - 5}px`
     } else {
-      div.style.cursor = "text"
+      div.style.cursor = "default"
       fakePoint.style.display = "none"
     }
   }
@@ -158,7 +158,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
           width: "100%",
           top: "0px",
           height: `${height}px`,
-          paddingLeft: "15pt",
+          paddingLeft: "12pt",
           paddingRight: "10px",
           marginRight: "0px",
         }}

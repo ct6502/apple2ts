@@ -48,3 +48,22 @@ export const getViridisColorsRGB = (colorTable: PaletteName, count: number): [nu
   }
   return rgbColors
 }
+
+export const getHeatMapRGBValues = (heatMapValue: number, heatMapMax: number,
+  colorTable: [number, number, number][]) => {
+  const logHeatMax = Math.log10(Math.max(1, 0.9 * heatMapMax))
+  const logscale = Math.log10(Math.max(1, heatMapValue)) / logHeatMax
+  // Math.log10(1) is exactly 0, so a cell touched exactly once always
+  // computed value === -1 here, same as a cell never touched at all --
+  // e.g. code copied into place by a single denibblizing pass and never
+  // rewritten was indistinguishable from memory nothing ever wrote to.
+  // Floor any actually-touched cell at bucket 0 instead of letting it
+  // fall through.
+  const value = heatMapValue > 0 ? Math.max(0, Math.floor(16 * logscale) - 1) : -1
+  if (value >= 0) {
+    const [r, g, b] = colorTable[value]
+    return [r, g, b, 255]
+  } else {
+    return [0, 0, 0, 255]
+  }
+}

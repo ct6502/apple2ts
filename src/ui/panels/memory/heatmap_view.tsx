@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { handleGetHeatMap, handleGetHeatMapMax, handleGetHeatMapState, handleGetRunMode, handleGetState6502 } from "../../main2worker"
 import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
 import HeatMapMagnifier from "./heatmap_magnifier"
-import { getViridisColorsRGB } from "../../ui_utilities"
+import { getHeatMapRGBValues, getViridisColorsRGB } from "../../ui_utilities"
 import { PaletteName } from "viridis"
 
 const BASE_HEATMAP_WIDTH = 256
@@ -18,6 +18,7 @@ let maxIndex = 0
 // signal - it only bumps on running/paused/idle transitions, so it never
 // changes while the emulator runs continuously.)
 let lastDrawnCycleCount = -1
+let lastDrawnColorTable: PaletteName | null = null
 // Which HEATMAP_STATE (CPU/GETMEM/SETMEM) the canvas currently reflects, as
 // reported by the worker for the data it actually sent. This is deliberately NOT
 // props.state: clicking a sub-tab re-renders us immediately, but the new array only
@@ -122,6 +123,7 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     if (heatMap.length === 0) {
       ctx.clearRect(0, 0, BASE_HEATMAP_WIDTH, BASE_HEATMAP_HEIGHT)
       lastDrawnCycleCount = -1
+      lastDrawnColorTable = null
       lastDrawnHeatMapState = null
       return
     }
@@ -133,8 +135,10 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     }
     const cycleCount = handleGetState6502().cycleCount
     const heatMapState = handleGetHeatMapState()
-    if (cycleCount === lastDrawnCycleCount && heatMapState === lastDrawnHeatMapState) return
+    if (cycleCount === lastDrawnCycleCount && heatMapState === lastDrawnHeatMapState
+      && props.colorTable === lastDrawnColorTable) return
     lastDrawnCycleCount = cycleCount
+    lastDrawnColorTable = props.colorTable
     lastDrawnHeatMapState = heatMapState
     ctx.imageSmoothingEnabled = false
     const rgba = new Uint8ClampedArray(4 * BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT)
@@ -144,27 +148,14 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     // rescanned across all 65536 entries here on every redraw.
     const heatMapMax = handleGetHeatMapMax()
     maxIndex = heatMapMax.index
-    const heatMax = Math.log10(Math.max(1, 0.9 * heatMapMax.value))
     const colorTable = getViridisColorsRGB(props.colorTable, 16)
     // const heatMapBottom = 75
     for (let i = 0; i < BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT; i++) {
-      const logscale = Math.log10(Math.max(1, heatMap[i])) / heatMax
-      // Math.log10(1) is exactly 0, so a cell touched exactly once always
-      // computed value === -1 here, same as a cell never touched at all --
-      // e.g. code copied into place by a single denibblizing pass and never
-      // rewritten was indistinguishable from memory nothing ever wrote to.
-      // Floor any actually-touched cell at bucket 0 instead of letting it
-      // fall through.
-      const value = heatMap[i] > 0 ? Math.max(0, Math.floor(16 * logscale) - 1) : -1
-      if (value >= 0) {
-        const [r, g, b] = colorTable[value]
-        rgba[4 * i] = r
-        rgba[4 * i + 1] = g
-        rgba[4 * i + 2] = b
-        rgba[4 * i + 3] = 255
-      } else {
-        if (rgba[4 * i + 3] === 0) rgba[4 * i + 3] = 255
-      }
+      const [r, g, b, a] = getHeatMapRGBValues(heatMap[i], heatMapMax.value, colorTable)
+      rgba[4 * i] = r
+      rgba[4 * i + 1] = g
+      rgba[4 * i + 2] = b
+      rgba[4 * i + 3] = a
     }
     ctx.putImageData(new ImageData(rgba as ImageDataArray, BASE_HEATMAP_WIDTH, BASE_HEATMAP_HEIGHT), 0, 0)
   }

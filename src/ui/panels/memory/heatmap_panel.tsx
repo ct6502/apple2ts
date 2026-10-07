@@ -6,7 +6,7 @@ import { handleGetRunMode, passHeatMapState } from "../../main2worker"
 import type { PaletteName } from "viridis"
 import { getPreferenceByString, setPreferenceByString } from "../../localstorage"
 
-const HeatMapPanel = (props: { isActive: boolean }) => {
+const HeatMapPanel = (props: { isActive: boolean, updateDisplay: UpdateDisplay }) => {
   const [state, setState] = useState<HEATMAP_STATE>(HEATMAP_STATE.CPU)
   const [colorTable, setColorTable] = useState<PaletteName>(
     getPreferenceByString("heatMapColorTable", "Spectral") as PaletteName)
@@ -19,8 +19,9 @@ const HeatMapPanel = (props: { isActive: boolean }) => {
   }
 
   const doSetColorTable = (value: PaletteName) => {
-    setColorTable(value)
     setPreferenceByString("heatMapColorTable", value, "Spectral")
+    setColorTable(value)
+    props.updateDisplay()
   }
 
   // Only ask the worker to build/send the heat map while this tab is the

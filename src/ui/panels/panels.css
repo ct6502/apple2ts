@@ -171,8 +171,8 @@ body.dark-mode .breakpoint-pushbutton:active {
 
 .fake-point {
   position: absolute;
-  left: 6px;
-  top: 0;
+  left: 2px;
+  top: -3px;
   opacity: 50%;
 }
 
@@ -490,7 +490,6 @@ body.dark-mode .disassembly-immediate {
 .disassembly-address {
   color: var(--address);
   font-weight: bold;
-  cursor: crosshair;
 }
 
 body.dark-mode .disassembly-address {
@@ -506,6 +505,13 @@ body.dark-mode .disassembly-address {
 
 body.dark-mode .disassembly-separator {
   border-bottom-color: var(--text-color-dark);
+}
+
+.disassembly-heatmap-value {
+  display: inline-block;
+  width: 1.5ch;
+  height: 1em;
+  cursor: default;
 }
 
 .memtable {
