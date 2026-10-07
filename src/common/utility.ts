@@ -245,12 +245,6 @@ export enum CLOUD_SYNC {
   FAILED
 }
 
-export enum DISASSEMBLE_VISIBLE {
-  RESET,
-  ADDRESS,
-  CURRENT_PC
-}
-
 export enum ADDR_MODE {
   IMPLIED,  // BRK
   IMM,      // LDA #$01

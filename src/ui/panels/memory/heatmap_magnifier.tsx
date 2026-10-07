@@ -136,7 +136,7 @@ const HeatMapMagnifier = (props: {
     }
     if (heatMapAddress >= 0) {
       const memoryValue = toHex(handleGetMemoryAtAddress(heatMapAddress), 2)
-      const heatmapInfo = `$${toHex(heatMapAddress, 4)}($${memoryValue}) count=${props.heatMapCount}`
+      const heatmapInfo = `$${toHex(heatMapAddress, 4)}($${memoryValue}) ${t("debug.heatMap.count")}=${props.heatMapCount}`
       const scroll = magnifierScrollRef.current
       const leftEdge = scroll.scrollLeft
       const topEdge = scroll.scrollTop
@@ -158,7 +158,7 @@ const HeatMapMagnifier = (props: {
 
       // Add in the local assembly code if CPU heatmap
       if (props.state === HEATMAP_STATE.CPU) {
-        const disassembly = getDisassembly(heatMapAddress - 15, heatMapAddress + 15).split("\n")
+        const disassembly = getDisassembly(heatMapAddress - 15, heatMapAddress + 15)
         if ((heatMapAddress & 0xFF00) === 0xC000) {
           return
         }

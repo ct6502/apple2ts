@@ -3279,6 +3279,10 @@ msgctxt "debug.heatMap.cpuProgramCounter"
 msgid "6502 Program Counter"
 msgstr ""
 
+msgctxt "debug.heatMap.count"
+msgid "Count"
+msgstr ""
+
 msgctxt "debug.heatMap.getMemoryCalls"
 msgid "Get Memory Calls"
 msgstr ""

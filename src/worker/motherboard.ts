@@ -733,11 +733,12 @@ export const doStepOver = () => {
     doBoot()
     cpuRunMode = RUN_MODE.PAUSED
   }
+  // If we're at a JSR then briefly step in, then step out.
   if (memGet(s6502.PC, false) === 0x20) {
     // Remove all tracelog values if we are no longer tracing.
     if (!tracing) clearTracelog()
-    // If we're at a JSR then briefly step in, then step out.
-    if (processInstruction(tracing ? updateTrace : null) !== -1) doStepOut()
+    const cycles = processInstruction(tracing ? updateTrace : null)
+    if (cycles !== -1) doStepOut()
   } else {
     // Otherwise just do a single step.
     doStepInto()

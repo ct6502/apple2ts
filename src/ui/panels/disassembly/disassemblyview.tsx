@@ -4,13 +4,12 @@ import {
 } from "../../main2worker"
 import { useGlobalContext } from "../../globalcontext"
 import { BreakpointMap, BreakpointNew } from "../../../common/breakpoint"
-import { getDisassembly, setDisassemblyAddress } from "./disassembly_utilities"
+import { getDisassemblyAddressStart, setDisassemblyAddressStart } from "./disassembly_utilities"
 import { setPreferenceBreakpoints } from "../../localstorage"
 import DisassemblyDiv from "./disassemblydiv"
 import { faCircle } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
-let currentScrollAddress = -1
 let allowScrollEvent = false
 let isMouseDown = false
 //const lineNumbers: Array<number> = []
@@ -47,12 +46,10 @@ const DisassemblyView = (props: DisassemblyProps) => {
           newAddress = parseInt(topElement.textContent.slice(0, 4), 16)
         }
         // Are we already there?
-        if (newAddress === currentScrollAddress || Number.isNaN(newAddress)) {
+        if (newAddress === getDisassemblyAddressStart() || Number.isNaN(newAddress)) {
           return
         }
-        // console.log("handleCodeScroll ", newAddress.toString(16))
-        currentScrollAddress = newAddress
-        setDisassemblyAddress(newAddress)
+        setDisassemblyAddressStart(newAddress)
         props.refresh()
       }
     }, 50)
@@ -63,31 +60,39 @@ const DisassemblyView = (props: DisassemblyProps) => {
   }
 
   const handleCodeKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    const currentAddr = getDisassemblyAddressStart()
+    let newAddress = currentAddr
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault()  // suppress normal scroll events
-      const currentAddr = getAddressAtTop()
-      let newAddress = currentAddr + ((e.key === "ArrowDown") ? 1 : -1)
+      newAddress = currentAddr + ((e.key === "ArrowDown") ? 1 : -1)
       if (e.metaKey) {
-        newAddress = (e.key === "ArrowDown") ? 0xFFFF : 0
+        newAddress = (e.key === "ArrowDown") ? 0xFFCC : 0
       } else if (e.ctrlKey) {
         // Down array: Jump down to start of next page
         // Up arrow: Jump back to start of page (or previous page if at $XX00)
         newAddress = (e.key === "ArrowDown") ? ((currentAddr >> 8) + 1) << 8 :
           ((currentAddr - 1) >> 8) << 8
       }
-      newAddress = Math.max(Math.min(newAddress, 0xFFFF), 0)
-      if (newAddress !== currentAddr) {
-        setDisassemblyAddress(newAddress)
-        props.refresh()
-      }
+    } else if (e.key === "Home") {
+      e.preventDefault()  // suppress normal scroll events
+      newAddress = 0
+    } else if (e.key === "End") {
+      e.preventDefault()  // suppress normal scroll events
+      newAddress = 0xFFCC
+    } else if (e.key === "PageUp") {
+      e.preventDefault()  // suppress normal scroll events
+      newAddress = ((currentAddr - 1) >> 8) << 8
+    } else if (e.key === "PageDown") {
+      e.preventDefault()  // suppress normal scroll events
+      newAddress = ((currentAddr >> 8) + 1) << 8
+    }
+    newAddress = Math.max(Math.min(newAddress, 0xFFFF), 0)
+    if (newAddress !== currentAddr) {
+      setDisassemblyAddressStart(newAddress)
+      props.refresh()
     }
   }
-
-  const getAddressAtTop = () => {
-    const disassembly = getDisassembly()
-    return parseInt(disassembly.slice(0, disassembly.indexOf(":")), 16)
-  }
-
+  
   const getAddressAtMouse = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!disassemblyRef.current) return [-1, -1]
     const div = disassemblyRef.current as HTMLDivElement
@@ -125,7 +130,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
       fakePoint.style.display = "initial"
       fakePoint.style.top = `${mouseY - 5}px`
     } else {
-      div.style.cursor = "text"
+      div.style.cursor = "default"
       fakePoint.style.display = "none"
     }
   }
@@ -153,7 +158,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
           width: "100%",
           top: "0px",
           height: `${height}px`,
-          paddingLeft: "15pt",
+          paddingLeft: "12pt",
           paddingRight: "10px",
           marginRight: "0px",
         }}

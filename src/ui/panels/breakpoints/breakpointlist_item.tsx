@@ -10,10 +10,10 @@ import {
   faCircle as iconBreakpointEnabled,
 } from "@fortawesome/free-solid-svg-icons"
 import { faCircle as iconBreakpointDisabled } from "@fortawesome/free-regular-svg-icons"
-import { setDisassemblyAddress, setDisassemblyVisibleMode } from "../disassembly/disassembly_utilities"
+import { ensureDisassemblyContainsAddress } from "../disassembly/disassembly_utilities"
 import { BreakpointMap, getBreakpointString, getBreakpointStyle } from "../../../common/breakpoint"
 import { useGlobalContext } from "../../globalcontext"
-import { DISASSEMBLE_VISIBLE, RUN_MODE } from "../../../common/utility"
+import { RUN_MODE } from "../../../common/utility"
 import { setPreferenceBreakpoints } from "../../localstorage"
 import { useTranslation } from "../../../i18n/useTranslation"
 
@@ -30,8 +30,7 @@ const BreakpointListItem = (props: {updateDisplay: UpdateDisplay,
     if (handleGetRunMode() !== RUN_MODE.PAUSED) return
     const addr = parseInt(event.currentTarget.getAttribute("data-key") || "-1")
     if (addr >= 0) {
-      setDisassemblyAddress(addr, true)
-      setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.ADDRESS)
+      ensureDisassemblyContainsAddress(addr, true, true)
       props.updateDisplay()
     }
   }

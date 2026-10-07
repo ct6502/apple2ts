@@ -84,21 +84,15 @@ body.dark-mode .debug-panel {
 }
 
 .program-counter {
-  background-color: gray;
-  opacity: 100%;
-  margin-left: 0px;
-  padding-left: 0px;
-  margin-right: 0px;
+  background-color: var(--highlight);
 }
 
-.highlight-line {
-  background-color: black;
-  opacity: 30%;
-  width: 95%;
-  height: 14px;
-  left: 2px;
-  margin-top: -14px;
-  pointer-events: none;
+body.dark-mode .program-counter {
+  background-color: var(--highlight-dark);
+}
+
+.highlight-address {
+  background-color: gray;
 }
 
 .breakpoint-style {
@@ -137,19 +131,28 @@ body.dark-mode .debug-panel {
   }
 
   100% {
-    background-color: var(--bp-hit-color, yellow);
+    background-color: var(--highlight);
   }
 }
 
 .breakpoint-hit {
-  --bp-hit-color: yellow;
-  --bp-flash-color: rgb(243, 243, 174);
-  background-color: var(--bp-hit-color);
+  background-color: var(--highlight);
   animation: breakpoint-flash 0.8s ease-out;
 }
 
+@keyframes breakpoint-flash-dark {
+  0% {
+    background-color: transparent;
+  }
+
+  100% {
+    background-color: var(--highlight-dark);
+  }
+}
+
 body.dark-mode .breakpoint-hit {
-  --bp-hit-color: var(--highlight-dark);
+  background-color: var(--highlight-dark);
+  animation: breakpoint-flash-dark 0.8s ease-out;
 }
 
 body.dark-mode .breakpoint-pushbutton {
@@ -168,8 +171,8 @@ body.dark-mode .breakpoint-pushbutton:active {
 
 .fake-point {
   position: absolute;
-  left: 6px;
-  top: 0;
+  left: 2px;
+  top: -3px;
   opacity: 50%;
 }
 
@@ -487,7 +490,6 @@ body.dark-mode .disassembly-immediate {
 .disassembly-address {
   color: var(--address);
   font-weight: bold;
-  cursor: crosshair;
 }
 
 body.dark-mode .disassembly-address {
@@ -503,6 +505,13 @@ body.dark-mode .disassembly-address {
 
 body.dark-mode .disassembly-separator {
   border-bottom-color: var(--text-color-dark);
+}
+
+.disassembly-heatmap-value {
+  display: inline-block;
+  width: 1.5ch;
+  height: 1em;
+  cursor: default;
 }
 
 .memtable {

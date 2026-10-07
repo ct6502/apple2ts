@@ -1,43 +1,55 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../../common/breakpoint"
-import { RUN_MODE, DISASSEMBLE_VISIBLE, toHex } from "../../../common/utility"
-import { getPreferenceDebugTabLeftWidth, setPreferenceBreakpoints } from "../../localstorage"
-import { handleGetRunMode, handleGetState6502, handleGetBreakpoints } from "../../main2worker"
-import { getDisassembly, getDisassemblyVisibleMode, getDisassemblyAddress, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
+import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
+import { getPreferenceByString, getPreferenceDebugTabLeftWidth, setPreferenceBreakpoints } from "../../localstorage"
+import { handleGetRunMode, handleGetState6502, handleGetBreakpoints, handleGetHeatMap, handleGetHeatMapState, handleGetHeatMapMax } from "../../main2worker"
+import {getDisassembly, 
+  setLinesVisible,
+  ensureDisassemblyContainsAddress,
+  getDisassemblyAddressStart,
+  checkDisassemblyNeedUpdatePC,
+  getHighlightedAddress} from "./disassembly_utilities"
 import { getChromacodedLine } from "./disassemblyview_singleline"
 import React, { useEffect, useRef } from "react"
 import { useGlobalContext } from "../../globalcontext"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { PaletteName } from "viridis"
+import { getViridisColorsRGB } from "../../ui_utilities"
 
-let lastRepositionedAddress = -1
- 
-const DisassemblyDiv = (props: {
+type DisassemblyDivProps = {
   disassemblyRef: React.RefObject<HTMLDivElement | null>,
   hideFakePoint: () => void,
   setAllowScrollEvent: (value: boolean) => void,
   refresh: () => void,
   height: number
-}) => {
-  const { updateBreakpoint, setUpdateBreakpoint, setMemdumpAddress } = useGlobalContext()
+}
+
+const DisassemblyDiv = (props: DisassemblyDivProps) => {
   const { t } = useTranslation()
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  if (handleGetRunMode() !== RUN_MODE.PAUSED) {
+    return <div className="noselect" style={{ marginTop: "30px", width: "24em" }}>{t("debug.pauseForDisassembly")}</div>
+  }
+
+  return <PausedDisassemblyDiv {...props} />
+}
+
+const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
+  const { updateBreakpoint, setUpdateBreakpoint, setMemdumpAddress } = useGlobalContext()
+  // const { refresh } = props
+  const { t } = useTranslation()
   const scrollToRef = useRef<HTMLDivElement>(null)
   const lineHeightPx = 10 * (96 / 72)
-  const nlines = Math.max(15, Math.floor(props.height / lineHeightPx))
+  const nlines = Math.max(15, Math.floor(props.height / lineHeightPx + 0.5))
+  setLinesVisible(nlines)
 
   const getAddress = (line: string) => {
     return parseInt(line, 16)//.slice(0, line.indexOf(":")), 16)
   }
 
-  // const fWeight = (opcode: string) => {
-  //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
-  //   return ""
-  // }
-
   // This function gets used in disassemblyview_singleline but we
   // define it here so it can access our local variables.
   const onJumpClick = (addr: number) => {
-    setDisassemblyAddress(addr, true)
+    ensureDisassemblyContainsAddress(addr, true, true)
     props.refresh()
   }
 
@@ -63,74 +75,25 @@ const DisassemblyDiv = (props: {
     props.hideFakePoint()
   }
 
-  const isPaused = handleGetRunMode() === RUN_MODE.PAUSED
-
-  // Calculate approximate width in characters
-  // For 7pt monospace at line-height 10pt: char width ≈ 0.6 * height = 0.6 * 9.33px ≈ 5.6px
-  const containerWidth = Math.max(getPreferenceDebugTabLeftWidth(), 260) - 36
-  const width = Math.floor(containerWidth / 5.6)
-  
-  let disArray = getDisassembly().split("\n").slice(0, nlines)
+  checkDisassemblyNeedUpdatePC()
+  const disassemblyAddressStart = getDisassemblyAddressStart()
+  const disArray = getDisassembly(disassemblyAddressStart, disassemblyAddressStart + 4 * nlines)
   const hasDisassembly = disArray.length > 1
-  const visibleMode = getDisassemblyVisibleMode()
-  const currentAddress = getDisassemblyAddress()
-  let foundLine = visibleMode === DISASSEMBLE_VISIBLE.RESET &&
-                  lastRepositionedAddress === currentAddress
-  if (isPaused && hasDisassembly && visibleMode !== DISASSEMBLE_VISIBLE.RESET) {
-    const visibleLine = (visibleMode === DISASSEMBLE_VISIBLE.CURRENT_PC) ?
-      handleGetState6502().PC : getDisassemblyAddress()
-    // console.log("visibleLine", visibleLine.toString(16))
-    for (let i = 0; i < disArray.length; i++) {
-      if (getAddress(disArray[i]) === visibleLine) {
-        foundLine = true
-        break
-      }
-    }
-    if (!foundLine) {
-      setDisassemblyAddress(visibleLine)
-      disArray = getDisassembly().split("\n").slice(0, nlines)
-    } else {
-      if (getDisassemblyAddress() === -1) {
-        setDisassemblyAddress(visibleLine)
-      }
-      setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.RESET)
-    }
-  }
 
   useEffect(() => {
-    if (!isPaused) {
-      lastRepositionedAddress = -1
-    }
-
-    if (!isPaused || !hasDisassembly || foundLine) {
-      return
-    }
-
-    if (scrollTimeoutRef.current !== null) {
-      clearTimeout(scrollTimeoutRef.current)
-    }
-
-    scrollTimeoutRef.current = setTimeout(() => {
+    if (!hasDisassembly) return
+    const frame = requestAnimationFrame(() => {
       if (props.disassemblyRef?.current && scrollToRef.current) {
         const container = props.disassemblyRef.current
         const line = scrollToRef.current
         props.setAllowScrollEvent(false)
         container.scrollTop += line.getBoundingClientRect().top - container.getBoundingClientRect().top
-        lastRepositionedAddress = getDisassemblyAddress()
       }
-    }, 20)
-
-    return () => {
-      if (scrollTimeoutRef.current !== null) {
-        clearTimeout(scrollTimeoutRef.current)
-      }
-    }
+    })
+    return () => cancelAnimationFrame(frame)
+  // The line ref points at the first decoded instruction for this address start.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [foundLine, hasDisassembly, isPaused, props.disassemblyRef, props.setAllowScrollEvent])
-
-  if (!isPaused) {
-    return <div className="noselect" style={{ marginTop: "30px", width: "24em" }}>{t("debug.pauseForDisassembly")}</div>
-  }
+  }, [disassemblyAddressStart, hasDisassembly])
 
   if (!hasDisassembly) {
     return <div
@@ -152,40 +115,63 @@ const DisassemblyDiv = (props: {
       bp[i] = bp1
     }
   }
-  const pc1 = handleGetState6502().PC
-  const lineTop = getAddress(disArray[0])
-  const lineBottom = (disArray[nlines - 1] !== "") ? getAddress(disArray[nlines - 1]) : 65535
-  const topHalf = Array.from({ length: Math.floor(lineTop / 16) }, (_, i) => (i * 16))
-  for (let i = topHalf[topHalf.length - 1] + 1; i < lineTop; i++) {
-    topHalf.push(i)
+
+  // Calculate approximate width in characters
+  // For 7pt monospace at line-height 10pt: char width ≈ 0.6 * height = 0.6 * 9.33px ≈ 5.6px
+  const containerWidth = Math.max(getPreferenceDebugTabLeftWidth(), 260) - 36
+  const width = Math.max(Math.floor((containerWidth / 5.6 + 2) / 2), 24)
+  
+  const disBefore = getDisassembly(disassemblyAddressStart - 4 * nlines, disassemblyAddressStart - 1)
+  const lineTop = (disBefore[0] !== "") ? getAddress(disBefore[0]) : 0
+  const topHalf = Array.from({ length: Math.floor(lineTop / 16) }, (_, i) => toHex(i * 16, 4))
+  for (let i = parseInt(topHalf[topHalf.length - 1], 16) + 1; i < lineTop; i++) {
+    topHalf.push(toHex(i, 4))
   }
-  // Construct an evenly-spaced array for the bottom but stop well before 65535.
-  // Then fill in all the remaining values up to 65535. This provides a smooth
-  // scrolling experience and allows you to drag the scrollbar all the way to the bottom.
-  const length = Math.max(Math.floor((65535 - lineBottom) / 16) - 2, 0)
-  const bottomHalf = Array.from({ length: length },
-    (_, i) => Math.min((i * 16) + lineBottom + 1, 65535))
-  const istart = (bottomHalf.length > 0) ? (bottomHalf[bottomHalf.length - 1] + 1) : (lineBottom + 1)
-  for (let i = istart; i <= 65535; i++) {
-    bottomHalf.push(i)
+  topHalf.push(...disBefore.map(line => line.slice(0, 16) + " ".repeat(width - 15) + line.slice(16)))
+
+  const lineBottom = (disArray[nlines - 1] !== "") ? getAddress(disArray[nlines - 1]) : 65535
+  const denseEnd = Math.min(lineBottom + 100, 65450)
+  const bottomHalf: number[] = []
+  for (let address = lineBottom + 1; address <= denseEnd; address++) {
+    bottomHalf.push(address)
+  }
+  const strideStart = Math.max(lineBottom + 1, denseEnd + 1)
+  for (let address = strideStart; address < 65450; address += 16) {
+    bottomHalf.push(address)
+  }
+  for (let address = Math.max(65450, lineBottom + 1); address <= 65535; address++) {
+    bottomHalf.push(address)
   }
 
+  const pc1 = handleGetState6502().PC
+  const highlightedAddress = getHighlightedAddress()
+  const classLine = (line: string) => {
+    const addr = getAddress(line)
+    return addr === pc1 ? "program-counter" : addr === highlightedAddress ? "highlight-address" : ""
+  }
+
+  const heatMapState = handleGetHeatMapState()
+  const heatMap = (heatMapState === HEATMAP_STATE.CPU) ? handleGetHeatMap() : new Float64Array()
+  const heatMapMax = handleGetHeatMapMax().value
+  const heatMapPalette = getPreferenceByString("heatMapColorTable", "Spectral") as PaletteName
+  const colorTable = getViridisColorsRGB(heatMapPalette, 16)
+  
   return <div style={{ width: "24em", lineHeight: "10pt" }}>
-    {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
+    {topHalf.map((line, i) => (<div key={`before-${i}`}>{line}</div>))}
     {disArray.map((line, index) => (
-      <div key={index}
+      <div key={`addr-${index}`}
         ref={index === 0 ? scrollToRef : null}
         style={{ position: "relative" }}
-        className={getAddress(line) === pc1 ? "program-counter" : ""}>
+        className={classLine(line)}>
         {(bp[index] && !bp[index].basic &&
           <FontAwesomeIcon icon={getBreakpointIcon(bp[index])}
             className={"breakpoint-position " + getBreakpointStyle(bp[index])}
             data-key={bp[index].address}
             onClick={handleBreakpointClick} />)}
-        {getChromacodedLine(line, width, onJumpClick, onMemoryClick, t)}
+        {getChromacodedLine(line, width, onJumpClick, onMemoryClick, t, heatMap, heatMapMax, colorTable)}
       </div>
     ))}
-    {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
+    {bottomHalf.map((line, i) => (<div key={`after-${i}`}>{toHex(line, 4)}</div>))}
   </div>
 }
 
