@@ -1,9 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-08-25 03:04+0000\n"
-"Last-Translator: Warren James <19525653+3amcinnamonroll@users.noreply.github."
-"com>\n"
+"PO-Revision-Date: 2026-10-09 23:51+0000\n"
+"Last-Translator: Titouan Mandeville <titouan.mandeville@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/apple2ts/browser-"
 "emulator/fr/>\n"
 "Language: fr\n"
@@ -11,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.9.dev0\n"
+"X-Generator: Weblate 2026.10.1.dev0\n"
 
 #, fuzzy
 msgctxt "controls.boot"
@@ -152,43 +151,48 @@ msgstr "Configuration du joystick"
 
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
-msgstr ""
+msgstr "Configuration de la Machine"
 
 msgctxt "machine.slotConfigurator"
 msgid "Slot Configuration"
 msgstr "Configuration des slots"
 
+#, fuzzy
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
-msgstr ""
+msgstr "Apple II+"
 
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
-msgstr ""
+msgstr "Apple IIe (non-amélioré)"
 
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
-msgstr ""
+msgstr "Apple IIe (amélioré)"
 
+#, fuzzy
 msgctxt "machine.ram.64kb_aux"
 msgid "64 KB (AUX)"
-msgstr ""
+msgstr "64 KB (AUX)"
 
+#, fuzzy
 msgctxt "machine.ram.512kb"
 msgid "512 KB"
-msgstr ""
+msgstr "512 KB"
 
+#, fuzzy
 msgctxt "machine.ram.1024kb"
 msgid "1024 KB"
-msgstr ""
+msgstr "1024 KB"
 
+#, fuzzy
 msgctxt "machine.ram.4mb"
 msgid "4 MB"
-msgstr ""
+msgstr "4 MB"
 
 msgctxt "machine.ram.8mb"
 msgid "8 MB"
-msgstr ""
+msgstr "8 MB"
 
 #, fuzzy
 msgctxt "speed.snail"
@@ -207,11 +211,11 @@ msgstr "Vitesse Normale (1 MHz)"
 
 msgctxt "speed.two"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 MHz"
 
 msgctxt "speed.three"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 MHz"
 
 #, fuzzy
 msgctxt "speed.fast"
@@ -259,23 +263,23 @@ msgstr ""
 
 msgctxt "timetravel.snapshotOnKeyPress"
 msgid "Take Snapshot On Keypress"
-msgstr ""
+msgstr "Prendre une capture d'écran à l'appuie du bouton"
 
 msgctxt "timetravel.autoSnapshot"
 msgid "Auto Snapshot"
-msgstr ""
+msgstr "Capture automatique"
 
 msgctxt "timetravel.auto_Off"
 msgid "Off"
-msgstr ""
+msgstr "Désactivé"
 
 msgctxt "timetravel.auto_100k"
 msgid "Every 0.1s (100000 cycles)"
-msgstr ""
+msgstr "Toutes les 0,1s (100000 cycles)"
 
 msgctxt "timetravel.auto_1M"
 msgid "Every 1s (1M cycles)"
-msgstr ""
+msgstr "Toutes les secondes (1M de cycles)"
 
 #, fuzzy
 msgctxt "themes.classic"
@@ -289,7 +293,7 @@ msgstr "Sombre"
 
 msgctxt "themes.minimal"
 msgid "Minimal"
-msgstr ""
+msgstr "Minimalisé"
 
 #, fuzzy
 msgctxt "debug.helpPanel"
@@ -381,7 +385,7 @@ msgstr "Reprendre"
 
 msgctxt "debug.pause"
 msgid "Pause"
-msgstr ""
+msgstr "Pause"
 
 #, fuzzy
 msgctxt "debug.loadSymbolTable"
@@ -390,7 +394,7 @@ msgstr "Charger la table des symboles"
 
 msgctxt "debug.agentTab"
 msgid "Agent"
-msgstr ""
+msgstr "Agent"
 
 #, fuzzy
 msgctxt "debug.disassembly"
@@ -403,11 +407,11 @@ msgstr ""
 
 msgctxt "debug.basicLineNumber"
 msgid "BASIC Line Number:"
-msgstr ""
+msgstr "Nombre de la ligne BASIC:"
 
 msgctxt "debug.any"
 msgid "Any"
-msgstr ""
+msgstr "Chaque"
 
 msgctxt "disassembly.memory.effectiveAddress"
 msgid "Effective address: {{notation}}"
@@ -415,11 +419,11 @@ msgstr ""
 
 msgctxt "disassembly.memory.value"
 msgid "Value: {{notation}}"
-msgstr ""
+msgstr "Valeur: {{notation}}"
 
 msgctxt "disassembly.keyboard.character"
 msgid "Keyboard: \"{{character}}\""
-msgstr ""
+msgstr "Clavier: \"{{touche}}\""
 
 msgctxt "disassembly.keyboard.strobeClear"
 msgid "Keyboard strobe: CLEAR (MSB = 0)"
@@ -632,11 +636,11 @@ msgstr ""
 
 msgctxt "disassembly.display.altCharsetStatusOff"
 msgid "Alternate character set: OFF (MSB = 0)"
-msgstr ""
+msgstr "Touches alternatives : Désactivées (MSB = 0)"
 
 msgctxt "disassembly.display.altCharsetStatusOn"
 msgid "Alternate character set: ON (MSB = 1)"
-msgstr ""
+msgstr "Touches alternatives : Activées (MSB = 1)"
 
 msgctxt "disassembly.display.selectPrimaryCharset"
 msgid "Select primary character set"
@@ -668,7 +672,7 @@ msgstr ""
 
 msgctxt "disassembly.display.mixedDisplayStatusOn"
 msgid "Mixed display: ON (MSB = 1)"
-msgstr ""
+msgstr "Écrans mélangés: Activé (MSB = 1)"
 
 msgctxt "disassembly.display.selectFullScreenDisplay"
 msgid "Select full-screen display"
@@ -1894,7 +1898,7 @@ msgstr "Cliquer pour retirer de la collection de disques"
 
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
-msgstr ""
+msgstr "Clicker pour garder dans la collection de disques"
 
 #, fuzzy
 msgctxt "collection.clickToAddToCollection"
@@ -2319,7 +2323,7 @@ msgstr ""
 
 msgctxt "traceSettings.ignoreRegisters"
 msgid "Ignore register values when finding repeating lines"
-msgstr ""
+msgstr "Ignorer les valeurs quand les lignes se répètes"
 
 #, fuzzy
 msgctxt "traceSettings.settings"
@@ -2400,7 +2404,7 @@ msgstr ""
 
 msgctxt "linkBuilder.textToType"
 msgid "Text to type after loading disk:"
-msgstr ""
+msgstr "Texte pour écrire après avoir chargés les disques :"
 
 msgctxt "linkBuilder.enterTextPlaceholder"
 msgid "Enter Text or BASIC code here"
