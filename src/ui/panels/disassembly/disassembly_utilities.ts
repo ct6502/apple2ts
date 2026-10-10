@@ -94,7 +94,7 @@ export const getDisassembly = (startAddress: number, endAddress = -1) => {
   let addr = (startAddress !== -1) ? startAddress : disassemblyAddressStart
   if (addr < 0 || addr > 0xFFFF) return [""]
   const lines = endAddress !== -1 ? Math.min(endAddress - addr + 1, 0xFFFF) : nlines
-  const r = Array<string>(lines)
+  const r = Array<string>(lines).fill("")
   const memory = handleGetCurrentMemory()
   for (let i = 0; i < lines; i++) {
     if (addr > 0xFFFF) {

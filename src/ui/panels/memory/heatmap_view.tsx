@@ -219,6 +219,7 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
         heatCanvas={heatMapRef}
         heatMapCount={heatMapCount}
         maxIndex={maxIndex}
+        heatMapAddress={heatMapAddress}
         setHeatMapAddress={doSetHeatMapAddress}
         setMagnifierViewport={setMagnifierViewport}
         heatMapPosition={heatMapPosition}

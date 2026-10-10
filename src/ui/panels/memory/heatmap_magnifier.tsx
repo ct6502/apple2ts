@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react"
 import { HEATMAP_STATE, toHex } from "../../../common/utility"
-import { faBolt, faMountain, faXmark } from "@fortawesome/free-solid-svg-icons"
+import { faMountain, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { getDisassembly } from "../disassembly/disassembly_utilities"
 import { handleGetMemoryAtAddress, handleGetState6502 } from "../../main2worker"
@@ -12,13 +12,12 @@ const MAGNIFIER_HEIGHT = 512
 const BASE_HEATMAP_WIDTH = 256
 const BASE_HEATMAP_HEIGHT = 256
 
-let heatMapAddress = -1
-
 const HeatMapMagnifier = (props: {
   state: HEATMAP_STATE,
   heatCanvas: React.RefObject<HTMLCanvasElement | null>,
   heatMapCount: number,
   maxIndex: number,
+  heatMapAddress: number,
   setHeatMapAddress: (address: number) => void,
   setMagnifierViewport: (viewport: {x: number, y: number, width: number, height: number} | null) => void,
   heatMapPosition: [number, number],
@@ -74,6 +73,18 @@ const HeatMapMagnifier = (props: {
     setDragging(false)
   }
 
+  const selectAddress = (address: number) => {
+    const x = address & 0xFF
+    const y = address >>> 8
+    props.setHeatMapAddress(address)
+    setMouseClicked(true)
+    setMousePos({
+      x: x * MAGNIFIER_ZOOM + MAGNIFIER_ZOOM / 2,
+      y: y * MAGNIFIER_ZOOM + MAGNIFIER_ZOOM / 2,
+    })
+    props.setHeatMapPosition(x, y)
+  }
+
   const handleHeatMapMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (!magnifierCanvasRef.current || !props.heatCanvas.current) return
     if (mouseClicked) return
@@ -90,8 +101,7 @@ const HeatMapMagnifier = (props: {
     const sourceY = Math.max(0, Math.min(Math.floor(next.y / MAGNIFIER_ZOOM), BASE_HEATMAP_HEIGHT - 1))
     const addrY = Math.max(0, Math.min(sourceY * BASE_HEATMAP_WIDTH, 0xFFFF))
     const addrX = Math.max(0, Math.min(sourceX, BASE_HEATMAP_WIDTH - 1))
-    heatMapAddress = addrY + addrX
-    props.setHeatMapAddress(heatMapAddress)
+    props.setHeatMapAddress(addrY + addrX)
   }
 
   // Auto scroll the magnifier to center on the heat map position when it changes
@@ -134,9 +144,9 @@ const HeatMapMagnifier = (props: {
       magnifierCtx.lineWidth = 0.5
       magnifierCtx.stroke()
     }
-    if (heatMapAddress >= 0) {
-      const memoryValue = toHex(handleGetMemoryAtAddress(heatMapAddress), 2)
-      const heatmapInfo = `$${toHex(heatMapAddress, 4)}($${memoryValue}) ${t("debug.heatMap.count")}=${props.heatMapCount}`
+    if (props.heatMapAddress >= 0) {
+      const memoryValue = toHex(handleGetMemoryAtAddress(props.heatMapAddress), 2)
+      const heatmapInfo = `$${toHex(props.heatMapAddress, 4)}($${memoryValue}) ${t("debug.heatMap.count")}=${props.heatMapCount}`
       const scroll = magnifierScrollRef.current
       const leftEdge = scroll.scrollLeft
       const topEdge = scroll.scrollTop
@@ -151,15 +161,15 @@ const HeatMapMagnifier = (props: {
       // Draw a small box locked on the pixel address
       magnifierCtx.strokeStyle = "#fff"
       magnifierCtx.lineWidth = 2
-      const pixelX = (heatMapAddress & 0xFF) * MAGNIFIER_ZOOM
-      const pixelY = (heatMapAddress >>> 8) * MAGNIFIER_ZOOM
+      const pixelX = (props.heatMapAddress & 0xFF) * MAGNIFIER_ZOOM
+      const pixelY = (props.heatMapAddress >>> 8) * MAGNIFIER_ZOOM
       magnifierCtx.strokeRect(pixelX - 1, pixelY - 1,
         MAGNIFIER_ZOOM + 2, MAGNIFIER_ZOOM + 2)
 
       // Add in the local assembly code if CPU heatmap
       if (props.state === HEATMAP_STATE.CPU) {
-        const disassembly = getDisassembly(heatMapAddress - 15, heatMapAddress + 15)
-        if ((heatMapAddress & 0xFF00) === 0xC000) {
+        const disassembly = getDisassembly(props.heatMapAddress - 15, props.heatMapAddress + 15)
+        if ((props.heatMapAddress & 0xFF00) === 0xC000) {
           return
         }
         // If disassembly is all $00 or $FF then skip
@@ -169,7 +179,7 @@ const HeatMapMagnifier = (props: {
         const leftEdge = magnifierScrollRef.current.scrollLeft
         const topEdge = magnifierScrollRef.current.scrollTop
         const rightEdge = magnifierScrollRef.current.scrollLeft + magnifierScrollRef.current.clientWidth
-        const addressX = (heatMapAddress & 0xFF) * MAGNIFIER_ZOOM
+        const addressX = (props.heatMapAddress & 0xFF) * MAGNIFIER_ZOOM
         const addressOnLeft = addressX - leftEdge <= magnifierScrollRef.current.clientWidth / 2
         const leftPosition = addressOnLeft ? rightEdge - 200 : leftEdge + 5
         const topPosition = topEdge + 15
@@ -177,7 +187,7 @@ const HeatMapMagnifier = (props: {
         const addresses = disassembly.map(line => parseInt(line, 16))
         addresses.push(0xFFFF)
         for (let i = 0; i < disassembly.length; i++) {
-          const hit = addresses[i] <= heatMapAddress && addresses[i + 1] > heatMapAddress
+          const hit = addresses[i] <= props.heatMapAddress && addresses[i + 1] > props.heatMapAddress
           magnifierCtx.font = hit ? "bold 11px monospace" : "11px monospace"
           const xtra = hit ? "*" : " "
           magnifierCtx.fillText(xtra + disassembly[i], leftPosition, topPosition + i * 12)
@@ -205,19 +215,15 @@ const HeatMapMagnifier = (props: {
       onMouseMove={(e) => handleTitleBarMouseMove(e)}
       onMouseUp={handleTitleBarMouseUp}>
       <div className="flex-row" style={{ marginLeft: "5px" }}>
-        <button className="push-button"
+        <button className="push-button bigger-font"
           title={t("debug.heatMap.jumpToProgramCounter")}
           onClick={() => {
-            const addr = handleGetState6502().PC
-            props.setHeatMapPosition(addr & 0xFF, addr >> 8)
-          }}>
-          <FontAwesomeIcon icon={faBolt} style={{ fontSize: "0.8em" }} />
-        </button>
+            selectAddress(handleGetState6502().PC)
+          }}>PC</button>
         <button className="push-button"
           title={t("debug.heatMap.jumpToMaximumValue")}
           onClick={() => {
-            const addr = props.maxIndex
-            props.setHeatMapPosition(addr & 0xFF, addr >> 8)
+            selectAddress(props.maxIndex)
           }}>
           <FontAwesomeIcon icon={faMountain} style={{ fontSize: "0.8em" }} />
         </button>
