@@ -24,31 +24,15 @@ export type DisassemblyTooltipMessage = {
   key: DisassemblyMessageKey
   params?: Record<string, string>
 }
-type TooltipGroupedMessageDescriptor<Group extends TooltipGroup> = {
-  kind: "grouped-message"
-  group: Group
-  key: TooltipGroupedMessageKey<Group>
-  params?: Record<string, string>
-}
-type AnyTooltipGroupedMessageDescriptor = {
-  [Group in TooltipGroup]: TooltipGroupedMessageDescriptor<Group>
-}[TooltipGroup]
-
-type TooltipDescriptor =
-  | AnyTooltipGroupedMessageDescriptor
-  | {kind: "sequence", parts: readonly TooltipDescriptor[]}
-  | {kind: "msb-choice", zero: TooltipDescriptor, one: TooltipDescriptor}
-  | {kind: "keyboard"}
-  | {kind: "aux-bank-selector", addressing: string}
-  | {kind: "accelerator-control"}
+type TooltipResolver = (value: number) => readonly DisassemblyTooltipMessage[]
 
 type DisassemblyTooltipRow = {
   machines: readonly MACHINE_NAME[]
   address: number
   // Used when either a read or write access has the same effect.
-  access?: TooltipDescriptor
-  read?: TooltipDescriptor
-  write?: TooltipDescriptor
+  access?: TooltipResolver
+  read?: TooltipResolver
+  write?: TooltipResolver
 }
 
 type DisassemblyTooltipRangeDefinition = Omit<DisassemblyTooltipRow, "address"> & {
@@ -60,39 +44,86 @@ const ALL_MACHINES: readonly MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE"
 const APPLE2EX: readonly MACHINE_NAME[] = ["APPLE2EU", "APPLE2EE"]
 const APPLE2P: readonly MACHINE_NAME[] = ["APPLE2P"]
 
-const sequence = (...parts: readonly TooltipDescriptor[]): TooltipDescriptor =>
-  ({kind: "sequence", parts})
-const keyboard = (): TooltipDescriptor => ({kind: "keyboard"})
-const auxiliaryBankSelector = (addressing: string): TooltipDescriptor =>
-  ({kind: "aux-bank-selector", addressing})
-const acceleratorControl = (): TooltipDescriptor => ({kind: "accelerator-control"})
+const message = <Group extends TooltipGroup>(
+  group: Group,
+  key: TooltipGroupedMessageKey<Group>,
+  params?: Record<string, string>,
+): DisassemblyTooltipMessage => ({
+  key: `disassembly.${group}.${key}` as TooltipGroupedMessagePath,
+  ...(params ? {params} : {}),
+})
+
+const staticMessages = (...messages: readonly DisassemblyTooltipMessage[]): TooltipResolver =>
+  () => messages
+const sequence = (...resolvers: readonly TooltipResolver[]): TooltipResolver =>
+  value => resolvers.flatMap(resolver => resolver(value))
 const groupedMessage = <Group extends TooltipGroup>(
   group: Group,
   key: TooltipGroupedMessageKey<Group>,
   params?: Record<string, string>,
-): TooltipGroupedMessageDescriptor<Group> => ({kind: "grouped-message", group, key, params})
+): TooltipResolver => staticMessages(message(group, key, params))
 const msbMessages = <Group extends TooltipGroup>(
   group: Group,
   zero: TooltipGroupedMessageKey<Group>,
   one: TooltipGroupedMessageKey<Group>,
   params?: Record<string, string>,
-): TooltipDescriptor => ({
-  kind: "msb-choice",
-  zero: groupedMessage(group, zero, params) as AnyTooltipGroupedMessageDescriptor,
-  one: groupedMessage(group, one, params) as AnyTooltipGroupedMessageDescriptor,
-})
+): TooltipResolver => value => value < 0
+  ? []
+  : [message(group, (value & 0x80) === 0 ? zero : one, params)]
+const keyboard = (): TooltipResolver => value => {
+  if (value < 0) return []
+  const strobe = (value & 0x80) !== 0
+  return [
+    message("keyboard", "character", {character: formatKeyboardCharacter(value)}),
+    message("keyboard", strobe ? "strobeSet" : "strobeClear"),
+  ]
+}
+const auxiliaryBankSelector = (addressing: string): TooltipResolver => value => value < 0
+  ? []
+  : [message("auxMemory", "selectExpansionBank", {
+    bank: `$${(value & 0xFF).toString(16).toUpperCase().padStart(2, "0")}`,
+    addressing,
+  })]
+const acceleratorControl = (): TooltipResolver => value => {
+  if (value < 0) return []
+
+  const controlValue = value & 0xFF
+  const effects: DisassemblyTooltipMessage[] = []
+  switch (controlValue) {
+    case 0:
+      effects.push(message("transWarp", "configuredMaximum"))
+      break
+    case 1:
+      effects.push(message("transWarp", "oneMhz"))
+      break
+    case 3:
+      effects.push(message("transWarp", "disableUntilColdBoot"))
+      break
+  }
+
+  const laserSpeedKey: TooltipGroupedMessageKey<"laser128ex"> = controlValue < 0x80
+    ? "oneMhz"
+    : controlValue < 0xC0 ? "twoPointThreeMhz" : "threePointSixMhz"
+  effects.push(
+    message("laser128ex", laserSpeedKey),
+    message("laser128ex", (controlValue & 0x20) === 0
+      ? "disableDiskSlowdown"
+      : "enableDiskSlowdown"),
+  )
+  return effects
+}
 const setAnnunciator = (
   number: "0" | "1" | "2" | "3",
   action: "disable" | "enable",
-): TooltipDescriptor => groupedMessage("annunciator", action, {
+): TooltipResolver => groupedMessage("annunciator", action, {
   number,
 })
-const setDisplayWidth = (columns: "40" | "80"): TooltipDescriptor =>
+const setDisplayWidth = (columns: "40" | "80"): TooltipResolver =>
   groupedMessage("display", "setWidth", {columns})
 const selectRomForRange = (
   source: "internal" | "slot",
   range: string,
-): TooltipDescriptor => groupedMessage(
+): TooltipResolver => groupedMessage(
   "rom",
   source,
   {range},
@@ -110,7 +141,7 @@ const languageCard = (
   bank: "1" | "2",
   readSource: "ram" | "rom",
   writeMode: LanguageCardWriteMode,
-): TooltipDescriptor => sequence(
+): TooltipResolver => sequence(
   groupedMessage("languageCard", "selectBank", {bank}),
   groupedMessage("languageCard", readSource === "ram" ? "useRamForReads" : "useRomForReads"),
   groupedMessage("languageCard", LANGUAGE_CARD_WRITE_KEYS[writeMode]),
@@ -155,7 +186,7 @@ const defineLanguageCardSwitches = (
   write: languageCard(bank, readSource, "reset-prewrite-latch"),
 }))
 
-// These shared descriptors are intentionally one semantic source for every
+// These shared resolvers are intentionally one semantic source for every
 // matching address.
 const KEYBOARD_READ = keyboard()
 const CLEAR_KEYBOARD_STROBE = groupedMessage("keyboard", "clearStrobe")
@@ -499,84 +530,14 @@ const formatKeyboardCharacter = (value: number) => {
   return String.fromCharCode(key)
 }
 
-const groupedTooltipMessage = <Group extends TooltipGroup>(
-  group: Group,
-  key: TooltipGroupedMessageKey<Group>,
-  params?: Record<string, string>,
-): DisassemblyTooltipMessage => ({
-  key: `disassembly.${group}.${key}` as TooltipGroupedMessagePath,
-  ...(params ? {params} : {}),
-})
 const warningMessage = (
   key: "multipleTriggers" | "unknownWrite",
-): DisassemblyTooltipMessage => groupedTooltipMessage("notice", key)
+): DisassemblyTooltipMessage => message("notice", key)
 
 export const renderDisassemblyTooltipMessages = (
   messages: readonly DisassemblyTooltipMessage[],
   translate: TooltipTranslator,
 ) => messages.map(({key, params}) => translate(key, params))
-
-const resolveDescriptor = (
-  descriptor: TooltipDescriptor,
-  value: number,
-): readonly DisassemblyTooltipMessage[] => {
-  switch (descriptor.kind) {
-    case "sequence":
-      return descriptor.parts.flatMap((part) => resolveDescriptor(part, value))
-    case "msb-choice":
-      return value < 0
-        ? []
-        : resolveDescriptor((value & 0x80) === 0 ? descriptor.zero : descriptor.one, value)
-    case "grouped-message":
-      return [groupedTooltipMessage(descriptor.group, descriptor.key, descriptor.params)]
-    case "keyboard": {
-      if (value < 0) return []
-      const strobe = (value & 0x80) !== 0
-      return [
-        groupedTooltipMessage("keyboard", "character", {
-          character: formatKeyboardCharacter(value),
-        }),
-        groupedTooltipMessage("keyboard", strobe ? "strobeSet" : "strobeClear"),
-      ]
-    }
-    case "aux-bank-selector":
-      return value < 0 ? [] : [groupedTooltipMessage("auxMemory", "selectExpansionBank", {
-        bank: `$${(value & 0xFF).toString(16).toUpperCase().padStart(2, "0")}`,
-        addressing: descriptor.addressing,
-      })]
-    case "accelerator-control": {
-      if (value < 0) return []
-
-      const controlValue = value & 0xFF
-      const effects: DisassemblyTooltipMessage[] = []
-      switch (controlValue) {
-        case 0:
-          effects.push(groupedTooltipMessage("transWarp", "configuredMaximum"))
-          break
-        case 1:
-          effects.push(groupedTooltipMessage("transWarp", "oneMhz"))
-          break
-        case 3:
-          effects.push(groupedTooltipMessage("transWarp", "disableUntilColdBoot"))
-          break
-      }
-
-      const laserSpeedKey: TooltipGroupedMessageKey<"laser128ex"> = controlValue < 0x80
-        ? "oneMhz"
-        : controlValue < 0xC0 ? "twoPointThreeMhz" : "threePointSixMhz"
-      const laserSpeedSelection = groupedTooltipMessage("laser128ex", laserSpeedKey)
-      const laserDiskSlowdown = groupedTooltipMessage(
-        "laser128ex",
-        (controlValue & 0x20) === 0
-          ? "disableDiskSlowdown"
-          : "enableDiskSlowdown",
-      )
-
-      effects.push(laserSpeedSelection, laserDiskSlowdown)
-      return effects
-    }
-  }
-}
 
 // undefined means the address is not in the semantic table and should retain
 // the generic value tooltip. An empty array means the address is known but
@@ -596,10 +557,10 @@ export const getDisassemblyTooltipMessages = (
     const warning = warningMessage("multipleTriggers")
     if (address < 0xC070 || address > 0xC07F) return [warning]
 
-    const descriptor = row.write ?? row.access
-    if (!descriptor) return [warning]
+    const resolver = row.write ?? row.access
+    if (!resolver) return [warning]
     const semanticValue = operation === "read-modify-write" ? -1 : value
-    const effects = resolveDescriptor(descriptor, semanticValue)
+    const effects = resolver(semanticValue)
     if (effects.length === 0) return [warning]
     const [paddleEffect, ...otherEffects] = effects
     if (address === 0xC074 && operation === "read-modify-write") {
@@ -622,10 +583,10 @@ export const getDisassemblyTooltipMessages = (
     return [paddleEffect, warning, ...otherEffects]
   }
 
-  const descriptor = operation === "write"
+  const resolver = operation === "write"
     ? row.write ?? row.access
     : row.read ?? row.access
-  return descriptor ? resolveDescriptor(descriptor, value) : []
+  return resolver ? resolver(value) : []
 }
 
 export const getDisassemblyTooltipLines = (
