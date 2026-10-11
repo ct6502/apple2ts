@@ -3,7 +3,8 @@ import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   DEFAULT_SLOT_CONFIG, VeraSdStatus, 
   HEATMAP_STATE,
   MEMORY_DUMP_STATE,
-  AUTO_SNAPSHOT} from "../common/utility"
+  AUTO_SNAPSHOT,
+  ERROR_CODE} from "../common/utility"
 import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -18,7 +19,7 @@ import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
 import { Buffer } from "buffer"
-import { setErrorMsg } from "./ui_utilities"
+import { setDialogMessageContext } from "./ui_utilities"
 
 let worker: Worker | null = null
 
@@ -643,7 +644,13 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     }
     case MSG_WORKER.ERRORMSG: {
       const errorMsg = e.data.payload as ErrorMsg
-      setErrorMsg(errorMsg)
+      setDialogMessageContext({
+        title: "Error",
+        message: errorMsg.message,
+        code: ERROR_CODE.ERROR,
+        actionCancel: () => {},
+        actionConfirm: () => {},
+      })
       break
     }
     default:

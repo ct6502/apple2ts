@@ -1,4 +1,4 @@
-import { UI_THEME, UI_THEMES } from "../../common/utility"
+import { ERROR_CODE, UI_THEME, UI_THEMES } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faVolumeHigh,
@@ -33,6 +33,7 @@ import { ControlRegistry } from "./controlregistry"
 import { choiceBinding, controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 import { openRetroControlPanel } from "../retro/retrocontrolevents"
 import { TimeTravelConfig } from "../devices/timetravelconfig"
+import { setDialogMessageContext } from "../ui_utilities"
 
 const themeLabels = (t: (key: string) => string) => [
   t("themes.classic"),
@@ -74,7 +75,19 @@ const configBindings: RetroControlBindings = {
   }),
   "settings.reset": {
     action: context => {
-      resetPreferences(context.settingsOrigin)
+      const { t } = context
+      setDialogMessageContext({
+        title: t("config.resetSettings"),
+        message: t("config.resetSettingsText"),
+        code: ERROR_CODE.QUESTION,
+        actionCancel: () => {
+          context.displayProps.updateDisplay()
+        },
+        actionConfirm: () => {
+          resetPreferences(context.settingsOrigin)
+          context.displayProps.updateDisplay()
+        },
+      })
       context.displayProps.updateDisplay()
     },
   },

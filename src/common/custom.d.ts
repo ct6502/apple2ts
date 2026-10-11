@@ -696,3 +696,11 @@ type ErrorMsg = {
   message: string,
   code?: number,
 }
+
+type DialogMessageContext = {
+  title: string,
+  message: string,
+  code: number,
+  actionCancel: () => void,
+  actionConfirm: () => void,
+}

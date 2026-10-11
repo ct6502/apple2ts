@@ -88,6 +88,12 @@ msgctxt "config.resetSettings"
 msgid "Reset All Settings"
 msgstr "Återställ alla inställningar"
 
+msgctxt "config.resetSettingsText"
+msgid ""
+"Are you sure you want to reset all settings? This will not erase your "
+"breakpoints or BASIC program."
+msgstr ""
+
 msgctxt "config.capsLock"
 msgid "Caps Lock"
 msgstr "Caps Lock"

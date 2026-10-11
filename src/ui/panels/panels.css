@@ -243,6 +243,7 @@ body.dark-mode .round-rect-border {
 
 .dialog-title {
   font-size: 10pt;
+  font-weight: bold;
   line-height: 18pt;
   padding-top: 3px;
   padding-bottom: 3px;

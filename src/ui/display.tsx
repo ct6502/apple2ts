@@ -21,7 +21,7 @@ import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
 import { RUN_MODE, TEST_DEBUG } from "../common/utility"
 import DiskCollectionPanel from "./diskdialog/diskcollectionpanel"
-import { handleSetTheme } from "./ui_utilities"
+import { handleSetTheme, hasDialogMessageContext } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
 import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText, getColorMode } from "./ui_settings"
@@ -29,6 +29,7 @@ import { messagelistener } from "./api/messagelistener"
 import { CRTStartup } from "./graphics"
 import { startRemoteControlBridge } from "./api/remotecontrol"
 import RetroMenuRenderer from "./retro/retromenurenderer"
+import { DialogMessage } from "./dialog_message"
 
 const isHeadlessRemoteControl = () => {
   try {
@@ -222,6 +223,7 @@ const DisplayApple2 = () => {
   if (isEmbedMode() || isHeadlessRemoteControl()) {
     return <Apple2Canvas {...props} />
   }
+
   return (
     <>
       <div className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
@@ -242,6 +244,7 @@ const DisplayApple2 = () => {
       {/* {isMinimalTheme() && isTouchDevice && <TouchJoystick />} */}
       <FileInput {...props} />
       <RetroMenuRenderer displayProps={props} />
+      {hasDialogMessageContext() && <DialogMessage updateDisplay={updateDisplay} />}
     </>
   )
 }

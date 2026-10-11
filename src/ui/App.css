@@ -180,6 +180,11 @@ body.dark-mode .push-button:active {
   pointer-events: none;
 }
 
+.dialog-button {
+  margin: 4px;
+  margin-right: 0px;
+}
+
 .control-availability-icon {
   display: inline-flex;
   position: relative;

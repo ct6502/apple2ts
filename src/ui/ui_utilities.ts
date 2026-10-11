@@ -68,16 +68,32 @@ export const getHeatMapRGBValues = (heatMapValue: number, heatMapMax: number,
   }
 }
 
-let errorMsg: ErrorMsg | null = null
-
-export const clearErrorMsg = () => {
-  errorMsg = null
+let dialogMessageContext: DialogMessageContext = {
+  title: "",
+  message: "",
+  code: 0,
+  actionCancel: () => {},
+  actionConfirm: () => {},
 }
 
-export const getErrorMsg = () => {
-  return errorMsg
+export const clearDialogMessageContext = () => {
+  dialogMessageContext = {
+    title: "",
+    message: "",
+    code: 0,
+    actionCancel: () => {},
+    actionConfirm: () => {},
+  }
 }
 
-export const setErrorMsg = (msg: ErrorMsg) => {
-  errorMsg = msg
+export const hasDialogMessageContext = () => {
+  return dialogMessageContext.message !== ""
+}
+
+export const getDialogMessageContext = () => {
+  return dialogMessageContext
+}
+
+export const setDialogMessageContext = (context: DialogMessageContext) => {
+  dialogMessageContext = context
 }

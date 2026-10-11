@@ -180,6 +180,7 @@ export enum ERROR_CODE {
   INFO,
   WARNING,
   ERROR,
+  QUESTION,
 }
 
 export const UI_THEMES = [
