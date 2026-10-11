@@ -11,7 +11,7 @@
   border: 2px solid #675b47;
   font-size: 24px;
   cursor: pointer;
-  z-index: 10004;
+  z-index: 10011;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
@@ -38,7 +38,7 @@
   background: linear-gradient(180deg, #534a39 0%, #3a3328 100%);
   border-radius: 15px 15px 0 0;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-  z-index: 9999;
+  z-index: 10011;
   padding-left: 8px;
   padding-right: 8px;
   padding-top: 8px;
@@ -180,7 +180,7 @@
   .keyboard-key:active {
     background: linear-gradient(180deg, #87775d 0%, #5f5441 100%);
     transform: translateY(-1em) scale(2);
-    z-index: 10000;
+    z-index: 10011;
     padding-top: 0;
     align-items: flex-start;
   }

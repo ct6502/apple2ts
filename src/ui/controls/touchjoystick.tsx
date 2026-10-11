@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react"
 import "./touchjoystick.css"
+import tjJoystick from "./tj-joystick.png"
+import tjButton from "./tj-button.png"
+
 import { clearCustomGamepad, setCustomGamepad } from "../devices/gamepad"
 import { getUIStateBoolean } from "../ui_settings"
 
@@ -193,7 +196,7 @@ export const TouchJoystick = () => {
             >
             <img
               className="tj-joystick-image"
-              src="/tj-joystick.png"
+              src={tjJoystick}
               draggable={false} />
           </div>
         </div>
@@ -210,7 +213,7 @@ export const TouchJoystick = () => {
             onLostPointerCapture={(event) => onButtonPointerUp(event, 0, 2)}>
             <img
               className="tj-button-image"
-              src="/tj-button.png"
+              src={tjButton}
               draggable={false}/>
             <div className="tj-button-number">1</div>
           </div>
@@ -225,7 +228,7 @@ export const TouchJoystick = () => {
             onLostPointerCapture={(event) => onButtonPointerUp(event, 1, 2)}>
             <img
               className="tj-button-image"
-              src="/tj-button.png"
+              src={tjButton}
               draggable={false}/>
             <div className="tj-button-number">2</div>
           </div>
