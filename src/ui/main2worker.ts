@@ -18,6 +18,7 @@ import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
 import { Buffer } from "buffer"
+import { setErrorMsg } from "./ui_utilities"
 
 let worker: Worker | null = null
 
@@ -638,6 +639,11 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     }
     case MSG_WORKER.VERA_FRAME: {
       latestVeraFrame = e.data.payload as { fb?: Uint8ClampedArray<ArrayBuffer>, dcVideo: number }
+      break
+    }
+    case MSG_WORKER.ERRORMSG: {
+      const errorMsg = e.data.payload as ErrorMsg
+      setErrorMsg(errorMsg)
       break
     }
     default:

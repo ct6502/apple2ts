@@ -67,3 +67,17 @@ export const getHeatMapRGBValues = (heatMapValue: number, heatMapMax: number,
     return [0, 0, 0, 255]
   }
 }
+
+let errorMsg: ErrorMsg | null = null
+
+export const clearErrorMsg = () => {
+  errorMsg = null
+}
+
+export const getErrorMsg = () => {
+  return errorMsg
+}
+
+export const setErrorMsg = (msg: ErrorMsg) => {
+  errorMsg = msg
+}

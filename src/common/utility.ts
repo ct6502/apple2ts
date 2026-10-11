@@ -32,6 +32,7 @@ export enum MSG_WORKER {
   CLICK,
   DRIVE_PROPS,
   DRIVE_SOUND,
+  ERRORMSG,
   GET_MEMORY_RESPONSE,
   SAVE_STATE,
   RUMBLE,
@@ -173,6 +174,12 @@ export enum UI_THEME {
   CLASSIC,
   DARK,
   MINIMAL,
+}
+
+export enum ERROR_CODE {
+  INFO,
+  WARNING,
+  ERROR,
 }
 
 export const UI_THEMES = [

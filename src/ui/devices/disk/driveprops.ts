@@ -11,7 +11,7 @@ import {
 } from "../../../common/utility"
 
 import { passSetDriveNewData, requestSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
-import { showGlobalProgressModal } from "../../ui_utilities"
+import { clearErrorMsg, getErrorMsg, showGlobalProgressModal } from "../../ui_utilities"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
 import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
@@ -302,6 +302,8 @@ const setDiskOrFileFromBuffer = (
     return { mountedDrive: index, workerOperation }
   }
 
+  clearErrorMsg()
+
   if (fname.endsWith(".bin")) {
     passSetBinaryBlock(binaryRunAddress, new Uint8Array(buffer), true)
   } else if (fname.endsWith(".bas") || fname.endsWith(".a")) {
@@ -339,11 +341,16 @@ const setDiskOrFileFromBuffer = (
       preserveDriveIndex,
       false,
     )
-    const shouldBoot = bootsExplicitDrive || handleGetRunMode() === RUN_MODE.IDLE
-    if (shouldBoot) {
-      passSetRunMode(RUN_MODE.NEED_BOOT)
-    } else {
-//      props.updateDisplay()
+    const needsBoot = bootsExplicitDrive || handleGetRunMode() === RUN_MODE.IDLE
+
+    if (needsBoot) {
+      setTimeout(() => {
+        if (getErrorMsg()) {
+          alert(`${getErrorMsg()?.message}`)
+          clearErrorMsg()
+        } else {
+          passSetRunMode(RUN_MODE.NEED_BOOT)
+        }}, 10)
     }
   }
 
@@ -1099,7 +1106,7 @@ export const prepWritableFile = async (index: number, writableFileHandle: Writab
 
 const resetAllDiskDrives = () => {
   for (let i=0; i < MAX_DRIVES; i++) {
-    handleSetDiskData(i, new Uint8Array(), "", null, null, -1)
+    setDiskData(i, new Uint8Array(), "", null, null, -1)
   }
 }
 
@@ -1125,6 +1132,7 @@ export const handleSetDiskFromFile = async (disk: string,
   callback?: (buffer: ArrayBuffer | null) => void,
   onLoadSuccess?: () => void,
   preserveDriveIndex = false) => {
+  clearErrorMsg()
   const configuredHelpFile = findCatalogHelpFile(disk)
   let data: ArrayBuffer
   try {
@@ -1159,7 +1167,7 @@ export const handleSetDiskFromFile = async (disk: string,
       }
     }
 
-    handleSetDiskData(
+    setDiskData(
       driveIndex,
       new Uint8Array(data),
       disk,
@@ -1175,10 +1183,15 @@ export const handleSetDiskFromFile = async (disk: string,
     )
 
     if (needsBoot) {
-      passSetRunMode(RUN_MODE.NEED_BOOT)
+      setTimeout(() => {
+        if (getErrorMsg()) {
+          alert(`${getErrorMsg()?.message}`)
+          clearErrorMsg()
+        } else {
+          passSetRunMode(RUN_MODE.NEED_BOOT)
+        }}, 10)
     }
     onLoadSuccess?.()
-
   }
 }
 

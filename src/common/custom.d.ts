@@ -691,3 +691,8 @@ type DownloadedExportDisk = {
   buffer: Uint8Array,
   filename: string,
 }
+
+type ErrorMsg = {
+  message: string,
+  code?: number,
+}

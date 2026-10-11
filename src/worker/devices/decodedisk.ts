@@ -1,5 +1,8 @@
 import { convertdsk2woz } from "../../common/convertdsk2woz"
-import { crc32, isHardDriveImage } from "../../common/utility"
+import { crc32, ERROR_CODE, isHardDriveImage } from "../../common/utility"
+import { passErrorMsg } from "../worker2main"
+
+let errorMsg: ErrorMsg | null = null
 
 const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]
@@ -8,6 +11,12 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   driveState.isWriteProtected = diskData[22] === 1
   driveState.isSynchronized = diskData[23] === 1
   driveState.optimalTiming = (diskData[59] > 0) ? diskData[59] : 32
+  const fluxBlockNumber = (diskData[67] << 8) + diskData[66]
+  const fluxBlockSize = (diskData[69] << 8) + diskData[68]
+  if (fluxBlockNumber > 0 && fluxBlockSize > 0) {
+    errorMsg = { message: `Unable to load: ${driveState.filename} contains a FLUX chunk`, code: ERROR_CODE.ERROR }
+    return false
+  }
   // if (driveState.optimalTiming !== 32) {
   //   console.log(`${driveState.filename} optimal timing = ${driveState.optimalTiming}`)
   // }
@@ -15,10 +24,10 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const storedCRC = crc[0] + (crc[1] << 8) + (crc[2] << 16) + crc[3] * (2 ** 24)
   const actualCRC = crc32(diskData, 12)
   if (storedCRC !== 0 && storedCRC !== actualCRC) {
-    alert("CRC checksum error: " + driveState.filename)
+    errorMsg = { message: `CRC checksum error: ${driveState.filename}`, code: ERROR_CODE.ERROR }
     return false
   }
-  for (let qtrtrack=0; qtrtrack < 160; qtrtrack++) {
+  for (let qtrtrack = 0; qtrtrack < 160; qtrtrack++) {
     const tmap_index = diskData[88 + qtrtrack]
     if (tmap_index < 255) {
       const tmap_offset = 256 + 8 * tmap_index
@@ -75,6 +84,7 @@ export const decodeDiskData = (
   enforceDriveKind = false,
 ): Uint8Array => {
   driveState.diskHasChanges = false
+  errorMsg = null
   const fname = driveState.filename.toLowerCase()
   if (diskData.length > 10000) {
     if (isHardDriveImage(fname, diskData?.length)) {
@@ -102,7 +112,10 @@ export const decodeDiskData = (
     }
   }
   if (fname !== "") {
-    console.error(`Unknown disk format or unable to decode: ${driveState.filename} (${diskData.length} bytes).`)
+    if (errorMsg === null) {
+      errorMsg = { message: `Unknown format or unable to decode: ${driveState.filename}`, code: ERROR_CODE.ERROR }
+    }
+    passErrorMsg(errorMsg)
   }
   return new Uint8Array()
 }
