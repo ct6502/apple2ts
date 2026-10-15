@@ -81,7 +81,6 @@ export enum MSG_MAIN {
   GET_MEMORY_REQUEST,
   GET_SAVE_STATE,
   GET_SAVE_STATE_SNAPSHOTS,
-  HEATMAP_STATE,
   KEYBOARD_STATE,
   KEY_SEQUENCE,
   KEYPRESS,
@@ -211,16 +210,6 @@ export enum MEMORY_DUMP_STATE {
   HGR1,
   HGR2,
   NONE,
-}
-
-export enum HEATMAP_STATE {
-  CPU,
-  GETMEM,
-  SETMEM,
-  GETSET,   // Not currently used
-  // Heat Map tab is not the visible tab: producers stop sending heatmap
-  // data and the panel skips its redraw work entirely.
-  NONE
 }
 
 export const colorToName = (mode: COLOR_MODE) => {

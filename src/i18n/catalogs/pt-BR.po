@@ -3351,11 +3351,11 @@ msgid "Auxiliary RAM"
 msgstr ""
 
 msgctxt "debug.memoryDump.range.hgr1"
-msgid "HGR page 1 (screen order)"
+msgid "HGR page 1"
 msgstr ""
 
 msgctxt "debug.memoryDump.range.hgr2"
-msgid "HGR page 2 (screen order)"
+msgid "HGR page 2"
 msgstr ""
 
 msgctxt "debug.disassemblyPreviousLocation"

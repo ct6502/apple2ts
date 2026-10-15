@@ -21,7 +21,7 @@ import {
   joinDisassemblyTooltipLines,
 } from "./disassembly_tooltips"
 import type { TooltipTranslator } from "./disassembly_tooltips"
-import { getHeatMapRGBValues } from "../../ui_utilities"
+import { getHeatMapRGBValues, linearizeColor } from "../../ui_utilities"
 
 // const fWeight = (opcode: string) => {
 //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
@@ -212,13 +212,6 @@ const getOperand = (
   }
   operand = (operand + "         ").slice(0, 10)
   return <span title={title} className={className}>{operand}</span>
-}
-
-const linearizeColor = (val: number) => {
-  const value = val / 255
-  return value <= 0.04045
-    ? value / 12.92
-    : ((value + 0.055) / 1.055) ** 2.4
 }
 
 export const getChromacodedLine = (

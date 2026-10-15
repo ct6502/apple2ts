@@ -68,6 +68,13 @@ export const getHeatMapRGBValues = (heatMapValue: number, heatMapMax: number,
   }
 }
 
+export const linearizeColor = (val: number) => {
+  const value = val / 255
+  return value <= 0.04045
+    ? value / 12.92
+    : ((value + 0.055) / 1.055) ** 2.4
+}
+
 let dialogMessageContext: DialogMessageContext = {
   title: "",
   message: "",

@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
-import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, HEATMAP_STATE, MEMORY_DUMP_STATE, AUTO_SNAPSHOT } from "../common/utility"
+import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, MEMORY_DUMP_STATE, AUTO_SNAPSHOT } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
@@ -84,7 +84,7 @@ let executionState: "running" | "paused" = "paused"
 let executionPauseReason: ExecutionPauseReason | null = "idle"
 let executionBreakpointAddress: number | null = null
 let executionMemoryWrite: MemoryWriteEvent | null = null
-let heatMapState: HEATMAP_STATE = HEATMAP_STATE.CPU
+// let heatMapGetMem = false
 let memoryDumpState: MEMORY_DUMP_STATE = MEMORY_DUMP_STATE.NONE
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
@@ -97,10 +97,10 @@ let gameSetupTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
 let speedTracker: Array<{time: number, cycles: number}> = []
 
-export const setHeatMapState = (state: HEATMAP_STATE) => {
-  heatMapState = state
-  updateExternalMachineState()
-}
+// export const setHeatMapGetMem = (state: boolean) => {
+//   heatMapGetMem = state
+//   updateExternalMachineState()
+// }
 
 export const setMemoryDumpState = (state: MEMORY_DUMP_STATE) => {
   memoryDumpState = state
@@ -211,41 +211,6 @@ const resetHeatMapCounts = () => {
   resetHeatMapCPU()
   resetHeatMapMemGet()
   resetHeatMapMemSet()
-}
-
-const getHeatMap = () => {
-  // Idle, or the Heat Map tab isn't the visible tab (HEATMAP_STATE.NONE):
-  // skip building/sending the 64K-entry array every frame.
-  if (cpuRunMode === RUN_MODE.IDLE || !isDebugging) {
-    return new Float64Array()
-  }
-  switch (heatMapState) {
-    case HEATMAP_STATE.CPU:
-      return getHeatMapCPU()
-    case HEATMAP_STATE.GETMEM:
-      return getHeatMapMemGet()
-    case HEATMAP_STATE.SETMEM:
-      return getHeatMapMemSet()
-    case HEATMAP_STATE.GETSET:
-    case HEATMAP_STATE.NONE:
-    default:
-      return new Float64Array()
-  }
-}
-
-const getHeatMapMax = () => {
-  switch (heatMapState) {
-    case HEATMAP_STATE.CPU:
-      return getHeatMapCPUMax()
-    case HEATMAP_STATE.GETMEM:
-      return getHeatMapMemGetMax()
-    case HEATMAP_STATE.SETMEM:
-      return getHeatMapMemSetMax()
-    case HEATMAP_STATE.GETSET:
-    case HEATMAP_STATE.NONE:
-    default:
-      return { value: 0, index: 0 }
-  }
 }
 
 export const doSetCycleCount = (count: number) => {
@@ -985,9 +950,12 @@ export const getExternalMachineState = () => {
         ramWorksKb: 64 * (RamWorksMaxBank + 1),
       },
     },
-    heatMap: getHeatMap(),
-    heatMapMax: getHeatMapMax(),
-    heatMapState: heatMapState,
+    heatMapCPU: getHeatMapCPU(),
+    heatMapCPUMax: getHeatMapCPUMax(),
+    heatMapGetMem: getHeatMapMemGet(),
+    heatMapGetMemMax: getHeatMapMemGetMax(),
+    heatMapSetMem: getHeatMapMemSet(),
+    heatMapSetMemMax: getHeatMapMemSetMax(),
     hires: getHires(),
     iTempState: getTempStateIndex(),
     isDebugging: isDebugging,

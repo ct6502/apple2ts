@@ -1,12 +1,13 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPenToSquare, faUpRightFromSquare, faMicrochip, faMagnifyingGlass, faSync } from "@fortawesome/free-solid-svg-icons"
-import { HEATMAP_STATE, RUN_MODE } from "../../../common/utility"
+import { RUN_MODE } from "../../../common/utility"
 import { handleGetRunMode, passSetCycleCount } from "../../main2worker"
 import PopupMenu from "../../controls/popupmenu"
 import { useState } from "react"
 import { getViridisColorsRGB, HEATMAP_PALETTES } from "../../ui_utilities"
 import { PaletteName } from "viridis"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { HEATMAP_STATE } from "./heatmap_panel"
 
 const HeatMapControls = (props: {
   state: HEATMAP_STATE,

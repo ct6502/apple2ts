@@ -1,7 +1,6 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
   DEFAULT_SLOT_CONFIG, VeraSdStatus, 
-  HEATMAP_STATE,
   MEMORY_DUMP_STATE,
   AUTO_SNAPSHOT,
   ERROR_CODE} from "../common/utility"
@@ -417,10 +416,6 @@ export const passRequestMemoryDump = () => {
   doPostMessage(MSG_MAIN.GET_MEMORY_REQUEST, true)
 }
 
-export const passHeatMapState = (state: HEATMAP_STATE) => {
-  doPostMessage(MSG_MAIN.HEATMAP_STATE, state)
-}
-
 export const passMemoryDumpState = (state: MEMORY_DUMP_STATE) => {
   doPostMessage(MSG_MAIN.MEMORY_DUMP_STATE, state)
 }
@@ -475,9 +470,12 @@ let machineState: MachineState = {
   cpuSpeed: 0,
   currentMemory: new Uint8Array(),
   extraRamSize: 64,
-  heatMap: new Float64Array(),
-  heatMapMax: { value: 0, index: 0 },
-  heatMapState: HEATMAP_STATE.NONE,
+  heatMapCPU: new Float64Array(),
+  heatMapCPUMax: { value: 0, index: 0 },
+  heatMapGetMem: new Float64Array(),
+  heatMapGetMemMax: { value: 0, index: 0 },
+  heatMapSetMem: new Float64Array(),
+  heatMapSetMemMax: { value: 0, index: 0 },
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
   isTracing: TEST_DEBUG,
@@ -711,18 +709,28 @@ export const handleGetExecution = () => {
   return machineState.execution
 }
 
-export const handleGetHeatMap = () => {
-  return machineState.heatMap
+export const handleGetHeatMapCPU = () => {
+  return machineState.heatMapCPU
 }
 
-export const handleGetHeatMapMax = () => {
-  return machineState.heatMapMax
+export const handleGetHeatMapCPUMax = () => {
+  return machineState.heatMapCPUMax
 }
 
-// The state the last heatMap payload was built for. Lags behind the state the UI
-// last requested by one round-trip.
-export const handleGetHeatMapState = () => {
-  return machineState.heatMapState
+export const handleGetHeatMapGetMem = () => {
+  return machineState.heatMapGetMem
+}
+
+export const handleGetHeatMapGetMemMax = () => {
+  return machineState.heatMapGetMemMax
+}
+
+export const handleGetHeatMapSetMem = () => {
+  return machineState.heatMapSetMem
+}
+
+export const handleGetHeatMapSetMemMax = () => {
+  return machineState.heatMapSetMemMax
 }
 
 export const handleGetTextPage = () => {

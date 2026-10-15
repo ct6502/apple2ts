@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react"
-import { HEATMAP_STATE, toHex } from "../../../common/utility"
+import { toHex } from "../../../common/utility"
 import { faMountain, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { getDisassembly } from "../disassembly/disassembly_utilities"
 import { handleGetMemoryAtAddress, handleGetState6502 } from "../../main2worker"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { HEATMAP_STATE } from "./heatmap_panel"
 
 const MAGNIFIER_ZOOM = 8
 const MAGNIFIER_WIDTH = 512

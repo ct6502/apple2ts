@@ -7,8 +7,9 @@ import { overrideHires } from "../../graphics"
 import MemoryTable from "./memorytable"
 import {
   faCrosshairs, faSave,
-  faA,
-  faArrowUp, faArrowDown
+  faArrowUp, faArrowDown,
+  faPenToSquare,
+  faUpRightFromSquare
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { useGlobalContext } from "../../globalcontext"
@@ -40,7 +41,8 @@ const MemoryDump = (props: { isActive?: boolean }) => {
   const [matches, setMatches] = useState(new Array(0))
   const [highlight, setHighlight] = useState(new Array(0))
   const [matchIndex, setMatchIndex] = useState(0)
-  const [highAscii, setHighAscii] = useState(false)
+  const [highAscii] = useState(true)
+  const [heatGetMem, setHeatGetMem] = useState(false)
   const previousMemLengthRef = useRef(0)
 
   // Only ask the worker to build/send the memory while this tab is the one
@@ -337,6 +339,24 @@ const MemoryDump = (props: { isActive?: boolean }) => {
           setValue={handleSetMemoryRange}
           userdata={0}
           isDisabled={() => false} />
+        <button className={`push-button
+          ${heatGetMem ? "button-active" : ""}`}
+          title={t("debug.heatMap.getMemoryCalls")}
+          onClick={() => {
+            setHeatGetMem(true)
+          }}
+          disabled={runMode === RUN_MODE.IDLE}>
+          <FontAwesomeIcon icon={faUpRightFromSquare} />
+        </button>
+        <button className={`push-button
+          ${!heatGetMem ? "button-active" : ""}`}
+          title={t("debug.heatMap.setMemoryCalls")}
+          onClick={() => {
+            setHeatGetMem(false)
+          }}
+          disabled={runMode === RUN_MODE.IDLE}>
+          <FontAwesomeIcon icon={faPenToSquare} />
+        </button>
         <button className={"push-button" + (pickWatchpoint ? " button-active" : "")}
           title={t("debug.memoryDump.pickWatchpoint")}
           disabled={memory.length < 1}
@@ -349,12 +369,12 @@ const MemoryDump = (props: { isActive?: boolean }) => {
           onClick={() => saveMemory()}>
           <FontAwesomeIcon icon={faSave} />
         </button>
-        <button className={"push-button" + (highAscii ? " button-active" : "")}
+        {/* <button className={"push-button" + (highAscii ? " button-active" : "")}
           title={t("debug.memoryDump.highBitAscii")}
           disabled={memory.length < 1}
           onClick={() => setHighAscii(!highAscii)}>
           <FontAwesomeIcon style={{ width: "16px" }} icon={faA} />
-        </button>
+        </button> */}
       </span>
       <span className="flex-row"
         style={{
@@ -414,6 +434,7 @@ const MemoryDump = (props: { isActive?: boolean }) => {
           offset={offset} scrollRow={scrollRow}
           highlight={highlight}
           pickWatchpoint={pickWatchpoint}
+          heatGetMem={heatGetMem}
           doPickWatchpoint={doPickWatchpoint}
           doSetMemory={doSetMemory} />
       </div>

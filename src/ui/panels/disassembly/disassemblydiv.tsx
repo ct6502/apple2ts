@@ -1,8 +1,8 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../../common/breakpoint"
-import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
+import { RUN_MODE, toHex } from "../../../common/utility"
 import { getPreferenceByString, getPreferenceDebugTabLeftWidth, setPreferenceBreakpoints } from "../../localstorage"
-import { handleGetRunMode, handleGetState6502, handleGetBreakpoints, handleGetHeatMap, handleGetHeatMapState, handleGetHeatMapMax } from "../../main2worker"
+import { handleGetRunMode, handleGetState6502, handleGetBreakpoints, handleGetHeatMapCPU, handleGetHeatMapCPUMax } from "../../main2worker"
 import {getDisassembly, 
   setLinesVisible,
   ensureDisassemblyContainsAddress,
@@ -150,9 +150,8 @@ const PausedDisassemblyDiv = (props: DisassemblyDivProps) => {
     return addr === pc1 ? "program-counter" : addr === highlightedAddress ? "highlight-address" : ""
   }
 
-  const heatMapState = handleGetHeatMapState()
-  const heatMap = (heatMapState === HEATMAP_STATE.CPU) ? handleGetHeatMap() : new Float64Array()
-  const heatMapMax = handleGetHeatMapMax().value
+  const heatMap = handleGetHeatMapCPU()
+  const heatMapMax = handleGetHeatMapCPUMax().value
   const heatMapPalette = getPreferenceByString("heatMapColorTable", "Spectral") as PaletteName
   const colorTable = getViridisColorsRGB(heatMapPalette, 16)
   

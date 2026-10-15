@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import { hiresLineToAddress, toHex, UI_THEME } from "../../../common/utility"
+import { hiresLineToAddress, toHex } from "../../../common/utility"
 import { useGlobalContext } from "../../globalcontext"
 import { nColsHgrMagnifier, nRowsHgrMagnifier } from "../../graphics"
-import { getTheme } from "../../ui_settings"
-import { handleGetMemoryDump } from "../../main2worker"
+import { handleGetHeatMapGetMem, handleGetHeatMapGetMemMax, handleGetHeatMapSetMem, handleGetHeatMapSetMemMax, handleGetMemoryDump } from "../../main2worker"
+import { PaletteName } from "viridis"
+import { getPreferenceByString } from "../../localstorage"
+import { getHeatMapRGBValues, getViridisColorsRGB, linearizeColor } from "../../ui_utilities"
 
 type MemoryTableProps = {
   addressGetTable: Uint32Array | null
@@ -13,6 +15,7 @@ type MemoryTableProps = {
   highlight: number[]
   scrollRow: number
   pickWatchpoint: boolean
+  heatGetMem: boolean
   doPickWatchpoint: (addr: number) => void
   doSetMemory: (address: number, value: number) => void
 }
@@ -123,7 +126,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     let ascii = ""
     for (let b = 0; b < width; b++) {
       cells.push(toHex(mem[b]))
-      ascii += convertByteToAscii(mem[b])
+      if (!props.isHGR) ascii += convertByteToAscii(mem[b])
     }
     if (!props.isHGR) {
       cells.push(ascii)
@@ -166,7 +169,6 @@ const MemoryTable = (props: MemoryTableProps) => {
         (hiresLineToAddress(props.offset, offset[1]) + offset[0]) :
         (16 * offset[1] + offset[0] + props.offset)
       props.doPickWatchpoint(addr)
-      applyHighlightAnimation(cell)
       setTimeout(() => {
         cell.style.animation = ""
       }, 2250)
@@ -324,11 +326,11 @@ const MemoryTable = (props: MemoryTableProps) => {
     return (index < 0x10000) || (index >= 0x17F00)
   }
 
-  const applyHighlightAnimation = (element: HTMLElement) => {
-    const isDarkMode = getTheme() == UI_THEME.DARK
-    const animationName = isDarkMode ? "highlight-anim-dark" : "highlight-anim"
-    element.style.animation = `${animationName} 3s 0.5s`
-  }
+  // const applyHighlightAnimation = (element: HTMLElement) => {
+  //   const isDarkMode = getTheme() == UI_THEME.DARK
+  //   const animationName = isDarkMode ? "highlight-anim-dark" : "highlight-anim"
+  //   element.style.animation = `${animationName} 3s 0.5s`
+  // }
 
   // This scrolling code is used by the higher-level MemoryDump component to
   // scroll to a specific row when the address field is changed.
@@ -337,7 +339,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     const row = table.rows[props.scrollRow + 1]
     if (row) {
       row.scrollIntoView({ block: "center", inline: "nearest" })
-      applyHighlightAnimation(row)
+     // applyHighlightAnimation(row)
       // Tried to also highlight the address column, but it does strange things
       // in HGR mode where it draws some of the columns on top of each other...
       //    applyHighlightAnimation(row.cells[0])
@@ -353,6 +355,27 @@ const MemoryTable = (props: MemoryTableProps) => {
     if (col === 17) return ""
     const highlight = (props.highlight.includes(row * width + col - 1)) ? " memtable-highlight" : ""
     return (isEditable(col, row) ? "" : "memtable-readonly") + highlight
+  }
+
+  const heatMap = (props.heatGetMem) ? handleGetHeatMapGetMem() : handleGetHeatMapSetMem()
+  const heatMapMax = (props.heatGetMem) ? handleGetHeatMapGetMemMax().value : handleGetHeatMapSetMemMax().value
+  const heatMapPalette = getPreferenceByString("heatMapColorTable", "Spectral") as PaletteName
+  const colorTable = getViridisColorsRGB(heatMapPalette, 16)
+
+  const getCellStyle = (col: number, row: number) => {
+    if (col < 0 || col >= 16) return {}
+    const heatMapValue = heatMap[row * width + col] || 0
+    if (heatMapValue === 0) return {}
+    // Don't stomp on top of a currently highlighted cell
+    if ((props.highlight.includes(row * width + col)) ) return {}
+    const [r, g, b, a] = getHeatMapRGBValues(heatMapValue, heatMapMax, colorTable)
+    const alpha = (heatMapValue !== 0) ? a : 0
+    const luminance = (heatMapValue !== 0) ? 0.2126 * linearizeColor(r) + 0.7152 * linearizeColor(g) +
+      0.0722 * linearizeColor(b) : 1
+    const textColor = luminance > 0.179 ? "black" : "white"
+    const style = {backgroundColor: `rgba(${r}, ${g}, ${b}, ${alpha})`,
+      color: textColor}
+    return style
   }
 
   // Materialize only the rows inside the scroll window; every other row becomes an empty
@@ -423,6 +446,7 @@ const MemoryTable = (props: MemoryTableProps) => {
         <tr>
           <th style={{ position: "sticky", top: "0", left: "0", zIndex: "2" }}></th>
           {Array.from({ length: width }, (_, i) => <th className="memtable-hex" key={i}>{toHex(i, 2)}</th>)}
+          {props.isHGR ? null : <th className="memtable-ascii" key="ascii">ASCII</th>}
         </tr>
       </thead>
       <tbody>
@@ -437,7 +461,8 @@ const MemoryTable = (props: MemoryTableProps) => {
                   onKeyDown={(e) => handleKeyDown(i, j, e)}
                   onInput={(e) => handleInput(i, j, e.currentTarget)}
                   onFocus={(e) => handleFocus(e.currentTarget)}
-                  className={cellClass(i, j)}>
+                  className={cellClass(i, j)}
+                  style={getCellStyle(i - 1, j)}>
                   {cell}
                 </td>
               ))}

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react"
-import { handleGetHeatMap, handleGetHeatMapMax, handleGetHeatMapState, handleGetRunMode, handleGetState6502 } from "../../main2worker"
-import { HEATMAP_STATE, RUN_MODE, toHex } from "../../../common/utility"
+import { handleGetHeatMapCPU, handleGetHeatMapCPUMax, handleGetHeatMapGetMem, handleGetHeatMapGetMemMax, handleGetHeatMapSetMem, handleGetHeatMapSetMemMax, handleGetRunMode, handleGetState6502 } from "../../main2worker"
+import { RUN_MODE, toHex } from "../../../common/utility"
 import HeatMapMagnifier from "./heatmap_magnifier"
 import { getHeatMapRGBValues, getViridisColorsRGB } from "../../ui_utilities"
 import { PaletteName } from "viridis"
+import { HEATMAP_STATE } from "./heatmap_panel"
 
 const BASE_HEATMAP_WIDTH = 256
 const BASE_HEATMAP_HEIGHT = 256
@@ -115,11 +116,38 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     //   }
     // }
 
+  const getHeatMap = () => {
+    switch (props.state) {
+      case HEATMAP_STATE.CPU:
+        return handleGetHeatMapCPU()
+      case HEATMAP_STATE.GETMEM:
+        return handleGetHeatMapGetMem()
+      case HEATMAP_STATE.SETMEM:
+        return handleGetHeatMapSetMem()
+      default:
+        return []
+    }
+  }
+  const getHeatMapMax = () => {
+    switch (props.state) {
+      case HEATMAP_STATE.CPU:
+        return handleGetHeatMapCPUMax()
+      case HEATMAP_STATE.GETMEM:
+        return handleGetHeatMapGetMemMax()
+      case HEATMAP_STATE.SETMEM:
+        return handleGetHeatMapSetMemMax()
+      default:
+        return { index: -1, value: 0 }
+    }
+  }
+
   const updateHeatMap = () => {
     const canvas = heatMapRef.current
     const ctx = canvas?.getContext("2d")
     if (!ctx) return
-    const heatMap = handleGetHeatMap()
+    const heatMap = getHeatMap()
+    const heatMapMax = getHeatMapMax() 
+
     if (heatMap.length === 0) {
       ctx.clearRect(0, 0, BASE_HEATMAP_WIDTH, BASE_HEATMAP_HEIGHT)
       lastDrawnCycleCount = -1
@@ -134,19 +162,17 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
       heatMapCount = heatMap[heatMapAddress]
     }
     const cycleCount = handleGetState6502().cycleCount
-    const heatMapState = handleGetHeatMapState()
-    if (cycleCount === lastDrawnCycleCount && heatMapState === lastDrawnHeatMapState
+    if (cycleCount === lastDrawnCycleCount && props.state === lastDrawnHeatMapState
       && props.colorTable === lastDrawnColorTable) return
     lastDrawnCycleCount = cycleCount
     lastDrawnColorTable = props.colorTable
-    lastDrawnHeatMapState = heatMapState
+    lastDrawnHeatMapState = props.state
     ctx.imageSmoothingEnabled = false
     const rgba = new Uint8ClampedArray(4 * BASE_HEATMAP_WIDTH * BASE_HEATMAP_HEIGHT)
     // drawGrid(rgba)
     // The peak value/address is tracked incrementally by the producer
     // (cpu6502.ts / memory.ts) as it writes the heat map, instead of being
     // rescanned across all 65536 entries here on every redraw.
-    const heatMapMax = handleGetHeatMapMax()
     maxIndex = heatMapMax.index
     const colorTable = getViridisColorsRGB(props.colorTable, 16)
     // const heatMapBottom = 75
