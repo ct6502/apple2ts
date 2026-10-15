@@ -131,6 +131,53 @@ test.each([
   }
 })
 
+test("single Hi-Res mode ignores VIDEO7_MONO when DHIRES is off (e.g. AppleVision launched from A2DeskTop)", () => {
+  const videoSwitches = [
+    SWITCHES.TEXT,
+    SWITCHES.HIRES,
+    SWITCHES.MIXED,
+    SWITCHES.PAGE2,
+    SWITCHES.STORE80,
+    SWITCHES.COLUMN80,
+    SWITCHES.DHIRES,
+    SWITCHES.VIDEO7_MONO,
+    SWITCHES.VIDEO7_160,
+  ]
+  const oldSwitchValues = videoSwitches.map(videoSwitch => videoSwitch.isSet)
+
+  try {
+    memorySetForTests(true)
+    SWITCHES.TEXT.isSet = false
+    SWITCHES.HIRES.isSet = true
+    SWITCHES.MIXED.isSet = false
+    SWITCHES.PAGE2.isSet = false
+    SWITCHES.STORE80.isSet = false
+    SWITCHES.COLUMN80.isSet = false
+    SWITCHES.DHIRES.isSet = false
+    // Simulate stale Video-7 mono flag
+    SWITCHES.VIDEO7_MONO.isSet = true
+    SWITCHES.VIDEO7_160.isSet = false
+
+    const firstAddress = hiresLineToAddress(0x2000, 0)
+    memory[firstAddress] = 0x55
+    memory[RamWorksMemoryStart + firstAddress] = 0xAA
+
+    exportMemoryToHiresLine(0)
+    exportMemoryToHiresLine(191)
+    const frame = getHires()
+
+    // Must be single-res: 40 bytes per line, 7680 bytes total
+    expect(frame).toHaveLength(40 * 192)
+    // First byte must come from main memory ($55), NOT aux memory ($AA)
+    expect(frame[0]).toBe(0x55)
+  } finally {
+    videoSwitches.forEach((videoSwitch, index) => {
+      videoSwitch.isSet = oldSwitchValues[index]
+    })
+    exportMemoryToHiresLine(0)
+  }
+})
+
 test("readMainMemIndex", () => {
   memorySetForTests()
   doTestMemory(0, 0, 0xBF, expectIndex)

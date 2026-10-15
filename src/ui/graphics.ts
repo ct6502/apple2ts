@@ -446,15 +446,16 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
   const nlines = mixedMode ? 160 : 192
   const switches = handleGetSoftSwitches()
+  const isDoubleHiresBuffer = hgrPage.length === 12800 || hgrPage.length === 15360
   const video7foreground = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
-  const doubleRes = switches.COLUMN80 && (hgrPage.length === 12800 || hgrPage.length === 15360)
+  const doubleRes = switches.DHIRES && switches.COLUMN80 && isDoubleHiresBuffer
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const noDelayMode = handleGetNoDelayMode()
   const fillColor = colorMode === COLOR_MODE.INVERSEBLACKANDWHITE ? WHITE : BLACK
   let hgrColors: Uint8Array
-  if (switches.VIDEO7_160) {
+  if (switches.DHIRES && !switches.COLUMN80 && switches.VIDEO7_160 && isDoubleHiresBuffer) {
     hgrColors = getVideo7H160Colors(hgrPage)
-  } else if (switches.VIDEO7_MONO) {
+  } else if (switches.DHIRES && switches.COLUMN80 && switches.VIDEO7_MONO && isDoubleHiresBuffer) {
     hgrColors = getDoubleHiresColors(hgrPage, COLOR_MODE.BLACKANDWHITE, doBlurring())
   } else if (video7foreground) {
     hgrColors = getVideo7HiresColors(hgrPage, colorMode)
@@ -465,12 +466,13 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   } else {
     hgrColors = getHiresGreen(hgrPage, nlines, fillColor)
   }
-  if (switches.VIDEO7_MIXED) {
+  if (switches.DHIRES && switches.COLUMN80 && switches.VIDEO7_MIXED && isDoubleHiresBuffer) {
     // We should have already done the double hires colors.
     // Now apply the Video7 monochrome mode on top of the existing HGR colors.
     hgrColors = applyVideo7MixedMode(hgrPage, hgrColors)
   }
-  const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes || video7foreground)
+  const isDoublePalette = doubleRes || video7foreground || (switches.DHIRES && !switches.COLUMN80 && switches.VIDEO7_160)
+  const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, isDoublePalette)
   if (doBlurring()) {
     for (let j = 0; j < nlines; j++) {
       const row = hgrRGBA.slice(4 * 560 * j, 4 * 560 * (j + 1))

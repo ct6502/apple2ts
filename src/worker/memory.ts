@@ -791,8 +791,10 @@ let hiResLines = 192
 export const exportMemoryToHiresLine = (line: number) => {
   const doubleRes = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet
   const video7foreground = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
+  const video7_160 = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.VIDEO7_160.isSet
+  const video7_mono = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet && SWITCHES.VIDEO7_MONO.isSet
   // Determine which hi-res buffer to use
-  if (doubleRes || SWITCHES.VIDEO7_MONO.isSet || SWITCHES.VIDEO7_160.isSet || video7foreground) {
+  if (doubleRes || video7_160 || video7_mono || video7foreground) {
     if (line === 0) {
       hiResCurrent = hiResDouble
       hiResLines = SWITCHES.MIXED.isSet ? 160 : 192
