@@ -4,6 +4,7 @@ import {
   getHelpFileUrl,
   readHelpResponseText
 } from "./helpfile"
+import { getPrimaryDiskUrl } from "../../../common/utility"
 import { diskImages, internalDiskResources } from "./diskimages"
 import { newReleases } from "./newreleases"
 import fs from "node:fs"
@@ -19,7 +20,7 @@ describe("findCatalogHelpFile", () => {
   ])("finds the Help file declared for %s", (title, helpFile) => {
     const disk = diskImages.find((item) => item.title === title)
 
-    expect(findCatalogHelpFile(disk?.diskUrl ?? "")).toBe(helpFile)
+    expect(findCatalogHelpFile(getPrimaryDiskUrl(disk) || "")).toBe(helpFile)
   })
 
   it("finds the Help file declared for the internal blank disk", () => {

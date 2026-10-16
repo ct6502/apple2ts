@@ -19,10 +19,11 @@
     }
   },
   "scripts": {
-    "prestart": "npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --prompt",
-    "prehost": "npm run generate-i18n-catalogs",
+    "prestart": "npm run copy-wasm && npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --prompt",
+    "prehost": "npm run copy-wasm && npm run generate-i18n-catalogs",
     "predeploy": "npm run build",
-    "prebuild": "npm run check-qr-hgr-assembly && npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --no-prompt",
+    "prebuild": "npm run copy-wasm && npm run check-qr-hgr-assembly && npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --no-prompt",
+    "copy-wasm": "node tools/copy-wasm.mjs",
     "deploy": "gh-pages -d dist",
     "start": "vite --open",
     "host": "vite --open --host",
@@ -70,6 +71,7 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-joyride": "^3.2.0",
+    "sevenzip-wasm": "^26.4.0",
     "smplr": "^1.0.0",
     "viridis": "^1.7.0"
   },

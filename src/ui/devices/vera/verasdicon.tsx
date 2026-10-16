@@ -27,11 +27,64 @@ import {
 import { getPreferenceSlotConfig } from "../../localstorage"
 import { SETTINGS_CHANGED_EVENT } from "../../settingschange"
 import { isFileSystemApiSupported } from "../../ui_utilities"
-import { toHex, VeraSdStatus } from "../../../common/utility"
+import { toHex, VeraSdStatus, getPrimaryDiskUrl } from "../../../common/utility"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { OneDriveCloudDrive } from "../disk/onedriveclouddrive"
 import { GoogleDrive } from "../disk/googledrive"
-import { handleSetDiskOrFileFromBuffer } from "../disk/driveprops"
+import { findMatchingDiskImage, handleSetDiskOrFileFromBuffer, fetchWithCorsProxy } from "../disk/driveprops"
+import { decompressSingleFile } from "../../../common/zip_utils"
+
+export const handleSetVeraSdFromURL = async (url: string): Promise<boolean> => {
+  try {
+    let resolvedUrl = url
+    const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
+    if (isLocalFile && !url.startsWith("/") && !url.startsWith("file://")) {
+      const match = findMatchingDiskImage(url)
+      const matchUrl = getPrimaryDiskUrl(match)
+      if (matchUrl) {
+        resolvedUrl = matchUrl
+      }
+      if (!URL.canParse(resolvedUrl) && !resolvedUrl.startsWith("/")) {
+        resolvedUrl = "disks/" + resolvedUrl
+      }
+    }
+    let response: Response | null = null
+    try {
+      response = await fetch(resolvedUrl)
+      if (!response.ok) response = null
+    } catch {
+      response = null
+    }
+    if (!response || !response.ok) {
+      response = await fetchWithCorsProxy(resolvedUrl)
+    }
+    if ((!response || !response.ok) && typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname)) {
+      try {
+        response = await fetch(`/api/disk-direct?url=${encodeURIComponent(resolvedUrl)}`)
+      } catch {
+        response = null
+      }
+    }
+    if (!response || !response.ok) return false
+    const buffer = await response.arrayBuffer()
+    let fileName = decodeURIComponent(resolvedUrl.split("/").pop()?.split("?")[0] || "sd.img")
+    let data = new Uint8Array(buffer)
+
+    const decompressed = await decompressSingleFile(data, fileName, [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"])
+    if (decompressed) {
+      fileName = decompressed.filename
+      data = decompressed.data
+    }
+
+    setVeraSdFileHandle(null)
+    setVeraSdCloudData(null)
+    handleSetVeraSdImage(data, fileName)
+    return true
+  } catch (error) {
+    console.error("Error loading VERA SD from URL:", error)
+    return false
+  }
+}
 
 export const isAppleDiskImage = (filename: string): boolean => {
   const lower = filename.toLowerCase()
@@ -81,9 +134,9 @@ export const openSdFilePicker = async () => {
       const [fileHandle] = await window.showOpenFilePicker({
         types: [
           {
-            description: "SD Card & Disk Images (*.img, *.raw, *.sd, *.bin, *.dsk, *.woz)",
+            description: "SD Card & Disk Images (*.img, *.raw, *.sd, *.bin, *.dsk, *.woz, *.zip, *.gz, *.7z)",
             accept: {
-              "application/octet-stream": [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"]
+              "application/octet-stream": [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv", ".zip", ".gz", ".7z"]
             }
           }
         ],
@@ -93,13 +146,24 @@ export const openSdFilePicker = async () => {
       if (fileHandle) {
         const file = await fileHandle.getFile()
         const buffer = await file.arrayBuffer()
-        if (isAppleDiskImage(file.name)) {
-          handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, fileHandle)
+        let fileData = new Uint8Array(buffer)
+        let fileName = file.name
+        let unzippedFileHandle: FileSystemFileHandle | null = fileHandle
+
+        const decompressed = await decompressSingleFile(fileData, fileName, [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"])
+        if (decompressed) {
+          fileName = decompressed.filename
+          fileData = decompressed.data
+          unzippedFileHandle = null
+        }
+
+        if (isAppleDiskImage(fileName)) {
+          handleSetDiskOrFileFromBuffer(0, decompressed ? decompressed.buffer : buffer, fileName, null, unzippedFileHandle)
           return
         }
         setVeraSdCloudData(null)
-        setVeraSdFileHandle(fileHandle)
-        handleSetVeraSdImage(new Uint8Array(buffer), file.name)
+        setVeraSdFileHandle(unzippedFileHandle)
+        handleSetVeraSdImage(fileData, fileName)
         return
       }
     } catch (err: unknown) {
@@ -113,7 +177,7 @@ export const openSdFilePicker = async () => {
   // Fallback for browsers without File System Access API
   const input = document.createElement("input")
   input.type = "file"
-  input.accept = ".img,.raw,.sd,.bin,.iso,.dsk,.woz,.po,.do,.2mg,.hdv"
+  input.accept = ".img,.raw,.sd,.bin,.iso,.dsk,.woz,.po,.do,.2mg,.hdv,.zip,.gz,.7z"
   input.style.position = "fixed"
   input.style.left = "-9999px"
   input.style.top = "-9999px"
@@ -125,13 +189,22 @@ export const openSdFilePicker = async () => {
       const file = input.files?.[0]
       if (file) {
         const buffer = await file.arrayBuffer()
-        if (isAppleDiskImage(file.name)) {
-          handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, null)
+        let fileData = new Uint8Array(buffer)
+        let fileName = file.name
+
+        const decompressed = await decompressSingleFile(fileData, fileName, [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"])
+        if (decompressed) {
+          fileName = decompressed.filename
+          fileData = decompressed.data
+        }
+
+        if (isAppleDiskImage(fileName)) {
+          handleSetDiskOrFileFromBuffer(0, decompressed ? decompressed.buffer : buffer, fileName, null, null)
           return
         }
         setVeraSdFileHandle(null)
         setVeraSdCloudData(null)
-        handleSetVeraSdImage(new Uint8Array(buffer), file.name)
+        handleSetVeraSdImage(fileData, fileName)
       }
     } finally {
       if (document.body.contains(input)) {

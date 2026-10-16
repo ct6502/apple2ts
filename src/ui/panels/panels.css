@@ -882,12 +882,16 @@ body.dark-mode .basic-vars-field {
 }
 
 .link-builder-textarea {
+  box-sizing: border-box;
   margin: 10px;
   margin-bottom: 0;
   margin-top: 0;
-  width: calc(100% - 40px);
-  min-width: calc(100% - 40px);
-  max-width: calc(100% - 40px);
+  width: calc(100% - 20px);
+  min-width: calc(100% - 20px);
+  max-width: calc(100% - 20px);
+  min-height: 80px;
+  flex-shrink: 0;
+  resize: vertical;
   font-family: monospace;
   padding: 8px;
   border-radius: 4px;

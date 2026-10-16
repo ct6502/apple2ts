@@ -86,6 +86,7 @@ export default defineConfig({
     }
   },
   build: {
+    emptyOutDir: false,
     chunkSizeWarningLimit: 3000,
     sourcemap: true
   },

@@ -466,6 +466,24 @@ body.dark-mode .dcp-tab-active {
   z-index: 0;
 }
 
+.dcp-item-multidisk-icon {
+  position: relative;
+  width: auto;
+  height: auto;
+  color: #38bdf8;
+  z-index: 1;
+}
+
+.dcp-item-multidisk-icon-bg {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 4px;
+  bottom: 2px;
+  background-color: black;
+  z-index: 0;
+}
+
 .dcp-item-ia-icon {
   position: relative;
   display: block;

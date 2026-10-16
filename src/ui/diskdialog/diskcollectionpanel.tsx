@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faCommentDots, faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faCommentDots, faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faLayerGroup, faStar } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgDemoZooLogo } from "../img/icon_demozoo"
 import PopupMenu from "../controls/popupmenu"
@@ -23,7 +23,7 @@ import {
   cloudProviderHasAuthToken,
   signInToCloudProvider,
 } from "../devices/disk/cloudauth"
-import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, loadDiskIntoDrive, createHdv, diskItemKey, formatBytes } from "./diskpanel_utils"
+import { sortDisks, diskCollectionSortOptions, getDiskCollectionSortMode, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, getMultiDiskConfigFromItem, getPrimaryDiskUrl, loadDisk, loadDiskIntoDrive, createHdv, diskItemKey, formatBytes } from "./diskpanel_utils"
 import { DiskItemTitle } from "./diskitemtitle"
 import { DiskPanelVtoc } from "./diskpanel_vtoc"
 import { isHardDriveImage } from "../../common/utility"
@@ -491,8 +491,24 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   }, [exportQueue])
 
   const getMenuItemsForDiskContextMenu = () => {
-    const filename = popupItem?.diskUrl || "foobar"
+    const filename = (popupItem ? getPrimaryDiskUrl(popupItem) : "") || "foobar"
     const filesize = popupItem?.fileSize || 0
+    const multiDiskItems: PopupMenuItem[] = []
+    if (popupItem) {
+      const config = getMultiDiskConfigFromItem(popupItem)
+      if (config.isMultiDisk) {
+        multiDiskItems.push({
+          label: "Load All Disks",
+          icon: faLayerGroup,
+          isSelected: () => false,
+          onClick: () => {
+            setDrivePopupLocation(undefined)
+            loadDisk(-1, popupItem, props.updateDisplay)
+            dismissDiskCollection()
+          }
+        })
+      }
+    }
     const hardDriveMenuItems = [0, 1].map((i) => (
       {
         label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
@@ -520,10 +536,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     const isHD = isHardDriveImage(filename, filesize)
     if (isHD) {
       return [[
+        ...multiDiskItems,
         ...hardDriveMenuItems
       ]]
     }
     return [[
+      ...multiDiskItems,
       ...floppyDriveMenuItems
     ]]
   }
@@ -797,6 +815,22 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                             }
                           }} />
                         </div>}
+                      {(() => {
+                        const multiConfig = getMultiDiskConfigFromItem(diskCollectionItem)
+                        if (!multiConfig.isMultiDisk) return null
+                        return (
+                          <div className={`dcp-item-icon ${isSmallDevice ? "dcp-item-smallicon" : ""}`}
+                            title="Multi-Disk (Multiple drives configured)">
+                            <FontAwesomeIcon icon={faLayerGroup} size="lg" className="dcp-item-multidisk-icon"
+                              onClick={(event) => {
+                                if (activeTab != TAB_INDEX.EXPORT) {
+                                  event.stopPropagation()
+                                }
+                              }} />
+                            <div className="dcp-item-multidisk-icon-bg">&nbsp;</div>
+                          </div>
+                        )
+                      })()}
                       {(() => {
                         const exportBadge = getExportBadgeInfo(diskCollectionItem)
                         const badgeStateClass = exportBadge.state === "blocked"

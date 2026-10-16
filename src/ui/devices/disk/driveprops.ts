@@ -1,10 +1,10 @@
 import { diskImages } from "./diskimages"
-import * as fflate from "fflate"
+import { unzipSingleFile, decompressSingleFile } from "../../../common/zip_utils"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import {
-  FILE_SUFFIXES_DISK,
   getDefaultDiskDriveIndex,
+  getPrimaryDiskUrl,
   MAX_DRIVES,
   RUN_MODE,
 } from "../../../common/utility"
@@ -232,7 +232,7 @@ export const requestEjectDisk = (index: number) => {
   return requestSetDriveNewData(driveProps[index])
 }
 
-const findMatchingDiskImage = (url: string) => {
+export const findMatchingDiskImage = (url: string) => {
   const name = decodeURIComponent(url).replace(/[^A-Z]/gi, "").toUpperCase()
   for (let i = 0; i < diskImages.length; i++) {
     const diskname = diskImages[i].title.replace(/[^A-Z]/gi, "").toUpperCase()
@@ -269,7 +269,17 @@ const setDiskOrFileFromBuffer = (
   writableFileHandle: WritableFileHandle | null,
   helpFile?: string,
   preserveDriveIndex = false,
-  confirmed = false) => {
+  confirmed = false,
+  noReset = false,
+  noBoot = false) => {
+
+  // Auto-unzip if archive or zipped disk image
+  const unzipped = unzipSingleFile(buffer, filename, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+  if (unzipped) {
+    filename = unzipped.filename
+    buffer = unzipped.buffer
+    writableFileHandle = null
+  }
 
   // Sanity check for strange downloads with no filename.
   if (buffer.byteLength === 143360 && !filename.includes(".")) {
@@ -316,12 +326,12 @@ const setDiskOrFileFromBuffer = (
     }
   } else {
     const defaultDriveIndex = getDefaultDiskDriveIndex(fname, buffer.byteLength)
-    const bootsExplicitDrive = preserveDriveIndex && index === defaultDriveIndex
+    const bootsExplicitDrive = !noReset && preserveDriveIndex && index === defaultDriveIndex
     if (bootsExplicitDrive) {
       passSetRunMode(RUN_MODE.IDLE)
       resetAllDiskDrives()
     }
-    if (!preserveDriveIndex || index < 0) {
+    if (!noReset && (!preserveDriveIndex || index < 0)) {
       if (defaultDriveIndex < 2) {
         if (index < 0 || index > 1) newIndex = defaultDriveIndex
       } else if (index < 2) {
@@ -340,7 +350,7 @@ const setDiskOrFileFromBuffer = (
       preserveDriveIndex,
       false,
     )
-    const needsBoot = bootsExplicitDrive || handleGetRunMode() === RUN_MODE.IDLE
+    const needsBoot = !noBoot && (bootsExplicitDrive || handleGetRunMode() === RUN_MODE.IDLE)
 
     if (needsBoot) {
       setTimeout(() => {
@@ -360,7 +370,10 @@ export const handleSetDiskOrFileFromBuffer = (
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null,
   helpFile?: string,
-  preserveDriveIndex = false) => {
+  preserveDriveIndex = false,
+  confirmed = false,
+  noReset = false,
+  noBoot = false) => {
   return setDiskOrFileFromBuffer(
     index,
     buffer,
@@ -369,6 +382,9 @@ export const handleSetDiskOrFileFromBuffer = (
     writableFileHandle,
     helpFile,
     preserveDriveIndex,
+    confirmed,
+    noReset,
+    noBoot,
   ).mountedDrive
 }
 
@@ -692,7 +708,8 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
 
 const setDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
-  debug?: (message: string) => void, preserveDriveIndex = false, confirmed = false): Promise<boolean> => {
+  debug?: (message: string) => void, preserveDriveIndex = false, confirmed = false,
+  noReset = false, noBoot = false): Promise<boolean> => {
   const requestedIndex = index
   const installDisk = (
     installIndex: number,
@@ -722,6 +739,9 @@ const setDiskFromURL = async (url: string,
       writableFileHandle,
       helpFile,
       preserveInstallIndex,
+      confirmed,
+      noReset,
+      noBoot,
     ))
   }
   debug?.(`handleSetDiskFromURL(${url}) drive=${index}`)
@@ -735,13 +755,13 @@ const setDiskFromURL = async (url: string,
         // Fetch for browser (may fail for local files due to CORS)
         const state = getDiskImageFromLocalStorage()
         if (state) {
-          if (!preserveDriveIndex) resetAllDiskDrives()
+          if (!preserveDriveIndex && !noReset) resetAllDiskDrives()
           index = await installDisk(state.index, state.data.buffer, url, null, null, helpFile)
         } else {
           const response = await fetch(url)
           const buffer = await response.arrayBuffer()
           const fileName = url.split("/").pop() || url        
-          if (!preserveDriveIndex) resetAllDiskDrives()
+          if (!preserveDriveIndex && !noReset) resetAllDiskDrives()
           index = await installDisk(
             index,
             buffer,
@@ -763,13 +783,14 @@ const setDiskFromURL = async (url: string,
     
     // Otherwise, try to find matching disk image in collections
     const match = findMatchingDiskImage(url)
-    if ( !match.diskUrl ) {
+    const matchUrl = getPrimaryDiskUrl(match)
+    if ( !matchUrl ) {
       return false
     }
-    url = match.diskUrl
+    url = matchUrl
     helpFile ??= match.helpFile
     if (!URL.canParse(url) && updateDisplay) {
-      handleSetDiskFromFile(url, updateDisplay, index, undefined, undefined, preserveDriveIndex)
+      handleSetDiskFromFile(url, updateDisplay, index, undefined, undefined, preserveDriveIndex, noReset, noBoot)
       return true
     }
   }
@@ -975,20 +996,10 @@ const setDiskFromURL = async (url: string,
     } catch {
       // Keep the raw URL for local/blob-style inputs.
     }
-    if (downloadPath.endsWith(".zip")) {
-      try {
-        const unzipped = fflate.unzipSync(new Uint8Array(fileBuffer))
-        for (const fileName of Object.keys(unzipped)) {
-          const fileExtension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase()
-          if (FILE_SUFFIXES_DISK.includes(fileExtension) && unzipped[fileName].length > 1024) {
-            name = fileName
-            buffer = unzipped[fileName].buffer
-            break
-          }
-        }
-      } catch (err) {
-        console.error("Failed to unzip disk image:", err)
-      }
+    const unzipped = await decompressSingleFile(fileBuffer, name || downloadPath, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+    if (unzipped) {
+      name = unzipped.filename
+      buffer = unzipped.buffer
     } else {
       if (name === "") {
         const urlObj = new URL(url)
@@ -1005,7 +1016,7 @@ const setDiskFromURL = async (url: string,
       if (callback) {
         callback(buffer)
       } else {
-        if (!preserveDriveIndex) {
+        if (!preserveDriveIndex && !noReset) {
           // If we are loading from a URL, reset all drives. Fixes issue#186
           resetAllDiskDrives()
         }
@@ -1021,7 +1032,7 @@ const setDiskFromURL = async (url: string,
         )
         // Loading a disk from a remote URL must boot it even when the
         // emulator was already paused or had previously run a program.
-        if (!preserveDriveIndex) passSetRunMode(RUN_MODE.NEED_BOOT)
+        if (!preserveDriveIndex && !noBoot) passSetRunMode(RUN_MODE.NEED_BOOT)
         debug?.(`Disk buffer installed as ${name}; NEED_BOOT sent`)
       }
     } else {
@@ -1050,8 +1061,9 @@ const setDiskFromURL = async (url: string,
 
 export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
-  debug?: (message: string) => void, preserveDriveIndex = false): Promise<boolean> => {
-  return setDiskFromURL(url, updateDisplay, index, cloudData, callback, debug, preserveDriveIndex)
+  debug?: (message: string) => void, preserveDriveIndex = false, confirmed = false,
+  noReset = false, noBoot = false): Promise<boolean> => {
+  return setDiskFromURL(url, updateDisplay, index, cloudData, callback, debug, preserveDriveIndex, confirmed, noReset, noBoot)
 }
 
 export const requestSetDiskFromURL = async (url: string,
@@ -1100,7 +1112,7 @@ export const prepWritableFile = async (index: number, writableFileHandle: Writab
   return () => clearInterval(timer)
 }
 
-const resetAllDiskDrives = () => {
+export const resetAllDiskDrives = () => {
   for (let i=0; i < MAX_DRIVES; i++) {
     setDiskData(i, new Uint8Array(), "", null, null, -1)
   }
@@ -1127,13 +1139,20 @@ export const handleSetDiskFromFile = async (disk: string,
   updateDisplay: UpdateDisplay | null, driveIndex: number = -1,
   callback?: (buffer: ArrayBuffer | null) => void,
   onLoadSuccess?: () => void,
-  preserveDriveIndex = false) => {
+  preserveDriveIndex = false,
+  noReset = false,
+  noBoot = false) => {
   clearDialogMessageContext()
   const configuredHelpFile = findCatalogHelpFile(disk)
   let data: ArrayBuffer
   try {
     const res = await fetch("disks/" + disk)
     data = await res.arrayBuffer()
+    const unzipped = await decompressSingleFile(data, disk, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+    if (unzipped) {
+      disk = unzipped.filename
+      data = unzipped.buffer
+    }
   } catch {
     if (callback) {
       callback(null)
@@ -1147,15 +1166,15 @@ export const handleSetDiskFromFile = async (disk: string,
     callback(data)
   } else {
     const defaultDriveIndex = getDefaultDiskDriveIndex(disk, data.byteLength)
-    let needsBoot = preserveDriveIndex
+    let needsBoot = !noBoot && (preserveDriveIndex
       ? (driveIndex === 0 || driveIndex === 2)
-      : handleGetRunMode() === RUN_MODE.IDLE
+      : handleGetRunMode() === RUN_MODE.IDLE)
     
-    if (driveIndex < 0) {
+    if (!noReset && driveIndex < 0) {
       needsBoot = true
     }
     
-    if (needsBoot) {
+    if (!noReset && needsBoot) {
       if (preserveDriveIndex) passSetRunMode(RUN_MODE.IDLE)
       resetAllDiskDrives()
       if (!preserveDriveIndex || driveIndex < 0) {
@@ -1178,7 +1197,7 @@ export const handleSetDiskFromFile = async (disk: string,
       preserveDriveIndex,
     )
 
-    if (needsBoot) {
+    if (!noBoot && needsBoot) {
       setTimeout(() => {
         if (!hasDialogMessageContext()) {
           passSetRunMode(RUN_MODE.NEED_BOOT)

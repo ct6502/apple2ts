@@ -1,6 +1,6 @@
 import { DiskCollectionSortMode, setPreferenceDiskCollectionSort } from "../../localstorage"
 import { handleGetSlotConfig, handleGetVeraSdStatus, handleSetVeraSdWriteProtected, passSetDriveProps } from "../../main2worker"
-import { CLOUD_SYNC, getDefaultDiskDriveIndex } from "../../../common/utility"
+import { CLOUD_SYNC, getDefaultDiskDriveIndex, getPrimaryDiskUrl } from "../../../common/utility"
 import {
   DISK_COLLECTION_ITEM_TYPE,
   TAB_INDEX,
@@ -109,7 +109,7 @@ export const resetCollectionDriveSelectionSession = () => {
 
 const getCollectionDriveIndex = (disk: DiskCollectionItem) => {
   if (selectedCollectionDriveIndex !== undefined) return selectedCollectionDriveIndex
-  const filename = disk.cloudData?.fileName || disk.diskUrl
+  const filename = disk.cloudData?.fileName || getPrimaryDiskUrl(disk)
   const fileSize = disk.cloudData?.fileSize ?? disk.fileSize
   return getDefaultDiskDriveIndex(filename, fileSize)
 }
@@ -361,12 +361,22 @@ const collectionItems = (
         return collectionItems(runtime, tabIndex, disks, sortMode)
       },
       action: runtime => {
-        loadDiskIntoDrive(
-          getCollectionDriveIndex(disk),
-          disk,
-          runtime.displayProps.updateDisplay,
-          runtime.close,
-        )
+        if (selectedCollectionDriveIndex !== undefined) {
+          loadDiskIntoDrive(
+            getCollectionDriveIndex(disk),
+            disk,
+            runtime.displayProps.updateDisplay,
+            runtime.close,
+          )
+        } else {
+          loadDisk(
+            -1,
+            disk,
+            runtime.displayProps.updateDisplay,
+            undefined,
+            runtime.close,
+          )
+        }
       },
     })),
     sortSepBase,

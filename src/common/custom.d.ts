@@ -634,12 +634,23 @@ type DisassemblyProps = {
 
 type VtocType = "dos" | "prodos" | "other" | "dosup" | "4cade"
 
+type MultiDiskMap = {
+  s6d1?: string
+  s6d2?: string
+  s7d1?: string
+  s7d2?: string
+  s2d1?: string
+  s4d1?: string
+  verasd?: string
+  [key: string]: string | undefined
+}
+
 type DiskCollectionItem = {
   type: "builtin" | "internet" | "new" | "cloud" | "demozoo",
   title: string,
   lastUpdated: Date,
   imageUrl?: string,
-  diskUrl: string,
+  diskUrl?: string | MultiDiskMap | string[],
   helpFile?: string,
   detailsUrl?: string,
   bookmarkId?: string,
@@ -648,7 +659,7 @@ type DiskCollectionItem = {
   fileSize: number,
   vtocType?: VtocType,
   vtocVersion?: number,
-  exportDisabled?: boolean
+  exportDisabled?: boolean,
 }
 
 interface OpenerWindow {

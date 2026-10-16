@@ -3,6 +3,7 @@ import { FILE_SUFFIXES_ALL } from "../common/utility"
 import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
 import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
+import { decompressSingleFile } from "../common/zip_utils"
 import { isFileSystemApiSupported } from "./ui_utilities"
 import { DISK_LOAD_SUCCESS_EVENT } from "./ui_settings"
 
@@ -34,10 +35,16 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
           setDisplayBinaryDialog(true)
         }
     } else {
-      const filename = file.name
+      let filename = file.name
+      let buffer = await file.arrayBuffer()
+      const decompressed = await decompressSingleFile(buffer, filename, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+      if (decompressed) {
+        filename = decompressed.filename
+        buffer = decompressed.buffer
+      }
       const writableFileHandle: FileSystemFileHandle | null = null
       const newIndex = handleSetDiskOrFileFromBuffer(index,
-        await file.arrayBuffer(), filename, null, writableFileHandle)
+        buffer, filename, null, writableFileHandle)
       if (writableFileHandle) prepWritableFile(newIndex, writableFileHandle)
       notifyLoadSuccess()
     }

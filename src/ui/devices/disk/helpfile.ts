@@ -1,6 +1,8 @@
 import { diskImages, internalDiskResources } from "./diskimages"
 import { newReleases } from "./newreleases"
 
+import { getPrimaryDiskUrl } from "../../../common/utility"
+
 export const getHelpFileUrl = (helpFile: string) => `disks/${encodeURIComponent(helpFile)}`
 
 export const readHelpResponseText = async (
@@ -15,7 +17,10 @@ export const readHelpResponseText = async (
 export const findCatalogHelpFile = (diskUrl: string) => {
   const catalogDiskUrl = diskUrl.replace(/^\/disks\//, "")
   return [...diskImages, ...newReleases, ...internalDiskResources]
-    .find((item) => item.diskUrl === catalogDiskUrl)?.helpFile
+    .find((item) => {
+      const primaryUrl = "diskUrl" in item ? getPrimaryDiskUrl(item) : ""
+      return primaryUrl === catalogDiskUrl
+    })?.helpFile
 }
 
 export const createHelpTextSelector = (loadHelpText: (helpFile: string) => Promise<string>) => {
