@@ -149,8 +149,16 @@ export const decompressSingleFile = async (
     }
     const SevenZipModule = await import("sevenzip-wasm")
     const SevenZip = (SevenZipModule as { default?: unknown }).default || SevenZipModule
+    const options = typeof window !== "undefined" ? {
+      locateFile: (path: string) => {
+        if (path.endsWith(".wasm")) {
+          return "js/sevenzip-wasm.wasm"
+        }
+        return path
+      }
+    } : undefined
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sz = await (SevenZip as () => Promise<any>)()
+    const sz = await (SevenZip as (opts?: any) => Promise<any>)(options)
 
     const uniqueId = `${Date.now()}_${Math.floor(Math.random() * 10000)}`
     const tempArchive = `archive_${uniqueId}.7z`
