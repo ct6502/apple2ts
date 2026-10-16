@@ -4,6 +4,7 @@ import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import {
   getDefaultDiskDriveIndex,
+  getPrimaryDiskUrl,
   MAX_DRIVES,
   RUN_MODE,
 } from "../../../common/utility"
@@ -782,10 +783,11 @@ const setDiskFromURL = async (url: string,
     
     // Otherwise, try to find matching disk image in collections
     const match = findMatchingDiskImage(url)
-    if ( !match.diskUrl ) {
+    const matchUrl = getPrimaryDiskUrl(match)
+    if ( !matchUrl ) {
       return false
     }
-    url = match.diskUrl
+    url = matchUrl
     helpFile ??= match.helpFile
     if (!URL.canParse(url) && updateDisplay) {
       handleSetDiskFromFile(url, updateDisplay, index, undefined, undefined, preserveDriveIndex, noReset, noBoot)

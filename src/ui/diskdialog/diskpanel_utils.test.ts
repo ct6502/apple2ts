@@ -4,6 +4,11 @@ const mockBuildProDosHdv = jest.fn()
 const mockShowGlobalProgressModal = jest.fn()
 const mockLoadAndConvertImageToHires = jest.fn()
 
+const mockHandleSetDiskFromURL = jest.fn().mockResolvedValue(true)
+const mockResetAllDiskDrives = jest.fn()
+const mockHandleInputParams = jest.fn()
+const mockHandleSetVeraSdFromURL = jest.fn().mockResolvedValue(true)
+
 jest.mock("../../common/prodos_hdv", () => ({
   ...jest.requireActual("../../common/prodos_hdv"),
   buildProDosHdv: (...args: unknown[]) => mockBuildProDosHdv(...args),
@@ -12,7 +17,14 @@ jest.mock("../../common/prodos_hdv", () => ({
 jest.mock("../devices/disk/driveprops", () => ({
   handleSetDiskFromCloudData: jest.fn(),
   handleSetDiskFromFile: (...args: unknown[]) => mockHandleSetDiskFromFile(...args),
-  handleSetDiskFromURL: jest.fn(),
+  handleSetDiskFromURL: (...args: unknown[]) => mockHandleSetDiskFromURL(...args),
+  resetAllDiskDrives: (...args: unknown[]) => mockResetAllDiskDrives(...args),
+}))
+jest.mock("../inputparams", () => ({
+  handleInputParams: (...args: unknown[]) => mockHandleInputParams(...args),
+}))
+jest.mock("../devices/vera/verasdicon", () => ({
+  handleSetVeraSdFromURL: (...args: unknown[]) => mockHandleSetVeraSdFromURL(...args),
 }))
 jest.mock("../main2worker", () => ({
   passSetRunMode: (...args: unknown[]) => mockPassSetRunMode(...args),
@@ -24,7 +36,8 @@ jest.mock("./screenshot_utils", () => ({
   loadAndConvertImageToHires: (...args: unknown[]) => mockLoadAndConvertImageToHires(...args),
 }))
 
-import { createHdv, DISK_COLLECTION_ITEM_TYPE, getExportBadgeInfo, loadDisk, loadDiskIntoDrive } from "./diskpanel_utils"
+import { RUN_MODE } from "../../common/utility"
+import { createHdv, DISK_COLLECTION_ITEM_TYPE, getExportBadgeInfo, getMultiDiskConfigFromItem, getPrimaryDiskUrl, loadDisk, loadDiskIntoDrive } from "./diskpanel_utils"
 
 describe("loadDisk", () => {
   const disk = {
@@ -84,6 +97,130 @@ describe("loadDisk", () => {
       true,
     )
     expect(mockPassSetRunMode).not.toHaveBeenCalled()
+  })
+
+  test("loads multiple disks when item defines disks or multi-disk params", async () => {
+    const multiDisk: DiskCollectionItem = {
+      type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+      title: "MultiGame",
+      diskUrl: "https://example.com/disk1.dsk",
+      params: "s6d2=https://example.com/disk2.dsk&s2d1=https://example.com/vera.img&color=green",
+      fileSize: 143360,
+      lastUpdated: new Date(0),
+    }
+
+    const updateDisplay = jest.fn()
+    const onLoadSuccess = jest.fn()
+
+    loadDisk(-1, multiDisk, updateDisplay, undefined, onLoadSuccess)
+
+    // Should reset drives and apply input params
+    expect(mockResetAllDiskDrives).toHaveBeenCalled()
+    expect(mockHandleInputParams).toHaveBeenCalledWith(multiDisk.params)
+
+    // Wait for promise resolution
+    await Promise.resolve()
+    await Promise.resolve()
+
+    // Should mount drive 1 (index 2) and drive 2 (index 3)
+    expect(mockHandleSetDiskFromURL).toHaveBeenCalledWith(
+      "https://example.com/disk1.dsk",
+      updateDisplay,
+      2,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(mockHandleSetDiskFromURL).toHaveBeenCalledWith(
+      "https://example.com/disk2.dsk",
+      updateDisplay,
+      3,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    // Should mount VERA SD
+    expect(mockHandleSetVeraSdFromURL).toHaveBeenCalledWith("https://example.com/vera.img")
+
+    // Should trigger boot
+    expect(mockPassSetRunMode).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+    expect(onLoadSuccess).toHaveBeenCalled()
+  })
+})
+
+describe("getMultiDiskConfigFromItem", () => {
+  test("identifies single disk items correctly", () => {
+    const item: DiskCollectionItem = {
+      type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
+      title: "Solo",
+      diskUrl: "solo.dsk",
+      fileSize: 143360,
+      lastUpdated: new Date(0),
+    }
+    const config = getMultiDiskConfigFromItem(item)
+    expect(config.isMultiDisk).toBe(false)
+    expect(config.drives).toEqual([{ index: 2, url: "solo.dsk" }])
+    expect(config.veraSdUrl).toBeUndefined()
+  })
+
+  test("parses diskUrl as multi-disk object dictionary", () => {
+    const item: DiskCollectionItem = {
+      type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+      title: "DiskUrlObject",
+      diskUrl: {
+        s6d1: "sideA.dsk",
+        s6d2: "sideB.dsk",
+      },
+      fileSize: 143360,
+      lastUpdated: new Date(0),
+    }
+    const config = getMultiDiskConfigFromItem(item)
+    expect(config.isMultiDisk).toBe(true)
+    expect(config.drives).toEqual([
+      { index: 2, url: "sideA.dsk" },
+      { index: 3, url: "sideB.dsk" },
+    ])
+    expect(getPrimaryDiskUrl(item)).toBe("sideA.dsk")
+  })
+
+  test("parses diskUrl as array", () => {
+    const item: DiskCollectionItem = {
+      type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+      title: "ArrayDisks",
+      diskUrl: ["boot.dsk", "data.dsk"],
+      fileSize: 143360,
+      lastUpdated: new Date(0),
+    }
+    const config = getMultiDiskConfigFromItem(item)
+    expect(config.isMultiDisk).toBe(true)
+    expect(config.drives).toEqual([
+      { index: 2, url: "boot.dsk" },
+      { index: 3, url: "data.dsk" },
+    ])
+    expect(getPrimaryDiskUrl(item)).toBe("boot.dsk")
+  })
+
+  test("parses multi-disk and VERA SD from params", () => {
+    const item: DiskCollectionItem = {
+      type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+      title: "VeraGame",
+      diskUrl: "game.hdv",
+      params: "slot2=vera&s2d1=sdcard.img",
+      fileSize: 819200,
+      lastUpdated: new Date(0),
+    }
+    const config = getMultiDiskConfigFromItem(item)
+    expect(config.isMultiDisk).toBe(true)
+    expect(config.drives).toEqual([{ index: 0, url: "game.hdv" }])
+    expect(config.veraSdUrl).toBe("sdcard.img")
   })
 })
 

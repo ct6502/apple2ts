@@ -3,7 +3,7 @@ import { determineVtocType, lookupFourCadeByTitle, VTOC_REFRESH } from "../../co
 import { hasSessionVtocFailure, addSessionVtocFailure, removeSessionVtocFailure, setPreferenceVtocType } from "../localstorage"
 import { isMinimalTheme } from "../ui_settings"
 import { showGlobalProgressModal } from "../ui_utilities"
-import { isDiskExportable, getExportFilename, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, diskItemKey } from "./diskpanel_utils"
+import { isDiskExportable, getExportFilename, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, diskItemKey, getPrimaryDiskUrl } from "./diskpanel_utils"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/disk/driveprops"
 import { clearIaResolveCache, internetArchiveUrlProtocol } from "../devices/disk/internetarchive_utils"
@@ -33,12 +33,13 @@ type DiskPanelVtocProps = {
 const fetchDiskBufferForItem = (diskCollectionItem: DiskCollectionItem): Promise<Uint8Array | null> => {
   return new Promise((resolve) => {
     const cb = (buffer: ArrayBuffer | null) => resolve(buffer ? new Uint8Array(buffer) : null)
+    const primaryUrl = getPrimaryDiskUrl(diskCollectionItem)
     if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, -1, cb)
-    } else if (diskCollectionItem.diskUrl && !diskCollectionItem.diskUrl.includes("://")) {
-      handleSetDiskFromFile(diskCollectionItem.diskUrl, null, -1, cb)
+    } else if (primaryUrl && !primaryUrl.includes("://")) {
+      handleSetDiskFromFile(primaryUrl, null, -1, cb)
     } else {
-      handleSetDiskFromURL(diskCollectionItem.diskUrl || "", undefined, -1, diskCollectionItem.cloudData, cb)
+      handleSetDiskFromURL(primaryUrl || "", undefined, -1, diskCollectionItem.cloudData, cb)
     }
   })
 }
@@ -117,11 +118,12 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
       const key = itemKey(disk)
       disk.vtocType = undefined
       disk.vtocVersion = undefined
-      removeSessionVtocFailure(disk.diskUrl?.toString() || "")
+      const primaryUrl = getPrimaryDiskUrl(disk)
+      removeSessionVtocFailure(primaryUrl)
       // Clear the Internet Archive negative cache so the identifier is
       // re-resolved from scratch instead of returning the cached failure.
-      if (disk.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE && disk.diskUrl?.startsWith(internetArchiveUrlProtocol)) {
-        clearIaResolveCache(disk.diskUrl.substring(internetArchiveUrlProtocol.length))
+      if (disk.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE && primaryUrl.startsWith(internetArchiveUrlProtocol)) {
+        clearIaResolveCache(primaryUrl.substring(internetArchiveUrlProtocol.length))
       }
       vtocResolveAttempted.current.delete(key)
       suppressProgressRef.current = true
@@ -153,7 +155,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     } else {
       // Cache by URL so non-bookmarked disks (e.g. new releases) avoid
       // re-downloading their bytes to redetermine the VTOC on every visit.
-      setPreferenceVtocType(diskCollectionItem.diskUrl.toString(), vtocType, VTOC_REFRESH)
+      setPreferenceVtocType(getPrimaryDiskUrl(diskCollectionItem), vtocType, VTOC_REFRESH)
     }
 
     // Trigger a re-render so the export filter reflects the new VTOC type.
@@ -167,7 +169,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
   // VTOC fetches before they could record a failure -- an infinite retry loop
   // for un-fetchable (CORS/offline) disks.
   const visibleCandidatesKey = props.visibleCandidates
-    .map((item) => item.diskUrl?.toString() || "")
+    .map((item) => getPrimaryDiskUrl(item))
     .join("|")
 
   // While the Export tab is visible, fill in (and cache) the VTOC type of any
@@ -233,7 +235,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     const pendingCandidates = props.visibleCandidates.filter((item) =>
       item.vtocType === undefined &&
       isDiskExportable(item) &&
-      !hasSessionVtocFailure(item.diskUrl.toString()) &&
+      !hasSessionVtocFailure(getPrimaryDiskUrl(item)) &&
       (item.type !== DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE ||
         props.cloudProviderHasAuthToken(item.cloudData?.providerName || ""))
     )
@@ -283,7 +285,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
             setVtocCheckPass((pass) => pass + 1)
           }
         } else {
-          addSessionVtocFailure(pending.diskUrl.toString())
+          addSessionVtocFailure(getPrimaryDiskUrl(pending))
           if (!cancelled) {
             setVtocCheckPass((pass) => pass + 1)
           }
@@ -314,7 +316,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
             setVtocCheckPass((pass) => pass + 1)
           }
         } else {
-          addSessionVtocFailure(pending.diskUrl.toString())
+          addSessionVtocFailure(getPrimaryDiskUrl(pending))
           if (!cancelled) {
             setVtocCheckPass((pass) => pass + 1)
           }

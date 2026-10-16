@@ -27,7 +27,7 @@ import {
 import { getPreferenceSlotConfig } from "../../localstorage"
 import { SETTINGS_CHANGED_EVENT } from "../../settingschange"
 import { isFileSystemApiSupported } from "../../ui_utilities"
-import { toHex, VeraSdStatus } from "../../../common/utility"
+import { toHex, VeraSdStatus, getPrimaryDiskUrl } from "../../../common/utility"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { OneDriveCloudDrive } from "../disk/onedriveclouddrive"
 import { GoogleDrive } from "../disk/googledrive"
@@ -40,8 +40,9 @@ export const handleSetVeraSdFromURL = async (url: string): Promise<boolean> => {
     const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
     if (isLocalFile && !url.startsWith("/") && !url.startsWith("file://")) {
       const match = findMatchingDiskImage(url)
-      if (match.diskUrl) {
-        resolvedUrl = match.diskUrl
+      const matchUrl = getPrimaryDiskUrl(match)
+      if (matchUrl) {
+        resolvedUrl = matchUrl
       }
       if (!URL.canParse(resolvedUrl) && !resolvedUrl.startsWith("/")) {
         resolvedUrl = "disks/" + resolvedUrl

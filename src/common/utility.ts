@@ -601,3 +601,15 @@ export const playAudio = (audioDevice: AudioDevice, timeout: number) => {
     })
   }
 }
+
+export const getPrimaryDiskUrl = (item?: Partial<DiskCollectionItem> | null): string => {
+  if (!item || !item.diskUrl) return ""
+  if (typeof item.diskUrl === "string") return item.diskUrl
+  if (Array.isArray(item.diskUrl)) {
+    return item.diskUrl[0] || ""
+  }
+  if (typeof item.diskUrl === "object") {
+    return item.diskUrl.s6d1 || item.diskUrl.s7d1 || item.diskUrl.d1 || item.diskUrl.hd1 || item.diskUrl.s6d2 || item.diskUrl.s7d2 || ""
+  }
+  return ""
+}
