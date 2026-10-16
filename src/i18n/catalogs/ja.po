@@ -2352,6 +2352,10 @@ msgctxt "linkBuilder.sound"
 msgid "Sound"
 msgstr ""
 
+msgctxt "linkBuilder.startupOptionsTab"
+msgid "Startup Options"
+msgstr ""
+
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
 msgstr ""

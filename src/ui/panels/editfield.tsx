@@ -74,8 +74,8 @@ const EditField = (props: EditFieldProps) => {
   </span>
   return (
     props.name ?
-      <div className="flex-row" style={{ marginTop: "2px", position: "relative" }}>
-        <div className="dialog-title">{props.name}</div>
+      <div className="flex-row" style={{ alignItems: "center", marginTop: "2px", position: "relative" }}>
+        <div className="dialog-text">{props.name}</div>
         {textfield}
       </div> :
       <span>{textfield}</span>

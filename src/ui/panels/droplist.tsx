@@ -59,7 +59,7 @@ export const Droplist = (props: DroplistProps) => {
     />
   </span>
 
-  return (props.name ? <div className="flex-row">
-    <div className="dialog-title">{props.name}</div>{spanselect}</div> :
+  return (props.name ? <div className="flex-row" style={{ alignItems: "center" }}>
+    <div className="dialog-text">{props.name}</div>{spanselect}</div> :
     <span>{spanselect}</span>)
 }

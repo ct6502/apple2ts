@@ -20,7 +20,7 @@ const BPEdit_Basic = (props: {
 
   return (
     <div>
-      <div className="flex-row">
+      <div className="flex-row" style={{ marginBottom: "10px" }}>
         <EditField name={t("debug.basicLineNumber")}
           initialFocus={true}
           value={bpAddress}

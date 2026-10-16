@@ -387,7 +387,7 @@ body.dark-mode .warning-text-help {
   border-color: var(--text-color);
   border-radius: 10px 10px 0 0;
   border-bottom: none;
-  width: 120px;
+  min-width: 120px;
   height: 28px;
   color: var(--text-color);
   margin-left: 2px;

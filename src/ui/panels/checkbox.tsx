@@ -20,7 +20,7 @@ return(<div className="flex-row" style={{marginRight: "10px",
           className="check-radio-box shift-down"
           checked={props.checked}
           onChange={(e) => { handleValueChange(e) }} />
-        {props.name && <label htmlFor={props.name} className="dialog-title flush-left">{props.name}</label>}
+        {props.name && <label htmlFor={props.name} className="dialog-text flush-left">{props.name}</label>}
       </div>
       )
 }

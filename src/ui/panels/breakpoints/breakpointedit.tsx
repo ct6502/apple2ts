@@ -63,6 +63,58 @@ const BreakpointEdit = (props: {
   const isBreakpoint = !props.breakpoint.watchpoint &&
     !props.breakpoint.instruction && !props.breakpoint.basic
 
+  const radioBreakpoint =
+    <>
+      <input type="radio"
+        id="Address"
+        name="breakAt"
+        value="address"
+        autoComplete="off"
+        className="check-radio-box"
+        checked={isBreakpoint}
+        onChange={(e) => { handleBreakAtChange(e) }} />
+      <label htmlFor="Address" className="dialog-text flush-left">{t("debug.breakpoint.breakpoint")}</label>
+    </>
+
+  const radioWatchpoint =
+    <>
+      <input type="radio"
+        id="Watchpoint"
+        name="watch"
+        value="watchpoint"
+        autoComplete="off"
+        className="check-radio-box"
+        checked={props.breakpoint.watchpoint}
+        onChange={(e) => { handleBreakAtChange(e) }} />
+      <label htmlFor="Watchpoint" className="dialog-text flush-left">{t("debug.breakpoint.watchpoint")}</label>
+    </>
+
+  const radioInstruction =
+    <>
+      <input type="radio"
+        id="Instruction"
+        name="instruction"
+        value="instruction"
+        autoComplete="off"
+        className="check-radio-box"
+        checked={props.breakpoint.instruction}
+        onChange={(e) => { handleBreakAtChange(e) }} />
+      <label htmlFor="Instruction" className="dialog-text flush-left">{t("debug.breakpoint.instruction")}</label>
+    </>
+
+  const radioBASIC =
+    <>
+      <input type="radio"
+        id="Basic"
+        name="basic"
+        value="basic"
+        autoComplete="off"
+        className="check-radio-box"
+        checked={props.breakpoint.basic}
+        onChange={(e) => { handleBreakAtChange(e) }} />
+      <label htmlFor="Basic" className="dialog-text flush-left">BASIC</label>
+    </>
+
   return (
     <div className="modal-overlay"
       tabIndex={0} // Make the div focusable
@@ -75,11 +127,15 @@ const BreakpointEdit = (props: {
       }}
       onMouseMove={(e) => handleMouseMove(e)}
       onMouseUp={handleMouseUp}>
-      <div className="floating-dialog flex-column"
+      <div className="floating-dialog flex-column-gap"
         ref={dialogRef}
         style={{
-          left: `${props.dialogPositionX}px`, top: `${props.dialogPositionY}px`,
-          width: "550px", height: "auto"
+          left: `${props.dialogPositionX}px`,
+          top: `${props.dialogPositionY}px`,
+          width: "550px",
+          height: "auto",
+          minHeight: "400px",
+          userSelect: "none"
         }}
       >
         <div className="flex-column">
@@ -94,68 +150,33 @@ const BreakpointEdit = (props: {
             </button>
           </div>
           <div className="horiz-rule"></div>
-        </div>
-        <div className="flex-column">
-          <div className="flex-row">
-            <div className="dialog-title">{t("debug.breakpoint.breakAt")}</div>
-            <input type="radio"
-              id="Address"
-              name="breakAt"
-              value="address"
-              autoComplete="off"
-              className="check-radio-box"
-              checked={isBreakpoint}
-              onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Address" className="dialog-title flush-left">{t("debug.breakpoint.breakpoint")}</label>
-            <input type="radio"
-              id="Watchpoint"
-              name="watch"
-              value="watchpoint"
-              autoComplete="off"
-              className="check-radio-box"
-              checked={props.breakpoint.watchpoint}
-              onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Watchpoint" className="dialog-title flush-left">{t("debug.breakpoint.watchpoint")}</label>
-            <input type="radio"
-              id="Instruction"
-              name="instruction"
-              value="instruction"
-              autoComplete="off"
-              className="check-radio-box"
-              checked={props.breakpoint.instruction}
-              onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Instruction" className="dialog-title flush-left">{t("debug.breakpoint.instruction")}</label>
-            <input type="radio"
-              id="Basic"
-              name="basic"
-              value="basic"
-              autoComplete="off"
-              className="check-radio-box"
-              checked={props.breakpoint.basic}
-              onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Basic" className="dialog-title flush-left">BASIC</label>
+          <div className="flex-row" style={{ alignItems: "center" }}>
+            <div className="dialog-text">{t("debug.breakpoint.breakAt")}</div>
+            {radioBreakpoint}
+            {radioWatchpoint}
+            {radioInstruction}
+            {radioBASIC}
           </div>
-
+          <div className="horiz-rule" style={{ marginTop: "10px" }}/>
           {isBreakpoint && <BPEdit_Breakpoint breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint} />}
           {props.breakpoint.watchpoint && <BPEdit_Watchpoint
             breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint} />}
           {props.breakpoint.instruction && <BPEdit_Instruction
             breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint} />}
           {props.breakpoint.basic && <BPEdit_Basic breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint} />}
-
-          <div className="flex-row-space-between" style={{ marginTop: "5px" }}>
-            <div></div>
-            <div className="flex-row">
-              <button className="push-button text-button"
-                disabled={isBreakpoint && getBreakpointKey(props.breakpoint) === BRK_NOADDRESS}
-                onClick={props.saveBreakpoint}>
-                <span className="centered-title">OK</span>
-              </button>
-              <button className="push-button text-button"
-                onClick={props.cancelDialog}>
-                <span className="centered-title">{t("messages.cancel")}</span>
-              </button>
-            </div>
+        </div>
+        <div id="button-row" className="flex-row-space-between" style={{ marginTop: "auto" }}>
+          <div></div>
+          <div className="flex-row">
+            <button className="push-button text-button"
+              disabled={isBreakpoint && getBreakpointKey(props.breakpoint) === BRK_NOADDRESS}
+              onClick={props.saveBreakpoint}>
+              <span className="centered-title">OK</span>
+            </button>
+            <button className="push-button text-button"
+              onClick={props.cancelDialog}>
+              <span className="centered-title">{t("messages.cancel")}</span>
+            </button>
           </div>
         </div>
       </div>

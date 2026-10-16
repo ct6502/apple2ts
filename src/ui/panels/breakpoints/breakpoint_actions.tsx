@@ -26,7 +26,7 @@ const Breakpoint_Actions = (props: {
       <BreakpointActionControl action={props.breakpoint.action1}
         setAction={handleActionChange1} />
     </div>
-    <div>
+    <div style={{marginBottom: "4px"}}>
       <BreakpointActionControl action={props.breakpoint.action2}
         setAction={handleActionChange2}
       />

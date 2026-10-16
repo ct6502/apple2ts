@@ -12,6 +12,8 @@ import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode, handleGetSlotConfig } from "../main2worker"
 import { useTranslation } from "../../i18n/useTranslation"
 import { SLOT_NUMBERS, getSlotOptions } from "../devices/machineconfig"
+import TabBase from "../tabbase"
+import Tab from "../tab"
 
 export enum TAB {
   DISK,
@@ -397,407 +399,399 @@ const LinkBuilder = () => {
     setSlotConfig({ ...handleGetSlotConfig() })
   }
 
+  const emulatorGeneralSettings =
+    <>
+      <div className="flex-row">
+      <div className="flex-column">
+        <Droplist name={t("linkBuilder.userInterface")}
+          value={appmode}
+          values={gameModes}
+          setValue={setAppmode} />
+        <Droplist name={t("linkBuilder.machine")}
+          value={machine}
+          values={machineValues}
+          setValue={(val: string) => {
+            setMachine(val)
+            // Adjust slot 3 when crossing between II+ and IIe families
+            const newIsIIp = val === machineValues[2]
+            const wasIIp = lbMachineName === "APPLE2P"
+            if (newIsIIp !== wasIIp) {
+              setSlotConfig(prev => ({
+                ...prev,
+                3: newIsIIp ? "videoterm" : "aux"
+              }))
+              if (!newIsIIp) setRamdisk(ramdiskValues[0]) // reset to 64KB default
+            }
+          }} />
+        <Droplist name={t("linkBuilder.colorMode")}
+          value={colormode}
+          values={colorNames}
+          setValue={setColormode} />
+        <Droplist name={t("linkBuilder.ramDiskSize")}
+          value={ramdisk}
+          values={ramdiskValues}
+          setValue={(val: string) => {
+            setRamdisk(val)
+            const rIdx = ramdiskValues.indexOf(val)
+            if (rIdx > 0 && lbMachineName !== "APPLE2P" && slotConfig[3] !== "aux") {
+              setSlotConfig(prev => ({ ...prev, 3: "aux" }))
+            }
+          }} />
+        <Droplist name={t("linkBuilder.emulatorSpeed")}
+          value={speed !== "" ? speed : speedNames[2]}
+          values={speedNames}
+          setValue={setSpeed} />
+
+        <Droplist name={t("linkBuilder.uiTheme")}
+          value={theme !== "" ? theme : themeValues[0]}
+          values={themeValues}
+          setValue={setTheme} />
+      </div>
+      <div className="flex-column" style={{ marginLeft: "20px" }}>
+        <CheckBox name={t("config.crtDistortion")}
+          checked={crtdistort}
+          setChecked={setCrtdistort} />
+        <CheckBox name={t("config.ghosting")}
+          checked={ghosting}
+          setChecked={setGhosting} />
+        <CheckBox name={t("config.scanlines")}
+          checked={scanlines}
+          setChecked={setScanlines} />
+        <CheckBox name={t("config.capsLock")}
+          checked={!lowercaseMode}
+          setChecked={(on: boolean) => { setLowercaseMode(!on) }} />
+        <CheckBox name={t("linkBuilder.showDebugTab")}
+          checked={debug}
+          setChecked={setDebug} />
+        <CheckBox name={t("linkBuilder.sound")}
+          checked={!soundoff}
+          setChecked={(on: boolean) => { setSoundoff(!on) }} />
+      </div>
+    </div>
+  </>
+
+  const slotConfiguration = 
+    <>
+    <div className="dialog-title" style={{ marginBottom: "4px" }}>{t("linkBuilder.slots.configure")}</div>
+    <div className="flex-row" style={{ flexWrap: "wrap", gap: "0 20px", marginBottom: "8px" }}>
+      {SLOT_NUMBERS.map(slot => {
+        const rawOptions = getSlotOptions(slot, lbMachineName)
+        // Filter out cards already installed in another slot (unless card is none or mockingboard)
+        const options = rawOptions.filter(o => {
+          if (o.card === "none" || o.card === "mockingboard") return true
+          if (slotConfig[slot] === o.card) return true
+          return !SLOT_NUMBERS.some(otherSlot => otherSlot !== slot && slotConfig[otherSlot] === o.card)
+        })
+        // Build display label for each option (aux entries include RAM size)
+        const getOptionLabel = (o: typeof options[0]) => {
+          if (o.card === "aux" && o.ramSizeKb !== undefined) {
+            if (o.ramSizeKb <= 64) return "Aux/80Col (64KB)"
+            const sizeStr = o.ramSizeKb >= 1024 ? `${o.ramSizeKb / 1024}MB` : `${o.ramSizeKb}KB`
+            return `AE RamWorks (${sizeStr})`
+          }
+          return cardShortLabels[o.card]
+        }
+        const cardLabels = options.map(getOptionLabel)
+        // Current label: for slot 3 aux, reflect currently chosen ramdisk size
+        const currentCard = slotConfig[slot]
+        let currentLabel = cardShortLabels[currentCard]
+        if (slot === 3 && currentCard === "aux") {
+          const ramIdx = ramdiskValues.indexOf(ramdisk)
+          const ramSizeKb = parseInt(ramdiskParams[Math.max(ramIdx, 0)]) || 64
+          currentLabel = ramSizeKb <= 64 ? "Aux/80Col (64KB)"
+            : `AE RamWorks (${ramSizeKb >= 1024 ? `${ramSizeKb / 1024}MB` : `${ramSizeKb}KB`})`
+        }
+        return (
+          <Droplist
+            key={slot}
+            name={t("linkBuilder.slots.slot", { slot: String(slot) })}
+            value={currentLabel}
+            values={cardLabels}
+            setValue={(label: string) => {
+              const idx = cardLabels.indexOf(label)
+              if (idx >= 0) {
+                const chosen = options[idx]
+                setSlotConfig(prev => {
+                  const next = { ...prev, [slot]: chosen.card }
+                  if (chosen.card !== "none" && chosen.card !== "mockingboard") {
+                    SLOT_NUMBERS.forEach(otherSlot => {
+                      if (otherSlot !== slot && next[otherSlot] === chosen.card) {
+                        next[otherSlot] = "none"
+                      }
+                    })
+                  }
+                  return next
+                })
+                // For slot 3: sync or reset ramdisk
+                if (slot === 3) {
+                  if (chosen.card === "aux" && chosen.ramSizeKb !== undefined) {
+                    const paramStr = String(chosen.ramSizeKb)
+                    const ramIdx = ramdiskParams.indexOf(paramStr)
+                    if (ramIdx >= 0) setRamdisk(ramdiskValues[ramIdx])
+                  } else {
+                    setRamdisk(ramdiskValues[0])
+                  }
+                }
+              }
+            }} />
+        )
+      })}
+    </div>
+    </>
+
+  const loadDiskImageOptions =
+    <div className="flex-column">
+      <Droplist name={t("linkBuilder.diskImageToLoad")}
+        value={selectedDisk}
+        values={diskNames}
+        setValue={setSelectedDisk} />
+      <div className="dialog-text" style={{ marginTop: "6px" }}>{t("linkBuilder.customDiskUrl")}</div>
+      <div style={{ marginLeft: "10px", marginRight: "10px" }}>
+        <EditField
+          value={fragmentURL}
+          setValue={setFragmentURL}
+          disabled={!isCustomURL}
+          placeholder="http://example.com/disk.dsk" />
+      </div>
+      <div className="dialog-title" style={{ marginTop: "12px", marginBottom: "4px" }}>
+        Additional Disk Drives
+      </div>
+      {slotConfig[6] === "disk2" && (
+        <>
+          <Droplist
+            name="Slot 6 Drive 1 (Floppy 1)"
+            value={s6d1Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS6d1Disk} />
+          {s6d1Disk === customUrlOption && (
+            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+              <EditField
+                value={s6d1Url}
+                setValue={setS6d1Url}
+                placeholder="http://example.com/floppy1.dsk" />
+            </div>
+          )}
+          <Droplist
+            name="Slot 6 Drive 2 (Floppy 2)"
+            value={s6d2Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS6d2Disk} />
+          {s6d2Disk === customUrlOption && (
+            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+              <EditField
+                value={s6d2Url}
+                setValue={setS6d2Url}
+                placeholder="http://example.com/floppy2.dsk" />
+            </div>
+          )}
+        </>
+      )}
+      {slotConfig[7] === "smartport" && (
+        <>
+          <Droplist
+            name="Slot 7 Drive 1 (Hard Drive 1)"
+            value={s7d1Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS7d1Disk} />
+          {s7d1Disk === customUrlOption && (
+            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+              <EditField
+                value={s7d1Url}
+                setValue={setS7d1Url}
+                placeholder="http://example.com/hd1.hdv" />
+            </div>
+          )}
+          <Droplist
+            name="Slot 7 Drive 2 (Hard Drive 2)"
+            value={s7d2Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS7d2Disk} />
+          {s7d2Disk === customUrlOption && (
+            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+              <EditField
+                value={s7d2Url}
+                setValue={setS7d2Url}
+                placeholder="http://example.com/hd2.hdv" />
+            </div>
+          )}
+        </>
+      )}
+      {slotConfig[2] === "vera" && (
+        <div>
+          <Droplist
+            name="Slot 2 Drive 1 (VERA SD)"
+            value={s2d1Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS2d1Disk} />
+          {s2d1Disk === customUrlOption && (
+            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+              <EditField
+                value={s2d1Url}
+                setValue={setS2d1Url}
+                placeholder="http://example.com/sd.img" />
+            </div>
+          )}
+        </div>
+      )}
+      {slotConfig[4] === "vera" && (
+        <div>
+          <Droplist
+            name="Slot 4 Drive 1 (VERA SD)"
+            value={s4d1Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS4d1Disk} />
+          {s4d1Disk === customUrlOption && (
+            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+              <EditField
+                value={s4d1Url}
+                setValue={setS4d1Url}
+                placeholder="http://example.com/sd.img" />
+            </div>
+          )}
+        </div>
+      )}
+      <EditField name={t("linkBuilder.textToType")}
+        value={loadBlock}
+        setValue={setLoadBlock}
+        placeholder="CHOP"
+        width="15em" />
+    </div>
+
+  const loadBasicProgramOptions =
+    <div style={{ minHeight: "150px" }}>
+      <textarea
+        className="link-builder-textarea"
+        value={textBlock}
+        rows={5}
+        onChange={(e) => setTextBlock(e.target.value)}
+        placeholder={t("linkBuilder.enterTextPlaceholder")}
+      />
+      <CheckBox name={t("linkBuilder.runBasicAfterLoading")}
+        checked={!runprogoff}
+        setChecked={(on: boolean) => { setRunprogoff(!on) }} />
+    </div>
+
+  const loadHexCodeOptions =
+    <div style={{ minHeight: "150px" }}>
+      <textarea
+        className="link-builder-textarea"
+        value={hexBlock}
+        rows={4}
+        onChange={(e) => setHexBlock(e.target.value)}
+        onKeyDown={testKey}
+        placeholder={t("linkBuilder.enterHexPlaceholder")}
+      />
+      <EditField name={t("linkBuilder.hexLoadAddress")}
+        value={hexAddress}
+        setValue={setHexAddress}
+        isHex={true}
+        placeholder="0300"
+        width="5em" />
+      <CheckBox name={t("linkBuilder.runHexAfterLoading")}
+        checked={!runprogoff}
+        setChecked={(on: boolean) => { setRunprogoff(!on) }} />
+    </div>
+
+  const startUpOptions =
+    <> 
+      <div className="flex-row" style={{ marginBottom: "15px", alignItems: "center" }}>
+        <div className="dialog-title">{t("linkBuilder.onStartup")}</div>
+        <input type="radio"
+          id="Address"
+          name="breakAt"
+          value="address"
+          autoComplete="off"
+          className="check-radio-box"
+          checked={tabSection === TAB.DISK}
+          onChange={() => { setTabSection(TAB.DISK) }} />
+        <label htmlFor="Address" className="dialog-text flush-left">{t("linkBuilder.loadDiskImage")}</label>
+        <input type="radio"
+          id="Watchpoint"
+          name="watch"
+          value="watchpoint"
+          autoComplete="off"
+          className="check-radio-box"
+          checked={tabSection === TAB.TEXT}
+          onChange={() => { setTabSection(TAB.TEXT) }} />
+        <label htmlFor="Watchpoint" className="dialog-text flush-left">{t("linkBuilder.loadBasicProgram")}</label>
+        <input type="radio"
+          id="Instruction"
+          name="instruction"
+          value="instruction"
+          autoComplete="off"
+          className="check-radio-box"
+          checked={tabSection === TAB.HEX}
+          onChange={() => { setTabSection(TAB.HEX) }} />
+        <label htmlFor="Instruction" className="dialog-text flush-left">{t("linkBuilder.loadHexCode")}</label>
+      </div>
+      {tabSection === TAB.DISK && loadDiskImageOptions}
+      {tabSection === TAB.TEXT && loadBasicProgramOptions}
+      {tabSection === TAB.HEX && loadHexCodeOptions}
+    </>
+
+  const builderDialog =
+    <div className="modal-overlay"
+      tabIndex={0} // Make the div focusable
+      onKeyDown={(event) => {
+        if (event.key === "Escape") setShowBuilder(false)
+      }}>
+      <div className="floating-dialog flex-column"
+        style={{ left: "35%", top: "5%", width: "70%", maxWidth: "600px", maxHeight: "90vh", overflowX: "hidden", overflowY: "auto", resize: "both", minWidth: "400px", minHeight: "300px" }}>
+        <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
+          <div className="dialog-title" style={{ padding: 0, paddingTop: "6px" }}>{t("linkBuilder.title")}</div>
+          <button className="push-button"
+            type="button"
+            onClick={() => setShowBuilder(false)}>
+            <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
+          </button>
+        </div>
+        <div className="horiz-rule"></div>
+
+        <div style={{ marginLeft: "8px", marginRight: "8px" }}>
+          <TabBase>
+            <Tab title={t("machine.configuration")}>{emulatorGeneralSettings}<div className="horiz-rule" style={{ marginTop: "15px" }}/>{slotConfiguration}</Tab>
+            <Tab title={t("linkBuilder.startupOptionsTab")}>{startUpOptions}</Tab>
+          </TabBase>
+        </div>
+        <div className="horiz-rule" style={{ marginTop: "10px" }}/>
+
+        {/* Show final link, readonly textarea for now */}
+        <div className="flex-row-space-between" style={{ marginRight: "10px", flexShrink: 0 }}>
+          <div className="dialog-title">{t("linkBuilder.finalUrl")}</div>
+          <button className="push-button"
+            title={t("linkBuilder.copyToClipboard")}
+            onClick={() => { navigator.clipboard.writeText(link) }}>
+            <FontAwesomeIcon icon={faClipboard} />
+          </button>
+        </div>
+        <textarea
+          className="link-builder-textarea"
+          style={{ backgroundColor: "var(--input-bg-color)" }}
+          rows={8}
+          value={link}
+          readOnly
+        />
+        {/* Add text buttons for "Try it", "Clear", and "Close" */}
+        <div className="flex-row-space-between" style={{ margin: "10px", flexShrink: 0 }}>
+          <button className="push-button text-button"
+            onClick={() => { window.open(link, "_blank") }}>
+            <span className="centered-title">{t("linkBuilder.tryIt")}</span>
+          </button>
+          <button className="push-button text-button"
+            onClick={resetAllSettings}>
+            <span className="centered-title">{t("linkBuilder.reset")}</span>
+          </button>
+          <button className="push-button text-button"
+            onClick={() => { setShowBuilder(false) }}>
+            <span className="centered-title">{t("linkBuilder.close")}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
   return (
     <div>
-      {showBuilder &&
-        <div className="modal-overlay"
-          tabIndex={0} // Make the div focusable
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setShowBuilder(false)
-          }}>
-          <div className="floating-dialog flex-column"
-            style={{ left: "35%", top: "5%", width: "70%", maxWidth: "600px", maxHeight: "90vh", overflowX: "hidden", overflowY: "auto", resize: "both", minWidth: "400px", minHeight: "300px" }}>
-            <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
-              <div className="dialog-title" style={{ padding: 0, paddingTop: "6px" }}>{t("linkBuilder.title")}</div>
-              <button className="push-button"
-                type="button"
-                onClick={() => setShowBuilder(false)}>
-                <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
-              </button>
-            </div>
-            <div className="horiz-rule"></div>
-
-            <div className="flex-row">
-              <div className="flex-column">
-                <Droplist name={t("linkBuilder.userInterface")}
-                  value={appmode}
-                  values={gameModes}
-                  setValue={setAppmode} />
-
-                <Droplist name={t("linkBuilder.machine")}
-                  value={machine}
-                  values={machineValues}
-                  setValue={(val: string) => {
-                    setMachine(val)
-                    // Adjust slot 3 when crossing between II+ and IIe families
-                    const newIsIIp = val === machineValues[2]
-                    const wasIIp = lbMachineName === "APPLE2P"
-                    if (newIsIIp !== wasIIp) {
-                      setSlotConfig(prev => ({
-                        ...prev,
-                        3: newIsIIp ? "videoterm" : "aux"
-                      }))
-                      if (!newIsIIp) setRamdisk(ramdiskValues[0]) // reset to 64KB default
-                    }
-                  }} />
-
-                <Droplist name={t("linkBuilder.colorMode")}
-                  value={colormode}
-                  values={colorNames}
-                  setValue={setColormode} />
-
-                <Droplist name={t("linkBuilder.ramDiskSize")}
-                  value={ramdisk}
-                  values={ramdiskValues}
-                  setValue={(val: string) => {
-                    setRamdisk(val)
-                    const rIdx = ramdiskValues.indexOf(val)
-                    if (rIdx > 0 && lbMachineName !== "APPLE2P" && slotConfig[3] !== "aux") {
-                      setSlotConfig(prev => ({ ...prev, 3: "aux" }))
-                    }
-                  }} />
-
-                <Droplist name={t("linkBuilder.emulatorSpeed")}
-                  value={speed !== "" ? speed : speedNames[2]}
-                  values={speedNames}
-                  setValue={setSpeed} />
-
-                <Droplist name={t("linkBuilder.uiTheme")}
-                  value={theme !== "" ? theme : themeValues[0]}
-                  values={themeValues}
-                  setValue={setTheme} />
-              </div>
-              <div className="flex-column" style={{ marginLeft: "20px" }}>
-                <CheckBox name={t("config.crtDistortion")}
-                  checked={crtdistort}
-                  setChecked={setCrtdistort} />
-                <CheckBox name={t("config.ghosting")}
-                  checked={ghosting}
-                  setChecked={setGhosting} />
-                <CheckBox name={t("config.scanlines")}
-                  checked={scanlines}
-                  setChecked={setScanlines} />
-                <CheckBox name={t("config.capsLock")}
-                  checked={!lowercaseMode}
-                  setChecked={(on: boolean) => { setLowercaseMode(!on) }} />
-                <CheckBox name={t("linkBuilder.showDebugTab")}
-                  checked={debug}
-                  setChecked={setDebug} />
-                <CheckBox name={t("linkBuilder.sound")}
-                  checked={!soundoff}
-                  setChecked={(on: boolean) => { setSoundoff(!on) }} />
-              </div>
-            </div>
-
-            <div className="horiz-rule" style={{ marginTop: "15px" }}></div>
-
-            {/* Slot Configuration – always visible */}
-            <div className="dialog-title" style={{ marginBottom: "4px" }}>{t("linkBuilder.slots.configure")}</div>
-            <div className="flex-row" style={{ flexWrap: "wrap", gap: "0 20px", marginBottom: "8px" }}>
-              {SLOT_NUMBERS.map(slot => {
-                const rawOptions = getSlotOptions(slot, lbMachineName)
-                // Filter out cards already installed in another slot (unless card is none or mockingboard)
-                const options = rawOptions.filter(o => {
-                  if (o.card === "none" || o.card === "mockingboard") return true
-                  if (slotConfig[slot] === o.card) return true
-                  return !SLOT_NUMBERS.some(otherSlot => otherSlot !== slot && slotConfig[otherSlot] === o.card)
-                })
-
-                // Build display label for each option (aux entries include RAM size)
-                const getOptionLabel = (o: typeof options[0]) => {
-                  if (o.card === "aux" && o.ramSizeKb !== undefined) {
-                    if (o.ramSizeKb <= 64) return "Aux/80Col (64KB)"
-                    const sizeStr = o.ramSizeKb >= 1024 ? `${o.ramSizeKb / 1024}MB` : `${o.ramSizeKb}KB`
-                    return `AE RamWorks (${sizeStr})`
-                  }
-                  return cardShortLabels[o.card]
-                }
-                const cardLabels = options.map(getOptionLabel)
-
-                // Current label: for slot 3 aux, reflect currently chosen ramdisk size
-                const currentCard = slotConfig[slot]
-                let currentLabel = cardShortLabels[currentCard]
-                if (slot === 3 && currentCard === "aux") {
-                  const ramIdx = ramdiskValues.indexOf(ramdisk)
-                  const ramSizeKb = parseInt(ramdiskParams[Math.max(ramIdx, 0)]) || 64
-                  currentLabel = ramSizeKb <= 64 ? "Aux/80Col (64KB)"
-                    : `AE RamWorks (${ramSizeKb >= 1024 ? `${ramSizeKb / 1024}MB` : `${ramSizeKb}KB`})`
-                }
-
-                return (
-                  <Droplist
-                    key={slot}
-                    name={t("linkBuilder.slots.slot", { slot: String(slot) })}
-                    value={currentLabel}
-                    values={cardLabels}
-                    setValue={(label: string) => {
-                      const idx = cardLabels.indexOf(label)
-                      if (idx >= 0) {
-                        const chosen = options[idx]
-                        setSlotConfig(prev => {
-                          const next = { ...prev, [slot]: chosen.card }
-                          if (chosen.card !== "none" && chosen.card !== "mockingboard") {
-                            SLOT_NUMBERS.forEach(otherSlot => {
-                              if (otherSlot !== slot && next[otherSlot] === chosen.card) {
-                                next[otherSlot] = "none"
-                              }
-                            })
-                          }
-                          return next
-                        })
-                        // For slot 3: sync or reset ramdisk
-                        if (slot === 3) {
-                          if (chosen.card === "aux" && chosen.ramSizeKb !== undefined) {
-                            const paramStr = String(chosen.ramSizeKb)
-                            const ramIdx = ramdiskParams.indexOf(paramStr)
-                            if (ramIdx >= 0) setRamdisk(ramdiskValues[ramIdx])
-                          } else {
-                            setRamdisk(ramdiskValues[0])
-                          }
-                        }
-                      }
-                    }} />
-                )
-              })}
-            </div>
-
-            <div className="horiz-rule" style={{ marginTop: "15px" }}></div>
-
-            <div className="flex-row" style={{ marginBottom: "15px" }}>
-              <div className="dialog-title">{t("linkBuilder.onStartup")}</div>
-              <input type="radio"
-                id="Address"
-                name="breakAt"
-                value="address"
-                autoComplete="off"
-                className="check-radio-box"
-                checked={tabSection === TAB.DISK}
-                onChange={() => { setTabSection(TAB.DISK) }} />
-              <label htmlFor="Address" className="dialog-title flush-left">{t("linkBuilder.loadDiskImage")}</label>
-              <input type="radio"
-                id="Watchpoint"
-                name="watch"
-                value="watchpoint"
-                autoComplete="off"
-                className="check-radio-box"
-                checked={tabSection === TAB.TEXT}
-                onChange={() => { setTabSection(TAB.TEXT) }} />
-              <label htmlFor="Watchpoint" className="dialog-title flush-left">{t("linkBuilder.loadBasicProgram")}</label>
-              <input type="radio"
-                id="Instruction"
-                name="instruction"
-                value="instruction"
-                autoComplete="off"
-                className="check-radio-box"
-                checked={tabSection === TAB.HEX}
-                onChange={() => { setTabSection(TAB.HEX) }} />
-              <label htmlFor="Instruction" className="dialog-title flush-left">{t("linkBuilder.loadHexCode")}</label>
-            </div>
-
-            {tabSection === TAB.DISK &&
-              <div className="flex-column" style={{ gap: "6px" }}>
-                <Droplist name={t("linkBuilder.diskImageToLoad")}
-                  value={selectedDisk}
-                  values={diskNames}
-                  setValue={setSelectedDisk} />
-
-                <div className="dialog-title">{t("linkBuilder.customDiskUrl")}</div>
-
-                <div style={{ marginLeft: "10px", marginRight: "10px" }}>
-                  <EditField
-                    value={fragmentURL}
-                    setValue={setFragmentURL}
-                    disabled={!isCustomURL}
-                    placeholder="http://example.com/disk.dsk" />
-                </div>
-
-                <div className="dialog-title" style={{ marginTop: "12px", marginBottom: "4px" }}>
-                  Additional Disk Drives
-                </div>
-
-                {slotConfig[6] === "disk2" && (
-                  <>
-                    <Droplist
-                      name="Slot 6 Drive 1 (Floppy 1)"
-                      value={s6d1Disk || noneOption}
-                      values={diskOptionsWithNone}
-                      setValue={setS6d1Disk} />
-                    {s6d1Disk === customUrlOption && (
-                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-                        <EditField
-                          value={s6d1Url}
-                          setValue={setS6d1Url}
-                          placeholder="http://example.com/floppy1.dsk" />
-                      </div>
-                    )}
-
-                    <Droplist
-                      name="Slot 6 Drive 2 (Floppy 2)"
-                      value={s6d2Disk || noneOption}
-                      values={diskOptionsWithNone}
-                      setValue={setS6d2Disk} />
-                    {s6d2Disk === customUrlOption && (
-                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-                        <EditField
-                          value={s6d2Url}
-                          setValue={setS6d2Url}
-                          placeholder="http://example.com/floppy2.dsk" />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {slotConfig[7] === "smartport" && (
-                  <>
-                    <Droplist
-                      name="Slot 7 Drive 1 (Hard Drive 1)"
-                      value={s7d1Disk || noneOption}
-                      values={diskOptionsWithNone}
-                      setValue={setS7d1Disk} />
-                    {s7d1Disk === customUrlOption && (
-                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-                        <EditField
-                          value={s7d1Url}
-                          setValue={setS7d1Url}
-                          placeholder="http://example.com/hd1.hdv" />
-                      </div>
-                    )}
-
-                    <Droplist
-                      name="Slot 7 Drive 2 (Hard Drive 2)"
-                      value={s7d2Disk || noneOption}
-                      values={diskOptionsWithNone}
-                      setValue={setS7d2Disk} />
-                    {s7d2Disk === customUrlOption && (
-                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-                        <EditField
-                          value={s7d2Url}
-                          setValue={setS7d2Url}
-                          placeholder="http://example.com/hd2.hdv" />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {slotConfig[2] === "vera" && (
-                  <div>
-                    <Droplist
-                      name="Slot 2 Drive 1 (VERA SD)"
-                      value={s2d1Disk || noneOption}
-                      values={diskOptionsWithNone}
-                      setValue={setS2d1Disk} />
-                    {s2d1Disk === customUrlOption && (
-                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-                        <EditField
-                          value={s2d1Url}
-                          setValue={setS2d1Url}
-                          placeholder="http://example.com/sd.img" />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {slotConfig[4] === "vera" && (
-                  <div>
-                    <Droplist
-                      name="Slot 4 Drive 1 (VERA SD)"
-                      value={s4d1Disk || noneOption}
-                      values={diskOptionsWithNone}
-                      setValue={setS4d1Disk} />
-                    {s4d1Disk === customUrlOption && (
-                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-                        <EditField
-                          value={s4d1Url}
-                          setValue={setS4d1Url}
-                          placeholder="http://example.com/sd.img" />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <EditField name={t("linkBuilder.textToType")}
-                  value={loadBlock}
-                  setValue={setLoadBlock}
-                  placeholder="CHOP"
-                  width="15em" />
-              </div>
-            }
-
-            {tabSection === TAB.TEXT &&
-              <div style={{ minHeight: "150px" }}>
-                <textarea
-                  className="link-builder-textarea"
-                  value={textBlock}
-                  rows={5}
-                  onChange={(e) => setTextBlock(e.target.value)}
-                  placeholder={t("linkBuilder.enterTextPlaceholder")}
-                />
-                <CheckBox name={t("linkBuilder.runBasicAfterLoading")}
-                  checked={!runprogoff}
-                  setChecked={(on: boolean) => { setRunprogoff(!on) }} />
-              </div>
-            }
-
-            {tabSection === TAB.HEX &&
-              <div style={{ minHeight: "150px" }}>
-                <textarea
-                  className="link-builder-textarea"
-                  value={hexBlock}
-                  rows={4}
-                  onChange={(e) => setHexBlock(e.target.value)}
-                  onKeyDown={testKey}
-                  placeholder={t("linkBuilder.enterHexPlaceholder")}
-                />
-                <EditField name={t("linkBuilder.hexLoadAddress")}
-                  value={hexAddress}
-                  setValue={setHexAddress}
-                  isHex={true}
-                  placeholder="0300"
-                  width="5em" />
-                <CheckBox name={t("linkBuilder.runHexAfterLoading")}
-                  checked={!runprogoff}
-                  setChecked={(on: boolean) => { setRunprogoff(!on) }} />
-              </div>
-            }
-            <div className="horiz-rule" style={{ marginTop: "10px" }}></div>
-
-            {/* Show final link, readonly textarea for now */}
-            <div className="flex-row-space-between" style={{ marginRight: "10px", flexShrink: 0 }}>
-              <div className="dialog-title">{t("linkBuilder.finalUrl")}</div>
-              <button className="push-button"
-                title={t("linkBuilder.copyToClipboard")}
-                onClick={() => { navigator.clipboard.writeText(link) }}>
-                <FontAwesomeIcon icon={faClipboard} />
-              </button>
-            </div>
-            <textarea
-              className="link-builder-textarea"
-              style={{ backgroundColor: "var(--input-bg-color)" }}
-              rows={8}
-              value={link}
-              readOnly
-            />
-
-            {/* Add text buttons for "Try it", "Clear", and "Close" */}
-            <div className="flex-row-space-between" style={{ margin: "10px", flexShrink: 0 }}>
-              <button className="push-button text-button"
-                onClick={() => { window.open(link, "_blank") }}>
-                <span className="centered-title">{t("linkBuilder.tryIt")}</span>
-              </button>
-              <button className="push-button text-button"
-                onClick={resetAllSettings}>
-                <span className="centered-title">{t("linkBuilder.reset")}</span>
-              </button>
-              <button className="push-button text-button"
-                onClick={() => { setShowBuilder(false) }}>
-                <span className="centered-title">{t("linkBuilder.close")}</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      }
-
+      {showBuilder && builderDialog}
       <button className="push-button"
         title={t("linkBuilder.buttonTitle")}
         onClick={() => {

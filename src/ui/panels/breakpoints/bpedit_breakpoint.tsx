@@ -75,38 +75,34 @@ const BPEdit_Breakpoint = (props: {
           placeholder={t("debug.any")}
           width="5em" />
       </div>
-      <div>
-        <div style={{ marginTop: "16px" }}>
-          <EditField name={t("debug.breakpoint.hitCount")}
-            value={props.breakpoint.hitcount.toString()}
-            setValue={handleHitCountChange}
-            isNumber={true}
-            placeholder="1"
-            width="5em" />
-          <span className="dialog-title">{t("debug.breakpoint.expression")}</span>
-          <ExpressionControl expr={props.breakpoint.expression1}
-            setExpr={handleExpressionChange1} />
-          <span style={{ marginLeft: "1em", marginRight: "1em" }}>
-            <Droplist
-              monospace={true}
-              disabled={props.breakpoint.expression1.register === ""}
-              value={props.breakpoint.expressionOperator}
-              values={["", "&&", "||"]}
-              setValue={(v: string) => handleExpressionOperatorChange(v as ExpressionOperator)} />
-          </span>
-          <ExpressionControl expr={props.breakpoint.expression2}
-            setExpr={handleExpressionChange2}
-            disabled={props.breakpoint.expression1.register === "" || props.breakpoint.expressionOperator === ""}
-          />
-        </div>
-        <Droplist name={t("debug.breakpoint.memoryBank")}
-          value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
-          values={MemoryBankNames}
-          setValue={handleMemoryBankChange}
-          userdata={props.breakpoint.address}
-          isDisabled={isBankDisabledForAddress} />
-        <Breakpoint_Actions breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
-      </div>
+      <EditField name={t("debug.breakpoint.hitCount")}
+        value={props.breakpoint.hitcount.toString()}
+        setValue={handleHitCountChange}
+        isNumber={true}
+        placeholder="1"
+        width="5em" />
+      <span className="dialog-text">{t("debug.breakpoint.expression")}</span>
+      <ExpressionControl expr={props.breakpoint.expression1}
+        setExpr={handleExpressionChange1} />
+      <span style={{ marginLeft: "1em", marginRight: "1em" }}>
+        <Droplist
+          monospace={true}
+          disabled={props.breakpoint.expression1.register === ""}
+          value={props.breakpoint.expressionOperator}
+          values={["", "&&", "||"]}
+          setValue={(v: string) => handleExpressionOperatorChange(v as ExpressionOperator)} />
+      </span>
+      <ExpressionControl expr={props.breakpoint.expression2}
+        setExpr={handleExpressionChange2}
+        disabled={props.breakpoint.expression1.register === "" || props.breakpoint.expressionOperator === ""}
+      />
+      <Droplist name={t("debug.breakpoint.memoryBank")}
+        value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
+        values={MemoryBankNames}
+        setValue={handleMemoryBankChange}
+        userdata={props.breakpoint.address}
+        isDisabled={isBankDisabledForAddress} />
+      <Breakpoint_Actions breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
       <Breakpoint_Once breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
     </div>
   )

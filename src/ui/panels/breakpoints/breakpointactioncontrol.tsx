@@ -88,7 +88,7 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
       setValue={handleDroplistActionChange} />
     {(!isSnapshot && !isPrint) &&
     <span>
-      {isJump ? <span className="dialog-title">{t("debug.breakpoint.actionAddress")}</span> :
+      {isJump ? <span className="dialog-text">{t("debug.breakpoint.actionAddress")}</span> :
         <Droplist
           disabled={actionIndex === 0}
           value={registerLabels[registerIndex]}
@@ -98,7 +98,7 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
       {
         (props.action.register === "$") &&
         <span>
-        <span className="dialog-title" style={{ padding: 0 }}>$</span>
+        <span className="dialog-text" style={{ padding: 0 }}>$</span>
         <EditField
           disabled={actionIndex === 0}
           value={bpAddress}
@@ -110,7 +110,7 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
       }
       { (!isJump) &&
         <span>
-          <span className="dialog-title" style={{ padding: 0,
+          <span className="dialog-text" style={{ padding: 0,
           ...((actionIndex === 0) && {
           opacity: 0.4,
           pointerEvents: "none"

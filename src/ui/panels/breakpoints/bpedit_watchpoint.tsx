@@ -84,7 +84,7 @@ const BPEdit_Watchpoint = (props: {
           width="5em" />
         <PullDownMenu values={handleGetSoftSwitchDescriptions()} setValue={handleAddressChange} />
       </div>
-      <div className="flex-row" style={{ alignItems: "baseline" }}>
+      <div className="flex-row" style={{ alignItems: "baseline", marginTop: "6px" }}>
         <CheckBox name={t("debug.breakpoint.read")}
           checked={props.breakpoint.memget}
           setChecked={(checked) => props.setBreakpoint({ ...props.breakpoint, memget: checked })} />
