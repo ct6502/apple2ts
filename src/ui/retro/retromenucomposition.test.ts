@@ -9,10 +9,6 @@ jest.mock("../devices/disk/cloudauth", () => ({
     mockGetCloudProvidersNeedingAuth(disks),
   signInToCloudProvider: () => mockSignInToCloudProvider(),
 }))
-jest.mock("../devices/disk/apple2tsproxy", () => ({
-  apple2tsProxyPath: (path: string) => path,
-  hasApple2tsProxy: false,
-}))
 jest.mock("../devices/disk/demozoodialog", () => ({
   createDemoZooCloudData: jest.fn(),
   demoZooTypeFilters: [{ id: "all", labelKey: "demoZoo.all" }],

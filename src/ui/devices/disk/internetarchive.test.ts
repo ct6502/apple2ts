@@ -3,10 +3,6 @@ const mockHandleSetDiskFromURL = jest.fn()
 jest.mock("./driveprops", () => ({
   handleSetDiskFromURL: (...args: unknown[]) => mockHandleSetDiskFromURL(...args),
 }))
-jest.mock("./apple2tsproxy", () => ({
-  apple2tsProxyPath: (path: string) => path,
-  hasApple2tsProxy: false,
-}))
 
 import {
   buildInternetArchiveQueryUrl,

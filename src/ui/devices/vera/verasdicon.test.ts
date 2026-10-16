@@ -2,12 +2,9 @@ import * as fflate from "fflate"
 import { handleSetVeraSdFromURL } from "./verasdicon"
 import { handleSetVeraSdImage } from "../../main2worker"
 
-jest.mock("../disk/apple2tsproxy", () => ({
-  hasApple2tsProxy: jest.fn(() => false),
-}))
-
-jest.mock("../disk/demozoodialog", () => ({
-  default: () => null,
+jest.mock("../disk/driveprops", () => ({
+  findMatchingDiskImage: jest.fn(() => ({ diskUrl: null })),
+  handleSetDiskOrFileFromBuffer: jest.fn(),
 }))
 
 jest.mock("../../main2worker", () => ({
