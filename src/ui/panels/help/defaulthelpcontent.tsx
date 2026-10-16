@@ -74,7 +74,7 @@ export const DefaultHelpContent = ({
     },
     {
       label: t("help.exampleLinks.a2Desktop"),
-      href: "https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg",
+      href: "https://apple2ts.com/?color=color&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg",
     },
     {
       label: t("help.exampleLinks.embeddedBasic"),

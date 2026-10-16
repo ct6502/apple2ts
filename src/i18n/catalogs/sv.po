@@ -131,8 +131,8 @@ msgid "Machine Configuration"
 msgstr "Maskinkonfiguration"
 
 msgctxt "machine.slotConfigurator"
-msgid "Slot Configuration"
-msgstr "Kortplatskonfiguration"
+msgid "Expansion Slots"
+msgstr "Expansionskortplatser"
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -1383,8 +1383,8 @@ msgid "Total Replay, load Choplifter, embedded mode"
 msgstr "Total Replay, läs in Choplifter, inbäddat läge"
 
 msgctxt "help.exampleLinks.a2Desktop"
-msgid "A2Desktop 2MG with fast speed and white color"
-msgstr "A2Desktop 2MG med snabb hastighet och vit färg"
+msgid "A2Desktop 2MG with fast speed and color"
+msgstr "A2Desktop 2MG med snabb hastighet och färg"
 
 msgctxt "help.exampleLinks.embeddedBasic"
 msgid "Embedded Applesoft BASIC Program"

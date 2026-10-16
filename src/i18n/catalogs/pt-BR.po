@@ -159,8 +159,8 @@ msgid "Machine Configuration"
 msgstr ""
 
 msgctxt "machine.slotConfigurator"
-msgid "Slot Configuration"
-msgstr "Configuração de Slots"
+msgid "Expansion Slots"
+msgstr "Slots de expansão"
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -1527,10 +1527,9 @@ msgctxt "help.exampleLinks.totalReplayChoplifter"
 msgid "Total Replay, load Choplifter, embedded mode"
 msgstr "Total Replay, carregar Choplifter, modo integrado"
 
-#, fuzzy
 msgctxt "help.exampleLinks.a2Desktop"
-msgid "A2Desktop 2MG with fast speed and white color"
-msgstr "A2DeskTop 2MG com velocidade rápida e cor branca"
+msgid "A2Desktop 2MG with fast speed and color"
+msgstr "A2DeskTop 2MG com velocidade rápida e cor"
 
 #, fuzzy
 msgctxt "help.exampleLinks.embeddedBasic"
