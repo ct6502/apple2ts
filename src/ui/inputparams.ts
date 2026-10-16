@@ -474,6 +474,33 @@ export const handleFragment = async (
       const success = await handleSetVeraSdFromURL(veraSdUrl)
       if (success) anyLoaded = true
     }
+    if (fragment.length >= 2) {
+      const cloudProvider = params.get("cloudProvider")
+      const regex: RegExp = /access_token=([^&]+)/
+      const matches = regex.exec(fragment)
+
+      if (cloudProvider && matches && matches.length > 0) {
+        const opener = window.opener as OpenerWindow
+        opener.accessToken = matches[1]
+        window.close()
+        return
+      } else {
+        const url = decodeURI(fragment.substring(1))
+        const success = await handleSetDiskFromURL(
+          url,
+          updateDisplay,
+          -1,
+          undefined,
+          undefined,
+          undefined,
+          false,
+          false,
+          true,
+          true,
+        )
+        if (success) anyLoaded = true
+      }
+    }
     if (anyLoaded) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     }

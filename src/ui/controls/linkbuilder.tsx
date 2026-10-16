@@ -60,6 +60,8 @@ const LinkBuilder = () => {
   const [colormode, setColormode] = useState("")
   const [crtdistort, setCrtdistort] = useState(false)
   const [debug, setDebug] = useState(false)
+  const [selectedDisk, setSelectedDisk] = useState("")
+  const [fragmentURL, setFragmentURL] = useState("")
   const [s6d1Disk, setS6d1Disk] = useState("")
   const [s6d1Url, setS6d1Url] = useState("")
   const [s6d2Disk, setS6d2Disk] = useState("")
@@ -130,6 +132,8 @@ const LinkBuilder = () => {
   const customUrlOption = t("linkBuilder.customDiskUrlOption")
   const allDisks = [...diskImages, ...newReleases]
   const uniqueDiskTitles = [...new Set(allDisks.map(disk => disk.title))].sort()
+  const diskNames = [t("linkBuilder.customDiskUrlOption"), ...uniqueDiskTitles]
+  const isCustomURL = selectedDisk === "" || selectedDisk === t("linkBuilder.customDiskUrlOption")
   const diskOptionsWithNone = [noneOption, customUrlOption, ...uniqueDiskTitles]
 
   // When fragmentURL changes, generate the link
@@ -249,6 +253,19 @@ const LinkBuilder = () => {
     for (let i = 0; i < params.length; i++) {
       link += (i === 0 ? "?" : "&") + params[i]
     }
+
+    if (tabSection === TAB.DISK) {
+      if (isCustomURL) {
+        if (fragmentURL) {
+          link += `#${fragmentURL}`
+        }
+      } else if (selectedDisk) {
+        const disk = allDisks.find(d => d.title === selectedDisk)
+        if (disk) {
+          link += `#${selectedDisk.replace(/\s+/g, "")}`
+        }
+      }
+    }
     return link
   }
 
@@ -283,6 +300,8 @@ const LinkBuilder = () => {
     setMachine(machineValues[0])
     setRamdisk(ramdiskValues[0])
     setScanlines(false)
+    setSelectedDisk("")
+    setFragmentURL("")
     setS6d1Disk("")
     setS6d1Url("")
     setS6d2Disk("")
@@ -329,6 +348,8 @@ const LinkBuilder = () => {
       setSpeed("")
     }
 
+    setSelectedDisk("")
+    setFragmentURL("")
     setS6d1Disk("")
     setS6d1Url("")
     setS6d2Disk("")
@@ -557,6 +578,25 @@ const LinkBuilder = () => {
 
             {tabSection === TAB.DISK &&
               <div className="flex-column" style={{ gap: "6px" }}>
+                <Droplist name={t("linkBuilder.diskImageToLoad")}
+                  value={selectedDisk}
+                  values={diskNames}
+                  setValue={setSelectedDisk} />
+
+                <div className="dialog-title">{t("linkBuilder.customDiskUrl")}</div>
+
+                <div style={{ marginLeft: "10px", marginRight: "10px" }}>
+                  <EditField
+                    value={fragmentURL}
+                    setValue={setFragmentURL}
+                    disabled={!isCustomURL}
+                    placeholder="http://example.com/disk.dsk" />
+                </div>
+
+                <div className="dialog-title" style={{ marginTop: "12px", marginBottom: "4px" }}>
+                  Additional Disk Drives
+                </div>
+
                 {slotConfig[6] === "disk2" && (
                   <>
                     <Droplist

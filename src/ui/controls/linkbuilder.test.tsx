@@ -51,6 +51,11 @@ describe("LinkBuilder", () => {
       button!.dispatchEvent(new MouseEvent("click", { bubbles: true }))
     })
 
+    // Verify startup disk selector and custom url exist
+    expect(container.textContent).toContain("Disk image to load on startup:")
+    expect(container.textContent).toContain("Custom disk image URL:")
+    expect(container.textContent).toContain("Additional Disk Drives")
+
     // Verify drive selection droplists exist for active disk controllers
     expect(container.textContent).toContain("Slot 6 Drive 1 (Floppy 1)")
     expect(container.textContent).toContain("Slot 6 Drive 2 (Floppy 2)")

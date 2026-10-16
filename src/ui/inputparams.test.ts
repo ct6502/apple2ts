@@ -233,4 +233,40 @@ describe("handleFragment multi-disk loading", () => {
     expect(handleSetVeraSdFromURL).toHaveBeenCalledWith("https://example.com/game.img")
     expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
   })
+
+  test("loads multi-drive parameter together with startup disk hash fragment", async () => {
+    await handleFragment(
+      undefined,
+      false,
+      "?s6d2=SaveDisk.dsk",
+      "#Wizardry",
+    )
+
+    expect(resetAllDiskDrives).toHaveBeenCalledTimes(1)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "SaveDisk.dsk",
+      undefined,
+      3,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "Wizardry",
+      undefined,
+      -1,
+      undefined,
+      undefined,
+      undefined,
+      false,
+      false,
+      true,
+      true,
+    )
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
 })
