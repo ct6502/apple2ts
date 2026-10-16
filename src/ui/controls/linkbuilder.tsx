@@ -388,7 +388,7 @@ const LinkBuilder = () => {
             if (event.key === "Escape") setShowBuilder(false)
           }}>
           <div className="floating-dialog flex-column"
-            style={{ left: "35%", top: "5%", width: "70%", maxWidth: "600px", maxHeight: "90vh", overflowX: "hidden", overflowY: "auto" }}>
+            style={{ left: "35%", top: "5%", width: "70%", maxWidth: "600px", maxHeight: "90vh", overflowX: "hidden", overflowY: "auto", resize: "both", minWidth: "400px", minHeight: "300px" }}>
             <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
               <div className="dialog-title" style={{ padding: 0, paddingTop: "6px" }}>{t("linkBuilder.title")}</div>
               <button className="push-button"
@@ -744,7 +744,7 @@ const LinkBuilder = () => {
             <div className="horiz-rule" style={{ marginTop: "10px" }}></div>
 
             {/* Show final link, readonly textarea for now */}
-            <div className="flex-row-space-between" style={{ marginRight: "10px" }}>
+            <div className="flex-row-space-between" style={{ marginRight: "10px", flexShrink: 0 }}>
               <div className="dialog-title">{t("linkBuilder.finalUrl")}</div>
               <button className="push-button"
                 title={t("linkBuilder.copyToClipboard")}
@@ -761,7 +761,7 @@ const LinkBuilder = () => {
             />
 
             {/* Add text buttons for "Try it", "Clear", and "Close" */}
-            <div className="flex-row-space-between" style={{ margin: "10px" }}>
+            <div className="flex-row-space-between" style={{ margin: "10px", flexShrink: 0 }}>
               <button className="push-button text-button"
                 onClick={() => { window.open(link, "_blank") }}>
                 <span className="centered-title">{t("linkBuilder.tryIt")}</span>
