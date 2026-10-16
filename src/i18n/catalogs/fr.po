@@ -1545,10 +1545,9 @@ msgctxt "help.exampleLinks.totalReplayChoplifter"
 msgid "Total Replay, load Choplifter, embedded mode"
 msgstr "Total Replay, charger Choplifter, mode intégré"
 
-#, fuzzy
 msgctxt "help.exampleLinks.a2Desktop"
-msgid "A2Desktop 2MG with fast speed and white color"
-msgstr "A2DeskTop 2MG avec vitesse rapide et couleur blanche"
+msgid "A2Desktop 2MG with fast speed and color"
+msgstr "A2DeskTop 2MG avec vitesse rapide et couleur"
 
 #, fuzzy
 msgctxt "help.exampleLinks.embeddedBasic"

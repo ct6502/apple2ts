@@ -1514,10 +1514,9 @@ msgctxt "help.exampleLinks.totalReplayChoplifter"
 msgid "Total Replay, load Choplifter, embedded mode"
 msgstr "Total Replay, Choplifter 로드, 임베디드 모드"
 
-#, fuzzy
 msgctxt "help.exampleLinks.a2Desktop"
-msgid "A2Desktop 2MG with fast speed and white color"
-msgstr "빠른 속도와 흑백 색상의 A2DeskTop 2MG"
+msgid "A2Desktop 2MG with fast speed and color"
+msgstr "빠른 속도와 컬러 색상의 A2DeskTop 2MG"
 
 #, fuzzy
 msgctxt "help.exampleLinks.embeddedBasic"

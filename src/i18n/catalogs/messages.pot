@@ -1291,7 +1291,7 @@ msgid "Total Replay, load Choplifter, embedded mode"
 msgstr ""
 
 msgctxt "help.exampleLinks.a2Desktop"
-msgid "A2Desktop 2MG with fast speed and white color"
+msgid "A2Desktop 2MG with fast speed and color"
 msgstr ""
 
 msgctxt "help.exampleLinks.embeddedBasic"
