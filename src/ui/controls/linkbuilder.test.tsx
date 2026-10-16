@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom/client"
 import { act } from "react"
-import LinkBuilder from "./linkbuilder"
+import LinkBuilder, { getBaseAppUrl } from "./linkbuilder"
 
 // @ts-expect-error set act environment flag for React 18+
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -63,4 +63,24 @@ describe("LinkBuilder", () => {
     expect(container.textContent).toContain("Slot 7 Drive 2 (Hard Drive 2)")
     expect(container.textContent).toContain("Slot 2 Drive 1 (VERA SD)")
   })
+
+  test("getBaseAppUrl preserves subdirectories on GitHub Pages or custom paths", () => {
+    const originalHref = window.location.href
+    try {
+      window.history.pushState({}, "", "/apple2ts/")
+      expect(getBaseAppUrl()).toBe("http://localhost/apple2ts/")
+
+      window.history.pushState({}, "", "/apple2ts/index.html")
+      expect(getBaseAppUrl()).toBe("http://localhost/apple2ts/")
+
+      window.history.pushState({}, "", "/apple2ts")
+      expect(getBaseAppUrl()).toBe("http://localhost/apple2ts/")
+
+      window.history.pushState({}, "", "/")
+      expect(getBaseAppUrl()).toBe("http://localhost/")
+    } finally {
+      window.history.pushState({}, "", originalHref)
+    }
+  })
 })
+

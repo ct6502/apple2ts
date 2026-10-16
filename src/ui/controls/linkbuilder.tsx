@@ -19,6 +19,24 @@ export enum TAB {
   HEX,
 }
 
+export const getBaseAppUrl = (): string => {
+  if (typeof window === "undefined") return "http://localhost:6502/"
+  const url = new URL(window.location.href)
+  let pathname = url.pathname
+  if (pathname.endsWith("/index.html")) {
+    pathname = pathname.slice(0, -"/index.html".length + 1)
+  } else if (!pathname.endsWith("/")) {
+    const lastSlash = pathname.lastIndexOf("/")
+    const lastPart = pathname.slice(lastSlash + 1)
+    if (lastPart.includes(".")) {
+      pathname = pathname.slice(0, lastSlash + 1)
+    } else {
+      pathname = `${pathname}/`
+    }
+  }
+  return `${url.origin}${pathname}`
+}
+
 const LinkBuilder = () => {
   const { t } = useTranslation()
   const [showBuilder, setShowBuilder] = useState(false)
@@ -138,7 +156,7 @@ const LinkBuilder = () => {
 
   // When fragmentURL changes, generate the link
   const generateLink = () => {
-    let link = `${window.location.origin}`
+    let link = getBaseAppUrl()
     const params = []
 
     const appmodeIndex = gameModes.indexOf(appmode)
