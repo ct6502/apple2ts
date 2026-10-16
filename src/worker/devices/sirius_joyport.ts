@@ -1,3 +1,4 @@
+import { s6502 } from "../instructions"
 import { memSetC000 } from "../memory"
 import { SWITCHES } from "../softswitches"
 
@@ -36,6 +37,13 @@ let joy2right = false
 export const checkSiriusJoyportValues = (addr: number) => {
   const isAN0 = SWITCHES.AN0.isSet
   const isAN1 = SWITCHES.AN1.isSet
+  // This is a hack - the Sirius joyport uses "button low" for its button input.
+  // Since the buttons are held high, this can falsely trigger the IIe self test.
+  // See if we are anywhere within the IIe Cxxx ROM and ignore button checks.
+  if (s6502.PC >= 0xC100 && s6502.PC <= 0xC7FF && SWITCHES.INTCXROM.isSet) {
+    memSetC000(addr, 0)
+    return
+  }
   let isSet = false
   switch (addr) {
     case SWITCHES.PB0.isSetAddr:

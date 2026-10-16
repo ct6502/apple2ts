@@ -54,7 +54,7 @@ const DisassemblyPanel = (propsIn: { isShort: boolean }) => {
 
   const runMode = handleGetRunMode()
   const isPaused = runMode === RUN_MODE.PAUSED
-  const prevPausedRef = useRef(isPaused)
+  const prevPausedRef = useRef(false)
 
   useEffect(() => {
     // Detect transition from false -> true (not paused -> paused)
