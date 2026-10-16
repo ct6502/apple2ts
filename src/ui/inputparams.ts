@@ -2,6 +2,7 @@ import { COLOR_MODE, MONITOR_MODE, RUN_MODE, UI_THEMES } from "../common/utility
 import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetIsDebugging } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL, resetAllDiskDrives } from "./devices/disk/driveprops"
+import { handleSetVeraSdFromURL } from "./devices/vera/verasdicon"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
 import { isOneDriveMsalAuthCallback } from "./devices/disk/onedrive_authredirect"
 import { audioEnable } from "./devices/audio/speaker"
@@ -188,6 +189,29 @@ export const handleInputParams = (paramString = "") => {
         }
       }
     }
+  }
+
+  if (params.has("s2d1") && nextSlotConfig[2] !== "vera") {
+    if (nextSlotConfig[4] === "vera") {
+      nextSlotConfig[4] = "none"
+    }
+    nextSlotConfig[2] = "vera"
+    setPreferenceVeraSlot(2)
+    slotConfigChanged = true
+  }
+  if (params.has("s4d1") && nextSlotConfig[4] !== "vera") {
+    if (nextSlotConfig[2] === "vera") {
+      nextSlotConfig[2] = "none"
+    }
+    nextSlotConfig[4] = "vera"
+    setPreferenceVeraSlot(4)
+    slotConfigChanged = true
+  }
+  const verasd = params.has("verasd") || params.has("sd")
+  if (verasd && nextSlotConfig[2] !== "vera" && nextSlotConfig[4] !== "vera") {
+    nextSlotConfig[2] = "vera"
+    setPreferenceVeraSlot(2)
+    slotConfigChanged = true
   }
 
   if (slotConfigChanged) {
@@ -410,8 +434,26 @@ export const handleFragment = async (
     }
   }
 
-  if (driveConfigs.length > 0) {
-    resetAllDiskDrives()
+  // VERA SD parameter handling:
+  // s2d1, s4d1, or verasd/sd
+  let veraSdUrl: string | null = null
+  const veraKeys = ["s2d1", "s4d1", "verasd", "sd"]
+  for (const key of veraKeys) {
+    if (params.has(key)) {
+      for (const [origKey, origVal] of porig.entries()) {
+        if (origKey.toLowerCase() === key) {
+          if (origVal && origVal.trim() !== "") {
+            veraSdUrl = origVal.trim()
+            break
+          }
+        }
+      }
+      if (veraSdUrl) break
+    }
+  }
+
+  if (driveConfigs.length > 0 || veraSdUrl) {
+    if (driveConfigs.length > 0) resetAllDiskDrives()
     let anyLoaded = false
     for (const config of driveConfigs) {
       const success = await handleSetDiskFromURL(
@@ -426,6 +468,10 @@ export const handleFragment = async (
         true, // noReset
         true, // noBoot
       )
+      if (success) anyLoaded = true
+    }
+    if (veraSdUrl) {
+      const success = await handleSetVeraSdFromURL(veraSdUrl)
       if (success) anyLoaded = true
     }
     if (anyLoaded) {

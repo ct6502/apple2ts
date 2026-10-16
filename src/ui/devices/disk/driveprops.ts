@@ -232,7 +232,7 @@ export const requestEjectDisk = (index: number) => {
   return requestSetDriveNewData(driveProps[index])
 }
 
-const findMatchingDiskImage = (url: string) => {
+export const findMatchingDiskImage = (url: string) => {
   const name = decodeURIComponent(url).replace(/[^A-Z]/gi, "").toUpperCase()
   for (let i = 0; i < diskImages.length; i++) {
     const diskname = diskImages[i].title.replace(/[^A-Z]/gi, "").toUpperCase()

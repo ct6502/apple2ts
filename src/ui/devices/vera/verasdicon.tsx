@@ -31,7 +31,34 @@ import { toHex, VeraSdStatus } from "../../../common/utility"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { OneDriveCloudDrive } from "../disk/onedriveclouddrive"
 import { GoogleDrive } from "../disk/googledrive"
-import { handleSetDiskOrFileFromBuffer } from "../disk/driveprops"
+import { findMatchingDiskImage, handleSetDiskOrFileFromBuffer } from "../disk/driveprops"
+
+export const handleSetVeraSdFromURL = async (url: string): Promise<boolean> => {
+  try {
+    let resolvedUrl = url
+    const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
+    if (isLocalFile && !url.startsWith("/") && !url.startsWith("file://")) {
+      const match = findMatchingDiskImage(url)
+      if (match.diskUrl) {
+        resolvedUrl = match.diskUrl
+      }
+      if (!URL.canParse(resolvedUrl) && !resolvedUrl.startsWith("/")) {
+        resolvedUrl = "disks/" + resolvedUrl
+      }
+    }
+    const response = await fetch(resolvedUrl)
+    if (!response.ok) return false
+    const buffer = await response.arrayBuffer()
+    const fileName = resolvedUrl.split("/").pop()?.split("?")[0] || "sd.img"
+    setVeraSdFileHandle(null)
+    setVeraSdCloudData(null)
+    handleSetVeraSdImage(new Uint8Array(buffer), decodeURIComponent(fileName))
+    return true
+  } catch (error) {
+    console.error("Error loading VERA SD from URL:", error)
+    return false
+  }
+}
 
 export const isAppleDiskImage = (filename: string): boolean => {
   const lower = filename.toLowerCase()

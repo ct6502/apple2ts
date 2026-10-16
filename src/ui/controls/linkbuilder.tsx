@@ -68,6 +68,10 @@ const LinkBuilder = () => {
   const [s7d1Url, setS7d1Url] = useState("")
   const [s7d2Disk, setS7d2Disk] = useState("")
   const [s7d2Url, setS7d2Url] = useState("")
+  const [s2d1Disk, setS2d1Disk] = useState("")
+  const [s2d1Url, setS2d1Url] = useState("")
+  const [s4d1Disk, setS4d1Disk] = useState("")
+  const [s4d1Url, setS4d1Url] = useState("")
   const [ghosting, setGhosting] = useState(false)
   const [hexAddress, setHexAddress] = useState("")
   const [textBlock, setTextBlock] = useState("")
@@ -226,6 +230,8 @@ const LinkBuilder = () => {
         { key: "s6d2", disk: s6d2Disk, url: s6d2Url, enabled: slotConfig[6] === "disk2" },
         { key: "s7d1", disk: s7d1Disk, url: s7d1Url, enabled: slotConfig[7] === "smartport" },
         { key: "s7d2", disk: s7d2Disk, url: s7d2Url, enabled: slotConfig[7] === "smartport" },
+        { key: "s2d1", disk: s2d1Disk, url: s2d1Url, enabled: slotConfig[2] === "vera" },
+        { key: "s4d1", disk: s4d1Disk, url: s4d1Url, enabled: slotConfig[4] === "vera" },
       ]
 
       for (const drive of drives) {
@@ -285,6 +291,10 @@ const LinkBuilder = () => {
     setS7d1Url("")
     setS7d2Disk("")
     setS7d2Url("")
+    setS2d1Disk("")
+    setS2d1Url("")
+    setS4d1Disk("")
+    setS4d1Url("")
     setSpeed(speedNames[2])
     setTheme(themeValues[0])
     setSlotConfig({ ...DEFAULT_SLOT_CONFIG })
@@ -327,6 +337,10 @@ const LinkBuilder = () => {
     setS7d1Url("")
     setS7d2Disk("")
     setS7d2Url("")
+    setS2d1Disk("")
+    setS2d1Url("")
+    setS4d1Disk("")
+    setS4d1Url("")
 
     const mytheme = getTheme()
     const themeIndex = UI_THEMES.findIndex(option => option.value === mytheme)
@@ -605,6 +619,42 @@ const LinkBuilder = () => {
                       </div>
                     )}
                   </>
+                )}
+
+                {slotConfig[2] === "vera" && (
+                  <div>
+                    <Droplist
+                      name="Slot 2 Drive 1 (VERA SD)"
+                      value={s2d1Disk || noneOption}
+                      values={diskOptionsWithNone}
+                      setValue={setS2d1Disk} />
+                    {s2d1Disk === customUrlOption && (
+                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+                        <EditField
+                          value={s2d1Url}
+                          setValue={setS2d1Url}
+                          placeholder="http://example.com/sd.img" />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {slotConfig[4] === "vera" && (
+                  <div>
+                    <Droplist
+                      name="Slot 4 Drive 1 (VERA SD)"
+                      value={s4d1Disk || noneOption}
+                      values={diskOptionsWithNone}
+                      setValue={setS4d1Disk} />
+                    {s4d1Disk === customUrlOption && (
+                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+                        <EditField
+                          value={s4d1Url}
+                          setValue={setS4d1Url}
+                          placeholder="http://example.com/sd.img" />
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 <EditField name={t("linkBuilder.textToType")}

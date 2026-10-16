@@ -16,7 +16,7 @@ jest.mock("../main2worker", () => ({
   handleGetSpeedMode: jest.fn(() => 0),
   handleGetSlotConfig: jest.fn(() => ({
     1: "none",
-    2: "none",
+    2: "vera",
     3: "aux",
     4: "none",
     5: "none",
@@ -56,5 +56,6 @@ describe("LinkBuilder", () => {
     expect(container.textContent).toContain("Slot 6 Drive 2 (Floppy 2)")
     expect(container.textContent).toContain("Slot 7 Drive 1 (Hard Drive 1)")
     expect(container.textContent).toContain("Slot 7 Drive 2 (Hard Drive 2)")
+    expect(container.textContent).toContain("Slot 2 Drive 1 (VERA SD)")
   })
 })

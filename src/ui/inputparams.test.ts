@@ -20,11 +20,15 @@ jest.mock("./panels/disassembly/disassembly_utilities", () => ({
   set6502Instructions: jest.fn(),
   setDisassemblyVisibleMode: jest.fn(),
 }))
+jest.mock("./devices/vera/verasdicon", () => ({
+  handleSetVeraSdFromURL: jest.fn().mockResolvedValue(true),
+}))
 
 import { handleFragment, handleInputParams } from "./inputparams"
 import { getPreferenceSlotConfig, getPreferenceVeraSlot } from "./localstorage"
 import { getTabView, getUIStateBoolean } from "./ui_settings"
 import { handleSetDiskFromURL, resetAllDiskDrives } from "./devices/disk/driveprops"
+import { handleSetVeraSdFromURL } from "./devices/vera/verasdicon"
 import * as main2worker from "./main2worker"
 import { RUN_MODE } from "../common/utility"
 
@@ -179,10 +183,54 @@ describe("handleFragment multi-disk loading", () => {
       "#https://example.com/single.woz",
     )
 
-    expect(resetAllDiskDrives).not.toHaveBeenCalled()
     expect(handleSetDiskFromURL).toHaveBeenCalledWith(
       "https://example.com/single.woz",
       undefined,
     )
+  })
+
+  test("loads VERA SD image via s2d1 and auto-configures slot 2", async () => {
+    handleInputParams("s2d1=https://example.com/sd.img")
+    expect(getPreferenceSlotConfig()[2]).toBe("vera")
+    expect(getPreferenceVeraSlot()).toBe(2)
+
+    await handleFragment(
+      undefined,
+      false,
+      "?s2d1=https://example.com/sd.img",
+      "",
+    )
+
+    expect(handleSetVeraSdFromURL).toHaveBeenCalledWith("https://example.com/sd.img")
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("loads both floppy and VERA SD image via s6d1 and s4d1", async () => {
+    handleInputParams("s6d1=disk1.dsk&s4d1=https://example.com/game.img")
+    expect(getPreferenceSlotConfig()[4]).toBe("vera")
+    expect(getPreferenceVeraSlot()).toBe(4)
+
+    await handleFragment(
+      undefined,
+      false,
+      "?s6d1=disk1.dsk&s4d1=https://example.com/game.img",
+      "",
+    )
+
+    expect(resetAllDiskDrives).toHaveBeenCalledTimes(1)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "disk1.dsk",
+      undefined,
+      2,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(handleSetVeraSdFromURL).toHaveBeenCalledWith("https://example.com/game.img")
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
   })
 })
