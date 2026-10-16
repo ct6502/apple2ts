@@ -1,10 +1,18 @@
 import * as fflate from "fflate"
-import { unzipSingleFile } from "./zip_utils"
+import { unzipSingleFile, decompressSingleFile } from "./zip_utils"
 
-describe("unzipSingleFile", () => {
-  test("returns null for non-zip data", () => {
+if (typeof globalThis.TextDecoder === "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const util = require("util")
+  globalThis.TextDecoder = util.TextDecoder
+  globalThis.TextEncoder = util.TextEncoder
+}
+
+describe("zip_utils decompression", () => {
+  test("returns null for non-compressed raw data", async () => {
     const rawData = new Uint8Array([1, 2, 3, 4, 5])
     expect(unzipSingleFile(rawData, "test.bin")).toBeNull()
+    expect(await decompressSingleFile(rawData, "test.bin")).toBeNull()
   })
 
   test("unzips *.img.zip and extracts *.img", () => {
@@ -23,7 +31,28 @@ describe("unzipSingleFile", () => {
     expect(result?.data[0]).toBe(0x55)
   })
 
-  test("ignores macOS metadata files and empty directories", () => {
+  test("decompresses *.img.gz to *.img synchronously and asynchronously", async () => {
+    const imgContent = new Uint8Array(4096)
+    imgContent.fill(0x33)
+
+    const gzBytes = fflate.gzipSync(imgContent)
+
+    // Sync test
+    const syncResult = unzipSingleFile(gzBytes, "disk.img.gz")
+    expect(syncResult).not.toBeNull()
+    expect(syncResult?.filename).toBe("disk.img")
+    expect(syncResult?.data.length).toBe(4096)
+    expect(syncResult?.data[0]).toBe(0x33)
+
+    // Async test
+    const asyncResult = await decompressSingleFile(gzBytes, "disk.img.gz")
+    expect(asyncResult).not.toBeNull()
+    expect(asyncResult?.filename).toBe("disk.img")
+    expect(asyncResult?.data.length).toBe(4096)
+    expect(asyncResult?.data[0]).toBe(0x33)
+  })
+
+  test("ignores macOS metadata files and empty directories in zip", () => {
     const dskContent = new Uint8Array(143360)
     dskContent.fill(0xAA)
 
@@ -52,5 +81,24 @@ describe("unzipSingleFile", () => {
     expect(result).not.toBeNull()
     expect(result?.filename).toBe("disk.hdv")
     expect(result?.data.length).toBe(819200)
+  })
+
+  test("decompresses *.7z archive with sevenzip-wasm", async () => {
+    const SevenZipModule = await import("sevenzip-wasm")
+    const SevenZip = (SevenZipModule as { default?: unknown }).default || SevenZipModule
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sz = await (SevenZip as () => Promise<any>)()
+
+    const rawDisk = new Uint8Array(1024)
+    rawDisk.fill(0x77)
+    sz.FS.writeFile("sdcard.img", rawDisk)
+    sz.callMain(["a", "test_bundle.7z", "sdcard.img"])
+    const archive7z = sz.FS.readFile("test_bundle.7z")
+
+    const result = await decompressSingleFile(archive7z, "test_bundle.7z", [".img"])
+    expect(result).not.toBeNull()
+    expect(result?.filename).toBe("sdcard.img")
+    expect(result?.data.length).toBe(1024)
+    expect(result?.data[0]).toBe(0x77)
   })
 })

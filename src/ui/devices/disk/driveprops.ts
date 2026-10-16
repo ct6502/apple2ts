@@ -1,5 +1,5 @@
 import { diskImages } from "./diskimages"
-import { unzipSingleFile } from "../../../common/zip_utils"
+import { unzipSingleFile, decompressSingleFile } from "../../../common/zip_utils"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import {
@@ -994,7 +994,7 @@ const setDiskFromURL = async (url: string,
     } catch {
       // Keep the raw URL for local/blob-style inputs.
     }
-    const unzipped = unzipSingleFile(fileBuffer, name || downloadPath, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+    const unzipped = await decompressSingleFile(fileBuffer, name || downloadPath, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
     if (unzipped) {
       name = unzipped.filename
       buffer = unzipped.buffer
@@ -1146,7 +1146,7 @@ export const handleSetDiskFromFile = async (disk: string,
   try {
     const res = await fetch("disks/" + disk)
     data = await res.arrayBuffer()
-    const unzipped = unzipSingleFile(data, disk, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+    const unzipped = await decompressSingleFile(data, disk, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
     if (unzipped) {
       disk = unzipped.filename
       data = unzipped.buffer

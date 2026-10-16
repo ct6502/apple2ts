@@ -8,6 +8,8 @@ test("disk drive defaults use the emulator's hard-drive image classification", (
   expect(getDefaultDiskDriveIndex("disk.img", 143360)).toBe(2)
   expect(getDefaultDiskDriveIndex("disk.img", 819200)).toBe(0)
   expect(getDefaultDiskDriveIndex("disk.img.zip", 33553920)).toBe(0)
+  expect(getDefaultDiskDriveIndex("disk.img.gz", 33553920)).toBe(0)
+  expect(getDefaultDiskDriveIndex("disk.img.7z", 33553920)).toBe(0)
   expect(getDefaultDiskDriveIndex("WizardReplay.hdv_.zip", 33553920)).toBe(0)
 })
 
