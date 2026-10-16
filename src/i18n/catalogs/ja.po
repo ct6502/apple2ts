@@ -159,8 +159,8 @@ msgid "Machine Configuration"
 msgstr ""
 
 msgctxt "machine.slotConfigurator"
-msgid "Slot Configuration"
-msgstr "スロット設定"
+msgid "Expansion Slots"
+msgstr "拡張スロット"
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"

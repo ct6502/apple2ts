@@ -160,8 +160,8 @@ msgid "Machine Configuration"
 msgstr "Configuration de la Machine"
 
 msgctxt "machine.slotConfigurator"
-msgid "Slot Configuration"
-msgstr "Configuration des slots"
+msgid "Expansion Slots"
+msgstr "Slots d'extension"
 
 #, fuzzy
 msgctxt "machine.models.apple2p"

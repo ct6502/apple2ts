@@ -134,8 +134,8 @@ msgid "Machine Configuration"
 msgstr "Machine Rigging"
 
 msgctxt "machine.slotConfigurator"
-msgid "Slot Configuration"
-msgstr "Ship's Hold Configuration"
+msgid "Expansion Slots"
+msgstr "Cargo Holds"
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
