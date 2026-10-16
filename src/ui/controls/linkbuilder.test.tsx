@@ -67,6 +67,18 @@ describe("LinkBuilder", () => {
   test("getBaseAppUrl preserves subdirectories on GitHub Pages or custom paths", () => {
     const originalHref = window.location.href
     try {
+      window.history.pushState({}, "", "/a2ts/")
+      expect(getBaseAppUrl()).toBe("http://localhost/a2ts/")
+
+      window.history.pushState({}, "", "/a2ts/site/")
+      expect(getBaseAppUrl()).toBe("http://localhost/a2ts/site/")
+
+      window.history.pushState({}, "", "/a2ts/site/index.html")
+      expect(getBaseAppUrl()).toBe("http://localhost/a2ts/site/")
+
+      window.history.pushState({}, "", "/my-org/project/demo/")
+      expect(getBaseAppUrl()).toBe("http://localhost/my-org/project/demo/")
+
       window.history.pushState({}, "", "/apple2ts/")
       expect(getBaseAppUrl()).toBe("http://localhost/apple2ts/")
 
