@@ -540,7 +540,7 @@ export const getSymbolTables = (machineName: string) => {
 
   if (machineSymbolTable.size === 0 && !fetchingTable) {
     fetchingTable = true
-    const url = "/symbol_tables/" + machineName.toLowerCase() + ".sym"
+    const url = `${import.meta.env.BASE_URL}symbol_tables/${machineName.toLowerCase()}.sym`
     fetchAndProcessSymbolFile(url).then(symbolMap => {
       machineSymbolTable = symbolMap
       fetchingTable = false
