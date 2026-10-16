@@ -429,7 +429,7 @@ msgstr "Valeur: {{notation}}"
 
 msgctxt "disassembly.keyboard.character"
 msgid "Keyboard: \"{{character}}\""
-msgstr "Clavier: \"{{touche}}\""
+msgstr "Clavier: \"{{character}}\""
 
 msgctxt "disassembly.keyboard.strobeClear"
 msgid "Keyboard strobe: CLEAR (MSB = 0)"
