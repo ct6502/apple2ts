@@ -1,7 +1,7 @@
 import { COLOR_MODE, MONITOR_MODE, RUN_MODE, UI_THEMES } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetIsDebugging } from "./main2worker"
-import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
+import { setDefaultBinaryAddress, handleSetDiskFromURL, resetAllDiskDrives } from "./devices/disk/driveprops"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
 import { isOneDriveMsalAuthCallback } from "./devices/disk/onedrive_authredirect"
 import { audioEnable } from "./devices/audio/speaker"
@@ -346,8 +346,15 @@ const isOneDriveAuthRedirect = () => {
   return has("oauth") || ((has("access_token") || has("error")) && has("state"))
 }
 
-export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgram: boolean) => {
-  const fragment = window.location.hash
+export const handleFragment = async (
+  updateDisplay?: UpdateDisplay,
+  hasBasicProgram = false,
+  searchString = "",
+  hashString = "",
+) => {
+  const search = searchString.length > 0 ? searchString : window.location.search
+  const fragment = hashString.length > 0 ? hashString : window.location.hash
+
   // If you start npm locally with 'npm start --xyz=blahblah', then npm
   // will automatically create an environment variable "npm_config_xyz".
   // So here we check for a --urlparam command line argument and load it if it exists.
@@ -369,11 +376,68 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
     return
   }
 
+  // Check for multi-drive parameters:
+  // Slot 7 Drive 1 (SmartPort 1): s7d1 or hd1 -> drive index 0
+  // Slot 7 Drive 2 (SmartPort 2): s7d2 or hd2 -> drive index 1
+  // Slot 6 Drive 1 (Disk II 1):   s6d1 or d1  -> drive index 2
+  // Slot 6 Drive 2 (Disk II 2):   s6d2 or d2  -> drive index 3
+  const params = new URLSearchParams(search.toLowerCase())
+  const porig = new URLSearchParams(search)
+
+  const driveParamDefs = [
+    { keys: ["s7d1", "hd1"], index: 0 },
+    { keys: ["s7d2", "hd2"], index: 1 },
+    { keys: ["s6d1", "d1"],  index: 2 },
+    { keys: ["s6d2", "d2"],  index: 3 },
+  ]
+
+  const driveConfigs: Array<{ index: number; url: string }> = []
+  for (const def of driveParamDefs) {
+    for (const key of def.keys) {
+      if (params.has(key)) {
+        let val: string | null = null
+        for (const [origKey, origVal] of porig.entries()) {
+          if (origKey.toLowerCase() === key) {
+            val = origVal
+            break
+          }
+        }
+        if (val && val.trim() !== "") {
+          driveConfigs.push({ index: def.index, url: val.trim() })
+          break
+        }
+      }
+    }
+  }
+
+  if (driveConfigs.length > 0) {
+    resetAllDiskDrives()
+    let anyLoaded = false
+    for (const config of driveConfigs) {
+      const success = await handleSetDiskFromURL(
+        config.url,
+        updateDisplay,
+        config.index,
+        undefined,
+        undefined,
+        undefined,
+        true, // preserveDriveIndex
+        false,
+        true, // noReset
+        true, // noBoot
+      )
+      if (success) anyLoaded = true
+    }
+    if (anyLoaded) {
+      passSetRunMode(RUN_MODE.NEED_BOOT)
+    }
+    return
+  }
+
   if (fragment.length >= 2) {
-    const params = new URLSearchParams(window.location.search)
     const cloudProvider = params.get("cloudProvider")
     const regex: RegExp = /access_token=([^&]+)/
-    const matches = regex.exec(window.location.hash)
+    const matches = regex.exec(fragment)
 
     if (cloudProvider && matches && matches.length > 0) {
       // Handle access token in fragment for cloud drive providers

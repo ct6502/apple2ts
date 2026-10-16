@@ -4,6 +4,7 @@ import { faLink, faXmark, faClipboard } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../panels/editfield"
 import { Droplist } from "../panels/droplist"
 import { diskImages } from "../devices/disk/diskimages"
+import { newReleases } from "../devices/disk/newreleases"
 import CheckBox from "../panels/checkbox"
 import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode } from "../ui_settings"
 import { DEFAULT_SLOT_CONFIG, UI_THEMES } from "../../common/utility"
@@ -59,7 +60,14 @@ const LinkBuilder = () => {
   const [colormode, setColormode] = useState("")
   const [crtdistort, setCrtdistort] = useState(false)
   const [debug, setDebug] = useState(false)
-  const [fragmentURL, setFragmentURL] = useState("")
+  const [s6d1Disk, setS6d1Disk] = useState("")
+  const [s6d1Url, setS6d1Url] = useState("")
+  const [s6d2Disk, setS6d2Disk] = useState("")
+  const [s6d2Url, setS6d2Url] = useState("")
+  const [s7d1Disk, setS7d1Disk] = useState("")
+  const [s7d1Url, setS7d1Url] = useState("")
+  const [s7d2Disk, setS7d2Disk] = useState("")
+  const [s7d2Url, setS7d2Url] = useState("")
   const [ghosting, setGhosting] = useState(false)
   const [hexAddress, setHexAddress] = useState("")
   const [textBlock, setTextBlock] = useState("")
@@ -68,7 +76,6 @@ const LinkBuilder = () => {
   const [machine, setMachine] = useState("")
   const [ramdisk, setRamdisk] = useState("")
   const [scanlines, setScanlines] = useState(false)
-  const [selectedDisk, setSelectedDisk] = useState("")
   const [speed, setSpeed] = useState("")
   const [theme, setTheme] = useState("")
   const [tabSection, setTabSection] = useState(TAB.DISK)
@@ -115,8 +122,11 @@ const LinkBuilder = () => {
   ]
   const themeParams = UI_THEMES.map(option => option.queryValue)
 
-  const diskNames = [t("linkBuilder.customDiskUrlOption"), ...diskImages.map(disk => disk.title).sort()]
-  const isCustomURL = selectedDisk === "" || selectedDisk === t("linkBuilder.customDiskUrlOption")
+  const noneOption = t("linkBuilder.slots.cardNone")
+  const customUrlOption = t("linkBuilder.customDiskUrlOption")
+  const allDisks = [...diskImages, ...newReleases]
+  const uniqueDiskTitles = [...new Set(allDisks.map(disk => disk.title))].sort()
+  const diskOptionsWithNone = [noneOption, customUrlOption, ...uniqueDiskTitles]
 
   // When fragmentURL changes, generate the link
   const generateLink = () => {
@@ -210,19 +220,28 @@ const LinkBuilder = () => {
       params.push("tab=vera")
     }
 
+    if (tabSection === TAB.DISK) {
+      const drives = [
+        { key: "s6d1", disk: s6d1Disk, url: s6d1Url, enabled: slotConfig[6] === "disk2" },
+        { key: "s6d2", disk: s6d2Disk, url: s6d2Url, enabled: slotConfig[6] === "disk2" },
+        { key: "s7d1", disk: s7d1Disk, url: s7d1Url, enabled: slotConfig[7] === "smartport" },
+        { key: "s7d2", disk: s7d2Disk, url: s7d2Url, enabled: slotConfig[7] === "smartport" },
+      ]
+
+      for (const drive of drives) {
+        if (!drive.enabled) continue
+        if (drive.disk === customUrlOption) {
+          if (drive.url.trim() !== "") {
+            params.push(`${drive.key}=${encodeURIComponent(drive.url.trim())}`)
+          }
+        } else if (drive.disk && drive.disk !== noneOption) {
+          params.push(`${drive.key}=${encodeURIComponent(drive.disk.replace(/\s+/g, ""))}`)
+        }
+      }
+    }
+
     for (let i = 0; i < params.length; i++) {
       link += (i === 0 ? "?" : "&") + params[i]
-    }
-    if (isCustomURL) {
-      if (fragmentURL) {
-        link += `#${fragmentURL}`
-      }
-    } else if (selectedDisk) {
-      const disk = diskImages.find(d => d.title === selectedDisk)
-      if (disk) {
-        // Remove all whitespace from the name
-        link += `#${selectedDisk.replace(/\s+/g, "")}`
-      }
     }
     return link
   }
@@ -258,7 +277,14 @@ const LinkBuilder = () => {
     setMachine(machineValues[0])
     setRamdisk(ramdiskValues[0])
     setScanlines(false)
-    setSelectedDisk("")
+    setS6d1Disk("")
+    setS6d1Url("")
+    setS6d2Disk("")
+    setS6d2Url("")
+    setS7d1Disk("")
+    setS7d1Url("")
+    setS7d2Disk("")
+    setS7d2Url("")
     setSpeed(speedNames[2])
     setTheme(themeValues[0])
     setSlotConfig({ ...DEFAULT_SLOT_CONFIG })
@@ -293,7 +319,14 @@ const LinkBuilder = () => {
       setSpeed("")
     }
 
-    setSelectedDisk("")
+    setS6d1Disk("")
+    setS6d1Url("")
+    setS6d2Disk("")
+    setS6d2Url("")
+    setS7d1Disk("")
+    setS7d1Url("")
+    setS7d2Disk("")
+    setS7d2Url("")
 
     const mytheme = getTheme()
     const themeIndex = UI_THEMES.findIndex(option => option.value === mytheme)
@@ -509,21 +542,70 @@ const LinkBuilder = () => {
             </div>
 
             {tabSection === TAB.DISK &&
-              <div>
-                <Droplist name={t("linkBuilder.diskImageToLoad")}
-                  value={selectedDisk}
-                  values={diskNames}
-                  setValue={setSelectedDisk} />
+              <div className="flex-column" style={{ gap: "6px" }}>
+                {slotConfig[6] === "disk2" && (
+                  <>
+                    <Droplist
+                      name="Slot 6 Drive 1 (Floppy 1)"
+                      value={s6d1Disk || noneOption}
+                      values={diskOptionsWithNone}
+                      setValue={setS6d1Disk} />
+                    {s6d1Disk === customUrlOption && (
+                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+                        <EditField
+                          value={s6d1Url}
+                          setValue={setS6d1Url}
+                          placeholder="http://example.com/floppy1.dsk" />
+                      </div>
+                    )}
 
-                <div className="dialog-title">{t("linkBuilder.customDiskUrl")}</div>
+                    <Droplist
+                      name="Slot 6 Drive 2 (Floppy 2)"
+                      value={s6d2Disk || noneOption}
+                      values={diskOptionsWithNone}
+                      setValue={setS6d2Disk} />
+                    {s6d2Disk === customUrlOption && (
+                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+                        <EditField
+                          value={s6d2Url}
+                          setValue={setS6d2Url}
+                          placeholder="http://example.com/floppy2.dsk" />
+                      </div>
+                    )}
+                  </>
+                )}
 
-                <div style={{ marginLeft: "10px", marginRight: "10px" }}>
-                  <EditField
-                    value={fragmentURL}
-                    setValue={setFragmentURL}
-                    disabled={!isCustomURL}
-                    placeholder="http://example.com/disk.dsk" />
-                </div>
+                {slotConfig[7] === "smartport" && (
+                  <>
+                    <Droplist
+                      name="Slot 7 Drive 1 (Hard Drive 1)"
+                      value={s7d1Disk || noneOption}
+                      values={diskOptionsWithNone}
+                      setValue={setS7d1Disk} />
+                    {s7d1Disk === customUrlOption && (
+                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+                        <EditField
+                          value={s7d1Url}
+                          setValue={setS7d1Url}
+                          placeholder="http://example.com/hd1.hdv" />
+                      </div>
+                    )}
+
+                    <Droplist
+                      name="Slot 7 Drive 2 (Hard Drive 2)"
+                      value={s7d2Disk || noneOption}
+                      values={diskOptionsWithNone}
+                      setValue={setS7d2Disk} />
+                    {s7d2Disk === customUrlOption && (
+                      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
+                        <EditField
+                          value={s7d2Url}
+                          setValue={setS7d2Url}
+                          placeholder="http://example.com/hd2.hdv" />
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <EditField name={t("linkBuilder.textToType")}
                   value={loadBlock}

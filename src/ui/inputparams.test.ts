@@ -1,7 +1,8 @@
 jest.mock("./devices/disk/driveprops", () => ({
   doSetUIDriveProps: jest.fn(),
   setDefaultBinaryAddress: jest.fn(),
-  handleSetDiskFromURL: jest.fn(),
+  handleSetDiskFromURL: jest.fn().mockResolvedValue(true),
+  resetAllDiskDrives: jest.fn(),
 }))
 jest.mock("./devices/disk/cloudscriptloader", () => ({
   loadOneDriveScript: jest.fn(),
@@ -20,9 +21,12 @@ jest.mock("./panels/disassembly/disassembly_utilities", () => ({
   setDisassemblyVisibleMode: jest.fn(),
 }))
 
-import { handleInputParams } from "./inputparams"
+import { handleFragment, handleInputParams } from "./inputparams"
 import { getPreferenceSlotConfig, getPreferenceVeraSlot } from "./localstorage"
 import { getTabView, getUIStateBoolean } from "./ui_settings"
+import { handleSetDiskFromURL, resetAllDiskDrives } from "./devices/disk/driveprops"
+import * as main2worker from "./main2worker"
+import { RUN_MODE } from "../common/utility"
 
 describe("handleInputParams slot configuration", () => {
   beforeEach(() => {
@@ -68,5 +72,117 @@ describe("handleInputParams slot configuration", () => {
     expect(getPreferenceVeraSlot()).toBe(2)
     expect(getTabView()).toBe(4)
     expect(getUIStateBoolean("infoPanel")).toBe(true)
+  })
+})
+
+describe("handleFragment multi-disk loading", () => {
+  let passSetRunModeSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    passSetRunModeSpy = jest.spyOn(main2worker, "passSetRunMode").mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    passSetRunModeSpy.mockRestore()
+  })
+
+  test("loads multiple disks into s7d1 and s6d1 and triggers boot", async () => {
+    await handleFragment(
+      undefined,
+      false,
+      "?s7d1=TotalReplay&s6d1=https://example.com/game.dsk",
+      "",
+    )
+
+    expect(resetAllDiskDrives).toHaveBeenCalledTimes(1)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "TotalReplay",
+      undefined,
+      0, // s7d1 -> index 0
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "https://example.com/game.dsk",
+      undefined,
+      2, // s6d1 -> index 2
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("supports aliases hd1, hd2, d1, d2", async () => {
+    await handleFragment(
+      undefined,
+      false,
+      "?hd1=hd.hdv&d1=floppy1.dsk&d2=floppy2.dsk",
+      "",
+    )
+
+    expect(resetAllDiskDrives).toHaveBeenCalledTimes(1)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "hd.hdv",
+      undefined,
+      0,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "floppy1.dsk",
+      undefined,
+      2,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "floppy2.dsk",
+      undefined,
+      3,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("falls back to hash fragment when no multi-drive parameters exist", async () => {
+    await handleFragment(
+      undefined,
+      false,
+      "",
+      "#https://example.com/single.woz",
+    )
+
+    expect(resetAllDiskDrives).not.toHaveBeenCalled()
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "https://example.com/single.woz",
+      undefined,
+    )
   })
 })
