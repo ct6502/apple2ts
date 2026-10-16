@@ -32,6 +32,7 @@ import { useTranslation } from "../../../i18n/useTranslation"
 import { OneDriveCloudDrive } from "../disk/onedriveclouddrive"
 import { GoogleDrive } from "../disk/googledrive"
 import { findMatchingDiskImage, handleSetDiskOrFileFromBuffer } from "../disk/driveprops"
+import { unzipSingleFile } from "../../../common/zip_utils"
 
 export const handleSetVeraSdFromURL = async (url: string): Promise<boolean> => {
   try {
@@ -49,10 +50,18 @@ export const handleSetVeraSdFromURL = async (url: string): Promise<boolean> => {
     const response = await fetch(resolvedUrl)
     if (!response.ok) return false
     const buffer = await response.arrayBuffer()
-    const fileName = resolvedUrl.split("/").pop()?.split("?")[0] || "sd.img"
+    let fileName = decodeURIComponent(resolvedUrl.split("/").pop()?.split("?")[0] || "sd.img")
+    let data = new Uint8Array(buffer)
+
+    const unzipped = unzipSingleFile(data, fileName, [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"])
+    if (unzipped) {
+      fileName = unzipped.filename
+      data = unzipped.data
+    }
+
     setVeraSdFileHandle(null)
     setVeraSdCloudData(null)
-    handleSetVeraSdImage(new Uint8Array(buffer), decodeURIComponent(fileName))
+    handleSetVeraSdImage(data, fileName)
     return true
   } catch (error) {
     console.error("Error loading VERA SD from URL:", error)
@@ -108,9 +117,9 @@ export const openSdFilePicker = async () => {
       const [fileHandle] = await window.showOpenFilePicker({
         types: [
           {
-            description: "SD Card & Disk Images (*.img, *.raw, *.sd, *.bin, *.dsk, *.woz)",
+            description: "SD Card & Disk Images (*.img, *.raw, *.sd, *.bin, *.dsk, *.woz, *.zip)",
             accept: {
-              "application/octet-stream": [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"]
+              "application/octet-stream": [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv", ".zip"]
             }
           }
         ],
@@ -120,13 +129,24 @@ export const openSdFilePicker = async () => {
       if (fileHandle) {
         const file = await fileHandle.getFile()
         const buffer = await file.arrayBuffer()
-        if (isAppleDiskImage(file.name)) {
-          handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, fileHandle)
+        let fileData = new Uint8Array(buffer)
+        let fileName = file.name
+        let unzippedFileHandle: FileSystemFileHandle | null = fileHandle
+
+        const unzipped = unzipSingleFile(fileData, fileName, [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"])
+        if (unzipped) {
+          fileName = unzipped.filename
+          fileData = unzipped.data
+          unzippedFileHandle = null
+        }
+
+        if (isAppleDiskImage(fileName)) {
+          handleSetDiskOrFileFromBuffer(0, unzipped ? unzipped.buffer : buffer, fileName, null, unzippedFileHandle)
           return
         }
         setVeraSdCloudData(null)
-        setVeraSdFileHandle(fileHandle)
-        handleSetVeraSdImage(new Uint8Array(buffer), file.name)
+        setVeraSdFileHandle(unzippedFileHandle)
+        handleSetVeraSdImage(fileData, fileName)
         return
       }
     } catch (err: unknown) {
@@ -140,7 +160,7 @@ export const openSdFilePicker = async () => {
   // Fallback for browsers without File System Access API
   const input = document.createElement("input")
   input.type = "file"
-  input.accept = ".img,.raw,.sd,.bin,.iso,.dsk,.woz,.po,.do,.2mg,.hdv"
+  input.accept = ".img,.raw,.sd,.bin,.iso,.dsk,.woz,.po,.do,.2mg,.hdv,.zip"
   input.style.position = "fixed"
   input.style.left = "-9999px"
   input.style.top = "-9999px"
@@ -152,13 +172,22 @@ export const openSdFilePicker = async () => {
       const file = input.files?.[0]
       if (file) {
         const buffer = await file.arrayBuffer()
-        if (isAppleDiskImage(file.name)) {
-          handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, null)
+        let fileData = new Uint8Array(buffer)
+        let fileName = file.name
+
+        const unzipped = unzipSingleFile(fileData, fileName, [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"])
+        if (unzipped) {
+          fileName = unzipped.filename
+          fileData = unzipped.data
+        }
+
+        if (isAppleDiskImage(fileName)) {
+          handleSetDiskOrFileFromBuffer(0, unzipped ? unzipped.buffer : buffer, fileName, null, null)
           return
         }
         setVeraSdFileHandle(null)
         setVeraSdCloudData(null)
-        handleSetVeraSdImage(new Uint8Array(buffer), file.name)
+        handleSetVeraSdImage(fileData, fileName)
       }
     } finally {
       if (document.body.contains(input)) {

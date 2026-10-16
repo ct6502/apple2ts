@@ -5,9 +5,9 @@ export const TEST_GRAPHICS = false
 export const MAX_SNAPSHOTS = 30
 const FILE_OPEN_SUFFIXES = ".a2ts,.bin,.a,.bas"
 const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.do"
-const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po,.2meg"
+const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po,.2meg,.img"
 export const FILE_SUFFIXES_DISK = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
-export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK}`
+export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK},.zip`
 export const MAX_DRIVES = 4
 // export const DISK_CONVERSION_SUFFIXES = new Map<string, string>([[".dsk", ".woz"]])
 
@@ -557,7 +557,7 @@ export const isHardDriveImage = (filename: string, fileSize: number) => {
   if (/\.(?:hdv|2mg|2meg)(?:$|[^a-z0-9])/.test(f)) {
     return true
   }
-  if (/\.po(?:$|[^a-z0-9])/.test(f)) {
+  if (/\.(?:po|img)(?:$|[^a-z0-9])/.test(f)) {
     // 5.25" ProDOS floppy disk is 140KB (143360 bytes).
     // Anything larger (e.g. 800KB 3.5" disk, 2MB, 16MB, 32MB hard drive images)
     // is treated as a Slot 7 SmartPort hard drive image.

@@ -1,9 +1,8 @@
 import { diskImages } from "./diskimages"
-import * as fflate from "fflate"
+import { unzipSingleFile } from "../../../common/zip_utils"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import {
-  FILE_SUFFIXES_DISK,
   getDefaultDiskDriveIndex,
   MAX_DRIVES,
   RUN_MODE,
@@ -272,6 +271,14 @@ const setDiskOrFileFromBuffer = (
   confirmed = false,
   noReset = false,
   noBoot = false) => {
+
+  // Auto-unzip if archive or zipped disk image
+  const unzipped = unzipSingleFile(buffer, filename, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+  if (unzipped) {
+    filename = unzipped.filename
+    buffer = unzipped.buffer
+    writableFileHandle = null
+  }
 
   // Sanity check for strange downloads with no filename.
   if (buffer.byteLength === 143360 && !filename.includes(".")) {
@@ -987,20 +994,10 @@ const setDiskFromURL = async (url: string,
     } catch {
       // Keep the raw URL for local/blob-style inputs.
     }
-    if (downloadPath.endsWith(".zip")) {
-      try {
-        const unzipped = fflate.unzipSync(new Uint8Array(fileBuffer))
-        for (const fileName of Object.keys(unzipped)) {
-          const fileExtension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase()
-          if (FILE_SUFFIXES_DISK.includes(fileExtension) && unzipped[fileName].length > 1024) {
-            name = fileName
-            buffer = unzipped[fileName].buffer
-            break
-          }
-        }
-      } catch (err) {
-        console.error("Failed to unzip disk image:", err)
-      }
+    const unzipped = unzipSingleFile(fileBuffer, name || downloadPath, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+    if (unzipped) {
+      name = unzipped.filename
+      buffer = unzipped.buffer
     } else {
       if (name === "") {
         const urlObj = new URL(url)
@@ -1149,6 +1146,11 @@ export const handleSetDiskFromFile = async (disk: string,
   try {
     const res = await fetch("disks/" + disk)
     data = await res.arrayBuffer()
+    const unzipped = unzipSingleFile(data, disk, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+    if (unzipped) {
+      disk = unzipped.filename
+      data = unzipped.buffer
+    }
   } catch {
     if (callback) {
       callback(null)

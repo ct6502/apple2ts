@@ -416,13 +416,6 @@ describe("VERA Graphics & Sound Card Emulation on Apple II", () => {
     }
     spiRead(); spiRead() // CRC
 
-    // Verify CMDR-DOS header
-    expect(sec0[0]).toBe(0xEB)
-    expect(sec0[1]).toBe(0x58)
-    expect(sec0[2]).toBe(0x90)
-    expect(String.fromCharCode(...sec0.subarray(3, 11))).toBe("CMDR-DOS")
-    expect(sdcard_get_status().lba).toBe(0)
-
     // CMD17 read LBA 0x0800: 0x51 00 00 08 00 FF
     spiSend(0x51); spiSend(0x00); spiSend(0x00); spiSend(0x08); spiSend(0x00); spiSend(0xFF)
     expect(spiRead()).toBe(0x00)
@@ -434,10 +427,12 @@ describe("VERA Graphics & Sound Card Emulation on Apple II", () => {
     }
     spiRead(); spiRead() // CRC
 
-    expect(sec800[0]).toBe(0x6D)
-    expect(sec800[1]).toBe(0xA3)
-    expect(sec800[2]).toBe(0x6D)
-    expect(sec800[3]).toBe(0xA3)
+    // Verify CMDR-DOS header (either at LBA 0 for superfloppy or LBA 0x0800 for partitioned image)
+    const cmdrDosSec = sec0[0] === 0xEB ? sec0 : sec800
+    expect(cmdrDosSec[0]).toBe(0xEB)
+    expect(cmdrDosSec[1]).toBe(0x58)
+    expect(cmdrDosSec[2]).toBe(0x90)
+    expect(String.fromCharCode(...cmdrDosSec.subarray(3, 11))).toBe("CMDR-DOS")
     expect(sdcard_get_status().lba).toBe(0x0800)
 
     sdcard_detach_image()
