@@ -149,7 +149,8 @@ export const decompressSingleFile = async (
     }
     const SevenZipModule = await import("sevenzip-wasm")
     const SevenZip = (SevenZipModule as { default?: unknown }).default || SevenZipModule
-    const options = typeof window !== "undefined" ? {
+    const isBrowser = typeof window !== "undefined" && (typeof process === "undefined" || !process.versions?.node)
+    const options = isBrowser ? {
       locateFile: (path: string) => {
         if (path.endsWith(".wasm")) {
           return "js/sevenzip-wasm.wasm"
