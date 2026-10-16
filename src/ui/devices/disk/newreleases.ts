@@ -73,7 +73,7 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: "https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/a2desktop.jpg",
     diskUrl: "https://a2desktop.s3.amazonaws.com/A2DeskTop-1.6-alpha4-en_800k.2mg",
     detailsUrl: "https://github.com/a2stuff/a2d",
-    params: "color=white&speed=fast&scanlines=off&ramdisk=8192",
+    params: "color=color&speed=fast&scanlines=off&ramdisk=8192",
     fileSize: 819264,
     exportDisabled: true
   },
