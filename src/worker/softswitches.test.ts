@@ -85,6 +85,29 @@ test("the documented AN3/80COL sequence selects Video-7 160x192 mode", () => {
   expectVideo7Mode("160x192")
 })
 
+test("A2DeskTop SetColorMode resets Video-7 monochrome mode even when 80STORE is off", () => {
+  // First, set monochrome mode
+  memSet(0xC00C, 0) // 80COL off
+  access(0xC05E) // AN3 off
+  access(0xC05F) // AN3 on: clock 1
+  access(0xC05E) // AN3 off
+  access(0xC05F) // AN3 on: clock 1
+  expectVideo7Mode("monochrome")
+
+  // Simulate A2DeskTop RestoreSystem exiting:
+  // Ctrl-U turns off 80STORE
+  memSet(0xC000, 0) // 80STORE off
+  // SetColorMode (sta SET80VID; sta AN3_OFF; sta AN3_ON; sta AN3_OFF; sta AN3_ON; sta DHIRESON)
+  memSet(0xC00D, 0) // 80COL on
+  access(0xC05E) // AN3 off
+  access(0xC05F) // AN3 on: clock 0
+  access(0xC05E) // AN3 off
+  access(0xC05F) // AN3 on: clock 0
+  access(0xC05E) // AN3 off / DHIRESON
+
+  expectVideo7Mode(null)
+})
+
 test.each(video7Modes)("the debugger can override %s without a CPU address", (mode, switchName) => {
   setVideo7Override(mode, true)
   expect(SWITCHES[switchName].isSet).toBe(true)

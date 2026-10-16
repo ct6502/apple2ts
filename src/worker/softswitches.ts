@@ -193,8 +193,7 @@ let v7flags : number = 0  // default according to docs is 3, but we aren't
                           // always emulating the video7, so leave at zero
 // Use AN3 set/reset logic, not the DHIRES SSwitch
 const video7clock = (onoff: boolean) => {
-  // not sure if 80store is necessary
-  if (v7clock !== onoff && SWITCHES.STORE80.isSet) {
+  if (v7clock !== onoff) {
     if (onoff) {
       SWITCHES.VIDEO7_160.isSet = false
       SWITCHES.VIDEO7_MONO.isSet = false
@@ -376,6 +375,8 @@ export const resetSoftSwitches = () => {
   } else {
     SWITCHES.TEXT.isSet = true
   }
+  v7flags = 0
+  v7clock = true
 }
 
 // An array of the original state of the soft switches, indexed by offAddress - 0xC000.
