@@ -85,6 +85,14 @@ export const setReverseYAxis = (mode: boolean) => {
   reverseYAxis = mode
 }
 
+// When the paddle timers were last started, which a state saved while a program
+// reads the paddles must keep.
+export const getJoystickSaveState = () => ({countStart})
+
+export const restoreJoystickSaveState = (state: {countStart: number} | undefined) => {
+  if (state) countStart = state.countStart
+}
+
 export const resetJoystick = (cycleCount: number) => {
   memSetC000(0xC064, 0x80)
   memSetC000(0xC065, 0x80)

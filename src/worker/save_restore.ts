@@ -9,6 +9,7 @@ import { SWITCHES } from "./softswitches"
 import { vidhd } from "./devices/vidhd"
 import { passRequestThumbnail } from "./worker2main"
 import { getSlotCardSaveState, restoreSlotCardSaveState } from "./devices/slot_card_state"
+import { getJoystickSaveState, restoreJoystickSaveState } from "./devices/joystick"
 import { getMemoryView } from "./memory_view"
 
 let iTempState = 0
@@ -62,6 +63,7 @@ export const getApple2State = (): Apple2SaveState => {
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     machineName: getMachineName(),
     cardStates: getSlotCardSaveState(),
+    joystick: getJoystickSaveState(),
     softSwitches: getSoftSwitches(),
     stackDump: getStackDump(),
     memvalid: memvalid.slice(0, maxGood + 1).join(""),
@@ -148,6 +150,7 @@ export const setApple2State = (
     setStackDump(newState.stackDump)
   }
   restoreSlotCardSaveState(newState.cardStates)
+  restoreJoystickSaveState(newState.joystick)
   updateAddressTables()
   // Force the help text to be reset if necessary.
   handleGameSetup(true)
