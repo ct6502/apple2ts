@@ -818,16 +818,18 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                       {(() => {
                         const multiConfig = getMultiDiskConfigFromItem(diskCollectionItem)
                         if (!multiConfig.isMultiDisk) return null
+                        const tooltip = multiConfig.isSwapper
+                          ? "Multi-Disk (Multiple disks swapping)"
+                          : "Multi-Disk (Multiple drives configured)"
                         return (
                           <div className={`dcp-item-icon ${isSmallDevice ? "dcp-item-smallicon" : ""}`}
-                            title="Multi-Disk (Multiple drives configured)">
+                            title={tooltip}>
                             <FontAwesomeIcon icon={faLayerGroup} size="lg" className="dcp-item-multidisk-icon"
                               onClick={(event) => {
                                 if (activeTab != TAB_INDEX.EXPORT) {
                                   event.stopPropagation()
                                 }
                               }} />
-                            <div className="dcp-item-multidisk-icon-bg">&nbsp;</div>
                           </div>
                         )
                       })()}

@@ -1210,7 +1210,7 @@ msgstr "Disk Downloaden"
 
 msgctxt "disk.downloadWoz"
 msgid "Download WOZ Disk Image"
-msgstr ""
+msgstr "WOZ-schijfkopie downloaden"
 
 #, fuzzy
 msgctxt "disk.downloadAndEjectDisk"
@@ -1221,6 +1221,10 @@ msgstr "Disk Downloaden en Uitwerpen"
 msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
 msgstr "Disk Uitwerpen"
+
+msgctxt "disk.ejectAllDisks"
+msgid "Eject All Disks"
+msgstr "Alle disks uitwerpen"
 
 #, fuzzy
 msgctxt "disk.saveDiskToOneDrive"
@@ -1237,6 +1241,10 @@ msgstr "Disk Opslaan op Google Drive"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
 msgstr "Disk laden"
+
+msgctxt "disk.loadAdditionalDisks"
+msgid "Load Additional Disk(s)..."
+msgstr "Extra disk laden..."
 
 msgctxt "disk.loadDiskFrom"
 msgid "Load Disk from"
@@ -1298,7 +1306,7 @@ msgstr "Disk Laden van Google Drive"
 
 msgctxt "disk.insertBlankDisk"
 msgid "Insert Blank Disk"
-msgstr ""
+msgstr "Lege disk invoegen"
 
 #, fuzzy
 msgctxt "disk.syncEveryMinute"
@@ -1412,6 +1420,14 @@ msgstr ""
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr ""
+
+msgctxt "help.diskContainers"
+msgid "Compressed archives:"
+msgstr "Gecomprimeerde archieven:"
+
+msgctxt "help.multiDiskNotice"
+msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "Wisselen van meerdere schijven: Klik op de multi-schijf-badge of klik met de rechtermuisknop om van schijf te wisselen. Multi-schijfarchieven (.zip, .7z, .gz) worden automatisch in de wissellijst geladen."
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -2351,7 +2367,7 @@ msgstr ""
 
 msgctxt "linkBuilder.startupOptionsTab"
 msgid "Startup Options"
-msgstr ""
+msgstr "Opstartopties"
 
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
@@ -3586,3 +3602,51 @@ msgstr ""
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
 msgstr ""
+
+msgctxt "disk.standbyDisks"
+msgid "Standby Disks (Click to change disk)"
+msgstr "Stand-by schijven (Klik om van schijf te wisselen)"
+
+msgctxt "linkBuilder.additionalDiskDrives"
+msgid "Additional Disk Drives"
+msgstr "Extra diskettestations"
+
+msgctxt "linkBuilder.slot6Drive1"
+msgid "Slot 6 Drive 1 (Floppy 1)"
+msgstr "Slot 6 Station 1 (Diskette 1)"
+
+msgctxt "linkBuilder.slot6Drive2"
+msgid "Slot 6 Drive 2 (Floppy 2)"
+msgstr "Slot 6 Station 2 (Diskette 2)"
+
+msgctxt "linkBuilder.slot7Drive1"
+msgid "Slot 7 Drive 1 (Hard Drive 1)"
+msgstr "Slot 7 Station 1 (Harde schijf 1)"
+
+msgctxt "linkBuilder.slot7Drive2"
+msgid "Slot 7 Drive 2 (Hard Drive 2)"
+msgstr "Slot 7 Station 2 (Harde schijf 2)"
+
+msgctxt "linkBuilder.slot2Drive1"
+msgid "Slot 2 Drive 1 (VERA SD)"
+msgstr "Slot 2 Station 1 (VERA SD)"
+
+msgctxt "linkBuilder.slot4Drive1"
+msgid "Slot 4 Drive 1 (VERA SD)"
+msgstr "Slot 4 Station 1 (VERA SD)"
+
+msgctxt "linkBuilder.addAdditionalDisk"
+msgid "Add additional disk for swapping"
+msgstr "Extra schijf toevoegen om te wisselen"
+
+msgctxt "linkBuilder.removeDisk"
+msgid "Remove this disk"
+msgstr "Deze schijf verwijderen"
+
+msgctxt "linkBuilder.addAnotherDisk"
+msgid "Add another disk"
+msgstr "Nog een schijf toevoegen"
+
+msgctxt "linkBuilder.diskPlaceholder"
+msgid "Disk {num} filename (e.g. sideB.woz|Scenario Disk)"
+msgstr "Schijf {num} bestandsnaam (bijv. sideB.woz|Scenarioschijf)"

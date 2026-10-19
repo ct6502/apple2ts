@@ -231,12 +231,12 @@ type DisplayProps = {
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,
-  showFileOpenDialog: {show: boolean, index: number},
+  showFileOpenDialog: {show: boolean, index: number, append?: boolean},
   updateDisplay: UpdateDisplay,
   handleCtrlDown: (mode: number) => void,
   handleOpenAppleDown: (mode: number) => void,
   handleClosedAppleDown: (mode: number) => void,
-  setShowFileOpenDialog: (show: boolean, index: number) => void,
+  setShowFileOpenDialog: (show: boolean, index: number, append?: boolean) => void,
 }
 
 type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P"
@@ -635,14 +635,14 @@ type DisassemblyProps = {
 type VtocType = "dos" | "prodos" | "other" | "dosup" | "4cade"
 
 type MultiDiskMap = {
-  s6d1?: string
-  s6d2?: string
-  s7d1?: string
-  s7d2?: string
-  s2d1?: string
-  s4d1?: string
-  verasd?: string
-  [key: string]: string | undefined
+  s6d1?: string | string[]
+  s6d2?: string | string[]
+  s7d1?: string | string[]
+  s7d2?: string | string[]
+  s2d1?: string | string[]
+  s4d1?: string | string[]
+  verasd?: string | string[]
+  [key: string]: string | string[] | undefined
 }
 
 type DiskCollectionItem = {
@@ -651,6 +651,7 @@ type DiskCollectionItem = {
   lastUpdated: Date,
   imageUrl?: string,
   diskUrl?: string | MultiDiskMap | string[],
+  disks?: MultiDiskMap | string[],
   helpFile?: string,
   detailsUrl?: string,
   bookmarkId?: string,

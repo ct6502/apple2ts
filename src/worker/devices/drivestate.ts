@@ -3,7 +3,7 @@ import { passDriveProps, passDriveSound } from "../worker2main"
 import { decodeDiskData } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive } from "./diskdata"
 import { enableHardDrive } from "./harddrivedata"
-import { DRIVE, isHardDriveImage } from "../../common/utility"
+import { DRIVE, isHardDriveImage, updateWozCrc } from "../../common/utility"
 
 const initDriveState = (index: number, drive: number, hardDrive: boolean): DriveState => {
   return {
@@ -77,25 +77,33 @@ export const getFilename = () => {
 const previousProps: Array<{diskHasChanges: boolean,
   motorRunning: boolean, status: string}> = []
 
-const getDriveProps = (index: number, forcePassData: boolean): DriveProps => ({
-  index,
-  hardDrive: driveState[index].hardDrive,
-  drive: driveState[index].drive,
-  filename: driveState[index].filename,
-  status: driveState[index].status,
-  motorRunning: driveState[index].motorRunning,
-  diskHasChanges: driveState[index].diskHasChanges,
-  isWriteProtected: driveState[index].isWriteProtected,
-  diskData: ((driveState[index].diskHasChanges && !driveState[index].motorRunning) || forcePassData) ?
-    driveData[index] : new Uint8Array(),
-  lastAppleWriteTime: driveState[index].lastAppleWriteTime,
-  lastLocalFileWriteTime: driveState[index].lastLocalFileWriteTime,
-  cloudData: driveState[index].cloudData,
-  writableFileHandle: driveState[index].writableFileHandle
-})
+const getDriveProps = (index: number, forcePassData: boolean): DriveProps => {
+  if (driveState[index].diskHasChanges && driveData[index]?.length > 0) {
+    updateWozCrc(driveData[index])
+  }
+  return {
+    index,
+    hardDrive: driveState[index].hardDrive,
+    drive: driveState[index].drive,
+    filename: driveState[index].filename,
+    status: driveState[index].status,
+    motorRunning: driveState[index].motorRunning,
+    diskHasChanges: driveState[index].diskHasChanges,
+    isWriteProtected: driveState[index].isWriteProtected,
+    diskData: ((driveState[index].diskHasChanges && !driveState[index].motorRunning) || forcePassData) ?
+      driveData[index] : new Uint8Array(),
+    lastAppleWriteTime: driveState[index].lastAppleWriteTime,
+    lastLocalFileWriteTime: driveState[index].lastLocalFileWriteTime,
+    cloudData: driveState[index].cloudData,
+    writableFileHandle: driveState[index].writableFileHandle
+  }
+}
 
 export const passDriveData = (replaceDiskDataIndex = -1, forcePassData = false) => {
   for (let i = 0; i < driveState.length; i++) {
+    if (driveState[i].diskHasChanges && driveData[i]?.length > 0) {
+      updateWozCrc(driveData[i])
+    }
     // For empty drives, only update if one of our special properties changed.
     if (driveState[i].filename === "" &&
       !driveState[i].cloudData &&
@@ -213,7 +221,18 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   if (!isHardDrive) {
     currentDrive = index
   }
+  const prevDrive = driveState[index]
+  const preserveHead = !isHardDrive && Boolean(prevDrive && !prevDrive.hardDrive)
+  const savedQuarterTrack = preserveHead ? prevDrive.quarterTrack : 0
+  const savedPrevQuarterTrack = preserveHead ? prevDrive.prevQuarterTrack : 0
+  const savedCurrentPhase = preserveHead ? prevDrive.currentPhase : 0
+
   driveState[index] = initDriveState(index, drive, isHardDrive)
+  if (preserveHead) {
+    driveState[index].quarterTrack = savedQuarterTrack
+    driveState[index].prevQuarterTrack = savedPrevQuarterTrack
+    driveState[index].currentPhase = savedCurrentPhase
+  }
   driveState[index].filename = props.filename
   driveData[index] = decodeDiskData(driveState[index], props.diskData, forceIndex)
   if (driveData[index].length === 0) {

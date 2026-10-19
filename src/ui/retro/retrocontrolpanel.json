@@ -771,6 +771,26 @@
     },
     {
       "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.ejectAll",
+      "kind": "action",
+      "labelKey": "disk.ejectAllDisks"
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.loadAdditional",
+      "kind": "action",
+      "labelKey": "disk.loadAdditionalDisks",
+      "keepMenuOpen": true
+    },
+    {
+      "group": "diskTemplates",
+      "id": "diskDrives.{{driveIndex}}.swapDisk.{{diskIndex}}",
+      "binding": "diskDrives.blankSeparator",
+      "kind": "action",
+      "keepMenuOpen": true
+    },
+    {
+      "group": "diskTemplates",
       "id": "diskDrives.{{driveIndex}}.writeProtected",
       "kind": "toggle",
       "labelKey": "disk.writeProtectDisk",

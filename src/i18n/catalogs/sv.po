@@ -1127,6 +1127,10 @@ msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
 msgstr "Mata ut disk"
 
+msgctxt "disk.ejectAllDisks"
+msgid "Eject All Disks"
+msgstr "Mata ut alla diskar"
+
 msgctxt "disk.saveDiskToOneDrive"
 msgid "Save Disk to OneDrive"
 msgstr "Spara disk på OneDrive"
@@ -1138,6 +1142,10 @@ msgstr "Spara disk på Google Drive"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
 msgstr "Läs in disk…"
+
+msgctxt "disk.loadAdditionalDisks"
+msgid "Load Additional Disk(s)..."
+msgstr "Läs in ytterligare disk…"
 
 msgctxt "disk.loadDiskFrom"
 msgid "Load Disk from"
@@ -1193,7 +1201,7 @@ msgstr "Läs in disk från Google Drive"
 
 msgctxt "disk.insertBlankDisk"
 msgid "Insert Blank Disk"
-msgstr "Sätt i en tom diskett"
+msgstr "Sätt in tom disk"
 
 msgctxt "disk.syncEveryMinute"
 msgid "Sync Every Minute"
@@ -1291,6 +1299,14 @@ msgstr ""
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr "Diskavbildningar:"
+
+msgctxt "help.diskContainers"
+msgid "Compressed archives:"
+msgstr "Komprimerade arkiv:"
+
+msgctxt "help.multiDiskNotice"
+msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "Växla flera disketter: Klicka på multi-disk-märket eller högerklicka för att byta diskett. Multi-diskarkiv (.zip, .7z, .gz) läses automatiskt in i växlingslistan."
 
 msgctxt "help.urlParameters"
 msgid "Optional URL Parameters"
@@ -3362,3 +3378,51 @@ msgstr "Indirekt, Y"
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
 msgstr "Indirekt"
+
+msgctxt "disk.standbyDisks"
+msgid "Standby Disks (Click to change disk)"
+msgstr "Standby-diskar (Klicka för att byta disk)"
+
+msgctxt "linkBuilder.additionalDiskDrives"
+msgid "Additional Disk Drives"
+msgstr "Ytterligare diskenheter"
+
+msgctxt "linkBuilder.slot6Drive1"
+msgid "Slot 6 Drive 1 (Floppy 1)"
+msgstr "Kortplats 6 Enhet 1 (Diskett 1)"
+
+msgctxt "linkBuilder.slot6Drive2"
+msgid "Slot 6 Drive 2 (Floppy 2)"
+msgstr "Kortplats 6 Enhet 2 (Diskett 2)"
+
+msgctxt "linkBuilder.slot7Drive1"
+msgid "Slot 7 Drive 1 (Hard Drive 1)"
+msgstr "Kortplats 7 Enhet 1 (Hårddisk 1)"
+
+msgctxt "linkBuilder.slot7Drive2"
+msgid "Slot 7 Drive 2 (Hard Drive 2)"
+msgstr "Kortplats 7 Enhet 2 (Hårddisk 2)"
+
+msgctxt "linkBuilder.slot2Drive1"
+msgid "Slot 2 Drive 1 (VERA SD)"
+msgstr "Kortplats 2 Enhet 1 (VERA SD)"
+
+msgctxt "linkBuilder.slot4Drive1"
+msgid "Slot 4 Drive 1 (VERA SD)"
+msgstr "Kortplats 4 Enhet 1 (VERA SD)"
+
+msgctxt "linkBuilder.addAdditionalDisk"
+msgid "Add additional disk for swapping"
+msgstr "Lägg till ytterligare disk för byte"
+
+msgctxt "linkBuilder.removeDisk"
+msgid "Remove this disk"
+msgstr "Ta bort denna disk"
+
+msgctxt "linkBuilder.addAnotherDisk"
+msgid "Add another disk"
+msgstr "Lägg till ytterligare en disk"
+
+msgctxt "linkBuilder.diskPlaceholder"
+msgid "Disk {num} filename (e.g. sideB.woz|Scenario Disk)"
+msgstr "Disk {num} filnamn (t.ex. sideB.woz|Scenariodisk)"

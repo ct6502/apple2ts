@@ -15,11 +15,13 @@ import { formatControlLabel } from "../controls/controlregistry"
 import { useRetroMenuHost } from "./retromenuhost"
 import {
   actionHintWidth,
+  calculateMarqueeOffset,
   centerControlTextOffset,
   controlTextWidth,
   fitControlText,
   formatClockDate,
   formatClockTime,
+  formatMarqueeText,
   menuItemTextWidth,
   mouseTextGlyphs,
   retroFontSupports,
@@ -512,6 +514,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     setDiskCollection,
     t,
   } = useRetroMenuHost(displayProps, close, () => diskScreenshotUrlRef.current)
+  const isAppleIIPlus = retroSkin === RETRO_SKIN.APPLE_IIPLUS
   const menuStack = manualMenuStack
   const currentFrame = menuStack[menuStack.length - 1]
   const currentMenu = currentFrame?.items ?? rootMenu
@@ -548,6 +551,32 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
     : 0
   const visibleMenu = currentMenu.slice(visibleMenuStart, visibleMenuStart + maxVisibleMenuItems)
   const selectedItem = currentMenu[selectedIndex]
+
+  const [marqueeTick, setMarqueeTick] = useState(0)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMarqueeTick(0)
+  }, [selectedIndex, currentFrame?.menuId])
+
+  const selectedAvailableWidth = currentFrame ? menuItemTextWidth.submenu : menuItemTextWidth.root
+  const selectedOptionIndex = currentFrame?.values[selectedIndex] ?? selectedItem?.optionIndex ?? -1
+  const selectedOption = selectedItem?.options?.[selectedOptionIndex]
+  const selectedBaseLabel = selectedItem?.valueOnly && selectedOption ? selectedOption.label : selectedItem?.label ?? ""
+  const selectedItemLabel = formatControlLabel(
+    selectedBaseLabel,
+    selectedItem?.separator,
+    isAppleIIPlus || !retroFontSupports(selectedBaseLabel) ? "-" : undefined,
+  )
+  const needsMarquee = isOpen && Boolean(selectedItem) && !selectedItem?.separator &&
+    controlTextWidth(selectedItemLabel, language) > selectedAvailableWidth
+
+  useEffect(() => {
+    if (!needsMarquee) return
+    const timer = window.setInterval(() => {
+      setMarqueeTick(tick => tick + 1)
+    }, 250)
+    return () => window.clearInterval(timer)
+  }, [needsMarquee, selectedIndex])
   const activateMenuItem = (
     row: HTMLElement,
     item: RetroMenuItem,
@@ -652,7 +681,6 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
   const hasBlinkingCloudSearchCursor = Boolean(currentFrame) && isCloudSearchTitle(selectedItem)
   const showCloudSearchCursor = Math.floor(now.getTime() / cursorBlinkMs) % 2 === 0
   const selectLabel = t("retroControl.select")
-  const isAppleIIPlus = retroSkin === RETRO_SKIN.APPLE_IIPLUS
   const isExportScreen = Boolean(currentFrame?.items.some(item =>
     item.id === "diskCollection.export.sort"))
   const updateDiskCollection = (update: (prev: DiskCollectionItem[]) => DiskCollectionItem[]) => {
@@ -1291,7 +1319,11 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             const valueIndex = currentFrame?.values[index] ?? item.optionIndex ?? -1
             const option = item.options?.[valueIndex]
             const baseLabel = item.valueOnly && option ? option.label : item.label
-            const itemLabel = formatControlLabel(baseLabel, item.separator, isAppleIIPlus ? "-" : undefined)
+            const itemLabel = formatControlLabel(
+              baseLabel,
+              item.separator,
+              isAppleIIPlus || !retroFontSupports(baseLabel) ? "-" : undefined,
+            )
             const textValue = item.textInput ? item.textValue ?? "" : undefined
             const hasOptionValue = (option && !item.valueOnly && !item.hideOptionValue &&
               item.checkmarkIndex === undefined
@@ -1304,7 +1336,15 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
               language,
             )
             const visibleOption = fittedText.option
-            const visibleLabel = fittedText.label
+            const isSelected = selectedIndex === index
+            const marqueeOffset = isSelected
+              ? calculateMarqueeOffset(itemLabel, marqueeTick, language)
+              : 0
+            const shouldMarquee = isSelected && !hasOptionValue && !item.separator &&
+              controlTextWidth(itemLabel, language) > availableWidth
+            const visibleLabel = shouldMarquee
+              ? formatMarqueeText(itemLabel, availableWidth, marqueeOffset, language)
+              : fittedText.label
             const isChecked = item.checkmarkIndex !== undefined
               ? valueIndex === item.checkmarkIndex
               : item.defaultIndex !== undefined && valueIndex === item.defaultIndex

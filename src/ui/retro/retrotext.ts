@@ -79,11 +79,56 @@ export const truncateControlText = (text: string, maxWidth: number, locale: stri
   return `${result}...`
 }
 
+export const truncateMiddleControlText = (text: string, maxWidth: number, locale: string) => {
+  if (controlTextWidth(text, locale) <= maxWidth) return text
+  if (maxWidth <= 0) return ""
+  if (maxWidth <= 3) return ".".repeat(maxWidth)
+
+  const useSpaced = maxWidth >= 14
+  const ellipsis = useSpaced ? " ... " : "..."
+  const ellipsisWidth = useSpaced ? 5 : 3
+  const budget = maxWidth - ellipsisWidth
+  if (budget <= 1) {
+    return truncateControlText(text, maxWidth, locale)
+  }
+
+  const rightTargetWidth = Math.max(1, Math.floor(budget * 0.45))
+  const leftTargetWidth = budget - rightTargetWidth
+
+  const segs = graphemes(text, locale)
+
+  let leftStr = ""
+  let leftWidth = 0
+  let leftIndex = 0
+  for (let i = 0; i < segs.length; i++) {
+    const g = segs[i]
+    const gw = wideCharacter.test(g) ? 2 : 1
+    if (leftWidth + gw > leftTargetWidth) break
+    leftStr += g
+    leftWidth += gw
+    leftIndex = i + 1
+  }
+
+  let rightStr = ""
+  let rightWidth = 0
+  const remainingForRight = budget - leftWidth
+  for (let i = segs.length - 1; i >= leftIndex; i--) {
+    const g = segs[i]
+    const gw = wideCharacter.test(g) ? 2 : 1
+    if (rightWidth + gw > remainingForRight) break
+    rightStr = g + rightStr
+    rightWidth += gw
+  }
+
+  return `${leftStr.trimEnd()}${ellipsis}${rightStr.trimStart()}`
+}
+
 export const fitControlText = (
   label: string,
   option: string | undefined,
   availableWidth: number,
   locale: string,
+  truncateMiddle = false,
 ) => {
   const fullLabelWidth = controlTextWidth(label, locale)
   const optionBudget = availableWidth - fullLabelWidth - 2
@@ -91,10 +136,59 @@ export const fitControlText = (
     ? truncateControlText(option, optionBudget, locale)
     : undefined
   const optionWidth = visibleOption ? controlTextWidth(visibleOption, locale) + 2 : 0
+  const truncateFn = truncateMiddle ? truncateMiddleControlText : truncateControlText
   return {
-    label: truncateControlText(label, Math.max(1, availableWidth - optionWidth), locale),
+    label: truncateFn(label, Math.max(1, availableWidth - optionWidth), locale),
     option: visibleOption,
   }
+}
+
+export const formatMarqueeText = (
+  text: string,
+  availableWidth: number,
+  offset: number,
+  locale: string,
+): string => {
+  if (controlTextWidth(text, locale) <= availableWidth) {
+    return text
+  }
+  const gap = "    "
+  const segs = graphemes(text + gap, locale)
+  const len = segs.length
+  if (len === 0) return ""
+
+  const startIdx = offset % len
+  let result = ""
+  let currentWidth = 0
+  for (let i = 0; i < len; i++) {
+    const g = segs[(startIdx + i) % len]
+    const gw = wideCharacter.test(g) ? 2 : 1
+    if (currentWidth + gw > availableWidth) break
+    result += g
+    currentWidth += gw
+  }
+
+  if (currentWidth < availableWidth) {
+    result += " ".repeat(availableWidth - currentWidth)
+  }
+
+  return result
+}
+
+export const calculateMarqueeOffset = (
+  text: string,
+  tick: number,
+  locale: string,
+  pauseTicks = 4,
+): number => {
+  const gap = "    "
+  const totalLength = graphemes(text + gap, locale).length
+  if (totalLength === 0) return 0
+  const cycleLength = pauseTicks + totalLength + 2
+  const cycleTick = tick % cycleLength
+  if (cycleTick < pauseTicks) return 0
+  if (cycleTick < pauseTicks + totalLength) return cycleTick - pauseTicks
+  return 0
 }
 
 export const retroFontSupports = (text: string) => retroGlyph.test(text)

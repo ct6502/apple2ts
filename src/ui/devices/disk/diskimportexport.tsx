@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { getDiskImageFromLocalStorage, hasDiskImageInLocalStorage, setDiskImageToLocalStorage } from "../../localstorage"
 import { handleGetDriveProps, handleSetDiskFromURL } from "./driveprops"
+import { getBlobFromDiskData } from "./diskdrive"
 import {
   faUpload,
   faDownload,
@@ -30,16 +31,17 @@ const DiskImportExport = () => {
     if (!state) {
       return
     }
-    const blob = new Blob([state.data], { type: "application/octet-stream" })
+    const filename = url.split("/").pop() || url
+    const blob = getBlobFromDiskData(state.data, filename)
     const link = document.createElement("a")
     const downloadUrl = URL.createObjectURL(blob)
     link.setAttribute("href", downloadUrl)
-    const filename = url.split("/").pop() || url
     link.setAttribute("download", `${filename}`)
     link.style.visibility = "hidden"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    URL.revokeObjectURL(downloadUrl)
   }
 
   const verifyImport = () => {

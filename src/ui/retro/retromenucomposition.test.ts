@@ -26,11 +26,19 @@ jest.mock("../devices/disk/diskdrive", () => ({
 const mockHandleGetDriveProps = jest.fn()
 const mockHandleGetFilename = jest.fn()
 const mockHandleSetDiskWriteProtected = jest.fn()
+const mockGetStandbyDisks = jest.fn()
+const mockGetStandbyActiveIndex = jest.fn()
+const mockSwapStandbyDisk = jest.fn()
+const mockEjectAllDisks = jest.fn()
 const mockLoadDisk = jest.fn()
 jest.mock("../devices/disk/driveprops", () => ({
   handleGetDriveProps: (...args: unknown[]) => mockHandleGetDriveProps(...args),
   handleGetFilename: (...args: unknown[]) => mockHandleGetFilename(...args),
   handleSetDiskWriteProtected: (...args: unknown[]) => mockHandleSetDiskWriteProtected(...args),
+  getStandbyDisks: (...args: unknown[]) => mockGetStandbyDisks(...args),
+  getStandbyActiveIndex: (...args: unknown[]) => mockGetStandbyActiveIndex(...args),
+  swapStandbyDisk: (...args: unknown[]) => mockSwapStandbyDisk(...args),
+  ejectAllDisks: (...args: unknown[]) => mockEjectAllDisks(...args),
 }))
 jest.mock("../diskdialog/diskpanel_utils", () => ({
   ...jest.requireActual("../diskdialog/diskpanel_utils"),
@@ -67,6 +75,7 @@ import {
 import { DISK_COLLECTION_ITEM_TYPE } from "../diskdialog/diskpanel_utils"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { CLOUD_SYNC } from "../../common/utility"
+import { ejectVeraSd, setStandbyVeraDisks } from "../devices/vera/verasdicon"
 import {
   createControlContext,
   type RetroControlMetadata,
@@ -96,6 +105,11 @@ describe("Retro menu metadata structure", () => {
     mockSignInToCloudProvider.mockResolvedValue(true)
     mockLoadDisk.mockClear()
     mockHandleSetDiskWriteProtected.mockClear()
+    mockGetStandbyDisks.mockReturnValue([])
+    mockGetStandbyActiveIndex.mockReturnValue(0)
+    mockSwapStandbyDisk.mockClear()
+    mockEjectAllDisks.mockClear()
+    ejectVeraSd()
     resetCollectionDriveSelectionSession()
   })
 
@@ -217,6 +231,7 @@ describe("Retro menu metadata structure", () => {
     const items = drive?.dynamicChildren?.(context) ?? []
     expect(items.map(item => item.id)).toEqual([
       "diskDrives.0.load.device",
+      "diskDrives.0.loadAdditional",
       "diskDrives.0.load.from",
       "diskDrives.0.diskSeparator",
       "diskDrives.0.writeProtected",
@@ -232,7 +247,9 @@ describe("Retro menu metadata structure", () => {
       "diskDrives.0.pauseSyncing",
       "diskDrives.0.syncNow",
     ])
-    expect(items.filter(item => item.separator).map(item => item.label)).toEqual([
+    expect(items.filter(item => item.separator).map(item =>
+      item.label instanceof Function ? item.label(context) : item.label,
+    )).toEqual([
       "Disk", "Download", "Save",
     ])
     expect(items.slice(3).filter(item => !item.separator).every(item => {
@@ -241,10 +258,11 @@ describe("Retro menu metadata structure", () => {
         : item.selectable
       return selectable === false
     })).toBe(true)
-    expect(items[1].label instanceof Function ? items[1].label(context) : items[1].label)
+    expect(typeof items[1].selectable === "function" && items[1].selectable(context)).toBe(false)
+    expect(items[2].label instanceof Function ? items[2].label(context) : items[2].label)
       .toBe("disk.loadDiskFromMenu")
 
-    const loadFromItems = items[1].dynamicChildren?.(context) ?? []
+    const loadFromItems = items[2].dynamicChildren?.(context) ?? []
     expect(loadFromItems.map(item => item.id)).toEqual([
       "diskDrives.0.load.internetArchive",
       "diskDrives.0.load.demoZoo",
@@ -261,6 +279,59 @@ describe("Retro menu metadata structure", () => {
     ])
   })
 
+  test("shows multi-disk swap controls when drive has two or more standby disks", async () => {
+    const drive = retroDiskControls.find(control => control.id === "diskDrives.0")
+    expect(drive).toBeDefined()
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    mockHandleGetDriveProps.mockReturnValue({ filename: "Ultima_III_Side_A.dsk" })
+    mockGetStandbyDisks.mockReturnValue([
+      { filename: "Ultima_III_Side_A.dsk", comment: "Side A" },
+      { filename: "Ultima_III_Side_B.dsk", comment: "Side B" },
+    ])
+    mockGetStandbyActiveIndex.mockReturnValue(0)
+
+    const items = drive?.dynamicChildren?.(context) ?? []
+    expect(items.map(item => item.id)).toEqual([
+      "diskDrives.0.load.device",
+      "diskDrives.0.loadAdditional",
+      "diskDrives.0.load.from",
+      "diskDrives.0.swapSeparator",
+      "diskDrives.0.swapDisk.0",
+      "diskDrives.0.swapDisk.1",
+      "diskDrives.0.ejectAll",
+      "diskDrives.0.diskSeparator",
+      "diskDrives.0.writeProtected",
+      "diskDrives.0.favorite",
+      "diskDrives.0.downloadSeparator",
+      "diskDrives.0.download",
+      "diskDrives.0.downloadWoz",
+      "diskDrives.0.downloadAndEject",
+      "diskDrives.0.eject",
+      "diskDrives.0.saveSeparator",
+      "diskDrives.0.saveToDevice",
+      "diskDrives.0.saveTo",
+      "diskDrives.0.pauseSyncing",
+      "diskDrives.0.syncNow",
+    ])
+    expect(items.filter(item => item.separator).map(item =>
+      item.label instanceof Function ? item.label(context) : item.label,
+    )).toEqual([
+      "disk.standbyDisks", "Disk", "Download", "Save",
+    ])
+    expect(items[4].label).toBe("Ultima_III_Side_A.dsk (Side A)")
+    expect(items[5].label).toBe("Ultima_III_Side_B.dsk (Side B)")
+    expect(typeof items[4].indicator === "function" && items[4].indicator(context)).toBe("*")
+    expect(typeof items[5].indicator === "function" && items[5].indicator(context)).toBeUndefined()
+
+    // Test swap action
+    await items[5].action?.(context)
+    expect(mockSwapStandbyDisk).toHaveBeenCalledWith(0, 1, undefined, expect.any(Function))
+
+    // Test eject all action
+    items[6].action?.(context)
+    expect(mockEjectAllDisks).toHaveBeenCalledWith(0, expect.any(Function))
+  })
+
   test("shows VERA SD drive items and controls", () => {
     const veraDrive = retroDiskControls.find(control => control.id === "diskDrives.vera")
     expect(veraDrive).toBeDefined()
@@ -268,6 +339,7 @@ describe("Retro menu metadata structure", () => {
     const items = veraDrive?.dynamicChildren?.(context) ?? []
     expect(items.map(item => item.id)).toEqual([
       "diskDrives.vera.load.device",
+      "diskDrives.vera.loadAdditional",
       "diskDrives.vera.load.from",
       "diskDrives.vera.diskSeparator",
       "diskDrives.vera.writeProtected",
@@ -285,11 +357,61 @@ describe("Retro menu metadata structure", () => {
       "Disk", "Download", "Save",
     ])
 
-    const loadFromItems = items[1].dynamicChildren?.(context) ?? []
+    const loadFromItems = items[2].dynamicChildren?.(context) ?? []
     expect(loadFromItems.map(item => item.id)).toEqual([
       "diskDrives.vera.load.oneDrive",
       "diskDrives.vera.load.googleDrive",
     ])
+  })
+
+  test("shows multi-disk swap controls for VERA SD when drive has two or more standby disks", async () => {
+    const veraDrive = retroDiskControls.find(control => control.id === "diskDrives.vera")
+    expect(veraDrive).toBeDefined()
+    const context = createControlContext(undefined, key => key, "en", () => undefined)
+    setStandbyVeraDisks([
+      { filename: "VERA_Disk1.img", diskData: new Uint8Array([1, 2]), comment: "Disk 1" },
+      { filename: "VERA_Disk2.img", diskData: new Uint8Array([3, 4]), comment: "Disk 2" },
+    ], 0)
+
+    const items = veraDrive?.dynamicChildren?.(context) ?? []
+    expect(items.map(item => item.id)).toEqual([
+      "diskDrives.vera.load.device",
+      "diskDrives.vera.loadAdditional",
+      "diskDrives.vera.load.from",
+      "diskDrives.vera.swapSeparator",
+      "diskDrives.vera.swapDisk.0",
+      "diskDrives.vera.swapDisk.1",
+      "diskDrives.vera.ejectAll",
+      "diskDrives.vera.diskSeparator",
+      "diskDrives.vera.writeProtected",
+      "diskDrives.vera.downloadSeparator",
+      "diskDrives.vera.download",
+      "diskDrives.vera.downloadAndEject",
+      "diskDrives.vera.eject",
+      "diskDrives.vera.saveSeparator",
+      "diskDrives.vera.saveToDevice",
+      "diskDrives.vera.saveTo",
+      "diskDrives.vera.pauseSyncing",
+      "diskDrives.vera.syncNow",
+    ])
+    expect(items.filter(item => item.separator).map(item =>
+      item.label instanceof Function ? item.label(context) : item.label,
+    )).toEqual([
+      "disk.standbyDisks", "Disk", "Download", "Save",
+    ])
+    expect(items[4].label).toBe("VERA_Disk1.img (Disk 1)")
+    expect(items[5].label).toBe("VERA_Disk2.img (Disk 2)")
+    expect(typeof items[4].indicator === "function" && items[4].indicator(context)).toBe("*")
+    expect(typeof items[5].indicator === "function" && items[5].indicator(context)).toBeUndefined()
+
+    // Test swap action
+    await items[5].action?.(context)
+    expect(typeof items[5].indicator === "function" && items[5].indicator(context)).toBe("*")
+
+    // Test eject all action
+    items[6].action?.(context)
+    const itemsAfterEject = veraDrive?.dynamicChildren?.(context) ?? []
+    expect(itemsAfterEject.map(item => item.id)).not.toContain("diskDrives.vera.swapSeparator")
   })
 
   test("keeps disk load items on the loaded disk screen", () => {
@@ -306,10 +428,12 @@ describe("Retro menu metadata structure", () => {
 
     const items = drive?.dynamicChildren?.(context) ?? []
 
-    expect(items.slice(0, 2).map(item => item.id)).toEqual([
+    expect(items.slice(0, 3).map(item => item.id)).toEqual([
       "diskDrives.0.load.device",
+      "diskDrives.0.loadAdditional",
       "diskDrives.0.load.from",
     ])
+    expect(typeof items[1].selectable === "function" && items[1].selectable(context)).toBe(true)
     expect(items.filter(item => item.separator).map(item => item.label)).toEqual([
       "Disk", "Download", "Save",
     ])

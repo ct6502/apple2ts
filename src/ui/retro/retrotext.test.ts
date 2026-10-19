@@ -1,10 +1,12 @@
 import {
   actionHintWidth,
+  calculateMarqueeOffset,
   centerControlTextOffset,
   controlTextWidth,
   fitControlText,
   formatClockDate,
   formatClockTime,
+  formatMarqueeText,
   menuItemTextWidth,
   mouseTextGlyphs,
   retroFontSupports,
@@ -86,5 +88,31 @@ describe("Retro control-panel text", () => {
     expect(shouldUseCompactLatinFooter(["Seleccionar", "Cancelar:Esc", "Guardar"], 39)).toBe(true)
     expect(shouldUseCompactLatinFooter(["Select", "Cancel:Esc", "Save"], 30)).toBe(false)
     expect(shouldUseCompactLatinFooter(["選取", "取消:Esc", "儲存"], 39)).toBe(false)
+  })
+
+  test("scrolls long text using a cyclic marquee window without exceeding available width", () => {
+    const longText = "AppleWorks 5.0 Quality Computers Disk 1.po"
+    expect(formatMarqueeText("Short", 34, 0, "en")).toBe("Short")
+    const frame0 = formatMarqueeText(longText, 34, 0, "en")
+    expect(frame0).toBe("AppleWorks 5.0 Quality Computers D")
+    expect(controlTextWidth(frame0, "en")).toBe(34)
+
+    const frame5 = formatMarqueeText(longText, 34, 5, "en")
+    expect(frame5).toBe("Works 5.0 Quality Computers Disk 1")
+    expect(controlTextWidth(frame5, "en")).toBe(34)
+
+    const frame33 = formatMarqueeText(longText, 34, 33, "en")
+    expect(frame33).toBe("Disk 1.po    AppleWorks 5.0 Qualit")
+    expect(controlTextWidth(frame33, "en")).toBe(34)
+  })
+
+  test("pauses marquee at the beginning before scrolling", () => {
+    const text = "AppleWorks 5.0 Quality Computers Disk 1.po"
+    expect(calculateMarqueeOffset(text, 0, "en")).toBe(0)
+    expect(calculateMarqueeOffset(text, 1, "en")).toBe(0)
+    expect(calculateMarqueeOffset(text, 3, "en")).toBe(0)
+    expect(calculateMarqueeOffset(text, 4, "en")).toBe(0)
+    expect(calculateMarqueeOffset(text, 5, "en")).toBe(1)
+    expect(calculateMarqueeOffset(text, 6, "en")).toBe(2)
   })
 })

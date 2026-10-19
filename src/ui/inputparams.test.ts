@@ -2,6 +2,7 @@ jest.mock("./devices/disk/driveprops", () => ({
   doSetUIDriveProps: jest.fn(),
   setDefaultBinaryAddress: jest.fn(),
   handleSetDiskFromURL: jest.fn().mockResolvedValue(true),
+  handleSetDiskSwapperFromURLs: jest.fn().mockResolvedValue(true),
   resetAllDiskDrives: jest.fn(),
 }))
 jest.mock("./devices/disk/cloudscriptloader", () => ({
@@ -27,7 +28,7 @@ jest.mock("./devices/vera/verasdicon", () => ({
 import { handleFragment, handleInputParams } from "./inputparams"
 import { getPreferenceSlotConfig, getPreferenceVeraSlot } from "./localstorage"
 import { getTabView, getUIStateBoolean } from "./ui_settings"
-import { handleSetDiskFromURL, resetAllDiskDrives } from "./devices/disk/driveprops"
+import { handleSetDiskFromURL, handleSetDiskSwapperFromURLs, resetAllDiskDrives } from "./devices/disk/driveprops"
 import { handleSetVeraSdFromURL } from "./devices/vera/verasdicon"
 import * as main2worker from "./main2worker"
 import { RUN_MODE } from "../common/utility"
@@ -262,10 +263,78 @@ describe("handleFragment multi-disk loading", () => {
       undefined,
       undefined,
       undefined,
-      false,
+      true,
       false,
       true,
       true,
+    )
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("loads multi-disk swapper parameter on slot 6 drive 1", async () => {
+    await handleFragment(
+      undefined,
+      false,
+      "?s6d1=%7Bdisk1.dsk%2Cdisk2.dsk%7D",
+      "",
+    )
+
+    expect(resetAllDiskDrives).toHaveBeenCalledTimes(1)
+    expect(handleSetDiskSwapperFromURLs).toHaveBeenCalledWith(
+      ["disk1.dsk", "disk2.dsk"],
+      undefined,
+      2,
+      true,
+      true,
+      true,
+    )
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("does not overwrite explicit s6d1 boot drive with startup disk hash fragment", async () => {
+    await handleFragment(
+      undefined,
+      false,
+      "?s6d1=disk1.dsk&s6d2=disk2.dsk",
+      "#Wizardry",
+    )
+
+    expect(resetAllDiskDrives).toHaveBeenCalledTimes(1)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "disk1.dsk",
+      undefined,
+      2,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "disk2.dsk",
+      undefined,
+      3,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(handleSetDiskFromURL).not.toHaveBeenCalledWith(
+      "Wizardry",
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
     )
     expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
   })

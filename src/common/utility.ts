@@ -430,6 +430,25 @@ export const crc32 = (data: Uint8Array, offset = 0) => {
   return (crc ^ (-1)) >>> 0
 }
 
+export const isWozData = (data?: Uint8Array | null): boolean => {
+  return Boolean(data && data.length >= 4 && data[0] === 0x57 && data[1] === 0x4F && data[2] === 0x5A)
+}
+
+export const updateWozCrc = (diskData?: Uint8Array | null): Uint8Array | undefined => {
+  if (diskData && isWozData(diskData) && diskData.length >= 12) {
+    const crc = crc32(diskData, 12)
+    diskData.set(uint32toBytes(crc), 8)
+  }
+  return diskData ?? undefined
+}
+
+export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
+  if (filename.toLowerCase().endsWith(".woz") || isWozData(diskData)) {
+    updateWozCrc(diskData)
+  }
+  return new Blob([diskData] as BlobPart[], { type: "application/octet-stream" })
+}
+
 export const lockedKeyStyle = (mode: number) => {
   return `push-button key-button ${(["", "button-active", "button-locked"])[mode]}`
 }
@@ -554,13 +573,20 @@ export const getSymbolTables = (machineName: string) => {
 
 export const isHardDriveImage = (filename: string, fileSize: number) => {
   const f = filename.toLowerCase()
+  if (/\.(?:woz|dsk|do)(?:$|[^a-z0-9])/.test(f)) {
+    return false
+  }
   if (/\.(?:hdv|2mg|2meg)(?:$|[^a-z0-9])/.test(f)) {
     return true
   }
   if (/\.(?:po|img)(?:$|[^a-z0-9])/.test(f)) {
     // 5.25" ProDOS floppy disk is 140KB (143360 bytes).
+    // Converted WOZ2 floppy images from 140KB disks are ~234KB - 236KB (35-40 tracks).
     // Anything larger (e.g. 800KB 3.5" disk, 2MB, 16MB, 32MB hard drive images)
     // is treated as a Slot 7 SmartPort hard drive image.
+    if (fileSize >= 230000 && fileSize <= 275000) {
+      return false
+    }
     return fileSize > 143360
   }
   return false
@@ -602,14 +628,83 @@ export const playAudio = (audioDevice: AudioDevice, timeout: number) => {
   }
 }
 
+export const getCleanDiskFilename = (rawName: string): string => {
+  if (!rawName) return ""
+  let decoded = rawName
+  try {
+    decoded = decodeURIComponent(rawName)
+  } catch {
+    // keep raw
+  }
+  decoded = decoded.replace(/%2f/gi, "/")
+  const segments = decoded.split(/[\\/]/)
+  return segments.pop()?.trim() || rawName.trim()
+}
+
+export const separateUrlAndComment = (entry: string): { url: string; comment?: string } => {
+  const pipeIndex = entry.indexOf("|")
+  if (pipeIndex >= 0) {
+    const comment = entry.substring(pipeIndex + 1).trim()
+    return {
+      url: entry.substring(0, pipeIndex).trim(),
+      comment: comment.length > 0 ? comment : undefined,
+    }
+  }
+  return { url: entry.trim() }
+}
+
 export const getPrimaryDiskUrl = (item?: Partial<DiskCollectionItem> | null): string => {
-  if (!item || !item.diskUrl) return ""
-  if (typeof item.diskUrl === "string") return item.diskUrl
-  if (Array.isArray(item.diskUrl)) {
-    return item.diskUrl[0] || ""
+  if (!item) return ""
+  const source = item.disks || item.diskUrl
+  if (!source) return ""
+  let candidate = ""
+  if (typeof source === "string") {
+    candidate = source
+  } else if (Array.isArray(source)) {
+    candidate = source[0] || ""
+  } else if (typeof source === "object") {
+    const raw = source.s6d1 || source.s7d1 || source.d1 || source.hd1 || source.s6d2 || source.s7d2 || ""
+    if (Array.isArray(raw)) candidate = raw[0] || ""
+    else candidate = raw || ""
   }
-  if (typeof item.diskUrl === "object") {
-    return item.diskUrl.s6d1 || item.diskUrl.s7d1 || item.diskUrl.d1 || item.diskUrl.hd1 || item.diskUrl.s6d2 || item.diskUrl.s7d2 || ""
+  return separateUrlAndComment(candidate).url
+}
+
+export const resolveDiskSwapperUrls = (rawUrls: string[]): string[] => {
+  if (rawUrls.length === 0) return []
+  const firstParsed = separateUrlAndComment(rawUrls[0])
+  const firstUrl = firstParsed.url
+  const lastSlash = firstUrl.lastIndexOf("/")
+  const lastEncodedSlash = firstUrl.toLowerCase().lastIndexOf("%2f")
+  let basePrefix = ""
+  if (lastEncodedSlash > lastSlash) {
+    basePrefix = firstUrl.substring(0, lastEncodedSlash + 3)
+  } else if (lastSlash >= 0) {
+    basePrefix = firstUrl.substring(0, lastSlash + 1)
   }
-  return ""
+
+  return rawUrls.map((rawUrl, idx) => {
+    const { url, comment } = separateUrlAndComment(rawUrl)
+    let resolvedUrl = url
+    if (idx > 0 && !/^(https?:|\/|file:)/i.test(url) && basePrefix) {
+      const encodedFilename = url.includes("%") ? url : encodeURIComponent(url)
+      resolvedUrl = `${basePrefix}${encodedFilename}`
+    }
+    return comment ? `${resolvedUrl}|${comment}` : resolvedUrl
+  })
+}
+
+export const parseDiskSwapperParam = (paramValue: string): string[] => {
+  const trimmed = paramValue.trim()
+  if (!trimmed) return []
+  let content = trimmed
+  if (content.toLowerCase().startsWith("%7b") && content.toLowerCase().endsWith("%7d")) {
+    content = decodeURIComponent(content)
+  }
+  if (content.startsWith("{") && content.endsWith("}")) {
+    content = content.slice(1, -1).trim()
+    const parts = content.split(",").map(p => p.trim()).filter(Boolean)
+    return resolveDiskSwapperUrls(parts)
+  }
+  return [trimmed]
 }

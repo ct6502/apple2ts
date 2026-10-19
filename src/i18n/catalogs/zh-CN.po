@@ -1133,7 +1133,7 @@ msgstr "下载磁盘"
 
 msgctxt "disk.downloadWoz"
 msgid "Download WOZ Disk Image"
-msgstr ""
+msgstr "下载 WOZ 磁盘映像"
 
 #, fuzzy
 msgctxt "disk.downloadAndEjectDisk"
@@ -1144,6 +1144,10 @@ msgstr "下载并退出磁盘"
 msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
 msgstr "退出磁盘"
+
+msgctxt "disk.ejectAllDisks"
+msgid "Eject All Disks"
+msgstr "退出全部磁盘"
 
 #, fuzzy
 msgctxt "disk.saveDiskToOneDrive"
@@ -1160,6 +1164,10 @@ msgstr "保存磁盘到 Google Drive"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
 msgstr "加载磁盘"
+
+msgctxt "disk.loadAdditionalDisks"
+msgid "Load Additional Disk(s)..."
+msgstr "加载附加磁盘..."
 
 msgctxt "disk.loadDiskFrom"
 msgid "Load Disk from"
@@ -1221,7 +1229,7 @@ msgstr "从 Google Drive 加载磁盘"
 
 msgctxt "disk.insertBlankDisk"
 msgid "Insert Blank Disk"
-msgstr ""
+msgstr "插入空白磁盘"
 
 #, fuzzy
 msgctxt "disk.syncEveryMinute"
@@ -1337,6 +1345,14 @@ msgstr ""
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr "磁盘映像文件："
+
+msgctxt "help.diskContainers"
+msgid "Compressed archives:"
+msgstr "压缩封装包："
+
+msgctxt "help.multiDiskNotice"
+msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "多磁盘置换：点击磁盘图标上的多盘标签或鼠标右键即可切换磁盘。加载多磁盘压缩包 (.zip, .7z, .gz) 会自动将所有磁盘载入置换列表。"
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -2296,7 +2312,7 @@ msgstr "音效"
 
 msgctxt "linkBuilder.startupOptionsTab"
 msgid "Startup Options"
-msgstr ""
+msgstr "启动选项"
 
 #, fuzzy
 msgctxt "linkBuilder.onStartup"
@@ -3597,3 +3613,51 @@ msgstr ""
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
 msgstr ""
+
+msgctxt "disk.standbyDisks"
+msgid "Standby Disks (Click to change disk)"
+msgstr "备用磁盘 (点击更换磁盘)"
+
+msgctxt "linkBuilder.additionalDiskDrives"
+msgid "Additional Disk Drives"
+msgstr "附加磁盘驱动器"
+
+msgctxt "linkBuilder.slot6Drive1"
+msgid "Slot 6 Drive 1 (Floppy 1)"
+msgstr "插槽 6 驱动器 1 (软盘 1)"
+
+msgctxt "linkBuilder.slot6Drive2"
+msgid "Slot 6 Drive 2 (Floppy 2)"
+msgstr "插槽 6 驱动器 2 (软盘 2)"
+
+msgctxt "linkBuilder.slot7Drive1"
+msgid "Slot 7 Drive 1 (Hard Drive 1)"
+msgstr "插槽 7 驱动器 1 (硬盘 1)"
+
+msgctxt "linkBuilder.slot7Drive2"
+msgid "Slot 7 Drive 2 (Hard Drive 2)"
+msgstr "插槽 7 驱动器 2 (硬盘 2)"
+
+msgctxt "linkBuilder.slot2Drive1"
+msgid "Slot 2 Drive 1 (VERA SD)"
+msgstr "插槽 2 驱动器 1 (VERA SD)"
+
+msgctxt "linkBuilder.slot4Drive1"
+msgid "Slot 4 Drive 1 (VERA SD)"
+msgstr "插槽 4 驱动器 1 (VERA SD)"
+
+msgctxt "linkBuilder.addAdditionalDisk"
+msgid "Add additional disk for swapping"
+msgstr "添加用于更换的附加磁盘"
+
+msgctxt "linkBuilder.removeDisk"
+msgid "Remove this disk"
+msgstr "移除此磁盘"
+
+msgctxt "linkBuilder.addAnotherDisk"
+msgid "Add another disk"
+msgstr "添加另一个磁盘"
+
+msgctxt "linkBuilder.diskPlaceholder"
+msgid "Disk {num} filename (e.g. sideB.woz|Scenario Disk)"
+msgstr "磁盘 {num} 文件名 (例如 sideB.woz|剧情磁盘)"

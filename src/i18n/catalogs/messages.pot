@@ -1053,6 +1053,10 @@ msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
 msgstr ""
 
+msgctxt "disk.ejectAllDisks"
+msgid "Eject All Disks"
+msgstr ""
+
 msgctxt "disk.saveDiskToOneDrive"
 msgid "Save Disk to OneDrive"
 msgstr ""
@@ -1063,6 +1067,10 @@ msgstr ""
 
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
+msgstr ""
+
+msgctxt "disk.loadAdditionalDisks"
+msgid "Load Additional Disk(s)..."
 msgstr ""
 
 msgctxt "disk.loadDiskFrom"
@@ -1211,6 +1219,14 @@ msgstr ""
 
 msgctxt "help.diskImages"
 msgid "Disk images:"
+msgstr ""
+
+msgctxt "help.diskContainers"
+msgid "Compressed archives:"
+msgstr ""
+
+msgctxt "help.multiDiskNotice"
+msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
 msgstr ""
 
 msgctxt "help.urlParameters"
@@ -3245,4 +3261,52 @@ msgstr ""
 
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
+msgstr ""
+
+msgctxt "disk.standbyDisks"
+msgid "Standby Disks (Click to change disk)"
+msgstr ""
+
+msgctxt "linkBuilder.additionalDiskDrives"
+msgid "Additional Disk Drives"
+msgstr ""
+
+msgctxt "linkBuilder.slot6Drive1"
+msgid "Slot 6 Drive 1 (Floppy 1)"
+msgstr ""
+
+msgctxt "linkBuilder.slot6Drive2"
+msgid "Slot 6 Drive 2 (Floppy 2)"
+msgstr ""
+
+msgctxt "linkBuilder.slot7Drive1"
+msgid "Slot 7 Drive 1 (Hard Drive 1)"
+msgstr ""
+
+msgctxt "linkBuilder.slot7Drive2"
+msgid "Slot 7 Drive 2 (Hard Drive 2)"
+msgstr ""
+
+msgctxt "linkBuilder.slot2Drive1"
+msgid "Slot 2 Drive 1 (VERA SD)"
+msgstr ""
+
+msgctxt "linkBuilder.slot4Drive1"
+msgid "Slot 4 Drive 1 (VERA SD)"
+msgstr ""
+
+msgctxt "linkBuilder.addAdditionalDisk"
+msgid "Add additional disk for swapping"
+msgstr ""
+
+msgctxt "linkBuilder.removeDisk"
+msgid "Remove this disk"
+msgstr ""
+
+msgctxt "linkBuilder.addAnotherDisk"
+msgid "Add another disk"
+msgstr ""
+
+msgctxt "linkBuilder.diskPlaceholder"
+msgid "Disk {num} filename (e.g. sideB.woz|Scenario Disk)"
 msgstr ""

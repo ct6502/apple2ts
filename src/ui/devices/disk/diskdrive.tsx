@@ -5,18 +5,22 @@ import {
   handleSaveWritableFile,
   prepWritableFile,
   doSetUIDriveProps,
-  handleSetDiskFromFile
+  handleSetDiskFromFile,
+  getStandbyDisks,
+  getStandbyActiveIndex,
+  swapStandbyDisk,
+  removeStandbyDisk,
+  syncActiveDiskToStandby,
 } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen,
-  faGlobe,
+  faGlobe, faLayerGroup,
   faLock, faPause, faRotate, faStar, faSync
 } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import React from "react"
-import { CLOUD_SYNC, crc32, FILE_SUFFIXES_DISK, uint32toBytes } from "../../../common/utility"
+import { CLOUD_SYNC, FILE_SUFFIXES_DISK, getCleanDiskFilename, isWozData, getBlobFromDiskData } from "../../../common/utility"
 import PopupMenu from "../../controls/popupmenu"
 import { svgDemoZooLogo } from "../../img/icon_demozoo"
 import { passSetDriveProps, handleGetSlotConfig } from "../../main2worker"
@@ -43,14 +47,7 @@ export const loadDiskFromCloudDrive = async (cloudDrive: CloudProvider, driveInd
   return true
 }
 
-export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
-  // Only WOZ requires a checksum. Other formats should be ready to download.
-  if (filename.toLowerCase().endsWith(".woz")) {
-    const crc = crc32(diskData, 12)
-    diskData.set(uint32toBytes(crc), 8)
-  }
-  return new Blob([diskData] as BlobPart[], { type: "application/octet-stream" })
-}
+export { getBlobFromDiskData }
 
 const downloadDisk = (diskData: Uint8Array, filename: string, isHardDrive: boolean, downloadWoz: boolean) => {
   const fileExt = filename.substring(filename.lastIndexOf(".")).toLowerCase()
@@ -110,25 +107,44 @@ export const saveDiskToDevice = async (index: number) => {
   }
   passSetDriveProps(nextProps)
   await prepWritableFile(index, writableFileHandle)
+  await handleSaveWritableFile(index, writableFileHandle)
+  nextProps.diskHasChanges = false
+  nextProps.lastLocalFileWriteTime = Date.now()
+  passSetDriveProps(nextProps)
 }
 
 type DiskDriveProps = {
   index: number,
   renderCount: number,
-  setShowFileOpenDialog: (show: boolean, index: number) => void
+  setShowFileOpenDialog: (show: boolean, index: number, append?: boolean) => void,
+  updateDisplay?: UpdateDisplay,
 }
 
 const DiskDrive = (props: DiskDriveProps) => {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
+  const isEnglish = language.startsWith("en")
   const dprops = handleGetDriveProps(props.index)
   const diskBookmarks = new DiskBookmarks()
 
   const [internetDialogDialogOpen, setInternetDialogDialogOpen] = useState<boolean>(false)
   const [demoZooDialogOpen, setDemoZooDialogOpen] = useState<boolean>(false)
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
+  const [swapperPopupLocation, setSwapperPopupLocation] = useState<[number, number]>()
+  const [, setStandbyRefresh] = useState(0)
+
+  const triggerStandbyUpdate = () => {
+    setStandbyRefresh(v => v + 1)
+    props.updateDisplay?.()
+  }
+
+  const standbyDisks = getStandbyDisks(props.index)
+  const validStandbyDisks = standbyDisks.filter(d => Boolean(d && d.filename && d.filename.trim()))
+  const hasMultipleDisks = Boolean(dprops.filename) && validStandbyDisks.length >= 2
+  const standbyActiveIndex = getStandbyActiveIndex(props.index)
 
   const ejectDisk = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null, null, -1)
+    triggerStandbyUpdate()
   }
 
   const getDriveFileName = () => {
@@ -254,6 +270,11 @@ const DiskDrive = (props: DiskDriveProps) => {
       dpropsTmp.lastLocalFileWriteTime = -1
       passSetDriveProps(dpropsTmp)
       prepWritableFile(index, writableFileHandle)
+      await handleSaveWritableFile(index, writableFileHandle)
+      dpropsTmp.diskHasChanges = false
+      // eslint-disable-next-line react-hooks/purity
+      dpropsTmp.lastLocalFileWriteTime = Date.now()
+      passSetDriveProps(dpropsTmp)
     }
   }
 
@@ -383,6 +404,18 @@ const DiskDrive = (props: DiskDriveProps) => {
               if (!isSlotDisabled) handleMenuClick(event)
             }}
             onClick={(event) => { if (!isSlotDisabled) handleMenuClick(event) }} />
+          {hasMultipleDisks && (
+            <span
+              className="disk-multidisk-badge"
+              title={t("disk.standbyDisks")}
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                setSwapperPopupLocation([event.clientX, event.clientY])
+              }}>
+              <FontAwesomeIcon icon={faLayerGroup} />
+            </span>
+          )}
           <FontAwesomeIcon
             icon={cloudDriveStatusClassName === "disk-clouddrive-paused" ? faPause : faRotate}
             className={`fa-fw disk-clouddrive ${cloudDriveStatusClassName}`}>
@@ -408,9 +441,15 @@ const DiskDrive = (props: DiskDriveProps) => {
         menuItems={[[
           // Disk load
           {
-            label: t("disk.loadDisk"),
+            label: isEnglish ? "Load Disk(s)..." : t("disk.loadDisk"),
             icon: faFolderOpen,
-            onClick: () => { props.setShowFileOpenDialog(true, props.index) }
+            onClick: () => { props.setShowFileOpenDialog(true, props.index, false) }
+          },
+          {
+            label: t("disk.loadAdditionalDisks"),
+            icon: faLayerGroup,
+            isDisabled: dprops.filename.length === 0,
+            onClick: () => { props.setShowFileOpenDialog(true, props.index, true) }
           },
           {
             label: t("disk.loadDiskFrom"),
@@ -451,12 +490,19 @@ const DiskDrive = (props: DiskDriveProps) => {
             label: "-",
           },
           {
-            label: t("disk.downloadDisk"),
+            label: (isEnglish && hasMultipleDisks) ? "Download Disk(s)..." : `${t("disk.downloadDisk")}...`,
             icon: faDownload,
             isDisabled: dprops.filename.length === 0,
             onClick: () => {
               if (dprops.diskData.length > 0) {
-                downloadDisk(dprops.diskData, filename, dprops.hardDrive, false)
+                syncActiveDiskToStandby(props.index)
+                const currentStandby = getStandbyDisks(props.index).filter(d => Boolean(d && d.filename && d.filename.trim()))
+                const disksToDownload = hasMultipleDisks ? currentStandby : [{ filename, diskData: dprops.diskData }]
+                disksToDownload.forEach((d, i) => {
+                  setTimeout(() => {
+                    downloadDisk(d.diskData, d.filename, dprops.hardDrive, false)
+                  }, i * 200)
+                })
                 const dpropsTmp: DriveProps = { ...dprops }
                 dpropsTmp.diskHasChanges = false
                 doSetUIDriveProps(dpropsTmp)
@@ -482,7 +528,17 @@ const DiskDrive = (props: DiskDriveProps) => {
             isDisabled: dprops.filename.length === 0,
             onClick: () => {
               if (dprops.diskData.length > 0) {
-                downloadDisk(dprops.diskData, filename, dprops.hardDrive, false)
+                if (hasMultipleDisks) {
+                  syncActiveDiskToStandby(props.index)
+                  const currentStandby = getStandbyDisks(props.index).filter(d => Boolean(d && d.filename && d.filename.trim()))
+                  currentStandby.forEach((d, i) => {
+                    setTimeout(() => {
+                      downloadDisk(d.diskData, d.filename, dprops.hardDrive, false)
+                    }, i * 200)
+                  })
+                } else {
+                  downloadDisk(dprops.diskData, filename, dprops.hardDrive, false)
+                }
                 const dpropsTmp: DriveProps = { ...dprops }
                 dpropsTmp.diskHasChanges = false
                 doSetUIDriveProps(dpropsTmp)
@@ -491,22 +547,79 @@ const DiskDrive = (props: DiskDriveProps) => {
             }
           },
           {
-            label: t("disk.ejectDisk"),
+            label: (isEnglish && hasMultipleDisks) ? "Eject Disk(s)" : t("disk.ejectDisk"),
             icon: faEject,
             isDisabled: dprops.filename.length === 0,
-            onClick: () => {
-              ejectDisk(props.index)
-            }
+            subMenu: hasMultipleDisks
+              ? [
+                  {
+                    label: t("disk.ejectAllDisks"),
+                    onClick: () => {
+                      ejectDisk(props.index)
+                    }
+                  },
+                  {
+                    label: "-"
+                  },
+                  ...validStandbyDisks.map((disk, idx) => {
+                    const cleanFilename = getCleanDiskFilename(disk.filename)
+                    const displayName = disk.comment ? `${cleanFilename} (${disk.comment})` : cleanFilename
+                    return {
+                      label: `Eject: ${displayName}`,
+                      onClick: () => {
+                        removeStandbyDisk(props.index, idx, triggerStandbyUpdate)
+                      }
+                    }
+                  })
+                ]
+              : undefined,
+            onClick: !hasMultipleDisks ? () => { ejectDisk(props.index) } : undefined,
           },
           {
             label: "-"
           },
           {
-            label: t("disk.saveDiskToDevice"),
+            label: (isEnglish && hasMultipleDisks) ? "Save Disk(s)" : t("disk.saveDiskToDevice"),
             icon: faFloppyDisk,
             isDisabled: dprops.filename.length === 0,
             isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle },
-            onClick: () => { showDiskSaveFilePicker(props.index) }
+            onClick: async () => {
+              if (!hasMultipleDisks) {
+                await showDiskSaveFilePicker(props.index)
+              } else {
+                syncActiveDiskToStandby(props.index)
+                const currentStandby = getStandbyDisks(props.index).filter(d => Boolean(d && d.filename && d.filename.trim()))
+                for (let i = 0; i < currentStandby.length; i++) {
+                  const disk = currentStandby[i]
+                  const fileExtension = disk.filename.includes(".")
+                    ? disk.filename.substring(disk.filename.lastIndexOf("."))
+                    : (isWozData(disk.diskData) ? ".woz" : ".dsk")
+                  try {
+                    const writableFileHandle = await window.showSaveFilePicker({
+                      excludeAcceptAllOption: false,
+                      suggestedName: disk.filename,
+                      types: [{
+                        description: t("disk.diskImage"),
+                        accept: { "application/octet": [fileExtension] as `.${string}`[] },
+                      }],
+                    })
+                    if (writableFileHandle) {
+                      const targetName = writableFileHandle.name || disk.filename
+                      const writable = await writableFileHandle.createWritable()
+                      await writable.write(getBlobFromDiskData(disk.diskData, targetName))
+                      await writable.close()
+                      disk.diskHasChanges = false
+                      disk.filename = targetName
+                      disk.writableFileHandle = writableFileHandle
+                    }
+                  } catch {
+                    break
+                  }
+                }
+                const dpropsTmp: DriveProps = { ...dprops, diskHasChanges: false }
+                doSetUIDriveProps(dpropsTmp)
+              }
+            }
           },
           {
             label: t("disk.saveDiskTo"),
@@ -553,6 +666,44 @@ const DiskDrive = (props: DiskDriveProps) => {
           },
         ]]}
       />
+
+      {hasMultipleDisks && (
+        <PopupMenu
+          location={swapperPopupLocation}
+          style={{
+            padding: "5px",
+            paddingLeft: "10px",
+            paddingRight: "10px",
+          }}
+          onClose={() => {
+            setSwapperPopupLocation(undefined)
+          }}
+          menuItems={[
+            validStandbyDisks.map((disk, idx) => {
+              const cleanFilename = getCleanDiskFilename(disk.filename)
+              const displayName = disk.comment ? `${cleanFilename} (${disk.comment})` : cleanFilename
+              return {
+                label: displayName,
+                icon: faFloppyDisk,
+                isSelected: () => idx === standbyActiveIndex,
+                onClick: async () => {
+                  setSwapperPopupLocation(undefined)
+                  if (idx !== standbyActiveIndex) {
+                    if (dprops.diskHasChanges) {
+                      if (dprops.writableFileHandle) {
+                        await handleSaveWritableFile(dprops.index)
+                      } else if (isFileSystemApiSupported()) {
+                        await showDiskSaveFilePicker(props.index)
+                      }
+                    }
+                    await swapStandbyDisk(props.index, idx, undefined, triggerStandbyUpdate)
+                  }
+                },
+              }
+            }),
+          ]}
+        />
+      )}
 
       <InternetArchivePopup
         driveIndex={dprops.index}

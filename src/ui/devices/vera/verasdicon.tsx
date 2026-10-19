@@ -7,6 +7,7 @@ import {
   faFloppyDisk,
   faFolderOpen,
   faGlobe,
+  faLayerGroup,
   faLock,
   faPause,
   faRotate,
@@ -27,58 +28,191 @@ import {
 import { getPreferenceSlotConfig } from "../../localstorage"
 import { SETTINGS_CHANGED_EVENT } from "../../settingschange"
 import { isFileSystemApiSupported } from "../../ui_utilities"
-import { toHex, VeraSdStatus, getPrimaryDiskUrl } from "../../../common/utility"
+import { toHex, VeraSdStatus, getPrimaryDiskUrl, getCleanDiskFilename, parseDiskSwapperParam, separateUrlAndComment, getBlobFromDiskData } from "../../../common/utility"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { OneDriveCloudDrive } from "../disk/onedriveclouddrive"
 import { GoogleDrive } from "../disk/googledrive"
-import { findMatchingDiskImage, handleSetDiskOrFileFromBuffer, fetchWithCorsProxy } from "../disk/driveprops"
-import { decompressSingleFile } from "../../../common/zip_utils"
+import { findMatchingDiskImage, handleSetDiskOrFileFromBuffer, fetchWithCorsProxy, setStandbyDisks } from "../disk/driveprops"
+import { decompressAllDiskFiles } from "../../../common/zip_utils"
+
+export interface StandbyVeraSd {
+  filename: string
+  diskData: Uint8Array
+  diskHasChanges?: boolean
+  writeProtected?: boolean
+  writableFileHandle?: FileSystemFileHandle | null
+  comment?: string
+}
+
+let standbyVeraDisks: StandbyVeraSd[] = []
+let standbyVeraActiveIndex = 0
+const standbyVeraListeners = new Set<(disks: StandbyVeraSd[], activeIndex: number) => void>()
+
+export const getStandbyVeraDisks = (): StandbyVeraSd[] => standbyVeraDisks
+export const getStandbyVeraActiveIndex = (): number => standbyVeraActiveIndex
+
+export const subscribeStandbyVeraDisks = (listener: (disks: StandbyVeraSd[], activeIndex: number) => void): (() => void) => {
+  standbyVeraListeners.add(listener)
+  return () => { standbyVeraListeners.delete(listener) }
+}
+
+const notifyStandbyVeraChange = () => {
+  standbyVeraListeners.forEach(l => l(standbyVeraDisks, standbyVeraActiveIndex))
+}
+
+export const setStandbyVeraDisks = (disks: StandbyVeraSd[], activeIndex = 0) => {
+  standbyVeraDisks = [...disks]
+  standbyVeraActiveIndex = activeIndex
+  notifyStandbyVeraChange()
+}
+
+export const appendStandbyVeraDisks = (disks: StandbyVeraSd[]) => {
+  const existingNames = new Set(standbyVeraDisks.map(d => d.filename.toLowerCase()))
+  const toAdd = disks.filter(d => !existingNames.has(d.filename.toLowerCase()))
+  if (toAdd.length > 0) {
+    standbyVeraDisks = [...standbyVeraDisks, ...toAdd]
+    notifyStandbyVeraChange()
+  }
+}
+
+export const syncActiveVeraDiskToStandby = async () => {
+  if (standbyVeraDisks[standbyVeraActiveIndex]) {
+    const result = await requestVeraSdImage()
+    if (result && result.data) {
+      standbyVeraDisks[standbyVeraActiveIndex].diskData = result.data
+      standbyVeraDisks[standbyVeraActiveIndex].diskHasChanges = false
+    }
+  }
+}
+
+export const swapVeraStandbyDisk = async (targetIndex: number) => {
+  if (targetIndex < 0 || targetIndex >= standbyVeraDisks.length) return
+  if (targetIndex === standbyVeraActiveIndex) return
+
+  const curStatus = handleGetVeraSdStatus()
+  if (curStatus.hasChanges) {
+    if (currentVeraSdFileHandle) {
+      await saveVeraSdToDevice()
+    } else {
+      await syncActiveVeraDiskToStandby()
+    }
+  }
+
+  standbyVeraActiveIndex = targetIndex
+  const target = standbyVeraDisks[targetIndex]
+  setVeraSdFileHandle(target.writableFileHandle || null)
+  setVeraSdCloudData(null)
+  handleSetVeraSdImage(target.diskData, target.filename)
+  if (target.writeProtected !== undefined) {
+    handleSetVeraSdWriteProtected(target.writeProtected)
+  }
+  notifyStandbyVeraChange()
+}
+
+export const removeStandbyVeraDisk = async (indexToRemove: number) => {
+  if (indexToRemove < 0 || indexToRemove >= standbyVeraDisks.length) return
+  if (indexToRemove === standbyVeraActiveIndex) {
+    if (standbyVeraDisks.length <= 1) {
+      ejectVeraSd()
+      return
+    }
+    const nextIdx = indexToRemove === 0 ? 1 : indexToRemove - 1
+    await swapVeraStandbyDisk(nextIdx)
+  }
+  standbyVeraDisks.splice(indexToRemove, 1)
+  if (standbyVeraActiveIndex > indexToRemove) {
+    standbyVeraActiveIndex--
+  }
+  notifyStandbyVeraChange()
+}
 
 export const handleSetVeraSdFromURL = async (url: string): Promise<boolean> => {
   try {
-    let resolvedUrl = url
-    const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
-    if (isLocalFile && !url.startsWith("/") && !url.startsWith("file://")) {
-      const match = findMatchingDiskImage(url)
-      const matchUrl = getPrimaryDiskUrl(match)
-      if (matchUrl) {
-        resolvedUrl = matchUrl
+    const urls = parseDiskSwapperParam(url)
+    const fetchedDisks: StandbyVeraSd[] = []
+
+    for (const singleUrl of urls) {
+      const { url: rawUrl, comment } = separateUrlAndComment(singleUrl)
+      let resolvedUrl = rawUrl
+      const isLocalFile = !rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")
+      if (isLocalFile && !rawUrl.startsWith("/") && !rawUrl.startsWith("file://")) {
+        const match = findMatchingDiskImage(rawUrl)
+        const matchUrl = getPrimaryDiskUrl(match)
+        if (matchUrl) {
+          resolvedUrl = matchUrl
+        }
+        if (!URL.canParse(resolvedUrl) && !resolvedUrl.startsWith("/")) {
+          resolvedUrl = "disks/" + resolvedUrl
+        }
       }
-      if (!URL.canParse(resolvedUrl) && !resolvedUrl.startsWith("/")) {
-        resolvedUrl = "disks/" + resolvedUrl
-      }
-    }
-    let response: Response | null = null
-    try {
-      response = await fetch(resolvedUrl)
-      if (!response.ok) response = null
-    } catch {
-      response = null
-    }
-    if (!response || !response.ok) {
-      response = await fetchWithCorsProxy(resolvedUrl)
-    }
-    if ((!response || !response.ok) && typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname)) {
+      let response: Response | null = null
       try {
-        response = await fetch(`/api/disk-direct?url=${encodeURIComponent(resolvedUrl)}`)
+        response = await fetch(resolvedUrl)
+        if (!response.ok) response = null
       } catch {
         response = null
       }
-    }
-    if (!response || !response.ok) return false
-    const buffer = await response.arrayBuffer()
-    let fileName = decodeURIComponent(resolvedUrl.split("/").pop()?.split("?")[0] || "sd.img")
-    let data = new Uint8Array(buffer)
+      if (!response || !response.ok) {
+        response = await fetchWithCorsProxy(resolvedUrl)
+      }
+      if ((!response || !response.ok) && typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname)) {
+        try {
+          response = await fetch(`/api/disk-direct?url=${encodeURIComponent(resolvedUrl)}`)
+        } catch {
+          response = null
+        }
+      }
+      if (!response || !response.ok) continue
+      const buffer = await response.arrayBuffer()
+      const fileName = decodeURIComponent(resolvedUrl.split("/").pop()?.split("?")[0] || "sd.img")
 
-    const decompressed = await decompressSingleFile(data, fileName, [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"])
-    if (decompressed) {
-      fileName = decompressed.filename
-      data = decompressed.data
+      const decompressedList = await decompressAllDiskFiles(
+        buffer,
+        fileName,
+        [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"]
+      )
+      if (decompressedList && decompressedList.length > 0) {
+        for (const item of decompressedList) {
+          fetchedDisks.push({
+            filename: getCleanDiskFilename(item.filename),
+            diskData: item.data,
+            comment,
+          })
+        }
+      } else {
+        fetchedDisks.push({
+          filename: getCleanDiskFilename(fileName),
+          diskData: new Uint8Array(buffer),
+          comment,
+        })
+      }
     }
 
+    if (fetchedDisks.length === 0) return false
+
+    if (isAppleDiskImage(fetchedDisks[0].filename)) {
+      handleSetDiskOrFileFromBuffer(0, fetchedDisks[0].diskData.buffer as ArrayBuffer, fetchedDisks[0].filename, null, null)
+      if (fetchedDisks.length > 1) {
+        setStandbyDisks(0, fetchedDisks.map(d => ({
+          filename: d.filename,
+          diskData: d.diskData,
+          diskHasChanges: false,
+          isWriteProtected: false,
+          writableFileHandle: null,
+          cloudData: null,
+          lastAppleWriteTime: -1,
+          lastLocalFileWriteTime: -1,
+          comment: d.comment,
+        })), 0)
+      }
+      return true
+    }
+
+    const first = fetchedDisks[0]
     setVeraSdFileHandle(null)
     setVeraSdCloudData(null)
-    handleSetVeraSdImage(data, fileName)
+    handleSetVeraSdImage(first.diskData, first.filename)
+    setStandbyVeraDisks(fetchedDisks, 0)
     return true
   } catch (error) {
     console.error("Error loading VERA SD from URL:", error)
@@ -127,11 +261,11 @@ export const downloadSdImage = (diskData: Uint8Array, filename: string) => {
   }, 10000)
 }
 
-export const openSdFilePicker = async () => {
+export const openSdFilePicker = async (append = false) => {
   if (isVeraSdSyncing()) return
   if (isFileSystemApiSupported()) {
     try {
-      const [fileHandle] = await window.showOpenFilePicker({
+      const fileHandles = await window.showOpenFilePicker({
         types: [
           {
             description: "SD Card & Disk Images (*.img, *.raw, *.sd, *.bin, *.dsk, *.woz, *.zip, *.gz, *.7z)",
@@ -141,29 +275,66 @@ export const openSdFilePicker = async () => {
           }
         ],
         excludeAcceptAllOption: false,
-        multiple: false
+        multiple: true
       })
-      if (fileHandle) {
-        const file = await fileHandle.getFile()
-        const buffer = await file.arrayBuffer()
-        let fileData = new Uint8Array(buffer)
-        let fileName = file.name
-        let unzippedFileHandle: FileSystemFileHandle | null = fileHandle
-
-        const decompressed = await decompressSingleFile(fileData, fileName, [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"])
-        if (decompressed) {
-          fileName = decompressed.filename
-          fileData = decompressed.data
-          unzippedFileHandle = null
+      if (fileHandles && fileHandles.length > 0) {
+        const newDisks: StandbyVeraSd[] = []
+        for (const fileHandle of fileHandles) {
+          const file = await fileHandle.getFile()
+          const buffer = await file.arrayBuffer()
+          const decompressedList = await decompressAllDiskFiles(
+            buffer,
+            file.name,
+            [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"]
+          )
+          if (decompressedList && decompressedList.length > 0) {
+            for (const item of decompressedList) {
+              newDisks.push({
+                filename: getCleanDiskFilename(item.filename),
+                diskData: item.data,
+                writableFileHandle: null,
+              })
+            }
+          } else {
+            newDisks.push({
+              filename: getCleanDiskFilename(file.name),
+              diskData: new Uint8Array(buffer),
+              writableFileHandle: fileHandle,
+            })
+          }
         }
+        if (newDisks.length === 0) return
 
-        if (isAppleDiskImage(fileName)) {
-          handleSetDiskOrFileFromBuffer(0, decompressed ? decompressed.buffer : buffer, fileName, null, unzippedFileHandle)
+        newDisks.sort((a, b) =>
+          a.filename.localeCompare(b.filename, undefined, { numeric: true, sensitivity: "base" })
+        )
+
+        if (isAppleDiskImage(newDisks[0].filename)) {
+          handleSetDiskOrFileFromBuffer(0, newDisks[0].diskData.buffer as ArrayBuffer, newDisks[0].filename, null, newDisks[0].writableFileHandle || null)
+          if (newDisks.length > 1) {
+            setStandbyDisks(0, newDisks.map(d => ({
+              filename: d.filename,
+              diskData: d.diskData,
+              diskHasChanges: false,
+              isWriteProtected: false,
+              writableFileHandle: d.writableFileHandle || null,
+              cloudData: null,
+              lastAppleWriteTime: -1,
+              lastLocalFileWriteTime: -1,
+            })), 0)
+          }
           return
         }
-        setVeraSdCloudData(null)
-        setVeraSdFileHandle(unzippedFileHandle)
-        handleSetVeraSdImage(fileData, fileName)
+
+        if (append) {
+          appendStandbyVeraDisks(newDisks)
+        } else {
+          const first = newDisks[0]
+          setVeraSdCloudData(null)
+          setVeraSdFileHandle(first.writableFileHandle || null)
+          handleSetVeraSdImage(first.diskData, first.filename)
+          setStandbyVeraDisks(newDisks, 0)
+        }
         return
       }
     } catch (err: unknown) {
@@ -177,6 +348,7 @@ export const openSdFilePicker = async () => {
   // Fallback for browsers without File System Access API
   const input = document.createElement("input")
   input.type = "file"
+  input.multiple = true
   input.accept = ".img,.raw,.sd,.bin,.iso,.dsk,.woz,.po,.do,.2mg,.hdv,.zip,.gz,.7z"
   input.style.position = "fixed"
   input.style.left = "-9999px"
@@ -186,25 +358,63 @@ export const openSdFilePicker = async () => {
 
   input.onchange = async () => {
     try {
-      const file = input.files?.[0]
-      if (file) {
-        const buffer = await file.arrayBuffer()
-        let fileData = new Uint8Array(buffer)
-        let fileName = file.name
-
-        const decompressed = await decompressSingleFile(fileData, fileName, [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"])
-        if (decompressed) {
-          fileName = decompressed.filename
-          fileData = decompressed.data
+      if (input.files && input.files.length > 0) {
+        const newDisks: StandbyVeraSd[] = []
+        for (const file of Array.from(input.files)) {
+          const buffer = await file.arrayBuffer()
+          const decompressedList = await decompressAllDiskFiles(
+            buffer,
+            file.name,
+            [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"]
+          )
+          if (decompressedList && decompressedList.length > 0) {
+            for (const item of decompressedList) {
+              newDisks.push({
+                filename: getCleanDiskFilename(item.filename),
+                diskData: item.data,
+                writableFileHandle: null,
+              })
+            }
+          } else {
+            newDisks.push({
+              filename: getCleanDiskFilename(file.name),
+              diskData: new Uint8Array(buffer),
+              writableFileHandle: null,
+            })
+          }
         }
+        if (newDisks.length === 0) return
 
-        if (isAppleDiskImage(fileName)) {
-          handleSetDiskOrFileFromBuffer(0, decompressed ? decompressed.buffer : buffer, fileName, null, null)
+        newDisks.sort((a, b) =>
+          a.filename.localeCompare(b.filename, undefined, { numeric: true, sensitivity: "base" })
+        )
+
+        if (isAppleDiskImage(newDisks[0].filename)) {
+          handleSetDiskOrFileFromBuffer(0, newDisks[0].diskData.buffer as ArrayBuffer, newDisks[0].filename, null, null)
+          if (newDisks.length > 1) {
+            setStandbyDisks(0, newDisks.map(d => ({
+              filename: d.filename,
+              diskData: d.diskData,
+              diskHasChanges: false,
+              isWriteProtected: false,
+              writableFileHandle: null,
+              cloudData: null,
+              lastAppleWriteTime: -1,
+              lastLocalFileWriteTime: -1,
+            })), 0)
+          }
           return
         }
-        setVeraSdFileHandle(null)
-        setVeraSdCloudData(null)
-        handleSetVeraSdImage(fileData, fileName)
+
+        if (append) {
+          appendStandbyVeraDisks(newDisks)
+        } else {
+          const first = newDisks[0]
+          setVeraSdCloudData(null)
+          setVeraSdFileHandle(null)
+          handleSetVeraSdImage(first.diskData, first.filename)
+          setStandbyVeraDisks(newDisks, 0)
+        }
       }
     } finally {
       if (document.body.contains(input)) {
@@ -261,7 +471,7 @@ export const showSdSaveFilePicker = async () => {
       setVeraSdCloudData(null)
       setVeraSdFileHandle(writableFileHandle)
       const writable = await writableFileHandle.createWritable()
-      const blob = new Blob([result.data] as BlobPart[], { type: "application/octet-stream" })
+      const blob = getBlobFromDiskData(result.data, fileName)
       await writable.write(blob)
       await writable.close()
       handleClearVeraSdChanges(result.writeSeq)
@@ -281,7 +491,7 @@ export const saveVeraSdToDevice = async () => {
   if (currentVeraSdFileHandle) {
     try {
       const writable = await currentVeraSdFileHandle.createWritable()
-      const blob = new Blob([result.data] as BlobPart[], { type: "application/octet-stream" })
+      const blob = getBlobFromDiskData(result.data, currentVeraSdFileHandle.name || "image.woz")
       await writable.write(blob)
       await writable.close()
       handleClearVeraSdChanges(result.writeSeq)
@@ -347,7 +557,7 @@ export const syncVeraSdNow = async () => {
     if (currentVeraSdFileHandle) {
       try {
         const writable = await currentVeraSdFileHandle.createWritable()
-        const blob = new Blob([result.data] as BlobPart[], { type: "application/octet-stream" })
+        const blob = getBlobFromDiskData(result.data, currentVeraSdFileHandle.name || "image.woz")
         await writable.write(blob)
         await writable.close()
         handleClearVeraSdChanges(result.writeSeq)
@@ -390,6 +600,9 @@ export const ejectVeraSd = () => {
   setVeraSdCloudData(null)
   setVeraSdSyncPaused(false)
   setVeraSdSyncing(false)
+  standbyVeraDisks = []
+  standbyVeraActiveIndex = 0
+  notifyStandbyVeraChange()
   handleSetVeraSdImage(null)
 }
 
@@ -404,12 +617,22 @@ export const downloadAndEjectVeraSd = async () => {
 }
 
 export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const [status, setStatus] = useState<VeraSdStatus>(handleGetVeraSdStatus())
   const [installed, setInstalled] = useState<boolean>(isVeraInstalledInSlot)
   const [popupLocation, setPopupLocation] = useState<[number, number] | undefined>(undefined)
   const [isSyncPaused, setIsSyncPaused] = useState<boolean>(isVeraSdSyncPaused)
   const [isSyncing, setIsSyncing] = useState<boolean>(isVeraSdSyncing)
+  const [standbyDisks, setStandbyDisksState] = useState<StandbyVeraSd[]>(getStandbyVeraDisks)
+  const [standbyActiveIndex, setStandbyActiveIndexState] = useState<number>(getStandbyVeraActiveIndex)
+  const [swapperPopupLocation, setSwapperPopupLocation] = useState<[number, number] | undefined>(undefined)
+
+  useEffect(() => {
+    return subscribeStandbyVeraDisks((disks, activeIndex) => {
+      setStandbyDisksState([...disks])
+      setStandbyActiveIndexState(activeIndex)
+    })
+  }, [])
 
   useEffect(() => {
     return subscribeVeraSdStatus((newStatus) => {
@@ -445,6 +668,10 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
   const veraSlot = (slotConfig[4] === "vera" || workerConfig[4] === "vera") ? 4 : 2
   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in document.documentElement
   const isElectron = typeof navigator !== "undefined" && navigator.userAgent.includes("Electron")
+  const isEnglish = (language || "en").startsWith("en")
+
+  const validStandbyDisks = standbyDisks.filter(d => Boolean(d?.filename?.trim()))
+  const hasMultipleDisks = validStandbyDisks.length > 1
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -460,17 +687,61 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     e.preventDefault()
     e.stopPropagation()
     if (isVeraSdSyncing()) return
-    const file = e.dataTransfer.files?.[0]
-    if (file) {
+    const files = Array.from(e.dataTransfer.files || [])
+    if (files.length === 0) return
+
+    const newDisks: StandbyVeraSd[] = []
+    for (const file of files) {
       const buffer = await file.arrayBuffer()
-      if (isAppleDiskImage(file.name)) {
-        handleSetDiskOrFileFromBuffer(0, buffer, file.name, null, null)
-        return
+      const decompressedList = await decompressAllDiskFiles(
+        buffer,
+        file.name,
+        [".img", ".raw", ".sd", ".bin", ".iso", ".dsk", ".woz", ".po", ".do", ".2mg", ".hdv"]
+      )
+      if (decompressedList && decompressedList.length > 0) {
+        for (const item of decompressedList) {
+          newDisks.push({
+            filename: getCleanDiskFilename(item.filename),
+            diskData: item.data,
+            writableFileHandle: null,
+          })
+        }
+      } else {
+        newDisks.push({
+          filename: getCleanDiskFilename(file.name),
+          diskData: new Uint8Array(buffer),
+          writableFileHandle: null,
+        })
       }
-      setVeraSdFileHandle(null)
-      setVeraSdCloudData(null)
-      handleSetVeraSdImage(new Uint8Array(buffer), file.name)
     }
+    if (newDisks.length === 0) return
+
+    newDisks.sort((a, b) =>
+      a.filename.localeCompare(b.filename, undefined, { numeric: true, sensitivity: "base" })
+    )
+
+    if (isAppleDiskImage(newDisks[0].filename)) {
+      handleSetDiskOrFileFromBuffer(0, newDisks[0].diskData.buffer as ArrayBuffer, newDisks[0].filename, null, null)
+      if (newDisks.length > 1) {
+        setStandbyDisks(0, newDisks.map(d => ({
+          filename: d.filename,
+          diskData: d.diskData,
+          diskHasChanges: false,
+          isWriteProtected: false,
+          writableFileHandle: null,
+          cloudData: null,
+          lastAppleWriteTime: -1,
+          lastLocalFileWriteTime: -1,
+        })), 0)
+      }
+      return
+    }
+
+    const first = newDisks[0]
+    setVeraSdCloudData(null)
+    setVeraSdFileHandle(null)
+    handleSetVeraSdImage(first.diskData, first.filename)
+    setStandbyVeraDisks(newDisks, 0)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -509,7 +780,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
         const result = await requestVeraSdImage()
         if (result && result.data && currentVeraSdFileHandle) {
           const writable = await currentVeraSdFileHandle.createWritable()
-          const blob = new Blob([result.data] as BlobPart[], { type: "application/octet-stream" })
+          const blob = getBlobFromDiskData(result.data, currentVeraSdFileHandle.name || "image.woz")
           await writable.write(blob)
           await writable.close()
           handleClearVeraSdChanges(result.writeSeq)
@@ -575,13 +846,24 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     return [[
     // 1. 載入磁碟 (Load Disk)
     {
-      label: t("disk.loadDisk"),
+      label: isEnglish ? "Load Disk(s)..." : t("disk.loadDisk"),
       icon: faFolderOpen,
       isDisabled: isSyncing,
       onClick: () => {
         setPopupLocation(undefined)
         setTimeout(() => {
-          openSdFilePicker()
+          openSdFilePicker(false)
+        }, 50)
+      }
+    },
+    {
+      label: t("disk.loadAdditionalDisks"),
+      icon: faLayerGroup,
+      isDisabled: !status.attached || isSyncing,
+      onClick: () => {
+        setPopupLocation(undefined)
+        setTimeout(() => {
+          openSdFilePicker(true)
         }, 50)
       }
     },
@@ -617,12 +899,22 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     },
     // 5. 下載磁碟 (Download Disk)
     {
-      label: t("disk.downloadDisk"),
+      label: (isEnglish && hasMultipleDisks) ? "Download Disk(s)..." : `${t("disk.downloadDisk")}...`,
       icon: faDownload,
       isDisabled: !status.attached,
       onClick: async () => {
         setPopupLocation(undefined)
-        downloadVeraSd()
+        await syncActiveVeraDiskToStandby()
+        const disksToDownload = hasMultipleDisks ? validStandbyDisks : (
+          status.attached ? [{ filename: status.name, diskData: (await requestVeraSdImage())?.data || new Uint8Array() }] : []
+        )
+        disksToDownload.forEach((d, i) => {
+          if (d.diskData && d.diskData.length > 0) {
+            setTimeout(() => {
+              downloadSdImage(d.diskData, d.filename)
+            }, i * 200)
+          }
+        })
       }
     },
     // 6. 下載 WOZ 磁碟映像 (Download WOZ Disk Image - grey out)
@@ -643,25 +935,83 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
     },
     // 8. 退出磁碟 (Eject Disk)
     {
-      label: t("disk.ejectDisk"),
+      label: (isEnglish && hasMultipleDisks) ? "Eject Disk(s)" : t("disk.ejectDisk"),
       icon: faEject,
       isDisabled: !status.attached || isSyncing,
-      onClick: () => {
+      subMenu: hasMultipleDisks
+        ? [
+            {
+              label: t("disk.ejectAllDisks"),
+              onClick: () => {
+                setPopupLocation(undefined)
+                ejectVeraSd()
+              }
+            },
+            {
+              label: "-"
+            },
+            ...validStandbyDisks.map((disk, idx) => {
+              const cleanFilename = getCleanDiskFilename(disk.filename)
+              const displayName = disk.comment ? `${cleanFilename} (${disk.comment})` : cleanFilename
+              return {
+                label: `Eject: ${displayName}`,
+                onClick: () => {
+                  setPopupLocation(undefined)
+                  removeStandbyVeraDisk(idx)
+                }
+              }
+            })
+          ]
+        : undefined,
+      onClick: !hasMultipleDisks ? () => {
         setPopupLocation(undefined)
         ejectVeraSd()
-      }
+      } : undefined,
     },
     {
       label: "-"
     },
     // 9. 儲存磁碟 (Save Disk to Device)
     {
-      label: t("disk.saveDiskToDevice"),
+      label: (isEnglish && hasMultipleDisks) ? "Save Disk(s)" : t("disk.saveDiskToDevice"),
       icon: faFloppyDisk,
       isDisabled: !status.attached || isSyncing,
       isVisible: () => isFileSystemApiSupported(),
-      onClick: () => {
-        saveVeraSdToDevice()
+      onClick: async () => {
+        setPopupLocation(undefined)
+        if (!hasMultipleDisks) {
+          await saveVeraSdToDevice()
+        } else {
+          await syncActiveVeraDiskToStandby()
+          for (let i = 0; i < validStandbyDisks.length; i++) {
+            const disk = validStandbyDisks[i]
+            const fileExtension = disk.filename.includes(".") ? disk.filename.substring(disk.filename.lastIndexOf(".")) : ".img"
+            try {
+              const writableFileHandle = disk.writableFileHandle || await window.showSaveFilePicker({
+                excludeAcceptAllOption: false,
+                suggestedName: disk.filename,
+                types: [{
+                  description: t("disk.diskImage"),
+                  accept: { "application/octet-stream": [fileExtension] as `.${string}`[] },
+                }],
+              })
+              if (writableFileHandle) {
+                // eslint-disable-next-line react-hooks/immutability
+                disk.writableFileHandle = writableFileHandle
+                const writable = await writableFileHandle.createWritable()
+                const blob = new Blob([disk.diskData as BlobPart], { type: "application/octet-stream" })
+                await writable.write(blob)
+                await writable.close()
+              }
+            } catch {
+              break
+            }
+          }
+          const res = await requestVeraSdImage()
+          if (res) {
+            handleClearVeraSdChanges(res.writeSeq)
+          }
+        }
       }
     },
     // 10. 儲存磁碟到 (Save Disk To)
@@ -693,7 +1043,7 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
         syncVeraSdNow()
       }
     }
-  ]]}, [status, isElectron, t, isSyncPaused, isSyncing])
+  ]]}, [status, isElectron, t, isEnglish, hasMultipleDisks, validStandbyDisks, isSyncPaused, isSyncing])
 
   // If VERA is not in slot 2 or 4, do not render at all
   if (!installed) {
@@ -789,6 +1139,18 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
                 SD
               </text>
             </svg>
+            {hasMultipleDisks && (
+              <span
+                className="disk-multidisk-badge"
+                title={t("disk.standbyDisks")}
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  setSwapperPopupLocation([event.clientX, event.clientY])
+                }}>
+                <FontAwesomeIcon icon={faLayerGroup} />
+              </span>
+            )}
             {status.attached && (isSyncing ? (
               <FontAwesomeIcon
                 icon={faRotate}
@@ -826,6 +1188,37 @@ export const VeraSdIcon: React.FC<VeraSdIconProps> = () => {
           }}
           onClose={() => setPopupLocation(undefined)}
           menuItems={menuItems}
+        />
+      )}
+
+      {hasMultipleDisks && (
+        <PopupMenu
+          location={swapperPopupLocation}
+          style={{
+            padding: "5px",
+            paddingLeft: "10px",
+            paddingRight: "10px",
+          }}
+          onClose={() => {
+            setSwapperPopupLocation(undefined)
+          }}
+          menuItems={[
+            validStandbyDisks.map((disk, idx) => {
+              const cleanFilename = getCleanDiskFilename(disk.filename)
+              const displayName = disk.comment ? `${cleanFilename} (${disk.comment})` : cleanFilename
+              return {
+                label: displayName,
+                icon: faFloppyDisk,
+                isSelected: () => idx === standbyActiveIndex,
+                onClick: async () => {
+                  setSwapperPopupLocation(undefined)
+                  if (idx !== standbyActiveIndex) {
+                    await swapVeraStandbyDisk(idx)
+                  }
+                },
+              }
+            }),
+          ]}
         />
       )}
     </>

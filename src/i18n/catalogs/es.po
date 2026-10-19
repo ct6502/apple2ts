@@ -1218,7 +1218,7 @@ msgstr "Descargar Disco"
 
 msgctxt "disk.downloadWoz"
 msgid "Download WOZ Disk Image"
-msgstr ""
+msgstr "Descargar imagen de disco WOZ"
 
 #, fuzzy
 msgctxt "disk.downloadAndEjectDisk"
@@ -1229,6 +1229,10 @@ msgstr "Descargar y Expulsar Disco"
 msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
 msgstr "Expulsar Disco"
+
+msgctxt "disk.ejectAllDisks"
+msgid "Eject All Disks"
+msgstr "Expulsar todos los discos"
 
 #, fuzzy
 msgctxt "disk.saveDiskToOneDrive"
@@ -1245,6 +1249,10 @@ msgstr "Guardar Disco en Google Drive"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
 msgstr "Cargar disco"
+
+msgctxt "disk.loadAdditionalDisks"
+msgid "Load Additional Disk(s)..."
+msgstr "Cargar disco adicional..."
 
 msgctxt "disk.loadDiskFrom"
 msgid "Load Disk from"
@@ -1306,7 +1314,7 @@ msgstr "Cargar Disco desde Google Drive"
 
 msgctxt "disk.insertBlankDisk"
 msgid "Insert Blank Disk"
-msgstr ""
+msgstr "Insertar disco en blanco"
 
 #, fuzzy
 msgctxt "disk.syncEveryMinute"
@@ -1423,6 +1431,14 @@ msgstr ""
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr "Imágenes de disco:"
+
+msgctxt "help.diskContainers"
+msgid "Compressed archives:"
+msgstr "Archivos comprimidos:"
+
+msgctxt "help.multiDiskNotice"
+msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "Intercambio de múltiples discos: Haga clic en la insignia multidisco o haga clic derecho para cambiar de disco. Los archivos multidisco (.zip, .7z, .gz) se cargan automáticamente en la lista de intercambio."
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -2369,7 +2385,7 @@ msgstr ""
 
 msgctxt "linkBuilder.startupOptionsTab"
 msgid "Startup Options"
-msgstr ""
+msgstr "Opciones de inicio"
 
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
@@ -3604,3 +3620,51 @@ msgstr ""
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
 msgstr ""
+
+msgctxt "disk.standbyDisks"
+msgid "Standby Disks (Click to change disk)"
+msgstr "Discos en espera (Haga clic para cambiar de disco)"
+
+msgctxt "linkBuilder.additionalDiskDrives"
+msgid "Additional Disk Drives"
+msgstr "Unidades de disco adicionales"
+
+msgctxt "linkBuilder.slot6Drive1"
+msgid "Slot 6 Drive 1 (Floppy 1)"
+msgstr "Ranura 6 Unidad 1 (Disquete 1)"
+
+msgctxt "linkBuilder.slot6Drive2"
+msgid "Slot 6 Drive 2 (Floppy 2)"
+msgstr "Ranura 6 Unidad 2 (Disquete 2)"
+
+msgctxt "linkBuilder.slot7Drive1"
+msgid "Slot 7 Drive 1 (Hard Drive 1)"
+msgstr "Ranura 7 Unidad 1 (Disco duro 1)"
+
+msgctxt "linkBuilder.slot7Drive2"
+msgid "Slot 7 Drive 2 (Hard Drive 2)"
+msgstr "Ranura 7 Unidad 2 (Disco duro 2)"
+
+msgctxt "linkBuilder.slot2Drive1"
+msgid "Slot 2 Drive 1 (VERA SD)"
+msgstr "Ranura 2 Unidad 1 (VERA SD)"
+
+msgctxt "linkBuilder.slot4Drive1"
+msgid "Slot 4 Drive 1 (VERA SD)"
+msgstr "Ranura 4 Unidad 1 (VERA SD)"
+
+msgctxt "linkBuilder.addAdditionalDisk"
+msgid "Add additional disk for swapping"
+msgstr "Agregar disco adicional para intercambiar"
+
+msgctxt "linkBuilder.removeDisk"
+msgid "Remove this disk"
+msgstr "Quitar este disco"
+
+msgctxt "linkBuilder.addAnotherDisk"
+msgid "Add another disk"
+msgstr "Agregar otro disco"
+
+msgctxt "linkBuilder.diskPlaceholder"
+msgid "Disk {num} filename (e.g. sideB.woz|Scenario Disk)"
+msgstr "Nombre de archivo del disco {num} (p. ej. sideB.woz|Disco de escenario)"
