@@ -1149,9 +1149,20 @@ const setDiskFromURL = async (url: string,
   // Resolve Internet Archive URL, if necessary
   if (url.startsWith(internetArchiveUrlProtocol)) {
     const identifier = url.substring(internetArchiveUrlProtocol.length)
-    const [resolvedUrl, fileSize] = await getDiskImageUrlFromIdentifier(identifier)
+    const [resolvedUrl, fileSize, allUrls] = await getDiskImageUrlFromIdentifier(identifier)
 
     if (resolvedUrl) {
+      if (allUrls && allUrls.length > 1 && !callback) {
+        return handleSetDiskSwapperFromURLs(
+          allUrls.map(u => u.toString()),
+          updateDisplay,
+          index < 0 ? 2 : index,
+          preserveDriveIndex,
+          noReset,
+          noBoot,
+        )
+      }
+
       url = resolvedUrl.toString()
 
       const diskBookmarks = new DiskBookmarks()
@@ -1214,6 +1225,9 @@ const setDiskFromURL = async (url: string,
         )
         if (typeof installed === "number") index = installed
         if (fetched.allDisks && fetched.allDisks.length > 1) {
+          if (cloudData && fetched.allDisks[0]) {
+            fetched.allDisks[0].cloudData = cloudData
+          }
           setStandbyDisks(index, fetched.allDisks, 0)
         } else if (comment) {
           const currentStandby = getStandbyDisks(index)
@@ -1254,6 +1268,42 @@ export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
   debug?: (message: string) => void, preserveDriveIndex = false, confirmed = false,
   noReset = false, noBoot = false): Promise<boolean> => {
+  if (url.startsWith(internetArchiveUrlProtocol)) {
+    const identifier = url.substring(internetArchiveUrlProtocol.length)
+    const [resolvedUrl, fileSize, allUrls] = await getDiskImageUrlFromIdentifier(identifier)
+
+    if (resolvedUrl) {
+      if (allUrls && allUrls.length > 1 && !callback) {
+        return handleSetDiskSwapperFromURLs(
+          allUrls.map(u => u.toString()),
+          updateDisplay,
+          index < 0 ? 2 : index,
+          preserveDriveIndex,
+          noReset,
+          noBoot,
+        )
+      }
+
+      url = resolvedUrl.toString()
+
+      const diskBookmarks = new DiskBookmarks()
+      const bookmark = diskBookmarks.get(identifier)
+      if (bookmark) {
+        bookmark.diskUrl = resolvedUrl.toString()
+        if (bookmark.cloudData) {
+          bookmark.cloudData.fileSize = fileSize
+        }
+        diskBookmarks.set(bookmark)
+      }
+    } else {
+      console.warn(`Unable to resolve Internet Archive disk image for "${identifier}"`)
+      if (callback) {
+        callback(null)
+      }
+      return false
+    }
+  }
+
   const swapperUrls = parseDiskSwapperParam(url)
   if (swapperUrls.length > 1) {
     return handleSetDiskSwapperFromURLs(

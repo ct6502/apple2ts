@@ -88,9 +88,10 @@ const getCorsProxyCandidates = (url: string): ProxyCandidate[] => {
 const iaResolveCache = new Map<string, {
   resolvedUrl: string,
   fileSize: number,
-  expiresAt: number
+  expiresAt: number,
+  allUrls?: string[],
 }>()
-const iaResolveInflight = new Map<string, Promise<[URL | undefined, number]>>()
+const iaResolveInflight = new Map<string, Promise<[URL | undefined, number, URL[]?]>>()
 
 const IA_CACHE_TTL_MS = 30 * 60 * 1000
 const IA_NEGATIVE_CACHE_TTL_MS = 2 * 60 * 1000
@@ -113,10 +114,115 @@ export const clearIaResolveCache = (identifier: string) => {
   iaResolveCache.delete(identifier)
 }
 
-export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise<[URL | undefined, number]> => {
+export interface IaResolvedDiskFiles {
+  primaryUrl?: URL
+  fileSize: number
+  allUrls?: URL[]
+}
+
+const DISK_EXTENSIONS = [".woz", ".dsk", ".po", ".hdv", ".2mg", ".do"]
+
+export const resolveIaDiskFilesFromDetails = (
+  identifier: string,
+  json: { metadata?: Record<string, unknown>; files?: Record<string, { size?: string | number; format?: string }> }
+): IaResolvedDiskFiles => {
+  if (!json.files || typeof json.files !== "object") {
+    return { fileSize: -1 }
+  }
+
+  const files = Object.keys(json.files)
+
+  const isIgnored = (file: string) => {
+    const lower = file.toLowerCase()
+    if (lower.startsWith("/history/") || lower.includes("/history/") || lower.endsWith(".~1~")) return true
+    if (lower.endsWith(".xml") || lower.endsWith(".sqlite") || lower.endsWith(".torrent")) return true
+    if (lower.includes("_screenshot.") || lower.includes("_thumb.") || lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".gif")) return true
+    if (lower.endsWith(".txt") || lower.endsWith(".pdf") || lower.endsWith(".nib")) return true
+    return false
+  }
+
+  const validFiles = files.filter(f => !isIgnored(f))
+
+  const directDisks: string[] = []
+  const playableDisks: string[] = []
+  const zipFiles: string[] = []
+
+  for (const file of validFiles) {
+    const lower = file.toLowerCase()
+    const isDisk = DISK_EXTENSIONS.some(ext => lower.endsWith(ext))
+    if (isDisk) {
+      if (lower.includes("00playable")) {
+        playableDisks.push(file)
+      } else {
+        directDisks.push(file)
+      }
+    } else if (lower.endsWith(".zip")) {
+      if (!lower.includes("extra")) {
+        zipFiles.push(file)
+      }
+    }
+  }
+
+  const naturalSort = (arr: string[]) => {
+    arr.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+  }
+
+  // 1. Show All direct disk files (.dsk, .po, .woz, etc.)
+  if (directDisks.length > 0) {
+    naturalSort(directDisks)
+    const allUrls = directDisks.map(f => new URL(`https://archive.org/download/${identifier}${f}`))
+    const primaryUrl = allUrls[0]
+    const fileSize = parseInt(String(json.files[directDisks[0]]?.size || "-1"), 10)
+    return { primaryUrl, fileSize, allUrls }
+  }
+
+  // 2. Primary .zip archive (e.g. woz-a-day collection or 4am crack)
+  if (zipFiles.length > 0) {
+    naturalSort(zipFiles)
+    const preferredZip = zipFiles.find(f => /woz-a-day|4am/i.test(f)) || zipFiles[0]
+    const primaryUrl = new URL(`https://archive.org/download/${identifier}${preferredZip}`)
+    const fileSize = parseInt(String(json.files[preferredZip]?.size || "-1"), 10)
+    return { primaryUrl, fileSize, allUrls: [primaryUrl] }
+  }
+
+  // 3. Fallback: 00playable or emulator_ext match
+  if (playableDisks.length > 0) {
+    naturalSort(playableDisks)
+    const primaryUrl = new URL(`https://archive.org/download/${identifier}${playableDisks[0]}`)
+    const fileSize = parseInt(String(json.files[playableDisks[0]]?.size || "-1"), 10)
+    return { primaryUrl, fileSize, allUrls: [primaryUrl] }
+  }
+
+  const emulatorExt = json.metadata?.emulator_ext ? String(json.metadata.emulator_ext).toLowerCase() : ""
+  if (emulatorExt && !emulatorExt.includes("nib")) {
+    for (const file of validFiles) {
+      if (file.toLowerCase().endsWith(emulatorExt)) {
+        const primaryUrl = new URL(`https://archive.org/download/${identifier}${file}`)
+        const fileSize = parseInt(String(json.files[file]?.size || "-1"), 10)
+        return { primaryUrl, fileSize, allUrls: [primaryUrl] }
+      }
+    }
+  }
+
+  for (const ext of DISK_EXTENSIONS) {
+    for (const file of validFiles) {
+      if (file.toLowerCase().endsWith(ext)) {
+        const primaryUrl = new URL(`https://archive.org/download/${identifier}${file}`)
+        const fileSize = parseInt(String(json.files[file]?.size || "-1"), 10)
+        return { primaryUrl, fileSize, allUrls: [primaryUrl] }
+      }
+    }
+  }
+
+  return { fileSize: -1 }
+}
+
+export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise<[URL | undefined, number, URL[]?]> => {
   const cached = iaResolveCache.get(identifier)
   if (cached && cached.expiresAt > Date.now()) {
-    return [cached.resolvedUrl ? new URL(cached.resolvedUrl) : undefined, cached.fileSize]
+    const primaryUrl = cached.resolvedUrl ? new URL(cached.resolvedUrl) : undefined
+    const allUrls = cached.allUrls ? cached.allUrls.map(u => new URL(u)) : (primaryUrl ? [primaryUrl] : undefined)
+    return [primaryUrl, cached.fileSize, allUrls]
   }
 
   const existingRequest = iaResolveInflight.get(identifier)
@@ -124,9 +230,10 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
     return existingRequest
   }
 
-  const request = (async (): Promise<[URL | undefined, number]> => {
+  const request = (async (): Promise<[URL | undefined, number, URL[]?]> => {
     let newDiskImageUrl: URL | undefined
     let fileSize = -1
+    let allDiskImageUrls: URL[] | undefined
     const detailsUrl = `https://archive.org/details/${identifier}?output=json`
     const favicon: Record<string, string> = {}
     favicon[iconKey()] = iconData()
@@ -141,31 +248,11 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
         return
       }
 
-      const emulatorExt = json.metadata.emulator_ext
-        ? json.metadata.emulator_ext.toString().toLowerCase()
-        : ""
-
-      if (emulatorExt) {
-        for (const file of Object.keys(json.files)) {
-          if (file.toLowerCase().endsWith(emulatorExt)) {
-            newDiskImageUrl = new URL(`https://archive.org/download/${identifier}${file}`)
-            fileSize = parseInt(json.files[file].size)
-            return
-          }
-        }
-      }
-
-      // Fallback: emulator_ext missing or no matching file found. Scan for
-      // known disk image extensions (prefer .woz, then common formats).
-      const knownExts = [".woz", ".dsk", ".po", ".hdv", ".2mg", ".nib", ".do"]
-      for (const ext of knownExts) {
-        for (const file of Object.keys(json.files)) {
-          if (file.toLowerCase().endsWith(ext)) {
-            newDiskImageUrl = new URL(`https://archive.org/download/${identifier}${file}`)
-            fileSize = parseInt(json.files[file].size)
-            return
-          }
-        }
+      const resolved = resolveIaDiskFilesFromDetails(identifier, json)
+      if (resolved.primaryUrl) {
+        newDiskImageUrl = resolved.primaryUrl
+        fileSize = resolved.fileSize
+        allDiskImageUrls = resolved.allUrls
       }
     }
 
@@ -219,6 +306,7 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
     iaResolveCache.set(identifier, {
       resolvedUrl: newDiskImageUrl ? newDiskImageUrl.toString() : "",
       fileSize,
+      allUrls: allDiskImageUrls ? allDiskImageUrls.map(u => u.toString()) : undefined,
       expiresAt: Date.now() + (newDiskImageUrl ? IA_CACHE_TTL_MS : IA_NEGATIVE_CACHE_TTL_MS)
     })
 
@@ -226,7 +314,7 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
       console.warn(`Unable to resolve Internet Archive disk image for ${detailsUrl}`)
     }
 
-    return [newDiskImageUrl, fileSize]
+    return [newDiskImageUrl, fileSize, allDiskImageUrls]
   })().finally(() => {
     iaResolveInflight.delete(identifier)
   })
