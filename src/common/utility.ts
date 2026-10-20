@@ -1,5 +1,8 @@
 import { KeyboardEvent } from "react"
 
+// Be sure to update this version whenever the save state format changes.
+export const SAVE_STATE_VERSION = 2.0
+
 export const TEST_DEBUG = false
 export const TEST_GRAPHICS = false
 export const MAX_SNAPSHOTS = 30

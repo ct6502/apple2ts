@@ -1,5 +1,5 @@
 import { Buffer } from "buffer"
-import { MAX_SNAPSHOTS, RamWorksMemoryStart, ROMmemoryStart, RUN_MODE } from "../common/utility"
+import { MAX_SNAPSHOTS, RamWorksMemoryStart, ROMmemoryStart, RUN_MODE, SAVE_STATE_VERSION } from "../common/utility"
 import { getDriveSaveState, restoreDriveSaveState } from "./devices/drivestate"
 import { handleGameSetup } from "./games/game_mappings"
 import { s6502, getStackDump, setState6502, setStackDump } from "./instructions"
@@ -106,7 +106,8 @@ export const setApple2State = (
     SWITCHES.BSR_WRITE.isSet = softSwitches.WRITEBSR1 || softSwitches.WRITEBSR2 ||
       softSwitches.RDWRBSR1 || softSwitches.RDWRBSR2
   }
-  const newmemory = Buffer.from(newState.memory, "base64")
+  // Decode to a plain Uint8Array: Buffer.prototype.slice is deprecated.
+  const newmemory = new Uint8Array(Buffer.from(newState.memory, "base64"))
   if (version < 1) {
     // Main memory
     memory.set(newmemory.slice(0, 0x10000))
@@ -210,7 +211,7 @@ export const restoreSessionSnapshot = (snapshotId: string): SessionSnapshotRecei
   }
   const snapshot = sessionSnapshot.state
   // Worker-local snapshots use v2 memory without the UI's version metadata.
-  doRestoreSaveState(snapshot, false, false, 2)
+  doRestoreSaveState(snapshot, false, false, SAVE_STATE_VERSION)
   return {snapshotId, cycleCount: snapshot.state6502.s6502.cycleCount}
 }
 

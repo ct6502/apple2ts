@@ -1,5 +1,5 @@
 import { BreakpointMap } from "../common/breakpoint"
-import { MAX_DRIVES, RUN_MODE } from "../common/utility"
+import { MAX_DRIVES, RUN_MODE, SAVE_STATE_VERSION } from "../common/utility"
 import { setPreferenceBreakpoints, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
 import { handleGetFilename } from "./devices/disk/driveprops"
 import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
@@ -19,7 +19,7 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const displayState: DisplaySaveState = {
     name: "Apple2TS Emulator",
     date: datetime,
-    version: 2.0,
+    version: SAVE_STATE_VERSION,
     ...uiState,
     audioEnable: isAudioEnabled(),
     mockingboardMode: getMockingboardMode(),
