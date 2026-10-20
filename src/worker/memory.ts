@@ -30,7 +30,11 @@ const SLOTC8start = 256 * SLOTC8index
 // This is the maximum bank number. Each index represents 64K.
 export let RamWorksMaxBank = 0
 const BaseMachineMemory = RamWorksMemoryStart
-export let memory = (new Uint8Array(BaseMachineMemory + (RamWorksMaxBank + 1) * 0x10000)).fill(0)
+// The RamWorks banks are followed by one extra page of 0xFF, which stands in
+// for a bank number that has no memory behind it (see auxGetPage).
+const memorySize = () => BaseMachineMemory + (RamWorksMaxBank + 1) * 0x10000 + 0x100
+const unpopulatedPage = () => memorySize() / 256 - 1
+export let memory = (new Uint8Array(memorySize())).fill(0)
 
 const slotHasCard = (new Uint8Array(8)).fill(0)
 
@@ -60,6 +64,17 @@ const RamWorksBankSet = (bank: number) => {
 export const addressGetTable = new Uint32Array(257)
 const addressSetTable = new Uint32Array(257)
 const ADDRESS_GUARD = 0xFFFFFF
+
+// Table entries for page i of the selected aux bank. The bank select register
+// latches whatever is written to it, so a bank number beyond the installed
+// memory selects no RAM at all: nothing drives the bus on a read (modeled as
+// 0xFF) and a write goes nowhere. On a real RamWorks the bank bits go
+// straight to the chip selects, so a partly populated card simply has holes.
+const auxBankIsPopulated = () => RamWorksBankGet() <= RamWorksMaxBank
+const auxGetPage = (i: number) => auxBankIsPopulated() ?
+  (RamWorksPage + RamWorksBankGet() * 256 + i) : unpopulatedPage()
+const auxSetPage = (i: number) => auxBankIsPopulated() ?
+  (RamWorksPage + RamWorksBankGet() * 256 + i) : ADDRESS_GUARD
 
 let currentMachineName: MACHINE_NAME = "APPLE2EE"
 
@@ -165,7 +180,7 @@ export const setRamWorks = (size: number) => {
   }
 
   // Reallocate memory and copy the old memory
-  const newMemSize = BaseMachineMemory + (RamWorksMaxBank + 1) * 0x10000
+  const newMemSize = memorySize()
   if (RamWorksMaxBank < oldMaxBank) {
     // We are shrinking memory, just keep the first part
     memory = memory.slice(0, newMemSize)
@@ -173,8 +188,9 @@ export const setRamWorks = (size: number) => {
     // We are expanding memory, copy the old memory
     const memtemp = memory
     memory = (new Uint8Array(newMemSize)).fill(0xFF)
-    memory.set(memtemp)
+    memory.set(memtemp.subarray(0, memtemp.length - 0x100))
   }
+  memory.fill(0xFF, newMemSize - 0x100)
 }
 
 let auxCardEnabled = true
@@ -185,24 +201,24 @@ export const setAuxCardEnabled = (enabled: boolean) => {
 export const getAuxCardEnabled = () => auxCardEnabled
 
 const updateMainAuxMemoryTable = () => {
-  const offsetAuxRead = (auxCardEnabled && SWITCHES.AUXRAMREAD.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  const offsetAuxWrite = (auxCardEnabled && SWITCHES.AUXRAMWRITE.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  const offsetPage2 = (auxCardEnabled && SWITCHES.PAGE2.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  const offsetTextPageRead = (auxCardEnabled && SWITCHES.STORE80.isSet) ? offsetPage2 : offsetAuxRead
-  const offsetTextPageWrite = (auxCardEnabled && SWITCHES.STORE80.isSet) ? offsetPage2 : offsetAuxWrite
-  const offsetHgrPageRead = (auxCardEnabled && SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxRead
-  const offsetHgrPageWrite = (auxCardEnabled && SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxWrite
+  const auxRead = auxCardEnabled && SWITCHES.AUXRAMREAD.isSet
+  const auxWrite = auxCardEnabled && SWITCHES.AUXRAMWRITE.isSet
+  const auxPage2 = auxCardEnabled && SWITCHES.PAGE2.isSet
+  const auxTextPageRead = (auxCardEnabled && SWITCHES.STORE80.isSet) ? auxPage2 : auxRead
+  const auxTextPageWrite = (auxCardEnabled && SWITCHES.STORE80.isSet) ? auxPage2 : auxWrite
+  const auxHgrPageRead = (auxCardEnabled && SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? auxPage2 : auxRead
+  const auxHgrPageWrite = (auxCardEnabled && SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? auxPage2 : auxWrite
   for (let i = 2; i < 256; i++) {
-    addressGetTable[i] = i + offsetAuxRead
-    addressSetTable[i] = i + offsetAuxWrite
+    addressGetTable[i] = auxRead ? auxGetPage(i) : i
+    addressSetTable[i] = auxWrite ? auxSetPage(i) : i
   }
   for (let i = 4; i <= 7; i++) {
-    addressGetTable[i] = i + offsetTextPageRead
-    addressSetTable[i] = i + offsetTextPageWrite
+    addressGetTable[i] = auxTextPageRead ? auxGetPage(i) : i
+    addressSetTable[i] = auxTextPageWrite ? auxSetPage(i) : i
   }
   for (let i = 0x20; i <= 0x3F; i++) {
-    addressGetTable[i] = i + offsetHgrPageRead
-    addressSetTable[i] = i + offsetHgrPageWrite
+    addressGetTable[i] = auxHgrPageRead ? auxGetPage(i) : i
+    addressSetTable[i] = auxHgrPageWrite ? auxSetPage(i) : i
   }
 }
 
@@ -210,19 +226,19 @@ const updateReadBankSwitchedRamTable = () => {
   // if (SWITCHES.ALTZP.isSet) {  // DEBUG
   //   console.log(`RamWorksPage: ${toHex(RamWorksPage)}, RamWorksBankGet(): ${RamWorksBankGet()}`)
   // }
-  const offsetZP = (auxCardEnabled && SWITCHES.ALTZP.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  addressGetTable[0] = offsetZP
-  addressGetTable[1] = 1 + offsetZP
-  addressSetTable[0] = offsetZP
-  addressSetTable[1] = 1 + offsetZP
+  const altZP = auxCardEnabled && SWITCHES.ALTZP.isSet
+  addressGetTable[0] = altZP ? auxGetPage(0) : 0
+  addressGetTable[1] = altZP ? auxGetPage(1) : 1
+  addressSetTable[0] = altZP ? auxSetPage(0) : 0
+  addressSetTable[1] = altZP ? auxSetPage(1) : 1
   if (SWITCHES.BSRREADRAM.isSet) {
     for (let i = 0xD0; i <= 0xFF; i++) {
-      addressGetTable[i] = i + offsetZP
+      addressGetTable[i] = altZP ? auxGetPage(i) : i
     }
     if (!SWITCHES.BSRBANK2.isSet) {
       // Bank1 of $D000-$DFFF is actually in 0xC0...0xCF
       for (let i = 0xD0; i <= 0xDF; i++) {
-        addressGetTable[i] = i - 0x10 + offsetZP
+        addressGetTable[i] = altZP ? auxGetPage(i - 0x10) : i - 0x10
       }
     }
   } else {
@@ -234,7 +250,7 @@ const updateReadBankSwitchedRamTable = () => {
 }
 
 const updateWriteBankSwitchedRamTable = () => {
-  const offsetZP = (auxCardEnabled && SWITCHES.ALTZP.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const altZP = auxCardEnabled && SWITCHES.ALTZP.isSet
   const writeRAM = SWITCHES.BSR_WRITE.isSet
   // Start out with Slot ROM and regular ROM as not writeable
   for (let i = 0xC0; i <= 0xFF; i++) {
@@ -242,12 +258,12 @@ const updateWriteBankSwitchedRamTable = () => {
   }
   if (writeRAM) {
     for (let i = 0xD0; i <= 0xFF; i++) {
-      addressSetTable[i] = i + offsetZP
+      addressSetTable[i] = altZP ? auxSetPage(i) : i
     }
     if (!SWITCHES.BSRBANK2.isSet) {
       // Bank1 of $D000-$DFFF is actually in 0xC0...0xCF
       for (let i = 0xD0; i <= 0xDF; i++) {
-        addressSetTable[i] = i - 0x10 + offsetZP
+        addressSetTable[i] = altZP ? auxSetPage(i - 0x10) : i - 0x10
       }
     }
   }
@@ -622,9 +638,8 @@ const memSetSoftSwitch = (addr: number, value: number) => {
   // these are write-only soft switches that don't work like the others, since
   // we need the full byte of data being written
   if (addr === 0xC071 || addr === 0xC073) {
-    // Out of range bank index?
-    if (value > RamWorksMaxBank) return
-    // The 0th bank is also AUX memory
+    // The 0th bank is also AUX memory. A bank past the installed memory is
+    // latched too, and selects no RAM (see auxGetPage).
     RamWorksBankSet(value)
   } else if (addr >= 0xC090) {
     checkSlotIO(addr, value)
