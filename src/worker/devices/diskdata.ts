@@ -4,6 +4,7 @@ import { toHex, DRIVE } from "../../common/utility"
 import { getCurrentDriveData, getCurrentDriveState, passDriveData, setCurrentDrive } from "./drivestate"
 import { setSlotDriver, setSlotIOCallback } from "../memory"
 import { disk2driver } from "../roms/slot_disk2_cx00"
+import { registerSlotCardState } from "./slot_card_state"
 
 let motorOffTimeout: NodeJS.Timeout | number = 0
 let dataRegister = 0
@@ -465,8 +466,63 @@ export const handleDriveSoftSwitches: AddressCallback =
   return result
 }
 
+// The controller's own state, which the drive states leave out. Without it, a state
+// saved while the disk turns loads into a machine that reads different bits.
+type Disk2SaveState = {
+  dataRegister: number,
+  dataRegHold: boolean,
+  cycleRemainder: number,
+  prevCycleCount: number,
+  MOTOR_RUNNING: boolean,
+  DATA_LATCH: boolean,
+  fullRevolutionCount: number,
+  randPos: number,
+  headWindow: number,
+  motorOffPending: boolean,
+}
+
+const getDisk2SaveState = (): Disk2SaveState => ({
+  dataRegister,
+  dataRegHold,
+  cycleRemainder,
+  prevCycleCount,
+  MOTOR_RUNNING,
+  DATA_LATCH,
+  fullRevolutionCount,
+  randPos,
+  headWindow,
+  motorOffPending: motorOffTimeout !== 0,
+})
+
+const restoreDisk2SaveState = (state: Disk2SaveState) => {
+  dataRegister = state.dataRegister
+  dataRegHold = state.dataRegHold
+  cycleRemainder = state.cycleRemainder
+  prevCycleCount = state.prevCycleCount
+  MOTOR_RUNNING = state.MOTOR_RUNNING
+  DATA_LATCH = state.DATA_LATCH
+  fullRevolutionCount = state.fullRevolutionCount
+  randPos = state.randPos
+  headWindow = state.headWindow
+  if (motorOffTimeout) {
+    clearTimeout(motorOffTimeout)
+    motorOffTimeout = 0
+  }
+  if (state.motorOffPending) {
+    // The motor was spinning down when the state was saved. The drive states are
+    // restored after the cards, so look up the current drive when the timer fires.
+    motorOffTimeout = setTimeout(() => doMotorTimeout(getCurrentDriveState()), 1000)
+  }
+}
+
 export const enableDiskDrive = () => {
   setSlotDriver(6, Uint8Array.from(disk2driver))
   setSlotIOCallback(6, handleDriveSoftSwitches)
+  registerSlotCardState(
+    6,
+    "disk2",
+    getDisk2SaveState,
+    state => restoreDisk2SaveState(state as Disk2SaveState),
+  )
 }
 
