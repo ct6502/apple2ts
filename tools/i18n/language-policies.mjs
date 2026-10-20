@@ -9,19 +9,20 @@ export const catalogIdentityAliases = {
 // and locale-specific behavior that cannot be inferred safely from a locale ID.
 export const languagePolicies = {
   en: {name: "English", flag: "🇺🇸", order: 0},
-  "zh-TW": {name: "繁體中文", flag: "🇹🇼", order: 1},
-  "zh-CN": {name: "简体中文", flag: "🇨🇳", order: 2},
-  es: {name: "Español", flag: "🇪🇸", order: 3},
-  de: {name: "Deutsch", flag: "🇩🇪", order: 4},
-  fr: {name: "Français", flag: "🇫🇷", order: 5},
-  it: {name: "Italiano", flag: "🇮🇹", order: 6},
-  "pt-BR": {name: "Português (Brasil)", flag: "🇧🇷", order: 7},
-  ja: {name: "日本語", flag: "🇯🇵", order: 8},
-  ko: {name: "한국어", flag: "🇰🇷", order: 9},
-  nl: {name: "Nederlands", flag: "🇳🇱", order: 10},
-  sv: {name: "Svenska", flag: "🇸🇪", order: 11},
-  ru: {name: "Русский", flag: "🇷🇺", order: 12},
-  "en-x-pirate": {name: "Pirate", flag: "🏴‍☠️", order: 13},
+  ar: {name: "العربية", flag: "", order: 1},
+  "zh-TW": {name: "繁體中文", flag: "🇹🇼", order: 2},
+  "zh-CN": {name: "简体中文", flag: "🇨🇳", order: 3},
+  es: {name: "Español", flag: "🇪🇸", order: 4},
+  de: {name: "Deutsch", flag: "🇩🇪", order: 5},
+  fr: {name: "Français", flag: "🇫🇷", order: 6},
+  it: {name: "Italiano", flag: "🇮🇹", order: 7},
+  "pt-BR": {name: "Português (Brasil)", flag: "🇧🇷", order: 8},
+  ja: {name: "日本語", flag: "🇯🇵", order: 9},
+  ko: {name: "한국어", flag: "🇰🇷", order: 10},
+  nl: {name: "Nederlands", flag: "🇳🇱", order: 11},
+  sv: {name: "Svenska", flag: "🇸🇪", order: 12},
+  ru: {name: "Русский", flag: "🇷🇺", order: 13},
+  "en-x-pirate": {name: "Pirate", flag: "🏴‍☠️", order: 14},
 }
 
 export const legacyLanguageAliases = {
