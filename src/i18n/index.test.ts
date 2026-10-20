@@ -97,7 +97,7 @@ describe("Portuguese language identity", () => {
 describe("generated language registry", () => {
   test("preserves the established language menu order when catalogs are added", () => {
     const establishedLanguages = [
-      "en", "zh-TW", "zh-CN", "es", "de", "fr", "it",
+      "en", "ar", "zh-TW", "zh-CN", "es", "de", "fr", "it",
       "pt-BR", "ja", "ko", "nl", "sv", "ru", "en-x-pirate",
     ]
 
