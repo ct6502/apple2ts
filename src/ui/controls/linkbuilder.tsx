@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faLink, faXmark, faClipboard } from "@fortawesome/free-solid-svg-icons"
+import { faLink, faXmark, faClipboard, faPlus, faMinus } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../panels/editfield"
 import { Droplist } from "../panels/droplist"
 import { diskImages } from "../devices/disk/diskimages"
@@ -94,6 +94,39 @@ const LinkBuilder = () => {
   const [s2d1Url, setS2d1Url] = useState("")
   const [s4d1Disk, setS4d1Disk] = useState("")
   const [s4d1Url, setS4d1Url] = useState("")
+  const [extraDriveUrls, setExtraDriveUrls] = useState<Record<string, string[]>>({
+    s6d1: [],
+    s6d2: [],
+    s7d1: [],
+    s7d2: [],
+    s2d1: [],
+    s4d1: [],
+  })
+
+  const addExtraDriveUrl = (driveKey: string) => {
+    setExtraDriveUrls(prev => ({
+      ...prev,
+      [driveKey]: [...(prev[driveKey] || []), ""],
+    }))
+  }
+
+  const removeExtraDriveUrl = (driveKey: string, index: number) => {
+    setExtraDriveUrls(prev => ({
+      ...prev,
+      [driveKey]: (prev[driveKey] || []).filter((_, i) => i !== index),
+    }))
+  }
+
+  const updateExtraDriveUrl = (driveKey: string, index: number, value: string) => {
+    setExtraDriveUrls(prev => {
+      const list = [...(prev[driveKey] || [])]
+      list[index] = value
+      return {
+        ...prev,
+        [driveKey]: list,
+      }
+    })
+  }
   const [ghosting, setGhosting] = useState(false)
   const [hexAddress, setHexAddress] = useState("")
   const [textBlock, setTextBlock] = useState("")
@@ -260,12 +293,25 @@ const LinkBuilder = () => {
 
       for (const drive of drives) {
         if (!drive.enabled) continue
+        const extras = (extraDriveUrls[drive.key] || []).map(u => u.trim()).filter(Boolean)
         if (drive.disk === customUrlOption) {
-          if (drive.url.trim() !== "") {
-            params.push(`${drive.key}=${encodeURIComponent(drive.url.trim())}`)
+          const mainUrl = drive.url.trim()
+          if (mainUrl !== "") {
+            if (extras.length > 0) {
+              const swapperParam = `{${[mainUrl, ...extras].join(",")}}`
+              params.push(`${drive.key}=${encodeURIComponent(swapperParam)}`)
+            } else {
+              params.push(`${drive.key}=${encodeURIComponent(mainUrl)}`)
+            }
           }
         } else if (drive.disk && drive.disk !== noneOption) {
-          params.push(`${drive.key}=${encodeURIComponent(drive.disk.replace(/\s+/g, ""))}`)
+          const baseName = drive.disk.replace(/\s+/g, "")
+          if (extras.length > 0) {
+            const swapperParam = `{${[baseName, ...extras].join(",")}}`
+            params.push(`${drive.key}=${encodeURIComponent(swapperParam)}`)
+          } else {
+            params.push(`${drive.key}=${encodeURIComponent(baseName)}`)
+          }
         }
       }
     }
@@ -275,14 +321,17 @@ const LinkBuilder = () => {
     }
 
     if (tabSection === TAB.DISK) {
-      if (isCustomURL) {
-        if (fragmentURL) {
-          link += `#${fragmentURL}`
-        }
-      } else if (selectedDisk) {
-        const disk = allDisks.find(d => d.title === selectedDisk)
-        if (disk) {
-          link += `#${selectedDisk.replace(/\s+/g, "")}`
+      const hasExplicitBootDrive = params.some(p => p.startsWith("s6d1=") || p.startsWith("s7d1="))
+      if (!hasExplicitBootDrive) {
+        if (isCustomURL) {
+          if (fragmentURL) {
+            link += `#${fragmentURL}`
+          }
+        } else if (selectedDisk) {
+          const disk = allDisks.find(d => d.title === selectedDisk)
+          if (disk) {
+            link += `#${selectedDisk.replace(/\s+/g, "")}`
+          }
         }
       }
     }
@@ -539,6 +588,74 @@ const LinkBuilder = () => {
     </div>
     </>
 
+  const renderDriveCustomUrlInputs = (
+    driveKey: string,
+    primaryUrl: string,
+    setPrimaryUrl: (val: string) => void,
+    placeholder: string
+  ) => {
+    const extras = extraDriveUrls[driveKey] || []
+    return (
+      <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "6px" }}>
+        {/* Primary custom URL row */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div style={{ flex: 1 }}>
+            <EditField
+              value={primaryUrl}
+              setValue={setPrimaryUrl}
+              placeholder={placeholder}
+            />
+          </div>
+          <button
+            type="button"
+            className="default-button"
+            style={{ minWidth: "28px", padding: "4px 8px" }}
+            title={t("linkBuilder.addAdditionalDisk")}
+            onClick={() => addExtraDriveUrl(driveKey)}>
+            <FontAwesomeIcon icon={faPlus} />
+          </button>
+        </div>
+
+        {/* Extra disk rows */}
+        {extras.map((extraVal, idx) => (
+          <div
+            key={idx}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              marginTop: "4px",
+              paddingLeft: "16px",
+            }}>
+            <div style={{ flex: 1 }}>
+              <EditField
+                value={extraVal}
+                setValue={(val) => updateExtraDriveUrl(driveKey, idx, val)}
+                placeholder={t("linkBuilder.diskPlaceholder", { num: String(idx + 2) })}
+              />
+            </div>
+            <button
+              type="button"
+              className="default-button"
+              style={{ minWidth: "28px", padding: "4px 8px" }}
+              title={t("linkBuilder.removeDisk")}
+              onClick={() => removeExtraDriveUrl(driveKey, idx)}>
+              <FontAwesomeIcon icon={faMinus} />
+            </button>
+            <button
+              type="button"
+              className="default-button"
+              style={{ minWidth: "28px", padding: "4px 8px" }}
+              title={t("linkBuilder.addAnotherDisk")}
+              onClick={() => addExtraDriveUrl(driveKey)}>
+              <FontAwesomeIcon icon={faPlus} />
+            </button>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   const loadDiskImageOptions =
     <div className="flex-column">
       <Droplist name={t("linkBuilder.diskImageToLoad")}
@@ -554,100 +671,58 @@ const LinkBuilder = () => {
           placeholder="http://example.com/disk.dsk" />
       </div>
       <div className="dialog-title" style={{ marginTop: "12px", marginBottom: "4px" }}>
-        Additional Disk Drives
+        {t("linkBuilder.additionalDiskDrives")}
       </div>
       {slotConfig[6] === "disk2" && (
         <>
           <Droplist
-            name="Slot 6 Drive 1 (Floppy 1)"
+            name={t("linkBuilder.slot6Drive1")}
             value={s6d1Disk || noneOption}
             values={diskOptionsWithNone}
             setValue={setS6d1Disk} />
-          {s6d1Disk === customUrlOption && (
-            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-              <EditField
-                value={s6d1Url}
-                setValue={setS6d1Url}
-                placeholder="http://example.com/floppy1.dsk" />
-            </div>
-          )}
+          {s6d1Disk === customUrlOption && renderDriveCustomUrlInputs("s6d1", s6d1Url, setS6d1Url, "http://example.com/floppy1.dsk")}
           <Droplist
-            name="Slot 6 Drive 2 (Floppy 2)"
+            name={t("linkBuilder.slot6Drive2")}
             value={s6d2Disk || noneOption}
             values={diskOptionsWithNone}
             setValue={setS6d2Disk} />
-          {s6d2Disk === customUrlOption && (
-            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-              <EditField
-                value={s6d2Url}
-                setValue={setS6d2Url}
-                placeholder="http://example.com/floppy2.dsk" />
-            </div>
-          )}
+          {s6d2Disk === customUrlOption && renderDriveCustomUrlInputs("s6d2", s6d2Url, setS6d2Url, "http://example.com/floppy2.dsk")}
         </>
       )}
       {slotConfig[7] === "smartport" && (
         <>
           <Droplist
-            name="Slot 7 Drive 1 (Hard Drive 1)"
+            name={t("linkBuilder.slot7Drive1")}
             value={s7d1Disk || noneOption}
             values={diskOptionsWithNone}
             setValue={setS7d1Disk} />
-          {s7d1Disk === customUrlOption && (
-            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-              <EditField
-                value={s7d1Url}
-                setValue={setS7d1Url}
-                placeholder="http://example.com/hd1.hdv" />
-            </div>
-          )}
+          {s7d1Disk === customUrlOption && renderDriveCustomUrlInputs("s7d1", s7d1Url, setS7d1Url, "http://example.com/hd1.hdv")}
           <Droplist
-            name="Slot 7 Drive 2 (Hard Drive 2)"
+            name={t("linkBuilder.slot7Drive2")}
             value={s7d2Disk || noneOption}
             values={diskOptionsWithNone}
             setValue={setS7d2Disk} />
-          {s7d2Disk === customUrlOption && (
-            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-              <EditField
-                value={s7d2Url}
-                setValue={setS7d2Url}
-                placeholder="http://example.com/hd2.hdv" />
-            </div>
-          )}
+          {s7d2Disk === customUrlOption && renderDriveCustomUrlInputs("s7d2", s7d2Url, setS7d2Url, "http://example.com/hd2.hdv")}
         </>
       )}
       {slotConfig[2] === "vera" && (
         <div>
           <Droplist
-            name="Slot 2 Drive 1 (VERA SD)"
+            name={t("linkBuilder.slot2Drive1")}
             value={s2d1Disk || noneOption}
             values={diskOptionsWithNone}
             setValue={setS2d1Disk} />
-          {s2d1Disk === customUrlOption && (
-            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-              <EditField
-                value={s2d1Url}
-                setValue={setS2d1Url}
-                placeholder="http://example.com/sd.img" />
-            </div>
-          )}
+          {s2d1Disk === customUrlOption && renderDriveCustomUrlInputs("s2d1", s2d1Url, setS2d1Url, "http://example.com/sd.img")}
         </div>
       )}
       {slotConfig[4] === "vera" && (
         <div>
           <Droplist
-            name="Slot 4 Drive 1 (VERA SD)"
+            name={t("linkBuilder.slot4Drive1")}
             value={s4d1Disk || noneOption}
             values={diskOptionsWithNone}
             setValue={setS4d1Disk} />
-          {s4d1Disk === customUrlOption && (
-            <div style={{ marginLeft: "10px", marginRight: "10px", marginBottom: "4px" }}>
-              <EditField
-                value={s4d1Url}
-                setValue={setS4d1Url}
-                placeholder="http://example.com/sd.img" />
-            </div>
-          )}
+          {s4d1Disk === customUrlOption && renderDriveCustomUrlInputs("s4d1", s4d1Url, setS4d1Url, "http://example.com/sd.img")}
         </div>
       )}
       <EditField name={t("linkBuilder.textToType")}

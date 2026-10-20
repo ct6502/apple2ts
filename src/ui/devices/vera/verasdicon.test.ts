@@ -1,5 +1,11 @@
 import * as fflate from "fflate"
-import { handleSetVeraSdFromURL } from "./verasdicon"
+import {
+  handleSetVeraSdFromURL,
+  getStandbyVeraDisks,
+  getStandbyVeraActiveIndex,
+  swapVeraStandbyDisk,
+  ejectVeraSd,
+} from "./verasdicon"
 import { handleSetVeraSdImage } from "../../main2worker"
 
 if (typeof globalThis.TextDecoder === "undefined") {
@@ -13,10 +19,12 @@ jest.mock("../disk/driveprops", () => ({
   findMatchingDiskImage: jest.fn(() => ({ diskUrl: null })),
   handleSetDiskOrFileFromBuffer: jest.fn(),
   fetchWithCorsProxy: jest.fn(),
+  setStandbyDisks: jest.fn(),
 }))
 
 jest.mock("../../main2worker", () => ({
   handleSetVeraSdImage: jest.fn(),
+  handleGetVeraSdStatus: jest.fn(() => ({ attached: true, hasChanges: false, name: "disk1.img" })),
   getPreferenceSlotConfig: jest.fn(() => ({ 2: "vera" })),
   handleGetSlotConfig: jest.fn(() => ({ 2: "vera" })),
 }))
@@ -121,5 +129,80 @@ describe("handleSetVeraSdFromURL", () => {
     const calledData = (handleSetVeraSdImage as jest.Mock).mock.calls[0][0]
     expect(calledData.length).toBe(2048)
     expect(calledData[0]).toBe(0x88)
+  })
+
+  test("loads multiple disk URLs via '|' separator, populates standby list, and allows swapping", async () => {
+    const disk1 = new Uint8Array([0x11, 0x22])
+    const disk2 = new Uint8Array([0x33, 0x44])
+
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes("disk1.img")) {
+        return Promise.resolve({
+          ok: true,
+          arrayBuffer: async () => disk1.buffer,
+        })
+      }
+      if (url.includes("disk2.img")) {
+        return Promise.resolve({
+          ok: true,
+          arrayBuffer: async () => disk2.buffer,
+        })
+      }
+      return Promise.reject(new Error("not found"))
+    }) as unknown as typeof fetch
+
+    const success = await handleSetVeraSdFromURL(
+      "{https://example.com/disk1.img|Disk 1, disk2.img|Disk 2}"
+    )
+    expect(success).toBe(true)
+
+    const standby = getStandbyVeraDisks()
+    expect(standby.length).toBe(2)
+    expect(standby[0].filename).toBe("disk1.img")
+    expect(standby[0].comment).toBe("Disk 1")
+    expect(standby[1].filename).toBe("disk2.img")
+    expect(standby[1].comment).toBe("Disk 2")
+    expect(getStandbyVeraActiveIndex()).toBe(0)
+
+    // Initial loaded image is disk 1
+    expect(handleSetVeraSdImage).toHaveBeenCalledWith(disk1, "disk1.img")
+
+    // Swap to disk 2
+    await swapVeraStandbyDisk(1)
+    expect(getStandbyVeraActiveIndex()).toBe(1)
+    expect(handleSetVeraSdImage).toHaveBeenLastCalledWith(disk2, "disk2.img")
+
+    // Eject clears standby list
+    ejectVeraSd()
+    expect(getStandbyVeraDisks()).toEqual([])
+    expect(getStandbyVeraActiveIndex()).toBe(0)
+  })
+
+  test("loads archive containing multiple disk images and populates standby list", async () => {
+    const d1 = new Uint8Array([0xAA, 0x11])
+    const d2 = new Uint8Array([0xBB, 0x22])
+
+    const zipBytes = fflate.zipSync({
+      "game_disk2.img": d2,
+      "game_disk1.img": d1,
+    })
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => zipBytes.buffer,
+    }) as unknown as typeof fetch
+
+    const success = await handleSetVeraSdFromURL("https://example.com/twodiskgame.zip")
+    expect(success).toBe(true)
+
+    const standby = getStandbyVeraDisks()
+    expect(standby.length).toBe(2)
+    // Sorted naturally
+    expect(standby[0].filename).toBe("game_disk1.img")
+    expect(standby[1].filename).toBe("game_disk2.img")
+    expect(getStandbyVeraActiveIndex()).toBe(0)
+    expect(handleSetVeraSdImage).toHaveBeenCalledWith(d1, "game_disk1.img")
+
+    ejectVeraSd()
   })
 })

@@ -86,8 +86,9 @@ export const decodeDiskData = (
   driveState.diskHasChanges = false
   errorMsg = null
   const fname = driveState.filename.toLowerCase()
+  const isWoz = diskData.length >= 4 && diskData[0] === 0x57 && diskData[1] === 0x4F && diskData[2] === 0x5A
   if (diskData.length > 10000) {
-    if (isHardDriveImage(fname, diskData?.length)) {
+    if (!isWoz && isHardDriveImage(fname, diskData?.length)) {
       if (enforceDriveKind && !driveState.hardDrive) {
         return new Uint8Array()
       }
@@ -96,7 +97,7 @@ export const decodeDiskData = (
       return diskData
     }
     if (enforceDriveKind && driveState.hardDrive &&
-      (fname.endsWith(".woz") || fname.endsWith(".dsk") || fname.endsWith(".do") || fname.endsWith(".po"))) {
+      (isWoz || fname.endsWith(".woz") || fname.endsWith(".dsk") || fname.endsWith(".do") || fname.endsWith(".po"))) {
       return new Uint8Array()
     }
     // We might have a DSK file that has already been renamed as a WOZ

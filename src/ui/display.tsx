@@ -47,7 +47,7 @@ const DisplayApple2 = () => {
   const [ctrlKeyMode, setCtrlKeyMode] = useState(0)
   const [openAppleKeyMode, setOpenAppleKeyMode] = useState(0)
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
-  const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
+  const [showFileOpenDialog, setShowFileOpenDialog] = useState<{ show: boolean; index: number; append?: boolean }>({ show: false, index: 0, append: false })
   const [worker, setWorker] = useState<Worker | null>(null)
 
   // We need to create our worker here so it has access to our properties
@@ -176,8 +176,8 @@ const DisplayApple2 = () => {
     setClosedAppleKeyMode(newMode)
   }
 
-  const handleShowFileOpenDialog = (show: boolean, index: number) => {
-    setShowFileOpenDialog({ show, index })
+  const handleShowFileOpenDialog = (show: boolean, index: number, append = false) => {
+    setShowFileOpenDialog({ show, index, append })
   }
 
   const props: DisplayProps = {

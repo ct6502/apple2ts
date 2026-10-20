@@ -30,6 +30,37 @@ Single-instance cards automatically handle slot exclusivity, and UI peripheral b
 
 ---
 
+## Disk Drives & Multi-Disk Swapping
+
+Apple2TS provides full emulation for 5.25" floppy drives, SmartPort 3.5" hard drives, and VERA SD storage, featuring advanced container support and multi-disk swapping:
+
+### Supported Disk Formats & Compressed Containers
+- **Disk Images**: `.woz` (WOZ 1.0 and 2.0 bitstream images with accurate bit timing, write-back, and automatic CRC32 recalculation), `.2mg`, `.dsk`, `.do`, `.po`, `.hdv`, `.bin`, and `.bas`.
+- **Archive Containers**: `.zip`, `.7z` (powered by WebAssembly SevenZip), and `.gz` (gzip).
+- **Auto-Mounting Multi-Disk Archives**: Dropping or loading a `.zip`, `.7z`, or `.gz` containing multiple disk images automatically extracts and mounts all discovered disks into the drive's swapper playlist, immediately booting the first disk.
+
+### Multi-Disk Swapper
+- **Drives Supported**: Floppy Drive 1 & 2 (Slot 6), Hard Drive 1 & 2 (Slot 7), and VERA SD Card 1 (Slot 2 & Slot 4).
+- **Visual Badge Indicator**: When a drive holds multiple disks, a multi-disk badge icon (layered disks) appears at the lower-right of the drive button.
+- **Interactive Swapping**:
+  - **Click on Badge**: Directly opens the quick-swap popup menu listing all mounted standby disks for instant selection.
+  - **Drive Menu**: Under the drive's main dropdown menu, access the "Standby Disks" submenu to select disks, "Load Additional Disk(s)..." to append disks to the active drive, or "Eject All Disks" / "Save All Disks".
+- **Write-Back & Dirty Disks**:
+  - Modified disks are visually indicated in red with an asterisk (`*`).
+  - Saving or downloading modified floppy disks saves back to `.woz` format with freshly updated CRC32 checksums, preserving all track/sector modifications for real hardware and other emulators.
+
+### URL Parameters & Link Builder
+- **Multi-Disk Hashes**: Load multiple disks via comma-separated hash: `#disk1.woz,disk2.woz` or `#https://example.com/sideA.woz,https://example.com/sideB.woz`.
+- **Custom Disk Labels & Comments**: Append an optional display title separated by a pipe (`|`) to any disk entry (e.g., `#sideA.woz|Boot Disk,sideB.woz|Scenario Disk` or `&s6d1_1=save.dsk|Player Roster`). The custom title is displayed on the drive status and inside the quick-swap popup menu.
+- **Per-Drive URL Parameters**:
+  - Floppy: `&s6d1=...`, `&s6d2=...` (or `&disk=...`, `&disk2=...`).
+  - Hard Drive: `&s7d1=...`, `&s7d2=...` (or `&harddrive=...`, `&harddrive2=...`).
+  - VERA SD: `&s2d1=...`, `&s4d1=...`.
+  - Multi-Disk Extra Slots: `&s6d1_1=...`, `&s6d1_2=...`, `&s6d2_1=...`, `&s7d1_1=...`, `&s2d1_1=...`, etc.
+- **Link Builder UI**: Click the **Link** icon in the toolbar to visually configure slot options, color modes, and multi-disk sets using the expandable `+` / `-` disk inputs.
+
+---
+
 ## AI Agent Integration
 
 **[AI Agent Integration Guide](src/ui/mcp/README.md)**
@@ -177,6 +208,12 @@ Apple2TS uses its built-in software synthesizer by default. Selecting **Enable E
     ```
 1. Confirm that the disk label briefly turns red with an asterisk. After a second or less, the label turns white again, with no asterisk.
 1. Refresh browser, click on hard drive 1, choose _Load Disk from Device (Read/Write)_, choose your `Test.po`. After disk boots, verify that your `TEST` file is at the bottom of the file list.
+1. Multi-disk and archive testing:
+    - Drag or load a multi-disk `.zip`, `.7z`, or `.gz` archive into floppy drive 1.
+    - Verify that all disk images in the archive are loaded into the swapper list, the drive displays the multi-disk badge icon, and the first disk boots.
+    - Click the drive badge to open the quick-swap popup menu and select any standby disk.
+    - Select _Load Additional Disk(s)..._ to append another disk image to the active drive.
+    - Make modifications on a disk so the label turns red with an asterisk (`*`), then choose _Download WOZ (write-back)_. Confirm that downloading the modified disk updates its CRC32 checksums and reloads without CRC errors.
 
 #### Updating the 4cade export catalog
 
@@ -310,7 +347,7 @@ Lawrence Sanchez (boredsenseless) — Built and maintains the disk collection/la
 
 Mike Morrison (code-bythepound) — Hardware card emulation including the VERA display adapter, SuperSerial card and ImageWriter, and MIDI support.
 
-anomixer — Full internationalization (i18n) with 13 languages, improved joystick/numpad input handling, and integrated Ollama and Google Gemini AI providers.
+anomixer — Dynamic slot manager and expansion cards (CP/M SoftCard, VidHD, Videx, RamWorks III), multi-disk mounting/swapping and archive container support (.zip, .7z, .gz), VERA optimizations, SD card interface, and software releases, full i18n with 13 languages, DemoZoo integration, and Ollama/Gemini AI agents.
 
 Dongsu Jang — Implemented a CLI/server interface with REST APIs.
 

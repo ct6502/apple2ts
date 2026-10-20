@@ -1206,7 +1206,7 @@ msgstr "디스크 다운로드"
 
 msgctxt "disk.downloadWoz"
 msgid "Download WOZ Disk Image"
-msgstr ""
+msgstr "WOZ 디스크 이미지 다운로드"
 
 #, fuzzy
 msgctxt "disk.downloadAndEjectDisk"
@@ -1217,6 +1217,10 @@ msgstr "디스크 다운로드 및 꼼내기"
 msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
 msgstr "디스크 꼼내기"
+
+msgctxt "disk.ejectAllDisks"
+msgid "Eject All Disks"
+msgstr "모든 디스크 꺼내기"
 
 #, fuzzy
 msgctxt "disk.saveDiskToOneDrive"
@@ -1233,6 +1237,10 @@ msgstr "Google Drive에 디스크 저장"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
 msgstr "디스크 로드"
+
+msgctxt "disk.loadAdditionalDisks"
+msgid "Load Additional Disk(s)..."
+msgstr "추가 디스크 로드..."
 
 msgctxt "disk.loadDiskFrom"
 msgid "Load Disk from"
@@ -1294,7 +1302,7 @@ msgstr "Google Drive에서 디스크 로드"
 
 msgctxt "disk.insertBlankDisk"
 msgid "Insert Blank Disk"
-msgstr ""
+msgstr "빈 디스크 삽입"
 
 #, fuzzy
 msgctxt "disk.syncEveryMinute"
@@ -1411,6 +1419,14 @@ msgstr ""
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr "디스크 이미지:"
+
+msgctxt "help.diskContainers"
+msgid "Compressed archives:"
+msgstr "압축 아카이브:"
+
+msgctxt "help.multiDiskNotice"
+msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "다중 디스크 교체: 드라이브의 멀티 디스크 배지를 클릭하거나 마우스 오른쪽 버튼을 클릭하여 디스크를 전환합니다. 다중 디스크 아카이브(.zip, .7z, .gz)는 모든 디스크를 교체 목록에 자동으로 마운트합니다."
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -2351,7 +2367,7 @@ msgstr ""
 
 msgctxt "linkBuilder.startupOptionsTab"
 msgid "Startup Options"
-msgstr ""
+msgstr "시작 옵션"
 
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
@@ -3586,3 +3602,51 @@ msgstr ""
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
 msgstr ""
+
+msgctxt "disk.standbyDisks"
+msgid "Standby Disks (Click to change disk)"
+msgstr "대기 디스크 (클릭하여 디스크 변경)"
+
+msgctxt "linkBuilder.additionalDiskDrives"
+msgid "Additional Disk Drives"
+msgstr "추가 디스크 드라이브"
+
+msgctxt "linkBuilder.slot6Drive1"
+msgid "Slot 6 Drive 1 (Floppy 1)"
+msgstr "슬롯 6 드라이브 1 (플로피 1)"
+
+msgctxt "linkBuilder.slot6Drive2"
+msgid "Slot 6 Drive 2 (Floppy 2)"
+msgstr "슬롯 6 드라이브 2 (플로피 2)"
+
+msgctxt "linkBuilder.slot7Drive1"
+msgid "Slot 7 Drive 1 (Hard Drive 1)"
+msgstr "슬롯 7 드라이브 1 (하드 드라이브 1)"
+
+msgctxt "linkBuilder.slot7Drive2"
+msgid "Slot 7 Drive 2 (Hard Drive 2)"
+msgstr "슬롯 7 드라이브 2 (하드 드라이브 2)"
+
+msgctxt "linkBuilder.slot2Drive1"
+msgid "Slot 2 Drive 1 (VERA SD)"
+msgstr "슬롯 2 드라이브 1 (VERA SD)"
+
+msgctxt "linkBuilder.slot4Drive1"
+msgid "Slot 4 Drive 1 (VERA SD)"
+msgstr "슬롯 4 드라이브 1 (VERA SD)"
+
+msgctxt "linkBuilder.addAdditionalDisk"
+msgid "Add additional disk for swapping"
+msgstr "교체할 추가 디스크 추가"
+
+msgctxt "linkBuilder.removeDisk"
+msgid "Remove this disk"
+msgstr "이 디스크 제거"
+
+msgctxt "linkBuilder.addAnotherDisk"
+msgid "Add another disk"
+msgstr "다른 디스크 추가"
+
+msgctxt "linkBuilder.diskPlaceholder"
+msgid "Disk {num} filename (e.g. sideB.woz|Scenario Disk)"
+msgstr "디스크 {num} 파일 이름 (예: sideB.woz|시나리오 디스크)"

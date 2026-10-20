@@ -1,7 +1,7 @@
-import { COLOR_MODE, MONITOR_MODE, RUN_MODE, UI_THEMES } from "../common/utility"
+import { COLOR_MODE, MONITOR_MODE, RUN_MODE, UI_THEMES, parseDiskSwapperParam } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetIsDebugging } from "./main2worker"
-import { setDefaultBinaryAddress, handleSetDiskFromURL, resetAllDiskDrives } from "./devices/disk/driveprops"
+import { setDefaultBinaryAddress, handleSetDiskFromURL, handleSetDiskSwapperFromURLs, resetAllDiskDrives } from "./devices/disk/driveprops"
 import { handleSetVeraSdFromURL } from "./devices/vera/verasdicon"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
 import { isOneDriveMsalAuthCallback } from "./devices/disk/onedrive_authredirect"
@@ -456,25 +456,39 @@ export const handleFragment = async (
     if (driveConfigs.length > 0) resetAllDiskDrives()
     let anyLoaded = false
     for (const config of driveConfigs) {
-      const success = await handleSetDiskFromURL(
-        config.url,
-        updateDisplay,
-        config.index,
-        undefined,
-        undefined,
-        undefined,
-        true, // preserveDriveIndex
-        false,
-        true, // noReset
-        true, // noBoot
-      )
+      const parsedUrls = parseDiskSwapperParam(config.url)
+      let success = false
+      if (parsedUrls.length > 1) {
+        success = await handleSetDiskSwapperFromURLs(
+          parsedUrls,
+          updateDisplay,
+          config.index,
+          true,
+          true,
+          true,
+        )
+      } else {
+        success = await handleSetDiskFromURL(
+          parsedUrls[0] || config.url,
+          updateDisplay,
+          config.index,
+          undefined,
+          undefined,
+          undefined,
+          true, // preserveDriveIndex
+          false,
+          true, // noReset
+          true, // noBoot
+        )
+      }
       if (success) anyLoaded = true
     }
     if (veraSdUrl) {
       const success = await handleSetVeraSdFromURL(veraSdUrl)
       if (success) anyLoaded = true
     }
-    if (fragment.length >= 2) {
+    const hasBootDriveInConfig = driveConfigs.some(c => c.index === 0 || c.index === 2)
+    if (fragment.length >= 2 && !hasBootDriveInConfig) {
       const cloudProvider = params.get("cloudProvider")
       const regex: RegExp = /access_token=([^&]+)/
       const matches = regex.exec(fragment)
@@ -493,7 +507,7 @@ export const handleFragment = async (
           undefined,
           undefined,
           undefined,
-          false,
+          true,
           false,
           true,
           true,

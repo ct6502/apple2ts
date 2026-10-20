@@ -2,7 +2,7 @@
 // https://github.com/mr-stivo/dsk2woz2
 //
 
-import { toASCII, uint32toBytes, uint16toBytes } from "./utility"
+import { toASCII, uint32toBytes, uint16toBytes, crc32 } from "./utility"
 
 /**
   Appends a byte to a woz at a supplied position: number, returning the
@@ -214,5 +214,7 @@ export const convertdsk2woz = (dskData: Uint8Array, isPO: boolean) => {
     offset = 1536 + c * 13 * 512
     woz.set(trackData, offset)
   }
+  const crc = crc32(woz, 12)
+  woz.set(uint32toBytes(crc), 8)
   return woz
 }

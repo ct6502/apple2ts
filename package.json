@@ -27,7 +27,7 @@
     "deploy": "gh-pages -d dist",
     "start": "vite --open",
     "host": "vite --open --host",
-    "build": "tsc && vite build",
+    "build": "node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc && vite build",
     "build:cloudflare": "npm run build && node tools/build-cloudflare-worker.mjs",
     "prelint": "npm run generate-i18n-catalogs",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",

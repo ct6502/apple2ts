@@ -468,20 +468,16 @@ body.dark-mode .dcp-tab-active {
 
 .dcp-item-multidisk-icon {
   position: relative;
+  display: block;
   width: auto;
   height: auto;
   color: #38bdf8;
+  font-size: 1.45em;
   z-index: 1;
 }
 
-.dcp-item-multidisk-icon-bg {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  left: 4px;
-  bottom: 2px;
-  background-color: black;
-  z-index: 0;
+.dcp-item-smallicon .dcp-item-multidisk-icon {
+  font-size: 1.15em;
 }
 
 .dcp-item-ia-icon {
@@ -589,6 +585,7 @@ body.dark-mode .dcp-tab-active {
 .dcp-item-new-icon,
 .dcp-item-a2ts-icon,
 .dcp-item-ia-icon,
+.dcp-item-multidisk-icon,
 .dcp-item-cloud-icon,
 .dcp-item-export-badge-icon,
 .dcp-item-report-icon {

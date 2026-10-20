@@ -1228,7 +1228,7 @@ msgstr "Disk herunterladen"
 
 msgctxt "disk.downloadWoz"
 msgid "Download WOZ Disk Image"
-msgstr ""
+msgstr "WOZ-Disk-Image herunterladen"
 
 #, fuzzy
 msgctxt "disk.downloadAndEjectDisk"
@@ -1239,6 +1239,10 @@ msgstr "Disk herunterladen und auswerfen"
 msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
 msgstr "Disk auswerfen"
+
+msgctxt "disk.ejectAllDisks"
+msgid "Eject All Disks"
+msgstr "Alle Disks auswerfen"
 
 #, fuzzy
 msgctxt "disk.saveDiskToOneDrive"
@@ -1255,6 +1259,10 @@ msgstr "Disk auf Google Drive speichern"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
 msgstr "Disk laden"
+
+msgctxt "disk.loadAdditionalDisks"
+msgid "Load Additional Disk(s)..."
+msgstr "Weitere Disk laden..."
 
 msgctxt "disk.loadDiskFrom"
 msgid "Load Disk from"
@@ -1316,7 +1324,7 @@ msgstr "Disk von Google Drive laden"
 
 msgctxt "disk.insertBlankDisk"
 msgid "Insert Blank Disk"
-msgstr ""
+msgstr "Leere Diskette einlegen"
 
 #, fuzzy
 msgctxt "disk.syncEveryMinute"
@@ -1432,6 +1440,14 @@ msgstr ""
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr "Disk-Images:"
+
+msgctxt "help.diskContainers"
+msgid "Compressed archives:"
+msgstr "Komprimierte Archive:"
+
+msgctxt "help.multiDiskNotice"
+msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "Mehrfach-Diskettenwechsel: Klicken Sie auf die Multi-Disk-Plakette oder klicken Sie mit der rechten Maustaste, um Disketten zu wechseln. Multi-Disk-Archive (.zip, .7z, .gz) werden automatisch in die Wechselliste geladen."
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -2381,7 +2397,7 @@ msgstr ""
 
 msgctxt "linkBuilder.startupOptionsTab"
 msgid "Startup Options"
-msgstr ""
+msgstr "Startoptionen"
 
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
@@ -3615,3 +3631,51 @@ msgstr ""
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
 msgstr ""
+
+msgctxt "disk.standbyDisks"
+msgid "Standby Disks (Click to change disk)"
+msgstr "Bereitstehende Disketten (Klicken zum Wechseln der Diskette)"
+
+msgctxt "linkBuilder.additionalDiskDrives"
+msgid "Additional Disk Drives"
+msgstr "Zusätzliche Diskettenlaufwerke"
+
+msgctxt "linkBuilder.slot6Drive1"
+msgid "Slot 6 Drive 1 (Floppy 1)"
+msgstr "Steckplatz 6 Laufwerk 1 (Diskette 1)"
+
+msgctxt "linkBuilder.slot6Drive2"
+msgid "Slot 6 Drive 2 (Floppy 2)"
+msgstr "Steckplatz 6 Laufwerk 2 (Diskette 2)"
+
+msgctxt "linkBuilder.slot7Drive1"
+msgid "Slot 7 Drive 1 (Hard Drive 1)"
+msgstr "Steckplatz 7 Laufwerk 1 (Festplatte 1)"
+
+msgctxt "linkBuilder.slot7Drive2"
+msgid "Slot 7 Drive 2 (Hard Drive 2)"
+msgstr "Steckplatz 7 Laufwerk 2 (Festplatte 2)"
+
+msgctxt "linkBuilder.slot2Drive1"
+msgid "Slot 2 Drive 1 (VERA SD)"
+msgstr "Steckplatz 2 Laufwerk 1 (VERA SD)"
+
+msgctxt "linkBuilder.slot4Drive1"
+msgid "Slot 4 Drive 1 (VERA SD)"
+msgstr "Steckplatz 4 Laufwerk 1 (VERA SD)"
+
+msgctxt "linkBuilder.addAdditionalDisk"
+msgid "Add additional disk for swapping"
+msgstr "Zusätzliche Diskette zum Wechseln hinzufügen"
+
+msgctxt "linkBuilder.removeDisk"
+msgid "Remove this disk"
+msgstr "Diese Diskette entfernen"
+
+msgctxt "linkBuilder.addAnotherDisk"
+msgid "Add another disk"
+msgstr "Weitere Diskette hinzufügen"
+
+msgctxt "linkBuilder.diskPlaceholder"
+msgid "Disk {num} filename (e.g. sideB.woz|Scenario Disk)"
+msgstr "Diskette {num} Dateiname (z. B. sideB.woz|Szenario-Diskette)"

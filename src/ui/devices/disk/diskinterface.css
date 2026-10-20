@@ -134,3 +134,30 @@ body.dark-mode .disk-cloud {
 body.dark-mode .disk-image {
   border-color: var(--text-color-dark);
 }
+
+.disk-multidisk-badge {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  color: #ffaa00;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.85));
+  transition: transform 0.15s ease, color 0.15s ease, filter 0.15s ease;
+}
+
+.disk-multidisk-badge:hover {
+  transform: scale(1.15);
+  color: #ffe033;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 1)) drop-shadow(0 0 3px rgba(255, 170, 0, 0.6));
+}
+
+.disk-image-small ~ .disk-multidisk-badge {
+  font-size: 14px;
+  bottom: 4px;
+  right: 5px;
+}

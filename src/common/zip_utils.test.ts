@@ -1,5 +1,5 @@
 import * as fflate from "fflate"
-import { unzipSingleFile, decompressSingleFile } from "./zip_utils"
+import { unzipSingleFile, decompressSingleFile, unzipAllDiskFiles, decompressAllDiskFiles } from "./zip_utils"
 
 if (typeof globalThis.TextDecoder === "undefined") {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -81,6 +81,64 @@ describe("zip_utils decompression", () => {
     expect(result).not.toBeNull()
     expect(result?.filename).toBe("disk.hdv")
     expect(result?.data.length).toBe(819200)
+  })
+
+  test("unzipAllDiskFiles extracts multiple disks in natural numeric order and ignores non-disks and macOS metadata", () => {
+    const disk1 = new Uint8Array(143360)
+    const disk2 = new Uint8Array(143360)
+    const disk11 = new Uint8Array(143360)
+    disk1[0] = 1
+    disk2[0] = 2
+    disk11[0] = 11
+
+    const zipBytes = fflate.zipSync({
+      "AppleWorks 5.0 - Disk 11.po": disk11,
+      "AppleWorks 5.0 - Disk 1.po": disk1,
+      "AppleWorks 5.0 - Disk 2.po": disk2,
+      "__MACOSX/._AppleWorks 5.0 - Disk 1.po": new Uint8Array([1, 2, 3]),
+      "README.txt": fflate.strToU8("Some text"),
+      ".DS_Store": new Uint8Array([4, 5]),
+    })
+
+    const results = unzipAllDiskFiles(zipBytes, "AppleWorks.zip")
+    expect(results).not.toBeNull()
+    expect(results?.length).toBe(3)
+    expect(results?.map(r => r.filename)).toEqual([
+      "AppleWorks 5.0 - Disk 1.po",
+      "AppleWorks 5.0 - Disk 2.po",
+      "AppleWorks 5.0 - Disk 11.po",
+    ])
+    expect(results?.[0].data[0]).toBe(1)
+    expect(results?.[1].data[0]).toBe(2)
+    expect(results?.[2].data[0]).toBe(11)
+  })
+
+  test("unzipAllDiskFiles handles multiple disks inside subdirectories", () => {
+    const sideA = new Uint8Array(2048)
+    const sideB = new Uint8Array(2048)
+
+    const zipBytes = fflate.zipSync({
+      "Ultima III/Side B.woz": sideB,
+      "Ultima III/Side A.woz": sideA,
+    })
+
+    const results = unzipAllDiskFiles(zipBytes, "Ultima_III.zip")
+    expect(results).not.toBeNull()
+    expect(results?.length).toBe(2)
+    expect(results?.[0].filename).toBe("Side A.woz")
+    expect(results?.[1].filename).toBe("Side B.woz")
+  })
+
+  test("decompressAllDiskFiles handles single .gz file", async () => {
+    const content = new Uint8Array(1024)
+    content.fill(0x88)
+    const gzBytes = fflate.gzipSync(content)
+
+    const results = await decompressAllDiskFiles(gzBytes, "single.po.gz")
+    expect(results).not.toBeNull()
+    expect(results?.length).toBe(1)
+    expect(results?.[0].filename).toBe("single.po")
+    expect(results?.[0].data[0]).toBe(0x88)
   })
 
   test("decompresses *.7z archive with sevenzip-wasm", async () => {
