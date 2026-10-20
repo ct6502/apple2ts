@@ -1226,7 +1226,7 @@ msgid "Compressed archives:"
 msgstr ""
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
 msgstr ""
 
 msgctxt "help.urlParameters"

@@ -1354,8 +1354,8 @@ msgid "Compressed archives:"
 msgstr "Compressed booty chests:"
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "Multi-platter swappin': Click a drive's badge or right-click to swap platters. Multi-disk booty chests (.zip, .7z, .gz) load all platters at once into yer stack."
+msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "Multi-platter swappin': Click a drive's badge to open the quick-swap menu. Multi-disk booty chests (.zip, .7z, .gz) load all platters at once into yer stack."
 
 msgctxt "help.urlParameters"
 msgid "Optional URL Parameters"

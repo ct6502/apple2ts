@@ -1429,8 +1429,8 @@ msgid "Compressed archives:"
 msgstr "圧縮アーカイブ："
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "複数ディスク入替：ドライブのマルチディスクバッジをクリックするか、右クリックでディスクを切り替えます。複数ディスクを含むアーカイブ（.zip、.7z、.gz）は自動的に入替リストへ読み込まれます。"
+msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "複数ディスク入替：ドライブのマルチディスクバッジをクリックしてクイック入替メニューを開きます。複数ディスクを含むアーカイブ（.zip、.7z、.gz）は自動的に入替リストへ読み込まれます。"
 
 #, fuzzy
 msgctxt "help.urlParameters"
