@@ -17,6 +17,12 @@ import {
 import { clearDialogMessageContext, hasDialogMessageContext, showGlobalProgressModal } from "../../ui_utilities"
 import { passSetDriveNewData, requestSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
+import {
+  isDemoZooDiskUrl,
+  parseDemoZooProductionPageHtml,
+  resolveExternalDownloadUrls,
+  sortDemoZooDisks
+} from "./demozoo_utils"
 import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
 import { parseGameList } from "./totalreplayutilities"
@@ -55,19 +61,6 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
 const driveProps: DriveProps[] = [initDriveProps(0, 1, true), initDriveProps(1, 2, true),
   initDriveProps(2, 1, false), initDriveProps(3, 2, false)]
 
-const demoZooDiskDownloadExtensions = [
-  ".hdv", ".2mg", ".dsk", ".woz", ".po", ".do", ".bin", ".bas", ".nib", ".2img", ".d13", ".dc", ".img",
-  ".zip", ".7z", ".gz", ".tar"
-]
-
-const isDemoZooDiskDownload = (url: string) => {
-  try {
-    const pathname = decodeURIComponent(new URL(url).pathname).toLowerCase()
-    return demoZooDiskDownloadExtensions.some(extension => pathname.endsWith(extension))
-  } catch {
-    return false
-  }
-}
 
 export const normalizeDownloadUrl = (url: string): string => {
   if (!url) return url
@@ -105,15 +98,10 @@ export const getWaybackRawUrl = (url: string): string => {
 }
 
 const chooseDemoZooDownloads = (links: Array<{ url: string; link_class?: string }>) => {
-  return [...links]
+  const urls = [...links]
     .filter(link => Boolean(link.url))
-    .map(link => ({ ...link, url: normalizeDownloadUrl(link.url) }))
-    .sort((left, right) => {
-      const leftScore = isDemoZooDiskDownload(left.url) ? 100 : /download/i.test(left.link_class || "") ? 10 : 0
-      const rightScore = isDemoZooDiskDownload(right.url) ? 100 : /download/i.test(right.link_class || "") ? 10 : 0
-      return rightScore - leftScore
-    })
-    .map(link => link.url)
+    .map(link => normalizeDownloadUrl(link.url))
+  return sortDemoZooDisks(urls)
 }
 
 export const handleGetFilename = (index: number) => {
@@ -129,6 +117,13 @@ export const handleGetFilename = (index: number) => {
 }
 
 export const doSetUIDriveProps = (props: DriveProps, replaceDiskData = false) => {
+  // If the UI has loaded a disk more recently than a stale empty worker update, ignore the empty update
+  if (props.filename === "" && driveProps[props.index].filename !== "") {
+    if (driveProps[props.index].lastLocalFileWriteTime > props.lastLocalFileWriteTime) {
+      return
+    }
+  }
+
   // For efficiency we only receive disk data if it has changed.
   // If our disk is the same but it hasn't changed, keep the existing data.
   // Also preserve writableFileHandle (custom Electron handlers aren't sent to worker)
@@ -254,9 +249,7 @@ export const getStandbyDisks = (driveIndex: number): StandbyDisk[] => {
   if (driveIndex < 0 || driveIndex >= 4) return []
   const drive = driveProps[driveIndex]
   if (!drive || !drive.filename) {
-    standbyDisks[driveIndex] = []
-    standbyActiveIndex[driveIndex] = 0
-    return []
+    return [...standbyDisks[driveIndex]]
   }
   if (standbyDisks[driveIndex].length === 0) {
     standbyDisks[driveIndex] = [{
@@ -839,29 +832,6 @@ const fetchDemoZooResource = async (url: string): Promise<Response | null> => {
   return fetchWithCorsProxy(url)
 }
 
-const fetchExternalDownloadPage = async (url: string): Promise<Response | null> => {
-  return fetchWithCorsProxy(url)
-}
-
-const findDirectDownloadOnExternalPage = async (url: string): Promise<string> => {
-  if (isDemoZooDiskDownload(url)) return url
-
-  const response = await fetchExternalDownloadPage(url)
-  if (!response?.ok) return ""
-
-  const html = await response.text()
-  const hrefPattern = /<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi
-  for (const match of html.matchAll(hrefPattern)) {
-    try {
-      const candidate = new URL(match[1].trim(), url).toString()
-      if (isDemoZooDiskDownload(candidate)) return candidate
-    } catch {
-      // Ignore malformed links.
-    }
-  }
-
-  return ""
-}
 
 
 
@@ -886,6 +856,55 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
   }, 3 * 1000)
 }
 
+const resolveDemoZooProductionDisks = async (prodId: string): Promise<string[]> => {
+  const resolvedUrls: string[] = []
+
+  // 1. Try JSON API first
+  try {
+    const apiRes = await fetchDemoZooResource(`https://demozoo.org/api/v1/productions/${prodId}/?format=json`)
+    if (apiRes && apiRes.ok) {
+      const prodData = await apiRes.json()
+      if (prodData && prodData.download_links && prodData.download_links.length > 0) {
+        for (const downloadUrl of chooseDemoZooDownloads(prodData.download_links)) {
+          const directUrls = await resolveExternalDownloadUrls(downloadUrl)
+          for (const resolvedUrl of (directUrls.length > 0 ? directUrls : [downloadUrl])) {
+            const normalizedUrl = normalizeDownloadUrl(resolvedUrl)
+            if (isDemoZooDiskUrl(normalizedUrl) && !resolvedUrls.includes(normalizedUrl)) {
+              resolvedUrls.push(normalizedUrl)
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to resolve DemoZoo production from API:", err)
+  }
+
+  // 2. Fallback to public web page scraping if API failed or was blocked (e.g. 403 without API key)
+  if (resolvedUrls.length === 0) {
+    try {
+      const pageRes = await fetchDemoZooResource(`https://demozoo.org/productions/${prodId}/`)
+      if (pageRes && pageRes.ok) {
+        const html = await pageRes.text()
+        const pageDisks = parseDemoZooProductionPageHtml(html, `https://demozoo.org/productions/${prodId}/`)
+        for (const candidate of pageDisks) {
+          const directUrls = await resolveExternalDownloadUrls(candidate)
+          for (const resolvedUrl of (directUrls.length > 0 ? directUrls : [candidate])) {
+            const normalizedUrl = normalizeDownloadUrl(resolvedUrl)
+            if (isDemoZooDiskUrl(normalizedUrl) && !resolvedUrls.includes(normalizedUrl)) {
+              resolvedUrls.push(normalizedUrl)
+            }
+          }
+        }
+      }
+    } catch (pageErr) {
+      console.warn("Failed to resolve DemoZoo production from public webpage:", pageErr)
+    }
+  }
+
+  return sortDemoZooDisks(resolvedUrls)
+}
+
 export const fetchDiskBufferAndNameFromURL = async (
   rawUrl: string,
   debug?: (message: string) => void,
@@ -907,27 +926,8 @@ export const fetchDiskBufferAndNameFromURL = async (
   if (url.includes("demozoo.org/productions/") && !/\.(zip|dsk|po|woz|nib|2mg|img)$/i.test(url)) {
     const match = url.match(/productions\/(\d+)/)
     if (match) {
-      const prodId = match[1]
-      try {
-        const apiRes = await fetchDemoZooResource(`https://demozoo.org/api/v1/productions/${prodId}/?format=json`)
-        if (apiRes && apiRes.ok) {
-          const prodData = await apiRes.json()
-          if (prodData && prodData.download_links && prodData.download_links.length > 0) {
-            const resolvedUrls: string[] = []
-            for (const downloadUrl of chooseDemoZooDownloads(prodData.download_links)) {
-              const resolvedUrl = await findDirectDownloadOnExternalPage(downloadUrl) || downloadUrl
-              const normalizedUrl = normalizeDownloadUrl(resolvedUrl)
-              if (!resolvedUrls.includes(normalizedUrl)) {
-                resolvedUrls.push(normalizedUrl)
-              }
-            }
-            alternateDownloadUrls = resolvedUrls
-            url = alternateDownloadUrls[0] || url
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to resolve DemoZoo production download link:", err)
-      }
+      alternateDownloadUrls = await resolveDemoZooProductionDisks(match[1])
+      url = alternateDownloadUrls[0] || url
     }
   }
 
@@ -1046,6 +1046,7 @@ export const fetchDiskBufferAndNameFromURL = async (
 
     return { buffer, name: getCleanDiskFilename(name), allDisks }
   } catch (err) {
+    console.error("fetchDiskBufferAndNameFromURL error:", err)
     debug?.(`Error processing disk buffer from ${url}: ${err}`)
     return null
   }
@@ -1146,7 +1147,27 @@ const setDiskFromURL = async (url: string,
     }
   }
 
-  // Resolve Internet Archive URL, if necessary
+  // Resolve DemoZoo production URL, if necessary
+  if (url.includes("demozoo.org/productions/") && !/\.(zip|dsk|po|woz|2mg|img)$/i.test(url)) {
+    const match = url.match(/productions\/(\d+)/)
+    if (match) {
+      const prodDisks = await resolveDemoZooProductionDisks(match[1])
+      if (prodDisks.length > 1 && !callback) {
+        return handleSetDiskSwapperFromURLs(
+          prodDisks,
+          updateDisplay,
+          index < 0 ? 0 : index,
+          preserveDriveIndex,
+          noReset,
+          noBoot,
+          cloudData,
+        )
+      }
+      if (prodDisks[0]) {
+        url = prodDisks[0]
+      }
+    }
+  }
   if (url.startsWith(internetArchiveUrlProtocol)) {
     const identifier = url.substring(internetArchiveUrlProtocol.length)
     const [resolvedUrl, fileSize, allUrls] = await getDiskImageUrlFromIdentifier(identifier)
@@ -1229,11 +1250,14 @@ const setDiskFromURL = async (url: string,
             fetched.allDisks[0].cloudData = cloudData
           }
           setStandbyDisks(index, fetched.allDisks, 0)
+          updateDisplay?.()
+          passSetDriveProps(driveProps[index])
         } else if (comment) {
           const currentStandby = getStandbyDisks(index)
           if (currentStandby[0]) {
             currentStandby[0].comment = comment
           }
+          updateDisplay?.()
         }
         // Loading a disk from a remote URL must boot it even when the
         // emulator was already paused or had previously run a program.
@@ -1332,6 +1356,7 @@ export const handleSetDiskSwapperFromURLs = async (
   preserveDriveIndex = true,
   noReset = false,
   noBoot = false,
+  cloudData?: CloudData,
 ): Promise<boolean> => {
   if (urls.length === 0) return false
   const resolvedUrls = resolveDiskSwapperUrls(urls)
@@ -1341,7 +1366,7 @@ export const handleSetDiskSwapperFromURLs = async (
     firstParsed.url,
     updateDisplay,
     index,
-    undefined,
+    cloudData,
     undefined,
     undefined,
     preserveDriveIndex,
