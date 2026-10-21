@@ -1248,8 +1248,8 @@ msgid "Click to show"
 msgstr "Klicka för att visa"
 
 msgctxt "disk.clickToLoadDiskImage"
-msgid "Click to load disk image"
-msgstr "Klicka för att läsa in diskavbildning"
+msgid "Click to load disk image(s)"
+msgstr "Klicka för att läsa in diskavbildning(ar)"
 
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"

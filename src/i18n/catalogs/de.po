@@ -1381,8 +1381,8 @@ msgstr ""
 
 #, fuzzy
 msgctxt "disk.clickToLoadDiskImage"
-msgid "Click to load disk image"
-msgstr "Klicken Sie hier, um das Disk-Image zu laden"
+msgid "Click to load disk image(s)"
+msgstr "Klicken Sie hier, um das Disk-Image (die Disk-Images) zu laden"
 
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"

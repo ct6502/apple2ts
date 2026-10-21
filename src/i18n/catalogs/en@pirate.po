@@ -1296,8 +1296,8 @@ msgid "Click to show"
 msgstr ""
 
 msgctxt "disk.clickToLoadDiskImage"
-msgid "Click to load disk image"
-msgstr "Click to load disk aboard"
+msgid "Click to load disk image(s)"
+msgstr "Click to load disk(s) aboard"
 
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"

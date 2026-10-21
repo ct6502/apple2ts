@@ -1179,7 +1179,7 @@ msgid "Click to show"
 msgstr ""
 
 msgctxt "disk.clickToLoadDiskImage"
-msgid "Click to load disk image"
+msgid "Click to load disk image(s)"
 msgstr ""
 
 msgctxt "disk.downloadingDisk"
