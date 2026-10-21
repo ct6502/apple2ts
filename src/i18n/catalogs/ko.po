@@ -1425,8 +1425,8 @@ msgid "Compressed archives:"
 msgstr "압축 아카이브:"
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "다중 디스크 교체: 드라이브의 멀티 디스크 배지를 클릭하거나 마우스 오른쪽 버튼을 클릭하여 디스크를 전환합니다. 다중 디스크 아카이브(.zip, .7z, .gz)는 모든 디스크를 교체 목록에 자동으로 마운트합니다."
+msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "다중 디스크 교체: 드라이브의 멀티 디스크 배지를 클릭하여 빠른 교체 메뉴를 엽니다. 다중 디스크 아카이브(.zip, .7z, .gz)는 모든 디스크를 교체 목록에 자동으로 마운트합니다."
 
 #, fuzzy
 msgctxt "help.urlParameters"

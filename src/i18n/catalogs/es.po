@@ -1437,8 +1437,8 @@ msgid "Compressed archives:"
 msgstr "Archivos comprimidos:"
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge or right-click to switch disks. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "Intercambio de múltiples discos: Haga clic en la insignia multidisco o haga clic derecho para cambiar de disco. Los archivos multidisco (.zip, .7z, .gz) se cargan automáticamente en la lista de intercambio."
+msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
+msgstr "Intercambio de múltiples discos: Haga clic en la insignia multidisco para abrir el menú de intercambio rápido. Los archivos multidisco (.zip, .7z, .gz) se cargan automáticamente en la lista de intercambio."
 
 #, fuzzy
 msgctxt "help.urlParameters"
