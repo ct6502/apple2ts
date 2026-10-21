@@ -1,14 +1,16 @@
 
 import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
-import { doRestoreSaveState, getApple2State } from "./save_restore"
+import path, { resolve } from "node:path"
+import { doGetSaveState, doRestoreSaveState, getApple2State } from "./save_restore"
 import { setIsTesting } from "./worker2main"
-import { getDriveSaveState } from "./devices/drivestate"
+import { doSetEmuDriveNewData, getDriveSaveState } from "./devices/drivestate"
 import { getTextPage, memory } from "./memory"
-import { doSetRunMode } from "./motherboard"
-import { RUN_MODE } from "../common/utility"
+import { doBoot, doSetRunMode } from "./motherboard"
+import { RUN_MODE, SAVE_STATE_VERSION } from "../common/utility"
 import { processInstruction } from "./cpu6502"
 import { sendTextToEmulator } from "./devices/keyboard"
+import * as fs from "fs"
+import { s6502 } from "./instructions"
 
 const readSaveState = (name: string): EmulatorSaveState =>
   JSON.parse(readFileSync(resolve(__dirname, "saves", name), "utf8"))
@@ -81,9 +83,59 @@ test.each(saveStates)("run Aztec %s", (filename) => {
   const sState = readSaveState(filename)
   doRestoreSaveState(sState, false, false)
   doSetRunMode(RUN_MODE.RUNNING)
-  // Send a space character to the emulator to start the game.
+  // Send a space character to the emulator to go to the next screen.
   sendTextToEmulator(32)
   for (let i = 0; i < 1500000; i++) {
+    processInstruction()
+  }
+  doSetRunMode(RUN_MODE.PAUSED)
+  const text = getTextPage()
+  // Convert Uint8Array to ASCII chars
+  let asciiText = Array.from(text).map(byte => String.fromCharCode(byte & 0x7F)).join("")
+  asciiText = asciiText.replaceAll(/\s+/g, " ").slice(0, 89) // Example slice, adjust as needed
+  const want = " AZTEC A FEW WEEKS AGO A RUMOR SURFACED THAT PROFESSOR G. VON FORSTER , NOTED TOMB ROBBER"
+  expect(asciiText).toBe(want)
+})
+
+test("Current save/restore round trip", () => {
+  setIsTesting()
+  const disk = "Aztec.woz"
+  const filePath = path.resolve(__dirname, "../../public/disks/", disk)
+  if (!fs.existsSync(filePath)) {
+    expect("COULD NOT FIND FILE").toBe("")
+    return
+  }
+  const data = fs.readFileSync(filePath)
+  const props: DriveProps = {
+    index: 2,
+    hardDrive: false,
+    drive: 1,
+    filename: disk,
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: false,
+    diskData: new Uint8Array(data),
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }
+  doSetEmuDriveNewData(props)
+  doBoot()
+  doSetRunMode(RUN_MODE.RUNNING)
+  while (s6502.cycleCount < 45000000) {
+    processInstruction()
+  }
+  const sState = doGetSaveState(true)
+  // Completely mangle the state by rebooting before restoring
+  doBoot()
+  doSetRunMode(RUN_MODE.PAUSED)
+  doRestoreSaveState(sState, false, false, SAVE_STATE_VERSION)
+  doSetRunMode(RUN_MODE.RUNNING)
+  // Send a space character to the emulator to start the game.
+  sendTextToEmulator(32)
+  while (s6502.cycleCount < 48000000) {
     processInstruction()
   }
   doSetRunMode(RUN_MODE.PAUSED)
