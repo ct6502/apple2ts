@@ -385,11 +385,12 @@ type CloudData = {
   apiEndpoint: string,
   downloadUrl: string,
   detailsUrl: string,
-  fileSize: number
+  fileSize: number,
+  isArchive?: boolean
 }
 
 type CloudProvider = {
-  download(filter: string): Promise<[Blob, CloudData] | null>,
+  download(filter: string): Promise<Array<[Blob, CloudData]> | [Blob, CloudData] | null>,
   upload(fileName: string, blob: Blob): Promise<CloudData | null>,
   sync(blob: Blob, cloudData: CloudData): Promise<boolean>,
   requestAuthToken(callback: (authToken: string) => void): void,

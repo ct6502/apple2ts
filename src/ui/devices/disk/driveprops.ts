@@ -3,6 +3,7 @@ import { unzipSingleFile, decompressSingleFile, decompressAllDiskFiles } from ".
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import {
+  CLOUD_SYNC,
   getDefaultDiskDriveIndex,
   getPrimaryDiskUrl,
   MAX_DRIVES,
@@ -12,7 +13,7 @@ import {
   resolveDiskSwapperUrls,
   separateUrlAndComment,
   updateWozCrc,
-  getBlobFromDiskData,
+  getDiskBlobForSync,
 } from "../../../common/utility"
 import { clearDialogMessageContext, hasDialogMessageContext, showGlobalProgressModal } from "../../ui_utilities"
 import { passSetDriveNewData, requestSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
@@ -443,9 +444,23 @@ const setDiskOrFileFromBuffer = (
   // Auto-unzip if archive or zipped disk image
   const unzipped = unzipSingleFile(buffer, filename, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
   if (unzipped) {
+    const origFilename = filename
     filename = unzipped.filename
     buffer = unzipped.buffer
     writableFileHandle = null
+    cloudData = {
+      providerName: cloudData?.providerName || "Local",
+      syncStatus: CLOUD_SYNC.INACTIVE,
+      syncInterval: cloudData?.syncInterval ?? -1,
+      lastSyncTime: cloudData?.lastSyncTime ?? -1,
+      fileName: cloudData?.fileName || origFilename,
+      itemId: cloudData?.itemId || "",
+      apiEndpoint: cloudData?.apiEndpoint || "",
+      downloadUrl: cloudData?.downloadUrl || "",
+      detailsUrl: cloudData?.detailsUrl || "",
+      fileSize: cloudData?.fileSize ?? buffer.byteLength,
+      isArchive: true,
+    }
   }
 
   // Sanity check for strange downloads with no filename.
@@ -501,12 +516,10 @@ const setDiskOrFileFromBuffer = (
     }
     if (newIndex < 0) {
       newIndex = defaultDriveIndex
-    } else if (!noReset && (!preserveDriveIndex || index < 0)) {
-      if (defaultDriveIndex < 2) {
-        if (index < 0 || index > 1) newIndex = defaultDriveIndex
-      } else if (index < 2) {
-        newIndex = defaultDriveIndex
-      }
+    } else if (defaultDriveIndex < 2) {
+      if (newIndex < 0 || newIndex > 1) newIndex = defaultDriveIndex
+    } else if (newIndex < 2 || newIndex > 3) {
+      newIndex = defaultDriveIndex
     }
     setDiskData(
       newIndex,
@@ -1587,7 +1600,7 @@ export const handleSaveWritableFile = async (index: number, writableFileHandle: 
         updateWozCrc(dprops.diskData)
       }
       console.log(`🔨 Creating blob from disk data: ${dprops.filename}, ${dprops.diskData.length} bytes`)
-      const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
+      const blob = getDiskBlobForSync(dprops.diskData, dprops.filename, dprops.hardDrive)
       console.log("📝 Calling createWritable()...")
       const writable = await writableFileHandle.createWritable()
 

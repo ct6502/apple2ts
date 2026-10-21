@@ -508,7 +508,9 @@ export const loadVeraSdFromCloud = async (cloudProvider: CloudProvider) => {
   try {
     const result = await cloudProvider.download(".img,.raw,.sd,.bin,.iso,.dsk,.woz,.po,.do,.2mg,.hdv")
     if (result) {
-      const [blob, data] = result
+      const [blob, data] = Array.isArray(result) && Array.isArray(result[0])
+        ? (result as Array<[Blob, CloudData]>)[0]
+        : (result as [Blob, CloudData])
       const buffer = await new Response(blob).arrayBuffer()
       if (isAppleDiskImage(data.fileName)) {
         handleSetDiskOrFileFromBuffer(0, buffer, data.fileName, data, null)

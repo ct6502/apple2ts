@@ -25,7 +25,7 @@ const stateBindings: RetroControlBindings = {
   "state.restore": {
     action: context => {
       context.close()
-      context.displayProps.setShowFileOpenDialog(true, 0)
+      context.displayProps.setShowFileOpenDialog(true, -1)
     },
   },
   "state.save": {
