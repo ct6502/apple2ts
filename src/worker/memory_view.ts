@@ -6,7 +6,8 @@ const getBackingLocation = (address: number) => {
   if (address >= 0xC000) return { space: "system" as const }
   const offset = addressGetTable[address >>> 8] + (address & 0xFF)
   if (offset < 0x10000) return { space: "main" as const }
-  if (offset >= RamWorksMemoryStart) {
+  // Past the last bank is the stand-in for a bank with no memory behind it.
+  if (offset >= RamWorksMemoryStart && offset < RamWorksMemoryStart + (RamWorksMaxBank + 1) * 0x10000) {
     return {
       space: "aux" as const,
       auxBank: Math.floor((offset - RamWorksMemoryStart) / 0x10000),

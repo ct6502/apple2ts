@@ -461,12 +461,68 @@ test("test RamWorks", () => {
   setRamWorks(64)
   expect(memGet(0x00C0)).toEqual(0xCD)
   for (let bank = 1; bank <= maxBank; bank++) {
-    // This should be a nop, and should just leave the bank index in AUX mem.
+    // There is no memory behind these banks any more, so they read as 0xFF.
     memSet(0xC073, bank)
-    expect(memGet(0x00C0)).toEqual(0xCD)
+    expect(memGet(0x00C0)).toEqual(0xFF)
   }
+  memSet(0xC073, 0)
+  expect(memGet(0x00C0)).toEqual(0xCD)
 
   memSet(0xC008,0)
+})
+
+test("RamWorks bank past the installed memory selects no RAM", () => {
+  memoryReset()
+  setRamWorks(1024)
+  const maxBank = 1024 / 64 - 1
+
+  // ALTZP on, and leave a mark in the last real bank
+  memSet(0xC009, 0)
+  memSet(0xC073, maxBank)
+  memSet(0x00C0, 0x5A)
+
+  // The register latches the out-of-range number; it does not stay in maxBank
+  memSet(0xC073, maxBank + 1)
+  expect(memGetC000(0xC073)).toEqual(maxBank + 1)
+  expect(memGet(0x00C0)).toEqual(0xFF)
+  // Writes go nowhere: not into this bank, and not into the previous one
+  memSet(0x00C0, 0xA5)
+  expect(memGet(0x00C0)).toEqual(0xFF)
+  memSet(0xC073, 0x7F)
+  expect(memGet(0x00C0)).toEqual(0xFF)
+  memSet(0xC073, maxBank)
+  expect(memGet(0x00C0)).toEqual(0x5A)
+  memSet(0xC008, 0)
+
+  // A memory-sizing probe (write a signature to every bank number, then read
+  // them all back) must find exactly the installed banks. When out-of-range
+  // writes were ignored, they all landed in maxBank, so the probe saw a
+  // phantom bank 0x7F and lost maxBank.
+  for (let bank = 0; bank <= 0x7F; bank++) {
+    memSet(0xC073, bank)
+    memSet(0xC005, 0)  // RAMWRT aux
+    memSet(0x9000, bank)
+    memSet(0xC004, 0)  // RAMWRT main
+  }
+  const found: number[] = []
+  for (let bank = 0; bank <= 0x7F; bank++) {
+    memSet(0xC073, bank)
+    memSet(0xC003, 0)  // RAMRD aux
+    if (memGet(0x9000) === bank) found.push(bank)
+    memSet(0xC002, 0)  // RAMRD main
+  }
+  expect(found).toEqual(Array.from({length: maxBank + 1}, (_, bank) => bank))
+
+  // The memory view does not report the stand-in page as a real bank
+  memSet(0xC073, 0x40)
+  memSet(0xC003, 0)
+  const view = getMemoryView({address: 0x9000, length: 1, space: "active"})
+  expect(view.bytes[0]).toEqual(0xFF)
+  expect(view.effectiveSegments[0].space).not.toEqual("aux")
+  memSet(0xC002, 0)
+
+  memSet(0xC073, 0)
+  setRamWorks(64)
 })
 
 describe("side-effect-free memory views", () => {
