@@ -1358,7 +1358,7 @@ msgstr ""
 "Tangenterna Open Apple och Closed Apple fungerar på samma sätt som Ctrl."
 
 msgctxt "help.controlPanelShortcut"
-msgid "SHIFT-ESC: display the Apple2TS control panel"
+msgid "<Shift>+<Esc>: display the Apple2TS control panel"
 msgstr "SKIFT+ESC: visa Apple2TS-kontrollpanelen"
 
 msgctxt "help.openAppleKey"

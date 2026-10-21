@@ -80,7 +80,7 @@ describe("DefaultHelpContent", () => {
 
     expect(html).toContain("class=\"help-shortcuts\"")
     expect(html).toContain(
-      "[help.controlPanelShortcut]\n\n[help.openAppleKey]"
+      "[help.controlPanelShortcut]\n[help.openAppleKey]"
     )
     expect(html).toContain(
       "<kbd class=\"help-shortcut-key\">Alt+B</kbd>"

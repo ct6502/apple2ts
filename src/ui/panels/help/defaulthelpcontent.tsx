@@ -129,8 +129,8 @@ export const DefaultHelpContent = ({
         </span>
         : <span key="shortcuts-available" className="help-shortcuts-available">
           <ShortcutTable rows={shortcutRows} />
-          {"\n"}{t("help.controlPanelShortcut")}
-          {"\n\n"}{t("help.openAppleKey")}
+          {t("help.controlPanelShortcut")}
+          {"\n"}{t("help.openAppleKey")}
           {"\n"}{t("help.closedAppleKey")}
           {"\n"}{t("help.joystickKeys")}
           {"\n\n"}{t("help.onScreenKeyboard")}
@@ -138,7 +138,7 @@ export const DefaultHelpContent = ({
     </>}
     {"\n"}<b>{t("help.diskImages")}</b>{" "}woz, 2mg, dsk, po, do, hdv, bin, bas
     {"\n"}<b>{t("help.diskContainers")}</b>{" "}zip, 7z, gz
-    {"\n\n"}{t("help.multiDiskNotice")}
+    {"\n"}{t("help.multiDiskNotice")}
     {"\n\n"}<b>{t("help.urlParameters")}</b>{"\n"}
     {t("help.urlParametersBody")}
     {"\n\n"}<b>{t("help.examples")}</b>{"\n"}

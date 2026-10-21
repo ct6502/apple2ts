@@ -36,7 +36,7 @@ ${i18n.t("startup.copyright", { year })}`
   default:
   }
 
-  emulatorStartText += `\n\nApple ${mode} mode`
+  emulatorStartText += `\n\nApple ${mode}`
 
   if (!isGameMode()) {
     emulatorStartText += `\n\n${i18n.t("startup.diskCollections")}`

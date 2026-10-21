@@ -1498,7 +1498,7 @@ msgstr ""
 "Las teclas open apple y closed apple se comportan igual que la tecla ctrl."
 
 msgctxt "help.controlPanelShortcut"
-msgid "SHIFT-ESC: display the Apple2TS control panel"
+msgid "<Shift>+<Esc>: display the Apple2TS control panel"
 msgstr ""
 
 #, fuzzy

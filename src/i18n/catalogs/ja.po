@@ -1487,7 +1487,7 @@ msgid "The open apple and closed apple keys behave the same as the ctrl key."
 msgstr "open appleおよびclosed appleキーはctrlキーと同じように動作します。"
 
 msgctxt "help.controlPanelShortcut"
-msgid "SHIFT-ESC: display the Apple2TS control panel"
+msgid "<Shift>+<Esc>: display the Apple2TS control panel"
 msgstr ""
 
 #, fuzzy
