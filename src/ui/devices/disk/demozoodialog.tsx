@@ -8,8 +8,14 @@ import { CLOUD_SYNC } from "../../../common/utility"
 import { svgDemoZooLogo, svgDemoZooTitle } from "../../img/icon_demozoo"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import { showGlobalProgressModal } from "../../ui_utilities"
-import { fetchWithCorsProxy, getWaybackRawUrl, handleSetDiskFromURL, normalizeDownloadUrl } from "./driveprops"
+import { fetchWithCorsProxy, handleSetDiskFromURL, handleSetDiskSwapperFromURLs, normalizeDownloadUrl } from "./driveprops"
 import { useTranslation } from "../../../i18n/useTranslation"
+import {
+  isDemoZooDiskUrl,
+  isDemoZooNonDiskUrl,
+  resolveExternalDownloadUrls,
+  sortDemoZooDisks
+} from "./demozoo_utils"
 export interface DemoZooItem {
   id: number
   title: string
@@ -196,46 +202,11 @@ interface RawDemoZooApiProduction {
   external_links?: Array<{ link_class: string; url: string }>
 }
 
-const diskDownloadExtensions = [
-  ".hdv", ".2mg", ".dsk", ".woz", ".po", ".do", ".bin", ".bas", ".nib", ".2img", ".d13", ".dc", ".img",
-  ".zip", ".7z", ".gz", ".tar"
-]
-
-const isDiskDownloadUrl = (url: string) => {
-  try {
-    const pathname = decodeURIComponent(new URL(url).pathname).toLowerCase()
-    return diskDownloadExtensions.some(extension => pathname.endsWith(extension))
-  } catch {
-    return false
-  }
-}
-
-const nonDiskMediaExtensions = [
-  ".mp4", ".webm", ".mkv", ".avi", ".mov", ".flv", ".wmv", ".m4v",
-  ".mp3", ".ogg", ".flac", ".wav", ".aac", ".m4a",
-  ".pdf", ".txt", ".nfo", ".diz", ".doc",
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"
-]
-
-const isNonDiskMediaUrl = (url: string) => {
-  try {
-    const pathname = decodeURIComponent(new URL(url).pathname).toLowerCase()
-    return nonDiskMediaExtensions.some(extension => pathname.endsWith(extension))
-  } catch {
-    return false
-  }
-}
-
 const chooseDemoZooDownloadUrls = (links: RawDemoZooApiProduction["download_links"] = []) => {
-  return [...links]
-    .filter(link => Boolean(link.url) && !isNonDiskMediaUrl(link.url))
-    .map(link => ({ ...link, url: normalizeDownloadUrl(link.url) }))
-    .sort((left, right) => {
-      const leftScore = isDiskDownloadUrl(left.url) ? 100 : /download/i.test(left.link_class || "") ? 10 : 0
-      const rightScore = isDiskDownloadUrl(right.url) ? 100 : /download/i.test(right.link_class || "") ? 10 : 0
-      return rightScore - leftScore
-    })
-    .map(link => link.url)
+  const urls = [...links]
+    .filter(link => Boolean(link.url) && !isDemoZooNonDiskUrl(link.url))
+    .map(link => normalizeDownloadUrl(link.url))
+  return sortDemoZooDisks(urls)
 }
 
 const parseDemoZooProductionPage = (html: string, id: number): RawDemoZooApiProduction => {
@@ -254,7 +225,7 @@ const parseDemoZooProductionPage = (html: string, id: number): RawDemoZooApiProd
     }
 
     url = normalizeDownloadUrl(url)
-    if (isDiskDownloadUrl(url)) {
+    if (isDemoZooDiskUrl(url)) {
       links.push({ url, link_class: "disk image" })
     } else if (/youtube\.com|youtu\.be/i.test(url)) {
       externalLinks.push({ url, link_class: "YouTube" })
@@ -269,40 +240,6 @@ const parseDemoZooProductionPage = (html: string, id: number): RawDemoZooApiProd
   }
 }
 
-const resolveExternalDownloadUrls = async (rawUrl: string): Promise<string[]> => {
-  const url = normalizeDownloadUrl(rawUrl)
-  try {
-    new URL(url)
-  } catch {
-    return []
-  }
-
-  if (isDiskDownloadUrl(url)) {
-    return [url]
-  }
-
-  if (isNonDiskMediaUrl(url)) {
-    return []
-  }
-
-  const html = await fetchExternalServerText(url)
-  const candidates: string[] = []
-  const hrefPattern = /<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi
-  for (const match of html.matchAll(hrefPattern)) {
-    const href = match[1].trim()
-    try {
-      const candidate = new URL(href, url).toString()
-      if (isDiskDownloadUrl(candidate) && !candidates.includes(candidate)) {
-        candidates.push(candidate)
-      }
-    } catch {
-      // Ignore malformed links.
-    }
-  }
-
-  return candidates
-}
-
 const fetchDemoZooServerText = async (url: string): Promise<string> => {
   const corsResponse = await fetchWithCorsProxy(url)
   if (corsResponse?.ok) return corsResponse.text()
@@ -313,31 +250,6 @@ const fetchDemoZooServerText = async (url: string): Promise<string> => {
     // Fall through
   }
   throw new Error(`DemoZoo server fetch failed for ${url}`)
-}
-
-const fetchExternalServerText = async (url: string): Promise<string> => {
-  const corsResponse = await fetchWithCorsProxy(url)
-  if (corsResponse?.ok) {
-    return corsResponse.text()
-  }
-  try {
-    const response = await fetch(url)
-    if (response.ok) return response.text()
-  } catch {
-    // Fall through
-  }
-  const waybackUrl = getWaybackRawUrl(url)
-  if (waybackUrl) {
-    const wbCors = await fetchWithCorsProxy(waybackUrl)
-    if (wbCors?.ok) return wbCors.text()
-    try {
-      const wbRes = await fetch(waybackUrl)
-      if (wbRes.ok) return wbRes.text()
-    } catch {
-      // Fall through
-    }
-  }
-  throw new Error(`External server fetch failed: ${url}`)
 }
 
 const fetchDemoZooProduction = async (id: number): Promise<RawDemoZooApiProduction> => {
@@ -396,8 +308,23 @@ export const loadDemoZooResult = async (item: DemoZooItem, driveIndex: number): 
     }
   }
 
-  for (const downloadUrl of resolvedDownloadUrls) {
-    if (await handleSetDiskFromURL(downloadUrl, undefined, driveIndex, createDemoZooCloudData(item, downloadUrl))) {
+  const diskCandidates = sortDemoZooDisks(resolvedDownloadUrls.filter(isDemoZooDiskUrl))
+
+  // If multiple disk images were found, mount all into swapper!
+  if (diskCandidates.length > 1) {
+    return handleSetDiskSwapperFromURLs(
+      diskCandidates,
+      undefined,
+      driveIndex < 0 ? 2 : driveIndex,
+      false,
+      false,
+      false,
+      createDemoZooCloudData(item, diskCandidates[0]),
+    )
+  }
+
+  for (const downloadUrl of (diskCandidates.length > 0 ? diskCandidates : resolvedDownloadUrls)) {
+    if (await handleSetDiskFromURL(downloadUrl, undefined, driveIndex < 0 ? 2 : driveIndex, createDemoZooCloudData(item, downloadUrl))) {
       return true
     }
   }
@@ -660,26 +587,7 @@ const DemoZooDialog = (props: DemoZooDialogProps) => {
       }
 
       if (downloadUrl) {
-        let loaded = false
-        for (const candidateUrl of downloadUrls) {
-          const cloudData: CloudData = {
-            providerName: "DemoZoo",
-            syncStatus: CLOUD_SYNC.INACTIVE,
-            syncInterval: -1,
-            lastSyncTime: Number.MAX_VALUE,
-            fileName: item.title,
-            itemId: `demozoo_${item.id}`,
-            apiEndpoint: "",
-            downloadUrl: candidateUrl,
-            detailsUrl: item.demozooUrl,
-            fileSize: -1
-          }
-          loaded = await handleSetDiskFromURL(candidateUrl, undefined, props.driveIndex, cloudData)
-          if (loaded) {
-            downloadUrl = candidateUrl
-            break
-          }
-        }
+        const loaded = await loadDemoZooResult(item, props.driveIndex)
         if (loaded) {
           handleClose()
           props.onLoadSuccess?.()

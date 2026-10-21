@@ -242,6 +242,8 @@ Apple2TS uses its built-in software synthesizer by default. Selecting **Enable E
 
 DemoZoo uses a bundled pre-fetched snapshot (`public/data/demozoo_snapshot.json`) with pre-resolved direct download links, allowing DemoZoo catalog browsing, searching, and downloads to work out of the box on static hosts (such as GitHub Pages) and Cloudflare Pages without requiring external proxy configuration.
 
+When updating the snapshot with `npm start` (or `node tools/fetch-demozoo.mjs --prompt`), you can provide a DemoZoo API key either interactively when prompted or via the `DEMOZOO_API_KEY` environment variable. API keys can be generated at [demozoo.org/account/api_keys](https://demozoo.org/account/api_keys/).
+
 The optional Cloudflare Pages workflow is opt-in and requires the following repository configuration:
 
 - **Required repository variable:** `CLOUDFLARE_PAGES_ENABLED=true`

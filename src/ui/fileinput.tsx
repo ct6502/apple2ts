@@ -4,7 +4,7 @@ import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
 import { appendStandbyDisks, handleSetDiskOrFileFromBuffer, prepWritableFile, setStandbyDisks, StandbyDisk } from "./devices/disk/driveprops"
 import { handleGetRunMode } from "./main2worker"
-import { decompressAllDiskFiles } from "../common/zip_utils"
+import { decompressAllDiskFiles, compareDiskFilenames } from "../common/zip_utils"
 import { isFileSystemApiSupported } from "./ui_utilities"
 import { DISK_LOAD_SUCCESS_EVENT } from "./ui_settings"
 
@@ -91,9 +91,7 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
     }
 
     // Natural numeric sort so Disk 1, Disk 2, ..., Disk 10, Disk 11 maintain correct sequence
-    processedList.sort((a, b) =>
-      a.filename.localeCompare(b.filename, undefined, { numeric: true, sensitivity: "base" })
-    )
+    processedList.sort((a, b) => compareDiskFilenames(a.filename, b.filename))
 
     if (append) {
       appendStandbyDisks(index, processedList)

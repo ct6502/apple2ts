@@ -159,4 +159,18 @@ describe("zip_utils decompression", () => {
     expect(result?.data.length).toBe(1024)
     expect(result?.data[0]).toBe(0x77)
   })
+
+  test("sorts BAD_APPLE.DSK before BAD_APPLE_DATA.DSK in multi-disk zip", () => {
+    const disk1 = new Uint8Array(143360)
+    const disk2 = new Uint8Array(143360)
+    const zipped = fflate.zipSync({
+      "BAD_APPLE_DATA.DSK": disk2,
+      "BAD_APPLE.DSK": disk1,
+    })
+    const unzipped = unzipAllDiskFiles(zipped, "BadApple.zip")
+    expect(unzipped).not.toBeNull()
+    expect(unzipped?.length).toBe(2)
+    expect(unzipped?.[0].filename).toBe("BAD_APPLE.DSK")
+    expect(unzipped?.[1].filename).toBe("BAD_APPLE_DATA.DSK")
+  })
 })

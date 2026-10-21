@@ -20,6 +20,31 @@ export const DEFAULT_DISK_EXTENSIONS = [
   ".nib",
 ]
 
+export const scoreDiskFilename = (filename: string): number => {
+  const stem = (filename.split("/").pop() || filename).replace(/\.[^.]+$/, "")
+  if (/(?:^|[\s_.-])(?:boot|disk\s*1|side\s*a|face\s*1|part\s*1|d1|s1|f1)(?:[\s_.-]|$)/i.test(stem)) return 0
+  if (/(?:^|[\s_.-])(?:disk\s*2|side\s*b|face\s*2|part\s*2|d2|s2|f2)(?:[\s_.-]|$)/i.test(stem)) return 10
+  if (/(?:^|[\s_.-])(?:disk\s*3|side\s*c|face\s*3|part\s*3|d3|s3|f3)(?:[\s_.-]|$)/i.test(stem)) return 20
+  if (/(?:^|[\s_.-])(?:disk\s*4|side\s*d|face\s*4|part\s*4|d4|s4|f4)(?:[\s_.-]|$)/i.test(stem)) return 30
+  if (/(?:^|[\s_.-])(?:data|save|savegame|docs|doc|manual|user)(?:[\s_.-]|$)/i.test(stem)) return 80
+  return 50
+}
+
+export const compareDiskFilenames = (a: string, b: string): number => {
+  const baseA = a.split("/").pop() || a
+  const baseB = b.split("/").pop() || b
+  const scoreA = scoreDiskFilename(baseA)
+  const scoreB = scoreDiskFilename(baseB)
+  if (scoreA !== scoreB) return scoreA - scoreB
+
+  const stemA = baseA.replace(/\.[^.]+$/, "")
+  const stemB = baseB.replace(/\.[^.]+$/, "")
+  const stemCmp = stemA.localeCompare(stemB, undefined, { numeric: true, sensitivity: "base" })
+  if (stemCmp !== 0) return stemCmp
+
+  return baseA.localeCompare(baseB, undefined, { numeric: true, sensitivity: "base" })
+}
+
 /**
  * Extracts a single disk or media image from a zip or gzip archive buffer synchronously.
  * For zip: filters out macOS metadata and empty directories.
@@ -73,6 +98,7 @@ export const unzipSingleFile = (
         !name.startsWith(".") &&
         unzipped[name].length > 0
     })
+    fileNames.sort(compareDiskFilenames)
 
     if (fileNames.length === 0) return null
 
@@ -315,11 +341,7 @@ export const unzipAllDiskFiles = (
       return single ? [single] : null
     }
 
-    targetFiles.sort((a, b) => {
-      const baseA = a.split("/").pop() || a
-      const baseB = b.split("/").pop() || b
-      return baseA.localeCompare(baseB, undefined, { numeric: true, sensitivity: "base" })
-    })
+    targetFiles.sort(compareDiskFilenames)
 
     return targetFiles.map(name => toResult(name, unzipped[name]))
   } catch (err) {
@@ -435,9 +457,7 @@ export const decompressAllDiskFiles = async (
     })
 
     const targetFiles = diskFiles.length > 0 ? diskFiles : validFiles
-    targetFiles.sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })
-    )
+    targetFiles.sort((a, b) => compareDiskFilenames(a.name, b.name))
 
     return targetFiles.map(toResult)
   } catch (err) {

@@ -155,6 +155,99 @@ async function main() {
     return
   }
 
+  let apiKey = (globalThis.process.env.DEMOZOO_API_KEY || "").trim()
+  if (!apiKey && globalThis.process.stdin.isTTY) {
+    console.log("\n--------------------------------------------------------------------------------")
+    console.log("DemoZoo API Access Notice:")
+    console.log("Due to bot protection, the DemoZoo API now requires an API key to access productions.")
+    console.log("You can obtain a free API key at: https://demozoo.org/account/api_keys/")
+    console.log("Note: This key is only used locally during this session to fetch the snapshot")
+    console.log("and is never stored on or transmitted to any server.")
+    console.log("--------------------------------------------------------------------------------\n")
+
+    apiKey = await new Promise(resolveKey => {
+      const input = readline.createInterface({ input: globalThis.process.stdin, output: globalThis.process.stdout })
+      input.on("SIGINT", () => {
+        console.log("\nOperation cancelled by user.")
+        input.close()
+        globalThis.process.exit(0)
+      })
+      input.question("Enter DemoZoo API key (or press Ctrl+C to cancel): ", answer => {
+        input.close()
+        resolveKey(answer.trim())
+      })
+    })
+
+    if (!apiKey) {
+      console.warn("No API key provided. DemoZoo API requests may be blocked by Cloudflare (403 Forbidden).")
+    }
+  }
+
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+  if (apiKey) {
+    try {
+      const curlTestArgs = [
+        "-L", "--fail", "--max-time", "10", "-sS",
+        "-H", "User-Agent: Apple2TS/3.7.0",
+        "-H", "Accept: application/json",
+        "-H", `Authorization: Api-Key ${apiKey}`,
+        "https://demozoo.org/api/v1/auth_test/"
+      ]
+      const { stdout } = await execFile("curl.exe", curlTestArgs)
+      const auth = JSON.parse(stdout)
+      if (auth?.message === "Authenticated OK!" || auth?.user) {
+        console.log(`DemoZoo API key verified${auth.user ? ` for user: ${auth.user}` : " successfully"}.`)
+      } else {
+        console.log("DemoZoo API key authenticated successfully.")
+      }
+    } catch {
+      try {
+        const testRes = await fetch("https://demozoo.org/api/v1/auth_test/", {
+          headers: {
+            "User-Agent": "Apple2TS/3.7.0",
+            "Accept": "application/json",
+            "Authorization": `Api-Key ${apiKey}`
+          }
+        })
+        if (testRes.ok) {
+          const auth = await testRes.json()
+          console.log(`DemoZoo API key verified${auth?.user ? ` for user: ${auth.user}` : " successfully"}.`)
+        } else {
+          console.warn(`DemoZoo API key verification failed (HTTP ${testRes.status}). Proceeding anyway...`)
+        }
+      } catch (err) {
+        console.warn(`DemoZoo API key verification skipped: ${err.message}. Proceeding anyway...`)
+      }
+    }
+  }
+
+  const formatDateStr = releaseDate => {
+    if (!releaseDate) return ""
+    const match = releaseDate.match(/^(\d{4})(?:-(\d{2}))?/)
+    if (!match) return releaseDate
+    const year = match[1]
+    const month = match[2]
+    if (!month) return year
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    const mIndex = parseInt(month, 10) - 1
+    if (mIndex >= 0 && mIndex < 12) {
+      return `${months[mIndex]} ${year}`
+    }
+    return year
+  }
+
+  const existingItemsMap = new Map()
+  if (existing?.pages) {
+    for (const page of existing.pages) {
+      for (const item of (page.items || [])) {
+        if (item && item.id) {
+          existingItemsMap.set(item.id, item)
+        }
+      }
+    }
+  }
+
   const diskExts = [".hdv", ".2mg", ".dsk", ".woz", ".po", ".do", ".bin", ".bas", ".nib", ".2img", ".d13", ".dc", ".img", ".zip", ".7z", ".gz", ".tar"]
   const isDisk = url => {
     try {
@@ -164,8 +257,6 @@ async function main() {
       return false
     }
   }
-
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
   const normalizeUrl = raw => {
     if (!raw) return ""
@@ -184,9 +275,34 @@ async function main() {
 
   const fetchDetailWithRetry = async id => {
     const url = `https://demozoo.org/api/v1/productions/${id}/?format=json`
+    const curlArgs = [
+      "-L", "--fail", "--max-time", "15", "-sS",
+      "-H", "User-Agent: Apple2TS/3.7.0",
+      "-H", "Accept: application/json"
+    ]
+    if (apiKey) {
+      curlArgs.push("-H", `Authorization: Api-Key ${apiKey}`)
+    }
+    curlArgs.push(url)
+
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const { stdout } = await execFile("curl.exe", ["-L", "--fail", "--max-time", "15", "-sS", url])
+        let stdout = ""
+        try {
+          const res = await execFile("curl.exe", curlArgs)
+          stdout = res.stdout
+        } catch (curlErr) {
+          // Fallback to global fetch if curl is unavailable or fails
+          const headers = {
+            "User-Agent": "Apple2TS/3.7.0",
+            "Accept": "application/json"
+          }
+          if (apiKey) headers["Authorization"] = `Api-Key ${apiKey}`
+          const fetchRes = await fetch(url, { headers })
+          if (!fetchRes.ok) throw curlErr || new Error(`Fetch failed: ${fetchRes.status}`)
+          stdout = await fetchRes.text()
+        }
+
         if (/just a moment|enable javascript and cookies|cf-chl-/i.test(stdout)) {
           console.warn(`CF challenge on item ${id}, waiting 3s (attempt ${attempt})`)
           await sleep(3000)
@@ -203,60 +319,151 @@ async function main() {
           })
           .map(link => link.url)
         const yt = (detail.external_links || []).find(link => /youtube/i.test(link.link_class || "") || /youtube\.com|youtu\.be/i.test(link.url || ""))?.url || ""
-        return { downloadUrls: links, downloadUrl: links[0] || "", youtubeUrl: yt }
+        const scr = detail.screenshots?.[0]?.thumbnail_url || detail.screenshots?.[0]?.standard_url || ""
+        return { downloadUrls: links, downloadUrl: links[0] || "", youtubeUrl: yt, screenshotUrl: scr }
       } catch {
         if (attempt < 3) await sleep(2000)
       }
     }
-    return { downloadUrls: [], downloadUrl: "", youtubeUrl: "" }
+    return { downloadUrls: [], downloadUrl: "", youtubeUrl: "", screenshotUrl: "" }
   }
 
-  const pages = []
-  for (let page = 1; page <= 1000; page++) {
-    try {
-      const html = await fetchText(TARGET(page))
-      const items = parsePage(html, page)
-      if (items.length === 0) {
-        if (page === 1) throw new Error("No productions parsed from page 1")
+  let allItems = []
+
+  if (apiKey) {
+    console.log("Fetching productions list via DemoZoo API...")
+    let nextUrl = "https://demozoo.org/api/v1/productions/?platform=67"
+    let apiPage = 1
+    const rawProds = []
+    while (nextUrl) {
+      try {
+        let stdout = ""
+        const curlArgs = [
+          "-L", "--fail", "--max-time", "20", "-sS",
+          "-H", "User-Agent: Apple2TS/3.7.0",
+          "-H", "Accept: application/json",
+          "-H", `Authorization: Api-Key ${apiKey}`,
+          nextUrl
+        ]
+        try {
+          const res = await execFile("curl.exe", curlArgs)
+          stdout = res.stdout
+        } catch {
+          const fetchRes = await fetch(nextUrl, {
+            headers: {
+              "User-Agent": "Apple2TS/3.7.0",
+              "Accept": "application/json",
+              "Authorization": `Api-Key ${apiKey}`
+            }
+          })
+          if (!fetchRes.ok) throw new Error(`API page fetch failed: ${fetchRes.status}`)
+          stdout = await fetchRes.text()
+        }
+        const data = JSON.parse(stdout)
+        rawProds.push(...(data.results || []))
+        console.log(`DemoZoo API page ${apiPage}: ${data.results?.length || 0} productions (total so far: ${rawProds.length}/${data.count || "?"})`)
+        nextUrl = data.next
+        apiPage++
+        if (nextUrl) await sleep(300)
+      } catch (err) {
+        console.warn(`DemoZoo API page fetch stopped: ${err.message}`)
         break
       }
-      pages.push({ page, items })
-      console.log(`DemoZoo page ${page}: ${items.length} productions`)
-      if (items.length < PAGE_SIZE) break
-    } catch (error) {
-      if (existing?.pages?.length) {
-        console.warn(`DemoZoo refresh stopped at page ${page}: ${error.message}`)
-        console.warn(`Keeping the previous snapshot (${existing.pageCount || existing.pages.length} pages).`)
-        return
-      }
-      throw error
+    }
+
+    if (rawProds.length > 0) {
+      allItems = rawProds.map((prod, idx) => {
+        const typeName = prod.types?.[0]?.name || "Demo"
+        const subType = prod.types?.length ? `Apple II - ${typeName}` : "Apple II"
+        const authors = (prod.author_nicks || []).map(a => a.name).filter(Boolean)
+        const date = prod.release_date || ""
+        const page = Math.floor(idx / PAGE_SIZE) + 1
+        const existingItem = existingItemsMap.get(prod.id)
+
+        return {
+          id: prod.id,
+          title: prod.title,
+          subType,
+          type: classifyProductionType(subType),
+          author: authors.join(" / "),
+          dateStr: formatDateStr(date),
+          year: date.match(/\d{4}/)?.[0] || "",
+          screenshotUrl: existingItem?.screenshotUrl || "",
+          demozooUrl: prod.demozoo_url || `https://demozoo.org/productions/${prod.id}/`,
+          page,
+          downloadUrl: existingItem?.downloadUrl || "",
+          downloadUrls: existingItem?.downloadUrls || [],
+          youtubeUrl: existingItem?.youtubeUrl || ""
+        }
+      })
     }
   }
 
-  const allItems = pages.flatMap(p => p.items)
+  if (allItems.length === 0) {
+    const pages = []
+    for (let page = 1; page <= 1000; page++) {
+      try {
+        const html = await fetchText(TARGET(page))
+        const items = parsePage(html, page)
+        if (items.length === 0) {
+          if (page === 1) throw new Error("No productions parsed from page 1")
+          break
+        }
+        pages.push({ page, items })
+        console.log(`DemoZoo page ${page}: ${items.length} productions`)
+        if (items.length < PAGE_SIZE) break
+      } catch (error) {
+        if (existing?.pages?.length) {
+          console.warn(`DemoZoo refresh stopped at page ${page}: ${error.message}`)
+          console.warn(`Keeping the previous snapshot (${existing.pageCount || existing.pages.length} pages).`)
+          return
+        }
+        throw error
+      }
+    }
+    allItems = pages.flatMap(p => p.items)
+  }
+
   console.log(`Pre-fetching download links for ${allItems.length} productions...`)
   let linksCount = 0
+  let fetchAttempts = 0
   for (let i = 0; i < allItems.length; i++) {
     const item = allItems[i]
-    if (item.downloadUrls?.length) {
+    if (item.downloadUrls?.length && item.screenshotUrl) {
       linksCount++
       continue
     }
     const res = await fetchDetailWithRetry(item.id)
-    if (res.downloadUrl) {
+    fetchAttempts++
+    if (res.downloadUrl && !item.downloadUrl) {
       item.downloadUrl = res.downloadUrl
       item.downloadUrls = res.downloadUrls
-      linksCount++
     }
-    if (res.youtubeUrl) {
+    if (res.screenshotUrl && !item.screenshotUrl) {
+      item.screenshotUrl = res.screenshotUrl
+    }
+    if (res.youtubeUrl && !item.youtubeUrl) {
       item.youtubeUrl = res.youtubeUrl
+    }
+    if (item.downloadUrls?.length) {
+      linksCount++
     }
     if ((i + 1) % 50 === 0 || i + 1 === allItems.length) {
       console.log(`Pre-fetch progress: ${i + 1}/${allItems.length} (${linksCount} with links)`)
     }
-    await sleep(150)
+    if (fetchAttempts > 0) {
+      // Respect DemoZoo policy: leave pause between repeated detail requests
+      await sleep(500)
+    }
   }
   console.log(`Pre-fetched download links: ${linksCount}/${allItems.length}`)
+
+  const pages = []
+  for (let i = 0; i < allItems.length; i += PAGE_SIZE) {
+    const pageNum = Math.floor(i / PAGE_SIZE) + 1
+    const pageItems = allItems.slice(i, i + PAGE_SIZE).map(it => ({ ...it, page: pageNum }))
+    pages.push({ page: pageNum, items: pageItems })
+  }
 
   await mkdir(dirname(OUTPUT), { recursive: true })
   await writeFile(OUTPUT, JSON.stringify({
@@ -266,6 +473,7 @@ async function main() {
     pageCount: pages.length,
     pages
   }, null, 2) + "\n")
+  console.log(`DemoZoo snapshot saved successfully (${pages.length} pages, ${allItems.length} productions).`)
 }
 
 main().catch(error => {

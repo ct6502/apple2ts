@@ -708,13 +708,15 @@ const DiskDrive = (props: DiskDriveProps) => {
       <InternetArchivePopup
         driveIndex={dprops.index}
         open={internetDialogDialogOpen}
-        onClose={() => { setInternetDialogDialogOpen(false) }}>
+        onClose={() => { setInternetDialogDialogOpen(false) }}
+        onLoadSuccess={triggerStandbyUpdate}>
       </InternetArchivePopup>
 
       <DemoZooDialog
         driveIndex={dprops.index}
         open={demoZooDialogOpen}
-        onClose={() => { setDemoZooDialogOpen(false) }}>
+        onClose={() => { setDemoZooDialogOpen(false) }}
+        onLoadSuccess={triggerStandbyUpdate}>
       </DemoZooDialog>
     </span>
   )
