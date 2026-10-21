@@ -22,6 +22,9 @@ describe("Google Drive REST provider", () => {
       configurable: true,
       value: {
         accounts: { oauth2: { initTokenClient: mockInitTokenClient } },
+        picker: {
+          Document: { ID: "id", NAME: "name", PARENT_ID: "parentId", URL: "url" },
+        },
       },
     })
   })
@@ -145,5 +148,65 @@ describe("Google Drive REST provider", () => {
 
     expect(drive.signIn).toHaveBeenCalled()
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  test("downloads multiple files selected via Google Drive picker", async () => {
+    const blob1 = new Blob([new Uint8Array([1, 1])])
+    const blob2 = new Blob([new Uint8Array([2, 2])])
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce({ ok: true, blob: async () => blob1 } as Response)
+      .mockResolvedValueOnce({ ok: true, blob: async () => blob2 } as Response)
+    globalThis.fetch = fetchMock
+
+    const drive = new GoogleDrive()
+    drive.createPicker = jest.fn(() => {
+      drive.pickerCallback({
+        action: "picked",
+        docs: [
+          {
+            [google.picker.Document.ID]: "id1",
+            [google.picker.Document.NAME]: "Game_Disk1.dsk",
+            [google.picker.Document.PARENT_ID]: "root",
+            [google.picker.Document.URL]: "https://drive.example/1",
+          },
+          {
+            [google.picker.Document.ID]: "id2",
+            [google.picker.Document.NAME]: "Game_Disk2.dsk",
+            [google.picker.Document.PARENT_ID]: "root",
+            [google.picker.Document.URL]: "https://drive.example/2",
+          },
+        ],
+      } as unknown as google.picker.ResponseObject)
+    })
+
+    const result = await drive.download(".dsk,.woz,.zip")
+
+    expect(Array.isArray(result)).toBe(true)
+    const items = result as Array<[Blob, unknown]>
+    expect(items.length).toBe(2)
+    expect(items[0][0]).toBe(blob1)
+    expect(items[0][1]).toMatchObject({ fileName: "Game_Disk1.dsk", itemId: "id1" })
+    expect(items[1][0]).toBe(blob2)
+    expect(items[1][1]).toMatchObject({ fileName: "Game_Disk2.dsk", itemId: "id2" })
+  })
+
+  test("refuses to sync archive container without modifying sync status", async () => {
+    const drive = new GoogleDrive()
+    const cloudData: CloudData = {
+      providerName: "GoogleDrive",
+      syncStatus: 1,
+      syncInterval: 60000,
+      lastSyncTime: Date.now(),
+      fileName: "games.zip",
+      itemId: "id1",
+      apiEndpoint: "",
+      downloadUrl: "",
+      detailsUrl: "",
+      fileSize: 1000,
+      isArchive: true,
+    }
+    const result = await drive.sync(new Blob([new Uint8Array(143360)]), cloudData)
+    expect(result).toBe(false)
+    expect(cloudData.syncStatus).toBe(1)
   })
 })

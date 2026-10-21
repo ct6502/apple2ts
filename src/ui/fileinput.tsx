@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { FILE_SUFFIXES_ALL, getCleanDiskFilename, RUN_MODE } from "../common/utility"
+import { CLOUD_SYNC, FILE_SUFFIXES_ALL, getCleanDiskFilename, RUN_MODE } from "../common/utility"
 import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
 import { appendStandbyDisks, handleSetDiskOrFileFromBuffer, prepWritableFile, setStandbyDisks, StandbyDisk } from "./devices/disk/driveprops"
@@ -29,13 +29,26 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
       [".woz", ".po", ".dsk", ".do", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"]
     )
     if (decompressedList && decompressedList.length > 0) {
+      const archiveCloudData: CloudData = {
+        providerName: "Local",
+        syncStatus: CLOUD_SYNC.INACTIVE,
+        syncInterval: -1,
+        lastSyncTime: -1,
+        fileName: filename,
+        itemId: "",
+        apiEndpoint: "",
+        downloadUrl: "",
+        detailsUrl: "",
+        fileSize: buffer.byteLength,
+        isArchive: true,
+      }
       return decompressedList.map(item => ({
         filename: getCleanDiskFilename(item.filename),
         diskData: new Uint8Array(item.buffer),
         diskHasChanges: false,
         isWriteProtected: false,
         writableFileHandle: null,
-        cloudData: null,
+        cloudData: archiveCloudData,
         lastAppleWriteTime: -1,
         lastLocalFileWriteTime: -1,
       }))
@@ -103,7 +116,7 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
         index,
         first.diskData.buffer as ArrayBuffer,
         first.filename,
-        null,
+        first.cloudData,
         first.writableFileHandle,
         undefined,
         true, // preserveDriveIndex: keep user's chosen drive!
@@ -145,11 +158,14 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
     }
   }
 
+  const pendingIndexRef = useRef(2)
+  const pendingAppendRef = useRef(false)
+
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       const files = Array.from(e.target.files)
       const items = files.map(file => ({ file, handle: null }))
-      void readFiles(items, props.showFileOpenDialog.index, props.showFileOpenDialog.append)
+      void readFiles(items, pendingIndexRef.current, pendingAppendRef.current)
     }
   }
 
@@ -182,6 +198,8 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
   useEffect(() => {
     if (!props.showFileOpenDialog.show) return
     const { index, append } = props.showFileOpenDialog
+    pendingIndexRef.current = index
+    pendingAppendRef.current = !!append
     props.setShowFileOpenDialog(false, index, append)
     if (isFileSystemApiSupported()) {
       setTimeout(() => showReadWriteFilePicker(index, append), 0)

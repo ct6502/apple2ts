@@ -26,9 +26,9 @@ import { createRetroInternetArchiveControl } from "./internetarchive_retro"
 import {
   DISK_DRIVE_LABELS,
   downloadDiskToDevice,
-  getBlobFromDiskData,
   saveDiskToDevice,
 } from "./diskdrive"
+import { getDiskBlobForSync } from "../../../common/utility"
 import {
   doSetUIDriveProps,
   ejectAllDisks,
@@ -665,9 +665,10 @@ const getCurrentDiskScreenshotUrl = () => {
 
 const saveDiskToCloud = async (driveIndex: number, provider: CloudProvider) => {
   const drive = handleGetDriveProps(driveIndex)
+  const blob = getDiskBlobForSync(drive.diskData, drive.filename, drive.hardDrive)
   const cloudData = await provider.upload(
     drive.filename,
-    getBlobFromDiskData(drive.diskData, drive.filename),
+    blob,
   )
   if (!cloudData) return
   if (drive.writableFileHandle) await handleSaveWritableFile(driveIndex)
@@ -681,14 +682,15 @@ const saveDiskToCloud = async (driveIndex: number, provider: CloudProvider) => {
 
 const syncCloudDisk = async (driveIndex: number) => {
   const drive = handleGetDriveProps(driveIndex)
-  if (!drive.cloudData) return
+  if (!drive.cloudData || drive.cloudData.isArchive) return
   const provider = drive.cloudData.providerName === "OneDrive"
     ? new OneDriveCloudDrive()
     : drive.cloudData.providerName === "GoogleDrive"
       ? new GoogleDrive()
       : null
   if (!provider) return
-  const blob = getBlobFromDiskData(drive.diskData, drive.filename)
+  const targetFilename = drive.cloudData.fileName || drive.filename
+  const blob = getDiskBlobForSync(drive.diskData, targetFilename, drive.hardDrive)
   if (!await provider.sync(blob, drive.cloudData)) return
   passSetDriveProps({
     ...drive,
@@ -749,10 +751,14 @@ export const insertedDiskItems = (
   const hasDisk = Boolean(drive.filename)
   const isElectron = navigator.userAgent.includes("Electron")
   const activeCloudDisk = Boolean(
-    drive.cloudData && drive.cloudData.syncStatus !== CLOUD_SYNC.INACTIVE
+    drive.cloudData &&
+    drive.cloudData.syncStatus !== CLOUD_SYNC.INACTIVE &&
+    !drive.cloudData.isArchive
   )
-  const supportedCloudDisk = activeCloudDisk && (
-    drive.cloudData?.providerName === "OneDrive" || drive.cloudData?.providerName === "GoogleDrive"
+  const supportedCloudDisk = Boolean(
+    activeCloudDisk && (
+      drive.cloudData?.providerName === "OneDrive" || drive.cloudData?.providerName === "GoogleDrive"
+    )
   )
   const setSyncInterval = (syncInterval: number) => {
     const latestDrive = handleGetDriveProps(driveIndex)

@@ -1,4 +1,5 @@
 import { KeyboardEvent } from "react"
+import { convertwoz2dsk } from "./convertwoz2dsk"
 
 // Be sure to update this version whenever the save state format changes.
 export const SAVE_STATE_VERSION = 2.0
@@ -7,10 +8,10 @@ export const TEST_DEBUG = false
 export const TEST_GRAPHICS = false
 export const MAX_SNAPSHOTS = 30
 const FILE_OPEN_SUFFIXES = ".a2ts,.bin,.a,.bas"
-const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.do"
+const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.do,.nib"
 const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po,.2meg,.img"
 export const FILE_SUFFIXES_DISK = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
-export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK},.zip,.gz,.7z`
+export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK},.zip,.gz,.7z,.tar`
 export const MAX_DRIVES = 4
 // export const DISK_CONVERSION_SUFFIXES = new Map<string, string>([[".dsk", ".woz"]])
 
@@ -450,6 +451,19 @@ export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blo
     updateWozCrc(diskData)
   }
   return new Blob([diskData] as BlobPart[], { type: "application/octet-stream" })
+}
+
+export const getDiskBlobForSync = (diskData: Uint8Array, filename: string, isHardDrive = false): Blob => {
+  const fileExt = filename.substring(filename.lastIndexOf(".")).toLowerCase()
+  const isFloppy = !isHardDrive && [".dsk", ".do", ".po"].includes(fileExt)
+  let targetData = diskData
+  if (isFloppy) {
+    const converted = convertwoz2dsk(diskData, fileExt === ".po")
+    if (converted.length > 0) {
+      targetData = converted
+    }
+  }
+  return getBlobFromDiskData(targetData, filename)
 }
 
 export const lockedKeyStyle = (mode: number) => {

@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { getDiskImageFromLocalStorage, hasDiskImageInLocalStorage, setDiskImageToLocalStorage } from "../../localstorage"
 import { handleGetDriveProps, handleSetDiskFromURL } from "./driveprops"
-import { getBlobFromDiskData } from "./diskdrive"
+import { getDiskBlobForSync } from "../../../common/utility"
 import {
   faUpload,
   faDownload,
@@ -32,7 +32,7 @@ const DiskImportExport = () => {
       return
     }
     const filename = url.split("/").pop() || url
-    const blob = getBlobFromDiskData(state.data, filename)
+    const blob = getDiskBlobForSync(state.data, filename, dprops.hardDrive)
     const link = document.createElement("a")
     const downloadUrl = URL.createObjectURL(blob)
     link.setAttribute("href", downloadUrl)

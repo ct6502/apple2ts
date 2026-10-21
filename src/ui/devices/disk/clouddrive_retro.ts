@@ -1,4 +1,4 @@
-import { FILE_SUFFIXES_DISK } from "../../../common/utility"
+import { FILE_SUFFIXES_ALL } from "../../../common/utility"
 import { RETRO_SKIN } from "../../localstorage"
 import type { RetroControlMetadata, RetroMenuContext } from "../../retro/retromenucontext"
 import { controlFromJson, type RetroControlBindings } from "../../retro/retrocontrolmetadata"
@@ -36,7 +36,7 @@ type CloudBrowserState = {
   loaded: boolean
 }
 
-const diskExtensions = FILE_SUFFIXES_DISK.split(",")
+const diskExtensions = FILE_SUFFIXES_ALL.split(",")
 
 const cloudDriveTemplateBindings: RetroControlBindings = {
   "diskDrives.cloudDrive.parentItem": { label: (): string => ".." },

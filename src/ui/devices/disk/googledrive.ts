@@ -47,7 +47,7 @@ export class GoogleDrive implements CloudProvider {
     }
   }
 
-  private resolvePicker: ((result: GoogleDriveResult | null) => void) | null = null
+  private resolvePicker: ((result: GoogleDriveResult[] | GoogleDriveResult | null) => void) | null = null
 
   // Create and render a Google Picker object for selecting from Drive.
   createPicker = (view: string, filter?: string) => {
@@ -56,7 +56,7 @@ export class GoogleDrive implements CloudProvider {
       if (view === "file") {
         googleView = new google.picker.DocsView(google.picker.ViewId.DOCS)
           .setIncludeFolders(true)
-          .setMimeTypes("application/octet-stream")
+          .setMimeTypes("application/octet-stream,application/zip,application/x-zip-compressed,application/x-7z-compressed,application/x-tar,application/gzip,application/x-gzip")
         if (filter) {
           const modifiedFilter = filter.replace(/,/g, "|")
           googleView.setQuery(modifiedFilter)
@@ -67,7 +67,7 @@ export class GoogleDrive implements CloudProvider {
           .setIncludeFolders(true)
           .setMimeTypes("application/vnd.google-apps.folder")
       }
-      const picker = new google.picker.PickerBuilder()
+      const pickerBuilder = new google.picker.PickerBuilder()
         .addView(googleView)
         // .enableFeature(google.picker.Feature.NAV_HIDDEN)  // hide the nav bar at the top
         .enableFeature(google.picker.Feature.MINE_ONLY)   // only show user's drive files
@@ -75,8 +75,11 @@ export class GoogleDrive implements CloudProvider {
         .setDeveloperKey(pickerKey())
         .setCallback(this.pickerCallback)
         .setAppId(appID())
-        .setTitle(`Select a ${view === "file" ? "disk image" : "folder"}`)
-        .build()
+        .setTitle(`Select ${view === "file" ? "disk image(s)" : "folder"}`)
+      if (view === "file") {
+        pickerBuilder.enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+      }
+      const picker = pickerBuilder.build()
       picker.setVisible(true)
     }
 
@@ -111,14 +114,15 @@ export class GoogleDrive implements CloudProvider {
   pickerCallback = (data: google.picker.ResponseObject) => {
     // console.log(`data = ${JSON.stringify(data, null, 2)}`)
     if (data["action"] === "picked" && data["docs"]) {
-      const doc = data["docs"][0]
+      const docs = data["docs"]
       if (this.resolvePicker) {
-        this.resolvePicker({
+        const results: GoogleDriveResult[] = docs.map((doc: google.picker.DocumentObject) => ({
           fileId: doc[google.picker.Document.ID],
           parentID: doc[google.picker.Document.PARENT_ID] ?? "",
           fileName: doc[google.picker.Document.NAME] ?? "",
           webViewLink: doc[google.picker.Document.URL] ?? ""
-        })
+        }))
+        this.resolvePicker(results)
         this.resolvePicker = null
       }
     } else if (data["action"] === "cancel") {
@@ -130,7 +134,7 @@ export class GoogleDrive implements CloudProvider {
   }
 
   launchPicker = async (view: string, filter?: string) => {
-    return new Promise<GoogleDriveResult | null>((resolve, reject) => {
+    return new Promise<GoogleDriveResult[] | GoogleDriveResult | null>((resolve, reject) => {
       try {
         this.resolvePicker = resolve
         this.createPicker(view, filter)
@@ -209,44 +213,51 @@ export class GoogleDrive implements CloudProvider {
     }] : [])
   }
 
-  async download(filter: string): Promise<[Blob, CloudData]|null> {
+  async download(filter: string): Promise<Array<[Blob, CloudData]> | [Blob, CloudData] | null> {
     if (this.selectedItem) return this.downloadSelectedItem(this.selectedItem)
     await this.ensureScriptsLoaded()
-    const result = await this.launchPicker("file", filter)
-    if (result) {
-      const cloudData: CloudData = {
-        providerName: "GoogleDrive",
-        syncStatus: CLOUD_SYNC.INPROGRESS,
-        syncInterval: DEFAULT_SYNC_INTERVAL,
-        lastSyncTime: Date.now(),
-        fileName: result.fileName,
-        itemId: result.fileId,
-        apiEndpoint: "",
-        parentId: result.parentID,
-        downloadUrl: `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`,
-        detailsUrl: result.webViewLink,
-        fileSize: -1
-      }
-      
-      showGlobalProgressModal(true, "Downloading disk")
+    const pickerResult = await this.launchPicker("file", filter)
+    if (!pickerResult) return null
 
-      const response = await fetch(cloudData.downloadUrl, {
-        headers: {
-          "Authorization": `Bearer ${g_accessToken}`
+    const results: GoogleDriveResult[] = Array.isArray(pickerResult) ? pickerResult : [pickerResult]
+    if (results.length === 0) return null
+
+    showGlobalProgressModal(true, "Downloading disk(s)")
+    try {
+      const downloaded: Array<[Blob, CloudData]> = []
+      for (const result of results) {
+        const cloudData: CloudData = {
+          providerName: "GoogleDrive",
+          syncStatus: CLOUD_SYNC.INPROGRESS,
+          syncInterval: DEFAULT_SYNC_INTERVAL,
+          lastSyncTime: Date.now(),
+          fileName: result.fileName,
+          itemId: result.fileId,
+          apiEndpoint: "",
+          parentId: result.parentID,
+          downloadUrl: `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`,
+          detailsUrl: result.webViewLink,
+          fileSize: -1
         }
-      })
-      .finally(() => {
-        showGlobalProgressModal(false)
-      })
-      if (response.ok) {
-        console.log(`File download success: ${result.fileName}`)
-        cloudData.syncStatus = CLOUD_SYNC.ACTIVE
-        const blob = await response.blob()
-        return [blob, cloudData]
-      } else {
-        console.error(`Error downloading ${result.fileName}: ${response.statusText}`)
-        return null
+        const response = await fetch(cloudData.downloadUrl, {
+          headers: {
+            "Authorization": `Bearer ${g_accessToken}`
+          }
+        })
+        if (response.ok) {
+          console.log(`File download success: ${result.fileName}`)
+          cloudData.syncStatus = CLOUD_SYNC.ACTIVE
+          const blob = await response.blob()
+          cloudData.fileSize = blob.size
+          downloaded.push([blob, cloudData])
+        } else {
+          console.error(`Error downloading ${result.fileName}: ${response.statusText}`)
+        }
       }
+      if (downloaded.length === 1) return downloaded[0]
+      if (downloaded.length > 1) return downloaded
+    } finally {
+      showGlobalProgressModal(false)
     }
     return null
   }
@@ -276,7 +287,8 @@ export class GoogleDrive implements CloudProvider {
 
   async upload(filename: string, blob: Blob): Promise<CloudData | null> {
     await this.ensureScriptsLoaded()
-    const result = await this.launchPicker("folder")
+    const pickerResult = await this.launchPicker("folder")
+    const result = Array.isArray(pickerResult) ? pickerResult[0] : pickerResult
 
     if (result) {
       const cloudData: CloudData = {
@@ -331,6 +343,7 @@ export class GoogleDrive implements CloudProvider {
   }
 
   async sync(blob: Blob, cloudData: CloudData): Promise<boolean> {
+    if (cloudData.isArchive) return false
     cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
     cloudData.lastSyncTime = Date.now()
 
