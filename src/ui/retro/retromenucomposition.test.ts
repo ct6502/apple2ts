@@ -974,6 +974,7 @@ describe("Retro menu metadata structure", () => {
       "keyboard.joystick.arrowKeys",
       "keyboard.joystick.reverseYAxis",
       "keyboard.joystick.siriusJoyport",
+      "keyboard.enableGamePatches",
       "keyboard.joystick.touchJoystick",
       "keyboard.joystick.tiltSensorJoystick",
     ])
