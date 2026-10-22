@@ -91,6 +91,11 @@ export default defineConfig({
     sourcemap: true
   },
   define: {
-    "process.env.npm_config_urlparam": JSON.stringify(process.env.npm_config_urlparam),
+    // npm 11+ rejects unknown CLI flags (EUNKNOWNCONFIG), so `--urlparam=...`
+    // no longer produces npm_config_urlparam. Use an environment variable
+    // instead: A2TS_URLPARAM="speed=fast#Replay" npm start
+    "process.env.A2TS_URLPARAM": JSON.stringify(
+      process.env.A2TS_URLPARAM ?? process.env.npm_config_urlparam ?? ""
+    ),
   }
 })

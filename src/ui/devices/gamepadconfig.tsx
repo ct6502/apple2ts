@@ -23,8 +23,9 @@ const joystickSettings = [
   ["keyboard.joystick.arrowKeys", "arrowKeysAsJoystick", true, false],
   ["keyboard.joystick.reverseYAxis", "reverseYAxis", true, false],
   ["keyboard.joystick.siriusJoyport", "siriusJoyport", true, false],
+  ["keyboard.enableGamePatches", "enableGamePatches", true, false],
   ["keyboard.joystick.touchJoystick", "touchJoystick", isTouchDevice, false],
-  ["keyboard.joystick.tiltSensorJoystick", "tiltSensorJoystick", isTouchDevice, false]
+  ["keyboard.joystick.tiltSensorJoystick", "tiltSensorJoystick", isTouchDevice, false],
 ] as const
 
 const gamepadBindings: RetroControlBindings = Object.fromEntries(

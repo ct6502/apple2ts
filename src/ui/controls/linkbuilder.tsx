@@ -6,7 +6,7 @@ import { Droplist } from "../panels/droplist"
 import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import CheckBox from "../panels/checkbox"
-import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode } from "../ui_settings"
+import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode, getUIStateBoolean } from "../ui_settings"
 import { DEFAULT_SLOT_CONFIG, UI_THEMES } from "../../common/utility"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode, handleGetSlotConfig } from "../main2worker"
@@ -76,6 +76,7 @@ const LinkBuilder = () => {
   const [lowercaseMode, setLowercaseMode] = useState(false)
   const [runprogoff, setRunprogoff] = useState(false)
   const [soundoff, setSoundoff] = useState(false)
+  const [gamepatchesOff, setGamepatchesOff] = useState(false)
 
   const [colormode, setColormode] = useState("")
   const [crtdistort, setCrtdistort] = useState(false)
@@ -256,6 +257,9 @@ const LinkBuilder = () => {
     if (soundoff) {
       params.push("sound=off")
     }
+    if (gamepatchesOff) {
+      params.push("gamepatches=off")
+    }
 
     const speedIndex = speedNames.indexOf(speed)
     if (speedIndex !== -1 && speedIndex !== 2) { // 2 is "1 MHz (default)"
@@ -358,6 +362,7 @@ const LinkBuilder = () => {
     setLowercaseMode(false)
     setRunprogoff(false)
     setSoundoff(false)
+    setGamepatchesOff(false)
     setColormode(colorNames[0])
     setCrtdistort(false)
     setDebug(false)
@@ -389,8 +394,8 @@ const LinkBuilder = () => {
   }
 
   const retrieveFromEmulatorSettings = () => {
-    // Retrieve all of the emulator settings from their individual local
-    // local storage keys or from the emulator state and populate the fields in the link builder
+    // Retrieve all of the emulator settings from their individual local storage
+    // keys or from the emulator state and populate the fields in the link builder
     setColormode(colorNames[getColorMode()])
     setCrtdistort(getCrtDistortion())
     setGhosting(getGhosting())
@@ -398,6 +403,7 @@ const LinkBuilder = () => {
     setLowercaseMode(getLowercaseMode())
     setDebug(handleGetIsDebugging())
     setSoundoff(!isAudioEnabled())
+    setGamepatchesOff(!getUIStateBoolean("enableGamePatches"))
     setTextBlock("")
     setHexBlock("")
     setHexAddress("")
@@ -515,6 +521,9 @@ const LinkBuilder = () => {
         <CheckBox name={t("linkBuilder.sound")}
           checked={!soundoff}
           setChecked={(on: boolean) => { setSoundoff(!on) }} />
+        <CheckBox name={t("linkBuilder.gamepatches")}
+          checked={!gamepatchesOff}
+          setChecked={(on: boolean) => { setGamepatchesOff(!on) }} />
       </div>
     </div>
   </>

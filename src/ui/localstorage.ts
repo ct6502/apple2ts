@@ -2,7 +2,7 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passAutoSnapshot, passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
+import { passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
 import { getTheme, getUIState, initialBooleanUIKeys, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode, isDefaultTrueBooleanKey, setAutoSnapshot } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
@@ -18,6 +18,7 @@ export const PREFERENCES_RESET_EVENT = "apple2ts-preferences-reset"
 const booleanControlIds: Partial<Record<BooleanKeyOf<UIState>, string>> = {
   arrowKeysAsJoystick: "keyboard.joystick.arrowKeys",
   crtDistortion: "display.crtDistortion",
+  enableGamePatches: "keyboard.enableGamePatches",
   ghosting: "display.ghosting",
   hotReload: "options.hotReload",
   lowercaseMode: "keyboard.lowercase",
@@ -108,6 +109,7 @@ export const setPreferenceBoolean = (
   setUIStateBoolean(key as BooleanKeyOf<UIState>, value)
   if (key === "reverseYAxis") passReverseYAxis(value)
   if (key === "siriusJoyport") passSiriusJoyport(value)
+  if (key === "enableGamePatches") passEnableGamePatches(value)
   const controlId = booleanControlIds[key]
   if (controlId) notifySettingsChanged([controlId], origin)
 }

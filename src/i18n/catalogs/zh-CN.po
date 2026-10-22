@@ -1351,8 +1351,13 @@ msgid "Compressed archives:"
 msgstr "压缩封装包："
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "多磁盘置换：点击磁盘图标上的多盘标签可打开快速置换菜单。加载多磁盘压缩包 (.zip, .7z, .gz) 会自动将所有磁盘载入置换列表。"
+msgid ""
+"Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap "
+"menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all "
+"disks into the swapper list."
+msgstr ""
+"多磁盘置换：点击磁盘图标上的多盘标签可打开快速置换菜单。加载多磁盘压缩包 (."
+"zip, .7z, .gz) 会自动将所有磁盘载入置换列表。"
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -1615,6 +1620,10 @@ msgstr "删除"
 
 msgctxt "keyboard.return"
 msgid "Return"
+msgstr ""
+
+msgctxt "keyboard.enableGamePatches"
+msgid "Enable Game Patches"
 msgstr ""
 
 #, fuzzy

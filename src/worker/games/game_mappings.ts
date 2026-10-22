@@ -115,37 +115,43 @@ const defaultGame: GameLibraryItem = {
   joystick: (axes: number[]) => axes,
   rumble: null,
   setup: null,
-  helptext: ""
+  helptext: " "
 }
 
-export const handleKeyMapping = (key: string) => {
-  for (const game of gameLibrary) {
-    if (matchMemory(game.address, game.data)) {
-      return (key.toUpperCase() in game.keymap) ? game.keymap[key.toUpperCase()] : key
-    }   
-  }
-  return key
+let gamePatchesEnabled = true
+
+export const enableGamePatches = (enabled: boolean) => {
+  gamePatchesEnabled = enabled
 }
 
 export const getGameMapping = () => {
-  for (const game of gameLibrary) {
-    if (matchMemory(game.address, game.data)) {
-      return game
-    }   
+  if (gamePatchesEnabled) {
+    for (const game of gameLibrary) {
+      if (matchMemory(game.address, game.data)) {
+        return game
+      }   
+    }
   }
   return defaultGame
 }
 
-export const handleGameSetup = (reset = false) => {
-  for (const game of gameLibrary) {
-    if (matchMemory(game.address, game.data)) {
-      passHelptext(game.helptext ? game.helptext : " ")
-      if (game.setup) game.setup()
-      return
-    }   
+export const handleKeyMapping = (key: string) => {
+  const game = getGameMapping()
+  if (game !== defaultGame) {
+    return (key.toUpperCase() in game.keymap) ? game.keymap[key.toUpperCase()] : key
   }
+  return key
+}
+
+export const handleGameSetup = (reset = false) => {
   if (reset) { 
     passHelptext(" ")
     passEnhancedMidi(0)
+    return
+  }
+  const game = getGameMapping()
+  if (game !== defaultGame) {
+    passHelptext(game.helptext ? game.helptext : " ")
+    if (game.setup) game.setup()
   }
 }

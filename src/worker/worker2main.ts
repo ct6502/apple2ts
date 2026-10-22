@@ -42,6 +42,7 @@ import { setTraceSettings } from "./tracelog"
 import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState } from "./save_restore"
 import { setSiriusJoyport } from "./devices/sirius_joyport"
 import { getCurrentMemory } from "./memory"
+import { enableGamePatches } from "./games/game_mappings"
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -540,6 +541,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.MEMORY_DUMP_STATE:
         setMemoryDumpState(e.data.payload as MEMORY_DUMP_STATE)
+        break
+      case MSG_MAIN.ENABLE_GAME_PATCHES:
+        enableGamePatches(e.data.payload as boolean)
         break
       default:
         console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)

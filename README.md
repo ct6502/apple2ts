@@ -102,15 +102,21 @@ The page will reload when you make changes. You may also see any lint errors in 
 
 ### Emulator Settings
 
-You can append parameters to the URL (to control say the emulator speed or the starting disk image) by using the following syntax:
+You can append parameters to the URL (to control say the emulator speed or the starting disk image) by setting the `A2TS_URLPARAM` environment variable using the following syntax:
 
-`npm start --urlparam=<parameters>`
+```sh
+A2TS_URLPARAM="<parameters>" npm start
+```
 
 For example:
 
-`npm start --urlparam=speed=fast#Replay`
+```sh
+A2TS_URLPARAM="speed=fast#Replay" npm start
+```
 
 This will start the emulator in fast mode and load the Total Replay disk image.
+
+> **Note:** The older `npm start --urlparam=<parameters>` form no longer works, because npm 11 and later reject unknown command line flags (`EUNKNOWNCONFIG`).
 
 ### Testing
 

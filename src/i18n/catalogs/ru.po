@@ -1441,8 +1441,14 @@ msgid "Compressed archives:"
 msgstr "Сжатые архивы:"
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "Смена нескольких дисков: Нажмите на значок нескольких дисков, чтобы открыть меню быстрой смены. Архивы с несколькими дисками (.zip, .7z, .gz) автоматически загружаются в список смены."
+msgid ""
+"Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap "
+"menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all "
+"disks into the swapper list."
+msgstr ""
+"Смена нескольких дисков: Нажмите на значок нескольких дисков, чтобы открыть "
+"меню быстрой смены. Архивы с несколькими дисками (.zip, .7z, .gz) "
+"автоматически загружаются в список смены."
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -1710,6 +1716,10 @@ msgstr ""
 msgctxt "keyboard.return"
 msgid "Return"
 msgstr "Ввод"
+
+msgctxt "keyboard.enableGamePatches"
+msgid "Enable Game Patches"
+msgstr ""
 
 #, fuzzy
 msgctxt "audio.speaker"

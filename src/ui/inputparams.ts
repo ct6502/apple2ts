@@ -1,6 +1,6 @@
 import { COLOR_MODE, MONITOR_MODE, RUN_MODE, UI_THEMES, parseDiskSwapperParam } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetIsDebugging } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetIsDebugging, passEnableGamePatches } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL, handleSetDiskSwapperFromURLs, resetAllDiskDrives } from "./devices/disk/driveprops"
 import { handleSetVeraSdFromURL } from "./devices/vera/verasdicon"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
@@ -41,6 +41,11 @@ export const handleInputParams = (paramString = "") => {
     passSetIsDebugging(true)
     passSetShowDebugTab(true)
     notifySettingsChanged(["panels.tab"], "external")
+  }
+
+  if (params.get("gamepatches") === "off") {
+    passEnableGamePatches(false)
+    setUIStateBoolean("enableGamePatches", false)
   }
 
   const mode = params.get("appmode") as string
@@ -379,13 +384,18 @@ export const handleFragment = async (
   const search = searchString.length > 0 ? searchString : window.location.search
   const fragment = hashString.length > 0 ? hashString : window.location.hash
 
-  // If you start npm locally with 'npm start --xyz=blahblah', then npm
-  // will automatically create an environment variable "npm_config_xyz".
-  // So here we check for a --urlparam command line argument and load it if it exists.
-  // For example, npm start --urlparam=speed=fast#Replay
-  if (process.env.npm_config_urlparam) {
+  // URL parameters for local development are supplied via the A2TS_URLPARAM
+  // environment variable (see vite.config.ts), so here we redirect to that
+  // parameter string if it exists.
+  //
+  // For example: A2TS_URLPARAM="speed=fast#Replay" npm start
+  //
+  // Older npm versions supported `npm start --urlparam=...`, which set
+  // npm_config_urlparam. npm 11+ rejects unknown CLI flags, but vite.config.ts
+  // still falls back to npm_config_urlparam for older npm versions.
+  if (process.env.A2TS_URLPARAM) {
     if (window.location.search === "") {
-      window.location.href = window.location.pathname + "?" + process.env.npm_config_urlparam
+      window.location.href = window.location.pathname + "?" + process.env.A2TS_URLPARAM
     }
   }
   if (isOneDriveMsalAuthCallback()) return

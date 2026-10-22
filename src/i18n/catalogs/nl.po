@@ -1426,8 +1426,14 @@ msgid "Compressed archives:"
 msgstr "Gecomprimeerde archieven:"
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "Wisselen van meerdere schijven: Klik op de multi-schijf-badge om het snelwisselmenu te openen. Multi-schijfarchieven (.zip, .7z, .gz) worden automatisch in de wissellijst geladen."
+msgid ""
+"Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap "
+"menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all "
+"disks into the swapper list."
+msgstr ""
+"Wisselen van meerdere schijven: Klik op de multi-schijf-badge om het "
+"snelwisselmenu te openen. Multi-schijfarchieven (.zip, .7z, .gz) worden "
+"automatisch in de wissellijst geladen."
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -1694,6 +1700,10 @@ msgstr ""
 
 msgctxt "keyboard.return"
 msgid "Return"
+msgstr ""
+
+msgctxt "keyboard.enableGamePatches"
+msgid "Enable Game Patches"
 msgstr ""
 
 #, fuzzy

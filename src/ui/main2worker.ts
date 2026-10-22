@@ -419,7 +419,11 @@ export const passRequestMemoryDump = () => {
 export const passMemoryDumpState = (state: MEMORY_DUMP_STATE) => {
   doPostMessage(MSG_MAIN.MEMORY_DUMP_STATE, state)
 }
-  
+
+export const passEnableGamePatches = (enabled: boolean) => {
+  doPostMessage(MSG_MAIN.ENABLE_GAME_PATCHES, enabled)
+}
+
 export const requestMemoryView = (
   request: MemoryViewRequest,
   timeoutMs = 5000,

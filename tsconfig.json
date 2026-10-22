@@ -31,4 +31,17 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
+  "include": [
+    "src",
+    "functions",
+    "tools",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "public",
+    "coverage",
+    ".worktrees"
+  ]
 }

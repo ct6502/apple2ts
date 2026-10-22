@@ -1446,6 +1446,10 @@ msgctxt "keyboard.return"
 msgid "Return"
 msgstr ""
 
+msgctxt "keyboard.enableGamePatches"
+msgid "Enable Game Patches"
+msgstr ""
+
 msgctxt "audio.speaker"
 msgid "Speaker"
 msgstr ""

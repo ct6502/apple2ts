@@ -1437,8 +1437,14 @@ msgid "Compressed archives:"
 msgstr "Archivos comprimidos:"
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "Intercambio de múltiples discos: Haga clic en la insignia multidisco para abrir el menú de intercambio rápido. Los archivos multidisco (.zip, .7z, .gz) se cargan automáticamente en la lista de intercambio."
+msgid ""
+"Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap "
+"menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all "
+"disks into the swapper list."
+msgstr ""
+"Intercambio de múltiples discos: Haga clic en la insignia multidisco para "
+"abrir el menú de intercambio rápido. Los archivos multidisco (.zip, .7z, ."
+"gz) se cargan automáticamente en la lista de intercambio."
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -1707,6 +1713,10 @@ msgstr "Eliminar"
 
 msgctxt "keyboard.return"
 msgid "Return"
+msgstr ""
+
+msgctxt "keyboard.enableGamePatches"
+msgid "Enable Game Patches"
 msgstr ""
 
 #, fuzzy
@@ -3667,4 +3677,5 @@ msgstr "Agregar otro disco"
 
 msgctxt "linkBuilder.diskPlaceholder"
 msgid "Disk {num} filename (e.g. sideB.woz|Scenario Disk)"
-msgstr "Nombre de archivo del disco {num} (p. ej. sideB.woz|Disco de escenario)"
+msgstr ""
+"Nombre de archivo del disco {num} (p. ej. sideB.woz|Disco de escenario)"

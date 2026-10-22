@@ -178,10 +178,19 @@
     },
     {
       "group": "gamepad",
-      "id": "keyboard.joystick.touchJoystick",
+      "id": "keyboard.enableGamePatches",
       "kind": "toggle",
       "parentId": "keyboard.joystick",
       "order": 3,
+      "labelKey": "keyboard.enableGamePatches",
+      "defaultIndex": 0
+    },
+    {
+      "group": "gamepad",
+      "id": "keyboard.joystick.touchJoystick",
+      "kind": "toggle",
+      "parentId": "keyboard.joystick",
+      "order": 4,
       "labelKey": "gamepad.touchJoystick",
       "defaultIndex": 0
     },
@@ -190,7 +199,7 @@
       "id": "keyboard.joystick.tiltSensorJoystick",
       "kind": "toggle",
       "parentId": "keyboard.joystick",
-      "order": 3,
+      "order": 5,
       "labelKey": "gamepad.tiltSensorJoystick",
       "defaultIndex": 0
     },

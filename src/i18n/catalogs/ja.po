@@ -1429,8 +1429,14 @@ msgid "Compressed archives:"
 msgstr "圧縮アーカイブ："
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "複数ディスク入替：ドライブのマルチディスクバッジをクリックしてクイック入替メニューを開きます。複数ディスクを含むアーカイブ（.zip、.7z、.gz）は自動的に入替リストへ読み込まれます。"
+msgid ""
+"Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap "
+"menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all "
+"disks into the swapper list."
+msgstr ""
+"複数ディスク入替：ドライブのマルチディスクバッジをクリックしてクイック入替メ"
+"ニューを開きます。複数ディスクを含むアーカイブ（.zip、.7z、.gz）は自動的に入"
+"替リストへ読み込まれます。"
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -1693,6 +1699,10 @@ msgstr ""
 
 msgctxt "keyboard.return"
 msgid "Return"
+msgstr ""
+
+msgctxt "keyboard.enableGamePatches"
+msgid "Enable Game Patches"
 msgstr ""
 
 #, fuzzy

@@ -1440,8 +1440,14 @@ msgid "Compressed archives:"
 msgstr "Archivi compressi:"
 
 msgctxt "help.multiDiskNotice"
-msgid "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all disks into the swapper list."
-msgstr "Scambio multi-disco: Fare clic sul badge multi-disco per aprire il menu di scambio rapido. Gli archivi multi-disco (.zip, .7z, .gz) caricano automaticamente tutti i dischi nell'elenco."
+msgid ""
+"Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap "
+"menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all "
+"disks into the swapper list."
+msgstr ""
+"Scambio multi-disco: Fare clic sul badge multi-disco per aprire il menu di "
+"scambio rapido. Gli archivi multi-disco (.zip, .7z, .gz) caricano "
+"automaticamente tutti i dischi nell'elenco."
 
 #, fuzzy
 msgctxt "help.urlParameters"
@@ -1712,6 +1718,10 @@ msgstr "Elimina"
 msgctxt "keyboard.return"
 msgid "Return"
 msgstr "Invio"
+
+msgctxt "keyboard.enableGamePatches"
+msgid "Enable Game Patches"
+msgstr ""
 
 #, fuzzy
 msgctxt "audio.speaker"

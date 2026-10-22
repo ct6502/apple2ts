@@ -16,6 +16,7 @@ const initialUIState: Readonly<UIState> = {
   colorMode: COLOR_MODE.COLOR,
   crtDistortion: false,
   debugMode: false,
+  enableGamePatches: true,
   ghosting: false,
   helpText: "",
   hotReload: false,

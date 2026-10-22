@@ -357,6 +357,7 @@ type UIState = {
   colorMode: COLOR_MODE,
   crtDistortion: boolean,
   debugMode: boolean,
+  enableGamePatches: boolean,
   ghosting: boolean,
   helpText: string,
   hotReload: boolean,
