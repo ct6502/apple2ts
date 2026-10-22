@@ -1,7 +1,7 @@
 
 import { readFileSync } from "node:fs"
 import path, { resolve } from "node:path"
-import { doGetSaveState, doRestoreSaveState, getApple2State } from "./save_restore"
+import { doGetSaveState, doGoBackInTime, doRestoreSaveState, doSnapshot, getApple2State } from "./save_restore"
 import { setIsTesting } from "./worker2main"
 import { doSetEmuDriveNewData, getDriveSaveState } from "./devices/drivestate"
 import { getTextPage, memory } from "./memory"
@@ -145,4 +145,39 @@ test("Current save/restore round trip", () => {
   asciiText = asciiText.replaceAll(/\s+/g, " ").slice(0, 89) // Example slice, adjust as needed
   const want = " AZTEC A FEW WEEKS AGO A RUMOR SURFACED THAT PROFESSOR G. VON FORSTER , NOTED TOMB ROBBER"
   expect(asciiText).toBe(want)
+})
+
+// Time travel snapshots have no version, so going back in time must still
+// read their memory in the version 2 layout.
+test("going back in time restores the memory", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  try {
+    const disk = "Olympic Decathlon.woz"
+    const data = fs.readFileSync(path.resolve(__dirname, "../../public/disks/", disk))
+    doSetEmuDriveNewData({
+      index: 2, hardDrive: false, drive: 1, filename: disk, status: "",
+      motorRunning: false, diskHasChanges: false, isWriteProtected: false,
+      diskData: new Uint8Array(data), lastAppleWriteTime: 0, cloudData: null,
+      writableFileHandle: null, lastLocalFileWriteTime: 0,
+    })
+    doBoot()
+    doSetRunMode(RUN_MODE.RUNNING)
+    while (s6502.cycleCount < 9500000) {
+      processInstruction()
+    }
+    doSnapshot()
+    const saved = Uint8Array.from(memory.subarray(0, 0xC000))
+    while (s6502.cycleCount < 10000000) {
+      processInstruction()
+    }
+    doGoBackInTime()
+    // doGoBackInTime() restores the snapshot on a 50 ms timer.
+    jest.advanceTimersByTime(100)
+    expect(memory.subarray(0, 0xC000).findIndex((byte, i) => byte !== saved[i])).toBe(-1)
+  } finally {
+    doSetRunMode(RUN_MODE.PAUSED)
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
 })
