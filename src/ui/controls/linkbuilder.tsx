@@ -521,7 +521,7 @@ const LinkBuilder = () => {
         <CheckBox name={t("linkBuilder.sound")}
           checked={!soundoff}
           setChecked={(on: boolean) => { setSoundoff(!on) }} />
-        <CheckBox name={t("linkBuilder.gamepatches")}
+        <CheckBox name={t("keyboard.enableGamePatches")}
           checked={!gamepatchesOff}
           setChecked={(on: boolean) => { setGamepatchesOff(!on) }} />
       </div>
