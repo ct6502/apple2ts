@@ -2041,16 +2041,6 @@ msgctxt "debugControls.pause"
 msgid "Pause"
 msgstr "Pauzeren"
 
-#, fuzzy
-msgctxt "debugControls.hotReloadEnabled"
-msgid "Hot Reload Enabled"
-msgstr "Hot Reload Ingeschakeld"
-
-#, fuzzy
-msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload"
-msgstr "Hot Reload Uitgeschakeld"
-
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr ""

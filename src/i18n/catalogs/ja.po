@@ -2045,16 +2045,6 @@ msgid "Pause"
 msgstr "一時停止"
 
 #, fuzzy
-msgctxt "debugControls.hotReloadEnabled"
-msgid "Hot Reload Enabled"
-msgstr "ホットリロード有効"
-
-#, fuzzy
-msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload"
-msgstr "ホットリロード無効"
-
-#, fuzzy
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr "トレース"

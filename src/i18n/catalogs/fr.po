@@ -2076,16 +2076,6 @@ msgctxt "debugControls.pause"
 msgid "Pause"
 msgstr "Suspendre"
 
-#, fuzzy
-msgctxt "debugControls.hotReloadEnabled"
-msgid "Hot Reload Enabled"
-msgstr "Rechargement À Chaud Activé"
-
-#, fuzzy
-msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload"
-msgstr "Rechargement À Chaud Désactivé"
-
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr ""

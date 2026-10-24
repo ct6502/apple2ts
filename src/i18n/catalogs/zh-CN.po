@@ -1969,16 +1969,6 @@ msgid "Pause"
 msgstr "暂停"
 
 #, fuzzy
-msgctxt "debugControls.hotReloadEnabled"
-msgid "Hot Reload Enabled"
-msgstr "热重载已启用"
-
-#, fuzzy
-msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload"
-msgstr "热重载已停用"
-
-#, fuzzy
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr "追踪"

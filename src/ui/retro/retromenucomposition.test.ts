@@ -936,7 +936,6 @@ describe("Retro menu metadata structure", () => {
     ])
     expect(retroMenuRegistry.getIds("options")).toEqual([
       "options.speed",
-      "options.hotReload",
       "options.retroSkinSeparator",
       "options.theme",
       "options.retroSkin",

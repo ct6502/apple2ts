@@ -2061,16 +2061,6 @@ msgid "Pause"
 msgstr "Пауза"
 
 #, fuzzy
-msgctxt "debugControls.hotReloadEnabled"
-msgid "Hot Reload Enabled"
-msgstr "Горячая перезагрузка включена"
-
-#, fuzzy
-msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload"
-msgstr "Горячая перезагрузка отключена"
-
-#, fuzzy
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr "Трассировка"

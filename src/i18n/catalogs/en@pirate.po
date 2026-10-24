@@ -1903,14 +1903,6 @@ msgctxt "debugControls.pause"
 msgid "Pause"
 msgstr "Drop Anchor"
 
-msgctxt "debugControls.hotReloadEnabled"
-msgid "Hot Reload Enabled"
-msgstr ""
-
-msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload"
-msgstr ""
-
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr "Follow th' Trail"

@@ -358,14 +358,6 @@
       ]
     },
     {
-      "group": "debug",
-      "id": "options.hotReload",
-      "binding": "options.hotReload",
-      "kind": "toggle",
-      "order": 1,
-      "defaultIndex": 0
-    },
-    {
       "group": "language",
       "id": "options.language",
       "binding": "options.language",

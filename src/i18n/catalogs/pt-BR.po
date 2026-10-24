@@ -2051,16 +2051,6 @@ msgid "Pause"
 msgstr "Pausar"
 
 #, fuzzy
-msgctxt "debugControls.hotReloadEnabled"
-msgid "Hot Reload Enabled"
-msgstr "Recarga Rápida Habilitada"
-
-#, fuzzy
-msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload"
-msgstr "Recarga Rápida Desabilitada"
-
-#, fuzzy
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr "Rastrear"

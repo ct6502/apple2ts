@@ -19,7 +19,6 @@ const initialUIState: Readonly<UIState> = {
   enableGamePatches: true,
   ghosting: false,
   helpText: "",
-  hotReload: false,
   infoPanel: false,
   monitorMode: MONITOR_MODE.NTSC,
   reverseYAxis: false,
@@ -157,10 +156,6 @@ export const getGhosting = () => {
 
 export const getHelpText = () => {
   return uiState.helpText
-}
-
-export const getHotReload = () => {
-  return uiState.hotReload || isGameMode()
 }
 
 export const getInfoPanel = () => {

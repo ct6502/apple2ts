@@ -27,7 +27,7 @@ import {
 import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
 import { parseGameList } from "./totalreplayutilities"
-import { getHotReload, setHelpText } from "../../ui_settings"
+import { setHelpText } from "../../ui_settings"
 import { getDiskImageFromLocalStorage, setDiskImageToLocalStorage } from "../../localstorage"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import {
@@ -769,10 +769,10 @@ const getCorsProxyCandidates = (url: string): ProxyCandidate[] => {
   ]
 }
 
-const FETCH_DEBUG_LOGS = false
+const CONSOLE_LOGS = false
 
-const logFetchDebug = (...args: unknown[]) => {
-  if (FETCH_DEBUG_LOGS) {
+const logToConsole = (...args: unknown[]) => {
+  if (CONSOLE_LOGS) {
     console.log(...args)
   }
 }
@@ -824,17 +824,17 @@ export const fetchWithCorsProxy = async (url: string, debug?: (message: string) 
       if (response.ok) {
         debug?.(`Corsfix ${candidate.id}: HTTP ${response.status}`)
         noteProxyScore(domain, candidate.id, true)
-        logFetchDebug(`Proxy fetch succeeded via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
+        logToConsole(`Proxy fetch succeeded via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
         return response
       }
 
       noteProxyScore(domain, candidate.id, false)
       debug?.(`Corsfix ${candidate.id}: HTTP ${response.status}`)
-      logFetchDebug(`Proxy attempt failed (${response.status}) via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
+      logToConsole(`Proxy attempt failed (${response.status}) via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
       lastResponse = response
     } catch (error) {
       noteProxyScore(domain, candidate.id, false)
-      logFetchDebug(`Proxy attempt errored via ${proxyName} (attempt ${i + 1}/${candidates.length})`, error)
+      logToConsole(`Proxy attempt errored via ${proxyName} (attempt ${i + 1}/${candidates.length})`, error)
     }
   }
 
@@ -978,7 +978,7 @@ export const fetchDiskBufferAndNameFromURL = async (
     }
 
     if (!response || !response.ok) {
-      logFetchDebug("Direct fetch failed, trying corsfix proxy")
+      logToConsole("Direct fetch failed, trying corsfix proxy")
       response = await fetchWithCorsProxy(url, debug)
     }
 
@@ -1439,26 +1439,23 @@ export const handleSetDiskSwapperFromURLs = async (
 }
 
 export const prepWritableFile = async (index: number, writableFileHandle: WritableFileHandle) => {
-  console.log(`🔄 prepWritableFile: Starting auto-save timer for drive ${index}`)
+  logToConsole(`🔄 prepWritableFile: Starting auto-save timer for drive ${index}`)
   const timer = setInterval(async (index: number) => {
     const dprops = handleGetDriveProps(index)
-    if (getHotReload()) {
-      // Only FileSystemFileHandle supports getFile() for hot reload
-      if ("getFile" in writableFileHandle && typeof writableFileHandle.getFile === "function") {
-        const file = await writableFileHandle.getFile()
-        if (dprops.lastLocalFileWriteTime > 0 && file.lastModified > dprops.lastLocalFileWriteTime) {
-          console.log(`🔄 Hot reload detected for drive ${index}`)
-          handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
-          passSetRunMode(RUN_MODE.NEED_BOOT)
-          return
-        }
+    // Only FileSystemFileHandle supports getFile() for hot reload
+    if ("getFile" in writableFileHandle && typeof writableFileHandle.getFile === "function") {
+      const file = await writableFileHandle.getFile()
+      if (dprops.lastLocalFileWriteTime > 0 && file.lastModified > dprops.lastLocalFileWriteTime) {
+        logToConsole(`🔄 Hot reload detected for drive ${index}`)
+        handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
+        passSetRunMode(RUN_MODE.NEED_BOOT)
+        return
       }
     }
-
     if (dprops.diskHasChanges && !dprops.motorRunning) {
-      console.log(`💾 Drive ${index} has changes and motor stopped, attempting save...`)
+      logToConsole(`💾 Drive ${index} has changes and motor stopped, attempting save...`)
       if (await handleSaveWritableFile(index)) {
-        console.log(`✅ Save successful for drive ${index}`)
+        logToConsole(`✅ Save successful for drive ${index}`)
         dprops.diskHasChanges = false
         dprops.lastLocalFileWriteTime = Date.now()
         
@@ -1470,7 +1467,7 @@ export const prepWritableFile = async (index: number, writableFileHandle: Writab
         }
         passSetDriveProps(propsForWorker)
       } else {
-        console.log(`❌ Save failed for drive ${index}`)
+        console.error(`❌ Save failed for drive ${index}`)
       }
     }
   }, 3 * 1000, index)
@@ -1584,12 +1581,12 @@ export const handleSetDiskFromFile = async (disk: string,
 }
 
 export const handleSaveWritableFile = async (index: number, writableFileHandle: WritableFileHandle|null = null) => {
-  console.log(`💾 handleSaveWritableFile called for drive ${index}`)
+  logToConsole(`💾 handleSaveWritableFile called for drive ${index}`)
   let success = false
 
   if (writableFileHandle === null) {
     writableFileHandle = driveProps[index].writableFileHandle
-    console.log("📁 Using stored writableFileHandle:", writableFileHandle ? "present" : "null")
+    logToConsole("📁 Using stored writableFileHandle:", writableFileHandle ? "present" : "null")
   }
 
   const dprops = driveProps[index]
@@ -1599,24 +1596,24 @@ export const handleSaveWritableFile = async (index: number, writableFileHandle: 
       if (dprops.diskData?.length > 0) {
         updateWozCrc(dprops.diskData)
       }
-      console.log(`🔨 Creating blob from disk data: ${dprops.filename}, ${dprops.diskData.length} bytes`)
+      logToConsole(`🔨 Creating blob from disk data: ${dprops.filename}, ${dprops.diskData.length} bytes`)
       const blob = getDiskBlobForSync(dprops.diskData, dprops.filename, dprops.hardDrive)
-      console.log("📝 Calling createWritable()...")
+      logToConsole("📝 Calling createWritable()...")
       const writable = await writableFileHandle.createWritable()
 
-      console.log("✍️ Calling write() with blob...")
+      logToConsole("✍️ Calling write() with blob...")
       // Both browser FileSystemWritableFileStream and custom handler support write()
       await writable.write(blob)
-      console.log("🔒 Calling close()...")
+      logToConsole("🔒 Calling close()...")
       await writable.close()
       
       success = true
-      console.log("✅ handleSaveWritableFile completed successfully")
+      logToConsole("✅ handleSaveWritableFile completed successfully")
     } catch (ex) {
-      console.log(`❌ Error saving writable file: ${ex}`)
+      console.error(`❌ Error saving writable file: ${ex}`)
     }
   } else {
-    console.log(`⚠️ No writableFileHandle available for drive ${index}`)
+    console.warn(`⚠️ No writableFileHandle available for drive ${index}`)
   }
 
   return success

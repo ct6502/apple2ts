@@ -181,7 +181,6 @@ const FULL_STRUCTURE = {
   debugControls: {
     goBackInTime: "Go Back in Time", takeSnapshot: "Take a Snapshot", goForwardInTime: "Go Forward in Time",
     saveStateWithSnapshots: "Save State with Snapshots", resume: "Resume", pause: "Pause",
-    hotReloadEnabled: "Hot Reload Enabled", hotReloadDisabled: "Hot Reload Disabled"
   },
   fullscreen: { fullScreen: "Full Screen" },
   internetArchive: { searchPlaceholder: "...", go: "GO" },

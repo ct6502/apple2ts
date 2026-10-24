@@ -1756,14 +1756,6 @@ msgctxt "debugControls.pause"
 msgid "Pause"
 msgstr ""
 
-msgctxt "debugControls.hotReloadEnabled"
-msgid "Hot Reload Enabled"
-msgstr ""
-
-msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload"
-msgstr ""
-
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr ""

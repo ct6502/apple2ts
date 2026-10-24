@@ -360,7 +360,6 @@ type UIState = {
   enableGamePatches: boolean,
   ghosting: boolean,
   helpText: string,
-  hotReload: boolean,
   infoPanel: boolean,
   monitorMode: MONITOR_MODE,
   reverseYAxis: boolean,

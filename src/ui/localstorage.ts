@@ -20,7 +20,6 @@ const booleanControlIds: Partial<Record<BooleanKeyOf<UIState>, string>> = {
   crtDistortion: "display.crtDistortion",
   enableGamePatches: "keyboard.enableGamePatches",
   ghosting: "display.ghosting",
-  hotReload: "options.hotReload",
   lowercaseMode: "keyboard.lowercase",
   reverseYAxis: "keyboard.joystick.reverseYAxis",
   showScanlines: "display.scanlines",

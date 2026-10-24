@@ -269,11 +269,6 @@ export const handleInputParams = (paramString = "") => {
     setRunTour(tour)
   }
 
-  const hotReload = params.get("hotreload")
-  if (hotReload) {
-    setUIStateBoolean("hotReload", hotReload === "true")
-  }
-
   const hasLineNumbers = (text: string) => {
     // Remove all space characters, then make sure we don't have a CALL -151.
     const trimmed = text.replace(/ +/g, "").toLowerCase()

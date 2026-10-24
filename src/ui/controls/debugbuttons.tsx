@@ -5,8 +5,6 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faClock,
-  faEye,
-  faEyeSlash,
   faFastBackward,
   faFastForward,
   faLayerGroup,
@@ -16,14 +14,12 @@ import {
 import { handleSetCPUState } from "../controller"
 import { handleFileSave } from "../savestate"
 import { RUN_MODE } from "../../common/utility"
-import { getHotReload, isGameMode } from "../ui_settings"
+import { isGameMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
-import { setPreferenceBoolean } from "../localstorage"
-import { isFileSystemApiSupported } from "../ui_utilities"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { createControlContext } from "../retro/retromenucontext"
 import { ControlRegistry } from "./controlregistry"
-import { controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
+import { controlsFromJson, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 
 const emulatorStarted = () => {
   const runMode = handleGetRunMode()
@@ -57,19 +53,6 @@ const debugBindings: RetroControlBindings = {
     },
     selectable: () => handleGetRunMode() !== RUN_MODE.IDLE,
   },
-  "options.hotReload": {
-    ...toggleBinding({
-      enabled: getHotReload,
-      setEnabled: (context, enabled) => {
-        setPreferenceBoolean("hotReload", enabled, context.settingsOrigin)
-        context.displayProps.updateDisplay()
-      },
-    }),
-    label: context => context.t(getHotReload()
-      ? "debugControls.hotReloadEnabled"
-      : "debugControls.hotReloadDisabled"),
-    isVisible: isFileSystemApiSupported,
-  },
 }
 
 export const retroDebugControls: RetroControlMetadata[] = controlsFromJson("debug", debugBindings)
@@ -83,10 +66,6 @@ const DebugButtons = (props: DisplayProps) => {
     createControlContext(props, t, language, changeLanguage),
     "machine",
   )
-  const optionControls = debugControlRegistry.resolve(
-    createControlContext(props, t, language, changeLanguage),
-    "options",
-  )
   const controls = machineControls.filter(item => item.id !== "machine.timeMachine")
   const control = (id: string) => controls.find(item => item.id === id)!
   const back = control("snapshot.back")
@@ -94,7 +73,6 @@ const DebugButtons = (props: DisplayProps) => {
   const forward = control("snapshot.forward")
   const save = control("snapshot.saveState")
   const pause = control("emulator.pause")
-  const hotReload = optionControls.find(item => item.id === "options.hotReload")
   return <span className="flex-row">
     <div className="flex-row" id="tour-snapshot">
       <button className="push-button"
@@ -130,12 +108,6 @@ const DebugButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
-    {hotReload && !isGameMode() &&
-      <button className="push-button"
-        title={hotReload.label}
-        onClick={hotReload.options?.[hotReload.optionIndex === 1 ? 0 : 1]?.action}>
-        <FontAwesomeIcon icon={getHotReload() ? faEye : faEyeSlash} />
-      </button>}
   </span>
 }
 

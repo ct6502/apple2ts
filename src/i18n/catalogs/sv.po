@@ -1846,14 +1846,6 @@ msgctxt "debugControls.pause"
 msgid "Pause"
 msgstr "Pausa"
 
-msgctxt "debugControls.hotReloadEnabled"
-msgid "Hot Reload Enabled"
-msgstr "Snabb omläsning aktiverad"
-
-msgctxt "debugControls.hotReloadDisabled"
-msgid "Hot Reload"
-msgstr "Snabb omläsning"
-
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr "Spårning"
