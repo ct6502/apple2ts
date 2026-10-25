@@ -150,7 +150,6 @@ const compile = async options => {
   }
 
   if (existing === rendered) {
-    process.stdout.write(`Catalog unchanged: ${outputPath}\n`)
     return 0
   }
 
