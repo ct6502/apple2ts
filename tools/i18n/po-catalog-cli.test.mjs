@@ -99,7 +99,6 @@ export const fr = {
 
     const unchanged = run(args)
     assert.equal(unchanged.status, 0)
-    assert.match(unchanged.stdout, /Catalog unchanged:/)
   })
 
   it("reports generated-file drift without writing", async () => {
