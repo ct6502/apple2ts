@@ -19,10 +19,10 @@
     }
   },
   "scripts": {
-    "prestart": "npm run copy-wasm && npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --prompt",
-    "prehost": "npm run copy-wasm && npm run generate-i18n-catalogs",
+    "prestart": "npm run copy-wasm && npm run ensure-i18n-catalogs && node tools/fetch-demozoo.mjs --prompt",
+    "prehost": "npm run copy-wasm && npm run ensure-i18n-catalogs",
     "predeploy": "npm run build",
-    "prebuild": "npm run copy-wasm && npm run check-qr-hgr-assembly && npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --no-prompt",
+    "prebuild": "npm run copy-wasm && npm run check-qr-hgr-assembly && npm run ensure-i18n-catalogs && node tools/fetch-demozoo.mjs --no-prompt",
     "copy-wasm": "node tools/copy-wasm.mjs",
     "deploy": "gh-pages -d dist",
     "start": "vite --open",
@@ -52,6 +52,7 @@
     "update-4cade-db": "node tools/regen_4cade_db.ts",
     "update-i18n-catalogs": "node tools/i18n/update-catalogs.mjs",
     "generate-i18n-catalogs": "node tools/i18n/generate-catalogs.mjs",
+    "ensure-i18n-catalogs": "node tools/i18n/ensure-catalogs.mjs",
     "check-i18n-catalogs": "node tools/i18n/generate-catalogs.mjs --check"
   },
   "dependencies": {
