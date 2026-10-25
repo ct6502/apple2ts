@@ -83,13 +83,13 @@ msgid "Control Panel"
 msgstr ""
 
 msgctxt "config.resetSettings"
-msgid "Reset All Settings"
+msgid "Reset Settings"
 msgstr ""
 
 msgctxt "config.resetSettingsText"
 msgid ""
-"Are you sure you want to reset all settings? This will not erase your "
-"breakpoints or BASIC program."
+"Are you sure you want to reset emulator settings? This will not erase your "
+"breakpoints, save states, or BASIC program."
 msgstr ""
 
 msgctxt "config.capsLock"

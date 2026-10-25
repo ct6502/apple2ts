@@ -282,7 +282,10 @@ body.dark-mode .button-locked {
   border-width: 1px;
   border-color: white;
   border-style: outset;
-  width: 3em;
+  width: auto;
+  min-width: 4em;
+  white-space: nowrap;
+  flex: 0 0 auto;
   height: 1em;
   margin-right: 10px;
   margin-bottom: 10px;

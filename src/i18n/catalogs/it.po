@@ -102,14 +102,15 @@ msgid "Control Panel"
 msgstr "Pannello di controllo"
 
 #, fuzzy
+#| msgid "Reset All Settings"
 msgctxt "config.resetSettings"
-msgid "Reset All Settings"
+msgid "Reset Settings"
 msgstr "Ripristina Tutte le Impostazioni"
 
 msgctxt "config.resetSettingsText"
 msgid ""
-"Are you sure you want to reset all settings? This will not erase your "
-"breakpoints or BASIC program."
+"Are you sure you want to reset emulator settings? This will not erase your "
+"breakpoints, save states, or BASIC program."
 msgstr ""
 
 #, fuzzy

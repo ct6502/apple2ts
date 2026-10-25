@@ -1,14 +1,13 @@
-import { ERROR_CODE, UI_THEME, UI_THEMES } from "../../common/utility"
+import { UI_THEME, UI_THEMES } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faVolumeHigh,
   faVolumeXmark,
-  faSync,
   faPalette,
 } from "@fortawesome/free-solid-svg-icons"
 import { faWindowMaximize as faWindowMaximizeOutline } from "@fortawesome/free-regular-svg-icons"
 import { MachineConfig } from "../devices/machineconfig"
-import { notifySettingsChanged, resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
+import { notifySettingsChanged, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { useState, useSyncExternalStore } from "react"
@@ -33,7 +32,8 @@ import { ControlRegistry } from "./controlregistry"
 import { choiceBinding, controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 import { openRetroControlPanel } from "../retro/retrocontrolevents"
 import { TimeTravelConfig } from "../devices/timetravelconfig"
-import { setDialogMessageContext } from "../ui_utilities"
+import { SettingsDialog } from "./settingsdialog"
+import { settingsResetBinding } from "./resetcontrols"
 
 const themeLabels = (t: (key: string) => string) => [
   t("themes.classic"),
@@ -73,24 +73,7 @@ const configBindings: RetroControlBindings = {
       context.displayProps.updateDisplay()
     },
   }),
-  "settings.reset": {
-    action: context => {
-      const { t } = context
-      setDialogMessageContext({
-        title: t("config.resetSettings"),
-        message: t("config.resetSettingsText"),
-        code: ERROR_CODE.QUESTION,
-        actionCancel: () => {
-          context.displayProps.updateDisplay()
-        },
-        actionConfirm: () => {
-          resetPreferences(context.settingsOrigin)
-          context.displayProps.updateDisplay()
-        },
-      })
-      context.displayProps.updateDisplay()
-    },
-  },
+  "settings.reset": settingsResetBinding,  // needed for the Retro Menu action
 }
 
 export const retroConfigControls: RetroControlMetadata[] = controlsFromJson("config", configBindings)
@@ -102,7 +85,6 @@ const ConfigButtons = (props: DisplayProps) => {
   const context = createControlContext(props, t, language, changeLanguage)
   const optionControls = configControlRegistry.resolve(context, "options")
   const themeControl = optionControls.find(control => control.id === "options.theme")!
-  const resetControl = optionControls.find(control => control.id === "settings.reset")!
 
   const getThemeName = (theme: UI_THEME) => themeControl.options?.[
     UI_THEMES.findIndex(option => option.value === theme)
@@ -173,11 +155,7 @@ const ConfigButtons = (props: DisplayProps) => {
       })]}
     />
 
-    {!isGameMode() && <button className="push-button" id="tour-clearcookies"
-      title={resetControl.label}
-      onClick={resetControl.action}>
-      <FontAwesomeIcon icon={faSync} />
-    </button>}
+    <SettingsDialog {...props} />
 
     {!isGameMode() && <RunTour showTour={false} />}
 

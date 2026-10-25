@@ -45,7 +45,7 @@ export const getTourSettings = (t: any): Step[] => {
         {isTouchDevice ? "" : altArrowKeys}</div>),
     },
     {
-      target: "#tour-clearcookies",
+      target: "#tour-settings",
       content: t("tour.clearCookies"),
     },
     {

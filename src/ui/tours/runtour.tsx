@@ -4,7 +4,7 @@ import { getTourMain } from "./tourmain"
 import { getTourSettings } from "./toursettings"
 import { getTourDebug } from "./tourdebug"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faGlobe } from "@fortawesome/free-solid-svg-icons"
+import { faCircleQuestion } from "@fortawesome/free-regular-svg-icons"
 import { DropdownButton } from "../controls/dropdownbutton"
 import { useTranslation } from "../../i18n/useTranslation"
 import { navigateToTourStep } from "./tourutils"
@@ -167,7 +167,7 @@ const RunTour = ({
           t("tour.debugLabel")
         ]}
         closeCallback={selectGuidedTour}
-        icon={<FontAwesomeIcon icon={faGlobe} />}
+        icon={<FontAwesomeIcon icon={faCircleQuestion} />}
         tooltip={t("tour.guidedTour")}
       />}
     </span>
