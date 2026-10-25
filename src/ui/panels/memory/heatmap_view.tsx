@@ -33,11 +33,8 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
   showMagnifier: boolean,
   setShowMagnifier: (value: boolean) => void }) => {
   const heatMapRef = useRef<HTMLCanvasElement>(null)
-  const x = window.outerWidth - 600
-  const y = window.outerHeight - 700
-  const [dialogPosition, setDialogPosition] = useState([x, y])
   const [heatMapAddress, setHeatMapAddressState] = useState<number>(-1)
-  const [heatMapPosition, setHeatMapPosition] = useState<[number, number]>([x, y])
+  const [heatMapPosition, setHeatMapPosition] = useState<[number, number]>([0, 0])
   const [mouseDown, setMouseDown] = useState(false)
   const [magnifierViewport, setMagnifierViewport] = useState<{
     x: number,
@@ -45,10 +42,6 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
     width: number,
     height: number,
   } | null>(null)
-
-  const doSetDialogPosition = (x: number, y: number) => {
-    setDialogPosition([x, y])
-  }
 
   const doSetHeatMapPosition = (x: number, y: number) => {
     setHeatMapPosition([x, y])
@@ -250,10 +243,7 @@ const HeatMapView = (props: { state: HEATMAP_STATE,
         setMagnifierViewport={setMagnifierViewport}
         heatMapPosition={heatMapPosition}
         setHeatMapPosition={doSetHeatMapPosition}
-        closeDialog={closeMagnifier}
-        dialogPositionX={dialogPosition[0]}
-        dialogPositionY={dialogPosition[1]}
-        setDialogPosition={doSetDialogPosition} />}
+        closeDialog={closeMagnifier} />}
   </div>
   )
 }

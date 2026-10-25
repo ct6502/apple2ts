@@ -34,7 +34,6 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   const [address, setAddress] = useState("")
   const [showSaveDisassembly, setShowSaveDisassembly] = useState(false)
   const [showTraceDialog, setShowTraceDialog] = useState(false)
-  const [dialogPosition, setDialogPosition] = useState([-1, -1])
 
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
@@ -76,10 +75,6 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       // Display the dialog.
       fileInput.click()
     }
-  }
-
-  const doSetDialogPosition = (x: number, y: number) => {
-    setDialogPosition([x, y])
   }
 
   const turnOnTracing = () => {
@@ -182,10 +177,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       </button>
       {showTraceDialog &&
         <TraceDialog
-          cancelDialog={turnOffTracing}
-          dialogPositionX={dialogPosition[0]}
-          dialogPositionY={dialogPosition[1]}
-          setDialogPosition={doSetDialogPosition} />}
+          cancelDialog={turnOffTracing} />}
       <input
         name="fileInput"
         type="file"

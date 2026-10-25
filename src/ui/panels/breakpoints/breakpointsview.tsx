@@ -15,9 +15,6 @@ import { useTranslation } from "../../../i18n/useTranslation"
 const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   const { t } = useTranslation()
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
-  const x = window.outerWidth / 2 - 200
-  const y = window.outerHeight / 2 - 200
-  const [dialogPosition, setDialogPosition] = useState([x, y])
   const [breakpointEditAddress, setBreakpointEditAddress] = useState(0)
   const [breakpointEditValue, setBreakpointEditValue] = useState(BreakpointNew())
   const [showBreakpointEdit, setShowBreakpointEdit] = useState(false)
@@ -51,10 +48,6 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
 
   const cancelEdit = () => {
     setShowBreakpointEdit(false)
-  }
-
-  const doSetDialogPosition = (x: number, y: number) => {
-    setDialogPosition([x, y])
   }
 
   const breakpoints = handleGetBreakpoints()
@@ -100,10 +93,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
           <BreakpointEdit breakpoint={breakpointEditValue}
             setBreakpoint={setBreakpointEditValue}
             saveBreakpoint={saveBreakpoint}
-            cancelDialog={cancelEdit}
-            dialogPositionX={dialogPosition[0]}
-            dialogPositionY={dialogPosition[1]}
-            setDialogPosition={doSetDialogPosition} />}
+            cancelDialog={cancelEdit} />}
       </div>
     </div>
   )

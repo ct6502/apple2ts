@@ -18,15 +18,12 @@ import { getCyclesToRun, setCyclesToRun } from "../../ui_settings"
 const width = 550
 const height = 600
 const header = "Cycle        PC             Instruction    A   X   Y   S   P   NVBDIZC  AUX  RAM  80STORE"
+const dialogPosition = [window.outerWidth - width - 10, 100]
 
 const TraceDialog = (props: {
   cancelDialog: () => void,
-  dialogPositionX: number,
-  dialogPositionY: number,
-  setDialogPosition: (x: number, y: number) => void
 }) => {
   const { t } = useTranslation()
-  const { dialogPositionX, dialogPositionY, setDialogPosition } = props
   const dialogRef = useRef<HTMLDivElement>(null)
   const traceLogRef = useRef<HTMLDivElement>(null)
   const previousLastLineRef = useRef("")
@@ -62,7 +59,8 @@ const TraceDialog = (props: {
     if (dragging && dialogRef.current) {
       const div = dialogRef.current as HTMLDivElement
       // Save the final position to parent state
-      setDialogPosition(parseInt(div.style.left), parseInt(div.style.top))
+      dialogPosition[0] = parseInt(div.style.left)
+      dialogPosition[1] = parseInt(div.style.top)
     }
     setDragging(false)
   }
@@ -88,12 +86,6 @@ const TraceDialog = (props: {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
-
-  useEffect(() => {
-    if (dialogPositionX === -1) {
-      setDialogPosition(window.outerWidth - width - 10, 100)
-    }
-  }, [dialogPositionX, setDialogPosition])
 
   useEffect(() => {
     const traceLog = handleGetTracelog()
@@ -131,7 +123,7 @@ const TraceDialog = (props: {
       <div className="floating-dialog flex-column"
         ref={dialogRef}
         style={{
-          left: `${dialogPositionX}px`, top: `${dialogPositionY}px`,
+          left: `${dialogPosition[0]}px`, top: `${dialogPosition[1]}px`,
           zIndex: 500,  // above most stuff but not modal dialogs
         }}
       >

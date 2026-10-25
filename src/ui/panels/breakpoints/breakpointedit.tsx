@@ -10,14 +10,13 @@ import BPEdit_Basic from "./bpedit_basic"
 import { BRK_NOADDRESS, getBreakpointKey } from "../../../common/breakpoint"
 import { useTranslation } from "../../../i18n/useTranslation"
 
+const dialogPosition = [window.innerWidth / 2 - 275, window.innerHeight / 2 - 200]
+
 const BreakpointEdit = (props: {
   breakpoint: Breakpoint,
   setBreakpoint: (bp: Breakpoint) => void,
   saveBreakpoint: () => void,
   cancelDialog: () => void,
-  dialogPositionX: number,
-  dialogPositionY: number,
-  setDialogPosition: (x: number, y: number) => void
 }) => {
   const { t } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -39,7 +38,8 @@ const BreakpointEdit = (props: {
       const div = dialogRef.current as HTMLDivElement
       const left = e.clientX - offset[0]
       const top = e.clientY - offset[1]
-      props.setDialogPosition(left, top)
+      dialogPosition[0] = left
+      dialogPosition[1] = top
       div.style.left = `${left}px`
       div.style.top = `${top}px`
     }
@@ -130,8 +130,8 @@ const BreakpointEdit = (props: {
       <div className="floating-dialog flex-column-gap"
         ref={dialogRef}
         style={{
-          left: `${props.dialogPositionX}px`,
-          top: `${props.dialogPositionY}px`,
+          left: `${dialogPosition[0]}px`,
+          top: `${dialogPosition[1]}px`,
           width: "550px",
           height: "auto",
           minHeight: "400px",
