@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faLink, faXmark, faClipboard, faPlus, faMinus } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../panels/editfield"
@@ -39,9 +39,40 @@ export const getBaseAppUrl = (): string => {
   return `${url.origin}${pathname}`
 }
 
+const dialogPosition = [window.innerWidth / 2 - 275, Math.max(window.innerHeight / 2 - 400, 10)]
+
 const LinkBuilder = () => {
   const { t } = useTranslation()
   const [showBuilder, setShowBuilder] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const [offset, setOffset] = useState([0, 0])
+  const [dragging, setDragging] = useState(false)
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (dialogRef.current) {
+      setDragging(true)
+      const div = dialogRef.current as HTMLDivElement
+      // Offset of the mouse down event within the dialog title bar.
+      // This way we drag the window from where the user clicked.
+      setOffset([e.clientX - div.offsetLeft, e.clientY - div.offsetTop])
+    }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (dragging && dialogRef.current) {
+      const div = dialogRef.current as HTMLDivElement
+      const left = e.clientX - offset[0]
+      const top = e.clientY - offset[1]
+      dialogPosition[0] = left
+      dialogPosition[1] = top
+      div.style.left = `${left}px`
+      div.style.top = `${top}px`
+    }
+  }
+
+  const handleMouseUp = () => {
+    setDragging(false)
+  }
 
   const colorNames = [
     t("linkBuilder.colorNames.color"),
@@ -818,10 +849,19 @@ const LinkBuilder = () => {
       tabIndex={0} // Make the div focusable
       onKeyDown={(event) => {
         if (event.key === "Escape") setShowBuilder(false)
-      }}>
+      }}
+      onMouseMove={(e) => handleMouseMove(e)}
+      onMouseUp={handleMouseUp}>
       <div className="floating-dialog flex-column"
-        style={{ left: "35%", top: "5%", width: "70%", maxWidth: "600px", maxHeight: "90vh", overflowX: "hidden", overflowY: "auto", resize: "both", minWidth: "400px", minHeight: "300px" }}>
-        <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
+        ref={dialogRef}
+        style={{ left: `${dialogPosition[0]}px`, top: `${dialogPosition[1]}px`,
+          width: "70%", maxWidth: "600px", maxHeight: "90vh",
+          overflowX: "hidden", overflowY: "auto", resize: "both",
+          minWidth: "400px", minHeight: "300px" }}>
+        <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}
+            onMouseDown={(e) => handleMouseDown(e)}
+            onMouseMove={(e) => handleMouseMove(e)}
+            onMouseUp={handleMouseUp}>
           <div className="dialog-title" style={{ padding: 0, paddingTop: "6px" }}>{t("linkBuilder.title")}</div>
           <button className="push-button"
             type="button"
