@@ -1033,7 +1033,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
           }))
           setSelectedIndex(refreshedSelectedIndex)
         }
-      } else if (event.key === "Enter") {
+      } else if (event.key === "Enter" || event.key === " ") {
         event.preventDefault()
         event.stopPropagation()
         const item = currentMenu[selectedIndex]
@@ -1085,7 +1085,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
             }
           }
           openSubmenu()
-        } else if (currentFrame && item.options && item.kind !== "action") {
+        } else if (currentFrame && item.options && item.kind !== "action" && event.key !== " ") {
           if (currentFrame.submit && !item.valueOnly) {
             if (currentFrame.isSubmitVisible?.(currentFrame.items, currentFrame.values)) {
               currentFrame.submit(currentFrame.items, currentFrame.values)
@@ -1128,7 +1128,7 @@ const RetroMenuRenderer = ({ displayProps }: { displayProps: DisplayProps }) => 
                 )
               }))
             })
-          } else if (currentFrame && !item.keepMenuOpen) {
+          } else if (currentFrame && !item.keepMenuOpen && event.key !== " ") {
             setMenuStack(refreshPreviousMenu)
             setSelectedIndex(currentFrame.parentSelectedIndex)
           }
