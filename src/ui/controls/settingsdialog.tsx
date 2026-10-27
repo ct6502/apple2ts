@@ -4,6 +4,15 @@ import { faXmark, faGear } from "@fortawesome/free-solid-svg-icons"
 import { useTranslation } from "../../i18n/useTranslation"
 import { createControlContext } from "../retro/retromenucontext"
 import { settingsResetBinding } from "./resetcontrols"
+import { Droplist } from "../panels/droplist"
+import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../main2worker"
+import { getPreferenceBoolean, notifySettingsChanged, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
+import { getSlotOptions, SLOT_NUMBERS } from "../devices/machineconfig"
+import { cardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, ramdiskValues, themeLabels } from "../ui_utilities"
+import { BooleanKeyOf, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
+import CheckBox from "../panels/checkbox"
+import { getModKeyName } from "../retro/retrocontrolmetadata"
+import { themeToName, UI_THEMES } from "../../common/utility"
 
 const dialogPosition = [window.innerWidth / 2 - 275, window.innerHeight / 2 - 200]
 
@@ -46,6 +55,236 @@ export const SettingsDialog = (props: DisplayProps) => {
     settingsResetBinding.action?.(createControlContext(props, t, language, changeLanguage))
   }
 
+  const machineName = handleGetMachineName()
+  const machineNames: MACHINE_NAME[] = ["APPLE2EE", "APPLE2EU", "APPLE2P"]
+  const machineStrings = [t("machine.models.apple2ee"), t("machine.models.apple2eu"), t("machine.models.apple2p")]
+  const machineIndex = machineNames.indexOf(machineName)
+
+  const slotConfig = handleGetSlotConfig()
+
+  const mem = handleGetMemSize()
+  const memIndex = mem > 8000 ? 4 : mem > 4000 ? 3 : mem > 1000 ? 2 : mem > 500 ? 1 : 0
+  const ramdisk = ramdiskValues[memIndex]
+
+  const handleSelectSlotCard = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7, cardId: SLOT_CARD_ID, ramSizeKb = 64) => {
+    const currentConfig = handleGetSlotConfig()
+    const newConfig = { ...currentConfig }
+
+    // Single-instance cards (all except 'none' and 'mockingboard'): remove from other slots
+    if (cardId !== "none" && cardId !== "mockingboard") {
+      for (let s = 1; s <= 7; s++) {
+        if (s !== slot && newConfig[s as keyof SlotConfig] === cardId) {
+          newConfig[s as keyof SlotConfig] = "none"
+        }
+      }
+    }
+
+    if (cardId === "vera") {
+      setPreferenceVeraSlot(slot as VERA_SLOT)
+      setUIStateBoolean("infoPanel", true)
+      setTabView(4)
+      notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
+    } else if (currentConfig[slot] === "vera") {
+      setPreferenceVeraSlot(0)
+    }
+
+    if (slot === 3) {
+      if (cardId === "aux") {
+        setPreferenceRamWorks(ramSizeKb)
+      }
+    }
+
+    newConfig[slot] = cardId
+    setPreferenceSlotConfig(newConfig)
+    props.updateDisplay()
+  }
+
+  const themeConfig = () => {
+    return (
+      <Droplist name={t("config.theme")}
+        value={themeToName(getTheme())}
+        values={themeLabels(t)}
+        setValue={(val: string) => {
+          const i = themeLabels(t).indexOf(val)
+          setPreferenceTheme(UI_THEMES[i].value)
+          const url = new URL(window.location.href)
+          url.searchParams.delete("theme")
+          url.searchParams.set("cache", Date.now().toString())
+          window.location.href = url.toString()
+        }}
+      />
+    )
+  }
+
+  const machineConfig = () => {
+    return (
+      <Droplist name={t("linkBuilder.machine")}
+      value={machineStrings[machineIndex]}
+      values={machineStrings}
+      setValue={(val: string) => {
+        const i = machineStrings.indexOf(val)
+        setPreferenceMachineName(machineNames[i])
+        props.updateDisplay()
+        // // Adjust slot 3 when crossing between II+ and IIe families
+        const newIsIIp = val === machineStrings[2]
+        const wasIIp = machineName === "APPLE2P"
+        if (newIsIIp !== wasIIp) {
+          handleSelectSlotCard(3, newIsIIp ? "videoterm" : "aux")
+          if (!newIsIIp) setPreferenceRamWorks() // reset to 64KB default
+        }
+      }}
+      />
+    )
+  }
+
+  const colorConfig = () => {
+    return (
+      <Droplist name={t("linkBuilder.colorMode")}
+        value={colorLabels(t)[getColorMode()]}
+        values={colorLabels(t)}
+        setValue={(val: string) => {
+          const i = colorLabels(t).indexOf(val)
+          setPreferenceColorMode(COLOR_MODES[i])
+          props.updateDisplay()
+        }}
+      />
+    )
+  }
+
+  const monitorModeConfig = () => {
+    return (
+      <Droplist name={t("linkBuilder.monitorMode")}
+        value={monitorModeLabels(t)[getMonitorMode()]}
+        values={monitorModeLabels(t)}
+        setValue={(val: string) => {
+          const i = monitorModeLabels(t).indexOf(val)
+          setPreferenceMonitorMode(MONITOR_MODES[i])
+          props.updateDisplay()
+        }}
+      />
+    )
+  }
+
+  const doSetPreferenceBoolean = (key: BooleanKeyOf<UIState>, value: boolean) => {
+    setPreferenceBoolean(key, value)
+    props.updateDisplay()
+  }
+
+  const toggleOptions = () => {
+    const isTouchDevice = "ontouchstart" in document.documentElement
+    return (
+      <>
+        <CheckBox name={t("config.crtDistortion")}
+          checked={getPreferenceBoolean("crtDistortion")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("crtDistortion", on)} />
+        <CheckBox name={t("config.ghosting")}
+          checked={getPreferenceBoolean("ghosting")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("ghosting", on)} />
+        <CheckBox name={t("config.scanlines")}
+          checked={getPreferenceBoolean("showScanlines")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("showScanlines", on)} />
+        <CheckBox name={t("config.capsLock")}
+          checked={!getPreferenceBoolean("lowercaseMode")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("lowercaseMode", !on)} />
+        <CheckBox name={t("config.useOpenApple", { modKey: getModKeyName() })}
+          checked={getPreferenceBoolean("useOpenAppleKey")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("useOpenAppleKey", on)} />
+        <CheckBox name={t("config.useArrowKeys")}
+          checked={getPreferenceBoolean("arrowKeysAsJoystick")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("arrowKeysAsJoystick", on)} />
+        <CheckBox name={t("gamepad.reverseYAxis")}
+          checked={getPreferenceBoolean("reverseYAxis")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("reverseYAxis", on)} />
+        <CheckBox name={t("gamepad.siriusJoyport")}
+          checked={getPreferenceBoolean("siriusJoyport")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("siriusJoyport", on)} />
+        <CheckBox name={t("keyboard.enableGamePatches")}
+          checked={getPreferenceBoolean("enableGamePatches")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("enableGamePatches", on)} />
+        <CheckBox name={t("gamepad.touchJoystick")}
+          disabled={!isTouchDevice}
+          checked={getPreferenceBoolean("touchJoystick")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("touchJoystick", on)} />
+        <CheckBox name={t("gamepad.tiltSensorJoystick")}
+          disabled={!isTouchDevice}
+          checked={getPreferenceBoolean("tiltSensorJoystick")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("tiltSensorJoystick", on)} />
+      </>
+    )
+  }
+
+  const slotConfiguration = () => {
+    return (
+    <>
+      <div className="dialog-title" style={{ marginTop: "6px" }}>{t("linkBuilder.slots.configure")}</div>
+      {/* Two columns filled top-to-bottom: slots 1-4 left, 5-7 right. The grid
+          flows column-major through the four declared rows, so the single map
+          below keeps SLOT_NUMBERS order. */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "auto auto",
+        gridTemplateRows: "repeat(4, auto)",
+        gridAutoFlow: "column",
+        columnGap: "20px",
+        marginBottom: "8px",
+      }}>
+        {SLOT_NUMBERS.map(slot => {
+          const rawOptions = getSlotOptions(slot, machineName)
+          // Filter out cards already installed in another slot (unless card is none or mockingboard)
+          const options = rawOptions.filter(o => {
+            if (o.card === "none" || o.card === "mockingboard") return true
+            if (slotConfig[slot] === o.card) return true
+            return !SLOT_NUMBERS.some(otherSlot => otherSlot !== slot && slotConfig[otherSlot] === o.card)
+          })
+          // Build display label for each option (aux entries include RAM size)
+          const getOptionLabel = (o: typeof options[0]) => {
+            if (o.card === "aux" && o.ramSizeKb !== undefined) {
+              if (o.ramSizeKb <= 64) return "Aux/80Col (64KB)"
+              const sizeStr = o.ramSizeKb >= 1024 ? `${o.ramSizeKb / 1024}MB` : `${o.ramSizeKb}KB`
+              return `RamWorks (${sizeStr})`
+            }
+            return cardShortLabels[o.card]
+          }
+          const cardLabels = options.map(getOptionLabel)
+          // Current label: for slot 3 aux, reflect currently chosen ramdisk size
+          const currentCard = slotConfig[slot]
+          let currentLabel = cardShortLabels[currentCard]
+          if (slot === 3 && currentCard === "aux") {
+            const ramIdx = ramdiskValues.indexOf(ramdisk)
+            const ramSizeKb = parseInt(ramdiskParams[Math.max(ramIdx, 0)]) || 64
+            currentLabel = ramSizeKb <= 64 ? "Aux/80Col (64KB)"
+              : `RamWorks (${ramSizeKb >= 1024 ? `${ramSizeKb / 1024}MB` : `${ramSizeKb}KB`})`
+          }
+          return (
+            <Droplist
+              key={slot}
+              name={t("linkBuilder.slots.slot", { slot: String(slot) })}
+              value={currentLabel}
+              values={cardLabels}
+              setValue={(label: string) => {
+                const idx = cardLabels.indexOf(label)
+                if (idx >= 0) {
+                  const chosen = options[idx]
+                  handleSelectSlotCard(slot, chosen.card, chosen.ramSizeKb)
+                  // For slot 3: sync or reset ramdisk
+                  if (slot === 3) {
+                    if (chosen.card === "aux" && chosen.ramSizeKb !== undefined) {
+                      const paramStr = String(chosen.ramSizeKb)
+                      const ramIdx = ramdiskParams.indexOf(paramStr)
+                      if (ramIdx >= 0) setPreferenceRamWorks(chosen.ramSizeKb)
+                    } else {
+                      setPreferenceRamWorks()
+                    }
+                  }
+                }
+              }} />
+          )
+        })}
+      </div>
+    </>
+    )
+  }
+
   const builderDialog =
     <div className="modal-overlay"
       tabIndex={0} // Make the div focusable
@@ -75,17 +314,27 @@ export const SettingsDialog = (props: DisplayProps) => {
             </button>
           </div>
           <div className="horiz-rule"></div>
-
-
+          <div className="flex-row">
+            <div className="flex-column">
+              {themeConfig()}
+              {machineConfig()}
+              {colorConfig()}
+              {monitorModeConfig()}
+            </div>
+            <div className="flex-column" style={{ marginLeft: "20px" }}>
+              {toggleOptions()}
+            </div>
+          </div>
+          {slotConfiguration()}
         </div>
-        <div className="flex-row-space-between" style={{ marginLeft: "10px", flexShrink: 0 }}>
+        <div className="flex-row-space-between" style={{ marginLeft: "10px", marginTop: "10px", flexShrink: 0 }}>
           <button className="push-button text-button"
             onClick={resetSettings}>
             <span className="centered-title">{t("config.resetSettings")}</span>
           </button>
           <button className="push-button text-button"
             onClick={() => { setShowDialog(false) }}>
-            <span className="centered-title">{t("linkBuilder.close")}</span>
+            <span className="centered-title">{t("dialog.close")}</span>
           </button>
         </div>
       </div>

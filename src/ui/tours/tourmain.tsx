@@ -28,10 +28,6 @@ export const getTourMain = (t: any): Step[] => [
     content: t("tour.saveRestore"),
   },
   {
-    target: "#tour-theme-button",
-    content: t("tour.themeButton")
-  },
-  {
     target: "body",
     placement: "center",
     content: t("tour.endTour") + " " + t("tour.tourSelectorHint")

@@ -1082,11 +1082,6 @@ msgid "Back"
 msgstr "Indietro"
 
 #, fuzzy
-msgctxt "tour.close"
-msgid "Close"
-msgstr "Chiudi"
-
-#, fuzzy
 msgctxt "tour.last"
 msgid "Finish"
 msgstr "Termina"
@@ -1100,11 +1095,6 @@ msgstr "Avanti"
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
 msgstr "Avanti (Passaggio {step} di {steps})"
-
-#, fuzzy
-msgctxt "tour.skip"
-msgid "Close"
-msgstr "Chiudi"
 
 #, fuzzy
 msgctxt "tour.guidedTour"
@@ -2291,11 +2281,6 @@ msgid "Separator lines after JMP, RTS"
 msgstr "Linee separatrici dopo JMP, RTS"
 
 #, fuzzy
-msgctxt "gamepad.useArrowKeys"
-msgid "Use Arrow Keys as Joystick"
-msgstr "Tasti freccia come joystick"
-
-#, fuzzy
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Modalità Sirius Joyport"
@@ -2364,6 +2349,10 @@ msgstr ""
 
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
+msgstr ""
+
+msgctxt "linkBuilder.monitorMode"
+msgid "Monitor mode:"
 msgstr ""
 
 msgctxt "linkBuilder.ramDiskSize"
@@ -2450,13 +2439,14 @@ msgctxt "linkBuilder.tryIt"
 msgid "Try It"
 msgstr ""
 
-msgctxt "linkBuilder.reset"
+msgctxt "dialog.reset"
 msgid "Reset"
 msgstr ""
 
-msgctxt "linkBuilder.close"
+#, fuzzy
+msgctxt "dialog.close"
 msgid "Close"
-msgstr ""
+msgstr "Chiudi"
 
 msgctxt "linkBuilder.customDiskUrlOption"
 msgid "Custom URL"
@@ -2527,18 +2517,6 @@ msgstr ""
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Ludicrous"
 msgstr "Ridicola"
-
-msgctxt "linkBuilder.machines.enhanced"
-msgid "Apple IIe enhanced"
-msgstr ""
-
-msgctxt "linkBuilder.machines.unenhanced"
-msgid "Apple IIe unenhanced"
-msgstr ""
-
-msgctxt "linkBuilder.machines.apple2p"
-msgid "Apple II+"
-msgstr ""
 
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"

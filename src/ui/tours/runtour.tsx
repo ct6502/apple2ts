@@ -121,11 +121,11 @@ const RunTour = ({
 
   const locale = {
     back: t("tour.back"),
-    close: t("tour.close"),
+    close: t("dialog.close"),
     last: t("tour.last"),
     next: t("tour.next"),
     nextLabelWithProgress: t("tour.nextLabelWithProgress"),
-    skip: t("tour.skip"),
+    skip: t("dialog.close"),
   }
 
   return (

@@ -936,10 +936,6 @@ msgctxt "tour.back"
 msgid "Back"
 msgstr ""
 
-msgctxt "tour.close"
-msgid "Close"
-msgstr ""
-
 msgctxt "tour.last"
 msgid "Finish"
 msgstr ""
@@ -950,10 +946,6 @@ msgstr ""
 
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
-msgstr ""
-
-msgctxt "tour.skip"
-msgid "Close"
 msgstr ""
 
 msgctxt "tour.guidedTour"
@@ -1952,10 +1944,6 @@ msgctxt "saveDisassembly.separatorLines"
 msgid "Separator lines after JMP, RTS"
 msgstr ""
 
-msgctxt "gamepad.useArrowKeys"
-msgid "Use Arrow Keys as Joystick"
-msgstr ""
-
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr ""
@@ -2022,6 +2010,10 @@ msgstr ""
 
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
+msgstr ""
+
+msgctxt "linkBuilder.monitorMode"
+msgid "Monitor mode:"
 msgstr ""
 
 msgctxt "linkBuilder.ramDiskSize"
@@ -2108,11 +2100,11 @@ msgctxt "linkBuilder.tryIt"
 msgid "Try It"
 msgstr ""
 
-msgctxt "linkBuilder.reset"
+msgctxt "dialog.reset"
 msgid "Reset"
 msgstr ""
 
-msgctxt "linkBuilder.close"
+msgctxt "dialog.close"
 msgid "Close"
 msgstr ""
 
@@ -2182,18 +2174,6 @@ msgstr ""
 
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Ludicrous"
-msgstr ""
-
-msgctxt "linkBuilder.machines.enhanced"
-msgid "Apple IIe enhanced"
-msgstr ""
-
-msgctxt "linkBuilder.machines.unenhanced"
-msgid "Apple IIe unenhanced"
-msgstr ""
-
-msgctxt "linkBuilder.machines.apple2p"
-msgid "Apple II+"
 msgstr ""
 
 msgctxt "linkBuilder.themes.classic"

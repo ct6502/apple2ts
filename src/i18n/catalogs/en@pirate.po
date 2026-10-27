@@ -1041,11 +1041,6 @@ msgid "Back"
 msgstr "Turn Back"
 
 #, fuzzy
-msgctxt "tour.close"
-msgid "Close"
-msgstr "Batten Down"
-
-#, fuzzy
 msgctxt "tour.last"
 msgid "Finish"
 msgstr "Make Port"
@@ -1057,11 +1052,6 @@ msgstr "Ahead"
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
 msgstr "Ahead (Step {step} o' {steps})"
-
-#, fuzzy
-msgctxt "tour.skip"
-msgid "Close"
-msgstr "Batten Down"
 
 #, fuzzy
 msgctxt "tour.guidedTour"
@@ -2108,10 +2098,6 @@ msgctxt "saveDisassembly.separatorLines"
 msgid "Separator lines after JMP, RTS"
 msgstr ""
 
-msgctxt "gamepad.useArrowKeys"
-msgid "Use Arrow Keys as Joystick"
-msgstr "Use Arrow Keys fer Steerin'"
-
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr ""
@@ -2179,6 +2165,10 @@ msgstr ""
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
 msgstr "Color:"
+
+msgctxt "linkBuilder.monitorMode"
+msgid "Monitor mode:"
+msgstr ""
 
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb):"
@@ -2265,11 +2255,12 @@ msgctxt "linkBuilder.tryIt"
 msgid "Try It"
 msgstr "Give It a Go"
 
-msgctxt "linkBuilder.reset"
+msgctxt "dialog.reset"
 msgid "Reset"
 msgstr "Reset Ship"
 
-msgctxt "linkBuilder.close"
+#, fuzzy
+msgctxt "dialog.close"
 msgid "Close"
 msgstr "Batten Down"
 
@@ -2342,18 +2333,6 @@ msgstr "4 MHz (Full sail)"
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Ludicrous"
 msgstr "Kraken!"
-
-msgctxt "linkBuilder.machines.enhanced"
-msgid "Apple IIe enhanced"
-msgstr "Apple IIe (Upgraded)"
-
-msgctxt "linkBuilder.machines.unenhanced"
-msgid "Apple IIe unenhanced"
-msgstr "Apple IIe (Original)"
-
-msgctxt "linkBuilder.machines.apple2p"
-msgid "Apple II+"
-msgstr "Apple II+ (Ol' Reliable)"
 
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"

@@ -1005,10 +1005,6 @@ msgctxt "tour.back"
 msgid "Back"
 msgstr "Tillbaka"
 
-msgctxt "tour.close"
-msgid "Close"
-msgstr "Stäng"
-
 msgctxt "tour.last"
 msgid "Finish"
 msgstr "Slutför"
@@ -1020,10 +1016,6 @@ msgstr "Nästa"
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
 msgstr "Nästa (steg {step} av {steps})"
-
-msgctxt "tour.skip"
-msgid "Close"
-msgstr "Stäng"
 
 msgctxt "tour.guidedTour"
 msgid "Tours"
@@ -2053,10 +2045,6 @@ msgctxt "saveDisassembly.separatorLines"
 msgid "Separator lines after JMP, RTS"
 msgstr "Skiljelinjer efter JMP, RTS"
 
-msgctxt "gamepad.useArrowKeys"
-msgid "Use Arrow Keys as Joystick"
-msgstr "Använd piltangenter som styrspak"
-
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Sirius Joyport-läge"
@@ -2124,6 +2112,10 @@ msgstr "Maskin:"
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
 msgstr "Färgläge:"
+
+msgctxt "linkBuilder.monitorMode"
+msgid "Monitor mode:"
+msgstr ""
 
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb):"
@@ -2209,11 +2201,11 @@ msgctxt "linkBuilder.tryIt"
 msgid "Try It"
 msgstr "Prova"
 
-msgctxt "linkBuilder.reset"
+msgctxt "dialog.reset"
 msgid "Reset"
 msgstr "Återställ"
 
-msgctxt "linkBuilder.close"
+msgctxt "dialog.close"
 msgid "Close"
 msgstr "Stäng"
 
@@ -2284,18 +2276,6 @@ msgstr "4 MHz"
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Ludicrous"
 msgstr "Löjlig"
-
-msgctxt "linkBuilder.machines.enhanced"
-msgid "Apple IIe enhanced"
-msgstr "Apple IIe utökad"
-
-msgctxt "linkBuilder.machines.unenhanced"
-msgid "Apple IIe unenhanced"
-msgstr "Apple IIe utan utökning"
-
-msgctxt "linkBuilder.machines.apple2p"
-msgid "Apple II+"
-msgstr "Apple II+"
 
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"

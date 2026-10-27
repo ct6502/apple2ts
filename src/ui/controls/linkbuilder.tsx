@@ -14,6 +14,7 @@ import { useTranslation } from "../../i18n/useTranslation"
 import { SLOT_NUMBERS, getSlotOptions } from "../devices/machineconfig"
 import TabBase from "../tabbase"
 import Tab from "../tab"
+import { cardShortLabels, ramdiskParams, ramdiskValues } from "../ui_utilities"
 
 export enum TAB {
   DISK,
@@ -172,39 +173,11 @@ const LinkBuilder = () => {
   const [tabSection, setTabSection] = useState(TAB.DISK)
   const [slotConfig, setSlotConfig] = useState<SlotConfig>({ ...DEFAULT_SLOT_CONFIG })
 
-  // Short display labels for cards in the Link Builder slot dropdowns
-  const cardShortLabels: Record<SLOT_CARD_ID, string> = {
-    none: t("linkBuilder.slots.cardNone"),
-    ssc: "SSC",
-    softcard: "SoftCard (Z80)",
-    aux: "Aux/80Col",
-    videoterm: "VideoTerm",
-    vidhd: "VidHD",
-    mockingboard: "Mockingboard",
-    mouse: "Mouse",
-    vera: "VERA",
-    passport: "Passport",
-    disk2: "Disk II",
-    smartport: "SmartPort",
-  }
+  const machineValues = [t("machine.models.apple2ee"), t("machine.models.apple2eu"), t("machine.models.apple2p")]
 
-  const machineValues = [
-    t("linkBuilder.machines.enhanced"),
-    t("linkBuilder.machines.unenhanced"),
-    t("linkBuilder.machines.apple2p")
-  ]
   // Derive MACHINE_NAME from local machine state so slot options stay in sync
   const lbMachineName: MACHINE_NAME = machine === machineValues[2] ? "APPLE2P"
     : machine === machineValues[1] ? "APPLE2EU" : "APPLE2EE"
-
-  const ramdiskValues = [
-    t("linkBuilder.ramDiskSizes.default"),
-    t("linkBuilder.ramDiskSizes.512"),
-    t("linkBuilder.ramDiskSizes.1024"),
-    t("linkBuilder.ramDiskSizes.4096"),
-    t("linkBuilder.ramDiskSizes.8192")
-  ]
-  const ramdiskParams = ["64", "512", "1024", "4096", "8192"]
 
   const themeValues = [
     t("linkBuilder.themes.classic"),
@@ -562,7 +535,17 @@ const LinkBuilder = () => {
   const slotConfiguration = 
     <>
     <div className="dialog-title" style={{ marginBottom: "4px" }}>{t("linkBuilder.slots.configure")}</div>
-    <div className="flex-row" style={{ flexWrap: "wrap", gap: "0 20px", marginBottom: "8px" }}>
+    {/* Two columns filled top-to-bottom: slots 1-4 left, 5-7 right. The grid
+        flows column-major through the four declared rows, so the single map
+        below keeps SLOT_NUMBERS order. */}
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "auto auto",
+      gridTemplateRows: "repeat(4, auto)",
+      gridAutoFlow: "column",
+      columnGap: "20px",
+      marginBottom: "8px",
+    }}>
       {SLOT_NUMBERS.map(slot => {
         const rawOptions = getSlotOptions(slot, lbMachineName)
         // Filter out cards already installed in another slot (unless card is none or mockingboard)
@@ -576,7 +559,7 @@ const LinkBuilder = () => {
           if (o.card === "aux" && o.ramSizeKb !== undefined) {
             if (o.ramSizeKb <= 64) return "Aux/80Col (64KB)"
             const sizeStr = o.ramSizeKb >= 1024 ? `${o.ramSizeKb / 1024}MB` : `${o.ramSizeKb}KB`
-            return `AE RamWorks (${sizeStr})`
+            return `RamWorks (${sizeStr})`
           }
           return cardShortLabels[o.card]
         }
@@ -588,7 +571,7 @@ const LinkBuilder = () => {
           const ramIdx = ramdiskValues.indexOf(ramdisk)
           const ramSizeKb = parseInt(ramdiskParams[Math.max(ramIdx, 0)]) || 64
           currentLabel = ramSizeKb <= 64 ? "Aux/80Col (64KB)"
-            : `AE RamWorks (${ramSizeKb >= 1024 ? `${ramSizeKb / 1024}MB` : `${ramSizeKb}KB`})`
+            : `RamWorks (${ramSizeKb >= 1024 ? `${ramSizeKb / 1024}MB` : `${ramSizeKb}KB`})`
         }
         return (
           <Droplist
@@ -626,7 +609,7 @@ const LinkBuilder = () => {
         )
       })}
     </div>
-    </>
+  </>
 
   const renderDriveCustomUrlInputs = (
     driveKey: string,
@@ -903,11 +886,11 @@ const LinkBuilder = () => {
           </button>
           <button className="push-button text-button"
             onClick={resetAllSettings}>
-            <span className="centered-title">{t("linkBuilder.reset")}</span>
+            <span className="centered-title">{t("dialog.reset")}</span>
           </button>
           <button className="push-button text-button"
             onClick={() => { setShowBuilder(false) }}>
-            <span className="centered-title">{t("linkBuilder.close")}</span>
+            <span className="centered-title">{t("dialog.close")}</span>
           </button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import PopupMenu from "../../controls/popupmenu"
 import { Printer } from "./iwii"
 import { getPreferencePageLength } from "../../localstorage"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { changeSerialMode, getSerialMode } from "../serial/serialhub"
 
 export const PrinterDialogConfig = (props: { printer: Printer }) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -37,6 +38,18 @@ export const PrinterDialogConfig = (props: { printer: Printer }) => {
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
+          { label: t("retroControl.builtinImageWriter"),
+            isSelected: () => getSerialMode() === 0,
+            onClick: () => {
+              changeSerialMode(0)
+            }
+           },
+          { label: getSerialMode() === 0 ? t("retroControl.selectExternalPort") : t("retroControl.externalPort"),
+            isSelected: () => getSerialMode() !== 0,
+            onClick: () => {
+              changeSerialMode(1)
+            }
+          },
           {label: t("print.pageLength"), isHeading: true},
           {label: t("print.pageLengthLetter"), isSelected: () => {return pageLength === 11}, onClick: () => { setPageLength(11) }},
           {label: t("print.pageLengthA4"), isSelected: () => {return pageLength === 11.7}, onClick: () => { setPageLength(11.7) }},

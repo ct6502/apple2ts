@@ -1059,11 +1059,6 @@ msgid "Back"
 msgstr "上一步"
 
 #, fuzzy
-msgctxt "tour.close"
-msgid "Close"
-msgstr "關閉"
-
-#, fuzzy
 msgctxt "tour.last"
 msgid "Finish"
 msgstr "完成"
@@ -1077,11 +1072,6 @@ msgstr "下一步"
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
 msgstr "下一步 (第 {step} 步，共 {steps} 步)"
-
-#, fuzzy
-msgctxt "tour.skip"
-msgid "Close"
-msgstr "關閉"
 
 #, fuzzy
 msgctxt "tour.guidedTour"
@@ -2266,11 +2256,6 @@ msgid "Separator lines after JMP, RTS"
 msgstr "在 JMP、RTS 後加入分隔線"
 
 #, fuzzy
-msgctxt "gamepad.useArrowKeys"
-msgid "Use Arrow Keys as Joystick"
-msgstr "使用方向鍵作為搖桿"
-
-#, fuzzy
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Sirius 搖桿埠模式"
@@ -2352,6 +2337,10 @@ msgstr "主機型號："
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
 msgstr "顏色模式："
+
+msgctxt "linkBuilder.monitorMode"
+msgid "Monitor mode:"
+msgstr ""
 
 #, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
@@ -2458,12 +2447,12 @@ msgid "Try It"
 msgstr "嘗試執行"
 
 #, fuzzy
-msgctxt "linkBuilder.reset"
+msgctxt "dialog.reset"
 msgid "Reset"
 msgstr "重設"
 
 #, fuzzy
-msgctxt "linkBuilder.close"
+msgctxt "dialog.close"
 msgid "Close"
 msgstr "關閉"
 
@@ -2549,20 +2538,6 @@ msgstr ""
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Ludicrous"
 msgstr "極速"
-
-#, fuzzy
-msgctxt "linkBuilder.machines.enhanced"
-msgid "Apple IIe enhanced"
-msgstr "Apple IIe (增強型)"
-
-#, fuzzy
-msgctxt "linkBuilder.machines.unenhanced"
-msgid "Apple IIe unenhanced"
-msgstr "Apple IIe (非增強型)"
-
-msgctxt "linkBuilder.machines.apple2p"
-msgid "Apple II+"
-msgstr ""
 
 #, fuzzy
 msgctxt "linkBuilder.themes.classic"

@@ -68,7 +68,11 @@ let _lmargin = _lrm
 let _rmargin = 0
 let _tmargin = _tbm
 const _dpih = 144
-let _bmargin = getPreferencePageLength() * _dpih
+// Not read from preferences here: localstorage imports main2worker, which reaches
+// this module through serialhub, so the preference module is only half-initialized
+// when this file loads. reset() applies the saved page length before any printing.
+const _defaultPageLength = 11
+let _bmargin = _defaultPageLength * _dpih
 const _paperDPI = 180
 const _scaleFactor = 4 // resolution multiplier for sharper output
 let _dpi = _paperDPI

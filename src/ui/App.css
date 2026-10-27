@@ -442,6 +442,13 @@ body.dark-mode .centered-title {
   pointer-events: auto;
 }
 
+/* Popup menus opened from the printer toolbar render inside this host, which
+   disables pointer events. Their overlay still needs clicks so that clicking
+   outside the menu closes it. */
+.printer-dialog-host .modal-overlay {
+  pointer-events: auto;
+}
+
 body.dark-mode .floating-dialog {
   background-color: var(--panel-background-dark);
   border-color: var(--text-color-dark);

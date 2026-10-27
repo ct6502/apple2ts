@@ -155,7 +155,7 @@
       "kind": "toggle",
       "parentId": "keyboard.joystick",
       "order": 0,
-      "labelKey": "gamepad.useArrowKeys",
+      "labelKey": "config.useArrowKeys",
       "defaultIndex": 0
     },
     {

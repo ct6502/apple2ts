@@ -1,4 +1,5 @@
-import { UI_THEME } from "../common/utility"
+import { COLOR_MODE, MONITOR_MODE, UI_THEME } from "../common/utility"
+import { t } from "../i18n"
 import { getPreferenceRetroSkin, RETRO_SKIN } from "./localstorage"
 import { isMinimalTheme } from "./ui_settings"
 import { Color, Palette } from "viridis"
@@ -104,3 +105,56 @@ export const getDialogMessageContext = () => {
 export const setDialogMessageContext = (context: DialogMessageContext) => {
   dialogMessageContext = context
 }
+
+// Short display labels for cards in the Link Builder slot dropdowns
+export const cardShortLabels: Record<SLOT_CARD_ID, string> = {
+    none: t("linkBuilder.slots.cardNone"),
+    ssc: "Super Serial Card",
+    softcard: "SoftCard (Z80)",
+    aux: "Aux/80Col",
+    videoterm: "VideoTerm",
+    vidhd: "VidHD",
+    mockingboard: "Mockingboard",
+    mouse: "Mouse",
+    vera: "VERA",
+    passport: "Passport",
+    disk2: "Disk II",
+    smartport: "SmartPort",
+  }
+
+export const ramdiskValues = [
+      t("linkBuilder.ramDiskSizes.default"),
+      t("linkBuilder.ramDiskSizes.512"),
+      t("linkBuilder.ramDiskSizes.1024"),
+      t("linkBuilder.ramDiskSizes.4096"),
+      t("linkBuilder.ramDiskSizes.8192")
+    ]
+export const ramdiskParams = ["64", "512", "1024", "4096", "8192"]
+
+export const COLOR_MODES = Object.values(COLOR_MODE).filter(
+  (value): value is COLOR_MODE => typeof value === "number",
+)
+
+export const colorLabels = (t: (key: string) => string) => [
+  t("retroControl.color"),
+  t("retroControl.colorNoFringe"),
+  t("retroControl.green"),
+  t("retroControl.amber"),
+  t("retroControl.white"),
+  t("retroControl.inverse"),
+]
+
+export const MONITOR_MODES = Object.values(MONITOR_MODE).filter(
+  (value): value is MONITOR_MODE => typeof value === "number",
+)
+
+export const monitorModeLabels = (t: (key: string) => string) => [
+  t("retroControl.monitorModeChoice.ntsc"),
+  t("retroControl.monitorModeChoice.rgb"),
+]
+
+export const themeLabels = (t: (key: string) => string) => [
+  t("themes.classic"),
+  t("themes.dark"),
+  t("themes.minimal"),
+]

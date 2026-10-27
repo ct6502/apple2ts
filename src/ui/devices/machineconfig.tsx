@@ -1,21 +1,12 @@
-import { useState } from "react"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faGear } from "@fortawesome/free-solid-svg-icons"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../main2worker"
-import { setPreferenceMachineName, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
+import { setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
 import { setUIStateBoolean, setTabView } from "../ui_settings"
 import { notifySettingsChanged } from "../settingschange"
-import PopupMenu from "../controls/popupmenu"
-import { useTranslation } from "../../i18n/useTranslation"
 import { DEFAULT_SLOT_CONFIG, RUN_MODE } from "../../common/utility"
 import { handleSetCPUState } from "../controller"
 import { isCanvasFullscreen, setCanvasFullscreen } from "../controls/fullscreenbutton"
 import type { RetroControlMetadata, RetroMenuContext } from "../retro/retromenucontext"
-import { createControlContext } from "../retro/retromenucontext"
-import { ControlRegistry } from "../controls/controlregistry"
-import { controlOptionsToPopupItems } from "../controls/controlpopup"
 import { choiceBinding, controlsFromJson, type RetroControlBindings } from "../retro/retrocontrolmetadata"
-import { changeSerialMode, getSerialMode } from "./serial/serialhub"
 
 export const RAM_OPTIONS = [64, 512, 1024, 4096, 8192] as const
 
@@ -54,7 +45,7 @@ const getAuxCardLabel = (sizeKb: number): string => {
     return "Apple 699-0221 (64KB / 80-Col / dHGR)"
   }
   const sizeStr = sizeKb >= 1024 ? `${sizeKb / 1024}MB` : `${sizeKb}KB`
-  return `AE RamWorks III (${sizeStr} / 80-Col / dHGR)`
+  return `RamWorks III (${sizeStr} / 80-Col / dHGR)`
 }
 
 const retroCardLabels = (context: RetroMenuContext): Record<SLOT_CARD_ID, string> => ({
@@ -159,138 +150,138 @@ const machineBindings: RetroControlBindings = {
 
 export const retroMachineControls: RetroControlMetadata[] = controlsFromJson("machine", machineBindings)
 
-const machineControlRegistry = new ControlRegistry(retroMachineControls)
+// const machineControlRegistry = new ControlRegistry(retroMachineControls)
 
-export const MachineConfig = (props: DisplayProps) => {
-  const { t, language, changeLanguage } = useTranslation()
-  const [popupLocation, setPopupLocation] = useState<[number, number]>()
+// export const MachineConfig = (props: DisplayProps) => {
+//   const { t, language, changeLanguage } = useTranslation()
+//   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
-  const handleClick = (event: React.MouseEvent) => {
-    setPopupLocation([event.clientX, event.clientY])
-  }
+//   const handleClick = (event: React.MouseEvent) => {
+//     setPopupLocation([event.clientX, event.clientY])
+//   }
 
-  const machineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE"]
-  const roms = [t("machine.models.apple2p"), t("machine.models.apple2eu"), t("machine.models.apple2ee")]
-  const extraMemSize = handleGetMemSize()
-  const machineName = handleGetMachineName()
-  const slotConfig = handleGetSlotConfig()
-  const sharedSlotControls = machineControlRegistry.resolve(
-    createControlContext(props, t, language, changeLanguage),
-    "slots",
-  )
+//   const machineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE"]
+//   const roms = [t("machine.models.apple2p"), t("machine.models.apple2eu"), t("machine.models.apple2ee")]
+//   const extraMemSize = handleGetMemSize()
+//   const machineName = handleGetMachineName()
+//   const slotConfig = handleGetSlotConfig()
+//   const sharedSlotControls = machineControlRegistry.resolve(
+//     createControlContext(props, t, language, changeLanguage),
+//     "slots",
+//   )
 
-  const cardLabels: Record<SLOT_CARD_ID, string> = {
-    none: "None",
-    ssc: "Super Serial Card",
-    softcard: "Microsoft Z-80 SoftCard",
-    aux: getAuxCardLabel(extraMemSize),
-    videoterm: "Videx VideoTerm 80-Col Card",
-    vidhd: "VidHD (64KB / 80-Col / SHR)",
-    mockingboard: "Mockingboard Sound Card",
-    mouse: "Apple II Mouse Card",
-    vera: "VERA Graphics Card",
-    passport: "Passport MIDI Card",
-    disk2: "Disk II Floppy Controller",
-    smartport: "SmartPort Hard Drive Card",
-  }
+//   const cardLabels: Record<SLOT_CARD_ID, string> = {
+//     none: "None",
+//     ssc: "Super Serial Card",
+//     softcard: "Microsoft Z-80 SoftCard",
+//     aux: getAuxCardLabel(extraMemSize),
+//     videoterm: "Videx VideoTerm 80-Col Card",
+//     vidhd: "VidHD (64KB / 80-Col / SHR)",
+//     mockingboard: "Mockingboard Sound Card",
+//     mouse: "Apple II Mouse Card",
+//     vera: "VERA Graphics Card",
+//     passport: "Passport MIDI Card",
+//     disk2: "Disk II Floppy Controller",
+//     smartport: "SmartPort Hard Drive Card",
+//   }
 
-  const handleSelectSlotCard = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7, cardId: SLOT_CARD_ID, ramSizeKb = 64) => {
-    const currentConfig = handleGetSlotConfig()
-    const newConfig = { ...currentConfig }
+//   const handleSelectSlotCard = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7, cardId: SLOT_CARD_ID, ramSizeKb = 64) => {
+//     const currentConfig = handleGetSlotConfig()
+//     const newConfig = { ...currentConfig }
 
-    // Single-instance cards (all except 'none' and 'mockingboard'): remove from other slots
-    if (cardId !== "none" && cardId !== "mockingboard") {
-      for (let s = 1; s <= 7; s++) {
-        if (s !== slot && newConfig[s as keyof SlotConfig] === cardId) {
-          newConfig[s as keyof SlotConfig] = "none"
-        }
-      }
-    }
+//     // Single-instance cards (all except 'none' and 'mockingboard'): remove from other slots
+//     if (cardId !== "none" && cardId !== "mockingboard") {
+//       for (let s = 1; s <= 7; s++) {
+//         if (s !== slot && newConfig[s as keyof SlotConfig] === cardId) {
+//           newConfig[s as keyof SlotConfig] = "none"
+//         }
+//       }
+//     }
 
-    if (cardId === "vera") {
-      setPreferenceVeraSlot(slot as VERA_SLOT)
-      setUIStateBoolean("infoPanel", true)
-      setTabView(4)
-      notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
-    } else if (currentConfig[slot] === "vera") {
-      setPreferenceVeraSlot(0)
-    }
+//     if (cardId === "vera") {
+//       setPreferenceVeraSlot(slot as VERA_SLOT)
+//       setUIStateBoolean("infoPanel", true)
+//       setTabView(4)
+//       notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
+//     } else if (currentConfig[slot] === "vera") {
+//       setPreferenceVeraSlot(0)
+//     }
 
-    if (slot === 3) {
-      if (cardId === "aux") {
-        setPreferenceRamWorks(ramSizeKb)
-      }
-    }
+//     if (slot === 3) {
+//       if (cardId === "aux") {
+//         setPreferenceRamWorks(ramSizeKb)
+//       }
+//     }
 
-    newConfig[slot] = cardId
-    setPreferenceSlotConfig(newConfig)
-    props.updateDisplay()
-  }
+//     newConfig[slot] = cardId
+//     setPreferenceSlotConfig(newConfig)
+//     props.updateDisplay()
+//   }
 
-  const getSlotSubMenu = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7): PopupMenuItem[] => {
-    if (slot === 3) {
-      return getSlotOptions(slot, machineName).map(option => ({
-        label: option.card === "aux" && option.ramSizeKb !== undefined
-          ? `${getAuxCardLabel(option.ramSizeKb)}`
-          : `${cardLabels[option.card]}`,
-        isSelected: () => slotConfig[3] === option.card
-          && (option.card !== "aux" || option.ramSizeKb === extraMemSize),
-        onClick: () => handleSelectSlotCard(3, option.card, option.ramSizeKb),
-      }))
-    }
-    const control = sharedSlotControls.find(item => item.id === `slots.${slot}`)
-    return control ? controlOptionsToPopupItems(control) : []
-  }
+//   const getSlotSubMenu = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7): PopupMenuItem[] => {
+//     if (slot === 3) {
+//       return getSlotOptions(slot, machineName).map(option => ({
+//         label: option.card === "aux" && option.ramSizeKb !== undefined
+//           ? `${getAuxCardLabel(option.ramSizeKb)}`
+//           : `${cardLabels[option.card]}`,
+//         isSelected: () => slotConfig[3] === option.card
+//           && (option.card !== "aux" || option.ramSizeKb === extraMemSize),
+//         onClick: () => handleSelectSlotCard(3, option.card, option.ramSizeKb),
+//       }))
+//     }
+//     const control = sharedSlotControls.find(item => item.id === `slots.${slot}`)
+//     return control ? controlOptionsToPopupItems(control) : []
+//   }
 
-  return (
-    <span>
-      <button
-        id="basic-button"
-        className="push-button"
-        title={t("machine.configuration")}
-        onClick={handleClick}
-      >
-        <FontAwesomeIcon icon={faGear} />
-      </button>
+//   return (
+//     <span>
+//       <button
+//         id="basic-button"
+//         className="push-button"
+//         title={t("machine.configuration")}
+//         onClick={handleClick}
+//       >
+//         <FontAwesomeIcon icon={faGear} />
+//       </button>
 
-      <PopupMenu
-        location={popupLocation}
-        onClose={() => { setPopupLocation(undefined) }}
-        menuItems={[[
-          ...Array.from(Array(3).keys()).map((i) => (
-            {
-              label: roms[i],
-              isSelected: () => { return machineName === machineNames[i] },
-              onClick: () => {
-                setPreferenceMachineName(machineNames[i])
-                props.updateDisplay()
-              }
-            }
-          )),
-          { label: "-" },
-          { label: t("retroControl.builtinImageWriter"),
-            isSelected: () => getSerialMode() === 0,
-            onClick: () => {
-              changeSerialMode(0)
-            }
-           },
-          { label: getSerialMode() === 0 ? t("retroControl.selectExternalPort") : t("retroControl.externalPort"),
-            isSelected: () => getSerialMode() !== 0,
-            onClick: () => {
-              changeSerialMode(1)
-            }
-          },
-          { label: "-" },
-          { label: t("machine.slotConfigurator"), isHeading: true },
-          ...([1, 2, 3, 4, 5, 6, 7] as const).map((slot) => {
-            const currentCard = slotConfig[slot]
-            return {
-              label: `Slot ${slot}: ${cardLabels[currentCard]}`,
-              subMenu: getSlotSubMenu(slot)
-            }
-          })
-        ]]}
-      />
-    </span>
-  )
-}
+//       <PopupMenu
+//         location={popupLocation}
+//         onClose={() => { setPopupLocation(undefined) }}
+//         menuItems={[[
+//           ...Array.from(Array(3).keys()).map((i) => (
+//             {
+//               label: roms[i],
+//               isSelected: () => { return machineName === machineNames[i] },
+//               onClick: () => {
+//                 setPreferenceMachineName(machineNames[i])
+//                 props.updateDisplay()
+//               }
+//             }
+//           )),
+//           { label: "-" },
+//           { label: t("retroControl.builtinImageWriter"),
+//             isSelected: () => getSerialMode() === 0,
+//             onClick: () => {
+//               changeSerialMode(0)
+//             }
+//            },
+//           { label: getSerialMode() === 0 ? t("retroControl.selectExternalPort") : t("retroControl.externalPort"),
+//             isSelected: () => getSerialMode() !== 0,
+//             onClick: () => {
+//               changeSerialMode(1)
+//             }
+//           },
+//           { label: "-" },
+//           { label: t("machine.slotConfigurator"), isHeading: true },
+//           ...([1, 2, 3, 4, 5, 6, 7] as const).map((slot) => {
+//             const currentCard = slotConfig[slot]
+//             return {
+//               label: `Slot ${slot}: ${cardLabels[currentCard]}`,
+//               subMenu: getSlotSubMenu(slot)
+//             }
+//           })
+//         ]]}
+//       />
+//     </span>
+//   )
+// }
