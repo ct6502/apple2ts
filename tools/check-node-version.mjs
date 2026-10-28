@@ -1,3 +1,4 @@
+import process from "node:process"
 import { pathToFileURL } from "node:url"
 
 const minimums = new Map([[22, [23, 4]], [24, [22, 1]], [26, [12, 1]]])
