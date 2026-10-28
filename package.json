@@ -6,23 +6,26 @@
   "homepage": "https://apple2ts.com",
   "type": "module",
   "engines": {
-    "node": ">=24",
+    "node": ">=24.22.1 <25 || >=26.12.1 <27",
     "npm": ">=11"
   },
   "overrides": {
     "@fortawesome/fontawesome-common-types": "7.3.0",
+    "deepmerge": "file:vendor/deepmerge",
     "@eslint/eslintrc": {
-      "js-yaml": "4.3.1"
+      "js-yaml": "4.3.2"
     },
     "@istanbuljs/load-nyc-config": {
-      "js-yaml": "3.15.1"
+      "js-yaml": "3.15.2"
     }
   },
   "scripts": {
-    "prestart": "npm run copy-wasm && npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --prompt",
-    "prehost": "npm run copy-wasm && npm run generate-i18n-catalogs",
+    "check:node": "node tools/check-node-version.mjs",
+    "preinstall": "npm run check:node",
+    "prestart": "npm run check:node && npm run copy-wasm && npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --prompt",
+    "prehost": "npm run check:node && npm run copy-wasm && npm run generate-i18n-catalogs",
     "predeploy": "npm run build",
-    "prebuild": "npm run copy-wasm && npm run check-qr-hgr-assembly && npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --no-prompt",
+    "prebuild": "npm run check:node && npm run copy-wasm && npm run check-qr-hgr-assembly && npm run generate-i18n-catalogs && node tools/fetch-demozoo.mjs --no-prompt",
     "copy-wasm": "node tools/copy-wasm.mjs",
     "deploy": "gh-pages -d dist",
     "start": "vite --open",
