@@ -13,7 +13,7 @@ import { doSetUIDriveProps } from "./devices/disk/driveprops"
 import { setEnhancedMidi } from "./devices/audio/enhancedmidi"
 import { receiveMidiData } from "./devices/audio/midiinterface"
 import { playMockingboard } from "./devices/audio/mockingboard_audio"
-import { playVeraPcmWrite, playVeraPsgWrite, playVeraPsgBatch } from "./devices/audio/vera_psg_audio"
+import { playVeraFmReset, playVeraFmWrite, playVeraPcmWrite, playVeraPsgWrite, playVeraPsgBatch } from "./devices/audio/vera_psg_audio"
 import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
@@ -73,6 +73,7 @@ const resolveWorkerOperation = ({ operationId, error, value }: WorkerOperationRe
 export const setMain2Worker = (workerIn: Worker) => {
   resetExecutionSequence = worker !== null && worker !== workerIn
   worker = workerIn
+  doPostMessage(MSG_MAIN.VERA_FM_ENABLED, localStorage.getItem("veraFmAudioEnabled") !== "false")
   machineState.execution = undefined
 }
 
@@ -361,6 +362,10 @@ export const passSetMachineName = (name: MACHINE_NAME) => {
   machineState.machineName = name
 }
 
+export const passSetVeraFmEnabled = (enabled: boolean) => {
+  doPostMessage(MSG_MAIN.VERA_FM_ENABLED, enabled)
+}
+
 export const passSetVeraSlot = (slot: VERA_SLOT) => {
   doPostMessage(MSG_MAIN.VERA_SLOT, slot)
   // This will also come from the emulator, but set it here so the UI updates
@@ -585,6 +590,14 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     case MSG_WORKER.VERA_PCM_WRITE: {
       const pcmWrite = e.data.payload as VeraPcmWrite
       playVeraPcmWrite(pcmWrite)
+      break
+    }
+    case MSG_WORKER.VERA_FM_WRITE: {
+      playVeraFmWrite(e.data.payload as VeraFmWrite[])
+      break
+    }
+    case MSG_WORKER.VERA_FM_RESET: {
+      playVeraFmReset()
       break
     }
     case MSG_WORKER.VERA_SD_STATUS: {

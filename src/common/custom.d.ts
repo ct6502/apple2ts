@@ -175,6 +175,11 @@ type VeraPcmWrite = {
   value: number,
 }
 
+type VeraFmWrite = {
+  port: 0 | 1
+  value: number
+}
+
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }

@@ -1,3 +1,4 @@
+import { setVeraFmEnabled } from "./devices/vera/vera"
 import { doSetRunMode, doSetSpeedMode,
   doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doLoadBinary, doRunBinary, doSetIsDebugging, doSetState6502, requestSnapshot, doSetPastedText, forceSoftSwitches,
   forceVideo7Override,
@@ -90,12 +91,26 @@ export const passVeraPcmWrite = (event: VeraPcmWrite) => {
   doPostMessage(MSG_WORKER.VERA_PCM_WRITE, event)
 }
 
+let pendingFmWrites: VeraFmWrite[] = []
+export const passVeraFmWrite = (event: VeraFmWrite) => {
+  pendingFmWrites.push(event)
+}
+
+export const passVeraFmReset = () => {
+  pendingFmWrites = []
+  doPostMessage(MSG_WORKER.VERA_FM_RESET, null)
+}
+
 export const passVeraSdStatus = (status: VeraSdStatus) => {
   doPostMessage(MSG_WORKER.VERA_SD_STATUS, status)
 }
 set_sdcard_status_listener(passVeraSdStatus)
 
 export const passMachineState = (state: MachineState) => {
+  if (pendingFmWrites.length) {
+    doPostMessage(MSG_WORKER.VERA_FM_WRITE, pendingFmWrites)
+    pendingFmWrites = []
+  }
   doPostMessage(MSG_WORKER.MACHINE_STATE, state)
 }
 
@@ -485,6 +500,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.MACHINE_NAME:
         doSetMachineName(e.data.payload as MACHINE_NAME)
+        break
+      case MSG_MAIN.VERA_FM_ENABLED:
+        setVeraFmEnabled(e.data.payload as boolean)
         break
       case MSG_MAIN.VERA_SLOT:
         doSetVeraSlot(e.data.payload as VERA_SLOT)

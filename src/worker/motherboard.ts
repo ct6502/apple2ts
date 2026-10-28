@@ -73,6 +73,7 @@ let appMode = "default"
 let showDebugTab = false
 let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
+export const getCpuCyclesPerRefresh = () => cpuCyclesPerRefresh
 let cpuRunMode = RUN_MODE.IDLE
 export const getCpuRunMode = () => cpuRunMode
 
