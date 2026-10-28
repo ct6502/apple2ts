@@ -1,0 +1,15 @@
+{
+  "name": "deepmerge",
+  "version": "4.3.2-apple2ts.1",
+  "description": "A library for deep (recursive) merging of Javascript objects",
+  "license": "MIT",
+  "main": "dist/cjs.js",
+  "types": "index.d.ts",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TehShrike/deepmerge"
+  }
+}
