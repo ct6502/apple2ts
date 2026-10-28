@@ -81,6 +81,10 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "Ship's Liv'ry"
 
+msgctxt "config.graphics"
+msgid "Graphics"
+msgstr ""
+
 msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
 msgstr "Control Deck"
@@ -126,9 +130,9 @@ msgid "CRT Distortion"
 msgstr "Curvy Glass"
 
 #, fuzzy
-#| msgid "Joystick Configuration"
+#| msgid "Keyboard and Joystick Settings"
 msgctxt "config.joystick"
-msgid "Keyboard and Joystick Settings"
+msgid "Keyboard and Joystick"
 msgstr "Joystick Rigging"
 
 msgctxt "machine.configuration"

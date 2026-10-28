@@ -78,6 +78,10 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr ""
 
+msgctxt "config.graphics"
+msgid "Graphics"
+msgstr ""
+
 msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
 msgstr ""
@@ -121,7 +125,7 @@ msgid "CRT Distortion"
 msgstr ""
 
 msgctxt "config.joystick"
-msgid "Keyboard and Joystick Settings"
+msgid "Keyboard and Joystick"
 msgstr ""
 
 msgctxt "machine.configuration"

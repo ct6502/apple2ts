@@ -49,7 +49,7 @@ test("does not request MIDI permission when the module loads", async () => {
   expect(requestMIDIAccess).not.toHaveBeenCalled()
   const options = midiSelect.getMidiDeviceOptions()
   expect(options.map((option) => option.label)).toEqual([
-    "Apple2TS Built-in Synthesizer", "Enable External MIDI…",
+    "Built-in Synthesizer", "Enable External MIDI…",
   ])
   expect(midiSelect.isMidiDeviceSelected(options[0])).toBe(true)
   expect(midiSelect.isMidiDeviceSelected(options[1])).toBe(false)
@@ -64,7 +64,7 @@ test("does not offer external MIDI when Web MIDI is unsupported", async () => {
   const midiSelect = await import("./midiselect")
 
   expect(midiSelect.getMidiDeviceOptions().map((option) => option.label)).toEqual([
-    "Apple2TS Built-in Synthesizer",
+    "Built-in Synthesizer",
   ])
 })
 
@@ -91,7 +91,7 @@ test("requests MIDI permission only when Web MIDI access is requested", async ()
   expect(options.map((option) => option.type)).toEqual([
     "built-in-synth", "web-midi-output", "web-midi-output",
   ])
-  expect(options[0].label).toBe("Apple2TS Built-in Synthesizer")
+  expect(options[0].label).toBe("Built-in Synthesizer")
   expect(midiSelect.isMidiDeviceSelected(options[0])).toBe(false)
   expect(options[1].label).toBe("Test MIDI Output A")
   expect(midiSelect.isMidiDeviceSelected(options[1])).toBe(true)
@@ -125,7 +125,7 @@ test("warns and falls back when the selected output disappears", async () => {
 
   const options = midiSelect.getMidiDeviceOptions()
   expect(options.map((option) => option.label)).toEqual([
-    "Apple2TS Built-in Synthesizer", "Test MIDI Output B",
+    "Built-in Synthesizer", "Test MIDI Output B",
   ])
   expect(midiSelect.isMidiDeviceSelected(options[0])).toBe(true)
   expect(midiSelect.isMidiDeviceSelected(options[1])).toBe(false)
@@ -155,7 +155,7 @@ test("preserves the selected output by ID when another output disappears", async
 
   const options = midiSelect.getMidiDeviceOptions()
   expect(options.map((option) => option.label)).toEqual([
-    "Apple2TS Built-in Synthesizer", "Test MIDI Output B",
+    "Built-in Synthesizer", "Test MIDI Output B",
   ])
   expect(midiSelect.isMidiDeviceSelected(options[0])).toBe(false)
   expect(midiSelect.isMidiDeviceSelected(options[1])).toBe(true)

@@ -170,10 +170,12 @@ export const SettingsDialog = (props: DisplayProps) => {
     props.updateDisplay()
   }
 
-  const toggleOptions = () => {
-    const isTouchDevice = "ontouchstart" in document.documentElement
+  const graphicsOptions = () => {
     return (
       <>
+        <div className="dialog-title" style={{ paddingBottom: "0", marginTop: "0" }}>{t("config.graphics")}</div>
+        {colorConfig()}
+        {monitorModeConfig()}
         <CheckBox name={t("config.crtDistortion")}
           checked={getPreferenceBoolean("crtDistortion")}
           setChecked={(on: boolean) => doSetPreferenceBoolean("crtDistortion", on)} />
@@ -183,32 +185,39 @@ export const SettingsDialog = (props: DisplayProps) => {
         <CheckBox name={t("config.scanlines")}
           checked={getPreferenceBoolean("showScanlines")}
           setChecked={(on: boolean) => doSetPreferenceBoolean("showScanlines", on)} />
+      </>
+    )
+  }
+
+  const keyboardJoystickOptions = () => {
+    const isTouchDevice = "ontouchstart" in document.documentElement
+    return (
+      <>
+        <div className="dialog-title" style={{ paddingBottom: "0", marginTop: "6px" }}>{t("config.joystick")}</div>
         <CheckBox name={t("config.capsLock")}
           checked={!getPreferenceBoolean("lowercaseMode")}
           setChecked={(on: boolean) => doSetPreferenceBoolean("lowercaseMode", !on)} />
-        <CheckBox name={t("config.useOpenApple", { modKey: getModKeyName() })}
-          checked={getPreferenceBoolean("useOpenAppleKey")}
-          setChecked={(on: boolean) => doSetPreferenceBoolean("useOpenAppleKey", on)} />
         <CheckBox name={t("config.useArrowKeys")}
           checked={getPreferenceBoolean("arrowKeysAsJoystick")}
           setChecked={(on: boolean) => doSetPreferenceBoolean("arrowKeysAsJoystick", on)} />
         <CheckBox name={t("gamepad.reverseYAxis")}
           checked={getPreferenceBoolean("reverseYAxis")}
           setChecked={(on: boolean) => doSetPreferenceBoolean("reverseYAxis", on)} />
-        <CheckBox name={t("gamepad.siriusJoyport")}
-          checked={getPreferenceBoolean("siriusJoyport")}
-          setChecked={(on: boolean) => doSetPreferenceBoolean("siriusJoyport", on)} />
         <CheckBox name={t("keyboard.enableGamePatches")}
           checked={getPreferenceBoolean("enableGamePatches")}
           setChecked={(on: boolean) => doSetPreferenceBoolean("enableGamePatches", on)} />
-        <CheckBox name={t("gamepad.touchJoystick")}
-          disabled={!isTouchDevice}
+        {!isTouchDevice && <CheckBox name={t("config.useOpenApple", { modKey: getModKeyName() })}
+          checked={getPreferenceBoolean("useOpenAppleKey")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("useOpenAppleKey", on)} /> }
+        {!isTouchDevice && <CheckBox name={t("gamepad.siriusJoyport")}
+          checked={getPreferenceBoolean("siriusJoyport")}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("siriusJoyport", on)} /> }
+        { isTouchDevice && <CheckBox name={t("gamepad.touchJoystick")}
           checked={getPreferenceBoolean("touchJoystick")}
-          setChecked={(on: boolean) => doSetPreferenceBoolean("touchJoystick", on)} />
-        <CheckBox name={t("gamepad.tiltSensorJoystick")}
-          disabled={!isTouchDevice}
+          setChecked={(on: boolean) => doSetPreferenceBoolean("touchJoystick", on)} /> }
+        { isTouchDevice && <CheckBox name={t("gamepad.tiltSensorJoystick")}
           checked={getPreferenceBoolean("tiltSensorJoystick")}
-          setChecked={(on: boolean) => doSetPreferenceBoolean("tiltSensorJoystick", on)} />
+          setChecked={(on: boolean) => doSetPreferenceBoolean("tiltSensorJoystick", on)} /> }
       </>
     )
   }
@@ -220,14 +229,7 @@ export const SettingsDialog = (props: DisplayProps) => {
       {/* Two columns filled top-to-bottom: slots 1-4 left, 5-7 right. The grid
           flows column-major through the four declared rows, so the single map
           below keeps SLOT_NUMBERS order. */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "auto auto",
-        gridTemplateRows: "repeat(4, auto)",
-        gridAutoFlow: "column",
-        columnGap: "20px",
-        marginBottom: "8px",
-      }}>
+      <div className="flex-column">
         {SLOT_NUMBERS.map(slot => {
           const rawOptions = getSlotOptions(slot, machineName)
           // Filter out cards already installed in another slot (unless card is none or mockingboard)
@@ -277,7 +279,8 @@ export const SettingsDialog = (props: DisplayProps) => {
                     }
                   }
                 }
-              }} />
+              }}
+            />
           )
         })}
       </div>
@@ -318,14 +321,13 @@ export const SettingsDialog = (props: DisplayProps) => {
             <div className="flex-column">
               {themeConfig()}
               {machineConfig()}
-              {colorConfig()}
-              {monitorModeConfig()}
+              {slotConfiguration()}
             </div>
             <div className="flex-column" style={{ marginLeft: "20px" }}>
-              {toggleOptions()}
+              {graphicsOptions()}
+              {keyboardJoystickOptions()}
             </div>
           </div>
-          {slotConfiguration()}
         </div>
         <div className="flex-row-space-between" style={{ marginLeft: "10px", marginTop: "10px", flexShrink: 0 }}>
           <button className="push-button text-button"

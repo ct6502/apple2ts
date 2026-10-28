@@ -86,6 +86,10 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "主题"
 
+msgctxt "config.graphics"
+msgid "Graphics"
+msgstr ""
+
 msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
 msgstr "控制面板"
@@ -137,9 +141,9 @@ msgid "CRT Distortion"
 msgstr "CRT 失真效果"
 
 #, fuzzy
-#| msgid "Joystick Configuration"
+#| msgid "Keyboard and Joystick Settings"
 msgctxt "config.joystick"
-msgid "Keyboard and Joystick Settings"
+msgid "Keyboard and Joystick"
 msgstr "摇杆设置"
 
 #, fuzzy

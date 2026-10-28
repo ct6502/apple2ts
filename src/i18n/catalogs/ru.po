@@ -98,6 +98,10 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "Тема"
 
+msgctxt "config.graphics"
+msgid "Graphics"
+msgstr ""
+
 msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
 msgstr "Панель управления"
@@ -151,9 +155,9 @@ msgid "CRT Distortion"
 msgstr "Искажение ЭЛТ"
 
 #, fuzzy
-#| msgid "Joystick Configuration"
+#| msgid "Keyboard and Joystick Settings"
 msgctxt "config.joystick"
-msgid "Keyboard and Joystick Settings"
+msgid "Keyboard and Joystick"
 msgstr "Конфигурация джойстика"
 
 msgctxt "machine.configuration"
