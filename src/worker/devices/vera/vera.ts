@@ -4,6 +4,8 @@
 import { interruptRequest, registerCycleCountCallback } from "../../cpu6502"
 import { s6502 } from "../../instructions"
 import { setSlotIOCallback } from "../../memory"
+import { passVeraFmReset, passVeraFmWrite } from "../../worker2main"
+import { getCpuCyclesPerRefresh } from "../../motherboard"
 import { video_init, video_step, video_update, video_reset, video_read, video_write, video_get_irq_out } from "./video"
 import { vera_spi_init, vera_spi_step, sdcard_select } from "./sdcard"
 
@@ -11,6 +13,13 @@ let slot: number = 5
 let curInter: boolean = false
 let prevCycleCount = 0
 let pendingCycles = 0
+let ymBusyUntil = 0
+let fmEnabled = true
+export const setVeraFmEnabled = (enabled: boolean) => {
+  fmEnabled = enabled
+  ymBusyUntil = 0
+  passVeraFmReset()
+}
 
 const interrupt = (onoff: boolean): void => {
   if (onoff != curInter) {
@@ -47,12 +56,16 @@ export const initVera = () => {
   prevCycleCount = 0
   video_reset()
   sdcard_select(false)
+  ymBusyUntil = 0
+  passVeraFmReset()
 }
 
 export const resetVera = () => {
   pendingCycles = 0
   prevCycleCount = 0
   video_reset()
+  ymBusyUntil = 0
+  passVeraFmReset()
 }
 
 export const enableVera = (enable = true, aslot = 3) => {
@@ -85,6 +98,23 @@ const cycleCountCallback = (_slot: number) => {
 }
 
 const handleVeraIO = (addr: number, val = -1): number => {
+  const ymBase = 0xC080 + slot * 0x10
+  if (addr === ymBase || addr === ymBase + 1) {
+    if (!fmEnabled) return 0xff
+    const port = (addr - ymBase) as 0 | 1
+    if (val >= 0) {
+      passVeraFmWrite({ port, value: val & 0xff })
+      if (port === 1) {
+        // YM2151 writes hold BUSY for 32 chip clocks at the OPM prescale of 2.
+        // Convert those 64 chip clocks to Apple II CPU cycles so software
+        // probes (including VERA_FM_DETECT) can observe BUSY before it clears.
+        const busyCycles = Math.ceil(64 * getCpuCyclesPerRefresh() * 60 / 3579545)
+        ymBusyUntil = s6502.cycleCount + busyCycles
+      }
+      return 0
+    }
+    return addr === ymBase + 1 && s6502.cycleCount < ymBusyUntil ? 0x80 : 0
+  }
   // We dont have any ROM, but we have vera regs starting at Cx00
   if (addr >= 0xc100) {
     if (prevCycleCount) {

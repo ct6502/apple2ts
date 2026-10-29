@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { getMockingboardMode, MockingboardNames } from "./mockingboard_audio"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { notifySettingsChanged, setPreferenceMockingboardMode } from "../../localstorage"
+import { getPreferenceVeraFmAudioEnabled, notifySettingsChanged, setPreferenceMockingboardMode, setPreferenceVeraFmAudioEnabled } from "../../localstorage"
 import {
   faMusic,
 } from "@fortawesome/free-solid-svg-icons"
@@ -11,6 +11,7 @@ import { getMidiDeviceOptions, handleMidiDeviceSelect, isMidiDeviceSelected } fr
 import { useTranslation } from "../../../i18n/useTranslation"
 import type { RetroControlMetadata } from "../../retro/retromenucontext"
 import { audioEnable, getAudioStatus } from "./speaker"
+import { setVeraFmAudioEnabled } from "./vera_psg_audio"
 import { ControlRegistry } from "../../controls/controlregistry"
 import { controlsToPopupItems } from "../../controls/controlpopup"
 import { createControlContext } from "../../retro/retromenucontext"
@@ -63,6 +64,9 @@ export const AudioConfig = (props: DisplayProps) => {
     setPopupLocation([event.clientX, event.clientY])
   }
 
+  const veraFmEnabled = getPreferenceVeraFmAudioEnabled()
+  setVeraFmAudioEnabled(veraFmEnabled)
+
   const [, , midiControl] = audioControlRegistry.resolve(
     createControlContext(props, t, language, changeLanguage),
     "sound",
@@ -83,7 +87,25 @@ export const AudioConfig = (props: DisplayProps) => {
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
-          ...controlsToPopupItems([midiControl], false),
+          ...controlsToPopupItems([midiControl]),
+          { label: "-" },
+          { label: "VERA", isHeading: true },
+          {
+            label: "Enable FM Audio",
+            isSelected: () => getPreferenceVeraFmAudioEnabled(),
+            onClick: () => {
+              setPreferenceVeraFmAudioEnabled(true, "retro")
+              setVeraFmAudioEnabled(true)
+            },
+          },
+          {
+            label: "Disable FM Audio",
+            isSelected: () => !getPreferenceVeraFmAudioEnabled(),
+            onClick: () => {
+              setPreferenceVeraFmAudioEnabled(false, "retro")
+              setVeraFmAudioEnabled(false)
+            },
+          },
         ]]}
       />
     </span>

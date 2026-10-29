@@ -27,6 +27,7 @@
     "predeploy": "npm run build",
     "prebuild": "npm run check:node && npm run copy-wasm && npm run check-qr-hgr-assembly && npm run ensure-i18n-catalogs && node tools/fetch-demozoo.mjs --no-prompt",
     "copy-wasm": "node tools/copy-wasm.mjs",
+    "build:vera-ym": "node tools/build-vera-ym.mjs",
     "deploy": "gh-pages -d dist",
     "start": "vite --open",
     "host": "vite --open --host",
