@@ -21,7 +21,7 @@ export const getMidiDeviceOptions = (): MidiDeviceOption[] => {
   const options: MidiDeviceOption[] = []
 
   if (isSoftSynthAvailable())
-    options.push({ label: "Built-in Synthesizer", type: "built-in-synth" })
+    options.push({ label: "Built-in MIDI Synthesizer", type: "built-in-synth" })
 
   if (hasWebMidiAccess()) {
     if (midiOutDevices.length > 0) {

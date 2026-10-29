@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faXmark, faGear } from "@fortawesome/free-solid-svg-icons"
+import { faXmark, faGear, faMusic } from "@fortawesome/free-solid-svg-icons"
 import { useTranslation } from "../../i18n/useTranslation"
 import { createControlContext } from "../retro/retromenucontext"
 import { settingsResetBinding } from "./resetcontrols"
@@ -13,6 +13,9 @@ import { BooleanKeyOf, getColorMode, getMonitorMode, getTheme, setTabView, setUI
 import CheckBox from "../panels/checkbox"
 import { getModKeyName } from "../retro/retrocontrolmetadata"
 import { themeToName, UI_THEMES } from "../../common/utility"
+import PopupMenu from "./popupmenu"
+import { controlsToPopupItems } from "./controlpopup"
+import { audioControlRegistry } from "../devices/audio/audioconfig"
 
 const dialogPosition = [window.innerWidth / 2 - 275, window.innerHeight / 2 - 200]
 
@@ -22,6 +25,7 @@ export const SettingsDialog = (props: DisplayProps) => {
   const dialogRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
+  const [audioPopup, setAudioPopup] = useState<[number, number]>()
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (dialogRef.current) {
@@ -222,6 +226,45 @@ export const SettingsDialog = (props: DisplayProps) => {
     )
   }
 
+  const mockingboardConfiguration = () => {
+    const [, mockingboardControl] = audioControlRegistry.resolve(
+      createControlContext(props, t, language, changeLanguage),
+      "sound",
+    )
+    return (
+      <>
+        {/* "sound.mockingboard": {
+          ...choiceBinding({
+            options: () => MockingboardNames.map(label => ({ label })),
+            currentIndex: getMockingboardMode,
+            select: (context, index) => setPreferenceMockingboardMode(index, context.settingsOrigin),
+          }),
+          defaultIndex: 0,
+        }, */}
+      <button
+        id="basic-button"
+        className="push-button"
+        style={{ width: "24px", height: "24px",
+          marginTop: "3px", marginLeft: "6px",
+          outlineWidth: "1px",
+          outlineStyle: "solid",
+          outlineColor: "inherit" }}
+        title={t("audio.configuration")}
+        onClick={(e) => setAudioPopup([e.clientX, e.clientY])}
+      >
+        <FontAwesomeIcon icon={faMusic} style={{ fontSize: "0.8em" }}/>
+      </button>
+      <PopupMenu
+        location={audioPopup}
+        onClose={() => { setAudioPopup(undefined) }}
+        menuItems={[[
+          ...controlsToPopupItems([mockingboardControl]),
+        ]]}
+      />
+      </>
+    )
+  }
+
   const slotConfiguration = () => {
     return (
     <>
@@ -258,6 +301,7 @@ export const SettingsDialog = (props: DisplayProps) => {
               : `RamWorks (${ramSizeKb >= 1024 ? `${ramSizeKb / 1024}MB` : `${ramSizeKb}KB`})`
           }
           return (
+            <div className="flex-row" key={slot} style={{ alignItems: "center" }}>
             <Droplist
               key={slot}
               name={t("linkBuilder.slots.slot", { slot: String(slot) })}
@@ -281,6 +325,8 @@ export const SettingsDialog = (props: DisplayProps) => {
                 }
               }}
             />
+            {currentCard === "mockingboard" &&  mockingboardConfiguration()}
+            </div>
           )
         })}
       </div>

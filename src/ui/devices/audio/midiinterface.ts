@@ -105,7 +105,7 @@ const initDevices = () => {
     if (!useSoftSynth) {
       const outputName = selectedOutput?.name || "Unknown MIDI Output"
       if (SoftSynth.isSoftSynthAvailable()) {
-        console.warn(`MIDI output "${outputName}" is no longer available; using the built-in synthesizer.`)
+        console.warn(`MIDI output "${outputName}" is no longer available; using the Built-in MIDI Synthesizer.`)
         enableSoftSynth()
       } else {
         console.warn(`MIDI output "${outputName}" is no longer available; no MIDI output is selected.`)

@@ -53,7 +53,7 @@ const audioBindings: RetroControlBindings = {
 
 export const retroAudioControls: RetroControlMetadata[] = controlsFromJson("audio", audioBindings)
 
-const audioControlRegistry = new ControlRegistry(retroAudioControls)
+export const audioControlRegistry = new ControlRegistry(retroAudioControls)
 
 export const AudioConfig = (props: DisplayProps) => {
   const { t, language, changeLanguage } = useTranslation()
@@ -63,7 +63,7 @@ export const AudioConfig = (props: DisplayProps) => {
     setPopupLocation([event.clientX, event.clientY])
   }
 
-  const [, mockingboardControl, midiControl] = audioControlRegistry.resolve(
+  const [, , midiControl] = audioControlRegistry.resolve(
     createControlContext(props, t, language, changeLanguage),
     "sound",
   )
@@ -83,9 +83,7 @@ export const AudioConfig = (props: DisplayProps) => {
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
-          ...controlsToPopupItems([mockingboardControl]),
-          { label: "-" },
-          ...controlsToPopupItems([midiControl]),
+          ...controlsToPopupItems([midiControl], false),
         ]]}
       />
     </span>
