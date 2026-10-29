@@ -2,7 +2,7 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
+import { passSetVeraFmEnabled, passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
 import { getTheme, getUIState, initialBooleanUIKeys, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode, isDefaultTrueBooleanKey, setAutoSnapshot } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
@@ -14,6 +14,19 @@ export {
 } from "./settingschange"
 
 export const PREFERENCES_RESET_EVENT = "apple2ts-preferences-reset"
+
+export const getPreferenceVeraFmAudioEnabled = () =>
+  localStorage.getItem("veraFmAudioEnabled") !== "false"
+
+export const setPreferenceVeraFmAudioEnabled = (
+  enabled: boolean,
+  origin: SettingsChangeOrigin = "external",
+) => {
+  if (enabled) localStorage.removeItem("veraFmAudioEnabled")
+  else localStorage.setItem("veraFmAudioEnabled", "false")
+  passSetVeraFmEnabled(enabled)
+  notifySettingsChanged(["sound.veraFm"], origin)
+}
 
 const booleanControlIds: Partial<Record<BooleanKeyOf<UIState>, string>> = {
   arrowKeysAsJoystick: "keyboard.joystick.arrowKeys",

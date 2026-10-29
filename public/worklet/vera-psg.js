@@ -1,3 +1,4 @@
+import createYmfm from "../js/vera-ym.js"
 const WF_PULSE = 0
 const WF_SAWTOOTH = 1
 const WF_TRIANGLE = 2
@@ -34,8 +35,10 @@ const signExtend8To16 = (value) => ((value << 8) << 16) >> 16
 const signExtend16 = (value) => (value << 16) >> 16
 
 class VeraPsgProcessor extends AudioWorkletProcessor {
-  constructor() {
+  constructor(options) {
     super()
+    this.psgSample = { left: 0, right: 0 }
+    this.pcmSample = { left: 0, right: 0 }
     this.channels = Array.from({ length: 16 }, () => new Channel())
     this.noiseState = 1
     this.phaseScale = (25000000 / 512) / sampleRate
@@ -49,10 +52,20 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
     this.pcmCurL = 0
     this.pcmCurR = 0
     this.pcmPhase = 0
+    this.fmModule = null
+    this.fmBuffer = 0
+    this.fmCapacity = 128
+    this.fmEnabled = true
+    this.pendingFmWrites = []
+    this.fmReady = this.initFm(options.processorOptions.fmWasmModule)
     this.port.onmessage = (e) => {
       if (Array.isArray(e.data)) {
         for (let i = 0; i < e.data.length; i++) {
           const item = e.data[i]
+          if (item.type === "fm") {
+            this.writeFm(item)
+            continue
+          }
           if (item.reg === "ctrl") {
             this.writePcmCtrl(item.value)
           } else if (item.reg === "rate") {
@@ -63,6 +76,19 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
             this.writeReg(item.reg, item.value)
           }
         }
+        return
+      }
+      if (e.data.type === "fm") {
+        this.writeFm(e.data)
+        return
+      }
+      if (e.data.type === "fm-reset") {
+        this.pendingFmWrites = []
+        if (this.fmModule) this.fmModule._ymfm_reset()
+        return
+      }
+      if (e.data.type === "fm-enabled") {
+        this.fmEnabled = e.data.enabled
         return
       }
       const { reg, value } = e.data
@@ -76,6 +102,43 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
         this.writeReg(reg, value)
       }
     }
+  }
+
+  async initFm(wasmModule) {
+    try {
+
+      this.fmModule = await createYmfm({ instantiateWasm(imports, receiveInstance) {
+        const instance = new WebAssembly.Instance(wasmModule, imports)
+        receiveInstance(instance)
+        return instance.exports
+      } })
+      this.fmBuffer = this.fmModule._malloc(this.fmCapacity * 2 * Int16Array.BYTES_PER_ELEMENT)
+      this.pendingFmWrites.forEach(event => this.writeFm(event))
+      this.pendingFmWrites = []
+    } catch (error) {
+      console.error("Unable to load VERA YM2151 WebAssembly module", error)
+      this.pendingFmWrites = []
+    }
+  }
+
+  writeFm(event) {
+    if (!this.fmModule) {
+      this.pendingFmWrites.push(event)
+      return
+    }
+    this.fmModule._ymfm_write(event.port, event.value)
+  }
+
+  renderFm(count) {
+    if (!this.fmModule) return null
+    if (count > this.fmCapacity) {
+      this.fmModule._free(this.fmBuffer)
+      this.fmCapacity = count
+      this.fmBuffer = this.fmModule._malloc(this.fmCapacity * 2 * Int16Array.BYTES_PER_ELEMENT)
+    }
+    this.fmModule._ymfm_render(this.fmBuffer, count, sampleRate)
+    if (!this.fmEnabled) return null
+    return this.fmModule.HEAP16.subarray(this.fmBuffer >> 1, (this.fmBuffer >> 1) + count * 2)
   }
 
   writeReg(reg, value) {
@@ -150,10 +213,9 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
       if (ch.right) r += val >> 3
     }
 
-    return {
-      left: (l << 16) >> 16,
-      right: (r << 16) >> 16,
-    }
+    this.psgSample.left = (l << 16) >> 16
+    this.psgSample.right = (r << 16) >> 16
+    return this.psgSample
   }
 
   pcmFifoReset() {
@@ -265,10 +327,9 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
     }
 
     const volume = pcmVolumeLut[this.pcmCtrl & 0x0f]
-    return {
-      left: Math.trunc(this.pcmCurL * volume / 64),
-      right: Math.trunc(this.pcmCurR * volume / 64),
-    }
+    this.pcmSample.left = Math.trunc(this.pcmCurL * volume / 64)
+    this.pcmSample.right = Math.trunc(this.pcmCurR * volume / 64)
+    return this.pcmSample
   }
 
   process(inputs, outputs) {
@@ -276,11 +337,14 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
     const left = output[0]
     const right = output[1] || output[0]
 
+    const fm = this.renderFm(left.length)
     for (let i = 0; i < left.length; i++) {
       const psg = this.renderSample()
       const pcm = this.renderPcmSample()
-      left[i] = clampAudio(psg.left + pcm.left)
-      right[i] = clampAudio(psg.right + pcm.right)
+      const fmLeft = fm ? fm[i * 2] : 0
+      const fmRight = fm ? fm[i * 2 + 1] : 0
+      left[i] = clampAudio((psg.left + pcm.left) * 2 + fmLeft)
+      right[i] = clampAudio((psg.right + pcm.right) * 2 + fmRight)
     }
 
     return true
