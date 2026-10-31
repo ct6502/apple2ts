@@ -24,7 +24,6 @@ import { ControlAvailabilityIcon } from "./controlavailabilityicon"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
 import { choiceBinding, controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 import { openRetroControlPanel } from "../retro/retrocontrolevents"
-import { TimeTravelConfig } from "../devices/timetravelconfig"
 import { SettingsDialog } from "./settingsdialog"
 import { settingsResetBinding } from "./resetcontrols"
 import { themeLabels } from "../ui_utilities"
@@ -100,8 +99,6 @@ const ConfigButtons = (props: DisplayProps) => {
     </div>
 
     {!isGameMode() && <AudioConfig {...props} />}
-
-    {!isGameMode() && <TimeTravelConfig/>}
 
     <SettingsDialog {...props} />
 

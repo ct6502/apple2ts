@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { CLOUD_SYNC, FILE_SUFFIXES_ALL, getCleanDiskFilename, RUN_MODE } from "../common/utility"
 import BinaryFileDialog from "./devices/binaryfiledialog"
-import { RestoreSaveState } from "./savestate"
+import { RestoreSaveState } from "./save_restore_ui"
 import { appendStandbyDisks, handleSetDiskOrFileFromBuffer, prepWritableFile, setStandbyDisks, StandbyDisk } from "./devices/disk/driveprops"
 import { handleGetRunMode } from "./main2worker"
 import { decompressAllDiskFiles, compareDiskFilenames } from "../common/zip_utils"

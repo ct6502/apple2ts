@@ -115,7 +115,7 @@ const APPLESOFT_TOKENS: string[] = [
 
 export const BasicRebuildFromMemory = (setprogramText: (v: string) => void) => {
 
-  const useSaveStateCallback = (sState: EmulatorSaveState) => {
+  const retrieveMemoryViaCallback = (sState: EmulatorSaveState) => {
     const memString = sState.state6502.memory
     const memory = new Uint8Array(Buffer.from(memString, "base64"))
     const progStart = memory[0x67] + (memory[0x68] << 8)
@@ -192,5 +192,5 @@ export const BasicRebuildFromMemory = (setprogramText: (v: string) => void) => {
 
   // This has to be done via a callback since we don't normally pass all
   // the memory in the state.
-  handleGetSaveState(useSaveStateCallback)
+  handleGetSaveState(retrieveMemoryViaCallback)
 }

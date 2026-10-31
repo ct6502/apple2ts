@@ -10,7 +10,7 @@ const TabBase = (props: TabBaseProps) => {
   const [activeIndex, setActiveIndex] = useState(0)
 
   return (
-    <div className="tab-base">
+    <div className="tab-base" style={{ margin: "10px" }}>
       <div className="tab-base-header">
         {tabs.map((tab, i) => (
           <button

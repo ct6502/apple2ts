@@ -21,7 +21,7 @@ import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, UI_THEME } from "..
 import { ProcessDisplay, getCanvasSize, handleGetOverrideHires, canvasCoordToNormScreenCoord, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey, handleDiagonalKey, ensureGamepadEventListeners } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
-import { handleFileSave } from "./savestate"
+import { handleFileSave } from "./save_restore_ui"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
 import { getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, getTheme, getArrowKeysAsJoystick, isEmbedMode, getUIStateBoolean } from "./ui_settings"

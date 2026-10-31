@@ -40,7 +40,7 @@ export const getBaseAppUrl = (): string => {
   return `${url.origin}${pathname}`
 }
 
-const dialogPosition = [window.innerWidth / 2 - 275, Math.max(window.innerHeight / 2 - 400, 10)]
+const dialogPosition = [Math.max(window.innerWidth / 2 - 275, 0), Math.max(window.innerHeight / 2 - 400, 10)]
 
 const LinkBuilder = () => {
   const { t } = useTranslation()
@@ -854,16 +854,13 @@ const LinkBuilder = () => {
         </div>
         <div className="horiz-rule"></div>
 
-        <div style={{ marginLeft: "8px", marginRight: "8px" }}>
-          <TabBase>
-            <Tab title={t("machine.configuration")}>{emulatorGeneralSettings}<div className="horiz-rule" style={{ marginTop: "15px" }}/>{slotConfiguration}</Tab>
-            <Tab title={t("linkBuilder.startupOptionsTab")}>{startUpOptions}</Tab>
-          </TabBase>
-        </div>
-        <div className="horiz-rule" style={{ marginTop: "10px" }}/>
+        <TabBase>
+          <Tab title={t("machine.configuration")}>{emulatorGeneralSettings}<div className="horiz-rule" style={{ marginTop: "15px" }}/>{slotConfiguration}</Tab>
+          <Tab title={t("linkBuilder.startupOptionsTab")}>{startUpOptions}</Tab>
+        </TabBase>
 
         {/* Show final link, readonly textarea for now */}
-        <div className="flex-row-space-between" style={{ marginRight: "10px", flexShrink: 0 }}>
+        <div className="flex-row-space-between" style={{ marginRight: "10px", marginTop: "10px", flexShrink: 0 }}>
           <div className="dialog-title">{t("linkBuilder.finalUrl")}</div>
           <button className="push-button"
             title={t("linkBuilder.copyToClipboard")}

@@ -459,7 +459,7 @@ export const memoryReset = () => {
   // these two bytes need correcting.
   //
   // This is deliberately narrow -- not a general switch to the realistic
-  // pattern for all of memory -- because getApple2State()/setApple2State()
+  // pattern for all of memory -- because getApple2State()/restoreApple2State()
   // (save_restore.ts) use a uniform 0xFF as the sentinel "page not
   // written" value for sparse session-snapshot encoding. Filling all of
   // memory with the realistic pattern would defeat that optimization and

@@ -5,12 +5,9 @@ import { handleGetFilename } from "./devices/disk/driveprops"
 import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { isAudioEnabled, audioEnable } from "./devices/audio/speaker"
 import { handleGetBreakpoints, handleGetSpeedMode, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, passRestoreSaveState, passSetRunMode, passSetShowDebugTab } from "./main2worker"
-import { 
-  
-  getUIState,
-  setUIState} from "./ui_settings"
+import { getUIState, setUIState} from "./ui_settings"
 
-const useSaveStateCallback = (sState: EmulatorSaveState) => {
+const constructSaveStateWithUI = (sState: EmulatorSaveState) => {
   const d = new Date()
   const datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString()
   const breakpoints = handleGetBreakpoints()
@@ -30,6 +27,20 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
   }
   sState.emulator = displayState
   const state = JSON.stringify(sState, null, 2)
+  return state
+}
+
+export const saveStateToLocalStorageCallback = (sState: EmulatorSaveState) => {
+  const state = constructSaveStateWithUI(sState)
+  localStorage.setItem("apple2ts_save_state", state)
+}
+
+export const handleSaveStateToLocalStorage = () => {
+  handleGetSaveState(saveStateToLocalStorageCallback, false)
+}
+
+const saveStateToDownloadCallback = (sState: EmulatorSaveState) => {
+  const state = constructSaveStateWithUI(sState)
   const blob = new Blob([state], { type: "text/plain" })
   const link = document.createElement("a")
   const url = URL.createObjectURL(blob)
@@ -50,7 +61,7 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
 }
 
 export const handleFileSave = (withSnapshots: boolean) => {
-  handleGetSaveState(useSaveStateCallback, withSnapshots)
+  handleGetSaveState(saveStateToDownloadCallback, withSnapshots)
 }
 
 export const RestoreSaveState = (fileContents: string) => {

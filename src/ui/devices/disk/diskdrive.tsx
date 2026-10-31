@@ -36,7 +36,7 @@ import { canFavoriteDisk, isDiskFavorite, setDiskFavorite } from "./diskfavorite
 import { isFileSystemApiSupported } from "../../ui_utilities"
 import { useTranslation } from "../../../i18n/useTranslation"
 import { faInternetArchive } from "@fortawesome/free-brands-svg-icons"
-import { RestoreSaveState } from "../../savestate"
+import { RestoreSaveState } from "../../save_restore_ui"
 import { DISK_LOAD_SUCCESS_EVENT } from "../../ui_settings"
 
 export const DISK_DRIVE_LABELS = ["S7,D1", "S7,D2", "S6,D1", "S6,D2"]

@@ -6,18 +6,20 @@ import { createControlContext } from "../retro/retromenucontext"
 import { settingsResetBinding } from "./resetcontrols"
 import { Droplist } from "../panels/droplist"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../main2worker"
-import { getPreferenceBoolean, notifySettingsChanged, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
+import { getPreferenceBoolean, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
 import { getSlotOptions, SLOT_NUMBERS } from "../devices/machineconfig"
 import { cardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, ramdiskValues, themeLabels } from "../ui_utilities"
-import { BooleanKeyOf, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
+import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import CheckBox from "../panels/checkbox"
 import { getModKeyName } from "../retro/retrocontrolmetadata"
 import { themeToName, UI_THEMES } from "../../common/utility"
 import PopupMenu from "./popupmenu"
 import { controlsToPopupItems } from "./controlpopup"
 import { audioControlRegistry } from "../devices/audio/audioconfig"
+import TabBase from "../tabbase"
+import Tab from "../tab"
 
-const dialogPosition = [window.innerWidth / 2 - 275, window.innerHeight / 2 - 200]
+const dialogPosition = [Math.max(window.innerWidth / 2 - 275, 0), Math.max(window.innerHeight / 2 - 400, 0)]
 
 export const SettingsDialog = (props: DisplayProps) => {
   const { t, language, changeLanguage } = useTranslation()
@@ -272,7 +274,7 @@ export const SettingsDialog = (props: DisplayProps) => {
       {/* Two columns filled top-to-bottom: slots 1-4 left, 5-7 right. The grid
           flows column-major through the four declared rows, so the single map
           below keeps SLOT_NUMBERS order. */}
-      <div className="flex-column">
+      <div className="flex-column" style={{gap: "3px"}}>
         {SLOT_NUMBERS.map(slot => {
           const rawOptions = getSlotOptions(slot, machineName)
           // Filter out cards already installed in another slot (unless card is none or mockingboard)
@@ -334,6 +336,28 @@ export const SettingsDialog = (props: DisplayProps) => {
     )
   }
 
+  const timeTravelOptions = () => {
+    const autoSnapshot = getAutoSnapshot()
+    const ttnames = [t("timetravel.auto_Off"), t("timetravel.auto_100k"), t("timetravel.auto_1M")]
+    return (
+    <div>
+      <div className="dialog-title" style={{ paddingBottom: "4px" }}>{t("debug.timeTravelSnapshots")}</div>
+      <CheckBox name={t("timetravel.snapshotOnKeyPress")}
+        checked={!getPreferenceBoolean("snapshotOnKeyPress")}
+        setChecked={(on: boolean) => doSetPreferenceBoolean("snapshotOnKeyPress", !on)} />
+      <Droplist name={t("timetravel.autoSnapshot")}
+        value={ttnames[autoSnapshot]}
+        values={ttnames}
+        setValue={(val: string) => {
+          const i = ttnames.indexOf(val)
+          setPreferenceAutoSnapshot(i)
+          props.updateDisplay()
+        }}
+      />
+    </div>
+    )
+  }
+
   const builderDialog =
     <div className="modal-overlay"
       tabIndex={0} // Make the div focusable
@@ -344,7 +368,7 @@ export const SettingsDialog = (props: DisplayProps) => {
       onMouseUp={handleMouseUp}>
       <div className="floating-dialog flex-column"
         ref={dialogRef}
-        style={{ width: "550px",
+        style={{ width: "600px",
           left: `${dialogPosition[0]}px`,
           top: `${dialogPosition[1]}px`,
           height: "auto",
@@ -362,18 +386,29 @@ export const SettingsDialog = (props: DisplayProps) => {
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
             </button>
           </div>
-          <div className="horiz-rule"></div>
-          <div className="flex-row">
-            <div className="flex-column">
-              {themeConfig()}
-              {machineConfig()}
-              {slotConfiguration()}
-            </div>
-            <div className="flex-column" style={{ marginLeft: "20px" }}>
-              {graphicsOptions()}
-              {keyboardJoystickOptions()}
-            </div>
-          </div>
+          {/* <div className="horiz-rule"></div> */}
+
+          <TabBase>
+            <Tab title={t("machine.configuration")}>
+              <div className="flex-row" style={{marginTop: "10px", marginBottom: "10px"}}>
+                <div className="flex-column" style={{gap: "3px"}}>
+                  {themeConfig()}
+                  {machineConfig()}
+                  {slotConfiguration()}
+                </div>
+                <div className="flex-column" style={{gap: "3px", marginLeft: "20px" }}>
+                  {graphicsOptions()}
+                  {keyboardJoystickOptions()}
+                </div>
+              </div>
+            </Tab>
+            <Tab title={t("config.saveState")}>
+              <div className="flex-row" style={{marginTop: "10px", marginBottom: "10px"}}>
+                {timeTravelOptions()}
+              </div>
+            </Tab>
+          </TabBase>
+          
         </div>
         <div className="flex-row-space-between" style={{ marginLeft: "10px", marginTop: "10px", flexShrink: 0 }}>
           <button className="push-button text-button"

@@ -1,7 +1,7 @@
 
 import { readFileSync } from "node:fs"
 import path, { resolve } from "node:path"
-import { doGetSaveState, doGoBackInTime, doRestoreSaveState, doSnapshot, getApple2State } from "./save_restore"
+import { doGetSaveState, doGoBackInTime, doRestoreSaveState, doSnapshot, getApple2State } from "./save_restore_worker"
 import { setIsTesting } from "./worker2main"
 import { doSetEmuDriveNewData, getDriveSaveState } from "./devices/drivestate"
 import { getTextPage, memory } from "./memory"

@@ -4,7 +4,7 @@ import { memGet, memGetSlotROM, memSet, memSetSlotROM } from "./memory"
 import { handleMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { MouseCardEvent, onMouseVBL, resetMouse } from "./devices/mouse"
 import { configureMachine, doSetSlotConfig } from "./motherboard"
-import { getApple2State, setApple2State } from "./save_restore"
+import { getApple2State, restoreApple2State } from "./save_restore_worker"
 import { setIsTesting } from "./worker2main"
 import { s6502 } from "./instructions"
 
@@ -29,7 +29,7 @@ test("v2 save state preserves Mockingboard registers and timers", () => {
 
   const saved = getApple2State()
   resetMockingboard(4)
-  setApple2State(saved, 2)
+  restoreApple2State(saved, 2)
 
   expect(memGetSlotROM(4, 0x04)).toBe(0x34)
   expect(memGetSlotROM(4, 0x05)).toBe(0x12)
@@ -55,7 +55,7 @@ test("v2 save state preserves mouse position, button, and interrupt", () => {
   const saved = getApple2State()
   resetMouse()
   interruptRequest(5, false)
-  setApple2State(saved, 2)
+  restoreApple2State(saved, 2)
 
   expect(memGet(0xC0D1)).toBe(0)
   expect(memGet(0xC0D2)).toBe(1)

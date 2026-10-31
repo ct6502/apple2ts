@@ -12,7 +12,7 @@ import {
 import { handleSetCPUState } from "../controller"
 import { handleCopyScreenAsBitmap, handleCopyToClipboard } from "../copycanvas"
 import { handleGetRunMode, handleGetTextPage, passPasteText } from "../main2worker"
-import { handleFileSave } from "../savestate"
+import { handleFileSave } from "../save_restore_ui"
 import { isGameMode } from "../ui_settings"
 import DiskImportExport from "../devices/disk/diskimportexport"
 import { useTranslation } from "../../i18n/useTranslation"

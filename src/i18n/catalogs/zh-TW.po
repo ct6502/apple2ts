@@ -160,9 +160,14 @@ msgctxt "config.joystick"
 msgid "Keyboard and Joystick"
 msgstr "搖桿設定"
 
+msgctxt "config.saveState"
+msgid "Saved States"
+msgstr ""
+
 #, fuzzy
+#| msgid "Machine Configuration"
 msgctxt "machine.configuration"
-msgid "Machine Configuration"
+msgid "Machine"
 msgstr "機器配置"
 
 msgctxt "machine.slotConfigurator"

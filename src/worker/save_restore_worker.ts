@@ -72,7 +72,7 @@ export const getApple2State = (): Apple2SaveState => {
   }
 }
 
-export const setApple2State = (
+export const restoreApple2State = (
   newState: Apple2SaveState,
   version: number,
   publishState = true,
@@ -186,7 +186,7 @@ export const doRestoreSaveState = (
   // A state without a version is either a save file from before version 1, which
   // uses the legacy memory layout, or a time travel snapshot, which has no emulator
   // field. Only the version 2 layout has memvalid, so the default tells them apart.
-  setApple2State(sState.state6502, version, publishState)
+  restoreApple2State(sState.state6502, version, publishState)
   restoreDriveSaveState(sState.driveState)
   if (eraseSnapshots) {
     saveStates.length = 0

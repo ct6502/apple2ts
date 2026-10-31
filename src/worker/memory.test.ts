@@ -18,7 +18,7 @@ import {
 } from "./memory"
 import { hiresLineToAddress, RamWorksMemoryStart } from "../common/utility"
 import { setIsTesting } from "./worker2main"
-import { getApple2State, setApple2State } from "./save_restore"
+import { getApple2State, restoreApple2State } from "./save_restore_worker"
 import { SWITCHES } from "./softswitches"
 import { setKeyboardState } from "./devices/keyboard"
 import { createMemoryPredicateMatcher, findMemory, getMemoryView } from "./memory_view"
@@ -846,7 +846,7 @@ test("test RamWorks Save/Restore", () => {
   const sState = getApple2State()
   memoryReset()
   expect(memGet(0x00C0)).toEqual(0xFF)
-  setApple2State(sState, 2.0)
+  restoreApple2State(sState, 2.0)
   // We should still be in aux mem since that was our "saved" state
   expect(SWITCHES.ALTZP.isSet).toEqual(true)
   expect(SWITCHES.BSRREADRAM.isSet).toEqual(true)
