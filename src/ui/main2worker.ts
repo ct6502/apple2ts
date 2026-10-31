@@ -381,6 +381,10 @@ export const passSetMachineName = (name: MACHINE_NAME) => {
   machineState.machineName = name
 }
 
+export const passSetIigsRomVersion = (version: IigsRomVersion) => {
+  doPostMessage(MSG_MAIN.IIGS_ROM, version)
+}
+
 export const passSetVeraSlot = (slot: VERA_SLOT) => {
   doPostMessage(MSG_MAIN.VERA_SLOT, slot)
   // This will also come from the emulator, but set it here so the UI updates

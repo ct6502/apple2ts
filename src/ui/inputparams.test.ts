@@ -396,3 +396,57 @@ describe("handleFragment multi-disk loading", () => {
     expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
   })
 })
+
+describe("handleFragment boot deferral with a fragment disk", () => {
+  const { handleSetDiskFromURL } = jest.requireMock("./devices/disk/driveprops")
+  const DISK = "http://localhost:6503/SystemDisk.2mg"
+  let passSetRunModeSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    localStorage.clear()
+    jest.clearAllMocks()
+    passSetRunModeSpy = jest.spyOn(main2worker, "passSetRunMode").mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    passSetRunModeSpy.mockRestore()
+    window.history.replaceState({}, "", "/")
+    jest.useRealTimers()
+  })
+
+  // ?boot=true next to a fragment disk asks for a cold boot once the image has
+  // landed, because the ROM's device scan sees an empty bay otherwise. The
+  // deferral used to be a fixed 100 ms timer fired from the synchronous tail of
+  // handleFragment, so a fetch slower than that still scanned an empty drive.
+  test("waits for the mount instead of a fixed delay", async () => {
+    jest.useFakeTimers()
+    window.history.replaceState({}, "", `/?machine=apple2gs&boot=true&drive=4#${DISK}`)
+    handleInputParams("machine=apple2gs&boot=true&drive=4")
+
+    let settleMount: (v: boolean) => void = () => {}
+    handleSetDiskFromURL.mockImplementation(
+      () => new Promise<boolean>((resolve) => { settleMount = resolve }),
+    )
+    void handleFragment(jest.fn(), false)
+    await Promise.resolve()
+
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(DISK, expect.anything(), 4)
+    expect(passSetRunModeSpy).not.toHaveBeenCalled()
+
+    settleMount(true)
+    await jest.advanceTimersByTimeAsync(200)
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("a failed mount still boots", async () => {
+    jest.useFakeTimers()
+    window.history.replaceState({}, "", `/?machine=apple2gs&boot=true&drive=4#${DISK}`)
+    handleInputParams("machine=apple2gs&boot=true&drive=4")
+    handleSetDiskFromURL.mockResolvedValue(false)
+
+    await handleFragment(jest.fn(), false)
+    await jest.advanceTimersByTimeAsync(200)
+
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+})

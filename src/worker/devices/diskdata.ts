@@ -1188,3 +1188,17 @@ export const iwmStepHead = (
   }
 }
 
+// Bit 7 of the IWM status register ($C0EE) while the 5.25" family is selected:
+// the write-protect sensor. Ported from gssquared Floppy525_woz::read_sense.
+// With no media the LED's beam is unblocked, so the sensor reads exactly like a
+// write-protected disk (1). The WP switch also returns through PHASE1, so
+// driving that phase high forces 1 regardless of the notch. ROM 03's power-on
+// drive probe waits for this bit to go high and would spin forever on the
+// empty-bay answer of 0.
+export const iwmReadSense525 = (driveIndex: number) => {
+  const ds = getDriveStateByIndex(driveIndex)
+  if (ds.hardDrive || getDriveDataByIndex(driveIndex).length === 0) return 1
+  if (ds.currentPhase & 0x02) return 1
+  return ds.isWriteProtected ? 1 : 0
+}
+

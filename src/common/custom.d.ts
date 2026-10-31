@@ -243,6 +243,8 @@ type DisplayProps = {
 
 type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P" | "APPLE2GS"
 
+type IigsRomVersion = "01" | "03"
+
 type VERA_SLOT = 0 | 2 | 4
 
 type Video7Mode = "160x192" | "monochrome" | "mixed"

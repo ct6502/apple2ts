@@ -646,10 +646,19 @@ export const handleFragment = async (
     }
     if (anyLoaded) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
+    } else {
+      // Nothing landed, but ?boot=true still asked for a boot.
+      triggerPendingBoot()
     }
     return
   }
 
+  // A mount started below owns the deferred boot: it fires when the image has
+  // actually landed. This tail used to fire unconditionally 100 ms in, which on
+  // a slow fetch consumed the flag before the disk arrived, so the ROM scanned
+  // an empty bay and parked at the BASIC prompt (?boot=true&drive=4 on a fresh
+  // profile). A fragment that is not a disk still owes the boot.
+  let diskPending = false
   if (fragment.length >= 2) {
     const cloudProvider = params.get("cloudProvider")
     const regex: RegExp = /access_token=([^&]+)/
@@ -667,28 +676,27 @@ export const handleFragment = async (
       // 5.25" and 3.5" drives live in their own slots and a 5.25" disk in S7 is
       // simply never looked for. Without it the disk goes to drive 0.
       const driveParam = params.get("drive")
+      diskPending = true
       if (driveParam === null) {
-        handleSetDiskFromURL(url, updateDisplay).finally(() => triggerPendingBoot())
+        handleSetDiskFromURL(url, updateDisplay).finally(triggerPendingBoot)
       } else {
         const driveIndex = Number(driveParam)
         if (!Number.isInteger(driveIndex) || driveIndex < 0 || driveIndex > 5) {
           console.error(`Ignoring invalid ?drive=${driveParam} (expected 0-5)`)
-          handleSetDiskFromURL(url, updateDisplay).finally(() => triggerPendingBoot())
+          handleSetDiskFromURL(url, updateDisplay).finally(triggerPendingBoot)
         } else {
-          handleSetDiskFromURL(url, updateDisplay, driveIndex).finally(() => triggerPendingBoot())
+          handleSetDiskFromURL(url, updateDisplay, driveIndex).finally(triggerPendingBoot)
         }
       }
     }
   } else if (hasBasicProgram) {
     // If we had a BASIC program in the URL, and we didn't have a floppy,
     // then boot our default blank ProDOS disk.
-    handleSetDiskFromURL("blank.woz", updateDisplay).finally(() => triggerPendingBoot())
+    diskPending = true
+    handleSetDiskFromURL("blank.woz", updateDisplay).finally(triggerPendingBoot)
   }
-  // Trigger a deferred boot (requested via ?boot=true together with a
-  // fragment disk) now that the disk image has landed.
-  if ((window as any).__pendingBootAfterDisk) {
-    (window as any).__pendingBootAfterDisk = false
-    setTimeout(() => passSetRunMode(RUN_MODE.NEED_BOOT), 100)
+  if (!diskPending) {
+    triggerPendingBoot()
   }
 }
 

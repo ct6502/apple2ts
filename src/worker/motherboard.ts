@@ -54,6 +54,8 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
 
   iigsFloppyHasMedia,
   setIigsSlotRegister,
+  setIigsRomVersion,
+  isIigsRom03,
   iigsRegisters} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
@@ -380,6 +382,13 @@ export const configureMachine = () => {
     disableVidHD()
     setAuxCardEnabled(true)
 
+    // Neither a SoftCard nor a Vera exists on the IIgs. A configure pass taken
+    // for another machine - the UI posts the stored slot config before the
+    // machine name on a fresh profile - leaves both flags set, and doBoot()
+    // reads softCard.enabled as an input to the slot-7 decision.
+    softCard.enabled = false
+    veraSlot = 0
+
     // The built-in IWM serves both built-in drive families. The slot-5 Smart
     // Port (3.5") and slot-6 Disk Port (5.25") firmware lives in ROM, so no
     // card is installed for either.
@@ -395,7 +404,7 @@ export const configureMachine = () => {
       enableMockingboard(true, 4)
     }
     if (currentSlotConfig[7] === "smartport") {
-      enableHardDrive()
+      enableHardDrive(hasHardDriveMounted())
     }
 
     applyIigsSlotConfig()
@@ -566,11 +575,13 @@ export const doBoot = () => {
   }
 //  testTiming()
 
-  if (!softCard.enabled || hasHardDriveMounted()) {
+  const isIigs = machineName === "APPLE2GS"
+
+  if (isIigs ? hasHardDriveMounted() : (!softCard.enabled || hasHardDriveMounted())) {
     enableHardDrive()
   }
 
-  if (machineName === "APPLE2GS") {
+  if (isIigs) {
     iigsInitInterrupts()
     applyIigsSlotConfig()
   }
@@ -581,7 +592,11 @@ export const doBoot = () => {
   const ds = getHardDriveState(1)
   if (ds.filename === "") {
     enableHardDrive(false)
-    if (!softCard.enabled || hasHardDriveMounted()) {
+    // The IIgs does not re-enable on a timer: mounting an image enables the
+    // driver itself, and the ROM's device scan is still running 200 ms after a
+    // cold boot, so a card that appears mid-scan becomes the startup device and
+    // the 3.5"/5.25" firmware is never tried.
+    if (!isIigs && (!softCard.enabled || hasHardDriveMounted())) {
       setTimeout(() => { enableHardDrive() }, 200)
     }
   }
@@ -598,8 +613,10 @@ export const doReset = () => {
     iigsClearInterrupts()
     // A hardware reset returns the CPU to fast mode; software reads the same
     // value back from $C036, so keep both views in step across Ctrl-Reset.
-    setIigsSpeedRegister(0x80)
-    iigsRegisters[0x36] = 0x80
+    // ROM 03 additionally latches bit 6 (power-on status) on reset.
+    const speedRegister = isIigsRom03() ? 0xC0 : 0x80
+    setIigsSpeedRegister(speedRegister)
+    iigsRegisters[0x36] = speedRegister
     // The IWM's logic state sequencer runs on wall-clock cycles. A reset can
     // follow a long pause (breakpoint, menu), so restart its timing rather
     // than letting it shift thousands of idle bits into the data register.
@@ -828,6 +845,24 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState 
     applyIigsSlotConfig()
   }
   if (reset) doReset()
+  if (publishState) updateExternalMachineState()
+}
+
+// The IIgs ROM revision is a machine-wide choice (machine menu "ROM 01" /
+// "ROM 03"). Swapping the system ROM is a hardware change, so it cold-boots:
+// doBoot() reloads the ROM, clears memory and runs the reset path.
+export const doSetIigsRomVersion = (version: IigsRomVersion, reset = true, publishState = true) => {
+  if (!setIigsRomVersion(version)) return
+  if (machineName === "APPLE2GS") {
+    if (reset) {
+      doBoot()
+    } else {
+      doSetRom(machineName)
+      didConfiguration = false
+      configureMachine()
+      iigsInitInterrupts()
+    }
+  }
   if (publishState) updateExternalMachineState()
 }
 

@@ -30,6 +30,9 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   into it; `$C036` changes what a cycle is worth. Both are handled by the video
   clock (§8), never by changing the frame length mid-flight.
 - Banks `$00-$DF` are RAM, `$D0-$FF` is ROM. `$E0/$E1` are Mega II main/aux.
+- **Two system ROMs.** ROM 01 is 128 KB in banks `$FE-$FF`; ROM 03 is 256 KB
+  in banks `$FC-$FF`. The machine menu chooses between them (§9), and the live
+  cursor lives in a different place on each (§6).
 
 **Workflow constraints (learned the hard way)**
 
@@ -93,7 +96,17 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
 
 ## 2. Memory map / MMU
 
-- `$FE`/`$FF` → the 128 KB system ROM (image offset 0 = `$FE`, `0x10000` = `$FF`).
+- **ROM mapping derives from the image size, never from a ROM constant.** ROM 01
+  is 128 KB in `$FE`/`$FF` (image offset 0 = `$FE`, `0x10000` = `$FF`); ROM 03 is
+  256 KB in `$FC`-`$FF` (offset 0 = `$FC` … `0x30000` = `$FF`). `doSetRom()` sets
+  `iigsRomFirstBank = 0x100 - banks` and `iigsRomBankFFOffset = (banks - 1) << 16`,
+  and **every** read of "the ROM" derives from those: `memGet24`, the bank
+  `$00/$E0/$E1` language-card window, the `$C071-$C07F` BRK/IRQ firmware and the
+  `$C100-$CFFF` internal-ROM fallbacks. A literal `0x10000` in any of those sites
+  silently reads bank `$FD` on ROM 03. `isIigsRom03()` is a size test, and the
+  last bank (`iigsRomBankFFOffset`) is the IIe-compatibility image both ROMs
+  expose through the language card. Source: `src/worker/roms/rom_gs_system03.ts`
+  (256 KB, md5 `ba89edf2729a28a17cd9e0f7a0ac9a39`), embedded like the ROM 01 one.
 - Banks `$00`, `$E0`, `$E1` see the fast ROM through the language-card window
   for `$D000-$FFFF` while `BSRREADRAM` is clear, and slot space `$C100-$CFFF`
   via `memGet`. `$C071-$C07F` is **BRK/IRQ firmware code** (the vectors point
@@ -173,7 +186,7 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
 | `$C031` | disk control: bit 6 `EN35` selects the 3.5"/5.25" family, bit 7 `HDSEL` |
 | `$C033/$C034` | RTC data/control (see below) |
 | `$C035` | `STAT` shadowing: bit 0 = text page 1, bit 5 = text page 2 (clear = shadowed into Mega II main), bit 6 = `SHADOW_INH_IOLC` (see §2) |
-| `$C036` | bit 7 = CPU clock: 1 = 2.8 MHz, 0 = 1.024 MHz; bit 4 = `SPEED_SHADOW_ALL` (§2) |
+| `$C036` | bit 7 = CPU clock: 1 = 2.8 MHz, 0 = 1.024 MHz; bit 4 = `SPEED_SHADOW_ALL` (§2); bit 6 is a ROM 03 power-on latch (cold reset seeds `$C0`, ROM 01 `$80`). Writes mask bits 6-5 back off unless the value is exactly `$40` on ROM 03 (KEGS `moremem.c`), so a stray shadow-enable cannot survive a speed write |
 | `$C03C-$C03F` | Ensoniq DOC (§5) |
 | `$C046` | `INTFLAG`: bit 7 = a source is pending AND enabled. **Cold boot must read 0**, or the ROM runs its diagnostic self-test and prints `System Bad: GGGG0000`. |
 | `$C047` | interrupt acknowledge |
@@ -392,10 +405,16 @@ register 0 byte 1:  bit7 = LEFT  button (1 = up) | bit6 = moved up    | bits5-0 
   generated with `npm run generate-i18n-catalogs`, so edit the catalogs, not
   those files.
 
-Cursor position lives in the text-page holes `$047C/$057C` (X) and `$04FC/$05FC`
-(Y), data-bank relative. On our ROM 01 profile GS/OS reads those, not
-`$E1:0190-0193` (gssquared reads the `$E1:0190-0193` bank globals when the
-platform is ROM 03).
+Cursor position depends on the ROM revision, and `getIigsMousePos()` branches on
+it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
+
+- **ROM 01**: the text-page holes `$047C/$057C` (X) and `$04FC/$05FC` (Y),
+  data-bank relative. Measurement on GS/OS 6.0.1 shows the `$E1` mirrors carry
+  the same value, so either source works.
+- **ROM 03**: the `$E1:0190-$0193` bank globals (X low/high at `$0190/$0192`, Y at
+  `$0191/$0193`; `megaIIAux[0x190] | (megaIIAux[0x192] << 8)`). ROM 03 leaves the
+  text-page holes at 0, so reading them pins the closed-loop stepper at the
+  origin and the guest cursor never follows the host pointer.
 
 ---
 
@@ -439,10 +458,30 @@ platform is ROM 03).
   generated ProDOS 8 block driver + `$C7C3` SmartPort hook with
   `SP_MAX_UNIT = 2`, so Card Cat shows `(SP:2)` (probed with a hard-disk image
   mounted: units 0-2, DIB of the empty unit 2 fails, same error line). With no
-  hard-disk image mounted the card stays disabled at cold boot (the
-  `doSetMachineName` hack that lets a floppy boot first) and Card Cat only prints
+  hard-disk image mounted the card stays disabled at cold boot (the `doBoot`
+  hack that lets a floppy boot first) and Card Cat only prints
   the generic "Apple II Liron Drive Controller Card" line. Do not grow
   `SP_MAX_UNIT` to imitate `SP:32`: the extra 30 units are phantom.
+- **A configure pass taken for another machine must not reach the IIgs boot.**
+  A fresh profile's browser order is `loadPreferences()` (posts the stored slot
+  config - classic IIe defaults, because the worker itself starts as APPLE2EE)
+  → `handleInputParams()` (posts `MACHINE_NAME` from `?machine=`) →
+  `handleFragment()` (mounts the image, then `NEED_BOOT`), so the IIe branch of
+  `configureMachine()` runs first and that branch sets `softCard.enabled = false`.
+  `doBoot()` read exactly that flag to decide whether to present the slot-7 ProDOS
+  driver and the GS branch never restored it, so a deep link came up with the card
+  **enabled** plus a 200 ms `enableHardDrive()` timer - and the ROM is still walking
+  the slots at 200 ms, so it finds a slot-7 device, executes `$C700` (with
+  `INTCXROM` still set that is the internal `E2 40 / 70 1B` no-device stub) and
+  lands in `$00:E000` / `$00:F128` instead of loading the 3.5" system disk. Measured
+  with the boot-order probe: only the timer is needed to reproduce it, the enabled
+  install at boot is harmless because `doReset()` runs no code in between. Fix: the
+  GS branch clears `softCard.enabled`/`veraSlot` (a IIgs has neither) and installs
+  the slot-7 driver disabled unless a hard-disk image is mounted, and `doBoot()`
+  keys the IIgs purely off `hasHardDriveMounted()` with **no timer** - mounting an
+  image enables the driver itself (`drivestate.ts`, `enableHardDrive(true)`).
+  Regression: `gs_boot_order.test.ts` (fails with SCB set size 1 - stuck on the
+  boot splash - when the timer guard is removed).
 - **A loaded drive must label its track or the panel looks dead.** The drive
   panel renders `DISK_DRIVE_LABELS[index] + driveProps.status`, and only
   `moveHead()` wrote that label - the 3.5" head moves through `moveHead35()`, so
@@ -461,6 +500,19 @@ platform is ROM 03).
   `$C0E8` (Q6=0,Q7=0) is the data register. **An empty bay must keep returning
   the ROM byte** — the power-on disk self-test reads it before any drive is
   enabled, and feeding it live bits derails the boot.
+- **ROM 03's power-on self-test probes both IWM lines**, and the 5.25" family
+  must answer them or the boot hangs (KEGS applies a SmartPort patch instead;
+  gssquared does not, and porting the hardware behaviour boots without it):
+  - **Status bit 7 (`$C0EE`) is the 5.25" write-protect sense.** Ported from
+    gssquared `Floppy525_woz::read_sense`: an empty bay reads 1 (the LED's beam
+    is unblocked, indistinguishable from a write-protected disk) and an asserted
+    PHASE1 forces 1 as well, otherwise it follows the WP flag. A constant 0
+    leaves ROM 03 spinning at `$FF:5820`.
+  - **Handshake (`$C0EC`, Q6=0/Q7=1) idle is `$80`**, not `$C0`: ready with no
+    underrun (gssquared `reg_handshake` after reset). The 5.25" family never
+    enters async mode. ROM 03's write-handshake self-test waits for bit 6 to
+    clear and spins at `$FF:57B7` otherwise. The 3.5" family still owns these
+    bits through `iwmReadHandshake35`.
 - **SmartPort** (`src/worker/devices/harddrivedata.ts`): status `$F0` on line,
   `$B4` write-protected, `$E0` offline (returns offline for an empty unit so
   GS/OS skips it instead of offering to initialise it). Unit 0 reports the card's
@@ -544,6 +596,17 @@ platform is ROM 03).
   welcome page is only on screen for a few hundred frames at 2.8 MHz before
   A2DeskTop takes over, so `gs_floppy_late` watches every frame instead of
   sampling the end of the run.
+- **Nothing in the UI may post a speed before `doSetMachineName`.** `display.tsx`
+  used to call `passSpeedMode(0)` while starting up, which marked the mode as an
+  explicit user choice and pinned the IIgs to 1.02 MHz in the real UI. Jest hid
+  it because the worker tests call `doSetMachineName` directly. At that budget
+  the 3.5" driver cannot clock 500 kbit/s media, so the boot scan never locks
+  and the ROM parks at **"Check startup device!"** with the drive idle — what
+  looks like "ROM 03 hangs on boot", and reproduces identically on ROM 01. Only
+  a saved preference or a real user choice may set the speed; the worker then
+  publishes the effective `speedMode` in `MACHINE_STATE`, so the dropdown still
+  reads 2.8 MHz. Guard: `gs_speed_default.test.ts` (own module registry, so
+  `speedModeExplicit` is still false).
 
 ---
 
@@ -588,6 +651,15 @@ platform is ROM 03).
   memory and `$03F2-$03F4`.
 - IIgs speed labels in the dropdown and in `linkbuilder` / MCP settings must match
   `SPEED_MODES`.
+- **The machine menu's Apple IIgs entry carries a ROM submenu**: "ROM 01" and
+  "ROM 03 (custom)", persisted as the `iigsRom` localStorage key
+  (`get/setPreferenceIigsRomVersion`, `MSG_MAIN.IIGS_ROM`). A PopupMenu parent
+  with a `subMenu` never runs its own `onClick`, so each ROM item selects
+  `APPLE2GS` itself when another machine is current; it posts the ROM version
+  **before** `setPreferenceMachineName`, so the worker loads the right image on
+  its first `doSetRom`. Switching ROMs cold-boots (`doSetIigsRomVersion` →
+  `doBoot()`) and applies `$C036` seeding and the ROM-03 mouse source.
+  Preference origin is `machine.iigsRom`.
 
 ---
 
@@ -597,6 +669,7 @@ platform is ROM 03).
 |---|---|
 | `...\Temp\opencode\dis65816.cjs` | 65816 disassembler. `node dis65816.cjs <file.json> [at:N] [count] [m16] [x16]`; opcode table parsed from `c:\dev\gssquared\src\debugger\trace_opcodes.cpp`; accepts a plain `{start, bytes}` object |
 | `...\Temp\opencode\diskserver.cjs` | static server on :6503 for `c:\dev\emu\ap2`, CORS open |
+| `...\Temp\opencode\gs_deep_link.cjs` | fresh-profile deep-link check: `node gs_deep_link.cjs <waitS> <disk> <driveIdx> [rom] [port]` launches headless Chrome with an empty profile (so the browser really runs the `SLOT_CONFIG -> MACHINE_NAME -> mount -> NEED_BOOT` order), boots the link and prints canvas colour stats + a PNG. Pass `?romtrace=1` in its URL so `__romTracePeek([0x00FC1234,...])` can prove which ROM banks are mapped |
 | `...\Temp\opencode\mckey.cjs`, `mcpeek.cjs`, `mc1.cjs` | MCS key injection / memory peeking over CDP |
 | `?romtrace=1` | PC histogram + `window.__romTrace`, `__romTracePeek(addrs)` reads guest memory (peekPc/peekCode/peekZp) |
 | `?iwmgaps=1` | IWM read-cadence stats on `window.__iwmStats` |
@@ -775,6 +848,10 @@ platform is ROM 03).
 | A live Tool Locator / Event Manager means the guest publishes its cursor | freegemas keeps its own cursor and reads `$C024` directly; the holes stay `(0,0)` and closed-loop steering pinned its pointer in a corner. The flag says GS/OS is up, not that this program uses the EM cursor |
 | "One refresh is always 1/60 s, so every peripheral must follow machine time" | True for the beam and the 3.5" drive, **false for the 5.25" LSS**: gssquared counts raw CPU cycles for it in every speed mode, because the Disk II firmware's read loop is cycle-timed as well. Scaling it to wall time broke the 5.25" boot at the 2.8 MHz default |
 | An empty slot-5 bay should present the 3.5" mechanism because gssquared always instantiates the drives | The extra unit shifts GS/OS 6.0.1's ExpressLoad buffer by 498 bytes and MYCRATE dies in NIFTYLIST.CDA (§7, §11.9). The bay type follows the media |
+| ROM 03 needs KEGS's SmartPort `$C036` patch | KEGS patches the ROM image at `$FF:57C9`; porting the hardware (5.25" sense bit and handshake idle `$80`) boots the unpatched image, which is what gssquared does |
+| ROM 03 publishes the cursor in the same text-page holes as ROM 01 | It leaves the holes at 0; the live cursor is `$E1:0190-$0193` (§6) |
+| `!softCard.enabled` means "this machine has no SoftCard" | It is whatever the last configure pass left behind, and the IIgs branch used to restore nothing; on a IIgs the slot-7 card follows mounted media, not that flag (§7) |
+| "ROM 03 hangs at 'Check startup device!' — a ROM 03 boot bug" | Not a ROM difference: the UI posted speed 0 at startup, marking the mode explicit and pinning the IIgs to 1.02 MHz, where the 3.5" driver cannot clock 500 kbit/s media. ROM 01 hangs identically. The menu switch itself works (§8) |
 
 ---
 
@@ -782,8 +859,12 @@ platform is ROM 03).
 
 - `src/worker/cpu65816.ts` — 65816 core, stack normalisation, cycle accounting,
   IRQ sampling, `specialJumpTable`, `slot5DriverDirectPage` (slot-5 DP guard, §7)
-- `src/worker/memory.ts` — bank map, Mega II main/aux, soft switches, `$C02x`/`$C03x`
-  registers, text-page sources, SHR extraction, floating bus, slot strobes
+- `src/worker/memory.ts` — bank map (ROM 01/03 banks derived from the image
+  size), Mega II main/aux, soft switches, `$C02x`/`$C03x` registers (`$C036`
+  speed + ROM-03 power-on latch), text-page sources, SHR extraction, floating
+  bus, slot strobes, IWM status/handshake answers, `getIigsMousePos`
+- `src/worker/roms/rom_gs_system03.ts` — embedded 256 KB ROM 03 system image
+  (banks `$FC-$FF`); `src/worker/roms/rom_gs_system.ts` is ROM 01 (banks `$FE-$FF`)
 - `src/worker/motherboard.ts` — run loop, video clock, VBL, housekeeping, Ensoniq
   catch-up, speed modes, reset vs cold boot
 - `src/worker/iigs_adb.ts` — ADB micro + device model, report latching, buttons
@@ -805,9 +886,13 @@ platform is ROM 03).
   `gs_tass_click_freeze`, `gs_textpage`, `gs_floppy_late`, `gs_ctrl_reset`,
   `gs_keyboard_adb`, `gs_mcs_nokey`, `gs_silky`, `gs_freegemas`,
   `gs_floppy35` / `gs_floppy35_boot` (3.5" read, write, zone layout),
-  `gs_speed`, `gs_boot`, `gs_hdd_boot`, `gs_slots_mockingboard`,
+  `gs_speed`, `gs_speed_default` (IIgs 2.8 MHz default, §8), `gs_boot`,
+  `gs_hdd_boot`, `gs_slots_mockingboard`, `gs_boot_order` (browser message order
+  on a fresh profile: slot config → machine switch → 3.5" boot, §7),
   `gs_test_coldboot`, `gs_fatal`, `gs_cardcat` (Pascal p-machine vs. the slot-5
-  driver's DP clobber), `gs_shadow_all` (`SPEED_SHADOW_ALL`)
+  driver's DP clobber), `gs_shadow_all` (`SPEED_SHADOW_ALL`), `gs_rom03`
+  (four-bank mapping + reset vector, GS/OS boot to the Finder, ROM-03 cursor
+  convergence)
 
 The only known pre-existing failure is `vera.test.ts` (CMDR-DOS), which also
 fails on a clean tree.

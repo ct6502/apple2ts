@@ -2,7 +2,14 @@ import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGear } from "@fortawesome/free-solid-svg-icons"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../main2worker"
-import { setPreferenceMachineName, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
+import {
+  getPreferenceIigsRomVersion,
+  setPreferenceIigsRomVersion,
+  setPreferenceMachineName,
+  setPreferenceRamWorks,
+  setPreferenceSlotConfig,
+  setPreferenceVeraSlot,
+} from "../localstorage"
 import { setUIStateBoolean, setTabView } from "../ui_settings"
 import { notifySettingsChanged } from "../settingschange"
 import PopupMenu from "../controls/popupmenu"
@@ -277,7 +284,30 @@ export const MachineConfig = (props: DisplayProps) => {
               onClick: () => {
                 setPreferenceMachineName(machineNames[i])
                 props.updateDisplay()
-              }
+              },
+              // The IIgs ships two system ROMs. The ROMs are a submenu of the
+              // Apple IIgs entry; picking one also selects the IIgs, because
+              // a parent item with a submenu never runs its own onClick.
+              subMenu: machineNames[i] === "APPLE2GS" ? [
+                {
+                  label: "ROM 01",
+                  isSelected: () => getPreferenceIigsRomVersion() === "01",
+                  onClick: () => {
+                    setPreferenceIigsRomVersion("01")
+                    if (machineName !== "APPLE2GS") setPreferenceMachineName("APPLE2GS")
+                    props.updateDisplay()
+                  },
+                },
+                {
+                  label: "ROM 03 (custom)",
+                  isSelected: () => getPreferenceIigsRomVersion() === "03",
+                  onClick: () => {
+                    setPreferenceIigsRomVersion("03")
+                    if (machineName !== "APPLE2GS") setPreferenceMachineName("APPLE2GS")
+                    props.updateDisplay()
+                  },
+                },
+              ] : undefined,
             }
           )),
           { label: "-" },

@@ -1,6 +1,5 @@
 // Chris Torrence, 2022
 import {
-  passSpeedMode,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
   doOnMessage,
@@ -113,7 +112,11 @@ const DisplayApple2 = () => {
     // or whether just having the assets within that file is good enough
     // for the preloading.
     // preloadAssets()
-    passSpeedMode(0)
+    // Don't post a speed here: that would mark it as an explicit user choice
+    // before doSetMachineName runs, so the IIgs never got its 2.8 MHz default
+    // and its 3.5" driver could not clock 500 kbit/s media (the ROM stopped at
+    // "Check startup device!"). The worker starts at mode 0 and doSetMachineName
+    // picks the per-machine default until the user actually chooses a speed.
     loadPreferences()
     startRemoteControlBridge()
     const hasBasicProgram = handleInputParams()

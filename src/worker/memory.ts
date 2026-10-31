@@ -5,6 +5,7 @@ import { romBase64 as romBase64e } from "./roms/rom_2e"
 import { romBase64 as romBase64u } from "./roms/rom_2e_unenhanced"
 import { romBase64 as romBase64gs } from "./roms/rom_gs"
 import { romGsSystemBase64 } from "./roms/rom_gs_system"
+import { romGsSystem03Base64 } from "./roms/rom_gs_system03"
 // import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer"
 // import { isDebugging } from "./motherboard";
@@ -19,7 +20,7 @@ import { isDebugging, setIigsSpeedRegister, getIigsVideoClock, getIigsFrameUnits
 import { iigsClock } from "./iigs_clock"
 import { iigsADB } from "./iigs_adb"
 import { iigsEnsoniq, docAccess } from "./devices/iigs_ensoniq"
-import { iwmAdvance35, iwmFloppySpinning, iwmFlushWrites35, iwmGetSense35, iwmReadDataRegister, iwmReadHandshake35, iwmReset35Lines, iwmResetTiming, iwmStepHead, iwmWriteDataRegister35 } from "./devices/diskdata"
+import { iwmAdvance35, iwmFloppySpinning, iwmFlushWrites35, iwmGetSense35, iwmReadDataRegister, iwmReadHandshake35, iwmReadSense525, iwmReset35Lines, iwmResetTiming, iwmStepHead, iwmWriteDataRegister35 } from "./devices/diskdata"
 import { getDriveDataByIndex, getDriveStateByIndex } from "./devices/drivestate"
 
 // 0x00000: main memory
@@ -136,9 +137,23 @@ export const getCurrentMachineName = () => {
 }
 
 export let gsROM = new Uint8Array(0);
-// Apple IIgs ROM 01 system ROM (128KB, banks $FE-$FF). gsROM is the Mega II
-// (IIe) ROM used by the //e machines; the IIgs boots from gsSystemROM.
+// Apple IIgs system ROM (ROM 01: 128KB at banks $FE-$FF, ROM 03: 256KB at
+// banks $FC-$FF). gsROM is the Mega II (IIe) ROM used by the //e machines;
+// the IIgs boots from gsSystemROM.
 export let gsSystemROM = new Uint8Array(0);
+let iigsRomVersion: IigsRomVersion = "01"
+// Bank of the first ROM bank in gsSystemROM ($FE for ROM 01, $FC for ROM 03)
+// and the file offset of its last bank, which is the IIe-compatibility ROM
+// and the source of the language-card / internal-ROM overlay reads.
+let iigsRomFirstBank = 0xFE
+let iigsRomBankFFOffset = 0x10000
+export const setIigsRomVersion = (version: IigsRomVersion) => {
+  if (version === iigsRomVersion) return false
+  iigsRomVersion = version
+  return true
+}
+// gssquared treats any image with four ROM banks as a ROM 03.
+export const isIigsRom03 = () => gsSystemROM.length >= 0x40000
 export const iigsRegisters = new Uint8Array(256);
 export const megaIIAux = new Uint8Array(65536);
 export const megaIIMain = new Uint8Array(65536);
@@ -319,12 +334,13 @@ export const doSetRom = (machineName: MACHINE_NAME) => {
     case "APPLE2GS":
       const rom64_gs = romBase64gs.replace(/[\n\r\s]/g, "");
       gsROM = new Uint8Array(Buffer.from(rom64_gs, "base64"));
-      const rom64_sys = romGsSystemBase64.replace(/[\n\r\s]/g, "");
+      const rom64_sys = (iigsRomVersion === "03" ? romGsSystem03Base64 : romGsSystemBase64)
+        .replace(/[\n\r\s]/g, "");
       gsSystemROM = new Uint8Array(Buffer.from(rom64_sys, "base64"));
-      console.log(`[DEBUG] gsROM (Mega II) length: ${gsROM.length}`);
-      console.log(`[DEBUG] gsSystemROM length: ${gsSystemROM.length}`);
-      console.log(`[DEBUG] Reset vector at FF:FFFC = ${gsSystemROM[0x1FFFC]?.toString(16).padStart(2,'0')} ${gsSystemROM[0x1FFFD]?.toString(16).padStart(2,'0')}`);
-      memory.set(gsSystemROM.subarray(0x1C000, 0x20000), ROMmemoryStart);
+      const romBanks = gsSystemROM.length >> 16;
+      iigsRomFirstBank = 0x100 - romBanks;
+      iigsRomBankFFOffset = (romBanks - 1) << 16;
+      memory.set(gsSystemROM.subarray(iigsRomBankFFOffset + 0xC000, iigsRomBankFFOffset + 0x10000), ROMmemoryStart);
       updateAddressTables();
       return;
   }
@@ -386,32 +402,33 @@ export const memGet24 = (address: number): number => {
         return memory[(aux ? RamWorksMemoryStart : 0) + offset];
     }
 
-    // Apple IIgs ROM 01 mapping: the 128KB system ROM lives in banks $FE-$FF
-    // (FE at image offset 0, FF at 0x10000). The Mega II banks $E0/$E1 and the
-    // shadowed banks $00/$01 read the fast ROM in bank FF through their
-    // language-card window when RDROM is set — matching gssquared/web-a2e.
+    // Apple IIgs ROM mapping: ROM 01 is 128KB in banks $FE-$FF, ROM 03 is
+    // 256KB in banks $FC-$FF (bank $FC at image offset 0). The Mega II banks
+    // $E0/$E1 and the shadowed banks $00/$01 read the *last* ROM bank (the
+    // IIe-compatibility ROM) through their language-card window when RDROM is
+    // set — matching gssquared rom_bank_ff_offset().
     if (gsSystemROM && gsSystemROM.length > 0) {
-        if (bank >= 0xFE) {
-            return gsSystemROM[((bank & 1) << 16) | offset];
+        if (bank >= iigsRomFirstBank && bank <= 0xFF) {
+            return gsSystemROM[((bank - iigsRomFirstBank) << 16) | offset];
         }
         if (bank === 0x00 || bank === 0xE0 || bank === 0xE1) {
             if (offset >= 0xD000 && !SWITCHES.BSRREADRAM.isSet) {
-                return gsSystemROM[0x10000 + offset];
+                return gsSystemROM[iigsRomBankFFOffset + offset];
             }
             // $C071-$C07F: BRK/IRQ firmware (JML to the interrupt manager).
             // $C100-$CFFF: slot card space or internal ROM pages.
-            if (offset >= 0xC071 && offset <= 0xC07F) return gsSystemROM[0x10000 + offset];
+            if (offset >= 0xC071 && offset <= 0xC07F) return gsSystemROM[iigsRomBankFFOffset + offset];
             if (offset >= 0xC100 && offset <= 0xCFFF) {
                 if (offset < 0xC800) {
                     const slot = (offset >> 8) & 0x0F;
                     manageC800(slot);
-                    if (SWITCHES.INTCXROM.isSet) return gsSystemROM[0x10000 + offset];
+                    if (SWITCHES.INTCXROM.isSet) return gsSystemROM[iigsRomBankFFOffset + offset];
                     const isCard = (slot === 3) ? SWITCHES.SLOTC3ROM.isSet : ((iigsSlotRegister & (1 << slot)) !== 0);
                     if (isCard) return memGet(offset, false);
-                    return gsSystemROM[0x10000 + offset];
+                    return gsSystemROM[iigsRomBankFFOffset + offset];
                 } else {
                     if (offset === 0xCFFF) manageC800(0xFF);
-                    if (SWITCHES.INTCXROM.isSet || internalC8ROMIsActive()) return gsSystemROM[0x10000 + offset];
+                    if (SWITCHES.INTCXROM.isSet || internalC8ROMIsActive()) return gsSystemROM[iigsRomBankFFOffset + offset];
                     return memGet(offset, false);
                 }
             }
@@ -425,7 +442,7 @@ export const memGet24 = (address: number): number => {
         }
         if (offset >= 0xD000) {
             if (!SWITCHES.BSRREADRAM.isSet) {
-                return gsSystemROM ? gsSystemROM[0x10000 + offset] : (gsROM[(0xFF << 16) | offset] || 0);
+                return gsSystemROM ? gsSystemROM[iigsRomBankFFOffset + offset] : (gsROM[(0xFF << 16) | offset] || 0);
             }
             if (offset < 0xE000 && !SWITCHES.BSRBANK2.isSet) {
                 return megaIIMain[offset - 0x1000];
@@ -445,7 +462,7 @@ export const memGet24 = (address: number): number => {
         if (offset >= 0xD000) {
             // If RDROM is set, read from ROM
             if (!SWITCHES.BSRREADRAM.isSet) {
-                return gsSystemROM ? gsSystemROM[0x10000 + offset] : (gsROM[(bank << 16) | offset] || 0);
+                return gsSystemROM ? gsSystemROM[iigsRomBankFFOffset + offset] : (gsROM[(bank << 16) | offset] || 0);
             }
             // Otherwise read from language card RAM
             if (offset < 0xE000 && !SWITCHES.BSRBANK2.isSet) {
@@ -470,7 +487,7 @@ export const memGet24 = (address: number): number => {
         if (offset >= 0xD000 && !(iigsRegisters[0x35] & 0x40)) {
             // If RDROM is set, read from ROM
             if (!SWITCHES.BSRREADRAM.isSet) {
-                return gsSystemROM ? gsSystemROM[0x10000 + offset] : (gsROM[(0xFF << 16) | offset] || 0);
+                return gsSystemROM ? gsSystemROM[iigsRomBankFFOffset + offset] : (gsROM[(0xFF << 16) | offset] || 0);
             }
             // Language card region when shadowed
             if (offset < 0xE000 && !SWITCHES.BSRBANK2.isSet) {
@@ -1153,8 +1170,9 @@ const memGetSoftSwitch = (addr: number): number => {
   // This must read from Bank $FF ROM (not Bank $FE).
   if (currentMachineName === "APPLE2GS" && addr >= 0xC071 && addr <= 0xC07F) {
       if (gsSystemROM && gsSystemROM.length > 0) {
-          // Bank FF of the system ROM (128KB image: FE@0, FF@0x10000)
-          return gsSystemROM[0x10000 + addr];
+          // Last bank of the system ROM (ROM 01: FF@0x10000, ROM 03:
+          // FF@0x30000); this is the IIe-compatibility image.
+          return gsSystemROM[iigsRomBankFFOffset + addr];
       }
   }
   
@@ -1346,6 +1364,12 @@ const memGetSoftSwitch = (addr: number): number => {
           // The ROM reads the status register once after its final write
           // handshake wait; persist anything the burst wrote.
           iwmFlushWrites35(iwmDriveIndex);
+        } else {
+          // 5.25" family: bit 7 is the write-protect sense. An empty bay and
+          // an asserted PHASE1 both read 1 (gssquared read_sense); ROM 03's
+          // power-on drive probe polls this bit and hangs at $FF:5820
+          // otherwise.
+          status |= iwmReadSense525(iwmDriveIndex) << 7;
         }
         return status;
       } else {
@@ -1380,14 +1404,18 @@ const memGetSoftSwitch = (addr: number): number => {
       if (iwmQ6) {
         return 0;
       } else {
-        // Handshake register: bit 7 (ready) | bit 6 (no underrun). A 3.5"
-        // drive in async mode owns these bits while it clocks a queued byte
-        // onto the media; the 5.25" family has no async protocol.
+        // Handshake register: bit 7 (ready) | bit 6 (underrun). A 3.5" drive
+        // in async mode owns these bits while it clocks a queued byte onto
+        // the media. The 5.25" family never enters async mode, so the IWM's
+        // idle state is ready with no underrun (gssquared reg_handshake after
+        // reset is 0x80). ROM 03's write-handshake self-test polls bit 6 and
+        // spins at $FF:57B7 if it reads the 0xC0 the 3.5" sync path used to
+        // return here.
         if (iwmEnable35) {
           const spinning = iwmFloppySpinning(iwmDriveIndex, iwmMotorOn);
           return iwmReadHandshake35(iwmDriveIndex, spinning, iigsDiskBitCellCycles());
         }
-        return 0xC0;
+        return 0x80;
       }
     }
   }
@@ -1600,8 +1628,16 @@ const memSetSoftSwitch = (addr: number, value: number) => {
                 break;
 
             case 0xC036: // SPEED register: bit 7 = 1 → fast (2.8 MHz in native mode)
-                setIigsSpeedRegister(value);
-                iigsRegisters[0x36] = value;
+                // KEGS (moremem.c): bit 5 always clears; bits 6/5 are cleared by
+                // any write except 0x40 on ROM 03, where bit 6 is the power-on
+                // status latch.
+                {
+                    let speed = value & ~0x20;
+                    const powerOn = value & 0x60;
+                    if (powerOn !== 0 && (powerOn !== 0x40 || !isIigsRom03())) speed &= ~0x60;
+                    setIigsSpeedRegister(speed);
+                    iigsRegisters[0x36] = speed;
+                }
                 break;
 
             case 0xC038: // SCC Channel B Control
@@ -2166,18 +2202,29 @@ export const isIigsShr320 = (): boolean => {
   return (megaIIAux[physical] & 0x80) === 0
 }
 
-// The 65816 ROM's live mouse position, as the guest sees it. The ROM's ADB
-// accumulator writes it into the text-page screen holes ($047C/$057C = X,
-// $04FC/$05FC = Y) and also publishes a copy in the bank-$E1 scratch at
-// $00E9/$00EB, which is the one GS/OS reads. gssquared reads the holes for
-// ROM 01 and only uses the bank globals on ROM 03
-// (keygloo_mouse_sync.hpp em_mouse_pos_from_bank_globals()), and measurement
-// on GS/OS 6.0.1 + ROM 01 shows both mirrors carry the same value, so the
-// holes are a safe feedback source either way.
-export const getIigsMousePos = (): { x: number, y: number } => ({
-  x: memGet24(0x00047c) | (memGet24(0x00057c) << 8),
-  y: memGet24(0x0004fc) | (memGet24(0x0005fc) << 8),
-})
+// The 65816 ROM's live mouse position, as the guest sees it. ROM 01 publishes
+// it in the text-page screen holes ($047C/$057C = X, $04FC/$05FC = Y); ROM 03
+// leaves those holes at 0 and publishes it only in the bank-$E1 globals at
+// $E1:0190/0191/0192/0193 (keygloo_mouse_sync.hpp read_em_mouse_pos /
+// em_mouse_pos_from_bank_globals). Measurement on GS/OS 6.0.1 shows ROM 01
+// maps both mirrors to the same value, so each ROM reads the source gssquared
+// reads for it.
+export const getIigsMousePos = (): { x: number, y: number } => {
+  // ROM 03 / GS/OS 6.0.1 leaves the text-page holes at 0 and keeps the live
+  // cursor in the $E1/0190-0193 bank globals (gssquared
+  // keygloo_mouse_sync.hpp read_em_mouse_pos); reading the holes there pins
+  // closed-loop feedback at the origin.
+  if (isIigsRom03()) {
+    return {
+      x: megaIIAux[0x0190] | (megaIIAux[0x0192] << 8),
+      y: megaIIAux[0x0191] | (megaIIAux[0x0193] << 8),
+    }
+  }
+  return {
+    x: memGet24(0x00047c) | (memGet24(0x00057c) << 8),
+    y: memGet24(0x0004fc) | (memGet24(0x0005fc) << 8),
+  }
+}
 
 // Is the guest's Event Manager running? gssquared uses this to decide whether
 // its closed-loop mouse synchronisation is meaningful at all

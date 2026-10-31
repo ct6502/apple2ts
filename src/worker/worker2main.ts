@@ -6,6 +6,7 @@ import { doSetRunMode, doSetSpeedMode,
   doSetMemoryWriteWatchpoint,
   doClearMemoryWriteWatchpoint,
   doSetMachineName,
+  doSetIigsRomVersion,
   doSetRamWorks,
   doSetVeraSlot,
   doSetSlotConfig,
@@ -532,6 +533,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.MACHINE_NAME:
         doSetMachineName(e.data.payload as MACHINE_NAME)
+        break
+      case MSG_MAIN.IIGS_ROM:
+        doSetIigsRomVersion(e.data.payload as IigsRomVersion)
         break
       case MSG_MAIN.VERA_SLOT:
         doSetVeraSlot(e.data.payload as VERA_SLOT)

@@ -3,7 +3,7 @@ import { TraceSettingsDefault } from "../common/util_disassemble"
 import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
 import { sanitizeSlotConfig } from "../common/slot_options"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
+import { passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetIigsRomVersion, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
 import { getTheme, getUIState, initialBooleanUIKeys, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode, isDefaultTrueBooleanKey, setAutoSnapshot } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
@@ -248,6 +248,22 @@ export const setPreferenceMachineName = (
   }
   setPreferenceSlotConfig(newSlotConfig, origin)
   notifySettingsChanged([1, 2, 3, 4, 5, 6, 7].map(slot => `slots.${slot}`), origin)
+}
+
+export const getPreferenceIigsRomVersion = (): IigsRomVersion =>
+  localStorage.getItem("iigsRom") === "03" ? "03" : "01"
+
+export const setPreferenceIigsRomVersion = (
+  version: IigsRomVersion,
+  origin: SettingsChangeOrigin = "external",
+) => {
+  if (version === "03") {
+    localStorage.setItem("iigsRom", version)
+  } else {
+    localStorage.removeItem("iigsRom")
+  }
+  passSetIigsRomVersion(version)
+  notifySettingsChanged(["machine.iigsRom"], origin)
 }
 
 export const setPreferenceMockingboardMode = (
@@ -562,6 +578,7 @@ export const loadPreferences = () => {
   }
 
   const machineName = localStorage.getItem("machineName")
+  passSetIigsRomVersion(getPreferenceIigsRomVersion())
   if (machineName) {
     try {
       passSetMachineName(JSON.parse(machineName))
