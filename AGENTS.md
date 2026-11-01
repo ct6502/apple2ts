@@ -685,7 +685,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 - IIgs speed labels in the dropdown and in `linkbuilder` / MCP settings must match
   `SPEED_MODES`.
 - **The machine menu's Apple IIgs entry carries a ROM submenu**: "ROM 01" and
-  "ROM 03 (custom)", persisted as the `iigsRom` localStorage key
+  "ROM 03", persisted as the `iigsRom` localStorage key
   (`get/setPreferenceIigsRomVersion`, `MSG_MAIN.IIGS_ROM`). A PopupMenu parent
   with a `subMenu` never runs its own `onClick`, so each ROM item selects
   `APPLE2GS` itself when another machine is current; it posts the ROM version
@@ -846,7 +846,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
    `$7E:FFFF` (§7). No emulator setting avoids it other than not presenting the
    slot-5 mechanism (`GS_35DELAY` bisect: 1M cycles still crashes, 4M/10M boot
    but Card Cat's scan then fails at both). It is a GS/OS loader limitation, not
-   a drive-model bug; do not "fix" it by hiding the drive.
+   a drive-model bug; do not "fix" it by hiding the drive. §11.11 is the same defect
+   reached another way (ROM 03's allocation instead of a mounted slot-5 disk), with
+   the straddling record and the bogus fix-up measured byte for byte.
 10. **Arkanoid from MYCRATE: no bricks, permanent sprite trails — RESOLVED.**
     Same disk boots fine from floppy and the MYCRATE copy works in
     gssquared/gsplus, so the fault was ours. The game composes its playfield in
@@ -857,16 +859,44 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     erased. We ignored `$C036` bit 4, so bank-$09 stores stayed in fast RAM —
     bank `$09` held the level while `$E1` kept the hatch wall. Fix:
     `shadowIigsBankWrite` (§2). Regression: `gs_shadow_all.test.ts`.
-11. **MYCRATE desktop on ROM 03: no icons, garbled menu bar — open.** Only with
-    MYCRATE as the boot volume; plain `SystemDisk.2mg` renders byte-identically on
-    both ROMs. `$08:02BC-$0319` (DB=`$E1`, D=`$0800`) walks a word table at
-    `$E1:$0410` and a long table at `$E1:$0428` twelve times, but nothing ever
-    writes either one — they still hold `$A0` text-page spaces — so every
-    `mrc=0E1E` / `mrc=171E` gets parameter `$a0a0` and error `$06`, and the walk
-    ends in MYCRATE's own "Infinite loop while walking icon list" alert. The loop
-    is reached only on ROM 03 (`fe:0138 → 08:869b…08:86a7 → 08:02bc`) and never
-    runs on ROM 01. The ~20 s monitor crash that used to sit in front of this is
-    fixed (§2); what remains is MYCRATE reading a table GS/OS never filled in.
+11. **MYCRATE desktop on ROM 03 — resolved as a guest-side GS/OS defect (§11.9
+    family).**
+    Only with MYCRATE as the boot volume; plain `SystemDisk.2mg` renders
+    byte-identically on both ROMs. The whole visible chain (no icons, garbled menu
+    bar, "Infinite loop while walking icon list", and the
+    `Finder requires System 6.0.1 … ($0401)` alert) comes from **one 11-byte
+    relocation record that MYCRATE's own fix-up walker cannot read across a bank
+    boundary**, measured with `gs_rom03_reloc.test.ts`:
+    - The fix-up engine is **MYCRATE's own bank-`$01` loader**, a byte-exact copy of
+      MYCRATE.2MG file offsets `$C3C5-$C8C4` (`memory = file + $143B`), not ROM code
+      and not anything the emulator injects: `$01:D6D7` reads an 11-byte record with
+      `LDA ($52),Y`, `$01:DA46` dispatches on the kind (`$56` = size) and modifier
+      (`$58` = `$00` direct, `$F0` use the high word, `$F8` use the low byte, ≥$80
+      rotate, <$80 shift), and `$01:DAAx` (`$87 5a` = `STA [$5A]`) writes the value at
+      the 24-bit destination staged in DP `$995A-$995C`.
+    - `LDA ($52),Y` is a **16-bit** indirect, so it cannot read past `$xx:FFFF`: a
+      record that straddles a bank boundary is read *wrapped* inside its first bank.
+      The `$08:$0000` module has exactly two records, and both ROMs produce the same
+      bytes — `e2 02 f0 77 6c 00 00 0f 40 00 c0` and `e2 02 f0 dc bb 00 00 0f 40 00 c0`
+      (i.e. `$08:6C77 ← $C008` and `$08:BBDC ← $C008`) — only the *placement* differs:
+      ROM 01 puts the list at `$7F:01C0`, ROM 03 (whose 256 KB startup allocates
+      ~460 bytes less here) puts it at **`$7E:FFF3`**, so the second record starts at
+      `$7E:FFFE` and wraps.
+    - Read wrapped, that record decodes as a 2-byte fix-up of **`$08:$0000` ←
+      `$4F08`**, which lands on the first word of MYCRATE's own stub and replaces its
+      `PHK; PLB` (`4b ab`). The stub then leaves `DB = $E1` when it re-launches, so
+      MYCRATE reads its icon tables at `$0410/$0428` through **Mega II aux** (where
+      they hold `$A0` text-page spaces) instead of bank `$08` — the walk loops, the
+      relaunch runs with `D = $0000`, and the MEM tool's `MaxAmountAvail`
+      (`JSL $E10000`, `X=$1801`) reads its parameter list through DP `$0000`, returns
+      `A=$0401 C=1` and pops the alert.
+    - The emulator executed exactly what the guest asked for: DP `$995A = 00 00 08`
+      (dest) and `$995E = 08 4f` (value) were both written by MYCRATE's own loader
+      from its own (wrapped) record. Same class as §11.9's NIFTYLIST.CDA failure — a
+      GS/OS 6.0.1 loader limitation on a bank-straddling record, and the only way to
+      dodge it is to shift the boot allocation, which would be tuning the emulator to
+      one disk image. `$01:DAAE` runs 250 times on ROM 01 and never touches bank
+      `$08`; on ROM 03 it runs 213 times and the offender is call #176 (~frame 930).
 12. **MYCRATE menu music noise — fixed at the transport, unconfirmed by ear.**
     The DOC itself is not the source: over a 1600-frame MYCRATE boot the guest
     writes the chip 138 631 times, loads 65 272 of the 64 KB of DOC RAM and sets
@@ -907,6 +937,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | ROM 03's MYCRATE crash-to-monitor at ~20 s must be a soft switch or a bit | Measured, not guessed: diffing the two ROMs' `$C035`/`$C036` traffic gives one real difference (`$C035` bit 5, TEXT2 shadow) and nothing else — `$C036` bit 4 is never set, and KEGS-style masking of the speed write never changed an observed value. The crash came from the *power-on content* of bank-`$01` page 0 (§2, §11.11) |
 | The DOC music noise is in the chip's mix | Our mix matches gssquared byte for byte (`trunc(mix/8)`, signed int8 wave byte, the highest-oscillator triple-add). The clicking lived in the UI transport, which resampled every per-refresh block from phase zero (§5, §11.12) |
 | `LDA [$1824],$9C` in the ROM-03 task glue means the direct page should follow DB | The 65816's direct page is bank `$00` by architecture and gssquared pins it there too; the pointer is real, the memory behind it was just uninitialised |
+| ROM 03's MYCRATE `$0401` alert means a GS/OS tool or our RAM content is wrong | Both ROMs produce the *same* two relocation records for the `$08:$0000` module; ROM 03 just places the list at `$7E:FFF3` so the second record straddles into `$7F`, and MYCRATE's own `LDA ($52),Y` walker reads it wrapped and asks for exactly the `$4F08 → $08:$0000` store we faithfully performed (§11.11) |
+| gssquared's disassembler calls `$87`/`$97` EOR/ADC, so our core is wrong | That is the *trace disassembly* table's label; every gssquared core executes `STA [$nn]` / `STA [$nn],Y` there, as we do (`src/worker/cpu65816.ts:368`). The write data is A's own low/high bytes |
 
 ---
 
@@ -951,6 +983,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   (four-bank mapping + reset vector, GS/OS boot to the Finder, ROM-03 cursor
   convergence), `gs_mycrate_rom` (MYCRATE under both ROMs: no crash-to-monitor,
   §11.11 — deleting the bank-`$01` fill reproduces the monitor at frame 1210),
+  `gs_rom03_reloc` (MYCRATE's own relocation walker: the record bytes are identical
+  on both ROMs, ROM 03's list starts at `$7E:FFF3` so the second record straddles
+  into `$7F` and the wrapped read clobbers the `$08:$0000` stub — pins §11.11),
   `ensoniq_resample` (carried resampler continuity, length and buffer rate)
 
 The only known pre-existing failure is `vera.test.ts` (CMDR-DOS), which also
