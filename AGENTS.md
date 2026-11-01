@@ -118,10 +118,27 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
 - `$E0` = `megaIIMain`, `$E1` = `megaIIAux`. Both are separate 64 KB arrays,
   **filled with `0x00` at power-on** (`0xFF` made the ROM take the
   `LDA $E115FE / BMI` error path straight into uninitialised RAM).
-- `$01` = fast RAM at `memory[RamWorksMemoryStart + off]`. **Language-card RAM is
-  never shadowed between bank 01 and bank `$E1`.** A stray `megaIIAux[off] = data`
-  in the bank-01 LC write path corrupted the GS/OS volume prefix and produced
-  `Fatal system error 0308`.
+- `$01` = fast RAM at `memory[RamWorksMemoryStart + off]`. **Cold boot zeroes
+  bank `$01`'s first 64 KB** (`iigsInitInterrupts`). ROM 03's task glue keeps the
+  current record pointer at `$00:$1824` and dereferences `LDA [$1824],$9C`, i.e. a
+  24-bit far pointer into **bank `$01` page 0**; a non-zero word there means "a
+  callback is registered". The generic 0xFF power-on fill made `$01:$009C` read
+  `$FFFF`, the gate at `$FE:0FC3` dispatched record `$FFFFFF` and the return-address
+  patch at `$FE:2FDF` (`STA $02,S`) popped `$00:0000` — so ~20 s into the MYCRATE
+  Finder the machine dropped into the monitor on `BRK #$02`. gssquared and KEGS
+  heap-allocate fast RAM, so bank `$01` already reads `$00` for them; ROM 01 never
+  enters that glue (measured: zero `$E1:04xx` task writes on ROM 01). Regression:
+  `gs_mycrate_rom.test.ts` (both ROMs; commenting out that one `memory.fill`
+  reproduces the monitor at frame 1210 ≈ 20 s).
+- **Text page 2 shadowing is a ROM 03 feature.** gssquared's `shadow_is_enabled()`
+  gates only the `$0800-$0BFF` window on `is_rom03` (= `rom_banks >= 4`), because
+  ROM 01 keeps text page 2 in fast RAM; TEXT1 `$0400-$07FF`, both hires windows and
+  the SHR/AUXHGR windows are ungated. `iigsTextMainSource`, the bank-`$00` shadow
+  write and its read mirror all check `isIigsRom03()` for `$0800-$0BFF`. Without
+  the gate, ROM 01 80-column page 2 written to fast RAM disappears from the screen.
+- **Language-card RAM is never shadowed between bank 01 and bank `$E1`.** A stray
+  `megaIIAux[off] = data` in the bank-01 LC write path corrupted the GS/OS volume
+  prefix and produced `Fatal system error 0308`.
 - **IOLC shadow inhibit**: `$C035` bit 6 (`SHADOW_INH_IOLC`) set means banks
   `$00`/`$01` **stop** shadowing I/O and the language-card ROM across
   `$C000-$CFFF`; those addresses become plain fast RAM (bank `$00` main or aux by
@@ -297,8 +314,24 @@ Rules that are easy to get wrong:
   333/refresh shortfall was the active-oscillator gate. Both are fixed (see §11.2).
 - UI transport: `iigs_ensoniq_audio.ts` queues blocks with
   `nextTime += frames / rate`, and the gain is **1.0** (unity, as gssquared's
-  `apply_volume=false` stream). Open: `$00-$FF` of DOC RAM must be non-zero
-  before the Note Synthesizer path is used (TN #23).
+  `apply_volume=false` stream).
+- **The transport resamples, not the AudioContext.** `resampleDocBlock` carries a
+  fractional read position (plus the previous block's last frame) across blocks and
+  builds every `AudioBuffer` at `ctx.sampleRate`. Handing the context one
+  DOC-rate `AudioBufferSourceNode` per refresh makes *it* resample each block from
+  phase zero, and `outputRate()` is never an integer divisor of the device rate —
+  439 frames at 26320 Hz is 800.68 device frames, so ~1.7 frames per block are
+  never emitted and every 16.7 ms boundary lands on a step. Measured on real Tass
+  Times title PCM: boundary jumps 2.32x the stream's own interior slope (0.93x with
+  the carry), which is the clicking noise riding on any DOC stream. gssquared hits
+  the identical thing with SDL and says so: "feeding SDL small chunks at the raw DOC
+  rate made SDL's internal chunk resampler glitch audibly". Do not port its ±0.5%
+  queue-depth servo: it would detune the music by up to 8 cents, and our lead
+  hysteresis already handles a dry queue. Regression:
+  `src/ui/devices/audio/ensoniq_resample.test.ts` (fails on the old code: the buffer
+  comes back at 26320 instead of the device rate).
+- Open: `$00-$FF` of DOC RAM must be non-zero before the Note Synthesizer path is
+  used (TN #23).
 
 ---
 
@@ -824,6 +857,25 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     erased. We ignored `$C036` bit 4, so bank-$09 stores stayed in fast RAM —
     bank `$09` held the level while `$E1` kept the hatch wall. Fix:
     `shadowIigsBankWrite` (§2). Regression: `gs_shadow_all.test.ts`.
+11. **MYCRATE desktop on ROM 03: no icons, garbled menu bar — open.** Only with
+    MYCRATE as the boot volume; plain `SystemDisk.2mg` renders byte-identically on
+    both ROMs. `$08:02BC-$0319` (DB=`$E1`, D=`$0800`) walks a word table at
+    `$E1:$0410` and a long table at `$E1:$0428` twelve times, but nothing ever
+    writes either one — they still hold `$A0` text-page spaces — so every
+    `mrc=0E1E` / `mrc=171E` gets parameter `$a0a0` and error `$06`, and the walk
+    ends in MYCRATE's own "Infinite loop while walking icon list" alert. The loop
+    is reached only on ROM 03 (`fe:0138 → 08:869b…08:86a7 → 08:02bc`) and never
+    runs on ROM 01. The ~20 s monitor crash that used to sit in front of this is
+    fixed (§2); what remains is MYCRATE reading a table GS/OS never filled in.
+12. **MYCRATE menu music noise — fixed at the transport, unconfirmed by ear.**
+    The DOC itself is not the source: over a 1600-frame MYCRATE boot the guest
+    writes the chip 138 631 times, loads 65 272 of the 64 KB of DOC RAM and sets
+    `oscsenabled = 32` at ~frame 119, then leaves **every** oscillator halted, so
+    headless automation captures no music PCM at all — the menu that plays the tune
+    needs real interaction. The defect that puts noise under any DOC stream is the
+    per-block resample restart in the UI transport (§5), measured on real Tass
+    Times title audio at 2.32x the signal's own sample-to-sample slope every
+    16.7 ms. Needs the user's ear on the MYCRATE menu itself.
 
 ---
 
@@ -852,6 +904,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | ROM 03 publishes the cursor in the same text-page holes as ROM 01 | It leaves the holes at 0; the live cursor is `$E1:0190-$0193` (§6) |
 | `!softCard.enabled` means "this machine has no SoftCard" | It is whatever the last configure pass left behind, and the IIgs branch used to restore nothing; on a IIgs the slot-7 card follows mounted media, not that flag (§7) |
 | "ROM 03 hangs at 'Check startup device!' — a ROM 03 boot bug" | Not a ROM difference: the UI posted speed 0 at startup, marking the mode explicit and pinning the IIgs to 1.02 MHz, where the 3.5" driver cannot clock 500 kbit/s media. ROM 01 hangs identically. The menu switch itself works (§8) |
+| ROM 03's MYCRATE crash-to-monitor at ~20 s must be a soft switch or a bit | Measured, not guessed: diffing the two ROMs' `$C035`/`$C036` traffic gives one real difference (`$C035` bit 5, TEXT2 shadow) and nothing else — `$C036` bit 4 is never set, and KEGS-style masking of the speed write never changed an observed value. The crash came from the *power-on content* of bank-`$01` page 0 (§2, §11.11) |
+| The DOC music noise is in the chip's mix | Our mix matches gssquared byte for byte (`trunc(mix/8)`, signed int8 wave byte, the highest-oscillator triple-add). The clicking lived in the UI transport, which resampled every per-refresh block from phase zero (§5, §11.12) |
+| `LDA [$1824],$9C` in the ROM-03 task glue means the direct page should follow DB | The 65816's direct page is bank `$00` by architecture and gssquared pins it there too; the pointer is real, the memory behind it was just uninitialised |
 
 ---
 
@@ -876,6 +931,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 - `src/worker/devices/floppy35.ts` — 3.5" GCR field generation, sector offsets,
   write splice; machine-time media clock (§7)
 - `src/worker/iigs_clock.ts` — RTC + battery RAM
+- `src/ui/devices/audio/iigs_ensoniq_audio.ts` — the DOC *transport*: block queue,
+  lead control, and `resampleDocBlock` (the carried fractional resampler, §5)
 - `src/worker/memory.ts::iigsInitInterrupts` — tool vectors, `$E1:0034`
 - `src/ui/graphics.ts`, `canvas.tsx`, `copycanvas.ts` — rendering, aspect, text
 - `src/ui/inputparams.ts`, `main2worker.ts` — URL params, debug-hook plumbing
@@ -892,7 +949,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `gs_test_coldboot`, `gs_fatal`, `gs_cardcat` (Pascal p-machine vs. the slot-5
   driver's DP clobber), `gs_shadow_all` (`SPEED_SHADOW_ALL`), `gs_rom03`
   (four-bank mapping + reset vector, GS/OS boot to the Finder, ROM-03 cursor
-  convergence)
+  convergence), `gs_mycrate_rom` (MYCRATE under both ROMs: no crash-to-monitor,
+  §11.11 — deleting the bank-`$01` fill reproduces the monitor at frame 1210),
+  `ensoniq_resample` (carried resampler continuity, length and buffer rate)
 
 The only known pre-existing failure is `vera.test.ts` (CMDR-DOS), which also
 fails on a clean tree.
