@@ -49,6 +49,10 @@ const opcode_addr: number = 0
 const MAX = (a: number, b: number) => ((a) > (b) ? a : b)
 
 const MHZ: number = 1
+// motherboard.ts schedules 17,030 CPU cycles every 16.6881 ms at normal
+// speed. PCM status must use that same emulated clock, otherwise the worker
+// drains its FIFO faster than the independently clocked AudioWorklet.
+const CPU_CLOCK_HZ = 17030 / 0.0166881
 const AUDIO_SAMPLERATE = 25000000 / 512
 const PCM_RENDER_CHUNK = 1024
 let audio_last_cycle = 0
@@ -62,7 +66,7 @@ const audio_render = () => {
 		return
 	}
 
-	const samples_exact = audio_sample_frac + cycle_delta * AUDIO_SAMPLERATE / (MHZ * 1000000)
+	const samples_exact = audio_sample_frac + cycle_delta * AUDIO_SAMPLERATE / CPU_CLOCK_HZ
 	let samples = Math.trunc(samples_exact)
 	audio_sample_frac = samples_exact - samples
 	audio_last_cycle = s6502.cycleCount
