@@ -502,7 +502,7 @@ export const memGet24 = (address: number): number => {
     if (bank >= 0x02 && bank < 0x80) {
         return gsRAM[(bank << 16) | offset];
     }
-    
+
     return 0;
 }
 
@@ -532,7 +532,9 @@ const shadowIigsWrite = (offset: number, data: number, aux: boolean) => {
         return
     }
     if (offset >= 0x0800 && offset < 0x0c00) {
-        if (!(shadow & 0x20)) (aux ? megaIIAux : megaIIMain)[offset] = data
+        // TEXT2 shadowing is a ROM 03 feature: gssquared gates the $0800-$0BFF
+        // window on is_rom03, because ROM 01 keeps text page 2 in fast RAM.
+        if (isIigsRom03() && !(shadow & 0x20)) (aux ? megaIIAux : megaIIMain)[offset] = data
         return
     }
     if (offset < 0x2000 || offset >= 0xa000) return
@@ -568,7 +570,7 @@ const shadowIigsBankWrite = (bank: number, offset: number, data: number) => {
     const addr17 = (odd ? 0x10000 : 0) | offset
     let shadowed = false
     if (offset >= 0x0400 && offset < 0x0800) shadowed = !(shadow & 0x01)
-    else if (offset >= 0x0800 && offset < 0x0c00) shadowed = !(shadow & 0x20)
+    else if (offset >= 0x0800 && offset < 0x0c00) shadowed = isIigsRom03() && !(shadow & 0x20)
     else if (!odd && offset >= 0x2000 && offset < 0x4000) shadowed = !(shadow & 0x02)
     else if (!odd && offset >= 0x4000 && offset < 0x6000) shadowed = !(shadow & 0x04)
     // $2000-$5FFF is both the AUXHGR and SHR window, so either inhibit clear
@@ -719,6 +721,18 @@ export const iigsInitInterrupts = () => {
     // the machine proceeds like the harness (which starts from a zeroed
     // memory array).
     for (let i = 0; i < 0x2000; i++) memSet24(0x000000 + i, 0);
+    // Bank $01 must also start at $00, not $FF. ROM 03's task/interrupt glue
+    // keeps the current record pointer at $00:$1824 and dereferences
+    // LDA [$1824],$9C -- i.e. the 24-bit far pointer stored in bank $01 page 0.
+    // When that pointer is cleared to $01:$0000 (ROM 03 does this from
+    // $FE:1841 when it stashes the frame) the ROM reads $01:$009C, and a
+    // non-zero result means "a callback is registered". Under the generic
+    // 0xFF power-on fill that reads $FFFF, so the ROM dispatches through a
+    // record of $FFFFFF and its `STA $02,S` return-address patch ($FE:2FDF)
+    // pops $00:0000 -- a BRK #$02 into the ROM monitor. gssquared and KEGS
+    // allocate fast RAM from the heap, so their uninitialised banks read $00
+    // and the gate closes; match that here.
+    memory.fill(0x00, RamWorksMemoryStart, RamWorksMemoryStart + 0x10000);
     // Bank $00:$7000-$70FF is the interrupt manager's scratch area.
     for (let i = 0; i < 0x100; i++) memSet24(0x007000 + i, 0);
     // The ROM's interrupt-init reads $700C (JML low) / $7008 (mid) / $700A
@@ -1628,17 +1642,17 @@ const memSetSoftSwitch = (addr: number, value: number) => {
                 break;
 
             case 0xC036: // SPEED register: bit 7 = 1 → fast (2.8 MHz in native mode)
+            {
                 // KEGS (moremem.c): bit 5 always clears; bits 6/5 are cleared by
                 // any write except 0x40 on ROM 03, where bit 6 is the power-on
                 // status latch.
-                {
-                    let speed = value & ~0x20;
-                    const powerOn = value & 0x60;
-                    if (powerOn !== 0 && (powerOn !== 0x40 || !isIigsRom03())) speed &= ~0x60;
-                    setIigsSpeedRegister(speed);
-                    iigsRegisters[0x36] = speed;
-                }
-                break;
+                let speed = value & ~0x20;
+                const powerOn = value & 0x60;
+                if (powerOn !== 0 && (powerOn !== 0x40 || !isIigsRom03())) speed &= ~0x60;
+                setIigsSpeedRegister(speed);
+                iigsRegisters[0x36] = speed;
+            }
+            break;
 
             case 0xC038: // SCC Channel B Control
                 if (sccRegSelect[0] === 0) {
@@ -1862,6 +1876,8 @@ const TEXT_PAGE2 = 0x800
 // expects the scanner to show those pages, so the renderer has to read them
 // from there rather than from the fast RAM the CPU sees in banks 00/01.
 const iigsTextMainSource = (pageOffset: number): Uint8Array => {
+  // Page 2 is only shadowed on ROM 03 (gssquared shadow_is_enabled / is_rom03).
+  if (pageOffset === TEXT_PAGE2 && !isIigsRom03()) return memory;
   const shadowBit = (pageOffset === TEXT_PAGE2) ? 0x20 : 0x01;
   if (!(iigsRegisters[0x35] & shadowBit)) return megaIIMain;
   return memory;

@@ -299,7 +299,7 @@ export const MachineConfig = (props: DisplayProps) => {
                   },
                 },
                 {
-                  label: "ROM 03 (custom)",
+                  label: "ROM 03",
                   isSelected: () => getPreferenceIigsRomVersion() === "03",
                   onClick: () => {
                     setPreferenceIigsRomVersion("03")
