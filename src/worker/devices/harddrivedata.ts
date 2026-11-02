@@ -108,7 +108,7 @@ export const enableHardDrive = (enable = true) => {
 // Units the SmartPort driver status advertises. This is the card's capacity,
 // not the number of drives with media: units 1 and 2 are backed by driveState,
 // every other unit is an empty bay that answers "offline" (see SP_DRIVE_UNITS).
-const SP_MAX_UNIT = 16
+const SP_MAX_UNIT = 32
 
 // Units that actually map onto hard drive 1 and 2.
 const SP_DRIVE_UNITS = 2
@@ -267,6 +267,12 @@ const processSmartPortAccess = () => {
   const bufferAddr = memGet(spParamList + 2) + 256 * memGet(spParamList + 3)
   // console.log(`processSmartPortAccess cmd=${spCommand} unit=${unitNumber}`)
 
+  // Remember the block a read/write touched so the drive panel shows it. The
+  // ProDOS-8 entry point ($C7C0) already publishes this; GS/OS reads through
+  // the SmartPort entry ($C7C3), which used to leave the label frozen at
+  // whatever the ROM's boot scan last accessed.
+  let accessedBlock = -1
+
   switch (spCommand) {
     case 0: {
       handleSmartPortStatus(spParamList, unitNumber, bufferAddr)
@@ -281,6 +287,7 @@ const processSmartPortAccess = () => {
       const block = memGet(spParamList + 4) + 256 * memGet(spParamList + 5) +
         65536 * memGet(spParamList + 6)
       const blockStart = 512 * block
+      accessedBlock = block
       const [dd, offset, dataLen] = hasSmartPortDrive(unitNumber)
         ? getHardDriveData(unitNumber) : [new Uint8Array(0), 0, 0]
       if (dataLen === 0) {
@@ -308,6 +315,7 @@ const processSmartPortAccess = () => {
       const block = memGet(spParamList + 4) + 256 * memGet(spParamList + 5) +
         65536 * memGet(spParamList + 6)
       const blockStart = 512 * block
+      accessedBlock = block
       if (!hasSmartPortDrive(unitNumber)) {
         setAccumulator(SP_ERROR_DEVICE_OFFLINE)
         setCarry(true)
@@ -350,7 +358,10 @@ const processSmartPortAccess = () => {
       return
   }
   const ds = hasSmartPortDrive(unitNumber) ? getHardDriveState(unitNumber) : undefined
-  if (ds) ds.motorRunning = true
+  if (ds) {
+    ds.motorRunning = true
+    if (accessedBlock >= 0) ds.status = ` ${toHex(accessedBlock, 4)}`
+  }
   if (!timerID) {
     timerID = setTimeout(() => {
       timerID = 0

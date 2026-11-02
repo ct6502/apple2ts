@@ -23,8 +23,9 @@ const hex = (v: number, w = 4) => (v >>> 0).toString(16).padStart(w, "0")
 // the top of bank $7E, so the $08:$0000 module's second record started at
 // $7E:FFFE. Read wrapped it decoded as a bogus `$08:$0000 <- $4F08` fix-up
 // over the stub's PHK;PLB, and the re-launch then read its tables through
-// Mega II aux (the Finder's `$0401` alert). Advertising 16 units - the GSplus
-// SmartPort capacity - keeps both ROMs' lists inside one bank.
+// Mega II aux (the Finder's `$0401` alert). Advertising 32 units - the
+// reference slot-7 firmware's PDB3_MAX_UNITS - keeps both ROMs' lists inside
+// one bank, and does the same for AlterEgo's boot (gs_alterego.test.ts).
 const run = (rom: "01" | "03") => {
   jest.useFakeTimers()
   setIsTesting()
