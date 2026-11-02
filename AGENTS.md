@@ -628,6 +628,25 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   real ROM 03 hardware. Regression: `gs_acs_musique.test.ts` (ROM 03 reaches
   the menu at ~frame 498 with `TXTTAB` `$0801` and no `SYNTAX|ERROR`; ROM 01 is
   the control).
+- **ROM 03 moved the `$E10000` tool-set table, and ACS's music players hardcode
+  ROM 01's copy address.** The dispatcher (`FE:00C5`) reads its table pointer
+  from `$E103C0`; each ROM points it at its own table — ROM 01 at `$FE:012F`
+  (`21 00 00 00`), ROM 03 at `$FE:0139` (`31 00 00 00`) — because ROM 03's
+  prologue is 10 bytes longer (`PEA $FE01`/`PEA $3700`), so the table and the
+  error epilogue in front of it moved together. ACS's three bank-3 player
+  overlays copy 132 bytes with a hardcoded `LDA $FE012F,X` (three occurrences in
+  the image; `$FE0139` appears nowhere) into `$11:E1D0`, publish it through
+  `$E103C0` and patch tool set `$19`. On ROM 03 that copy begins with the
+  dispatcher's error epilogue `2B 3B 18 69 0A 00 1B 8A 38 6B` instead of the
+  count, so every lookup is shifted and resolves to garbage. The first tool call
+  after installation is the ROM's own `FD:03FC` helper (tool set 1 / function
+  `$0D`); it gets error 2 and the helper's `JSR`/`RTS` frame lands on `$0001` →
+  `BRK` → monitor (`A=X=2`). Replacing the three `BF 2F 01 FE` bytes with
+  `BF 39 01 FE` in a copy of the image makes ROM 03 drive the DOC exactly like
+  ROM 01 (`osce=32`, 5-6 live oscillators), so this is a guest ROM-01 assumption,
+  not an emulator defect: the shipped ROM 03 image fails the same way on real
+  hardware. Workaround: ROM 01, or patch a copy of the image. Regression:
+  `gs_rom03.test.ts` pins both table addresses and the 10-byte epilogue.
 - `doSetEmuDriveNewData()` must copy `props.isWriteProtected` into the drive
   state, not only the disk data. It used to keep whatever the previous mount
   left there, so a write-protected image mounted as the boot volume made GS/OS
@@ -1002,6 +1021,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | ROM 03's MYCRATE `$0401` alert means a GS/OS tool or our RAM content is wrong | Both ROMs produce the *same* two relocation records for the `$08:$0000` module. GS/OS places the list, and its boot-time allocation grows 84 bytes per SmartPort unit the slot-7 driver status advertises. Our old 2-unit card parked ROM 03's list at `$7E:FFF3`, so the second record straddled into `$7F` and MYCRATE's 16-bit `LDA ($52),Y` walker read it wrapped (the bogus `$4F08 → $08:$0000` store). Advertising the reference card's 32 units moves it to `$7E:F61B` and the alert is gone (§7, §11.11) |
 | AlterEgo's `Sorry, system error $0201 ... LoadDump.DA` means a bad image or an AlterEgo-only problem | Same bank-straddle class as MYCRATE, different GS/OS build and loader: with a 16-unit card its record list sat at `$7E:FFF8` (`$01:D724`, DP `$9900`) and the 11-byte read wrapped to `$7E:0000`. The 32-unit card moves it clear; gsplus and gssquared never showed it because neither leaves the buffer at that boundary (§7, §11.11) |
 | gssquared's disassembler calls `$87`/`$97` EOR/ADC, so our core is wrong | That is the *trace disassembly* table's label; every gssquared core executes `STA [$nn]` / `STA [$nn],Y` there, as we do (`src/worker/cpu65816.ts:368`). The write data is A's own low/high bytes |
+| ACS Musique option 2's `BRK` on ROM 03 means our `$E10000` dispatcher or stack is wrong | The dispatcher is fine (the frame and both table pointers were measured correct). The guest hardcodes ROM 01's tool-set table address `$FE:012F` in three player overlays; ROM 03's 10-byte-longer prologue moved it to `$FE:0139`, so ACS publishes the dispatcher's error epilogue as its table and the ROM's own tool call fails. It plays on ROM 01, and on ROM 03 once those three `LDA $FE012F,X` bytes are retargeted (§7) |
 
 ---
 
@@ -1045,7 +1065,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   driver's DP clobber), `gs_acs_musique` (Diversi-Cache on ROM 03: the widened
   slot-5 DP window keeps TXTTAB, §7), `gs_shadow_all` (`SPEED_SHADOW_ALL`), `gs_rom03`
   (four-bank mapping + reset vector, GS/OS boot to the Finder, ROM-03 cursor
-  convergence), `gs_mycrate_rom` (MYCRATE under both ROMs: no crash-to-monitor,
+  convergence, and the `$E10000` tool-set table at `$FE:0139` vs ROM 01's
+  `$FE:012F`, §7), `gs_mycrate_rom` (MYCRATE under both ROMs: no crash-to-monitor,
   §11.11 — deleting the bank-`$01` fill reproduces the monitor at frame 1210),
   `gs_rom03_reloc` (MYCRATE's own relocation walker: the record bytes are identical
   on both ROMs, neither list may put a record on a bank boundary, and the stub must

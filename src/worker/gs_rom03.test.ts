@@ -52,6 +52,32 @@ test("ROM 03 maps four ROM banks and resets through the last bank's vector", () 
   }
 })
 
+// The $E10000 dispatcher reads its tool-set table pointer from $E103C0. ROM 03's
+// prologue is 10 bytes longer than ROM 01's (PEA $FE01 / PEA $3700), so the
+// table moved with it. Guests that copy the ROM 01 address still find a table on
+// ROM 01; on ROM 03 they copy the dispatcher's error epilogue instead, and every
+// tool call after they install the copy resolves to garbage. The ACS Musique
+// players do exactly that (three bank-3 overlays, all `LDA $FE012F,X`), which is
+// why their music ends in `FD:0001 BRK` on ROM 03 - see AGENTS.md section 7.
+test("the $E10000 tool-set table moves from $FE:012F on ROM 01 to $FE:0139 on ROM 03", () => {
+  const word = (addr: number) => memGet24(addr) | (memGet24(addr + 1) << 8)
+  try {
+    setIigsRomVersion("01")
+    doSetRom("APPLE2GS")
+    expect(word(0xFE012F)).toBe(0x21)
+
+    setIigsRomVersion("03")
+    doSetRom("APPLE2GS")
+    // What ACS copies when it asks for $FE:012F on ROM 03.
+    expect([...Array(10)].map((_, i) => memGet24(0xFE012F + i)))
+      .toEqual([0x2B, 0x3B, 0x18, 0x69, 0x0A, 0x00, 0x1B, 0x8A, 0x38, 0x6B])
+    expect(word(0xFE0139)).toBe(0x31)
+  } finally {
+    setIigsRomVersion("01")
+    doSetRom("APPLE2GS")
+  }
+})
+
 test(`ROM 03 boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
   jest.useFakeTimers()
   setIsTesting()
