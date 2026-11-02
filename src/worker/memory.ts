@@ -318,6 +318,25 @@ export const iigsResetIwm = () => {
   iwmReset35Lines()
 }
 
+// ROM 03's slot-5 block driver saves/restores only direct page $40-$62 around
+// a block access (four MVN copies of #$0022 at FF:6031/$6063/$6089/$609C),
+// while ROM 01 and the IIe firmware preserve $40-$6E. Diversi-Cache (an 8-bit
+// ProDOS 8 accelerator) keeps its sync-byte compare buffer in DP $65-$67, so
+// the short window lets its scratch leak into the caller's direct page and
+// stomp TXTTAB ($0801 -> $0840) => `?SYNTAX ERROR` when BASIC.SYSTEM loads.
+// Widen the copies to #$002F, which matches ROM 01; the two $E1 save buffers
+// still fit end-to-end ($14E2 + $30 = $1512) without overlapping.
+const patchIigsRom03Slot5DirectPage = (rom: Uint8Array) => {
+  if (rom.length < 0x40000) return
+  const bankFF = rom.length - 0x10000
+  const sites = [0x6034, 0x6066, 0x608C, 0x609F]
+  for (const s of sites) {
+    if (rom[bankFF + s] !== 0xA9 || rom[bankFF + s + 1] !== 0x22 ||
+      rom[bankFF + s + 2] !== 0x00) return
+  }
+  for (const s of sites) rom[bankFF + s + 1] = 0x2F
+}
+
 export const doSetRom = (machineName: MACHINE_NAME) => {
   currentMachineName = machineName
   let romStr = ""
@@ -337,6 +356,7 @@ export const doSetRom = (machineName: MACHINE_NAME) => {
       const rom64_sys = (iigsRomVersion === "03" ? romGsSystem03Base64 : romGsSystemBase64)
         .replace(/[\n\r\s]/g, "");
       gsSystemROM = new Uint8Array(Buffer.from(rom64_sys, "base64"));
+      patchIigsRom03Slot5DirectPage(gsSystemROM)
       const romBanks = gsSystemROM.length >> 16;
       iigsRomFirstBank = 0x100 - romBanks;
       iigsRomBankFFOffset = (romBanks - 1) << 16;
