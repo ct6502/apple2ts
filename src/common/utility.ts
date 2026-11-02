@@ -23,6 +23,24 @@ export const RamWorksPage = 0x17F
 export const ROMmemoryStart = 256 * ROMpage
 export const RamWorksMemoryStart = 256 * RamWorksPage
 
+// The IIgs FPI decodes 23 address bits for RAM, so the installed 8 MB memory
+// expansion card is capped at 8 MB (banks $00-$7F) on both ROM revisions
+// (gssquared iigs_memory.hpp). memory.ts keeps exactly that much fast RAM.
+export const IIGS_MEMORY_KB = 8 * 1024
+
+// Footer RAM readout. The IIgs has no slot-3 auxiliary card; its memory is the
+// FPI fast RAM above, so the aux-card branch must not decide its label.
+export const getMemorySizeLabel = (
+  machineName: string,
+  extraRamKb: number,
+  hasAuxCard: boolean,
+): string => {
+  let memKb = 64
+  if (machineName === "APPLE2GS") memKb = IIGS_MEMORY_KB
+  else if (machineName !== "APPLE2P" && hasAuxCard) memKb = extraRamKb + 64
+  return (memKb > 1100) ? `${(memKb / 1024).toFixed()} MB` : `${memKb} KB`
+}
+
 export enum RUN_MODE {
   IDLE = 0,
   RUNNING = -1,

@@ -18,7 +18,7 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { getMemorySizeLabel, RUN_MODE, TEST_DEBUG } from "../common/utility"
 import DiskCollectionPanel from "./diskdialog/diskcollectionpanel"
 import { handleSetTheme, hasDialogMessageContext } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
@@ -217,8 +217,7 @@ const DisplayApple2 = () => {
   const slotConfig = handleGetSlotConfig()
   const isApple2Plus = machineName === "APPLE2P"
   const hasAuxCard = !isApple2Plus && (slotConfig[3] === "aux" || slotConfig[3] === "vidhd")
-  const mem = isApple2Plus ? 64 : (hasAuxCard ? (handleGetMemSize() + 64) : 64)
-  const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
+  const memSize = getMemorySizeLabel(machineName, handleGetMemSize(), hasAuxCard)
   const status = (isTouchDevice && isLandscape) ? <></> : <div className="default-font footer-item" translate="no">
     <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS}</>
   </div>

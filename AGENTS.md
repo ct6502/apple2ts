@@ -698,6 +698,14 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   memory and `$03F2-$03F4`.
 - IIgs speed labels in the dropdown and in `linkbuilder` / MCP settings must match
   `SPEED_MODES`.
+- **The footer RAM readout follows the machine, not the slot-3 card.**
+  `getMemorySizeLabel` (`src/common/utility.ts`) prints the IIgs as **8 MB**: the
+  FPI's 23-bit RAM decode caps the installed 8 MB expansion card at banks
+  `$00-$7F` on both ROM revisions (gssquared `iigs_memory.hpp`), and `gsRAM`
+  allocates exactly that. The IIgs has no auxiliary slot card, so deriving the
+  label from "is there an aux card?" fell through to 64 KB. Classic machines
+  still add the slot-3 aux bank to the 64 KB base; the Apple II+ ignores it.
+  Regression: `memory_label.test.ts`.
 - **The machine menu's Apple IIgs entry carries a ROM submenu**: "ROM 01" and
   "ROM 03", persisted as the `iigsRom` localStorage key
   (`get/setPreferenceIigsRomVersion`, `MSG_MAIN.IIGS_ROM`). A PopupMenu parent
@@ -1023,7 +1031,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   keep `PHK; PLB` with no `$08:$0000` fix-up — pins §11.11 and the 32-unit
   SmartPort capacity), `gs_alterego` (AlterEgo.2mg boots to its SHR title screen
   under ROM 03 with no `$0201`/`LoadDump.DA` alert),
-  `ensoniq_resample` (carried resampler continuity, length and buffer rate)
+  `ensoniq_resample` (carried resampler continuity, length and buffer rate),
+  `memory_label` (footer RAM readout: IIgs 8 MB vs. classic aux-card totals, §9)
 
 The only known pre-existing failure is `vera.test.ts` (CMDR-DOS), which also
 fails on a clean tree.
