@@ -15,8 +15,16 @@ const hex = (v: number, w = 4) => (v >>> 0).toString(16).padStart(w, "0")
 //     $01:DA46  dispatch on the record's kind/modifier bytes
 //     $01:DAAx  STA [$5A]                    write the value at the 24-bit dest
 // `LDA ($52),Y` is a 16-bit indirect, so it cannot read past $xx:FFFF: a record
-// that straddles a bank boundary is read wrapped inside its first bank. Record
-// the list position and every fix-up, so the two ROMs can be compared.
+// that straddles a bank boundary is read wrapped inside its first bank.
+//
+// Where GS/OS puts that list follows the SmartPort card's advertised unit
+// count: its boot-time device structures grow by 84 bytes per unit. The card
+// used to advertise 2 units, which parked the ExpressLoad buffer flush against
+// the top of bank $7E, so the $08:$0000 module's second record started at
+// $7E:FFFE. Read wrapped it decoded as a bogus `$08:$0000 <- $4F08` fix-up
+// over the stub's PHK;PLB, and the re-launch then read its tables through
+// Mega II aux (the Finder's `$0401` alert). Advertising 16 units - the GSplus
+// SmartPort capacity - keeps both ROMs' lists inside one bank.
 const run = (rom: "01" | "03") => {
   jest.useFakeTimers()
   setIsTesting()
@@ -73,7 +81,7 @@ const run = (rom: "01" | "03") => {
 
 const straddles = (p: string) => (parseInt(p.slice(2), 16) & 0xffff) + 10 > 0xffff
 
-test("gs: ROM 03 puts MYCRATE's $08:$0000 relocation list on a bank boundary", () => {
+test("gs: MYCRATE's $08:$0000 relocation list stays inside one bank on both ROMs", () => {
   if (!fs.existsSync(DISK_PATH)) { console.warn("missing " + DISK_PATH); return }
   const a = run("01")
   const b = run("03")
@@ -82,16 +90,15 @@ test("gs: ROM 03 puts MYCRATE's $08:$0000 relocation list on a bank boundary", (
   for (const r of [...a.recs, ...b.recs]) console.log(`  $${r.p} ${r.raw}${straddles(r.p) ? "   <-- STRADDLES" : ""}`)
 
   // The same two records, byte for byte: the disk read and the RAM content match,
-  // only GS/OS's placement differs.
+  // only the placement differs between ROMs.
   expect([a.recs.length, b.recs.length]).toEqual([2, 2])
   expect(a.recs.map(r => r.raw)).toEqual(b.recs.map(r => r.raw))
-  // ROM 01 keeps the list inside bank $7F, so every record is read whole.
-  expect(a.recs.every(r => r.p.startsWith("7f") && !straddles(r.p))).toBe(true)
+  // Neither ROM may park a record on a bank boundary: the loader's 16-bit
+  // `LDA ($52),Y` would read it wrapped.
+  expect([...a.recs, ...b.recs].filter(r => straddles(r.p))).toEqual([])
+  // The bogus `$08:$0000 <- $4F08` fix-up is what overwrote the stub's PHK;PLB.
   expect(a.fixups.some(f => f.dest === "080000")).toBe(false)
-  // ROM 03's allocation puts the second record at $7E:FFFE; read wrapped it decodes
-  // as a 2-byte fix-up of $08:$0000 with $4F08, over the stub's `PHK; PLB`.
-  expect(b.recs[1].p).toBe("7efffe")
-  expect(straddles(b.recs[1].p)).toBe(true)
-  expect(b.fixups.find(f => f.dest === "080000")).toEqual({ dest: "080000", val: "4f08", kind: "02", mod: "f0" })
-  expect(b.stub.slice(0, 5)).toBe("08 4f")
+  expect(b.fixups.some(f => f.dest === "080000")).toBe(false)
+  expect(a.stub.slice(0, 5)).toBe("4b ab")
+  expect(b.stub.slice(0, 5)).toBe("4b ab")
 }, 600000)

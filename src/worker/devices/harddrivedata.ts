@@ -105,8 +105,18 @@ export const enableHardDrive = (enable = true) => {
 }
 
 
-// Number of SmartPort units we emulate. Unit 1 and 2 map onto hard drive 1 and 2.
-const SP_MAX_UNIT = 2
+// Units the SmartPort driver status advertises. This is the card's capacity,
+// not the number of drives with media: units 1 and 2 are backed by driveState,
+// every other unit is an empty bay that answers "offline" (see SP_DRIVE_UNITS).
+const SP_MAX_UNIT = 16
+
+// Units that actually map onto hard drive 1 and 2.
+const SP_DRIVE_UNITS = 2
+
+const hasSmartPortDrive = (unit: number) => unit >= 1 && unit <= SP_DRIVE_UNITS
+
+const getSmartPortDataLength = (unit: number) =>
+  hasSmartPortDrive(unit) ? getHardDriveData(unit)[2] : 0
 
 // Status byte for a block device:
 // Bit   Function
@@ -144,8 +154,9 @@ const handleSmartPortDeviceStatus = (unitNumber: number, bufferAddr: number) => 
     // not how many currently have media. Empty units report "offline" below.
     memSet(bufferAddr, SP_MAX_UNIT)
   } else if (unitNumber <= SP_MAX_UNIT) {
-    // We assume that the unit number is the same as the drive number.
-    const [,, dataLen] = getHardDriveData(unitNumber)
+    // Units above SP_DRIVE_UNITS have no drive behind them; they report the
+    // same "not on line" status as an empty bay.
+    const dataLen = getSmartPortDataLength(unitNumber)
     // An empty drive must report "not on line" (bit 4 clear), otherwise the
     // OS assumes it can read blocks and faults when the media is missing.
     memSet(bufferAddr, getSmartPortStatusByte(unitNumber, dataLen))
@@ -166,8 +177,7 @@ const handleSmartPortDeviceStatus = (unitNumber: number, bufferAddr: number) => 
 
 
 const handleSmartPortDeviceInformationBlock = (unitNumber: number, bufferAddr: number) => {
-  // We assume that the unit number is the same as the drive number.
-  const [,, dataLen] = getHardDriveData(unitNumber)
+  const dataLen = getSmartPortDataLength(unitNumber)
   const nblocks = fixBlockCount32MB(dataLen / 512)
   // claim we are a 3.5" drive if 1600 or less blocks
   const deviceType = nblocks > 1600 ? 0x02 : 0x01  // 1 = 3.5 drive 2 = hard disk
@@ -271,7 +281,8 @@ const processSmartPortAccess = () => {
       const block = memGet(spParamList + 4) + 256 * memGet(spParamList + 5) +
         65536 * memGet(spParamList + 6)
       const blockStart = 512 * block
-      const [dd, offset, dataLen] = getHardDriveData(unitNumber)
+      const [dd, offset, dataLen] = hasSmartPortDrive(unitNumber)
+        ? getHardDriveData(unitNumber) : [new Uint8Array(0), 0, 0]
       if (dataLen === 0) {
         // No media in the drive. Report "device offline" so the OS knows the
         // difference between "drive is empty" and "read failed".
@@ -297,6 +308,11 @@ const processSmartPortAccess = () => {
       const block = memGet(spParamList + 4) + 256 * memGet(spParamList + 5) +
         65536 * memGet(spParamList + 6)
       const blockStart = 512 * block
+      if (!hasSmartPortDrive(unitNumber)) {
+        setAccumulator(SP_ERROR_DEVICE_OFFLINE)
+        setCarry(true)
+        return
+      }
       const ds = getHardDriveState(unitNumber)
       const [dd, offset, dataLen] = getHardDriveData(unitNumber)
       if (dataLen === 0) {
@@ -333,8 +349,8 @@ const processSmartPortAccess = () => {
       setCarry()
       return
   }
-  const ds = getHardDriveState(unitNumber)
-  ds.motorRunning = true
+  const ds = hasSmartPortDrive(unitNumber) ? getHardDriveState(unitNumber) : undefined
+  if (ds) ds.motorRunning = true
   if (!timerID) {
     timerID = setTimeout(() => {
       timerID = 0

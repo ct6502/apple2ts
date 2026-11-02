@@ -486,15 +486,22 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   media and it reports the mechanism and `DISK 3.5` as before. Regressions:
   `gs_cardcat.test.ts` (empty bay) and `gs_mycrate.test.ts` (boot).
 - **Slot 7's unit count belongs to the card model, not to gssquared.** gssquared's
-  slot-7 `pdblock3` is Liron firmware that claims 32 units and errors on the DIB
-  reads of its empty ones, hence `SP:32` + "SP DIB read err". Our slot 7 is the
-  generated ProDOS 8 block driver + `$C7C3` SmartPort hook with
-  `SP_MAX_UNIT = 2`, so Card Cat shows `(SP:2)` (probed with a hard-disk image
-  mounted: units 0-2, DIB of the empty unit 2 fails, same error line). With no
-  hard-disk image mounted the card stays disabled at cold boot (the `doBoot`
-  hack that lets a floppy boot first) and Card Cat only prints
-  the generic "Apple II Liron Drive Controller Card" line. Do not grow
-  `SP_MAX_UNIT` to imitate `SP:32`: the extra 30 units are phantom.
+  slot-7 `pdblock3` is Liron firmware that advertises 32 units (`PDB3_MAX_UNITS`)
+  and errors on the DIB reads of its empty ones; GSplus stops at 16
+  (`iwm.h:MAX_C7_DISKS`). Our slot 7 is the generated ProDOS 8 block driver +
+  `$C7C3` SmartPort hook. It advertises `SP_MAX_UNIT = 16` units while only
+  `SP_DRIVE_UNITS = 2` (units 1-2) are backed by `driveState`; every other unit
+  answers offline `$E0` and its DIB read fails with the same "SP DIB read err"
+  line gssquared produces, so Card Cat shows `(SP:16)`. With no hard-disk image
+  mounted the card stays disabled at cold boot (the `doBoot` hack that lets a
+  floppy boot first) and Card Cat only prints the generic "Apple II Liron Drive
+  Controller Card" line. The count is not cosmetic: GS/OS 6.0.1 sizes its
+  boot-time device structures at 84 bytes per advertised unit, and at the old
+  `SP_MAX_UNIT = 2` its ExpressLoad buffer sat flush against the end of bank
+  `$7E` (§11.11). Model a card capacity, not a mounted-volume count - and keep
+  the capacity independent of the media, so `hasSmartPortDrive` /
+  `getSmartPortDataLength` answer offline for the empty units whatever is
+  mounted.
 - **A configure pass taken for another machine must not reach the IIgs boot.**
   A fresh profile's browser order is `loadPreferences()` (posts the stored slot
   config - classic IIe defaults, because the worker itself starts as APPLE2EE)
@@ -846,9 +853,12 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
    `$7E:FFFF` (§7). No emulator setting avoids it other than not presenting the
    slot-5 mechanism (`GS_35DELAY` bisect: 1M cycles still crashes, 4M/10M boot
    but Card Cat's scan then fails at both). It is a GS/OS loader limitation, not
-   a drive-model bug; do not "fix" it by hiding the drive. §11.11 is the same defect
+   a drive-model bug; do not "fix" it by hiding the drive. §11.11 was the same defect
    reached another way (ROM 03's allocation instead of a mounted slot-5 disk), with
-   the straddling record and the bogus fix-up measured byte for byte.
+   the straddling record and the bogus fix-up measured byte for byte; that path is
+   now resolved by the SmartPort card's advertised capacity (§7), which moves the
+   whole allocation by a multiple of 7 bytes - this slot-5 case has not been
+   re-measured since.
 10. **Arkanoid from MYCRATE: no bricks, permanent sprite trails — RESOLVED.**
     Same disk boots fine from floppy and the MYCRATE copy works in
     gssquared/gsplus, so the fault was ours. The game composes its playfield in
@@ -859,8 +869,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     erased. We ignored `$C036` bit 4, so bank-$09 stores stayed in fast RAM —
     bank `$09` held the level while `$E1` kept the hatch wall. Fix:
     `shadowIigsBankWrite` (§2). Regression: `gs_shadow_all.test.ts`.
-11. **MYCRATE desktop on ROM 03 — resolved as a guest-side GS/OS defect (§11.9
-    family).**
+11. **MYCRATE desktop on ROM 03 — RESOLVED: the SmartPort card advertised too
+    few units.**
     Only with MYCRATE as the boot volume; plain `SystemDisk.2mg` renders
     byte-identically on both ROMs. The whole visible chain (no icons, garbled menu
     bar, "Infinite loop while walking icon list", and the
@@ -878,10 +888,11 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
       record that straddles a bank boundary is read *wrapped* inside its first bank.
       The `$08:$0000` module has exactly two records, and both ROMs produce the same
       bytes — `e2 02 f0 77 6c 00 00 0f 40 00 c0` and `e2 02 f0 dc bb 00 00 0f 40 00 c0`
-      (i.e. `$08:6C77 ← $C008` and `$08:BBDC ← $C008`) — only the *placement* differs:
-      ROM 01 puts the list at `$7F:01C0`, ROM 03 (whose 256 KB startup allocates
-      ~460 bytes less here) puts it at **`$7E:FFF3`**, so the second record starts at
-      `$7E:FFFE` and wraps.
+      (i.e. `$08:6C77 ← $C008` and `$08:BBDC ← $C008`) — only the *placement*
+      differs. With the old 2-unit SmartPort card ROM 01 put the list at `$7F:01C0`
+      and ROM 03 (whose 256 KB startup allocates less here) at **`$7E:FFF3`**, so
+      the second record started at `$7E:FFFE` and wrapped. With the 16-unit card
+      (§7) the lists sit at `$7E:FD33` (ROM 01) and `$7E:FB5B` (ROM 03), both whole.
     - Read wrapped, that record decodes as a 2-byte fix-up of **`$08:$0000` ←
       `$4F08`**, which lands on the first word of MYCRATE's own stub and replaces its
       `PHK; PLB` (`4b ab`). The stub then leaves `DB = $E1` when it re-launches, so
@@ -892,11 +903,20 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
       `A=$0401 C=1` and pops the alert.
     - The emulator executed exactly what the guest asked for: DP `$995A = 00 00 08`
       (dest) and `$995E = 08 4f` (value) were both written by MYCRATE's own loader
-      from its own (wrapped) record. Same class as §11.9's NIFTYLIST.CDA failure — a
-      GS/OS 6.0.1 loader limitation on a bank-straddling record, and the only way to
-      dodge it is to shift the boot allocation, which would be tuning the emulator to
-      one disk image. `$01:DAAE` runs 250 times on ROM 01 and never touches bank
-      `$08`; on ROM 03 it runs 213 times and the offender is call #176 (~frame 930).
+      from its own (wrapped) record. `$01:DAAE` runs 250 times on ROM 01 and never
+      touches bank `$08`; on ROM 03 it runs 213 times and the offender is call #176
+      (~frame 930).
+    - **The list placement follows the slot-7 card's advertised unit count.** GS/OS
+      sizes its boot-time device structures at **84 bytes per SmartPort unit** the
+      driver status reports: 2 -> 16 units moved ROM 03's list by `14 x 84 = 1176`
+      bytes, 2 -> 32 by `30 x 84 = 2520`, and 32 units plus the always-present
+      slot-5 bays reproduced gssquared's own `$7E:F4F1`. Advertising 16 units while
+      all but two answer offline still yields `$7E:FB5B`, so GS/OS charges for the
+      advertised capacity, not for mounted volumes. gssquared's `pdblock3`
+      advertises `PDB3_MAX_UNITS = 32`; GSplus stops at `MAX_C7_DISKS = 16`; our
+      old card advertised 2, which parked the ExpressLoad buffer flush against the
+      bank end. `SP_MAX_UNIT = 16` with `SP_DRIVE_UNITS = 2` (§7) keeps the stub's
+      `PHK; PLB` (`4b ab`) intact and the Finder boots without `$0401`.
 12. **MYCRATE menu music noise — fixed at the transport, unconfirmed by ear.**
     The DOC itself is not the source: over a 1600-frame MYCRATE boot the guest
     writes the chip 138 631 times, loads 65 272 of the 64 KB of DOC RAM and sets
@@ -937,7 +957,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | ROM 03's MYCRATE crash-to-monitor at ~20 s must be a soft switch or a bit | Measured, not guessed: diffing the two ROMs' `$C035`/`$C036` traffic gives one real difference (`$C035` bit 5, TEXT2 shadow) and nothing else — `$C036` bit 4 is never set, and KEGS-style masking of the speed write never changed an observed value. The crash came from the *power-on content* of bank-`$01` page 0 (§2, §11.11) |
 | The DOC music noise is in the chip's mix | Our mix matches gssquared byte for byte (`trunc(mix/8)`, signed int8 wave byte, the highest-oscillator triple-add). The clicking lived in the UI transport, which resampled every per-refresh block from phase zero (§5, §11.12) |
 | `LDA [$1824],$9C` in the ROM-03 task glue means the direct page should follow DB | The 65816's direct page is bank `$00` by architecture and gssquared pins it there too; the pointer is real, the memory behind it was just uninitialised |
-| ROM 03's MYCRATE `$0401` alert means a GS/OS tool or our RAM content is wrong | Both ROMs produce the *same* two relocation records for the `$08:$0000` module; ROM 03 just places the list at `$7E:FFF3` so the second record straddles into `$7F`, and MYCRATE's own `LDA ($52),Y` walker reads it wrapped and asks for exactly the `$4F08 → $08:$0000` store we faithfully performed (§11.11) |
+| ROM 03's MYCRATE `$0401` alert means a GS/OS tool or our RAM content is wrong | Both ROMs produce the *same* two relocation records for the `$08:$0000` module. GS/OS places the list, and its boot-time allocation grows 84 bytes per SmartPort unit the slot-7 driver status advertises. Our old 2-unit card parked ROM 03's list at `$7E:FFF3`, so the second record straddled into `$7F` and MYCRATE's 16-bit `LDA ($52),Y` walker read it wrapped (the bogus `$4F08 → $08:$0000` store). Advertising 16 units moves it to `$7E:FB5B` and the alert is gone (§7, §11.11) |
 | gssquared's disassembler calls `$87`/`$97` EOR/ADC, so our core is wrong | That is the *trace disassembly* table's label; every gssquared core executes `STA [$nn]` / `STA [$nn],Y` there, as we do (`src/worker/cpu65816.ts:368`). The write data is A's own low/high bytes |
 
 ---
@@ -984,8 +1004,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   convergence), `gs_mycrate_rom` (MYCRATE under both ROMs: no crash-to-monitor,
   §11.11 — deleting the bank-`$01` fill reproduces the monitor at frame 1210),
   `gs_rom03_reloc` (MYCRATE's own relocation walker: the record bytes are identical
-  on both ROMs, ROM 03's list starts at `$7E:FFF3` so the second record straddles
-  into `$7F` and the wrapped read clobbers the `$08:$0000` stub — pins §11.11),
+  on both ROMs, neither list may put a record on a bank boundary, and the stub must
+  keep `PHK; PLB` with no `$08:$0000` fix-up — pins §11.11 and the 16-unit
+  SmartPort capacity),
   `ensoniq_resample` (carried resampler continuity, length and buffer rate)
 
 The only known pre-existing failure is `vera.test.ts` (CMDR-DOS), which also
