@@ -40,7 +40,7 @@ import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
 import { receiveCommData } from "./devices/superserial/serial"
 import { setTraceSettings } from "./tracelog"
-import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState } from "./save_restore_worker"
+import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState, doGetSaveStateForLocalStorage } from "./save_restore_worker"
 import { setSiriusJoyport } from "./devices/sirius_joyport"
 import { getCurrentMemory } from "./memory"
 import { enableGamePatches } from "./games/game_mappings"
@@ -132,6 +132,10 @@ const passMemory = (mem: Uint8Array) => {
 
 const passSaveState = (sState: EmulatorSaveState) => {
   doPostMessage(MSG_WORKER.SAVE_STATE, sState)
+}
+
+const passSaveStateLocalStorage = (sState: EmulatorSaveState | object) => {
+  doPostMessage(MSG_WORKER.SAVE_STATE_LOCAL_STORAGE, sState)
 }
 
 export const passRumble = (params: GamePadActuatorEffect) => {
@@ -433,6 +437,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.GET_SAVE_STATE_SNAPSHOTS:
         passSaveState(doGetSaveStateWithSnapshots())
+        break
+      case MSG_MAIN.GET_SAVE_STATE_LOCAL_STORAGE:
+        passSaveStateLocalStorage(doGetSaveStateForLocalStorage())
         break
       case MSG_MAIN.DRIVE_PROPS: {
         const props = e.data.payload as DriveProps

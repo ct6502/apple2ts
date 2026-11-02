@@ -369,6 +369,7 @@ type UIState = {
   infoPanel: boolean,
   monitorMode: MONITOR_MODE,
   reverseYAxis: boolean,
+  saveStateToLocalStorage: boolean,
   showScanlines: boolean,
   siriusJoyport: boolean,
   snapshotOnKeyPress: boolean,

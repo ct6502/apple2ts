@@ -18,6 +18,7 @@ import { controlsToPopupItems } from "./controlpopup"
 import { audioControlRegistry } from "../devices/audio/audioconfig"
 import TabBase from "../tabbase"
 import Tab from "../tab"
+import { resetSavedStateFromLocalStorage } from "../save_restore_ui"
 
 const dialogPosition = [Math.max(window.innerWidth / 2 - 275, 0), Math.max(window.innerHeight / 2 - 400, 0)]
 
@@ -59,6 +60,10 @@ export const SettingsDialog = (props: DisplayProps) => {
   // same confirmation dialog and the same resetPreferences() call.
   const resetSettings = () => {
     settingsResetBinding.action?.(createControlContext(props, t, language, changeLanguage))
+  }
+
+  const resetSavedState = () => {
+    resetSavedStateFromLocalStorage()
   }
 
   const machineName = handleGetMachineName()
@@ -343,8 +348,8 @@ export const SettingsDialog = (props: DisplayProps) => {
     <div>
       <div className="dialog-title" style={{ paddingBottom: "4px" }}>{t("debug.timeTravelSnapshots")}</div>
       <CheckBox name={t("timetravel.snapshotOnKeyPress")}
-        checked={!getPreferenceBoolean("snapshotOnKeyPress")}
-        setChecked={(on: boolean) => doSetPreferenceBoolean("snapshotOnKeyPress", !on)} />
+        checked={getPreferenceBoolean("snapshotOnKeyPress")}
+        setChecked={(on: boolean) => doSetPreferenceBoolean("snapshotOnKeyPress", on)} />
       <Droplist name={t("timetravel.autoSnapshot")}
         value={ttnames[autoSnapshot]}
         values={ttnames}
@@ -354,6 +359,11 @@ export const SettingsDialog = (props: DisplayProps) => {
           props.updateDisplay()
         }}
       />
+      <div className="dialog-title" style={{ marginTop: "10px", marginBottom: "4px" }}>
+        {t("config.autoSaveState")}</div>
+      <CheckBox name={t("config.autoSaveState")}
+        checked={getPreferenceBoolean("saveStateToLocalStorage")}
+        setChecked={(on: boolean) => doSetPreferenceBoolean("saveStateToLocalStorage", on)} />
     </div>
     )
   }
@@ -373,7 +383,6 @@ export const SettingsDialog = (props: DisplayProps) => {
           top: `${dialogPosition[1]}px`,
           height: "auto",
           userSelect: "none" }}>
-        <div>
           <div className="flex-row-space-between"
             style={{ marginLeft: "10px", marginRight: "10px" }}
             onMouseDown={(e) => handleMouseDown(e)}
@@ -388,6 +397,7 @@ export const SettingsDialog = (props: DisplayProps) => {
           </div>
           {/* <div className="horiz-rule"></div> */}
 
+          <div style={{margin: "10px"}}>
           <TabBase>
             <Tab title={t("machine.configuration")}>
               <div className="flex-row" style={{marginTop: "10px", marginBottom: "10px"}}>
@@ -401,25 +411,24 @@ export const SettingsDialog = (props: DisplayProps) => {
                   {keyboardJoystickOptions()}
                 </div>
               </div>
+              <button className="push-button text-button"
+                style={{marginTop: "10px", marginLeft: "5px"}}
+                onClick={resetSettings}>
+                <span className="centered-title">{t("config.resetSettings")}</span>
+              </button>
             </Tab>
             <Tab title={t("config.saveState")}>
               <div className="flex-row" style={{marginTop: "10px", marginBottom: "10px"}}>
                 {timeTravelOptions()}
               </div>
+              <button className="push-button text-button"
+                style={{marginTop: "20px", marginLeft: "5px"}}
+                onClick={resetSavedState}>
+                <span className="centered-title">{t("config.resetSavedState")}</span>
+              </button>
             </Tab>
           </TabBase>
-          
-        </div>
-        <div className="flex-row-space-between" style={{ marginLeft: "10px", marginTop: "10px", flexShrink: 0 }}>
-          <button className="push-button text-button"
-            onClick={resetSettings}>
-            <span className="centered-title">{t("config.resetSettings")}</span>
-          </button>
-          <button className="push-button text-button"
-            onClick={() => { setShowDialog(false) }}>
-            <span className="centered-title">{t("dialog.close")}</span>
-          </button>
-        </div>
+          </div>
       </div>
     </div>
 

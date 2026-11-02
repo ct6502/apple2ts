@@ -106,6 +106,10 @@ msgid ""
 "breakpoints, save states, or BASIC program."
 msgstr ""
 
+msgctxt "config.resetSavedState"
+msgid "Reset Saved State"
+msgstr ""
+
 msgctxt "config.capsLock"
 msgid "Caps Lock"
 msgstr "大写锁定"
@@ -148,6 +152,10 @@ msgstr "摇杆设置"
 
 msgctxt "config.saveState"
 msgid "Saved States"
+msgstr ""
+
+msgctxt "config.autoSaveState"
+msgid "Automatically Save and Restore State"
 msgstr ""
 
 #, fuzzy

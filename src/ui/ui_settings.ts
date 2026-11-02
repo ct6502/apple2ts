@@ -22,6 +22,7 @@ const initialUIState: Readonly<UIState> = {
   infoPanel: false,
   monitorMode: MONITOR_MODE.NTSC,
   reverseYAxis: false,
+  saveStateToLocalStorage: false,
   showScanlines: false,
   siriusJoyport: false,
   snapshotOnKeyPress: false,

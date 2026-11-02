@@ -854,10 +854,12 @@ const LinkBuilder = () => {
         </div>
         <div className="horiz-rule"></div>
 
-        <TabBase>
-          <Tab title={t("machine.configuration")}>{emulatorGeneralSettings}<div className="horiz-rule" style={{ marginTop: "15px" }}/>{slotConfiguration}</Tab>
-          <Tab title={t("linkBuilder.startupOptionsTab")}>{startUpOptions}</Tab>
-        </TabBase>
+        <div style={{margin: "10px"}}>
+          <TabBase>
+            <Tab title={t("machine.configuration")}>{emulatorGeneralSettings}<div className="horiz-rule" style={{ marginTop: "15px" }}/>{slotConfiguration}</Tab>
+            <Tab title={t("linkBuilder.startupOptionsTab")}>{startUpOptions}</Tab>
+          </TabBase>
+        </div>
 
         {/* Show final link, readonly textarea for now */}
         <div className="flex-row-space-between" style={{ marginRight: "10px", marginTop: "10px", flexShrink: 0 }}>

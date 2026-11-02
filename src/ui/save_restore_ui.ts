@@ -1,10 +1,10 @@
 import { BreakpointMap } from "../common/breakpoint"
 import { MAX_DRIVES, RUN_MODE, SAVE_STATE_VERSION } from "../common/utility"
-import { setPreferenceBreakpoints, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
+import { getPreferenceBoolean, setPreferenceBreakpoints, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
 import { handleGetFilename } from "./devices/disk/driveprops"
 import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { isAudioEnabled, audioEnable } from "./devices/audio/speaker"
-import { handleGetBreakpoints, handleGetSpeedMode, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, passRestoreSaveState, passSetRunMode, passSetShowDebugTab } from "./main2worker"
+import { handleGetBreakpoints, handleGetSpeedMode, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, passRestoreSaveState, passSetRunMode, passSetShowDebugTab, handleGetSaveStateForLocalStorage } from "./main2worker"
 import { getUIState, setUIState} from "./ui_settings"
 
 const constructSaveStateWithUI = (sState: EmulatorSaveState) => {
@@ -30,13 +30,27 @@ const constructSaveStateWithUI = (sState: EmulatorSaveState) => {
   return state
 }
 
-export const saveStateToLocalStorageCallback = (sState: EmulatorSaveState) => {
+let didThrowConsoleError = false
+// let lastState = ""
+
+const saveStateToLocalStorageCallback = (sState: EmulatorSaveState) => {
   const state = constructSaveStateWithUI(sState)
-  localStorage.setItem("apple2ts_save_state", state)
+  // const currentState = state.slice(0, state.indexOf("stackDump:"))
+  // if (currentState === lastState) return
+  try {
+    localStorage.setItem("apple2ts_save_state", state)
+    // lastState = currentState
+    didThrowConsoleError = false
+  } catch (e) {
+    if (!didThrowConsoleError) {
+      console.error("Failed to save state to localStorage", e)
+      didThrowConsoleError = true
+    }
+  }
 }
 
-export const handleSaveStateToLocalStorage = () => {
-  handleGetSaveState(saveStateToLocalStorageCallback, false)
+export const resetSavedStateFromLocalStorage = () => {
+  localStorage.removeItem("apple2ts_save_state")
 }
 
 const saveStateToDownloadCallback = (sState: EmulatorSaveState) => {
@@ -60,7 +74,31 @@ const saveStateToDownloadCallback = (sState: EmulatorSaveState) => {
   document.body.removeChild(link)
 }
 
-export const handleFileSave = (withSnapshots: boolean) => {
+let saveStateTimer: number | undefined = undefined
+
+const onHidden = () => { if (document.hidden) handleSaveStateToLocalStorage() }
+const onPageHide = () => handleSaveStateToLocalStorage()
+
+export const handleSaveStateToLocalStorage = () => {
+  if (getPreferenceBoolean("saveStateToLocalStorage")) {
+    const runMode = handleGetRunMode()
+    if (runMode !== RUN_MODE.IDLE && runMode !== RUN_MODE.NEED_BOOT) {
+      handleGetSaveStateForLocalStorage(saveStateToLocalStorageCallback)
+    }
+    if (saveStateTimer === undefined) {
+      saveStateTimer = window.setInterval(handleSaveStateToLocalStorage, 1000)
+      document.addEventListener("visibilitychange", onHidden)
+      window.addEventListener("pagehide", onPageHide)
+    }
+  } else if (saveStateTimer !== undefined) {
+    clearInterval(saveStateTimer)
+    saveStateTimer = undefined
+    document.removeEventListener("visibilitychange", onHidden)
+    window.removeEventListener("pagehide", onPageHide)
+  }
+}
+
+export const handleSaveStateToDownload = (withSnapshots: boolean) => {
   handleGetSaveState(saveStateToDownloadCallback, withSnapshots)
 }
 

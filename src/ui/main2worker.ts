@@ -22,7 +22,8 @@ import { setDialogMessageContext } from "./ui_utilities"
 
 let worker: Worker | null = null
 
-let saveStateCallback: (sState: EmulatorSaveState) => void
+let saveStateCallback: ((sState: EmulatorSaveState) => void) | null = null
+let saveStateLocalStorageCallback: ((sState: EmulatorSaveState) => void) | null = null
 let bootCallback: (() => void) | null = null
 let serialConfigCallback: ((config: SerialConfig) => void) | null = null
 let executionStateCallback: ((execution: ExecutionSnapshot) => void) | null = null
@@ -75,6 +76,8 @@ export const setMain2Worker = (workerIn: Worker) => {
   worker = workerIn
   doPostMessage(MSG_MAIN.VERA_FM_ENABLED, localStorage.getItem("veraFmAudioEnabled") !== "false")
   machineState.execution = undefined
+  saveStateCallback = null
+  saveStateLocalStorageCallback = null
 }
 
 export const setBootCallback = (callback: () => void) => {
@@ -508,6 +511,8 @@ let machineState: MachineState = {
   zeroPage: new Uint8Array(256).fill(255)
 }
 
+let didThrowConsoleWarning = false
+
 export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
   switch (e.data.msg as MSG_WORKER) {
     case MSG_WORKER.MACHINE_STATE: {
@@ -538,7 +543,21 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       break
     case MSG_WORKER.SAVE_STATE: {
       const sState = e.data.payload as EmulatorSaveState
-      if (saveStateCallback) saveStateCallback(sState)
+      saveStateCallback?.(sState)
+      saveStateCallback = null
+      break
+    }
+    case MSG_WORKER.SAVE_STATE_LOCAL_STORAGE: {
+      const sState = e.data.payload as EmulatorSaveState
+      if (!sState?.state6502) {
+        if (!didThrowConsoleWarning) {
+          console.warn("Unable to save large disk images to local storage. Skipping...")
+          didThrowConsoleWarning = true
+        }
+        break
+      }
+      saveStateLocalStorageCallback?.(sState)
+      saveStateLocalStorageCallback = null
       break
     }
     case MSG_WORKER.CLICK:
@@ -852,6 +871,11 @@ export const handleGetSaveState = (callback: (sState: EmulatorSaveState) => void
   withSnapshots = false) => {
   saveStateCallback = callback
   doPostMessage(withSnapshots ? MSG_MAIN.GET_SAVE_STATE_SNAPSHOTS : MSG_MAIN.GET_SAVE_STATE, true)
+}
+
+export const handleGetSaveStateForLocalStorage = (callback: (sState: EmulatorSaveState) => void) => {
+  saveStateLocalStorageCallback = callback
+  doPostMessage(MSG_MAIN.GET_SAVE_STATE_LOCAL_STORAGE, true)
 }
 
 export const handleGetMemSize = () => {

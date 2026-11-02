@@ -90,6 +90,10 @@ msgid "Are you sure you want to reset emulator settings? "
 "This will not erase your breakpoints, save states, or BASIC program."
 msgstr ""
 
+msgctxt "config.resetSavedState"
+msgid "Reset Saved State"
+msgstr ""
+
 msgctxt "config.capsLock"
 msgid "Caps Lock"
 msgstr ""
@@ -125,6 +129,11 @@ msgstr ""
 msgctxt "config.saveState"
 msgid "Saved States"
 msgstr ""
+
+msgctxt "config.autoSaveState"
+msgid "Automatically Save and Restore State"
+msgstr ""
+
 
 msgctxt "machine.configuration"
 msgid "Machine"

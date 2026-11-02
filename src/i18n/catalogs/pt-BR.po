@@ -117,6 +117,10 @@ msgid ""
 "breakpoints, save states, or BASIC program."
 msgstr ""
 
+msgctxt "config.resetSavedState"
+msgid "Reset Saved State"
+msgstr ""
+
 msgctxt "config.capsLock"
 msgid "Caps Lock"
 msgstr ""
@@ -161,6 +165,10 @@ msgstr "Configuração de Joystick"
 
 msgctxt "config.saveState"
 msgid "Saved States"
+msgstr ""
+
+msgctxt "config.autoSaveState"
+msgid "Automatically Save and Restore State"
 msgstr ""
 
 msgctxt "machine.configuration"

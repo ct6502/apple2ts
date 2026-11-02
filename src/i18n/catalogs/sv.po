@@ -107,6 +107,10 @@ msgstr ""
 "Är du säker på att du vill återställa alla inställningar? Detta raderar inte "
 "dina brytpunkter eller ditt BASIC-program."
 
+msgctxt "config.resetSavedState"
+msgid "Reset Saved State"
+msgstr ""
+
 msgctxt "config.capsLock"
 msgid "Caps Lock"
 msgstr "Caps Lock"
@@ -143,6 +147,10 @@ msgstr "Tangentbord och styrspakskonfiguration"
 
 msgctxt "config.saveState"
 msgid "Saved States"
+msgstr ""
+
+msgctxt "config.autoSaveState"
+msgid "Automatically Save and Restore State"
 msgstr ""
 
 #, fuzzy
