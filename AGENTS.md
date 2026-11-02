@@ -608,6 +608,26 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   re-applies them at `FF:6F7F`. The other entries (`$C500`/`$C502`/`$C504`/
   `$C506`/`$C50A`) set `$E1:0FB0 = $C0` instead, take `BMI FF:6AEB`, and never
   reach the clobber. Regression: `gs_cardcat.test.ts`.
+- **ROM 03's slot-5 block driver preserves a narrower direct page window than
+  ROM 01.** ROM 01 (and the IIe firmware) save DP `$40-$6E` around a block
+  access (`FF:6F4D`/`FF:6F70`); ROM 03's counterpart (`FF:5BAD` entry,
+  `FF:5E94` exit) saves only `$40-$62`, via four `MVN` copies of `#$0022` at
+  `FF:6031/$6063/$6089/$609C`. Diversi-Cache 1.0b (1987 DSR Inc, on the ACS
+  Musique disk) installs an 8-bit ProDOS 8 cache driver in bank 2 and patches
+  three slot-5 dispatch entries (`$E1:0F6F/$0F77/$0FA7`) that the ROM-03 stubs
+  at `FF:4C4F/$4CDA/$3E5A` jump through. Its unit-1 read path keeps a
+  sync-byte compare buffer in DP `$65-$67` (`STA $67` at `$02C4`), so the short
+  window returns scratch over the caller's TXTTAB: BASIC.SYSTEM's freshly
+  `NEW`-ed `$0801` came back as `$0840` and the first program line failed with
+  `?SYNTAX ERROR`. `doSetRom()` widens the four lengths `#$0022` -> `#$002F`
+  in the decoded ROM-03 image (signature-checked, bank-FF offsets
+  `$6035/$6067/$608D/$60A0`), matching ROM 01; the two `$E1` save buffers are
+  `$30` apart (`$14E2 + $30 = $1512`) so they still do not overlap. Like KEGS's
+  slot-5 patches this is a firmware-compatibility fix, not an emulator bug: the
+  shipped dump (md5 `ba89edf2729a28a17cd9e0f7a0ac9a39`) fails the same way on
+  real ROM 03 hardware. Regression: `gs_acs_musique.test.ts` (ROM 03 reaches
+  the menu at ~frame 498 with `TXTTAB` `$0801` and no `SYNTAX|ERROR`; ROM 01 is
+  the control).
 - `doSetEmuDriveNewData()` must copy `props.isWriteProtected` into the drive
   state, not only the disk data. It used to keep whatever the previous mount
   left there, so a write-protected image mounted as the boot volume made GS/OS
@@ -1022,7 +1042,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `gs_hdd_boot`, `gs_slots_mockingboard`, `gs_boot_order` (browser message order
   on a fresh profile: slot config → machine switch → 3.5" boot, §7),
   `gs_test_coldboot`, `gs_fatal`, `gs_cardcat` (Pascal p-machine vs. the slot-5
-  driver's DP clobber), `gs_shadow_all` (`SPEED_SHADOW_ALL`), `gs_rom03`
+  driver's DP clobber), `gs_acs_musique` (Diversi-Cache on ROM 03: the widened
+  slot-5 DP window keeps TXTTAB, §7), `gs_shadow_all` (`SPEED_SHADOW_ALL`), `gs_rom03`
   (four-bank mapping + reset vector, GS/OS boot to the Finder, ROM-03 cursor
   convergence), `gs_mycrate_rom` (MYCRATE under both ROMs: no crash-to-monitor,
   §11.11 — deleting the bank-`$01` fill reproduces the monitor at frame 1210),
