@@ -231,11 +231,12 @@ export const requestKeySequence = (payload: KeySequenceRequest) => {
   )
 }
 
-// Open the Apple IIgs Desk Accessories drawer. The worker injects the whole
-// Closed Apple + Escape chord, because a chord lives in $C025 and no single host
-// keypress can carry it.
-export const requestIigsDaDrawer = () =>
-  requestWorkerOperation<KeySequenceResult>(MSG_MAIN.IIGS_DA_DRAWER, {}, 3000)
+// Open the Apple IIgs ROM Desk Accessories menu. The worker injects the whole
+// Control + Open Apple + Escape chord, because the ADB micro-controller
+// intercepts that sequence instead of passing the Escape on to the guest.
+export const passIigsDeskPanel = () => {
+  doPostMessage(MSG_MAIN.IIGS_DESK_PANEL, {})
+}
 
 export const requestConditionalKeySequence = (payload: ConditionalKeySequenceRequest) => {
   const timeoutMs = Number.isFinite(payload.timeoutMs)

@@ -5,8 +5,10 @@
  * micro-controller through four bytes of I/O:
  *   $C024 ADB Mouse Data   (X byte first, Y byte on the following read)
  *   $C025 ADB Modifiers    (shift/caps/option state + MOD_LATCH)
- *   $C026 ADB Data         (write = command register, read = response queue)
- *   $C027 ADB Status
+ *   $C026 ADB Data         (write = command register, read = the micro's report
+ *                           byte first, then the response queue)
+ *   $C027 ADB Status       (bit 5 = data register full; bits 6/4/2 are the
+ *                           mouse / data / keyboard interrupt enables)
  *
  * The command byte written to $C026 is *not* a classic ADB bus transaction.
  * It is the IIgs ADB micro-controller command set, classified by bits 7-6:
@@ -36,18 +38,32 @@ const ROM_ADB_TASK_PC_HI = 0xFFC560
 // ~2 frames of machine time: Tass polls every few cycles while it is running,
 // so any idle gap under this threshold still counts as "the task is alive".
 
-// $C027 status bits
+// $C027 status bits. gssquared's ADB_Micro `status` union and KEGS's
+// ADB_C027_* (adb.c:46-53) agree byte for byte, and the ROM's own writes prove
+// it here: ROM 01 writes $10 at FF:F9E0 (enable the *data* interrupt, which is
+// how the desk manager is woken) and GS/OS writes $40 at $C47C (enable the
+// mouse interrupt).
 const STATUS_MOUSE_DATA = 0x80;          // bit 7: a mouse report is waiting
-const STATUS_MOUSE_INTERRUPT = 0x40;     // bit 6: enable mouse interrupt
-const STATUS_DATA_AVAILABLE = 0x20;      // bit 5: $C026 response queue non-empty
-const STATUS_COMMAND_FULL = 0x10;        // bit 4: command register wants more args
-const STATUS_KEYBOARD_INTERRUPT = 0x08;  // bit 3: enable keyboard interrupt
-const STATUS_KEYBOARD_DATA = 0x04;       // bit 2: key data available
+const STATUS_MOUSE_INTERRUPT = 0x40;     // bit 6: mouse interrupt enable
+const STATUS_DATA_AVAILABLE = 0x20;      // bit 5: the data register holds a byte
+const STATUS_DATA_INTERRUPT = 0x10;      // bit 4: data interrupt enable
+const STATUS_KEYBOARD_DATA = 0x08;       // bit 3: key data available
+const STATUS_KEYBOARD_INTERRUPT = 0x04;  // bit 2: keyboard interrupt enable
 const STATUS_MOUSE_Y_NEXT = 0x02;        // bit 1: next $C024 read returns Y
-const STATUS_INTERRUPT_ENABLES = 0x48;   // bits 6 and 3 are writable
+// Bit 0 is the command-register-full flag. It is deliberately never set - see
+// readStatus().
+// The three interrupt enables are the only writable bits (gssquared
+// write_status_register's readonly_flags = 0b10101011).
+const STATUS_INTERRUPT_ENABLES = 0x54;   // bits 6, 4 and 2
 
 // First byte of every $C026 response.
 const RESPONSE_HEADER = 0x80;
+
+// The data register's report byte, as the micro hands it out when the CPU reads
+// $C026 after a data interrupt: bit 7 response/status, bit 6 abort, bit 5 the
+// desk-manager key sequence, bit 4 buffer flush, bit 3 service request valid,
+// bits 2-0 the response byte count minus one.
+const DATA_REPORT_DESKTOP_MANAGER = 0x20;
 
 // $C025 modifiers. Layout from KEGS adb.c:153-157 and gssquared's
 // adb_mod_key_t (ADB_Keyboard.hpp:6): bit0 shift, bit1 control, bit2 caps lock,
@@ -146,6 +162,12 @@ export class IIGSADB {
   // $C026 response queue
   private response: number[] = [];
 
+  // A micro-generated report waiting in the data register (KEGS's
+  // g_adb_interrupt_byte, gssquared's `send_data_register` + `datareg`). It is
+  // read out *before* any queued command response, because that is what the
+  // interrupt byte is: the micro's own event, not an answer to a command.
+  private reportByte: number | null = null;
+
   // Controller state
   private modes = 0;
   private configuration = new Uint8Array(3);
@@ -216,13 +238,23 @@ export class IIGSADB {
   }
 
   // --- Status / data registers ---
+  // The data register counts as full for a micro report as well as for a queued
+  // command response - the ROM polls bit 5 before reading $C026 either way.
+  private dataRegisterFull(): boolean {
+    return this.reportByte !== null || this.response.length > 0;
+  }
+
   readStatus(): number {
     let status = 0;
-    if (this.response.length > 0) status |= STATUS_DATA_AVAILABLE;
+    if (this.dataRegisterFull()) status |= STATUS_DATA_AVAILABLE;
     if (this.hasKeyData()) status |= STATUS_KEYBOARD_DATA;
     if (this.hasMouseData()) status |= STATUS_MOUSE_DATA;
     if (this.reportInProgress) status |= STATUS_MOUSE_Y_NEXT;
-    if (this.commandFull()) status |= STATUS_COMMAND_FULL;
+    // Bit 0 is the real "command register full" flag, and it is never reported:
+    // the ROM's boot-time command loop at FF:851E spins on it before writing the
+    // next byte, so publishing the awaiting-arguments state there deadlocks the
+    // self-test and the machine ends at 「Fatal system error-> 0911」. KEGS masks
+    // it out of adb_read_c027 (ADB_C027_NEG_MASK) and gssquared never sets it.
     status |= this.interruptEnables;
     noteAdbLog("stat", status);
     const pc = getCpuPc();
@@ -239,6 +271,15 @@ export class IIGSADB {
   }
 
   readData(): number {
+    // A latched report is handed out first and cleared on the read (KEGS
+    // adb_read_c026's ADB_IDLE branch, gssquared read_data_register's
+    // send_data_register path).
+    if (this.reportByte !== null) {
+      const v = this.reportByte;
+      this.reportByte = null;
+      noteAdbLog("report", v);
+      return v;
+    }
     const v = this.response.length > 0 ? (this.response.shift() as number) : 0x00;
     noteAdbLog("data", v);
     return v;
@@ -263,6 +304,7 @@ export class IIGSADB {
   // cmd[0] is the command byte, cmd[1..] are its arguments. A command is
   // complete once cmd.length - 1 === argumentsExpected.
   writeCommand(v: number) {
+    noteAdbLog("cmd", v, this.cmd.length, this.argumentsExpected);
     if (this.cmd.length > 0 && this.cmd.length - 1 < this.argumentsExpected) {
       this.cmd.push(v);
       if (this.cmd.length - 1 === this.argumentsExpected) this.executeCommand();
@@ -283,11 +325,6 @@ export class IIGSADB {
     }
     this.cmd = [];
     this.argumentsExpected = 0;
-  }
-
-  // True while the command register is waiting for more argument bytes.
-  private commandFull(): boolean {
-    return this.cmd.length > 0 && this.cmd.length - 1 < this.argumentsExpected;
   }
 
   // 00xxxxxx - commands addressed to the ADB micro-controller itself.
@@ -616,15 +653,31 @@ export class IIGSADB {
   // has no modifier field - so while $C025 stays 0, Closed Apple + Escape is
   // indistinguishable from a bare Escape and no key equivalent (the DA drawer
   // among them) can ever fire.
-  queueKeyboard(eventByte: number) {
+  //
+  // Returns true when the micro consumed the event for its own report, in which
+  // case the caller must not drive the legacy keyboard latch either.
+  queueKeyboard(eventByte: number): boolean {
     const bit = MODIFIER_KEY_BITS[eventByte & 0x7f];
     if (bit !== undefined) {
       this.modifiers = eventByte & 0x80
         ? this.modifiers & ~bit
         : this.modifiers | bit | MOD_LATCH;
     }
+    // Control + Open Apple + Escape is not a key the ROM can be told about
+    // through the keyboard register: the ADB micro intercepts it and answers
+    // with a data-register report (bit 5 = the desk-manager key sequence),
+    // which is what wakes the ROM's Desk Accessories menu. gssquared
+    // ADB_Micro.hpp:1026, KEGS adb.c:1687. The Escape is swallowed, not
+    // buffered, so the menu does not immediately see it as a dismiss.
+    if ((eventByte & 0x7f) === 0x35 && (eventByte & 0x80) === 0
+      && (this.modifiers & (MOD_CONTROL | MOD_OPEN)) === (MOD_CONTROL | MOD_OPEN)) {
+      this.reportByte = DATA_REPORT_DESKTOP_MANAGER;
+      noteAdbLog("desk", this.modifiers);
+      return true;
+    }
     this.keyboardRegs[0] = eventByte & 0xff;
     this.keyboardRegs[1] = this.modifiers;
+    return false;
   }
 
   // Read-back for tests/diagnostics: the last queued ADB keyboard report.
@@ -644,11 +697,13 @@ export class IIGSADB {
 
   interruptPending(): boolean {
     return ((this.interruptEnables & STATUS_MOUSE_INTERRUPT) !== 0 && this.hasMouseData())
-      || ((this.interruptEnables & STATUS_KEYBOARD_INTERRUPT) !== 0 && this.hasKeyData());
+      || ((this.interruptEnables & STATUS_KEYBOARD_INTERRUPT) !== 0 && this.hasKeyData())
+      || ((this.interruptEnables & STATUS_DATA_INTERRUPT) !== 0 && this.dataRegisterFull());
   }
 
   reset() {
     this.response = [];
+    this.reportByte = null;
     this.modes = 0;
     this.configuration = new Uint8Array(3);
     this.ucMemory = new Uint8Array(256);

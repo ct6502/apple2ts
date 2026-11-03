@@ -137,8 +137,8 @@ msgctxt "machine.slotConfigurator"
 msgid "Expansion Slots"
 msgstr "Expansionskortplatser"
 
-msgctxt "machine.iigsDaDrawer"
-msgid "Desk Accessories (Closed Apple + Esc)"
+msgctxt "machine.iigsDeskPanel"
+msgid "Desk Accessories (Ctrl + Open Apple + Esc)"
 msgstr ""
 
 msgctxt "machine.models.apple2p"

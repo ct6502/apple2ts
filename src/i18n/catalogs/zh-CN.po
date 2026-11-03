@@ -149,9 +149,9 @@ msgctxt "machine.slotConfigurator"
 msgid "Expansion Slots"
 msgstr "扩展插槽"
 
-msgctxt "machine.iigsDaDrawer"
-msgid "Desk Accessories (Closed Apple + Esc)"
-msgstr "桌面配件（Closed Apple + Esc）"
+msgctxt "machine.iigsDeskPanel"
+msgid "Desk Accessories (Ctrl + Open Apple + Esc)"
+msgstr "桌面配件（Ctrl + Open Apple + Esc）"
 
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"

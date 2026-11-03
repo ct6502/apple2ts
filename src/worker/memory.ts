@@ -1234,11 +1234,13 @@ const memGetSoftSwitch = (addr: number): number => {
               return iigsADB.readModifiers();
 
           case 0xC027: // ADB Status
-              // Bit 5 = data available, Bit 2 = keyboard data. The controller
-              // finishes commands instantly, so it reports what is really
-              // pending. The firmware polls bit 5 before every read, and the
-              // OS waits for it during ADB init, so the ADB must produce
-              // responses to the init commands (writeCommand -> completeCommand).
+              // Bit 5 = the data register holds a byte, bit 3 = keyboard data is
+              // available, bits 6/4/2 are the mouse/data/keyboard interrupt
+              // enables (see iigs_adb.ts). The controller finishes commands
+              // instantly, so it reports what is really pending. The firmware
+              // polls bit 5 before every read, and the OS waits for it during ADB
+              // init, so the ADB must produce responses to the init commands
+              // (writeCommand -> completeCommand).
               return iigsADB.readStatus();
 
           case 0xC023: // VGC interrupt status

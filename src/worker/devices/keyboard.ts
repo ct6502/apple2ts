@@ -159,10 +159,11 @@ export const setKeyboardState = (state: KeyboardState) => {
     // one key and no modifier field. Keyboard auto-repeat is the guest OS's
     // job, so host repeats are not re-queued.
     const code = DOM_TO_ADB[state.domCode]
+    let swallowedByMicro = false
     if (code !== undefined) {
       if (state.isDown) {
         if (!state.repeat) {
-          iigsADB.queueKeyboard(code)
+          swallowedByMicro = iigsADB.queueKeyboard(code)
         }
       } else {
         // Every key-up reports its *own* keycode. Tracking only one "last down"
@@ -179,8 +180,10 @@ export const setKeyboardState = (state: KeyboardState) => {
     }
     // A pure modifier carries no Apple II ASCII ($C000 has nothing to strobe)
     // and must not touch the held key's any-key-down line either, so it ends
-    // here.
-    if (state.key < 0) {
+    // here. A key the micro swallowed to make its own report ends here too:
+    // on real hardware $C000 is fed from the ADB keyboard buffer, so a key the
+    // micro did not buffer never reaches the legacy latch.
+    if (state.key < 0 || swallowedByMicro) {
       return
     }
     // DELIBERATELY no early return for a real key: on IIgs hardware the
@@ -212,30 +215,25 @@ export const setKeyboardState = (state: KeyboardState) => {
   nextKeyboardRepeatTime = performance.now() + Apple2eRepeatDelayMs
 }
 
-// The Apple IIgs DA (Desk Accessories) drawer opens on Closed Apple + Escape.
-// A chord is not two events that happen to arrive together: the Command bit has
-// to still be in $C025 when the guest reads the Escape, and both the legacy key
-// latch and the ADB key register hold exactly one value, so the release waits
-// until the guest has taken the press - the closed loop sendKeySequence()
-// already runs for typed keys, with the modifier wrapped around it.
-export const openIigsDaDrawer = () => {
-  const command = DOM_TO_ADB.AltRight
+// The ROM's own Desk Accessories menu (Control Panel / Alternate Display Mode /
+// Visit Monitor / Memory Peeker / Quit) is not a key the guest can be handed:
+// the ADB micro intercepts Control + Open Apple + Escape and answers with a
+// data-register report, which is what wakes the desk manager. So this posts the
+// four ADB event bytes and nothing else - no legacy $C000 strobe, because the
+// micro never buffers the Escape and on real hardware $C000 comes out of that
+// buffer. It is available while the ROM owns the desk manager (the startup
+// screen and ProDOS 8); under GS/OS the report is delivered and ignored, exactly
+// as on the machine.
+export const openIigsRomDeskPanel = () => {
+  const control = DOM_TO_ADB.ControlLeft
+  const open = DOM_TO_ADB.AltLeft
   const escape = DOM_TO_ADB.Escape
-  if (isKeyboardInputBusy()) {
-    return Promise.resolve({
-      outcome: "input_busy",
-      keysDelivered: 0,
-      keyMayHaveBeenObserved: false,
-    } satisfies KeySequenceResult)
+  for (const code of [control, open, escape]) {
+    iigsADB.queueKeyboard(code)
   }
-  // Both ADB downs land before the legacy Escape is strobed, so the Command bit
-  // is already in $C025 when the guest reads the key.
-  iigsADB.queueKeyboard(command)
-  iigsADB.queueKeyboard(escape)
-  return sendKeySequence({ keys: "\x1b", timeoutMs: 2000 }, () => {
-    iigsADB.queueKeyboard(escape | 0x80)
-    iigsADB.queueKeyboard(command | 0x80)
-  })
+  for (const code of [escape, open, control]) {
+    iigsADB.queueKeyboard(code | 0x80)
+  }
 }
 
 export const pollKeyboardRepeat = () => {

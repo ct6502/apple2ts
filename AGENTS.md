@@ -196,6 +196,8 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
 | addr | behaviour |
 |---|---|
 | `$C000/$C010` | legacy keyboard data / any-key-down. Real hardware clears bit 7 of `$C000` on **any** `$C010` access. |
+| `$C026` | ADB micro data: write = command register, read = the micro's own report byte **first**, then the queued command response (KEGS `adb_read_c026` ADB_IDLE). |
+| `$C027` | ADB micro status. bit 7 mouse data, bit 5 data register full, bit 3 keyboard data, bit 1 next `$C024` read is Y; bits 6/4/2 are the mouse / data / keyboard interrupt enables and the only writable ones. **Bit 0 always reads 0** — the ROM's boot-time command loop (`FF:851E`) spins on it before writing the next argument byte, so publishing "the micro still wants arguments" there deadlocks the self-test into 「Fatal system error-> 0911」. gssquared never sets `command_register_full`; KEGS masks bit 0 out. ROM 01 writes `$10` here at `FF:F9E0` (the data-interrupt enable, which is how the desk manager is woken), GS/OS `$40` at `$C47C`. |
 | `$C02D` | `SLTROMSEL`, default `0b11110110` (slots 7,6,5,4,2,1 = card). Must track the configured cards. |
 | `$C02E/$C02F` | video counter. `$C02E = (vcounter >> 1) & 0xFF` (`$80-$DF` visible, `$E0-$FF` VBL, `$E8` = scanline 240); `$C02F = ((vcounter & 1) << 7) \| hcounter`, `hcounter` runs `$00` then `$40-$7F`. Tass Times spins at `$2F90` until `$C02E == $E8`. |
 | `$C029` | bit 7 SHR, bit 6 aux linearize, bit 5 mono |
@@ -410,36 +412,58 @@ test assert a chord the guest could never have been sent.
   the Finder **consumes `$C000`**, polls `$C025` ~1.1 times per frame, and **never
   polls ADB device 2**. So `$C000` carries the key and `$C025` carries the chord —
   neither pipeline is optional.
-- **Still unimplemented: the ROM Control Panel chord.** `Ctrl + Open Apple + Esc`
-  is not a guest-visible key — KEGS `adb.c:1687` and gssquared `ADB_Micro.hpp:1026`
-  (`desktop_manager_key_sequence`) intercept it in the micro, assert `$C025` bit 5
-  and raise the ADB **data-register interrupt** to wake the desk manager. Our ADB
-  micro has no such intercept, which is why the UI reaches the DA drawer with an
-  injected key chord instead of a button wired to the ROM panel. Measured attempt
-  (`drawer_*` runs, `C:\Users\USER\AppData\Local\Temp\opencode\`): the desk manager
-  is woken by a `$C027` **data-register** read, not by the keyboard poll — ROM 01
-  writes `$10` at `FF:F9E0` and GS/OS writes `$40` at `$C47C`, and realigning
-  `$C027` to carry that report breaks `gs_boot_order`, `gs_command_key` and
-  `gs_mouse_sync`. The same change also takes the no-disk IIgs boot to
-  「Fatal system error-> 0911」. That route is parked, not pending: the experiment
-  diff is at `Temp\opencode\adb_c027_experiment.diff.txt`.
+- **The ROM's Desk Accessories menu is the ADB micro's own report, not a key.**
+  `Ctrl + Open Apple + Esc` never reaches the guest as a keystroke: KEGS `adb.c:1687`
+  and gssquared `ADB_Micro.hpp:1026` (`desktop_manager_key_sequence`) intercept the
+  sequence *in the micro*, latch a data-register byte whose **bit 5** means "the
+  desk-manager key sequence", and raise the ADB **data-register interrupt** — which is
+  why ROM 01 writes `$10` to `$C027` at `FF:F9E0` during boot (that enable bit).
+  `queueKeyboard()` recognises the three-key form and returns `true`; the Escape is
+  **swallowed**, not buffered (both references take an `else if`), so it appears in no
+  ADB key register and, because `setKeyboardState()` honours the return value, in no
+  legacy `$C000` either — on real hardware `$C000` is fed from that register, so a key
+  the micro did not buffer cannot show up there. Reaching the report first needed the
+  `$C027` layout fixed (§3), and that is what the `0911` fatal error was: bit 0 is the
+  command-register-full flag the ROM's boot loop spins on, so it must stay clear.
+  - The menu belongs to the **ROM's** desk manager, so it is visible on the startup
+    screen and under ProDOS 8. Under booted GS/OS the report is delivered and consumed
+    with nothing drawn, which is authentic — GS/OS owns the desk manager there — so the
+    menu item is not a way to summon the drawer described below.
+  - UI: the machine menu's `machine.iigsDeskPanel` item posts
+    `MSG_MAIN.IIGS_DESK_PANEL` (`passIigsDeskPanel()`, fire-and-forget), and the worker
+    runs `openIigsRomDeskPanel()` while `RUN_MODE.RUNNING`. It injects ADB events only —
+    no `$C000`, no closed loop — because the micro answers the sequence itself.
+    `isVisible: machineName === "APPLE2GS"`, verified in the browser: it renders under
+    "機器配置" on the IIgs and is absent on the IIe.
+  - Regression: `gs_rom_desk_panel.test.ts` — the micro in isolation (report latched and
+    read back as `$20`, the interrupt raised and cleared, two-key forms left as ordinary
+    keys, report ahead of a queued command response, and `$C027` bit 0 clear while a
+    multi-argument command is still being framed), plus a no-disk ROM boot that first
+    asserts the boot *finished* (`Check startup device!`, no 「Fatal system error->
+    0911」) and then that its text page really shows
+    `Desk Accessories / Control Panel / Alternate Display Mode`.
+    Disabling the intercept turns 4 cases red and the boot stays at
+    `Check startup device!`; re-adding the bit-0 report turns 3 red, including the boot.
+  - **Verified in the real UI** (`Temp\opencode\gs_rom_desk_ui.cjs`,
+    `gs_rom_desk_chord.cjs`, no disk, fresh Chrome profile): clicking the machine-menu
+    item changes 90 canvas rows and draws the ROM menu, and pressing the physical chord
+    `Ctrl + Numpad0 (Open Apple) + Esc` changes 89 rows and draws the same screen —
+    title `Desk Accessories`, `Control Panel`, `Alternate Display Mode`, `Quit`, and the
+    `Select: ↓↑   Open: ↵` footer. The earlier browser failure was not the UI: the
+    no-disk boot itself had died at 「Fatal system error-> 0911」, so the click had no
+    desk manager to wake.
 
-**The DA (Desk Accessories) drawer** opens on Closed Apple + Escape
-(`openIigsDaDrawer()` in `devices/keyboard.ts`). A chord is not two events that
-happen to arrive together: the Command bit must already be in `$C025` when the
+**The GS/OS DA (Desk Accessories) drawer** opens on Closed Apple + Escape, which a
+user presses with the bindings above — there is no injected function for it, because
+the same closed loop that types a key (`sendKeySequence()`, waiting on the `$C010`
+strobe) is what a chord needs: the Command bit must already be in `$C025` when the
 guest reads the Escape, and both the legacy latch and the ADB key register hold
-one value, so the release waits for the guest to take the press. Queue the Command
-and Escape downs **before** `sendKeySequence()` (the closed loop that waits on the
-`$C010` strobe), and both ups in its `onFinish`. Putting the downs in `onConsumed`
-does not work: a one-key sequence calls `onConsumed` and then `finishKeySequence`
-in the same tick, so press and release land together and nothing is "held".
-`isKeyboardInputBusy()` short-circuits to `input_busy` rather than corrupting a
-sequence already in flight. UI: `MSG_MAIN.IIGS_DA_DRAWER` (appended to the enum)
-→ `requestIigsDaDrawer()`, gated on `RUN_MODE.RUNNING`, surfaced as the
-`machine.iigsDaDrawer` item in the machine menu — named "Desk Accessories" because
-apple2ts already has a *Control Panel* (its own settings). `isVisible: machineName
-=== "APPLE2GS"`, verified in the browser: it renders under "機器配置" on the IIgs and
-is absent on the IIe.
+exactly one value, so the release has to wait for the guest to take the press. The
+shape that works is (Command down) + (key in `$C000`) + (Command up), and putting the
+modifier downs in `onConsumed` does not: a one-key sequence calls `onConsumed` and
+then `finishKeySequence` in the same tick, so press and release land together and
+nothing is "held". `isKeyboardInputBusy()` short-circuits an injection that would
+corrupt a sequence already in flight.
 - Regression: `gs_command_key.test.ts` boots GS/OS on a real desktop and measures
   Super Hi-Res scanlines that actually change. `idle` 24 / bare `W` 32 / `⌘-W` 178
   rows in jest, and 0 / 281 rows in headless Chrome — the front window closes.
@@ -462,12 +486,13 @@ is absent on the IIe.
      our renderer never dropped it;
   3. gssquared and KEGS contain no "drawer" code at all, which is consistent —
      the hole is pure guest drawing.
-  So `⌘-Esc` is delivered and taken (`outcome: "completed"`, Command bit set then
-  cleared) but there is nothing on this media for it to open. *Why* the Finder
-  ends with an empty DA list after reading the DA files is an open guest-side
-  question, plausibly the same family as the QuickDraw II mask/transfer defects
-  (§11.5). Do not present the menu item as "opens the drawer"; the defensible
-  claim is that the guest takes the chord.
+  So `⌘-Esc` is delivered and taken (the Finder reads the Escape out of `$C000` while
+  the Command bit is still held in `$C025`) but there is nothing on this media for it
+  to open. *Why* the Finder ends with an empty DA list after reading the DA files is an
+  open guest-side question, plausibly the same family as the QuickDraw II mask/transfer
+  defects (§11.5). This is why the machine-menu item is labelled and wired for the
+  **ROM** menu above rather than the drawer: it is the DA screen that demonstrably
+  appears, and the drawer chord stays covered as a chord, not as a visible result.
 
 ### ADB micro-controller (`src/worker/iigs_adb.ts`)
 
@@ -558,11 +583,12 @@ register 0 byte 1:  bit7 = LEFT  button (1 = up) | bit6 = moved up    | bits5-0 
   generated with `npm run generate-i18n-catalogs`, so edit the catalogs, not
   those files.
 - Three different things are called a "control panel" here, and the naming is
-  load-bearing: apple2ts's own settings panel, the IIgs **ROM Control Panel**
-  (reached by `Ctrl + Open Apple + Esc`, which needs the unimplemented micro
-  intercept above), and the GS/OS **Desk Accessories drawer** (`Closed Apple +
-  Esc`) the menu item actually opens — hence `machine.iigsDaDrawer` says "Desk
-  Accessories", not "Control Panel".
+  load-bearing: apple2ts's own settings panel, the IIgs **ROM Control Panel**, which
+  is one item inside the **Desk Accessories** menu the ROM's desk manager draws on
+  `Ctrl + Open Apple + Esc` (the micro intercept above), and the GS/OS **Desk
+  Accessories drawer** (`Closed Apple + Esc`), which the Finder never draws on this
+  media (§11.13). Hence `machine.iigsDeskPanel` says "Desk Accessories", not
+  "Control Panel": the menu it opens contains the Control Panel.
 
 Cursor position depends on the ROM revision, and `getIigsMousePos()` branches on
 it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
@@ -1019,6 +1045,12 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
    `memSet24` follow gssquared `calc_aux_write`/`shadow_is_enabled` (§2).
    Regression: `gs_silky.test.ts` (Finder double-click into the port, then
    asserts >100 scanlines of SHR pixels and >5000 non-zero Mega II aux bytes).
+   **That test is currently red on the byte count** — 2874 non-zero, with SHR on and
+   100+ scanlines carrying pixels — measured identical at `HEAD` with this branch's
+   ADB work reverted, so the blit path still works but the title screen is sparser
+   than the assertion expects. Open: whether the port now draws less (a Finder
+   timing/double-click difference at the 2.8 MHz default) or the threshold was
+   calibrated on a luckier run.
 8. **freegemas.2mg mouse would not move — RESOLVED.** The game is a self-booting
    GS/OS match-3 port that keeps its own cursor: it reads `$C024` twice per
    frame (X then Y) from bank `$09` and accumulates the deltas itself, so the
@@ -1124,9 +1156,10 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     though every local volume ships a populated `System/Desk Accs` and the Finder
     reads those blocks at boot. Decoded from the guest's own SHR bytes, so this is
     **not** a render-side defect; the cause is the same QuickDraw II mask/transfer
-    family as §11.5. A button cannot substitute: the ROM Control Panel path needs
-    the unimplemented ADB-micro intercept, and the `$C027` realignment it requires
-    breaks three suites (§6).
+    family as §11.5. The machine-menu item therefore opens the **ROM's** Desk
+    Accessories menu instead (§6), which works; nothing here is waiting on the
+    ADB-micro intercept or the `$C027` realignment — both are in, and the earlier
+    `0911` fatal error they seemed to cause was our own bit-0 report (§3).
 
 ---
 
@@ -1165,6 +1198,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | GS/OS applications only ever see keys through ADB keyboard register 0, so the legacy `$C000` strobe is optional for them | Measured on GS/OS 6.0.1: the Finder consumes `$C000` and polls `$C025` every frame while **never** polling ADB device 2. The legacy register is the key's carrier and `$C025` the modifier's (§6) |
 | "IIgs chords can't be pressed" is a host-keyboard problem needing a UI button | The chord was unexpressible at three layers: host modifier presses stopped in `canvas.tsx` (`convertAppleKey` → `key: -1` early return), `AltRight` shared Open Apple's `$3A`, and `$C025` was never driven by any event. A button is only the last piece; without the first three, real keys could not form a chord either (§6) |
 | Clicking the DA drawer proves the drawer works | Nothing visibly opens, but **not** because the media lacks DAs. Every local GS volume has a populated `System/Desk Accs`, the Finder reads those blocks at boot, and the drawer hole is missing from the guest's *own* SHR bytes — so ⌘-Esc is taken with nothing to open (§6) |
+| Realigning `$C027` is impossible — it breaks the boot and three suites | The realignment is what the ROM asks for. The 「Fatal system error-> 0911」 was our own bit 0: the boot-time command loop at `FF:851E` spins on "command register full" until it reads 0 before writing the next argument, so reporting the awaiting-arguments state there starves the self-test. Both references leave bit 0 clear; with it clear the desk-manager report lands and every suite passes (§3, §6) |
+| The ROM's Desk Accessories menu is a key combination the guest can be handed | It is the **ADB micro's** own data-register report (bit 5) plus the data-register interrupt; the micro swallows the Escape, so no `$C000`/`$C025` chord — however correct — can raise it (§6) |
 | CDP-synthesised key events prove a chord is pressable | They bypass the OS. On Windows `Alt + Esc` is stolen (window cycling), so the physical `rAlt-Esc` a browser test "verified" cannot be typed; only the numpad bindings reach the page, and those were not driving `$C025` (§6) |
 | No local image has a `Desk Accs` folder | False — it came from scanning raw sectors for an ASCII needle. ProDOS stores names with bit-7 case flags, so nothing matched. Decoded directory blocks: GSOS601.po 4 entries, SystemDisk.2mg 1, MYCRATE.2MG 10, freegemas / AlterEgo 11 (§6) |
 | The missing menu-bar drawer hole is our renderer dropping it | Decoded from the guest's SHR buffer: the Finder wrote white there. gssquared and KEGS have no drawer code either — it is guest drawing (§6) |
@@ -1184,10 +1219,11 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 - `src/worker/motherboard.ts` — run loop, video clock, VBL, housekeeping, Ensoniq
   catch-up, speed modes, reset vs cold boot
 - `src/worker/iigs_adb.ts` — ADB micro + device model, report latching, buttons,
-  `$C025` modifiers driven from the event byte (§6)
+  `$C025` modifiers driven from the event byte, the desk-manager report and the
+  `$C027` bit layout (§3, §6)
 - `src/worker/devices/mouse.ts` — IIgs event routing, closed-loop cursor, click queue
 - `src/worker/devices/keyboard.ts` — legacy strobe + ADB, DOM→ADB table,
-  `openIigsDaDrawer()` (the Closed Apple + Escape chord, §6)
+  `openIigsRomDeskPanel()` (the `Ctrl + Open Apple + Esc` the machine menu sends, §6)
 - `src/ui/adbmodifiers.ts` — the single table of which host key carries which IIgs
   ADB modifier (Alt / Meta / numpad bindings, §6)
 - `src/worker/devices/iigs_ensoniq.ts` — DOC
@@ -1207,6 +1243,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `gs_ensoniq`, `gs_doc_clock`, `gs_tass`, `gs_tass_title_tempo`,
   `gs_tass_click_freeze`, `gs_textpage`, `gs_floppy_late`, `gs_ctrl_reset`,
   `gs_keyboard_adb`, `gs_mcs_nokey`, `gs_silky`, `gs_freegemas`,
+  `gs_rom_desk_panel` (the ADB micro's desk-manager report: `$C027` bit 0 stays clear,
+  the no-disk boot finishes its ADB self-test, and the ROM's `Desk Accessories` menu
+  really reaches the text page, §6),
   `gs_command_key` (IIgs key chords on a booted GS/OS desktop: the `$C025`
   modifier byte, Open/Closed Apple as distinct keys, per-code key-up, and the
   ⌘-W window close measured as changed scanlines, §6),
@@ -1231,5 +1270,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `adbmodifiers` (which host key carries which IIgs Apple-key role — Alt / Meta /
   numpad bindings, so a Windows user can actually press a chord, §6)
 
-The only known pre-existing failure is `vera.test.ts` (CMDR-DOS), which also
-fails on a clean tree.
+Known failures that are not this branch's last change: `vera.test.ts` (CMDR-DOS,
+fails on a clean tree too), and `gs_silky.test.ts`, whose SHR byte count is 2874
+against a `> 5000` assertion. The latter was measured identical at `HEAD` with the
+ADB work reverted, so it is a pre-existing coverage regression, not a desk-panel
+one: SHR mode is on and more than 100 scanlines carry bytes, but the title screen
+is far sparser than when the test was written (§11.7).

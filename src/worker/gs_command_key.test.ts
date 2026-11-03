@@ -12,18 +12,18 @@
 // consumes the legacy $C000 strobe and polls $C025 about once per frame, so the
 // chord is (Command down) + (ASCII key in $C000) + (Command up).
 //
-// The DA drawer itself cannot be shown: none of the available images ships a
-// Desk Accs folder, so the drawer has nothing to pull out. What is provable is
-// that the guest *takes* the Closed Apple + Escape chord - the closed-loop
-// sequence completes, which only happens once the Finder has read and cleared
-// the Escape while the Command bit was still held.
+// What is provable here is that the guest *takes* a Closed Apple chord: the
+// Finder reads the key out of $C000 while the Command bit is still held in
+// $C025. The drawer itself draws nothing on the local volumes (agents.md §11.13)
+// and the menu that does open is the ROM's, reached by a different sequence -
+// see gs_rom_desk_panel.test.ts.
 
 import { doSetMachineName, doSetRunMode, resetCpuSpeedForTesting } from "./motherboard"
-import { getShr } from "./memory"
+import { getShr, memGetC000 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
-import { isKeyboardInputBusy, openIigsDaDrawer, setKeyboardState } from "./devices/keyboard"
+import { setKeyboardState } from "./devices/keyboard"
 import { iigsADB } from "./iigs_adb"
 import * as fs from "fs"
 
@@ -126,19 +126,25 @@ test("GS/OS is up on the Super Hi-Res desktop", () => {
   expect(iigsADB.peekModifiers() & MOD_CLOSED).toBe(0)
 })
 
-test("the guest takes the DA drawer chord while Command is held", async () => {
-  const pending = openIigsDaDrawer()
+test("the guest takes the DA drawer chord while Command is held", () => {
+  // Same shape as the ⌘-W case below but through the $C000 latch, because that
+  // is how the Finder reads a chord: Command in $C025 plus the key in $C000, and
+  // the release only after the guest has taken the press.
+  closedAppleDown()
   expect(iigsADB.peekModifiers() & MOD_CLOSED).toBe(MOD_CLOSED)
+  keyDown("Escape", 27)
   let frames = 0
-  while (isKeyboardInputBusy() && frames < 600) {
+  while (memGetC000(0xC000) >= 0x80 && frames < 600) {
     pump(1)
     frames++
-    // Let the promise the run loop resolves reach the microtask queue.
-    await Promise.resolve()
   }
-  const result = await pending
-  console.log(`[DA] outcome=${result.outcome} after ${frames} frames`)
-  expect(result.outcome).toBe("completed")
+  console.log(`[DA] Escape consumed after ${frames} frames`)
+  expect(frames).toBeLessThan(600)
+  // The Command bit is still held while the Finder reads the Escape: that
+  // coincidence is the chord, and it is what an un-driven $C025 could not make.
+  expect(iigsADB.peekModifiers() & MOD_CLOSED).toBe(MOD_CLOSED)
+  keyUp("Escape", 27)
+  closedAppleUp()
   expect(iigsADB.peekModifiers() & MOD_CLOSED).toBe(0)
 })
 

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGear } from "@fortawesome/free-solid-svg-icons"
-import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, requestIigsDaDrawer } from "../main2worker"
+import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, passIigsDeskPanel } from "../main2worker"
 import {
   getPreferenceIigsRomVersion,
   setPreferenceIigsRomVersion,
@@ -312,13 +312,13 @@ export const MachineConfig = (props: DisplayProps) => {
           )),
           { label: "-" },
           {
-            // GS/OS opens the Desk Accessories drawer on Closed Apple + Escape.
-            // A host keyboard has no Closed Apple key and a chord lives in the
-            // $C025 modifier byte rather than in any single key event, so this
-            // asks the worker to inject the whole press-and-release sequence.
-            label: t("machine.iigsDaDrawer"),
+            // The ROM's Desk Accessories menu opens on Control + Open Apple +
+            // Escape, and the ADB micro-controller eats that chord rather than
+            // passing the Escape to the guest. No host keypress can carry a
+            // three-key chord, so this asks the worker to inject the sequence.
+            label: t("machine.iigsDeskPanel"),
             isVisible: () => machineName === "APPLE2GS",
-            onClick: () => { void requestIigsDaDrawer() },
+            onClick: () => { passIigsDeskPanel() },
           },
           { label: "-" },
           { label: t("retroControl.builtinImageWriter"),
