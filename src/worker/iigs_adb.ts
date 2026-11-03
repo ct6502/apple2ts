@@ -49,11 +49,27 @@ const STATUS_INTERRUPT_ENABLES = 0x48;   // bits 6 and 3 are writable
 // First byte of every $C026 response.
 const RESPONSE_HEADER = 0x80;
 
-// $C025 modifiers
+// $C025 modifiers. Layout from KEGS adb.c:153-157 and gssquared's
+// adb_mod_key_t (ADB_Keyboard.hpp:6): bit0 shift, bit1 control, bit2 caps lock,
+// bit3 auto-repeat, bit4 keypad, bit5 the "modifiers updated" latch, bit6 Option
+// (= Open Apple), bit7 Command (= Closed Apple). Only the bits an event byte
+// drives are named here.
 const MOD_SHIFT = 0x01;
-const MOD_OPTION = 0x02;
-const MOD_CONTROL = 0x04;
+const MOD_CONTROL = 0x02;
+const MOD_CAPS = 0x04;
 const MOD_LATCH = 0x20;
+const MOD_OPEN = 0x40;
+const MOD_CLOSED = 0x80;
+
+// The ADB keycodes that are modifier keys, and the $C025 bit each reports. An
+// event byte with bit 7 set releases the bit again.
+const MODIFIER_KEY_BITS: Record<number, number> = {
+  0x36: MOD_CONTROL,
+  0x37: MOD_CLOSED,
+  0x38: MOD_SHIFT,
+  0x39: MOD_CAPS,
+  0x3a: MOD_OPEN,
+}
 
 const ADDR_KEYBOARD = 0x02;
 const ADDR_MOUSE = 0x03;
@@ -587,20 +603,28 @@ export class IIGSADB {
     return this.keyboardRegs[0] !== 0xff || this.keyboardRegs[1] !== 0xff;
   }
 
-  // Queue a raw ADB keyboard event byte plus the modifier byte into keyboard
-  // register 0. The event byte's bit 7 is the KEY-UP flag per the Apple IIgs
+  // Queue one ADB keyboard event byte into register 0, with the live modifier
+  // byte beside it. The event byte's bit 7 is the KEY-UP flag per the Apple IIgs
   // Hardware Reference and gssquared (ADB_Keyboard.hpp:477:
   // code = (up ? 0x80 : 0x00) | keycode) — the opposite of the Apple IIe
   // convention where bit 7 marks a key press. $C027's keyboard-data status bit
   // and the keyboard interrupt enable read hasKeyData(), so a queued byte
   // becomes visible to the ROM's ADB task and to programs that poll the ADB.
-  private queueKeyboardEventByte(eventByte: number, mods = 0) {
+  //
+  // A modifier keycode does more than report itself: it drives $C025. That byte
+  // is the only place a key *chord* exists - an event byte carries one key and
+  // has no modifier field - so while $C025 stays 0, Closed Apple + Escape is
+  // indistinguishable from a bare Escape and no key equivalent (the DA drawer
+  // among them) can ever fire.
+  queueKeyboard(eventByte: number) {
+    const bit = MODIFIER_KEY_BITS[eventByte & 0x7f];
+    if (bit !== undefined) {
+      this.modifiers = eventByte & 0x80
+        ? this.modifiers & ~bit
+        : this.modifiers | bit | MOD_LATCH;
+    }
     this.keyboardRegs[0] = eventByte & 0xff;
-    this.keyboardRegs[1] = mods;
-  }
-
-  queueKeyboard(eventByte: number, mods = this.peekModifiers()) {
-    this.queueKeyboardEventByte(eventByte, mods);
+    this.keyboardRegs[1] = this.modifiers;
   }
 
   // Read-back for tests/diagnostics: the last queued ADB keyboard report.
@@ -616,13 +640,6 @@ export class IIGSADB {
 
   peekModifiers(): number {
     return this.modifiers;
-  }
-
-  setModifiers(v: number) {
-    this.modifiers = v;
-    if (v & (MOD_SHIFT | MOD_OPTION | MOD_CONTROL)) {
-      this.modifiers |= MOD_LATCH;
-    }
   }
 
   interruptPending(): boolean {

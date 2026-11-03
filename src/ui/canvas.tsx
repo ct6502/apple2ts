@@ -5,6 +5,7 @@ import {
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
   passGoBackInTime,
   passGoForwardInTime,
+  passAdbModifierKey,
   passMouseEvent,
   passPasteText,
   handleGetShowAppleMouse,
@@ -42,6 +43,13 @@ let recallIndex = 99
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>  | KeyboardEvent<HTMLBodyElement> | KeyboardEvent<HTMLButtonElement>
 type ArrowKeyCode = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown" | "Numpad4" | "Numpad6" | "Numpad8" | "Numpad2"
 let mainCanvas: HTMLCanvasElement | null = null
+
+// DOM codes of the momentary ADB modifier keys, in the worker's DOM_TO_ADB
+// spelling: Alt is the two Apple keys (left = Option/Open, right =
+// Command/Closed), and Control and Shift are the other two $C025 bits.
+const ADB_MODIFIER_DOM_CODES = [
+  "AltLeft", "AltRight", "ControlLeft", "ControlRight", "ShiftLeft", "ShiftRight",
+]
 
 const Apple2Canvas = (props: DisplayProps) => {
   // const { updateHgr: updateHgr, setUpdateHgr: setUpdateHgr,
@@ -286,6 +294,30 @@ const Apple2Canvas = (props: DisplayProps) => {
     return false
   }
 
+  // The IIgs keyboard is an ADB device, and a key *chord* exists only in its
+  // $C025 modifier byte. Host modifier presses convert to key -1 (no Apple II
+  // ASCII), so they used to stop here and no IIgs chord could ever be formed.
+  // Send them as ADB-only events, outside the single-key hardwareKeyboardKey
+  // tracker, so a modifier neither claims nor cancels the key under it. Caps
+  // lock is a hardware toggle and Meta's key-up is unreliable in a browser, so
+  // both stay out.
+  const adbModifiersDown = useRef<string[]>([])
+
+  const sendAdbModifier = (e: keyEvent, isDown: boolean) => {
+    if (e.repeat) return
+    if (!ADB_MODIFIER_DOM_CODES.includes(e.code)) return
+    adbModifiersDown.current = adbModifiersDown.current.filter((code) => code !== e.code)
+    if (isDown) adbModifiersDown.current.push(e.code)
+    passAdbModifierKey(e.code, isDown)
+  }
+
+  const releaseAdbModifiers = () => {
+    for (const code of adbModifiersDown.current) {
+      passAdbModifierKey(code, false)
+    }
+    adbModifiersDown.current = []
+  }
+
   const handleKeyDown = (e: keyEvent) => {
     // Let the browser copy the user's own selection instead of the Apple II screen.
     // Returning without preventDefault leaves the native clipboard behaviour intact;
@@ -308,6 +340,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (isClosedAppleDown(e)) {
       passAppleCommandKeyPress(false)
     }
+    sendAdbModifier(e, true)
     const isNumpadFireButton = e.code === "Numpad0" || e.code === "Numpad5" || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
     if (getArrowKeysAsJoystick() && isNumpadFireButton) {
       e.preventDefault()
@@ -443,6 +476,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
     }
+    sendAdbModifier(e, false)
     const isNumpadFireButton = e.code === "Numpad0" || e.code === "Numpad5" || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
     if (getArrowKeysAsJoystick() && isNumpadFireButton) {
       e.preventDefault()
@@ -470,6 +504,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     stopHardwareKeyboard()
     passAppleCommandKeyRelease(true)
     passAppleCommandKeyRelease(false)
+    releaseAdbModifiers()
     passKeyRelease()
   }
 

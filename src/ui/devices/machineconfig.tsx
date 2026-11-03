@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGear } from "@fortawesome/free-solid-svg-icons"
-import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../main2worker"
+import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, requestIigsDaDrawer } from "../main2worker"
 import {
   getPreferenceIigsRomVersion,
   setPreferenceIigsRomVersion,
@@ -310,6 +310,16 @@ export const MachineConfig = (props: DisplayProps) => {
               ] : undefined,
             }
           )),
+          { label: "-" },
+          {
+            // GS/OS opens the Desk Accessories drawer on Closed Apple + Escape.
+            // A host keyboard has no Closed Apple key and a chord lives in the
+            // $C025 modifier byte rather than in any single key event, so this
+            // asks the worker to inject the whole press-and-release sequence.
+            label: t("machine.iigsDaDrawer"),
+            isVisible: () => machineName === "APPLE2GS",
+            onClick: () => { void requestIigsDaDrawer() },
+          },
           { label: "-" },
           { label: t("retroControl.builtinImageWriter"),
             isSelected: () => getSerialMode() === 0,

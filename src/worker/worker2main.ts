@@ -26,7 +26,7 @@ import { doSetRunMode, doSetSpeedMode,
   doSetAutoSnapshot,
   getIigsVblCount} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
-import { apple2KeyRelease, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
+import { apple2KeyRelease, openIigsDaDrawer, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import {
   hasConditionalInputSequence,
   requestConditionalInputTermination,
@@ -314,6 +314,24 @@ if (typeof self !== "undefined") {
           break
         }
         void sendKeySequence(e.data.payload as KeySequenceRequest).then(
+          (result) => passWorkerOperationResult(e.data.operationId, undefined, result),
+          (error) => passWorkerOperationResult(
+            e.data.operationId,
+            error instanceof Error ? error.message : String(error),
+          ),
+        )
+        break
+      case MSG_MAIN.IIGS_DA_DRAWER:
+        if (e.data.operationId === undefined) break
+        if (getCpuRunMode() !== RUN_MODE.RUNNING) {
+          passWorkerOperationResult(e.data.operationId, undefined, {
+            outcome: "not_running",
+            keysDelivered: 0,
+            keyMayHaveBeenObserved: false,
+          })
+          break
+        }
+        void openIigsDaDrawer().then(
           (result) => passWorkerOperationResult(e.data.operationId, undefined, result),
           (error) => passWorkerOperationResult(
             e.data.operationId,

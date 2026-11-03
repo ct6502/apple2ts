@@ -1,6 +1,6 @@
 import "./keyboardcontrol.css"
 import { useState } from "react"
-import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passKeyRelease, passPasteText } from "../main2worker"
+import { passAdbModifierKey, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passKeyRelease, passPasteText } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faKeyboard } from "@fortawesome/free-solid-svg-icons"
 import { getLowercaseMode, isMinimalTheme } from "../ui_settings"
@@ -83,9 +83,11 @@ export const KeyboardControl = () => {
           break
         case KEY.OPEN_APPLE:
           passAppleCommandKeyPress(true)
+          passAdbModifierKey("AltLeft", true)
           break
         case KEY.CLOSED_APPLE:
           passAppleCommandKeyPress(false)
+          passAdbModifierKey("AltRight", true)
           break
         case KEY.SYMBOLS:
           setSymbolMode((symbolMode === MODE.LETTER) ? MODE.SYMBOL : MODE.LETTER)
@@ -144,9 +146,11 @@ export const KeyboardControl = () => {
           break
         case KEY.OPEN_APPLE:
           passAppleCommandKeyRelease(true)
+          passAdbModifierKey("AltLeft", false)
           break
         case KEY.CLOSED_APPLE:
           passAppleCommandKeyRelease(false)
+          passAdbModifierKey("AltRight", false)
           break
       }
     } else {

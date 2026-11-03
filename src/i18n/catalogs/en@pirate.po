@@ -137,6 +137,10 @@ msgctxt "machine.slotConfigurator"
 msgid "Expansion Slots"
 msgstr "Cargo Holds"
 
+msgctxt "machine.iigsDaDrawer"
+msgid "Desk Accessories (Closed Apple + Esc)"
+msgstr ""
+
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
 msgstr "Apple II+ (Ol' Reliable)"

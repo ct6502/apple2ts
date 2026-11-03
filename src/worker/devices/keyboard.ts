@@ -127,6 +127,11 @@ export const advanceKeySequence = () => {
 // from gssquared's ADB_Keyboard.hpp (the gold standard), standard subsets
 // first: letters, digits, punctuation, navigation and modifiers. Modifier
 // codes sit in the $36-$3A block; ADB marks modifier events in the event byte.
+// The two Apple keys are distinct ADB keys: Open Apple is Option ($3A) and
+// Closed Apple is Command ($37). Left/right mirrors that, because every host
+// binding in canvas.tsx treats the left key as Open and the right as Closed;
+// mapping both Alt keys to $3A made Closed Apple + Escape a bare Escape and
+// Open Apple + Escape a Command, so no IIgs key chord could be pressed.
 const DOM_TO_ADB: Record<string, number> = {
   KeyA: 0x00, KeyS: 0x01, KeyD: 0x02, KeyF: 0x03, KeyH: 0x04, KeyG: 0x05,
   KeyZ: 0x06, KeyX: 0x07, KeyC: 0x08, KeyV: 0x09, KeyB: 0x0B,
@@ -138,49 +143,55 @@ const DOM_TO_ADB: Record<string, number> = {
   KeyL: 0x25, KeyJ: 0x26, Quote: 0x27, KeyK: 0x28, Semicolon: 0x29,
   Backslash: 0x2A, Comma: 0x2B, Slash: 0x2C, KeyN: 0x2D, KeyM: 0x2E,
   Period: 0x2F, Tab: 0x30, Space: 0x31, Backquote: 0x32, Backspace: 0x33,
-  Escape: 0x35, ControlLeft: 0x36, ControlRight: 0x36, MetaLeft: 0x37,
+  Escape: 0x35, ControlLeft: 0x36, ControlRight: 0x36, MetaLeft: 0x3A,
   MetaRight: 0x37, ShiftLeft: 0x38, ShiftRight: 0x38, CapsLock: 0x39,
-  AltLeft: 0x3A, AltRight: 0x3A, ArrowLeft: 0x3B, ArrowRight: 0x3C,
+  AltLeft: 0x3A, AltRight: 0x37, ArrowLeft: 0x3B, ArrowRight: 0x3C,
   ArrowDown: 0x3D, ArrowUp: 0x3E,
 }
-
-let adbKeyDownCode = -1
 
 export const setKeyboardState = (state: KeyboardState) => {
   interruptKeySequence()
   if (getCurrentMachineName() === "APPLE2GS" && state.domCode) {
-    // The IIgs's physical keyboard is ADB device address 2. Programs that do
-    // not poll the legacy $C000 softswitch (GS/OS applications) only ever see
-    // keys through ADB keyboard register 0, so hardware keys must be delivered
-    // there. Event bytes follow the ADB convention: the keycode for a key
-    // down, keycode | 0x80 for a key up (see iigs_adb.ts). Keyboard auto-repeat
-    // is the guest OS's job, so host repeats are not re-queued.
+    // The IIgs's physical keyboard is ADB device address 2, and every event
+    // byte goes there: the keycode for a key down, keycode | 0x80 for a key up
+    // (see iigs_adb.ts). queueKeyboard() also drives $C025 from a modifier
+    // keycode, and that byte is where a *chord* lives - an event byte carries
+    // one key and no modifier field. Keyboard auto-repeat is the guest OS's
+    // job, so host repeats are not re-queued.
     const code = DOM_TO_ADB[state.domCode]
     if (code !== undefined) {
       if (state.isDown) {
         if (!state.repeat) {
           iigsADB.queueKeyboard(code)
-          adbKeyDownCode = code
         }
-      } else if (adbKeyDownCode >= 0) {
-        iigsADB.queueKeyboard(adbKeyDownCode | 0x80)
-        adbKeyDownCode = -1
       } else {
-        // Up for a key whose down was missed (focus loss): still deliver it,
-        // so a stuck key does not survive a window switch.
+        // Every key-up reports its *own* keycode. Tracking only one "last down"
+        // code broke chords: hold Closed Apple, press Escape, then let go of the
+        // Apple key first, and the release was delivered as *Escape* going up,
+        // leaving the Command bit stuck in $C025. An up for a key whose down was
+        // never seen (focus loss, a browser that swallows key-up) still goes out,
+        // so a stuck key cannot survive a window switch.
         iigsADB.queueKeyboard(code | 0x80)
       }
     }
     if (state.saveSnapShot) {
       requestSnapshot()
     }
-    // DELIBERATELY no early return: on real IIgs hardware the physical
-    // keyboard also drives the Mega II's legacy keyboard register ($C000 /
-    // $C010 AKD/strobe), which is run in parallel with the ADB micro. ProDOS-8
-    // era software like Tass Times reads the legacy register in its game loop
-    // and never touches the ADB, so the early return that shipped with the
-    // ADB delivery left it with no keys at all. Fall through to the legacy
-    // path below instead.
+    // A pure modifier carries no Apple II ASCII ($C000 has nothing to strobe)
+    // and must not touch the held key's any-key-down line either, so it ends
+    // here.
+    if (state.key < 0) {
+      return
+    }
+    // DELIBERATELY no early return for a real key: on IIgs hardware the
+    // physical keyboard also drives the Mega II's legacy keyboard register
+    // ($C000 / $C010 AKD/strobe), which runs in parallel with the ADB micro.
+    // Measured on GS/OS 6.0.1 the Finder consumes $C000 and polls $C025 every
+    // frame while never polling ADB device 2, so the legacy register is the
+    // key's carrier and $C025 the modifier's. ProDOS-8-era software such as
+    // Tass Times reads the legacy register in its game loop and never touches
+    // the ADB at all; the early return that shipped with ADB delivery left it
+    // with no keys. Fall through to the legacy path below instead.
   }
   if (!state.isDown || state.key < 0) {
     keyboardIsDown = false
@@ -199,6 +210,32 @@ export const setKeyboardState = (state: KeyboardState) => {
     return
   }
   nextKeyboardRepeatTime = performance.now() + Apple2eRepeatDelayMs
+}
+
+// The Apple IIgs DA (Desk Accessories) drawer opens on Closed Apple + Escape.
+// A chord is not two events that happen to arrive together: the Command bit has
+// to still be in $C025 when the guest reads the Escape, and both the legacy key
+// latch and the ADB key register hold exactly one value, so the release waits
+// until the guest has taken the press - the closed loop sendKeySequence()
+// already runs for typed keys, with the modifier wrapped around it.
+export const openIigsDaDrawer = () => {
+  const command = DOM_TO_ADB.AltRight
+  const escape = DOM_TO_ADB.Escape
+  if (isKeyboardInputBusy()) {
+    return Promise.resolve({
+      outcome: "input_busy",
+      keysDelivered: 0,
+      keyMayHaveBeenObserved: false,
+    } satisfies KeySequenceResult)
+  }
+  // Both ADB downs land before the legacy Escape is strobed, so the Command bit
+  // is already in $C025 when the guest reads the key.
+  iigsADB.queueKeyboard(command)
+  iigsADB.queueKeyboard(escape)
+  return sendKeySequence({ keys: "\x1b", timeoutMs: 2000 }, () => {
+    iigsADB.queueKeyboard(escape | 0x80)
+    iigsADB.queueKeyboard(command | 0x80)
+  })
 }
 
 export const pollKeyboardRepeat = () => {

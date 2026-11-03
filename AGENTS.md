@@ -340,14 +340,94 @@ Rules that are easy to get wrong:
 ### Keyboard
 
 The IIgs's keyboard is ADB device 2 **and** drives the legacy `$C000`/`$C010`
-register in parallel (both pipelines get every key). `setKeyboardState()` must
-therefore queue the ADB event **and fall through** to `setKeyStrobe`; the early
-return that shipped with ADB delivery left ProDOS-8-era software (Tass Times)
-with no keys at all. ADB event bytes: keycode on down, `code | 0x80` on **up**
-(the opposite of the IIe convention); host auto-repeat is not re-queued.
+register in parallel (every key with an Apple II ASCII value goes to both).
+`setKeyboardState()` must therefore queue the ADB event **and fall through** to
+`setKeyStrobe`; the early return that shipped with ADB delivery left ProDOS-8-era
+software (Tass Times) with no keys at all. ADB event bytes: keycode on down,
+`code | 0x80` on **up** (the opposite of the IIe convention); host auto-repeat is
+not re-queued. The momentary modifier keys are the exception — see below.
 
 `handleKeyMapping()` is the identity unless a game matches, so `"\n"` arrives as
 10, not RETURN — the Apple II RETURN is `0x0D`.
+
+**Key chords live in `$C025`, nowhere else** (`src/worker/iigs_adb.ts`). An ADB
+event byte carries exactly one keycode and has no modifier field, so while `$C025`
+reads 0 a chord is physically unexpressible: Closed Apple + Escape arrives as a
+bare Escape and Open Apple + Escape as a Command. Layout (KEGS `adb.c:153-157`,
+gssquared `adb_mod_key_t` in `ADB_Keyboard.hpp:6`): bit0 shift, bit1 control,
+bit2 caps lock, bit3 auto-repeat, bit4 keypad, bit5 "modifiers updated" latch,
+bit6 Option = **Open Apple**, bit7 Command = **Closed Apple**. `queueKeyboard()`
+derives the byte from the event: `MODIFIER_KEY_BITS` maps the `$36-$3A` modifier
+keycodes to their bit, a down (`bit7` clear) sets it plus `MOD_LATCH`, and the
+same keycode with `bit7` set clears it. `readModifiers()` drops the latch after a
+read; the bits stay. The old `setModifiers()` is gone and had no callers: modifier
+state is a consequence of the event stream, so a side-channel setter would let a
+test assert a chord the guest could never have been sent.
+
+- **The two Apple keys are different ADB keys.** Open Apple is Option `$3A`,
+  Closed Apple is Command `$37`. `DOM_TO_ADB` used to map `AltLeft` *and*
+  `AltRight` to `$3A`, so the right Alt — every host binding's Closed Apple —
+  reported Option, and no chord could be formed. `MetaLeft` follows the same
+  split (`$3A` / `$37`) because hosts map Option/Command onto the Meta pair too.
+- **A key-up reports its own keycode.** The old single `adbKeyDownCode` tracker
+  held one key: hold Closed Apple, press Escape, release the Apple key first, and
+  the release went out as *Escape* going up, leaving Command stuck in `$C025`
+  forever. An up whose down was never seen still goes out, so a stuck key cannot
+  survive a focus loss.
+- **A pure modifier does not touch the legacy strobe.** `convertAppleKey()`
+  answers `-1` for modifier keys, so `state.key < 0` returns after the ADB queue;
+  falling through would have cleared the any-key-down line of the key actually
+  being held under the chord. A real key still **deliberately** falls through.
+- **The host has to send them at all.** `canvas.tsx` `sendAdbModifier()` forwards
+  `AltLeft/AltRight/ControlLeft/ControlRight/ShiftLeft/ShiftRight` keydown and
+  keyup through `passAdbModifierKey()`, outside the single-key
+  `hardwareKeyboardKey` tracker; `releaseAdbModifiers()` (in
+  `releaseBlurredModifierState()`) releases whatever was still held. Caps lock is
+  a hardware toggle and a browser's Meta key-up is unreliable, so both stay out.
+  The `passAdbModifierKey` gate returns early on a non-IIgs machine: a `key: -1`
+  event there would cancel the held key's AKD strobe for nothing.
+- **The on-screen Apple keys take the same path.** `keyboardcontrol.tsx` pairs
+  `OPEN_APPLE`/`CLOSED_APPLE` with `passAdbModifierKey("AltLeft"|"AltRight")` on
+  both press and release, so a click drives `$C025` like a real key. Shift and
+  Control on that panel are latching toggles, not momentary presses, and are
+  intentionally not mapped.
+- **Measured against GS/OS 6.0.1**, which is what made this worth documenting:
+  the Finder **consumes `$C000`**, polls `$C025` ~1.1 times per frame, and **never
+  polls ADB device 2**. So `$C000` carries the key and `$C025` carries the chord —
+  neither pipeline is optional.
+- **Still unimplemented: the ROM Control Panel chord.** `Ctrl + Open Apple + Esc`
+  is not a guest-visible key — KEGS `adb.c:1687` and gssquared `ADB_Micro.hpp:1026`
+  (`desktop_manager_key_sequence`) intercept it in the micro, assert `$C025` bit 5
+  and raise the ADB **data-register interrupt** to wake the desk manager. Our ADB
+  micro has no such intercept, which is why the UI reaches the DA drawer with an
+  injected key chord instead of a button wired to the ROM panel.
+
+**The DA (Desk Accessories) drawer** opens on Closed Apple + Escape
+(`openIigsDaDrawer()` in `devices/keyboard.ts`). A chord is not two events that
+happen to arrive together: the Command bit must already be in `$C025` when the
+guest reads the Escape, and both the legacy latch and the ADB key register hold
+one value, so the release waits for the guest to take the press. Queue the Command
+and Escape downs **before** `sendKeySequence()` (the closed loop that waits on the
+`$C010` strobe), and both ups in its `onFinish`. Putting the downs in `onConsumed`
+does not work: a one-key sequence calls `onConsumed` and then `finishKeySequence`
+in the same tick, so press and release land together and nothing is "held".
+`isKeyboardInputBusy()` short-circuits to `input_busy` rather than corrupting a
+sequence already in flight. UI: `MSG_MAIN.IIGS_DA_DRAWER` (appended to the enum)
+→ `requestIigsDaDrawer()`, gated on `RUN_MODE.RUNNING`, surfaced as the
+`machine.iigsDaDrawer` item in the machine menu — named "Desk Accessories" because
+apple2ts already has a *Control Panel* (its own settings). `isVisible: machineName
+=== "APPLE2GS"`, verified in the browser: it renders under "機器配置" on the IIgs and
+is absent on the IIe.
+- Regression: `gs_command_key.test.ts` boots GS/OS on a real desktop and measures
+  Super Hi-Res scanlines that actually change. `idle` 24 / bare `W` 32 / `⌘-W` 178
+  rows in jest, and 0 / 281 rows in headless Chrome — the front window closes.
+  Driving no `$C025` turns 6 cases red; re-merging `AltRight` onto `$3A` turns 3.
+  **The drawer's contents cannot be demonstrated with local media**: no image here
+  has a `Desk Accs` folder (GSOS601.po none; MYCRATE.2MG's `NIFTYLIST.CDA` does not
+  respond; freegemas / AlterEgo ship only `SNOOPER.CDA`), and clicking the menu-bar
+  drawer hole does nothing either. The provable claim is therefore that the guest
+  *takes* the chord (`outcome: "completed"`, Command bit set then cleared), not
+  that a drawer appears.
 
 ### ADB micro-controller (`src/worker/iigs_adb.ts`)
 
@@ -437,6 +517,12 @@ register 0 byte 1:  bit7 = LEFT  button (1 = up) | bit6 = moved up    | bits5-0 
   carry the same msgctxt or `--require-merged` fails); `languages/*.ts` are
   generated with `npm run generate-i18n-catalogs`, so edit the catalogs, not
   those files.
+- Three different things are called a "control panel" here, and the naming is
+  load-bearing: apple2ts's own settings panel, the IIgs **ROM Control Panel**
+  (reached by `Ctrl + Open Apple + Esc`, which needs the unimplemented micro
+  intercept above), and the GS/OS **Desk Accessories drawer** (`Closed Apple +
+  Esc`) the menu item actually opens — hence `machine.iigsDaDrawer` says "Desk
+  Accessories", not "Control Panel".
 
 Cursor position depends on the ROM revision, and `getIigsMousePos()` branches on
 it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
@@ -768,6 +854,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\diskserver.cjs` | static server on :6503 for `c:\dev\emu\ap2`, CORS open |
 | `...\Temp\opencode\gs_deep_link.cjs` | fresh-profile deep-link check: `node gs_deep_link.cjs <waitS> <disk> <driveIdx> [rom] [port]` launches headless Chrome with an empty profile (so the browser really runs the `SLOT_CONFIG -> MACHINE_NAME -> mount -> NEED_BOOT` order), boots the link and prints canvas colour stats + a PNG. Pass `?romtrace=1` in its URL so `__romTracePeek([0x00FC1234,...])` can prove which ROM banks are mapped |
 | `...\Temp\opencode\mckey.cjs`, `mcpeek.cjs`, `mc1.cjs` | MCS key injection / memory peeking over CDP |
+| `...\Temp\opencode\gs_chord_ui.cjs`, `gs_menu_visibility.cjs` | real-UI key-chord check: `node gs_chord_ui.cjs [waitS] [port]` boots GS/OS on a fresh profile and compares canvas **scanline row-sums** around raw host keys, so `bare W changed rows: 0` vs `Closed-Apple + W changed rows: 281` is the observed evidence (§6); the visibility variant takes a `[machine]` argument and stops before the keystrokes, which is how the IIgs-only menu item was confirmed absent on the IIe. Select menu entries by `/機器配置\|machine configuration/i` title text — headless Chrome renders the UI in the user's language, and the `basic-button` id is reused by several components |
 | `?romtrace=1` | PC histogram + `window.__romTrace`, `__romTracePeek(addrs)` reads guest memory (peekPc/peekCode/peekZp) |
 | `?iwmgaps=1` | IWM read-cadence stats on `window.__iwmStats` |
 | `?adbtrace=1` | ADB log ring on `window.__adbLog` (pc-stamped) |
@@ -1025,6 +1112,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | AlterEgo's `Sorry, system error $0201 ... LoadDump.DA` means a bad image or an AlterEgo-only problem | Same bank-straddle class as MYCRATE, different GS/OS build and loader: with a 16-unit card its record list sat at `$7E:FFF8` (`$01:D724`, DP `$9900`) and the 11-byte read wrapped to `$7E:0000`. The 32-unit card moves it clear; gsplus and gssquared never showed it because neither leaves the buffer at that boundary (§7, §11.11) |
 | gssquared's disassembler calls `$87`/`$97` EOR/ADC, so our core is wrong | That is the *trace disassembly* table's label; every gssquared core executes `STA [$nn]` / `STA [$nn],Y` there, as we do (`src/worker/cpu65816.ts:368`). The write data is A's own low/high bytes |
 | ACS Musique option 2's `BRK` on ROM 03 means our `$E10000` dispatcher or stack is wrong | The dispatcher is fine (the frame and both table pointers were measured correct). The guest hardcodes ROM 01's tool-set table address `$FE:012F` in three player overlays; ROM 03's 10-byte-longer prologue moved it to `$FE:0139`, so ACS publishes the dispatcher's error epilogue as its table and the ROM's own tool call fails. It plays on ROM 01, and on ROM 03 once those three `LDA $FE012F,X` bytes are retargeted (§7) |
+| GS/OS applications only ever see keys through ADB keyboard register 0, so the legacy `$C000` strobe is optional for them | Measured on GS/OS 6.0.1: the Finder consumes `$C000` and polls `$C025` every frame while **never** polling ADB device 2. The legacy register is the key's carrier and `$C025` the modifier's (§6) |
+| "IIgs chords can't be pressed" is a host-keyboard problem needing a UI button | The chord was unexpressible at three layers: host modifier presses stopped in `canvas.tsx` (`convertAppleKey` → `key: -1` early return), `AltRight` shared Open Apple's `$3A`, and `$C025` was never driven by any event. A button is only the last piece; without the first three, real keys could not form a chord either (§6) |
+| Clicking the DA drawer proves the drawer works | No local image has a `Desk Accs` folder, so nothing visibly opens — on IIgs with a mounted DA-less volume the correct assertion is that the guest *took* the chord. A 0-row screen change after the click is the expected result, not a failure (§6) |
 
 ---
 
@@ -1040,9 +1130,11 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   (banks `$FC-$FF`); `src/worker/roms/rom_gs_system.ts` is ROM 01 (banks `$FE-$FF`)
 - `src/worker/motherboard.ts` — run loop, video clock, VBL, housekeeping, Ensoniq
   catch-up, speed modes, reset vs cold boot
-- `src/worker/iigs_adb.ts` — ADB micro + device model, report latching, buttons
+- `src/worker/iigs_adb.ts` — ADB micro + device model, report latching, buttons,
+  `$C025` modifiers driven from the event byte (§6)
 - `src/worker/devices/mouse.ts` — IIgs event routing, closed-loop cursor, click queue
-- `src/worker/devices/keyboard.ts` — legacy strobe + ADB, DOM→ADB table
+- `src/worker/devices/keyboard.ts` — legacy strobe + ADB, DOM→ADB table,
+  `openIigsDaDrawer()` (the Closed Apple + Escape chord, §6)
 - `src/worker/devices/iigs_ensoniq.ts` — DOC
 - `src/worker/devices/diskdata.ts`, `drivestate.ts`, `decodedisk.ts`,
   `harddrivedata.ts` — IWM, drives, 2MG/PO/WOZ, SmartPort
@@ -1060,6 +1152,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `gs_ensoniq`, `gs_doc_clock`, `gs_tass`, `gs_tass_title_tempo`,
   `gs_tass_click_freeze`, `gs_textpage`, `gs_floppy_late`, `gs_ctrl_reset`,
   `gs_keyboard_adb`, `gs_mcs_nokey`, `gs_silky`, `gs_freegemas`,
+  `gs_command_key` (IIgs key chords on a booted GS/OS desktop: the `$C025`
+  modifier byte, Open/Closed Apple as distinct keys, per-code key-up, and the
+  ⌘-W window close measured as changed scanlines, §6),
   `gs_floppy35` / `gs_floppy35_boot` (3.5" read, write, zone layout),
   `gs_speed`, `gs_speed_default` (IIgs 2.8 MHz default, §8), `gs_boot`,
   `gs_hdd_boot`, `gs_slots_mockingboard`, `gs_boot_order` (browser message order

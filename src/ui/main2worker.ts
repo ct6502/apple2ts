@@ -204,6 +204,16 @@ export const passKeyboardState = (payload: KeyboardState) => {
   doPostMessage(MSG_MAIN.KEYBOARD_STATE, payload)
 }
 
+// One Apple IIgs modifier press or release. A modifier carries no Apple II
+// ASCII, so it goes over the same channel with key -1 and the worker delivers it
+// as an ADB event byte that drives $C025 - the only place a key chord exists.
+// Only the IIgs has an ADB keyboard; on a classic machine a key -1 event would
+// clear the held key's any-key-down strobe, so the chord path stays closed.
+export const passAdbModifierKey = (domCode: string, isDown: boolean) => {
+  if (handleGetMachineName() !== "APPLE2GS") return
+  passKeyboardState({ key: -1, isDown, domCode, repeat: false })
+}
+
 export const requestKeyboardState = (payload: KeyboardState, timeoutMs = 5000) => {
   return requestWorkerOperation(MSG_MAIN.KEYBOARD_STATE, payload, timeoutMs)
 }
@@ -220,6 +230,12 @@ export const requestKeySequence = (payload: KeySequenceRequest) => {
     timeoutMs + 1000,
   )
 }
+
+// Open the Apple IIgs Desk Accessories drawer. The worker injects the whole
+// Closed Apple + Escape chord, because a chord lives in $C025 and no single host
+// keypress can carry it.
+export const requestIigsDaDrawer = () =>
+  requestWorkerOperation<KeySequenceResult>(MSG_MAIN.IIGS_DA_DRAWER, {}, 3000)
 
 export const requestConditionalKeySequence = (payload: ConditionalKeySequenceRequest) => {
   const timeoutMs = Number.isFinite(payload.timeoutMs)
