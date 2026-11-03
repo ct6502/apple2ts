@@ -379,13 +379,28 @@ test assert a chord the guest could never have been sent.
   falling through would have cleared the any-key-down line of the key actually
   being held under the chord. A real key still **deliberately** falls through.
 - **The host has to send them at all.** `canvas.tsx` `sendAdbModifier()` forwards
-  `AltLeft/AltRight/ControlLeft/ControlRight/ShiftLeft/ShiftRight` keydown and
-  keyup through `passAdbModifierKey()`, outside the single-key
-  `hardwareKeyboardKey` tracker; `releaseAdbModifiers()` (in
-  `releaseBlurredModifierState()`) releases whatever was still held. Caps lock is
-  a hardware toggle and a browser's Meta key-up is unreliable, so both stay out.
-  The `passAdbModifierKey` gate returns early on a non-IIgs machine: a `key: -1`
-  event there would cancel the held key's AKD strobe for nothing.
+  whatever `adbModifierRole()` recognises keydown and keyup through
+  `passAdbModifierKey()`, outside the single-key `hardwareKeyboardKey` tracker;
+  `releaseAdbModifiers()` (in `releaseBlurredModifierState()`) releases whatever
+  was still held — now a per-`code` list, so holding both Alts and releasing one
+  cannot drop the other. Caps lock is a hardware toggle and a browser's Meta
+  key-up is unreliable, so both stay out. The `passAdbModifierKey` gate returns
+  early on a non-IIgs machine: a `key: -1` event there would cancel the held
+  key's AKD strobe for nothing.
+- **"Which host key is an Apple key" lives in `src/ui/adbmodifiers.ts`**, and the
+  full binding set — not just `AltLeft`/`AltRight` — must drive `$C025`. On
+  Windows `Alt + Esc` is stolen by the OS (it cycles windows), so the physical
+  `rAlt-Esc` chord a browser test had been "proving" is **unpressable**; only the
+  numpad bindings reach the page. `isOpenAppleCode`/`isClosedAppleCode` therefore
+  accept `Numpad0`/`Numpad5` and `NumpadDecimal`/`NumpadEnter` alongside the Alt
+  and Meta pairs, and `canvas.tsx`'s four hand-rolled `isOpenAppleDown/Up`,
+  `isClosedAppleDown/Up` predicates are deleted in favour of that one table, so
+  the ADB path and the legacy `OPEN_APPLE`/`CLOSED_APPLE` paths cannot drift apart
+  again. `handleKeyDown` also had to call `sendAdbModifier` **before** the
+  numpad-fire and Alt-`preventDefault` early returns, or a recognised binding
+  set `$C025` for the key it suppressed. Regression: `adbmodifiers.test.ts` (every
+  binding resolves to its role; `Meta` only with `useOpenAppleKey`; plain keys
+  return `null`) — removing the numpad clauses turns it red.
 - **The on-screen Apple keys take the same path.** `keyboardcontrol.tsx` pairs
   `OPEN_APPLE`/`CLOSED_APPLE` with `passAdbModifierKey("AltLeft"|"AltRight")` on
   both press and release, so a click drives `$C025` like a real key. Shift and
@@ -400,7 +415,14 @@ test assert a chord the guest could never have been sent.
   (`desktop_manager_key_sequence`) intercept it in the micro, assert `$C025` bit 5
   and raise the ADB **data-register interrupt** to wake the desk manager. Our ADB
   micro has no such intercept, which is why the UI reaches the DA drawer with an
-  injected key chord instead of a button wired to the ROM panel.
+  injected key chord instead of a button wired to the ROM panel. Measured attempt
+  (`drawer_*` runs, `C:\Users\USER\AppData\Local\Temp\opencode\`): the desk manager
+  is woken by a `$C027` **data-register** read, not by the keyboard poll — ROM 01
+  writes `$10` at `FF:F9E0` and GS/OS writes `$40` at `$C47C`, and realigning
+  `$C027` to carry that report breaks `gs_boot_order`, `gs_command_key` and
+  `gs_mouse_sync`. The same change also takes the no-disk IIgs boot to
+  「Fatal system error-> 0911」. That route is parked, not pending: the experiment
+  diff is at `Temp\opencode\adb_c027_experiment.diff.txt`.
 
 **The DA (Desk Accessories) drawer** opens on Closed Apple + Escape
 (`openIigsDaDrawer()` in `devices/keyboard.ts`). A chord is not two events that
@@ -422,12 +444,30 @@ is absent on the IIe.
   Super Hi-Res scanlines that actually change. `idle` 24 / bare `W` 32 / `⌘-W` 178
   rows in jest, and 0 / 281 rows in headless Chrome — the front window closes.
   Driving no `$C025` turns 6 cases red; re-merging `AltRight` onto `$3A` turns 3.
-  **The drawer's contents cannot be demonstrated with local media**: no image here
-  has a `Desk Accs` folder (GSOS601.po none; MYCRATE.2MG's `NIFTYLIST.CDA` does not
-  respond; freegemas / AlterEgo ship only `SNOOPER.CDA`), and clicking the menu-bar
-  drawer hole does nothing either. The provable claim is therefore that the guest
-  *takes* the chord (`outcome: "completed"`, Command bit set then cleared), not
-  that a drawer appears.
+- **The drawer itself does not open, and it is not our rendering.** An earlier
+  note here claimed no local image has a `Desk Accs` folder. That was a bad
+  needle-scan of raw sectors and it is **false** — decoded with
+  `Temp\opencode\prodos_dir_entries.cjs`, every GS volume here ships a *populated*
+  one: GSOS601.po blk 771 (`controlpanel`, `zipda`, `chronosiiv2.0`, `mr.apple`),
+  SystemDisk.2mg blk 543 (`controlpanel`), MYCRATE.2MG blk 585 (10 entries incl.
+  `calculator`, `mediacontrol`, `niftylist.cda`), freegemas / AlterEgo blk 1437
+  (11 entries). Three measurements then localised the fault:
+  1. the Finder's boot-time DA scan **does** read that media — a SmartPort
+     ReadBlock probe on MYCRATE logged block 585, then 586-619 (the whole
+     ControlPanel file) and 11540 (NIFTYLIST.CDA);
+  2. the menu-bar drawer hole is absent in the **guest's own** Super Hi-Res
+     bytes: decoding the top 12 SHR lines of a booted GSOS601 desktop gives the
+     clock glyphs at x 276-311 and white pixels at x 312-318 on lines 1-9
+     (column 319 is the black screen border), i.e. the Finder never drew it, and
+     our renderer never dropped it;
+  3. gssquared and KEGS contain no "drawer" code at all, which is consistent —
+     the hole is pure guest drawing.
+  So `⌘-Esc` is delivered and taken (`outcome: "completed"`, Command bit set then
+  cleared) but there is nothing on this media for it to open. *Why* the Finder
+  ends with an empty DA list after reading the DA files is an open guest-side
+  question, plausibly the same family as the QuickDraw II mask/transfer defects
+  (§11.5). Do not present the menu item as "opens the drawer"; the defensible
+  claim is that the guest takes the chord.
 
 ### ADB micro-controller (`src/worker/iigs_adb.ts`)
 
@@ -854,6 +894,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\diskserver.cjs` | static server on :6503 for `c:\dev\emu\ap2`, CORS open |
 | `...\Temp\opencode\gs_deep_link.cjs` | fresh-profile deep-link check: `node gs_deep_link.cjs <waitS> <disk> <driveIdx> [rom] [port]` launches headless Chrome with an empty profile (so the browser really runs the `SLOT_CONFIG -> MACHINE_NAME -> mount -> NEED_BOOT` order), boots the link and prints canvas colour stats + a PNG. Pass `?romtrace=1` in its URL so `__romTracePeek([0x00FC1234,...])` can prove which ROM banks are mapped |
 | `...\Temp\opencode\mckey.cjs`, `mcpeek.cjs`, `mc1.cjs` | MCS key injection / memory peeking over CDP |
+| `...\Temp\opencode\prodos_names.cjs`, `prodos_dir_entries.cjs` | read-only ProDOS volume decoder: `node prodos_names.cjs <image> [filter]` walks the volume directory tree, `node prodos_dir_entries.cjs <image> <dirBlock>` dumps one block. **A directory *header* block keeps its own record at offset 4 and its children from 43 onward; a storage block packs from 0** — dumping a header block from 0 gives garbage. Verified entry offsets: byte 0 `(storageType<<4)\|nameLength`, name 15 B at +1, **file type +16, first block +17/+18, blocks used +19/+20, EOF 3 B at +21**. The textbook 17/18-19/36-37 offsets are wrong and produced `eof=12124162`. Ground truth: SystemDisk.2mg `start.gs.os` 13/27/13169 |
+| `...\Temp\opencode\gs_da_drawer2.cjs` | real-UI DA drawer check: `node gs_da_drawer2.cjs <image> [waitS] [port] [driveIdx]` boots the volume on a fresh profile, clicks the machine-menu item, then sends the raw `rAlt`+`Esc` chord, saving `drawer_<TAG>_<n>.png` and printing per-step changed-row counts. The crop must start at the first **bright** canvas row: the IIgs black border puts the screen top at row 40 of the 818x511 canvas, so a strip taken from row 0 is blank |
 | `...\Temp\opencode\gs_chord_ui.cjs`, `gs_menu_visibility.cjs` | real-UI key-chord check: `node gs_chord_ui.cjs [waitS] [port]` boots GS/OS on a fresh profile and compares canvas **scanline row-sums** around raw host keys, so `bare W changed rows: 0` vs `Closed-Apple + W changed rows: 281` is the observed evidence (§6); the visibility variant takes a `[machine]` argument and stops before the keystrokes, which is how the IIgs-only menu item was confirmed absent on the IIe. Select menu entries by `/機器配置\|machine configuration/i` title text — headless Chrome renders the UI in the user's language, and the `basic-button` id is reused by several components |
 | `?romtrace=1` | PC histogram + `window.__romTrace`, `__romTracePeek(addrs)` reads guest memory (peekPc/peekCode/peekZp) |
 | `?iwmgaps=1` | IWM read-cadence stats on `window.__iwmStats` |
@@ -1077,6 +1119,14 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     per-block resample restart in the UI transport (§5), measured on real Tass
     Times title audio at 2.32x the signal's own sample-to-sample slope every
     16.7 ms. Needs the user's ear on the MYCRATE menu itself.
+13. **GS/OS DA drawer never opens — guest-side, open.** `⌘-Esc` reaches `$C025` and
+    the Finder takes the chord, but the menu-bar drawer hole is never drawn, even
+    though every local volume ships a populated `System/Desk Accs` and the Finder
+    reads those blocks at boot. Decoded from the guest's own SHR bytes, so this is
+    **not** a render-side defect; the cause is the same QuickDraw II mask/transfer
+    family as §11.5. A button cannot substitute: the ROM Control Panel path needs
+    the unimplemented ADB-micro intercept, and the `$C027` realignment it requires
+    breaks three suites (§6).
 
 ---
 
@@ -1114,7 +1164,10 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | ACS Musique option 2's `BRK` on ROM 03 means our `$E10000` dispatcher or stack is wrong | The dispatcher is fine (the frame and both table pointers were measured correct). The guest hardcodes ROM 01's tool-set table address `$FE:012F` in three player overlays; ROM 03's 10-byte-longer prologue moved it to `$FE:0139`, so ACS publishes the dispatcher's error epilogue as its table and the ROM's own tool call fails. It plays on ROM 01, and on ROM 03 once those three `LDA $FE012F,X` bytes are retargeted (§7) |
 | GS/OS applications only ever see keys through ADB keyboard register 0, so the legacy `$C000` strobe is optional for them | Measured on GS/OS 6.0.1: the Finder consumes `$C000` and polls `$C025` every frame while **never** polling ADB device 2. The legacy register is the key's carrier and `$C025` the modifier's (§6) |
 | "IIgs chords can't be pressed" is a host-keyboard problem needing a UI button | The chord was unexpressible at three layers: host modifier presses stopped in `canvas.tsx` (`convertAppleKey` → `key: -1` early return), `AltRight` shared Open Apple's `$3A`, and `$C025` was never driven by any event. A button is only the last piece; without the first three, real keys could not form a chord either (§6) |
-| Clicking the DA drawer proves the drawer works | No local image has a `Desk Accs` folder, so nothing visibly opens — on IIgs with a mounted DA-less volume the correct assertion is that the guest *took* the chord. A 0-row screen change after the click is the expected result, not a failure (§6) |
+| Clicking the DA drawer proves the drawer works | Nothing visibly opens, but **not** because the media lacks DAs. Every local GS volume has a populated `System/Desk Accs`, the Finder reads those blocks at boot, and the drawer hole is missing from the guest's *own* SHR bytes — so ⌘-Esc is taken with nothing to open (§6) |
+| CDP-synthesised key events prove a chord is pressable | They bypass the OS. On Windows `Alt + Esc` is stolen (window cycling), so the physical `rAlt-Esc` a browser test "verified" cannot be typed; only the numpad bindings reach the page, and those were not driving `$C025` (§6) |
+| No local image has a `Desk Accs` folder | False — it came from scanning raw sectors for an ASCII needle. ProDOS stores names with bit-7 case flags, so nothing matched. Decoded directory blocks: GSOS601.po 4 entries, SystemDisk.2mg 1, MYCRATE.2MG 10, freegemas / AlterEgo 11 (§6) |
+| The missing menu-bar drawer hole is our renderer dropping it | Decoded from the guest's SHR buffer: the Finder wrote white there. gssquared and KEGS have no drawer code either — it is guest drawing (§6) |
 
 ---
 
@@ -1135,6 +1188,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 - `src/worker/devices/mouse.ts` — IIgs event routing, closed-loop cursor, click queue
 - `src/worker/devices/keyboard.ts` — legacy strobe + ADB, DOM→ADB table,
   `openIigsDaDrawer()` (the Closed Apple + Escape chord, §6)
+- `src/ui/adbmodifiers.ts` — the single table of which host key carries which IIgs
+  ADB modifier (Alt / Meta / numpad bindings, §6)
 - `src/worker/devices/iigs_ensoniq.ts` — DOC
 - `src/worker/devices/diskdata.ts`, `drivestate.ts`, `decodedisk.ts`,
   `harddrivedata.ts` — IWM, drives, 2MG/PO/WOZ, SmartPort
@@ -1172,7 +1227,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   SmartPort capacity), `gs_alterego` (AlterEgo.2mg boots to its SHR title screen
   under ROM 03 with no `$0201`/`LoadDump.DA` alert),
   `ensoniq_resample` (carried resampler continuity, length and buffer rate),
-  `memory_label` (footer RAM readout: IIgs 8 MB vs. classic aux-card totals, §9)
+  `memory_label` (footer RAM readout: IIgs 8 MB vs. classic aux-card totals, §9),
+  `adbmodifiers` (which host key carries which IIgs Apple-key role — Alt / Meta /
+  numpad bindings, so a Windows user can actually press a chord, §6)
 
 The only known pre-existing failure is `vera.test.ts` (CMDR-DOS), which also
 fails on a clean tree.

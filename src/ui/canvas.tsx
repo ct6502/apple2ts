@@ -27,6 +27,7 @@ import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
 import { getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, getTheme, getArrowKeysAsJoystick, isEmbedMode, getUIStateBoolean } from "./ui_settings"
 import { KeyboardControl } from "./controls/keyboardcontrol"
+import { OPEN_APPLE, CLOSED_APPLE, adbModifierRole, isOpenAppleCode, isClosedAppleCode } from "./adbmodifiers"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
 import { toggleScanlines } from "./ui_utilities"
@@ -43,13 +44,6 @@ let recallIndex = 99
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>  | KeyboardEvent<HTMLBodyElement> | KeyboardEvent<HTMLButtonElement>
 type ArrowKeyCode = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown" | "Numpad4" | "Numpad6" | "Numpad8" | "Numpad2"
 let mainCanvas: HTMLCanvasElement | null = null
-
-// DOM codes of the momentary ADB modifier keys, in the worker's DOM_TO_ADB
-// spelling: Alt is the two Apple keys (left = Option/Open, right =
-// Command/Closed), and Control and Shift are the other two $C025 bits.
-const ADB_MODIFIER_DOM_CODES = [
-  "AltLeft", "AltRight", "ControlLeft", "ControlRight", "ShiftLeft", "ShiftRight",
-]
 
 const Apple2Canvas = (props: DisplayProps) => {
   // const { updateHgr: updateHgr, setUpdateHgr: setUpdateHgr,
@@ -211,25 +205,13 @@ const Apple2Canvas = (props: DisplayProps) => {
   const isCopyShortcut = (e: keyEvent) =>
     e.key.toLowerCase() === "c" && (isMac ? e.metaKey : e.ctrlKey)
 
-  const isOpenAppleDown = (e: keyEvent) => {
-    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
-    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft") || e.code === "Numpad0" || e.code === "Numpad5"
-  }
+  // Open/Closed Apple are whichever host keys this app binds to them, and the
+  // same keys mean the same thing on a press and a release.
+  const isOpenApple = (e: keyEvent) =>
+    isOpenAppleCode(e.code, getUIStateBoolean("useOpenAppleKey"))
 
-  const isOpenAppleUp = (e: keyEvent) => {
-    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
-    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft") || e.code === "Numpad0" || e.code === "Numpad5"
-  }
-
-  const isClosedAppleDown = (e: keyEvent) => {
-    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
-    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight") || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
-  }
-
-  const isClosedAppleUp = (e: keyEvent) => {
-    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
-    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight") || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
-  }
+  const isClosedApple = (e: keyEvent) =>
+    isClosedAppleCode(e.code, getUIStateBoolean("useOpenAppleKey"))
 
   const isMetaSequence = (e: keyEvent): boolean => {
     if (e.shiftKey) {
@@ -298,22 +280,27 @@ const Apple2Canvas = (props: DisplayProps) => {
   // $C025 modifier byte. Host modifier presses convert to key -1 (no Apple II
   // ASCII), so they used to stop here and no IIgs chord could ever be formed.
   // Send them as ADB-only events, outside the single-key hardwareKeyboardKey
-  // tracker, so a modifier neither claims nor cancels the key under it. Caps
-  // lock is a hardware toggle and Meta's key-up is unreliable in a browser, so
-  // both stay out.
-  const adbModifiersDown = useRef<string[]>([])
+  // tracker, so a modifier neither claims nor cancels the key under it.
+  const adbModifiersDown = useRef<Array<{ code: string, role: string }>>([])
 
+  // The Apple keys are whichever host key this app binds as Open/Closed Apple,
+  // not Alt alone: Windows takes Alt+Esc for its own window switcher, so the
+  // numpad and Meta bindings have to carry a chord too. Caps lock stays out — it
+  // is a hardware toggle and a browser reports its key-up inconsistently.
   const sendAdbModifier = (e: keyEvent, isDown: boolean) => {
     if (e.repeat) return
-    if (!ADB_MODIFIER_DOM_CODES.includes(e.code)) return
-    adbModifiersDown.current = adbModifiersDown.current.filter((code) => code !== e.code)
-    if (isDown) adbModifiersDown.current.push(e.code)
-    passAdbModifierKey(e.code, isDown)
+    const role = adbModifierRole(e.code, getUIStateBoolean("useOpenAppleKey"))
+    if (!role) return
+    // Track the physical key but report the role, so a release always clears the
+    // bit its own press set even when two host keys share a binding.
+    adbModifiersDown.current = adbModifiersDown.current.filter((held) => held.code !== e.code)
+    if (isDown) adbModifiersDown.current.push({ code: e.code, role })
+    passAdbModifierKey(role, isDown)
   }
 
   const releaseAdbModifiers = () => {
-    for (const code of adbModifiersDown.current) {
-      passAdbModifierKey(code, false)
+    for (const held of adbModifiersDown.current) {
+      passAdbModifierKey(held.role, false)
     }
     adbModifiersDown.current = []
   }
@@ -333,11 +320,11 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
 
     let keyHandledLocal = false
-    const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
-    if (isOpenAppleDown(e)) {
+    const isBrowserAltKey = e.code === OPEN_APPLE || e.code === CLOSED_APPLE
+    if (isOpenApple(e)) {
       passAppleCommandKeyPress(true)
     }
-    if (isClosedAppleDown(e)) {
+    if (isClosedApple(e)) {
       passAppleCommandKeyPress(false)
     }
     sendAdbModifier(e, true)
@@ -467,13 +454,13 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleKeyUp = (e: keyEvent) => {
-    const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
+    const isBrowserAltKey = e.code === OPEN_APPLE || e.code === CLOSED_APPLE
     stopHardwareKeyboard(e.code)
     const arrowKey = getArrowKeyName(e)
-    if (isOpenAppleUp(e)) {
+    if (isOpenApple(e)) {
       passAppleCommandKeyRelease(true)
     }
-    if (isClosedAppleUp(e)) {
+    if (isClosedApple(e)) {
       passAppleCommandKeyRelease(false)
     }
     sendAdbModifier(e, false)
