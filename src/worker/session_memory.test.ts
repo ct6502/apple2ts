@@ -1,6 +1,6 @@
 import { RamWorksMemoryStart, RUN_MODE } from "../common/utility"
 import { compareExternalSessionMemory, createExternalSessionSnapshot, doSetMachineName, doSetRunMode, getExternalMachineState } from "./motherboard"
-import { getApple2State, setApple2State } from "./save_restore"
+import { getApple2State, restoreApple2State } from "./save_restore_worker"
 import { getAuxCardEnabled, memory, memSet, setAuxCardEnabled, setRamWorks } from "./memory"
 import { s6502 } from "./instructions"
 import { SWITCHES } from "./softswitches"
@@ -21,7 +21,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  setApple2State(previous, 2, false)
+  restoreApple2State(previous, 2, false)
   setAuxCardEnabled(previousAux)
   doSetRunMode(previousRunMode, false)
 })

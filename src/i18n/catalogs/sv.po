@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
 "PO-Revision-Date: 2026-10-22 11:51+0000\n"
-"Last-Translator: bittin1ddc447d824349b2 "
-"<bittin1ddc447d824349b2@users.noreply.hosted.weblate.org>\n"
+"Last-Translator: bittin1ddc447d824349b2 <bittin1ddc447d824349b2@users."
+"noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/apple2ts/browser-"
 "emulator/sv/>\n"
 "Language: sv\n"
@@ -81,21 +81,35 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "Tema"
 
+msgctxt "config.graphics"
+msgid "Graphics"
+msgstr ""
+
 msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
 msgstr "Kontrollpanel"
 
+#, fuzzy
+#| msgid "Reset All Settings"
 msgctxt "config.resetSettings"
-msgid "Reset All Settings"
+msgid "Reset Settings"
 msgstr "Återställ alla inställningar"
 
+#, fuzzy
+#| msgid ""
+#| "Are you sure you want to reset all settings? This will not erase your "
+#| "breakpoints or BASIC program."
 msgctxt "config.resetSettingsText"
 msgid ""
-"Are you sure you want to reset all settings? This will not erase your "
-"breakpoints or BASIC program."
+"Are you sure you want to reset emulator settings? This will not erase your "
+"breakpoints, save states, or BASIC program."
 msgstr ""
 "Är du säker på att du vill återställa alla inställningar? Detta raderar inte "
 "dina brytpunkter eller ditt BASIC-program."
+
+msgctxt "config.resetSavedState"
+msgid "Reset Saved State"
+msgstr ""
 
 msgctxt "config.capsLock"
 msgid "Caps Lock"
@@ -125,12 +139,24 @@ msgctxt "config.crtDistortion"
 msgid "CRT Distortion"
 msgstr "CRT-förvrängning"
 
+#, fuzzy
+#| msgid "Keyboard and Joystick Settings"
 msgctxt "config.joystick"
-msgid "Keyboard and Joystick Settings"
+msgid "Keyboard and Joystick"
 msgstr "Tangentbord och styrspakskonfiguration"
 
+msgctxt "config.saveState"
+msgid "Saved States"
+msgstr ""
+
+msgctxt "config.autoSaveState"
+msgid "Automatically Save and Restore State"
+msgstr ""
+
+#, fuzzy
+#| msgid "Machine Configuration"
 msgctxt "machine.configuration"
-msgid "Machine Configuration"
+msgid "Machine"
 msgstr "Maskinkonfiguration"
 
 msgctxt "machine.slotConfigurator"
@@ -999,10 +1025,6 @@ msgctxt "tour.back"
 msgid "Back"
 msgstr "Tillbaka"
 
-msgctxt "tour.close"
-msgid "Close"
-msgstr "Stäng"
-
 msgctxt "tour.last"
 msgid "Finish"
 msgstr "Slutför"
@@ -1014,10 +1036,6 @@ msgstr "Nästa"
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
 msgstr "Nästa (steg {step} av {steps})"
-
-msgctxt "tour.skip"
-msgid "Close"
-msgstr "Stäng"
 
 msgctxt "tour.guidedTour"
 msgid "Tours"
@@ -2047,10 +2065,6 @@ msgctxt "saveDisassembly.separatorLines"
 msgid "Separator lines after JMP, RTS"
 msgstr "Skiljelinjer efter JMP, RTS"
 
-msgctxt "gamepad.useArrowKeys"
-msgid "Use Arrow Keys as Joystick"
-msgstr "Använd piltangenter som styrspak"
-
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Sirius Joyport-läge"
@@ -2118,6 +2132,10 @@ msgstr "Maskin:"
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
 msgstr "Färgläge:"
+
+msgctxt "linkBuilder.monitorMode"
+msgid "Monitor mode:"
+msgstr ""
 
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb):"
@@ -2203,11 +2221,11 @@ msgctxt "linkBuilder.tryIt"
 msgid "Try It"
 msgstr "Prova"
 
-msgctxt "linkBuilder.reset"
+msgctxt "dialog.reset"
 msgid "Reset"
 msgstr "Återställ"
 
-msgctxt "linkBuilder.close"
+msgctxt "dialog.close"
 msgid "Close"
 msgstr "Stäng"
 
@@ -2278,18 +2296,6 @@ msgstr "4 MHz"
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Ludicrous"
 msgstr "Löjlig"
-
-msgctxt "linkBuilder.machines.enhanced"
-msgid "Apple IIe enhanced"
-msgstr "Apple IIe utökad"
-
-msgctxt "linkBuilder.machines.unenhanced"
-msgid "Apple IIe unenhanced"
-msgstr "Apple IIe utan utökning"
-
-msgctxt "linkBuilder.machines.apple2p"
-msgid "Apple II+"
-msgstr "Apple II+"
 
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"

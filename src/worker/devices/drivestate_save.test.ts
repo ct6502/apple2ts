@@ -2,7 +2,7 @@ import { Buffer } from "buffer"
 import { convertdsk2woz } from "../../common/convertdsk2woz"
 import { doSetEmuDriveNewData, getCurrentDriveData, getCurrentDriveState, getDriveSaveState,
   getHardDriveData, getHardDriveState, restoreDriveSaveState } from "./drivestate"
-import { doGetSaveState, doRestoreSaveState } from "../save_restore"
+import { doGetSaveState, doRestoreSaveState } from "../save_restore_worker"
 import { setIsTesting } from "../worker2main"
 import * as workerMessages from "../worker2main"
 

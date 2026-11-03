@@ -1,16 +1,19 @@
-import { useEffect, useRef, useState } from "react"
+import { JSX, useEffect, useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCaretRight } from "@fortawesome/free-solid-svg-icons"
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
 type PopupMenuProps = {
-  location: [number, number] | undefined
+  buttonTitle?: string
+  buttonIcon?: JSX.Element | string
+  buttonWidth?: string
+  location?: [number, number] | undefined
   menuItems: Array<Array<PopupMenuItem>>
   menuIndex?: number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   style?: any
   submenu?: boolean
-  onClose: () => void
+  onClose?: () => void
 }
 
 const PopupMenu = (props: PopupMenuProps) => {
@@ -19,23 +22,24 @@ const PopupMenu = (props: PopupMenuProps) => {
   const [posStyle, setPosStyle] = useState<{ left: number, top: number } | undefined>(undefined)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [activeSubMenu, setActiveSubMenu] = useState<{ parentIndex: number, location: [number, number], items: PopupMenuItem[] } | null>(null)
+  const [popupLocation, setPopupLocation] = useState<[number, number] | undefined>(undefined)
 
   useEffect(() => {
-    if (!props.location || !menuRef.current) {
+    if ((props.buttonTitle ? !popupLocation : !props.location) || !menuRef.current) {
       setPosStyle(undefined)
       setActiveSubMenu(null)
       setHoveredIndex(null)
       return
     }
     const rect = menuRef.current.getBoundingClientRect()
-    const [x, y] = props.location
+    const [x, y] = props.buttonTitle ? popupLocation! : props.location!
     const maxRight = window.innerWidth
     const maxBottom = window.innerHeight
     setPosStyle({
       left: Math.max(0, Math.min(x, maxRight - rect.width)),
       top: Math.max(0, Math.min(y, maxBottom - rect.height)),
     })
-  }, [props.location])
+  }, [popupLocation, props.location, props.buttonTitle])
 
   const isItemDisabled = (menuItem: PopupMenuItem): boolean => {
     if (typeof menuItem.isDisabled === "function") {
@@ -44,8 +48,14 @@ const PopupMenu = (props: PopupMenuProps) => {
     return !!menuItem.isDisabled
   }
 
-  if (!props.location) {
+  const isOpen = props.buttonTitle ? !!popupLocation : !!props.location
+  if (!isOpen && !props.buttonTitle) {
     return null
+  }
+
+  const handleClose = () => {
+    setPopupLocation(undefined)
+    props.onClose?.()
   }
 
   const popupMenuDiv =
@@ -124,7 +134,7 @@ const PopupMenu = (props: PopupMenuProps) => {
               if (menuItem.onClick) {
                 await menuItem.onClick()
               }
-              props.onClose()
+              handleClose()
             }}>
             <span className="popup-item-main">
               <span className="popup-selection-marker">
@@ -151,22 +161,35 @@ const PopupMenu = (props: PopupMenuProps) => {
   }
 
   return (
-    <div className="modal-overlay"
-      style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
-      onClick={props.onClose}>
-      {popupMenuDiv}
-      {activeSubMenu && (
-        <PopupMenu
-          location={activeSubMenu.location}
-          menuItems={[activeSubMenu.items]}
-          onClose={() => {
-            setActiveSubMenu(null)
-            // props.onClose()
-          }}
-          submenu={true}
-        />
-      )}
-    </div>
+    <>
+      {props.buttonTitle &&
+        <button
+          className="push-button"
+          title={props.buttonTitle}
+          onClick={(e) => setPopupLocation([e.clientX, e.clientY])}
+          style={{ width: props.buttonWidth }}
+        >
+          {props.buttonIcon}
+        </button>
+      }
+      {isOpen &&
+        <div className="modal-overlay"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+          onClick={handleClose}>
+          {popupMenuDiv}
+          {activeSubMenu && (
+            <PopupMenu
+              location={activeSubMenu.location}
+              menuItems={[activeSubMenu.items]}
+              onClose={() => {
+                setActiveSubMenu(null)
+              }}
+              submenu={true}
+            />
+          )}
+        </div>
+      }
+    </>
   )
 }
 

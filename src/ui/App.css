@@ -157,6 +157,9 @@ body.dark-mode .push-button {
 
 .push-button:hover {
   cursor: pointer;
+  outline-width: 1px;
+  outline-style: solid;
+  outline-color: inherit;
 }
 
 .push-button:focus {
@@ -282,7 +285,10 @@ body.dark-mode .button-locked {
   border-width: 1px;
   border-color: white;
   border-style: outset;
-  width: 3em;
+  width: auto;
+  min-width: 4em;
+  white-space: nowrap;
+  flex: 0 0 auto;
   height: 1em;
   margin-right: 10px;
   margin-bottom: 10px;
@@ -436,6 +442,13 @@ body.dark-mode .centered-title {
 }
 
 .printer-dialog-host .floating-dialog {
+  pointer-events: auto;
+}
+
+/* Popup menus opened from the printer toolbar render inside this host, which
+   disables pointer events. Their overlay still needs clicks so that clicking
+   outside the menu closes it. */
+.printer-dialog-host .modal-overlay {
   pointer-events: auto;
 }
 

@@ -256,7 +256,8 @@ type Video7Override = {
   enabled: boolean,
 }
 
-type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "videoterm" | "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "smartport" | "vidhd"
+type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "videoterm" |
+  "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "smartport" | "vidhd"
 
 type SlotConfig = {
   1: SLOT_CARD_ID,
@@ -368,6 +369,7 @@ type UIState = {
   infoPanel: boolean,
   monitorMode: MONITOR_MODE,
   reverseYAxis: boolean,
+  saveStateToLocalStorage: boolean,
   showScanlines: boolean,
   siriusJoyport: boolean,
   snapshotOnKeyPress: boolean,

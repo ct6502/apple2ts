@@ -1,7 +1,7 @@
 import * as fflate from "fflate"
 import { loadDiskFromCloudDrive } from "./diskdrive"
 import * as driveprops from "./driveprops"
-import * as savestate from "../../savestate"
+import * as savestate from "../../save_restore_ui"
 
 jest.mock("../../main2worker", () => ({
   passSetDriveProps: jest.fn(),

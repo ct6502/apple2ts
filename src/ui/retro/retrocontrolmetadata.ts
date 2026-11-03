@@ -81,7 +81,7 @@ const hydrateTemplate = (value: unknown, params: RetroControlTemplateParams): un
   return value
 }
 
-const getModKeyName = () => navigator.platform.startsWith("Mac") ? "Cmd" : "Alt"
+export const getModKeyName = () => navigator.platform.startsWith("Mac") ? "Cmd" : "Alt"
 
 // Messages such as config.useOpenApple and config.useShortcuts contain a
 // {{modKey}} placeholder, so every retro translation supplies it. Extra params

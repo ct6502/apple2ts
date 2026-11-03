@@ -155,7 +155,7 @@
       "kind": "toggle",
       "parentId": "keyboard.joystick",
       "order": 0,
-      "labelKey": "gamepad.useArrowKeys",
+      "labelKey": "config.useArrowKeys",
       "defaultIndex": 0
     },
     {
@@ -254,7 +254,7 @@
       "parentId": "options",
       "order": 1002,
       "tourTargets": [
-        "#tour-clearcookies"
+        "#tour-settings"
       ],
       "labelKey": "config.resetSettings"
     },

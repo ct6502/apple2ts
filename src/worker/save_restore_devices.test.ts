@@ -6,7 +6,7 @@ import { doSetEmuDriveNewData, getCurrentDriveState } from "./devices/drivestate
 import { s6502 } from "./instructions"
 import { memGet, memory } from "./memory"
 import { configureMachine, doBoot, doSetRunMode, doSetSlotConfig } from "./motherboard"
-import { createSessionSnapshot, getApple2State, restoreSessionSnapshot, setApple2State } from "./save_restore"
+import { createSessionSnapshot, getApple2State, restoreSessionSnapshot, restoreApple2State } from "./save_restore_worker"
 import { setIsTesting } from "./worker2main"
 
 jest.setTimeout(60000)
@@ -21,7 +21,7 @@ test("v2 save state preserves the paddle timers", () => {
   s6502.cycleCount = 50000
   memGet(0xC070) // the program starts them again later
 
-  setApple2State(saved, 2)
+  restoreApple2State(saved, 2)
 
   // Paddle 0 is centred, so its timer runs out about 1,400 cycles after the start.
   s6502.cycleCount = 1100

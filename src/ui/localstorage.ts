@@ -6,6 +6,7 @@ import { passSetVeraFmEnabled, passAutoSnapshot, passBreakpoints, passEnableGame
 import { getTheme, getUIState, initialBooleanUIKeys, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode, isDefaultTrueBooleanKey, setAutoSnapshot } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
+import { handleSaveStateToLocalStorage, RestoreSaveState } from "./save_restore_ui"
 
 export {
   notifySettingsChanged,
@@ -122,6 +123,7 @@ export const setPreferenceBoolean = (
   if (key === "reverseYAxis") passReverseYAxis(value)
   if (key === "siriusJoyport") passSiriusJoyport(value)
   if (key === "enableGamePatches") passEnableGamePatches(value)
+  if (key === "saveStateToLocalStorage") handleSaveStateToLocalStorage()
   const controlId = booleanControlIds[key]
   if (controlId) notifySettingsChanged([controlId], origin)
 }
@@ -588,6 +590,16 @@ export const loadPreferences = () => {
   if (JSON.stringify(traceSettings) !== JSON.stringify(TraceSettingsDefault)) {
     passSetTraceSettings(traceSettings)
   }
+
+  if (getPreferenceBoolean("saveStateToLocalStorage")) {
+    const saveState = localStorage.getItem("apple2ts_save_state")
+    if (saveState) {
+      RestoreSaveState(saveState)
+      handleSaveStateToLocalStorage()
+    }
+  } else {
+    localStorage.removeItem("apple2ts_save_state")
+  }
 }
 
 export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
@@ -596,6 +608,7 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
     setUIStateBoolean(key, isDefaultTrueBooleanKey(key) ? true : false)
   })
   // Extra processing for certain boolean prefs
+  handleSaveStateToLocalStorage()
   passReverseYAxis(false)
   passSiriusJoyport(false)
   passSetShowDebugTab(false)

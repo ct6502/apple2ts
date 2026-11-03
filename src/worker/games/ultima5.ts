@@ -50,7 +50,7 @@ For Dual Mockingboard Support:
 
 For MIDI Support:
 1) Open Settings (gear icon) and assign Passport MIDI Card to Slot 2.
-2) In Audio Configuration (music icon), select Apple2TS Built-in Synthesizer. If using External MIDI, launch a WebMIDI-supported player/synthesizer (such as https://signalmidi.app/ or Munt MT-32 emulator) in a separate tab or app and grant WebMIDI access.
+2) In Audio Configuration (music icon), select Apple2TS Built-in MIDI Synthesizer. If using External MIDI, launch a WebMIDI-supported player/synthesizer (such as https://signalmidi.app/ or Munt MT-32 emulator) in a separate tab or app and grant WebMIDI access.
 3) In Ultima V, navigate to Activate Music -> Change Music Configuration, add Passport to Slot 2, and press Enter.
 4) In the MIDI Information screen, select Channel 1 (default) and 16 voices, then enter numbers 1–15 for "MIDI Number" for each song (where Ultima Theme is '1' and Rule Britannia is '15'). Press Enter on each song title to test playback.
 

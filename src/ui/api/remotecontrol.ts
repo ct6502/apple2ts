@@ -61,7 +61,7 @@ import {
   requestPreferenceSpeedMode,
   setPreferenceMonitorMode,
 } from "../localstorage"
-import { RestoreSaveState } from "../savestate"
+import { RestoreSaveState } from "../save_restore_ui"
 import { getUIState } from "../ui_settings"
 import { getMockingboardMode } from "../devices/audio/mockingboard_audio"
 import { isAudioEnabled } from "../devices/audio/speaker"

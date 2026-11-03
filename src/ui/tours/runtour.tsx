@@ -4,8 +4,8 @@ import { getTourMain } from "./tourmain"
 import { getTourSettings } from "./toursettings"
 import { getTourDebug } from "./tourdebug"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faGlobe } from "@fortawesome/free-solid-svg-icons"
-import { DropdownButton } from "../controls/dropdownbutton"
+import { faCircleQuestion } from "@fortawesome/free-solid-svg-icons"
+import PopupMenu from "../controls/popupmenu"
 import { useTranslation } from "../../i18n/useTranslation"
 import { navigateToTourStep } from "./tourutils"
 import { getTheme } from "../ui_settings"
@@ -119,13 +119,22 @@ const RunTour = ({
     setTourIndex(0)
   }
 
+  const tourMenuItems: PopupMenuItem[] = [
+    t("tour.mainLabel"),
+    t("tour.settingsLabel"),
+    t("tour.debugLabel"),
+  ].map((label, index) => ({
+    label,
+    onClick: () => selectGuidedTour(index),
+  }))
+
   const locale = {
     back: t("tour.back"),
-    close: t("tour.close"),
+    close: t("dialog.close"),
     last: t("tour.last"),
     next: t("tour.next"),
     nextLabelWithProgress: t("tour.nextLabelWithProgress"),
-    skip: t("tour.skip"),
+    skip: t("dialog.close"),
   }
 
   return (
@@ -159,17 +168,13 @@ const RunTour = ({
           />
         </div>
       }
-      {showSelector && <DropdownButton
-        currentIndex={-1}
-        itemNames={[
-          t("tour.mainLabel"),
-          t("tour.settingsLabel"),
-          t("tour.debugLabel")
-        ]}
-        closeCallback={selectGuidedTour}
-        icon={<FontAwesomeIcon icon={faGlobe} />}
-        tooltip={t("tour.guidedTour")}
-      />}
+      {showSelector &&
+        <PopupMenu
+          buttonTitle={t("tour.guidedTour")}
+          buttonIcon={<FontAwesomeIcon icon={faCircleQuestion} />}
+          menuItems={[tourMenuItems]}
+        />
+      }
     </span>
   )
 

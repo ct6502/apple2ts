@@ -998,10 +998,10 @@ describe("Retro menu metadata structure", () => {
     expect(slot3?.options?.map(option => option.label)).toEqual([
       "retroControl.card.empty",
       "Apple 699-0221 (64KB / 80-Col / dHGR)",
-      "AE RamWorks III (512KB / 80-Col / dHGR)",
-      "AE RamWorks III (1MB / 80-Col / dHGR)",
-      "AE RamWorks III (4MB / 80-Col / dHGR)",
-      "AE RamWorks III (8MB / 80-Col / dHGR)",
+      "RamWorks III (512KB / 80-Col / dHGR)",
+      "RamWorks III (1MB / 80-Col / dHGR)",
+      "RamWorks III (4MB / 80-Col / dHGR)",
+      "RamWorks III (8MB / 80-Col / dHGR)",
       "VidHD (64KB / 80-Col / SHR)",
     ])
   })

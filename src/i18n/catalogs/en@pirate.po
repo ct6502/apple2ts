@@ -81,18 +81,28 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "Ship's Liv'ry"
 
+msgctxt "config.graphics"
+msgid "Graphics"
+msgstr ""
+
 msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
 msgstr "Control Deck"
 
+#, fuzzy
+#| msgid "Reset All Settings"
 msgctxt "config.resetSettings"
-msgid "Reset All Settings"
+msgid "Reset Settings"
 msgstr "Reset All Rigging"
 
 msgctxt "config.resetSettingsText"
 msgid ""
-"Are you sure you want to reset all settings? This will not erase your "
-"breakpoints or BASIC program."
+"Are you sure you want to reset emulator settings? This will not erase your "
+"breakpoints, save states, or BASIC program."
+msgstr ""
+
+msgctxt "config.resetSavedState"
+msgid "Reset Saved State"
 msgstr ""
 
 msgctxt "config.capsLock"
@@ -124,13 +134,23 @@ msgid "CRT Distortion"
 msgstr "Curvy Glass"
 
 #, fuzzy
-#| msgid "Joystick Configuration"
+#| msgid "Keyboard and Joystick Settings"
 msgctxt "config.joystick"
-msgid "Keyboard and Joystick Settings"
+msgid "Keyboard and Joystick"
 msgstr "Joystick Rigging"
 
+msgctxt "config.saveState"
+msgid "Saved States"
+msgstr ""
+
+msgctxt "config.autoSaveState"
+msgid "Automatically Save and Restore State"
+msgstr ""
+
+#, fuzzy
+#| msgid "Machine Configuration"
 msgctxt "machine.configuration"
-msgid "Machine Configuration"
+msgid "Machine"
 msgstr "Machine Rigging"
 
 msgctxt "machine.slotConfigurator"
@@ -1039,11 +1059,6 @@ msgid "Back"
 msgstr "Turn Back"
 
 #, fuzzy
-msgctxt "tour.close"
-msgid "Close"
-msgstr "Batten Down"
-
-#, fuzzy
 msgctxt "tour.last"
 msgid "Finish"
 msgstr "Make Port"
@@ -1055,11 +1070,6 @@ msgstr "Ahead"
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
 msgstr "Ahead (Step {step} o' {steps})"
-
-#, fuzzy
-msgctxt "tour.skip"
-msgid "Close"
-msgstr "Batten Down"
 
 #, fuzzy
 msgctxt "tour.guidedTour"
@@ -2106,10 +2116,6 @@ msgctxt "saveDisassembly.separatorLines"
 msgid "Separator lines after JMP, RTS"
 msgstr ""
 
-msgctxt "gamepad.useArrowKeys"
-msgid "Use Arrow Keys as Joystick"
-msgstr "Use Arrow Keys fer Steerin'"
-
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr ""
@@ -2177,6 +2183,10 @@ msgstr ""
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
 msgstr "Color:"
+
+msgctxt "linkBuilder.monitorMode"
+msgid "Monitor mode:"
+msgstr ""
 
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb):"
@@ -2263,11 +2273,12 @@ msgctxt "linkBuilder.tryIt"
 msgid "Try It"
 msgstr "Give It a Go"
 
-msgctxt "linkBuilder.reset"
+msgctxt "dialog.reset"
 msgid "Reset"
 msgstr "Reset Ship"
 
-msgctxt "linkBuilder.close"
+#, fuzzy
+msgctxt "dialog.close"
 msgid "Close"
 msgstr "Batten Down"
 
@@ -2340,18 +2351,6 @@ msgstr "4 MHz (Full sail)"
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Ludicrous"
 msgstr "Kraken!"
-
-msgctxt "linkBuilder.machines.enhanced"
-msgid "Apple IIe enhanced"
-msgstr "Apple IIe (Upgraded)"
-
-msgctxt "linkBuilder.machines.unenhanced"
-msgid "Apple IIe unenhanced"
-msgstr "Apple IIe (Original)"
-
-msgctxt "linkBuilder.machines.apple2p"
-msgid "Apple II+"
-msgstr "Apple II+ (Ol' Reliable)"
 
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"

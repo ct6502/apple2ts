@@ -1,18 +1,13 @@
-import { ERROR_CODE, UI_THEME, UI_THEMES } from "../../common/utility"
+import { UI_THEME, UI_THEMES } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faVolumeHigh,
   faVolumeXmark,
-  faSync,
-  faPalette,
 } from "@fortawesome/free-solid-svg-icons"
 import { faWindowMaximize as faWindowMaximizeOutline } from "@fortawesome/free-regular-svg-icons"
-import { MachineConfig } from "../devices/machineconfig"
-import { notifySettingsChanged, resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
-import { DisplayConfig } from "../devices/displayconfig"
+import { notifySettingsChanged, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
 import RunTour from "../tours/runtour"
-import { useState, useSyncExternalStore } from "react"
-import PopupMenu from "./popupmenu"
+import { useSyncExternalStore } from "react"
 import {
   audioEnable,
   canShowAudioControl,
@@ -24,22 +19,14 @@ import { SpeedDropdown } from "./speeddropdown"
 import { getLowercaseMode, getTheme, getUIStateBoolean, isGameMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
 import { AudioConfig } from "../devices/audio/audioconfig"
-import { GamepadConfig } from "../devices/gamepadconfig"
 import LinkBuilder from "./linkbuilder"
 import { ControlAvailabilityIcon } from "./controlavailabilityicon"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
-import { createControlContext } from "../retro/retromenucontext"
-import { ControlRegistry } from "./controlregistry"
 import { choiceBinding, controlsFromJson, toggleBinding, type RetroControlBindings } from "../retro/retrocontrolmetadata"
 import { openRetroControlPanel } from "../retro/retrocontrolevents"
-import { TimeTravelConfig } from "../devices/timetravelconfig"
-import { setDialogMessageContext } from "../ui_utilities"
-
-const themeLabels = (t: (key: string) => string) => [
-  t("themes.classic"),
-  t("themes.dark"),
-  t("themes.minimal"),
-]
+import { SettingsDialog } from "./settingsdialog"
+import { settingsResetBinding } from "./resetcontrols"
+import { themeLabels } from "../ui_utilities"
 
 const configBindings: RetroControlBindings = {
   "options.theme": {
@@ -73,57 +60,23 @@ const configBindings: RetroControlBindings = {
       context.displayProps.updateDisplay()
     },
   }),
-  "settings.reset": {
-    action: context => {
-      const { t } = context
-      setDialogMessageContext({
-        title: t("config.resetSettings"),
-        message: t("config.resetSettingsText"),
-        code: ERROR_CODE.QUESTION,
-        actionCancel: () => {
-          context.displayProps.updateDisplay()
-        },
-        actionConfirm: () => {
-          resetPreferences(context.settingsOrigin)
-          context.displayProps.updateDisplay()
-        },
-      })
-      context.displayProps.updateDisplay()
-    },
-  },
+  "settings.reset": settingsResetBinding,  // needed for the Retro Menu action
 }
 
 export const retroConfigControls: RetroControlMetadata[] = controlsFromJson("config", configBindings)
 
-const configControlRegistry = new ControlRegistry(retroConfigControls)
-
 const ConfigButtons = (props: DisplayProps) => {
-  const { t, language, changeLanguage } = useTranslation()
-  const context = createControlContext(props, t, language, changeLanguage)
-  const optionControls = configControlRegistry.resolve(context, "options")
-  const themeControl = optionControls.find(control => control.id === "options.theme")!
-  const resetControl = optionControls.find(control => control.id === "settings.reset")!
-
-  const getThemeName = (theme: UI_THEME) => themeControl.options?.[
-    UI_THEMES.findIndex(option => option.value === theme)
-  ]?.label ?? theme
+  const { t } = useTranslation()
   const audioStatus = useSyncExternalStore(subscribeAudioStatus, getAudioStatus)
   const audioUnavailable = audioStatus === "unavailable"
   const audioTitle = audioUnavailable
     ? t("controls.retrySound")
     : t("controls.toggleSound")
 
-  const [popupLocation, setPopupLocation] = useState<[number, number]>()
-
-  const handleClick = (event: React.MouseEvent) => {
-    setPopupLocation([event.clientX, event.clientY])
-  }
   return <div className="flex-row">
     <div className="flex-row" id="tour-configbuttons">
 
       <SpeedDropdown {...props} />
-
-      <DisplayConfig {...props} />
 
       <button className="push-button"
         title={audioTitle}
@@ -145,39 +98,9 @@ const ConfigButtons = (props: DisplayProps) => {
       </button>
     </div>
 
-    <GamepadConfig />
-
     {!isGameMode() && <AudioConfig {...props} />}
 
-    {!isGameMode() && <MachineConfig {...props} />}
-
-    {!isGameMode() && <TimeTravelConfig/>}
-
-    <button className="push-button"
-      id="tour-theme-button"
-      title={`${getThemeName(getTheme())} ${t("config.theme")}`}
-      onClick={handleClick}>
-      <FontAwesomeIcon icon={faPalette} />
-    </button>
-
-    <PopupMenu
-      location={popupLocation}
-      onClose={() => { setPopupLocation(undefined) }}
-      menuItems={[UI_THEMES.map(({ value }, index) => {
-        return {
-          label: themeControl.options?.[index]?.label ?? String(value),
-          isVisible: () => { return !isGameMode() || value != UI_THEME.MINIMAL },
-          isSelected: () => { return value == getTheme() },
-          onClick: themeControl.options?.[index]?.action,
-        }
-      })]}
-    />
-
-    {!isGameMode() && <button className="push-button" id="tour-clearcookies"
-      title={resetControl.label}
-      onClick={resetControl.action}>
-      <FontAwesomeIcon icon={faSync} />
-    </button>}
+    <SettingsDialog {...props} />
 
     {!isGameMode() && <RunTour showTour={false} />}
 

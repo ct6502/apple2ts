@@ -143,6 +143,15 @@ export const getDriveSaveState = (full: boolean): DriveSaveState => {
   return result
 }
 
+export const getDriveSaveStateForLocalStorage = (): DriveSaveState | null => {
+  for (let i=0; i < driveState.length; i++) {
+    if (driveData[i].length >= largeDiskSnapshotThreshold) {
+      return null
+    }
+  }
+  return getDriveSaveState(false)
+}
+
 export const restoreDriveSaveState = (newState: DriveSaveState) => {
   const previousDriveState = driveState.map((state) => ({...state}))
   const previousDriveData = [...driveData]

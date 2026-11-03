@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faLink, faXmark, faClipboard, faPlus, faMinus } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../panels/editfield"
@@ -14,6 +14,7 @@ import { useTranslation } from "../../i18n/useTranslation"
 import { SLOT_NUMBERS, getSlotOptions } from "../devices/machineconfig"
 import TabBase from "../tabbase"
 import Tab from "../tab"
+import { cardShortLabels, ramdiskParams, ramdiskValues } from "../ui_utilities"
 
 export enum TAB {
   DISK,
@@ -39,9 +40,40 @@ export const getBaseAppUrl = (): string => {
   return `${url.origin}${pathname}`
 }
 
+const dialogPosition = [Math.max(window.innerWidth / 2 - 275, 0), Math.max(window.innerHeight / 2 - 400, 10)]
+
 const LinkBuilder = () => {
   const { t } = useTranslation()
   const [showBuilder, setShowBuilder] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const [offset, setOffset] = useState([0, 0])
+  const [dragging, setDragging] = useState(false)
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (dialogRef.current) {
+      setDragging(true)
+      const div = dialogRef.current as HTMLDivElement
+      // Offset of the mouse down event within the dialog title bar.
+      // This way we drag the window from where the user clicked.
+      setOffset([e.clientX - div.offsetLeft, e.clientY - div.offsetTop])
+    }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (dragging && dialogRef.current) {
+      const div = dialogRef.current as HTMLDivElement
+      const left = e.clientX - offset[0]
+      const top = e.clientY - offset[1]
+      dialogPosition[0] = left
+      dialogPosition[1] = top
+      div.style.left = `${left}px`
+      div.style.top = `${top}px`
+    }
+  }
+
+  const handleMouseUp = () => {
+    setDragging(false)
+  }
 
   const colorNames = [
     t("linkBuilder.colorNames.color"),
@@ -141,39 +173,11 @@ const LinkBuilder = () => {
   const [tabSection, setTabSection] = useState(TAB.DISK)
   const [slotConfig, setSlotConfig] = useState<SlotConfig>({ ...DEFAULT_SLOT_CONFIG })
 
-  // Short display labels for cards in the Link Builder slot dropdowns
-  const cardShortLabels: Record<SLOT_CARD_ID, string> = {
-    none: t("linkBuilder.slots.cardNone"),
-    ssc: "SSC",
-    softcard: "SoftCard (Z80)",
-    aux: "Aux/80Col",
-    videoterm: "VideoTerm",
-    vidhd: "VidHD",
-    mockingboard: "Mockingboard",
-    mouse: "Mouse",
-    vera: "VERA",
-    passport: "Passport",
-    disk2: "Disk II",
-    smartport: "SmartPort",
-  }
+  const machineValues = [t("machine.models.apple2ee"), t("machine.models.apple2eu"), t("machine.models.apple2p")]
 
-  const machineValues = [
-    t("linkBuilder.machines.enhanced"),
-    t("linkBuilder.machines.unenhanced"),
-    t("linkBuilder.machines.apple2p")
-  ]
   // Derive MACHINE_NAME from local machine state so slot options stay in sync
   const lbMachineName: MACHINE_NAME = machine === machineValues[2] ? "APPLE2P"
     : machine === machineValues[1] ? "APPLE2EU" : "APPLE2EE"
-
-  const ramdiskValues = [
-    t("linkBuilder.ramDiskSizes.default"),
-    t("linkBuilder.ramDiskSizes.512"),
-    t("linkBuilder.ramDiskSizes.1024"),
-    t("linkBuilder.ramDiskSizes.4096"),
-    t("linkBuilder.ramDiskSizes.8192")
-  ]
-  const ramdiskParams = ["64", "512", "1024", "4096", "8192"]
 
   const themeValues = [
     t("linkBuilder.themes.classic"),
@@ -531,7 +535,17 @@ const LinkBuilder = () => {
   const slotConfiguration = 
     <>
     <div className="dialog-title" style={{ marginBottom: "4px" }}>{t("linkBuilder.slots.configure")}</div>
-    <div className="flex-row" style={{ flexWrap: "wrap", gap: "0 20px", marginBottom: "8px" }}>
+    {/* Two columns filled top-to-bottom: slots 1-4 left, 5-7 right. The grid
+        flows column-major through the four declared rows, so the single map
+        below keeps SLOT_NUMBERS order. */}
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "auto auto",
+      gridTemplateRows: "repeat(4, auto)",
+      gridAutoFlow: "column",
+      columnGap: "20px",
+      marginBottom: "8px",
+    }}>
       {SLOT_NUMBERS.map(slot => {
         const rawOptions = getSlotOptions(slot, lbMachineName)
         // Filter out cards already installed in another slot (unless card is none or mockingboard)
@@ -545,7 +559,7 @@ const LinkBuilder = () => {
           if (o.card === "aux" && o.ramSizeKb !== undefined) {
             if (o.ramSizeKb <= 64) return "Aux/80Col (64KB)"
             const sizeStr = o.ramSizeKb >= 1024 ? `${o.ramSizeKb / 1024}MB` : `${o.ramSizeKb}KB`
-            return `AE RamWorks (${sizeStr})`
+            return `RamWorks (${sizeStr})`
           }
           return cardShortLabels[o.card]
         }
@@ -557,7 +571,7 @@ const LinkBuilder = () => {
           const ramIdx = ramdiskValues.indexOf(ramdisk)
           const ramSizeKb = parseInt(ramdiskParams[Math.max(ramIdx, 0)]) || 64
           currentLabel = ramSizeKb <= 64 ? "Aux/80Col (64KB)"
-            : `AE RamWorks (${ramSizeKb >= 1024 ? `${ramSizeKb / 1024}MB` : `${ramSizeKb}KB`})`
+            : `RamWorks (${ramSizeKb >= 1024 ? `${ramSizeKb / 1024}MB` : `${ramSizeKb}KB`})`
         }
         return (
           <Droplist
@@ -595,7 +609,7 @@ const LinkBuilder = () => {
         )
       })}
     </div>
-    </>
+  </>
 
   const renderDriveCustomUrlInputs = (
     driveKey: string,
@@ -818,10 +832,19 @@ const LinkBuilder = () => {
       tabIndex={0} // Make the div focusable
       onKeyDown={(event) => {
         if (event.key === "Escape") setShowBuilder(false)
-      }}>
+      }}
+      onMouseMove={(e) => handleMouseMove(e)}
+      onMouseUp={handleMouseUp}>
       <div className="floating-dialog flex-column"
-        style={{ left: "35%", top: "5%", width: "70%", maxWidth: "600px", maxHeight: "90vh", overflowX: "hidden", overflowY: "auto", resize: "both", minWidth: "400px", minHeight: "300px" }}>
-        <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
+        ref={dialogRef}
+        style={{ left: `${dialogPosition[0]}px`, top: `${dialogPosition[1]}px`,
+          width: "70%", maxWidth: "600px", maxHeight: "90vh",
+          overflowX: "hidden", overflowY: "auto", resize: "both",
+          minWidth: "400px", minHeight: "300px" }}>
+        <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}
+            onMouseDown={(e) => handleMouseDown(e)}
+            onMouseMove={(e) => handleMouseMove(e)}
+            onMouseUp={handleMouseUp}>
           <div className="dialog-title" style={{ padding: 0, paddingTop: "6px" }}>{t("linkBuilder.title")}</div>
           <button className="push-button"
             type="button"
@@ -831,16 +854,15 @@ const LinkBuilder = () => {
         </div>
         <div className="horiz-rule"></div>
 
-        <div style={{ marginLeft: "8px", marginRight: "8px" }}>
+        <div style={{margin: "10px"}}>
           <TabBase>
             <Tab title={t("machine.configuration")}>{emulatorGeneralSettings}<div className="horiz-rule" style={{ marginTop: "15px" }}/>{slotConfiguration}</Tab>
             <Tab title={t("linkBuilder.startupOptionsTab")}>{startUpOptions}</Tab>
           </TabBase>
         </div>
-        <div className="horiz-rule" style={{ marginTop: "10px" }}/>
 
         {/* Show final link, readonly textarea for now */}
-        <div className="flex-row-space-between" style={{ marginRight: "10px", flexShrink: 0 }}>
+        <div className="flex-row-space-between" style={{ marginRight: "10px", marginTop: "10px", flexShrink: 0 }}>
           <div className="dialog-title">{t("linkBuilder.finalUrl")}</div>
           <button className="push-button"
             title={t("linkBuilder.copyToClipboard")}
@@ -863,11 +885,11 @@ const LinkBuilder = () => {
           </button>
           <button className="push-button text-button"
             onClick={resetAllSettings}>
-            <span className="centered-title">{t("linkBuilder.reset")}</span>
+            <span className="centered-title">{t("dialog.reset")}</span>
           </button>
           <button className="push-button text-button"
             onClick={() => { setShowBuilder(false) }}>
-            <span className="centered-title">{t("linkBuilder.close")}</span>
+            <span className="centered-title">{t("dialog.close")}</span>
           </button>
         </div>
       </div>

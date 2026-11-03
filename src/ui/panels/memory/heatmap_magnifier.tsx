@@ -12,6 +12,7 @@ const MAGNIFIER_WIDTH = 512
 const MAGNIFIER_HEIGHT = 512
 const BASE_HEATMAP_WIDTH = 256
 const BASE_HEATMAP_HEIGHT = 256
+const dialogPosition = [window.outerWidth - 600, window.outerHeight - 700]
 
 const HeatMapMagnifier = (props: {
   state: HEATMAP_STATE,
@@ -24,9 +25,6 @@ const HeatMapMagnifier = (props: {
   heatMapPosition: [number, number],
   setHeatMapPosition: (x: number, y: number) => void
   closeDialog: () => void,
-  dialogPositionX: number,
-  dialogPositionY: number,
-  setDialogPosition: (x: number, y: number) => void,
 }) => {
   const { t } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -64,7 +62,8 @@ const HeatMapMagnifier = (props: {
       const div = dialogRef.current as HTMLDivElement
       const left = e.clientX - offset[0]
       const top = e.clientY - offset[1]
-      props.setDialogPosition(left, top)
+      dialogPosition[0] = left
+      dialogPosition[1] = top
       div.style.left = `${left}px`
       div.style.top = `${top}px`
     }
@@ -208,7 +207,7 @@ const HeatMapMagnifier = (props: {
       style={{
         // The overlay is pointer-events: none when idle, so the dialog must opt back in.
         pointerEvents: "auto",
-        left: `${props.dialogPositionX}px`, top: `${props.dialogPositionY}px`,
+        left: `${dialogPosition[0]}px`, top: `${dialogPosition[1]}px`,
       }}
     >
     <div className="flex-row-space-between"

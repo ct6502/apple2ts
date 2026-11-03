@@ -86,18 +86,28 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "主题"
 
+msgctxt "config.graphics"
+msgid "Graphics"
+msgstr ""
+
 msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
 msgstr "控制面板"
 
+#, fuzzy
+#| msgid "Reset All Settings"
 msgctxt "config.resetSettings"
-msgid "Reset All Settings"
+msgid "Reset Settings"
 msgstr "重置所有设置"
 
 msgctxt "config.resetSettingsText"
 msgid ""
-"Are you sure you want to reset all settings? This will not erase your "
-"breakpoints or BASIC program."
+"Are you sure you want to reset emulator settings? This will not erase your "
+"breakpoints, save states, or BASIC program."
+msgstr ""
+
+msgctxt "config.resetSavedState"
+msgid "Reset Saved State"
 msgstr ""
 
 msgctxt "config.capsLock"
@@ -135,14 +145,23 @@ msgid "CRT Distortion"
 msgstr "CRT 失真效果"
 
 #, fuzzy
-#| msgid "Joystick Configuration"
+#| msgid "Keyboard and Joystick Settings"
 msgctxt "config.joystick"
-msgid "Keyboard and Joystick Settings"
+msgid "Keyboard and Joystick"
 msgstr "摇杆设置"
 
+msgctxt "config.saveState"
+msgid "Saved States"
+msgstr ""
+
+msgctxt "config.autoSaveState"
+msgid "Automatically Save and Restore State"
+msgstr ""
+
 #, fuzzy
+#| msgid "Machine Configuration"
 msgctxt "machine.configuration"
-msgid "Machine Configuration"
+msgid "Machine"
 msgstr "机器配置"
 
 msgctxt "machine.slotConfigurator"
@@ -1007,10 +1026,6 @@ msgctxt "tour.back"
 msgid "Back"
 msgstr "上一步"
 
-msgctxt "tour.close"
-msgid "Close"
-msgstr "关闭"
-
 msgctxt "tour.last"
 msgid "Finish"
 msgstr "完成"
@@ -1023,11 +1038,6 @@ msgstr "下一步"
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
 msgstr "下一步 (第 {step} 步，共 {steps} 步)"
-
-#, fuzzy
-msgctxt "tour.skip"
-msgid "Close"
-msgstr "关闭"
 
 #, fuzzy
 msgctxt "tour.guidedTour"
@@ -2197,11 +2207,6 @@ msgid "Separator lines after JMP, RTS"
 msgstr "在 JMP、RTS 后加入分隔线"
 
 #, fuzzy
-msgctxt "gamepad.useArrowKeys"
-msgid "Use Arrow Keys as Joystick"
-msgstr "使用方向键作为摇杆"
-
-#, fuzzy
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Sirius 摇杆端口模式"
@@ -2283,6 +2288,10 @@ msgstr "主机型号："
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
 msgstr "颜色模式："
+
+msgctxt "linkBuilder.monitorMode"
+msgid "Monitor mode:"
+msgstr ""
 
 #, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
@@ -2389,12 +2398,11 @@ msgid "Try It"
 msgstr "尝试运行"
 
 #, fuzzy
-msgctxt "linkBuilder.reset"
+msgctxt "dialog.reset"
 msgid "Reset"
 msgstr "重置"
 
-#, fuzzy
-msgctxt "linkBuilder.close"
+msgctxt "dialog.close"
 msgid "Close"
 msgstr "关闭"
 
@@ -2480,20 +2488,6 @@ msgstr ""
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Ludicrous"
 msgstr "极速"
-
-#, fuzzy
-msgctxt "linkBuilder.machines.enhanced"
-msgid "Apple IIe enhanced"
-msgstr "Apple IIe (增强型)"
-
-#, fuzzy
-msgctxt "linkBuilder.machines.unenhanced"
-msgid "Apple IIe unenhanced"
-msgstr "Apple IIe (非增强型)"
-
-msgctxt "linkBuilder.machines.apple2p"
-msgid "Apple II+"
-msgstr ""
 
 #, fuzzy
 msgctxt "linkBuilder.themes.classic"

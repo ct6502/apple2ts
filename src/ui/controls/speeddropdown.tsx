@@ -6,7 +6,7 @@ import {
   faRocket,
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { DropdownButton } from "./dropdownbutton"
+import PopupMenu from "./popupmenu"
 import { handleGetSpeedMode } from "../main2worker"
 import { setPreferenceSpeedMode } from "../localstorage"
 import { snailIcon } from "../img/icon_snail"
@@ -56,8 +56,8 @@ export const SpeedDropdown = (props: DisplayProps) => {
   const speedMode = handleGetSpeedMode()
   const iconSize = 22
   const icons = [
-    <svg key="-2" width="27" height="27" className="fill-color">{snailIcon}</svg>,
-    <svg key="-1" width="27" height="27" className="fill-color">{turtleIcon}</svg>,
+    <svg key="-2" width="25" height="25" className="fill-color">{snailIcon}</svg>,
+    <svg key="-1" width="25" height="25" className="fill-color">{turtleIcon}</svg>,
     <FontAwesomeIcon key="0" icon={faWalking} style={{ fontSize: `${iconSize}px` }} />,
     <FontAwesomeIcon key="1" icon={faPersonRunning} style={{ fontSize: `${iconSize}px` }} />,
     <FontAwesomeIcon key="2" icon={faPersonBiking} style={{ fontSize: `${iconSize}px` }} />,
@@ -71,14 +71,19 @@ export const SpeedDropdown = (props: DisplayProps) => {
     "options",
   )[0]
 
+  const currentIndex = control.optionIndex ?? speedIndex
+  const menuItems: PopupMenuItem[] = control.options?.map((option, index) => ({
+    label: option.label,
+    svg: icons[index],
+    isSelected: () => currentIndex === index,
+    onClick: () => { control.options?.[index]?.action?.() },
+  })) ?? []
+
   return (
-    <DropdownButton
-      currentIndex={control.optionIndex ?? speedIndex}
-      itemNames={control.options?.map(option => option.label) ?? []}
-      closeCallback={(index: number) => { control.options?.[index]?.action?.() }}
-      icon={icon}
-      icons={icons}
-      tooltip={t("config.speed")}
+    <PopupMenu
+      buttonTitle={t("config.speed")}
+      buttonIcon={icon}
+      menuItems={[menuItems]}
     />
   )
 }

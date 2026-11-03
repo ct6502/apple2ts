@@ -61,7 +61,13 @@ const PrinterDialog = (props: PrinterDialogProps) => {
   }, [open, props.printer])
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dialogRef.current || event.button !== 0 || (event.target as Element).closest("button")) return
+    const target = event.target as Element
+    // PrinterDialogConfig renders its popup menu inside this drag header, and
+    // its rows are divs, not buttons. Capturing the pointer here would
+    // retarget the click to the header, so the row's onClick never fires and
+    // menu items appear to need several clicks. Leave popups alone.
+    if (!dialogRef.current || event.button !== 0 ||
+      target.closest("button, .droplist-option, .modal-overlay")) return
     event.preventDefault()
     event.stopPropagation()
     event.currentTarget.setPointerCapture(event.pointerId)

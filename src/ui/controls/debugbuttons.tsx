@@ -12,7 +12,7 @@ import {
   faPlay,
 } from "@fortawesome/free-solid-svg-icons"
 import { handleSetCPUState } from "../controller"
-import { handleFileSave } from "../savestate"
+import { handleSaveStateToDownload } from "../save_restore_ui"
 import { RUN_MODE } from "../../common/utility"
 import { isGameMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
@@ -40,7 +40,7 @@ const debugBindings: RetroControlBindings = {
     selectable: () => emulatorStarted() && handleCanGoForward(),
   },
   "snapshot.saveState": {
-    action: () => handleFileSave(true),
+    action: () => handleSaveStateToDownload(true),
     selectable: emulatorStarted,
   },
   "emulator.pause": {

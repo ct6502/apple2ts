@@ -1,6 +1,6 @@
 import { Buffer } from "buffer"
 import { MAX_SNAPSHOTS, RamWorksMemoryStart, ROMmemoryStart, RUN_MODE, SAVE_STATE_VERSION } from "../common/utility"
-import { getDriveSaveState, restoreDriveSaveState } from "./devices/drivestate"
+import { getDriveSaveState, getDriveSaveStateForLocalStorage, restoreDriveSaveState } from "./devices/drivestate"
 import { handleGameSetup } from "./games/game_mappings"
 import { s6502, getStackDump, setState6502, setStackDump } from "./instructions"
 import { getAuxCardEnabled, memory, memoryReset, RamWorksMaxBank, setRamWorks, updateAddressTables } from "./memory"
@@ -72,7 +72,7 @@ export const getApple2State = (): Apple2SaveState => {
   }
 }
 
-export const setApple2State = (
+export const restoreApple2State = (
   newState: Apple2SaveState,
   version: number,
   publishState = true,
@@ -176,6 +176,21 @@ export const doGetSaveStateWithSnapshots = (): EmulatorSaveState => {
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
 
+export const doGetSaveStateForLocalStorage = (): EmulatorSaveState | object => {
+  const driveState = getDriveSaveStateForLocalStorage()
+  if (!driveState) {
+    return {}
+  }
+  const state = {
+    emulator: null,  // filled in by UI thread
+    state6502: getApple2State(),
+    driveState: driveState,
+    thumbnail: "",
+    snapshots: null
+  }
+  return state
+}
+
 export const doRestoreSaveState = (
   sState: EmulatorSaveState,
   eraseSnapshots = false,
@@ -186,7 +201,7 @@ export const doRestoreSaveState = (
   // A state without a version is either a save file from before version 1, which
   // uses the legacy memory layout, or a time travel snapshot, which has no emulator
   // field. Only the version 2 layout has memvalid, so the default tells them apart.
-  setApple2State(sState.state6502, version, publishState)
+  restoreApple2State(sState.state6502, version, publishState)
   restoreDriveSaveState(sState.driveState)
   if (eraseSnapshots) {
     saveStates.length = 0

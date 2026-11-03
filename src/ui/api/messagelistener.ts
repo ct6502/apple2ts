@@ -1,7 +1,7 @@
 import { RUN_MODE } from "../../common/utility"
 import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "../devices/disk/driveprops"
 import { passSetRunMode, handleGetState6502, passSetBinaryBlock, handleGetRunMode } from "../main2worker"
-import { RestoreSaveState } from "../savestate"
+import { RestoreSaveState } from "../save_restore_ui"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { handleInputParams } from "../inputparams"
 

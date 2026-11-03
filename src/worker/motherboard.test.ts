@@ -9,7 +9,7 @@ import { setIsTesting } from "./worker2main"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { getCurrentDriveState } from "./devices/drivestate"
 import * as worker2main from "./worker2main"
-import { getApple2State, setApple2State } from "./save_restore"
+import { getApple2State, restoreApple2State } from "./save_restore_worker"
 import { advanceConditionalInputSequence, checkConditionalInputStop, runConditionalInputSequence } from "./conditional_input"
 import { isKeyboardInputBusy } from "./devices/keyboard"
 
@@ -199,7 +199,7 @@ test.each([
       expect(getExecutionSnapshot().state).toBe("paused")
     } finally {
       setRamWorks(previous.extraRamSize)
-      setApple2State(previous, 2, false)
+      restoreApple2State(previous, 2, false)
       doSetRunMode(previousMachine.runMode, false)
     }
   })
