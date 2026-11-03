@@ -753,7 +753,10 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   **before** `setPreferenceMachineName`, so the worker loads the right image on
   its first `doSetRom`. Switching ROMs cold-boots (`doSetIigsRomVersion` →
   `doBoot()`) and applies `$C036` seeding and the ROM-03 mouse source.
-  Preference origin is `machine.iigsRom`.
+  Preference origin is `machine.iigsRom`. A page reload needs no extra work:
+  `loadPreferences()` posts the stored version (`localstorage.ts`) **before**
+  `MACHINE_NAME`, so the worker's `doSetRom` picks ROM 03 on its first load and
+  the menu's tick always matches the running ROM.
 
 ---
 
