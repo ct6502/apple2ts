@@ -5,8 +5,8 @@ import { useTranslation } from "../../i18n/useTranslation"
 import { createControlContext } from "../retro/retromenucontext"
 import { settingsResetBinding } from "./resetcontrols"
 import { Droplist } from "../panels/droplist"
-import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../main2worker"
-import { getPreferenceBoolean, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
+import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, handleGetSpeedMode } from "../main2worker"
+import { getPreferenceBoolean, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
 import { getSlotOptions, SLOT_NUMBERS } from "../devices/machineconfig"
 import { cardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, ramdiskValues, themeLabels } from "../ui_utilities"
 import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
@@ -28,7 +28,6 @@ export const SettingsDialog = (props: DisplayProps) => {
   const dialogRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
-  const [audioPopup, setAudioPopup] = useState<[number, number]>()
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (dialogRef.current) {
@@ -148,6 +147,33 @@ export const SettingsDialog = (props: DisplayProps) => {
     )
   }
 
+  const speedConfig = () => {
+    const speedMode = handleGetSpeedMode()
+    const speedIndex = speedMode + 2
+    // const iconSize = 22
+    const SPEED_MODES = [-2, -1, 0, 1, 2, 3, 4] as const
+    const SPEED_LABEL_KEYS = [
+      t("retroControl.snail"),
+      t("retroControl.slow"),
+      t("retroControl.normal"),
+      t("retroControl.twoMhz"),
+      t("retroControl.threeMhz"),
+      t("retroControl.fast"),
+      t("retroControl.warp"),
+    ]
+    return (
+      <Droplist name={t("config.speed")}
+        value={SPEED_LABEL_KEYS[speedIndex]}
+        values={SPEED_LABEL_KEYS}
+        setValue={(val: string) => {
+          const index = SPEED_LABEL_KEYS.indexOf(val)
+          setPreferenceSpeedMode(SPEED_MODES[index])
+          props.updateDisplay()
+        }}
+      />
+    )
+  }
+
   const colorConfig = () => {
     return (
       <Droplist name={t("linkBuilder.colorMode")}
@@ -239,36 +265,13 @@ export const SettingsDialog = (props: DisplayProps) => {
       "sound",
     )
     return (
-      <>
-        {/* "sound.mockingboard": {
-          ...choiceBinding({
-            options: () => MockingboardNames.map(label => ({ label })),
-            currentIndex: getMockingboardMode,
-            select: (context, index) => setPreferenceMockingboardMode(index, context.settingsOrigin),
-          }),
-          defaultIndex: 0,
-        }, */}
-      <button
-        id="basic-button"
-        className="push-button"
-        style={{ width: "24px", height: "24px",
-          marginTop: "3px", marginLeft: "6px",
-          outlineWidth: "1px",
-          outlineStyle: "solid",
-          outlineColor: "inherit" }}
-        title={t("audio.configuration")}
-        onClick={(e) => setAudioPopup([e.clientX, e.clientY])}
-      >
-        <FontAwesomeIcon icon={faMusic} style={{ fontSize: "0.8em" }}/>
-      </button>
       <PopupMenu
-        location={audioPopup}
-        onClose={() => { setAudioPopup(undefined) }}
+        buttonTitle={t("audio.configuration")}
+        buttonIcon={<FontAwesomeIcon icon={faMusic} style={{ fontSize: "0.8em" }}/>}
         menuItems={[[
           ...controlsToPopupItems([mockingboardControl]),
         ]]}
       />
-      </>
     )
   }
 
@@ -404,6 +407,7 @@ export const SettingsDialog = (props: DisplayProps) => {
                 <div className="flex-column" style={{gap: "3px"}}>
                   {themeConfig()}
                   {machineConfig()}
+                  {speedConfig()}
                   {slotConfiguration()}
                 </div>
                 <div className="flex-column" style={{gap: "3px", marginLeft: "20px" }}>

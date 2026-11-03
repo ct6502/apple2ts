@@ -27,11 +27,6 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const [isBooting, setIsBooting] = useState<boolean>(false)
   const [highlightLine, setHighlightLine] = useState<number>(5)
 
-  const [popupLocation, setPopupLocation] = useState<[number, number]>()
-  const handleSettingsClick = (event: React.MouseEvent) => {
-    setPopupLocation([event.clientX, event.clientY])
-  }
-
   if (isMinimalTheme()) {
     import("../panels.minimal.css")
   }
@@ -341,38 +336,30 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
             onClick={handleRebuildClick}>
             <FontAwesomeIcon icon={faDatabase} />
           </button>
-
-          <button
-            id="basic-button"
-            className="push-button"
-            title={t("basic.displaySettings")}
-            onClick={handleSettingsClick}
-          >
-            <FontAwesomeIcon icon={faGear} />
-          </button>
+          <PopupMenu
+            buttonTitle={t("basic.displaySettings")}
+            buttonIcon={<FontAwesomeIcon icon={faGear} />}
+            menuItems={[[
+              {
+                label: t("basic.autoLineNumbering"),
+                isSelected: () => { return handleGetManualNumbering() },
+                onClick: () => {
+                  setPreferenceBoolean("manualNumbering", !handleGetManualNumbering())
+                }
+              },
+              {
+                label: t("basic.capitalizeKeywords"),
+                isSelected: () => { return handleGetCapitalizeBasic() },
+                onClick: () => {
+                  setPreferenceBoolean("capitalizeBasic", !handleGetCapitalizeBasic())
+                }
+              },
+            ]]}
+          />
         </div>
 
-        <PopupMenu
-          location={popupLocation}
-          onClose={() => { setPopupLocation(undefined) }}
-          menuItems={[[
-            {
-              label: t("basic.autoLineNumbering"),
-              isSelected: () => { return handleGetManualNumbering() },
-              onClick: () => {
-                setPreferenceBoolean("manualNumbering", !handleGetManualNumbering())
-              }
-            },
-            {
-              label: t("basic.capitalizeKeywords"),
-              isSelected: () => { return handleGetCapitalizeBasic() },
-              onClick: () => {
-                setPreferenceBoolean("capitalizeBasic", !handleGetCapitalizeBasic())
-              }
-            },
-          ]]}
-        />
       </div>
+
       {programError !== "" && <div
         style={{ gridColumn: "span 2" }}
         title={programError}

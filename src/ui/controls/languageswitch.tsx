@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React from "react"
 import { useTranslation } from "../../i18n/useTranslation"
 import { AllLanguages, LanguageFlags, LanguageNames } from "../../i18n"
 import PopupMenu from "./popupmenu"
@@ -36,15 +36,10 @@ export const createRetroLanguageControls = (selectedLanguageIndex?: number): Ret
 
 const LanguageSwitch: React.FC = () => {
   const { t, language, changeLanguage } = useTranslation()
-  const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const control = new ControlRegistry(createRetroLanguageControls()).resolve(
     createControlContext(undefined, t, language, changeLanguage),
     "display",
   )[0]
-
-  const handleClick = (event: React.MouseEvent) => {
-    setPopupLocation([event.clientX, event.clientY])
-  }
 
   const getCurrentFlag = () => {
     return LanguageFlags[language] || "🌐"
@@ -56,19 +51,9 @@ const LanguageSwitch: React.FC = () => {
 
   return (
     <span translate="no">
-      <button
-        className="push-button"
-        title={`${getCurrentLanguageName()} - Language 語言`}
-        onClick={handleClick}
-      >
-        <span style={{ fontSize: "1em" }}>
-          {getCurrentFlag()}
-        </span>
-      </button>
-
       <PopupMenu
-        location={popupLocation}
-        onClose={() => { setPopupLocation(undefined) }}
+        buttonTitle={`${getCurrentLanguageName()} - Language 語言`}
+        buttonIcon={getCurrentFlag()}
         menuItems={[controlOptionsToPopupItems(control)]}
       />
     </span>

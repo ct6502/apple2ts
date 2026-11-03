@@ -157,6 +157,9 @@ body.dark-mode .push-button {
 
 .push-button:hover {
   cursor: pointer;
+  outline-width: 1px;
+  outline-style: solid;
+  outline-color: inherit;
 }
 
 .push-button:focus {
