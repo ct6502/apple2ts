@@ -778,6 +778,33 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   the spliced image and reads it again). Reverting the one `| ((sideAndTrack &
   0x01) << 6)` turns both red (`Expected: 64 / Received: 0`, `diskHasChanges`
   false).
+- **A real Applesoft `SAVE`/`LOAD` through slot 5 round-trips byte-exactly.**
+  Measured on `A2DeskTop-1.5.po` (a stock ProDOS 8 800K volume with
+  `/EXTRAS/BASIC.SYSTEM`) booted from S5D1 at 2.8 MHz: the prompt arrives at
+  ~frame 593, `SAVE ROUNDTRIP` sets `diskHasChanges` and changes 106 bytes of the
+  image (the directory/bitmap update plus the file's data block),
+  `NEW`/`LOAD`/`LIST`
+  give all three lines back unaltered, and `RUN` prints
+  `42SAVED ON SONY 800K`. Remounting the spliced image and booting it again
+  reproduces the same listing and output, so the write reached the media, not
+  only the in-session bit stream. Regression: `gs_floppy35_basic` (patches the
+  root `desktop.system` record in memory to point at `BASIC.SYSTEM`, so no
+  fixture disk is stored in the repo).
+- **A 1.02 MHz CPU cannot read 3.5" media, and that is not an emulator defect.**
+  500 kbit/s = 2 µs per bit cell = 62.5 KB/s, which at 1.024 MHz leaves 16.3 CPU
+  cycles per byte; the tightest polled loop (`LDA $C0EC / BPL / LDA $C0ED /
+  STA (ptr),Y / INY / BNE`) is 22-23, so the stream overruns no matter what the
+  driver does. Our media clock is wall-time (`iigsDiskBitCellCycles()` = 2.04
+  CPU cycles/bit in `$C036` slow mode, 5.72 at 2.8 MHz) and the references agree:
+  gssquared's `Floppy35_woz::get_current_time()` is `clock->get_vid_cycles()`
+  with `vid_cycles_per_second = 1,020,484` in **every** clock mode, and
+  KEGS/GSplus advance the head from `dfcyc >> 16` microseconds. KEGS and GSplus
+  never run the IIgs at 1 MHz - their CPU speed follows `$C036` bit 7 and the
+  ROM keeps it fast. Selecting "1.02 MHz" in our machine-speed menu therefore
+  reproduces a genuinely throttled IIgs: a 3.5" boot parks at
+  `Check startup device!`, and 3.5" I/O inside a `$C036` slow-mode window cannot
+  complete either. This is why the IIgs default is 2.8 MHz (§8) and why nothing
+  in the UI may post a speed before `doSetMachineName`.
 - **The slot-5 firmware clobbers the caller's direct page `$57-$5A`.** The
   ProDOS-8 entry offset at `$C5FF` is `$0A`, so Apple Pascal's BIOS trampoline
   (bank-0 `$9E32`, which pops a 13-byte frame) enters at `$C50D`. That stub does
@@ -856,6 +883,12 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 - Verified: 4074 VBLs / 4074 refreshes over 4000 frames with `$C036` flipping
   both ways.
 - Speed modes: 1.02 MHz (17030 cycles/refresh), 2.8 (46727), 7.1, 14.3.
+- **The 3.5" media clock is wall time, not CPU cycles** (`iigsDiskBitCellCycles()`
+  in `memory.ts`: 2 µs per cell, i.e. 2.04 CPU cycles in `$C036` slow mode and
+  5.72 at 2.8 MHz). That is the opposite of the 5.25" LSS (§7), whose firmware
+  loop is cycle-timed. Do not try to make a slow-mode 3.5" read work by shrinking
+  the cell: at 1.024 MHz the 62.5 KB/s byte rate already exceeds what any polled
+  loop can drain (16.3 cycles/byte available, 22-23 needed).
 - **`$C036` bit 7 SET means FAST (2.8 MHz)**, clear means 1.024 MHz — verified in
   gssquared `mmu_iigs.hpp` (`set_slow_mode(value & 0x80 ? false : true)`); the
   `// bit 7 slow` comment in `mmu_iigs.cpp` is stale. Cold boot seeds `0x80`
@@ -1284,6 +1317,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | CDP-synthesised key events prove a chord is pressable | They bypass the OS. On Windows `Alt + Esc` is stolen (window cycling), so the physical `rAlt-Esc` a browser test "verified" cannot be typed; only the numpad bindings reach the page, and those were not driving `$C025` (§6) |
 | No local image has a `Desk Accs` folder | False — it came from scanning raw sectors for an ASCII needle. ProDOS stores names with bit-7 case flags, so nothing matched. Decoded directory blocks: GSOS601.po 4 entries, SystemDisk.2mg 1, MYCRATE.2MG 10, freegemas / AlterEgo 11 (§6) |
 | The missing menu-bar drawer hole is our renderer dropping it | Decoded from the guest's SHR buffer: the Finder wrote white there. gssquared and KEGS have no drawer code either — it is guest drawing (§6) |
+| "Other emulators read 3.5\" media at 1 MHz, so ours should too" | Those emulators have no 1 MHz IIgs: KEGS/GSplus follow `$C036` bit 7 (the ROM keeps it fast) and gssquared's 3.5" head is advanced by `vid_cycles`, which run at a fixed 1.02 MHz even in its 1.02 clock mode. 500 kbit/s leaves 16.3 CPU cycles per byte at 1.024 MHz while the tightest polled loop needs 22-23, so the stream overruns; at 2.8 MHz the budget is 45.8. The IIgs default is 2.8 MHz for this reason (§7, §8) |
 
 ---
 
@@ -1333,6 +1367,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   ⌘-W window close measured as changed scanlines, §6),
   `gs_floppy35` / `gs_floppy35_boot` (3.5" read, write, zone layout, the 7-bit
   cylinder on every track-side, and GS/OS + ProDOS 8 booting from slot 5),
+  `gs_floppy35_basic` (a real Applesoft `SAVE`/`LOAD` on A2DeskTop-1.5.po through
+  slot 5: `SAVE`, `NEW`/`LOAD`/`LIST`/`RUN`, then the spliced image is remounted
+  and loaded again, §7),
   `gs_speed`, `gs_speed_default` (IIgs 2.8 MHz default, §8), `gs_boot`,
   `gs_hdd_boot`, `gs_slots_mockingboard`, `gs_boot_order` (browser message order
   on a fresh profile: slot config → machine switch → 3.5" boot, §7),
