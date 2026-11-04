@@ -1,5 +1,5 @@
 import { doSetMachineName, doSetRunMode, resetCpuSpeedForTesting } from "./motherboard"
-import { getShr } from "./memory"
+import { getShr, getTextPageAsString } from "./memory"
 import {
   doSetEmuDriveNewData,
   getDriveBitstreamByIndex,
@@ -108,6 +108,47 @@ test("SystemDisk boots from slot 5 and leaves the 3.5\" media intact", () => {
     }
     expect(changed.length).toBeGreaterThan(0)
     expect(changed.length).toBeLessThanOrEqual(8)
+  } finally {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    resetCpuSpeedForTesting()
+    jest.useRealTimers()
+  }
+}, 900000)
+
+// The 800 KB Apple II DeskTop volume boots ProDOS 8 (not GS/OS) straight from
+// slot 5, so the guest pulls its own kernel and its startup application out of
+// the GCR fields: /PRODOS is 34 blocks and DESKTOP.SYSTEM another 13, plus the
+// directory and module blocks. A wrong byte anywhere in that chain shows up as
+// a failed load rather than a garbled screen, which is what makes this the
+// end-to-end proof that the drive hands the guest the volume's real bytes.
+const P8_PATH = process.env.GS_FLOPPY35_P8_PATH || "C:\\dev\\emu\\ap2\\A2DeskTop-1.5-en_800k.2mg"
+const P8_FRAMES = Number(process.env.GS_FLOPPY35_P8_FRAMES || 1600)
+
+test("ProDOS 8 loads its kernel and startup application from slot-5 3.5\" media", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  try {
+    doSetMachineName("APPLE2GS")
+    const data = new Uint8Array(fs.readFileSync(P8_PATH))
+    expect(doSetEmuDriveNewData({
+      index: 4, hardDrive: false, drive: 1, filename: "A2DeskTop.2mg", status: "",
+      motorRunning: false, diskHasChanges: false, isWriteProtected: false,
+      diskData: new Uint8Array(data), lastAppleWriteTime: 0, cloudData: null,
+      writableFileHandle: null, lastLocalFileWriteTime: 0,
+    } as DriveProps)).toBe(true)
+
+    doSetRunMode(RUN_MODE.NEED_BOOT)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    let seenProdos = ""
+    let seenStartup = ""
+    for (let f = 0; f < P8_FRAMES && !(seenProdos && seenStartup); f++) {
+      jest.advanceTimersByTime(17)
+      const page = getTextPageAsString()
+      if (!seenProdos && page.includes("ProDOS 8")) seenProdos = `frame ${f}`
+      if (!seenStartup && page.includes("Starting Apple II DeskTop")) seenStartup = `frame ${f}`
+    }
+    expect(seenProdos).toMatch(/^frame /)
+    expect(seenStartup).toMatch(/^frame /)
   } finally {
     doSetRunMode(RUN_MODE.PAUSED, false)
     resetCpuSpeedForTesting()

@@ -749,6 +749,35 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   sector back into the block image at `64 + sectorOffset(track, sector, side)`,
   flushed on a data-register read (`iwmFlushWrites35`). Captured 3.5" GCR images
   (`.do`/`.woz` from real media) are still not supported.
+- **The 3.5" track number is 7 bits, and the write-back decoder has to rebuild
+  it.** The nibblizer writes six bits into the address field's low-track byte and
+  puts bit 6 of the cylinder in **bit 0 of the side byte** (gssquared
+  `emit_address_field`: "side number ($00 or $20) and high part of track number
+  ($01 for tracks >= 64)"), so `decodeFloppy35Track` must return
+  `lowTrack | ((sideAndTrack & 0x01) << 6)`. Reading only `lowTrack` makes
+  cylinders 64-79 claim to be 0-15, and `spliceFloppy35Track`'s
+  `sector.track !== track` guard then discards **every** sector written there —
+  silently, with no error to the guest. That is the "saved a file and it came
+  back wrong" class: an 800 KB volume is 1600 blocks, so blocks 1280-1599 (the
+  tail of a full directory tree, and often the file data a `SAVE` allocates)
+  never reach the image, and the next mount re-nibblizes the stale bytes, which
+  Applesoft reports as `?SYNTAX ERROR`. Reads were never the problem: all 1600
+  blocks of `mcs.2mg`, `SystemDisk.2mg` and `SystemDisk-P8.2mg` decode byte-exact
+  from their own fields, and `gs_floppy35_boot` proves the live path carries real
+  file bytes (GS/OS 6.0.1 to its Finder desktop, and ProDOS 8 2.4.3 with its
+  34-block `/PRODOS` plus the 13-block `DESKTOP.SYSTEM` to the Apple II DeskTop
+  banner, both from slot 5). Write coherence inside a session is fine by
+  construction: `writeBit35` edits the nibblized stream in place, so the next
+  pass of the head returns the new bytes, and only the *image* needed the fix.
+  Beware the blind spot that let this ship: `gs_floppy35_boot` computes the
+  cylinder itself from the track-side index instead of trusting `sector.track`.
+  Regressions: `gs_floppy35` "decodes all 160 track-sides with their own cylinder
+  and block" (asserts `sector.track === track` for all 160) and "async write to
+  the last cylinder splices into its block" (writes cylinder 79/side 1 through
+  the live IWM async path, reads the sector back from the stream, then remounts
+  the spliced image and reads it again). Reverting the one `| ((sideAndTrack &
+  0x01) << 6)` turns both red (`Expected: 64 / Received: 0`, `diskHasChanges`
+  false).
 - **The slot-5 firmware clobbers the caller's direct page `$57-$5A`.** The
   ProDOS-8 entry offset at `$C5FF` is `$0A`, so Apple Pascal's BIOS trampoline
   (bank-0 `$9E32`, which pops a 13-byte frame) enters at `$C50D`. That stub does
@@ -1076,8 +1105,14 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
    (zoned 12/11/10/9/8 sectors, 160 track-sides), streams them on the machine
    clock and splices writes back into the block image. `SystemDisk.2mg` boots
    from slot 5 into the SHR Finder desktop and every field still decodes to the
-   *written* image afterwards (`gs_floppy35`, `gs_floppy35_boot`). Still open:
-   captured real-media images (`.do`/`.woz` 3.5") have no importer.
+   *written* image afterwards (`gs_floppy35`, `gs_floppy35_boot`). A ProDOS 8
+   volume does the same: `A2DeskTop-1.5-en_800k.2mg` reaches its banner from slot
+   5, so the guest's own kernel and startup application arrive byte-exact through
+   the live IWM path. Writes were the weak half until the 7-bit track number was
+   rebuilt in the decoder — cylinders 64-79 aliased to 0-15 and their written
+   sectors were dropped (§7); now all 160 track-sides splice, verified through a
+   remount. Still open: captured real-media images (`.do`/`.woz` 3.5") have no
+   importer.
 7. **SilkyGS ports render a blank SHR screen — RESOLVED.** Volume `SilkyGS.2mg`
    in S7D2 with `SystemDisk.2mg` in S7D1; picking e.g. Super Mario Bros left the
    screen a uniform palette-0 blue although the game blitted every frame. Every
@@ -1244,6 +1279,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | Realigning `$C027` is impossible — it breaks the boot and three suites | The realignment is what the ROM asks for. The 「Fatal system error-> 0911」 was our own bit 0: the boot-time command loop at `FF:851E` spins on "command register full" until it reads 0 before writing the next argument, so reporting the awaiting-arguments state there starves the self-test. Both references leave bit 0 clear; with it clear the desk-manager report lands and every suite passes (§3, §6) |
 | The ROM's Desk Accessories menu is a key combination the guest can be handed | It is the **ADB micro's** own data-register report (bit 5) plus the data-register interrupt; the micro swallows the Escape, so no `$C000`/`$C025` chord — however correct — can raise it (§6) |
 | A link that names only IIgs slot cards will open a IIgs | `?slot1=gsPrinter&…` without `?machine=apple2gs` opens the *visitor's* last machine and the parser drops every `gs*` card value, so the builder's own IIgs link came up as an IIe (`1.02 MHz, 128 KB`) on a fresh profile. Naming the machine is also what makes the `gs*` cards legal (§9) |
+| `SystemDisk-P8.2mg` prints `UNABLE TO LOAD PRODOS` from the 3.5" drive, so the drive corrupts reads | It prints the same thing from **slot 7**, where no nibblizer exists at all — the image has no kernel to load: its `/PRODOS` record is 5 blocks / `eof=1668`, while a real ProDOS 8 is 34 blocks / 17128 bytes (`A2DeskTop-1.5-en_800k.2mg`, which boots from slot 5 to its banner). A bad needle-scan of the diff against `SystemDisk.2mg` suggested the 3.5" path was involved because the drive sat at Trk 76; the block-0 booter and the `/PRODOS` blocks of the two images are byte-identical (§7) |
 | `…#s5d1=url.2mg` mounts the IIgs 3.5" drive | The hash is exactly one disk URL; bay parameters are read from the query only, so that hash asks for a disk *named* `s5d1=url.2mg` (§9) |
 | CDP-synthesised key events prove a chord is pressable | They bypass the OS. On Windows `Alt + Esc` is stolen (window cycling), so the physical `rAlt-Esc` a browser test "verified" cannot be typed; only the numpad bindings reach the page, and those were not driving `$C025` (§6) |
 | No local image has a `Desk Accs` folder | False — it came from scanning raw sectors for an ASCII needle. ProDOS stores names with bit-7 case flags, so nothing matched. Decoded directory blocks: GSOS601.po 4 entries, SystemDisk.2mg 1, MYCRATE.2MG 10, freegemas / AlterEgo 11 (§6) |
@@ -1275,7 +1311,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 - `src/worker/devices/diskdata.ts`, `drivestate.ts`, `decodedisk.ts`,
   `harddrivedata.ts` — IWM, drives, 2MG/PO/WOZ, SmartPort
 - `src/worker/devices/floppy35.ts` — 3.5" GCR field generation, sector offsets,
-  write splice; machine-time media clock (§7)
+  write splice (and the 7-bit track number its decoder rebuilds); machine-time
+  media clock (§7)
 - `src/worker/iigs_clock.ts` — RTC + battery RAM
 - `src/ui/devices/audio/iigs_ensoniq_audio.ts` — the DOC *transport*: block queue,
   lead control, and `resampleDocBlock` (the carried fractional resampler, §5)
@@ -1294,7 +1331,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `gs_command_key` (IIgs key chords on a booted GS/OS desktop: the `$C025`
   modifier byte, Open/Closed Apple as distinct keys, per-code key-up, and the
   ⌘-W window close measured as changed scanlines, §6),
-  `gs_floppy35` / `gs_floppy35_boot` (3.5" read, write, zone layout),
+  `gs_floppy35` / `gs_floppy35_boot` (3.5" read, write, zone layout, the 7-bit
+  cylinder on every track-side, and GS/OS + ProDOS 8 booting from slot 5),
   `gs_speed`, `gs_speed_default` (IIgs 2.8 MHz default, §8), `gs_boot`,
   `gs_hdd_boot`, `gs_slots_mockingboard`, `gs_boot_order` (browser message order
   on a fresh profile: slot config → machine switch → 3.5" boot, §7),

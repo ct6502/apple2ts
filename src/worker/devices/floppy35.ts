@@ -300,7 +300,13 @@ export const decodeFloppy35Track = (
         const [lowTrack, sector, sideAndTrack, format, checksum] = bytes
         if (format === 0x24 && sector < 12 &&
           ((lowTrack ^ sector ^ sideAndTrack ^ format) & 0x3F) === checksum) {
-          pending = { track: lowTrack, sector, side: (sideAndTrack & 0x20) ? 1 : 0 }
+          // The track number is 7 bits: 6 in the low-track byte and bit 6 of the
+          // cylinder in bit 0 of the side byte (IIgs Hardware Reference, $029).
+          pending = {
+            track: lowTrack | ((sideAndTrack & 0x01) << 6),
+            sector,
+            side: (sideAndTrack & 0x20) ? 1 : 0,
+          }
         }
       }
     } else if (window === 0xD5AAAD && pending) {
