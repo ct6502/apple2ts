@@ -859,6 +859,42 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `?speed=`, `#http://...` fragment disk. Named bay parameters: `?s7d1`/`?s7d2`
   (`?hd1`/`?hd2`), `?s6d1`/`?s6d2` (`?d1`/`?d2`) and `?s5d1`/`?s5d2` for the IIgs
   3.5" pair.
+- **Bay parameters live in the query, never after the `#`.** The hash carries
+  exactly one disk URL (its bay comes from `?drive=N`), so `…#s5d1=SystemDisk.2mg`
+  asks for a disk *named* `s5d1=SystemDisk.2mg` and nothing reaches slot 5. Measured
+  on fresh profiles: `?machine=apple2gs&s5d1=<url>` mounts S5,D1 (head walks to
+  Trk 24 and GS/OS boots from it), `s5d2` mounts alongside an `s7d1` boot volume,
+  `s6d1` takes a 140 KB woz (Trk 7), `hd1` is the same as `s7d1` (label
+  `*GSOS601.po`), and `{a,b}` still builds a swapper (`?machine=apple2gs&s5d1={A,B}`
+  needs ~40 s because both images download first — at 22 s it still looks idle).
+  Any landed `sNdM=` already posts `NEED_BOOT` (inputparams.ts:647), so `boot=true`
+  is optional with a named bay. Regression: `inputparams` (s5 pair → indices 4/5 and
+  the query-only rule).
+- **The Link Builder emits a IIgs link only if it names the machine.** A link with
+  `slot*=gs*` and no `?machine=` is useless twice over: it opens whatever machine the
+  visitor last used (so a IIgs volume gets scanned by an IIe), and `inputparams`
+  filters every `gsPrinter`/`gsMouse`/`gsSmartPort` value out unless the URL itself
+  says `machine=apple2gs`. Classic entries therefore keep emitting no `machine=` —
+  that is how a link follows the visitor's own saved choice. Verified end to end:
+  the builder on a running IIgs emits
+  `?machine=apple2gs&s5d1=http%3A%2F%2Flocalhost%3A6503%2FSystemDisk.2mg`, and that
+  link on a fresh profile comes up as a IIgs (`#tour-iigs-desk-button` present,
+  `8 MB`) with `SystemDisk.2mg` in S5,D1 reading Trk 43.
+  - `retrieveFromEmulatorSettings()` maps `APPLE2GS` to the IIgs row and reads the
+    speed label from `speedNamesFor(machineName)` — the GS table names rows 2-5 after
+    the clock (`1.02/2.8/7.1/14.3 MHz`) where the classic table uses multipliers, and
+    a classic label looked up in the GS table returns -1, which silently dropped
+    `speed=` from the link. The IIgs default is 2.8 MHz (index 3), classic 1 MHz
+    (index 2), so each family skips its own row only.
+  - Changing the machine **reseeds `slotConfig` to that family's defaults**: the two
+    share no card ids, so a classic list carried into a GS link emitted
+    `slot2=vera&slot4=mouse&slot6=disk2&tab=vera` (and a GS list carried the other
+    way died in the parser). Measured, without the reseed a GS link carries
+    `ramdisk=4096&slot1=none&slot2=vera&slot3=aux&slot4=mouse&slot5=none&slot6=disk2&tab=vera`.
+  - The disk tab now offers the IIgs bays: slot 6 rows appear for `gsDiskPort` as
+    well as `disk2`, and a new slot 5 pair (`s5d1`/`s5d2`, gated on `gsSmartPort` or
+    the legacy `disk35`) with `linkBuilder.slot5Drive1/2` in `messages.pot` + all 15
+    `.po`. Regressions: `linkbuilder` (IIgs cases).
 - **`?boot=true` must wait for the fragment disk to mount** (`__pendingBootAfterDisk`
   + `.finally`, so a failed mount still boots). Booting first scanned an empty
   drive.
@@ -928,6 +964,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\prodos_names.cjs`, `prodos_dir_entries.cjs` | read-only ProDOS volume decoder: `node prodos_names.cjs <image> [filter]` walks the volume directory tree, `node prodos_dir_entries.cjs <image> <dirBlock>` dumps one block. **A directory *header* block keeps its own record at offset 4 and its children from 43 onward; a storage block packs from 0** — dumping a header block from 0 gives garbage. Verified entry offsets: byte 0 `(storageType<<4)\|nameLength`, name 15 B at +1, **file type +16, first block +17/+18, blocks used +19/+20, EOF 3 B at +21**. The textbook 17/18-19/36-37 offsets are wrong and produced `eof=12124162`. Ground truth: SystemDisk.2mg `start.gs.os` 13/27/13169 |
 | `...\Temp\opencode\gs_da_drawer2.cjs` | real-UI DA drawer check: `node gs_da_drawer2.cjs <image> [waitS] [port] [driveIdx]` boots the volume on a fresh profile, clicks the machine-menu item, then sends the raw `rAlt`+`Esc` chord, saving `drawer_<TAG>_<n>.png` and printing per-step changed-row counts. The crop must start at the first **bright** canvas row: the IIgs black border puts the screen top at row 40 of the 818x511 canvas, so a strip taken from row 0 is blank |
 | `...\Temp\opencode\gs_rom_desk_button.cjs` | real-UI check of the one-click IIgs Desk Accessories button: `node gs_rom_desk_button.cjs [waitS] [port] [machine]` boots a fresh profile with **no disk**, reports `#tour-iigs-desk-button` (`present` + tooltip + rect), clicks it and prints the changed canvas-row count with `deskbtn_<machine>_<n>.png`. It doubles as the visibility probe (`present: false` on the IIe) and is the fastest way to see whether the ROM boot actually reached its desk manager |
+| `...\Temp\opencode\gs_linkbuilder.cjs` | real-UI Link Builder check: `build [waitS] [port]` boots a fresh-profile IIgs, opens 連結產生器 and dumps every `select` (name/value/options) plus the readonly link textarea; `emit [waitS] [port] [url]` also picks Custom URL on each drive row, types the URL into the 3.5" drive-1 field (matched by its language-independent `http://example.com/floppy35.dsk` placeholder) and prints the emitted link; `visit <port> <url> [waitS]` opens that link on its own fresh profile and reports `#tour-iigs-desk-button`, the footer (`2.61 MHz, 8 MB`), `.disk-label` texts and the `S5,S1…` bay statuses — the only way to prove a built link actually boots the machine it names |
 | `...\Temp\opencode\gs_chord_ui.cjs`, `gs_menu_visibility.cjs` | real-UI key-chord check: `node gs_chord_ui.cjs [waitS] [port]` boots GS/OS on a fresh profile and compares canvas **scanline row-sums** around raw host keys, so `bare W changed rows: 0` vs `Closed-Apple + W changed rows: 281` is the observed evidence (§6); the visibility variant takes a `[machine]` argument and stops before the keystrokes, which is how the IIgs-only menu item was confirmed absent on the IIe. Select menu entries by `/機器配置\|machine configuration/i` title text — headless Chrome renders the UI in the user's language, and the `basic-button` id is reused by several components |
 | `?romtrace=1` | PC histogram + `window.__romTrace`, `__romTracePeek(addrs)` reads guest memory (peekPc/peekCode/peekZp) |
 | `?iwmgaps=1` | IWM read-cadence stats on `window.__iwmStats` |
@@ -1206,6 +1243,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | Clicking the DA drawer proves the drawer works | Nothing visibly opens, but **not** because the media lacks DAs. Every local GS volume has a populated `System/Desk Accs`, the Finder reads those blocks at boot, and the drawer hole is missing from the guest's *own* SHR bytes — so ⌘-Esc is taken with nothing to open (§6) |
 | Realigning `$C027` is impossible — it breaks the boot and three suites | The realignment is what the ROM asks for. The 「Fatal system error-> 0911」 was our own bit 0: the boot-time command loop at `FF:851E` spins on "command register full" until it reads 0 before writing the next argument, so reporting the awaiting-arguments state there starves the self-test. Both references leave bit 0 clear; with it clear the desk-manager report lands and every suite passes (§3, §6) |
 | The ROM's Desk Accessories menu is a key combination the guest can be handed | It is the **ADB micro's** own data-register report (bit 5) plus the data-register interrupt; the micro swallows the Escape, so no `$C000`/`$C025` chord — however correct — can raise it (§6) |
+| A link that names only IIgs slot cards will open a IIgs | `?slot1=gsPrinter&…` without `?machine=apple2gs` opens the *visitor's* last machine and the parser drops every `gs*` card value, so the builder's own IIgs link came up as an IIe (`1.02 MHz, 128 KB`) on a fresh profile. Naming the machine is also what makes the `gs*` cards legal (§9) |
+| `…#s5d1=url.2mg` mounts the IIgs 3.5" drive | The hash is exactly one disk URL; bay parameters are read from the query only, so that hash asks for a disk *named* `s5d1=url.2mg` (§9) |
 | CDP-synthesised key events prove a chord is pressable | They bypass the OS. On Windows `Alt + Esc` is stolen (window cycling), so the physical `rAlt-Esc` a browser test "verified" cannot be typed; only the numpad bindings reach the page, and those were not driving `$C025` (§6) |
 | No local image has a `Desk Accs` folder | False — it came from scanning raw sectors for an ASCII needle. ProDOS stores names with bit-7 case flags, so nothing matched. Decoded directory blocks: GSOS601.po 4 entries, SystemDisk.2mg 1, MYCRATE.2MG 10, freegemas / AlterEgo 11 (§6) |
 | The missing menu-bar drawer hole is our renderer dropping it | Decoded from the guest's SHR buffer: the Finder wrote white there. gssquared and KEGS have no drawer code either — it is guest drawing (§6) |
@@ -1273,6 +1312,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   under ROM 03 with no `$0201`/`LoadDump.DA` alert),
   `ensoniq_resample` (carried resampler continuity, length and buffer rate),
   `memory_label` (footer RAM readout: IIgs 8 MB vs. classic aux-card totals, §9),
+  `linkbuilder` (IIgs links: `machine=apple2gs` and no `speed=` at the GS default,
+  the GS speed table in `retrieveFromEmulatorSettings`, the S5 3.5" rows emitting
+  `s5d1=`, and reseeding `slotConfig` so no classic card reaches a GS link, §9),
   `adbmodifiers` (which host key carries which IIgs Apple-key role — Alt / Meta /
   numpad bindings, so a Windows user can actually press a chord, §6)
 

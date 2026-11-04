@@ -3658,6 +3658,14 @@ msgctxt "linkBuilder.slot6Drive2"
 msgid "Slot 6 Drive 2 (Floppy 2)"
 msgstr "Ranura 6 Unidad 2 (Disquete 2)"
 
+msgctxt "linkBuilder.slot5Drive1"
+msgid "Slot 5 Drive 1 (3.5-inch Floppy 1)"
+msgstr "Ranura 5 Unidad 1 (Disquete de 3,5 pulgadas 1)"
+
+msgctxt "linkBuilder.slot5Drive2"
+msgid "Slot 5 Drive 2 (3.5-inch Floppy 2)"
+msgstr "Ranura 5 Unidad 2 (Disquete de 3,5 pulgadas 2)"
+
 msgctxt "linkBuilder.slot7Drive1"
 msgid "Slot 7 Drive 1 (Hard Drive 1)"
 msgstr "Ranura 7 Unidad 1 (Disco duro 1)"

@@ -233,6 +233,54 @@ describe("handleFragment multi-disk loading", () => {
     expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
   })
 
+  test("mounts the IIgs 3.5\" pair via s5d1 and s5d2", async () => {
+    await handleFragment(
+      undefined,
+      false,
+      "?s5d1=SystemDisk.2mg&s5d2=MYCRATE.2MG",
+      "",
+    )
+
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "SystemDisk.2mg",
+      undefined,
+      4, // s5d1 -> index 4
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "MYCRATE.2MG",
+      undefined,
+      5, // s5d2 -> index 5
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("reads bay parameters from the query only, never from the hash", async () => {
+    // The hash carries exactly one disk URL, so "…#s5d1=disk.2mg" asks for a
+    // disk named "s5d1=disk.2mg" in the default bay rather than the 3.5" drive.
+    await handleFragment(
+      undefined,
+      false,
+      "",
+      "#s5d1=SystemDisk.2mg",
+    )
+
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith("s5d1=SystemDisk.2mg", undefined)
+  })
+
   test("falls back to hash fragment when no multi-drive parameters exist", async () => {
     await handleFragment(
       undefined,

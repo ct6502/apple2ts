@@ -3720,6 +3720,14 @@ msgctxt "linkBuilder.slot6Drive2"
 msgid "Slot 6 Drive 2 (Floppy 2)"
 msgstr "插槽 6 磁碟機 2 (軟碟 2)"
 
+msgctxt "linkBuilder.slot5Drive1"
+msgid "Slot 5 Drive 1 (3.5-inch Floppy 1)"
+msgstr "插槽 5 磁碟機 1 (3.5 吋軟碟 1)"
+
+msgctxt "linkBuilder.slot5Drive2"
+msgid "Slot 5 Drive 2 (3.5-inch Floppy 2)"
+msgstr "插槽 5 磁碟機 2 (3.5 吋軟碟 2)"
+
 msgctxt "linkBuilder.slot7Drive1"
 msgid "Slot 7 Drive 1 (Hard Drive 1)"
 msgstr "插槽 7 磁碟機 1 (硬碟 1)"
