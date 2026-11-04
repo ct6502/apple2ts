@@ -5,9 +5,11 @@ import {
   faVolumeXmark,
   faSync,
   faPalette,
+  faDesktop,
 } from "@fortawesome/free-solid-svg-icons"
 import { faWindowMaximize as faWindowMaximizeOutline } from "@fortawesome/free-regular-svg-icons"
 import { MachineConfig } from "../devices/machineconfig"
+import { handleGetMachineName, passIigsDeskPanel } from "../main2worker"
 import { notifySettingsChanged, resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
@@ -150,6 +152,14 @@ const ConfigButtons = (props: DisplayProps) => {
     {!isGameMode() && <AudioConfig {...props} />}
 
     {!isGameMode() && <MachineConfig {...props} />}
+
+    {handleGetMachineName() === "APPLE2GS" && <button className="push-button"
+      id="tour-iigs-desk-button"
+      title={t("machine.iigsDeskPanel")}
+      aria-label={t("machine.iigsDeskPanel")}
+      onClick={() => { passIigsDeskPanel() }}>
+      <FontAwesomeIcon icon={faDesktop} />
+    </button>}
 
     {!isGameMode() && <TimeTravelConfig/>}
 

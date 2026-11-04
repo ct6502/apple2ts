@@ -429,12 +429,14 @@ test assert a chord the guest could never have been sent.
     screen and under ProDOS 8. Under booted GS/OS the report is delivered and consumed
     with nothing drawn, which is authentic — GS/OS owns the desk manager there — so the
     menu item is not a way to summon the drawer described below.
-  - UI: the machine menu's `machine.iigsDeskPanel` item posts
-    `MSG_MAIN.IIGS_DESK_PANEL` (`passIigsDeskPanel()`, fire-and-forget), and the worker
-    runs `openIigsRomDeskPanel()` while `RUN_MODE.RUNNING`. It injects ADB events only —
-    no `$C000`, no closed loop — because the micro answers the sequence itself.
-    `isVisible: machineName === "APPLE2GS"`, verified in the browser: it renders under
-    "機器配置" on the IIgs and is absent on the IIe.
+  - UI: `passIigsDeskPanel()` posts `MSG_MAIN.IIGS_DESK_PANEL` (fire-and-forget) and the
+    worker runs `openIigsRomDeskPanel()` while `RUN_MODE.RUNNING`. It injects ADB events
+    only — no `$C000`, no closed loop — because the micro answers the sequence itself.
+    Two entries carry it, both `machineName === "APPLE2GS"` only: a one-click
+    `faDesktop` push-button in the top bar (`src/ui/controls/configbuttons.tsx`, id
+    `tour-iigs-desk-button`, tooltip `machine.iigsDeskPanel`) and the machine-menu item
+    under it. The button exists because the menu path costs two clicks (gear → item) and
+    the real chord costs three held keys.
   - Regression: `gs_rom_desk_panel.test.ts` — the micro in isolation (report latched and
     read back as `$20`, the interrupt raised and cleared, two-key forms left as ordinary
     keys, report ahead of a queued command response, and `$C027` bit 0 clear while a
@@ -445,13 +447,16 @@ test assert a chord the guest could never have been sent.
     Disabling the intercept turns 4 cases red and the boot stays at
     `Check startup device!`; re-adding the bit-0 report turns 3 red, including the boot.
   - **Verified in the real UI** (`Temp\opencode\gs_rom_desk_ui.cjs`,
-    `gs_rom_desk_chord.cjs`, no disk, fresh Chrome profile): clicking the machine-menu
-    item changes 90 canvas rows and draws the ROM menu, and pressing the physical chord
-    `Ctrl + Numpad0 (Open Apple) + Esc` changes 89 rows and draws the same screen —
+    `gs_rom_desk_chord.cjs`, `gs_rom_desk_button.cjs`, no disk, fresh Chrome profile):
+    the one-click top-bar button changes 68 canvas rows, clicking the machine-menu item
+    changes 90, and pressing the physical chord
+    `Ctrl + Numpad0 (Open Apple) + Esc` changes 89 — all three draw the same screen:
     title `Desk Accessories`, `Control Panel`, `Alternate Display Mode`, `Quit`, and the
-    `Select: ↓↑   Open: ↵` footer. The earlier browser failure was not the UI: the
-    no-disk boot itself had died at 「Fatal system error-> 0911」, so the click had no
-    desk manager to wake.
+    `Select: ↓↑   Open: ↵` footer. `gs_rom_desk_button.cjs [waitS] [port] [machine]`
+    also answers the visibility question: `present: true` with the `桌面配件（…）`
+    tooltip on the IIgs, `present: false` on the IIe. The earlier browser failure was
+    not the UI: the no-disk boot itself had died at 「Fatal system error-> 0911」, so
+    the click had no desk manager to wake.
 
 **The GS/OS DA (Desk Accessories) drawer** opens on Closed Apple + Escape, which a
 user presses with the bindings above — there is no injected function for it, because
@@ -922,6 +927,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\mckey.cjs`, `mcpeek.cjs`, `mc1.cjs` | MCS key injection / memory peeking over CDP |
 | `...\Temp\opencode\prodos_names.cjs`, `prodos_dir_entries.cjs` | read-only ProDOS volume decoder: `node prodos_names.cjs <image> [filter]` walks the volume directory tree, `node prodos_dir_entries.cjs <image> <dirBlock>` dumps one block. **A directory *header* block keeps its own record at offset 4 and its children from 43 onward; a storage block packs from 0** — dumping a header block from 0 gives garbage. Verified entry offsets: byte 0 `(storageType<<4)\|nameLength`, name 15 B at +1, **file type +16, first block +17/+18, blocks used +19/+20, EOF 3 B at +21**. The textbook 17/18-19/36-37 offsets are wrong and produced `eof=12124162`. Ground truth: SystemDisk.2mg `start.gs.os` 13/27/13169 |
 | `...\Temp\opencode\gs_da_drawer2.cjs` | real-UI DA drawer check: `node gs_da_drawer2.cjs <image> [waitS] [port] [driveIdx]` boots the volume on a fresh profile, clicks the machine-menu item, then sends the raw `rAlt`+`Esc` chord, saving `drawer_<TAG>_<n>.png` and printing per-step changed-row counts. The crop must start at the first **bright** canvas row: the IIgs black border puts the screen top at row 40 of the 818x511 canvas, so a strip taken from row 0 is blank |
+| `...\Temp\opencode\gs_rom_desk_button.cjs` | real-UI check of the one-click IIgs Desk Accessories button: `node gs_rom_desk_button.cjs [waitS] [port] [machine]` boots a fresh profile with **no disk**, reports `#tour-iigs-desk-button` (`present` + tooltip + rect), clicks it and prints the changed canvas-row count with `deskbtn_<machine>_<n>.png`. It doubles as the visibility probe (`present: false` on the IIe) and is the fastest way to see whether the ROM boot actually reached its desk manager |
 | `...\Temp\opencode\gs_chord_ui.cjs`, `gs_menu_visibility.cjs` | real-UI key-chord check: `node gs_chord_ui.cjs [waitS] [port]` boots GS/OS on a fresh profile and compares canvas **scanline row-sums** around raw host keys, so `bare W changed rows: 0` vs `Closed-Apple + W changed rows: 281` is the observed evidence (§6); the visibility variant takes a `[machine]` argument and stops before the keystrokes, which is how the IIgs-only menu item was confirmed absent on the IIe. Select menu entries by `/機器配置\|machine configuration/i` title text — headless Chrome renders the UI in the user's language, and the `basic-button` id is reused by several components |
 | `?romtrace=1` | PC histogram + `window.__romTrace`, `__romTracePeek(addrs)` reads guest memory (peekPc/peekCode/peekZp) |
 | `?iwmgaps=1` | IWM read-cadence stats on `window.__iwmStats` |
