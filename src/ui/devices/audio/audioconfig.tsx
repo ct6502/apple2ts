@@ -88,7 +88,7 @@ export const SlotAudioConfig = (props: DisplayProps & { card: SlotAudioCard, slo
 
   return (
     <PopupMenu
-      buttonTitle={`${t("linkBuilder.slots.slot", { slot: String(props.slot) })}: ${cardName} ? ${t("audio.configuration")}`}
+      buttonTitle={`${t("linkBuilder.slots.slot", { slot: String(props.slot) })}: ${cardName} - ${t("audio.configuration")}`}
       buttonIcon={<FontAwesomeIcon icon={faMusic} style={{ fontSize: "0.8em" }} />}
       menuItems={[items]}
     />
