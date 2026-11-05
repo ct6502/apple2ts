@@ -8,6 +8,7 @@ import { doBoot } from "../../motherboard"
 import { s6502, setPC, setCycleCount } from "../../instructions"
 import { processInstruction } from "../../cpu6502"
 import { getVeraSpriteDemoAssembly, getVeraMode7DemoAssembly, buildVeraDemo } from "./vera_demos"
+import { MSG_WORKER } from "../../../common/utility"
 
 describe("VERA Graphics & Sound Card Emulation on Apple II", () => {
   beforeAll(() => {
@@ -109,6 +110,22 @@ describe("VERA Graphics & Sound Card Emulation on Apple II", () => {
     expect(step).toHaveBeenCalledTimes(1)
 
     step.mockRestore()
+  })
+
+  test("publishes a worker frame at the scheduled VGA frame boundary", () => {
+    const postMessage = jest.mocked(globalThis.postMessage)
+    const startCycle = s6502.cycleCount
+    memSet(0x2000, 0xEA)
+    setPC(0x2000)
+    postMessage.mockClear()
+
+    setCycleCount(startCycle + video_cycles_until_next_event() - 1)
+    processInstruction()
+
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({
+      msg: MSG_WORKER.VERA_FRAME,
+      payload: expect.objectContaining({ sequence: expect.any(Number) }),
+    }))
   })
 
   test("asserts a line interrupt at its scheduled raster deadline", () => {
