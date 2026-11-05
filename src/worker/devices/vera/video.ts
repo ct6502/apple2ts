@@ -167,13 +167,6 @@ const default_palette = new Uint16Array([
 ])
 
 export const video_reset = (): void => {
-	visualFrameUnchanged = false
-	visualWritesSinceFrame = true
-	stableVisualFrames = 0
-	skipFrameRendering = false
-	previousFrameTime = 0
-	reducedRenderingFrames = 0
-	renderFramePhase = 0
 	// console.log("[VERA] video_reset")
 	// init I/O registers
 	io_addr.fill(0)
@@ -901,14 +894,6 @@ let s_pos_x_p: number = 0
 let eff_y_fp: number = 0
 let eff_x_fp: number = 0
 
-let visualFrameUnchanged = false
-let visualWritesSinceFrame = true
-let stableVisualFrames = 0
-let skipFrameRendering = false
-let previousFrameTime = 0
-let reducedRenderingFrames = 0
-let renderFramePhase = 0
-
 const render_line = (y: number, scan_pos_x: number): void => {
 
 	const dc_video: number = reg_composer[0]
@@ -1023,7 +1008,7 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		render_sprite_line(eff_y)
 	}
 
-	if (visualFrameUnchanged || skipFrameRendering || (warp_mode && (frame_count & 63))) {
+	if (warp_mode && (frame_count & 63)) {
 		// sprites were needed for the collision IRQ, but we can skip
 		// everything else if we're in warp mode, most of the time
 		return
@@ -1372,23 +1357,7 @@ export const video_update = (): boolean => {
   }
 
   // inform the renderer here that framebuffer is updated
-  if (!skipFrameRendering && !visualFrameUnchanged) passVeraFramebuffer(framebuffer, reg_composer[0])
-  stableVisualFrames = visualWritesSinceFrame ? 0 : stableVisualFrames + 1
-  // Let delayed composer/layer registers settle before reusing a frame.
-  visualFrameUnchanged = stableVisualFrames >= 2
-  visualWritesSinceFrame = false
-  // Keep scanline/IRQ/audio emulation running, but reduce visual work when
-  // the host cannot sustain 60 complete frames. Hold for two seconds to
-  // avoid switching quality on every slightly late frame. Render one in
-  // three frames while overloaded, reserving more CPU time for guest audio.
-  const now = performance.now()
-  if (previousFrameTime && now - previousFrameTime > 18.5 && !skipFrameRendering) {
-    reducedRenderingFrames = 120
-  }
-  previousFrameTime = now
-  renderFramePhase = (renderFramePhase + 1) % 3
-  skipFrameRendering = reducedRenderingFrames > 0 && renderFramePhase !== 0
-  if (reducedRenderingFrames > 0) reducedRenderingFrames--
+  passVeraFramebuffer(framebuffer, reg_composer[0])
 	return true
 }
 
@@ -1888,16 +1857,6 @@ export const video_read = (reg: number, debugOn: boolean): number => {
 }
 
 export const video_write = (reg: number, value: number): void => {
-	// Address selection, IRQ acknowledgement, and PSG writes do not alter
-	// the displayed image. Other data/display writes invalidate the cache.
-	const dataPort = reg === 3 || reg === 4
-	const target = dataPort ? io_addr[reg - 3] & 0x1ffff : -1
-	const psgOnly = dataPort && target >= ADDR_PSG_START && target < ADDR_PSG_END
-	if ((dataPort && !psgOnly) || reg >= 9 || (reg === 5 && (value & 0x80))) {
-		visualWritesSinceFrame = true
-		visualFrameUnchanged = false
-	}
-
 	// if (reg > 4) {
 	// 	printf("ioregisters[0x%02X] = 0x%02X\n", reg, value)
 	// }

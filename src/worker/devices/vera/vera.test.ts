@@ -1,7 +1,7 @@
 import fs from "fs"
 import { enableVera, resetVera, initVera, sdcard_attach_image, sdcard_detach_image, sdcard_get_status, syncVera } from "./vera"
 import * as video from "./video"
-import { video_cycles_until_next_event, video_step, video_get_framebuffer, video_reset, video_write } from "./video"
+import { video_cycles_until_next_event, video_step, video_get_framebuffer, video_reset, video_update, video_write } from "./video"
 import { vera_spi_step, sdcard_set_write_protected, sdcard_clear_changes, sdcard_get_write_seq } from "./sdcard"
 import { memGet, memSet } from "../../memory"
 import { doBoot } from "../../motherboard"
@@ -40,6 +40,16 @@ describe("VERA Graphics & Sound Card Emulation on Apple II", () => {
     // 21 * 25 MHz / 512 / 128 samples per second.
     expect(freed).toBeGreaterThanOrEqual(2002)
     expect(freed).toBeLessThanOrEqual(2003)
+  })
+
+  test("publishes every completed frame even without intervening visual writes", () => {
+    const postMessage = jest.mocked(globalThis.postMessage)
+    video_write(0x09, 0x01)
+    postMessage.mockClear()
+
+    for (let frame = 0; frame < 4; frame++) video_update()
+
+    expect(postMessage).toHaveBeenCalledTimes(4)
   })
 
   test("resynchronizes after the CPU cycle counter moves backward", () => {
