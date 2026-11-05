@@ -178,9 +178,6 @@ export const initSoftSynth = async () => {
     isInitialized = true
     console.log("smplr SoundFont synthesizer initialized")
   }
-  if (audioContext.state === "suspended") {
-    await audioContext.resume()
-  }
 }
 
 export const setMasterVolume = (volume: number) => {
