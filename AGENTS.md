@@ -130,12 +130,17 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   enters that glue (measured: zero `$E1:04xx` task writes on ROM 01). Regression:
   `gs_mycrate_rom.test.ts` (both ROMs; commenting out that one `memory.fill`
   reproduces the monitor at frame 1210 ≈ 20 s).
-- **Text page 2 shadowing is a ROM 03 feature.** gssquared's `shadow_is_enabled()`
-  gates only the `$0800-$0BFF` window on `is_rom03` (= `rom_banks >= 4`), because
-  ROM 01 keeps text page 2 in fast RAM; TEXT1 `$0400-$07FF`, both hires windows and
-  the SHR/AUXHGR windows are ungated. `iigsTextMainSource`, the bank-`$00` shadow
-  write and its read mirror all check `isIigsRom03()` for `$0800-$0BFF`. Without
-  the gate, ROM 01 80-column page 2 written to fast RAM disappears from the screen.
+- **Text page 2 shadowing is a ROM 03 feature — on the write side only.**
+  gssquared's `shadow_is_enabled()` gates only the `$0800-$0BFF` window on
+  `is_rom03` (= `rom_banks >= 4`), because ROM 01 has no TEXT2 shadow at all;
+  TEXT1 `$0400-$07FF`, both hires windows and the SHR/AUXHGR windows are ungated.
+  `shadowIigsWrite` checks `isIigsRom03()` for `$0800-$0BFF`, and that is the
+  whole story: it decides whether a CPU store to `$0800` *reaches* the Mega II
+  page. It says nothing about where the beam reads from, so `iigsTextMainSource`
+  / `iigsTextAuxSource` must **not** mirror the gate. Extrapolating it into the
+  renderer (commit `503ed876`: "ROM 01 keeps page 2 in fast RAM, so read fast
+  RAM") hid every page written straight through `$E0`/`$E1` — which on ROM 01 is
+  the only route to page 2, and what Applecorn's MOS does (§11.14).
 - **Language-card RAM is never shadowed between bank 01 and bank `$E1`.** A stray
   `megaIIAux[off] = data` in the bank-01 LC write path corrupted the GS/OS volume
   prefix and produced `Fatal system error 0308`.
@@ -248,10 +253,15 @@ mouse dispatch that publishes the event record.
   forever. **The emulator no longer draws a cursor overlay** — the guest does
   (`drawIigsCursor`, `setHostCursorNorm`, `cursorX/Y` in `MachineState` are all
   deleted; do not bring them back).
-- **Text page source**: the scanner reads **Mega II main/aux RAM**, not fast RAM,
-  when `$C035` says the page is shadowed (`iigsTextMainSource` /
-  `iigsTextAuxSource`). ProDOS 16 systems (`$E0:$0400` / `$E1:$0400`) render
-  black without this.
+- **Text page source**: the IIgs legacy scanner reads **Mega II main/aux RAM**
+  (banks `$E0`/`$E1`) and nothing else — `iigsTextMainSource` /
+  `iigsTextAuxSource` return `megaIIMain` / `megaIIAux` unconditionally, for both
+  pages and both halves of the 80-column merge. `$C035` only redirects *CPU*
+  accesses into that RAM (§2), so reading fast RAM whenever a shadow bit says
+  "inhibited" (or whenever the ROM is 01) hides whatever the guest put there
+  directly: ProDOS 16 systems (`$E0:$0400` / `$E1:$0400`) render black, and
+  Applecorn's MOS banner never appears (§11.14). Classic machines keep reading
+  bank `$00`/`$01`.
 - MouseText decoding must be enabled for `APPLE2GS` as well as `APPLE2EE`
   (`graphics.ts`, `copycanvas.ts`), or the startup bar shows `@ A L` instead of
   the Apple glyphs and lines.
@@ -1026,6 +1036,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\prodos_names.cjs`, `prodos_dir_entries.cjs` | read-only ProDOS volume decoder: `node prodos_names.cjs <image> [filter]` walks the volume directory tree, `node prodos_dir_entries.cjs <image> <dirBlock>` dumps one block. **A directory *header* block keeps its own record at offset 4 and its children from 43 onward; a storage block packs from 0** — dumping a header block from 0 gives garbage. Verified entry offsets: byte 0 `(storageType<<4)\|nameLength`, name 15 B at +1, **file type +16, first block +17/+18, blocks used +19/+20, EOF 3 B at +21**. The textbook 17/18-19/36-37 offsets are wrong and produced `eof=12124162`. Ground truth: SystemDisk.2mg `start.gs.os` 13/27/13169 |
 | `...\Temp\opencode\gs_da_drawer2.cjs` | real-UI DA drawer check: `node gs_da_drawer2.cjs <image> [waitS] [port] [driveIdx]` boots the volume on a fresh profile, clicks the machine-menu item, then sends the raw `rAlt`+`Esc` chord, saving `drawer_<TAG>_<n>.png` and printing per-step changed-row counts. The crop must start at the first **bright** canvas row: the IIgs black border puts the screen top at row 40 of the 818x511 canvas, so a strip taken from row 0 is blank |
 | `...\Temp\opencode\gs_rom_desk_button.cjs` | real-UI check of the one-click IIgs Desk Accessories button: `node gs_rom_desk_button.cjs [waitS] [port] [machine]` boots a fresh profile with **no disk**, reports `#tour-iigs-desk-button` (`present` + tooltip + rect), clicks it and prints the changed canvas-row count with `deskbtn_<machine>_<n>.png`. It doubles as the visibility probe (`present: false` on the IIe) and is the fastest way to see whether the ROM boot actually reached its desk manager |
+| `...\Temp\opencode\gs_applecorn_ui.cjs` | real-UI Applecorn check: `node gs_applecorn_ui.cjs [waitS] [port] [rom]` boots `applecorn-0.54-beta.po` on S5,D1 with a fresh profile, presses `1` with a raw CDP key, prints the changed canvas-row count, peeks `$E1`/`$E0:$0800` back into the 80-column merge (`__romTracePeek`) and saves `acui_rom<rom>.png` |
 | `...\Temp\opencode\gs_linkbuilder.cjs` | real-UI Link Builder check: `build [waitS] [port]` boots a fresh-profile IIgs, opens 連結產生器 and dumps every `select` (name/value/options) plus the readonly link textarea; `emit [waitS] [port] [url]` also picks Custom URL on each drive row, types the URL into the 3.5" drive-1 field (matched by its language-independent `http://example.com/floppy35.dsk` placeholder) and prints the emitted link; `visit <port> <url> [waitS]` opens that link on its own fresh profile and reports `#tour-iigs-desk-button`, the footer (`2.61 MHz, 8 MB`), `.disk-label` texts and the `S5,S1…` bay statuses — the only way to prove a built link actually boots the machine it names |
 | `...\Temp\opencode\gs_chord_ui.cjs`, `gs_menu_visibility.cjs` | real-UI key-chord check: `node gs_chord_ui.cjs [waitS] [port]` boots GS/OS on a fresh profile and compares canvas **scanline row-sums** around raw host keys, so `bare W changed rows: 0` vs `Closed-Apple + W changed rows: 281` is the observed evidence (§6); the visibility variant takes a `[machine]` argument and stops before the keystrokes, which is how the IIgs-only menu item was confirmed absent on the IIe. Select menu entries by `/機器配置\|machine configuration/i` title text — headless Chrome renders the UI in the user's language, and the `basic-button` id is reused by several components |
 | `?romtrace=1` | PC histogram + `window.__romTrace`, `__romTracePeek(addrs)` reads guest memory (peekPc/peekCode/peekZp) |
@@ -1271,6 +1282,28 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     Accessories menu instead (§6), which works; nothing here is waiting on the
     ADB-micro intercept or the `$C027` realignment — both are in, and the earlier
     `0911` fatal error they seemed to cause was our own bit-0 report (§3).
+14. **Applecorn 0.54-beta "crashes" on the IIgs — RESOLVED: it never crashed.**
+    `applecorn-0.54-beta.po` in S5,D1 came up as a screen of interleaved garbage
+    on both ROMs after picking BBC BASIC, and looked frozen. The guest was fine:
+    its MOS boots, loads `/APLCORN.SYSTEM` and writes its own banner
+    (`Applecorn v0.54-beta-0-g3325769`, `BASIC`, `>`) with native 24-bit stores
+    into `$E0:$0800` / `$E1:$0800` (measured 960 writes per bank — the two halves
+    of the 80-column page). The renderer read page 2 from bank-`$00` fast RAM on
+    **both** ROMs, just for different reasons: ROM 01 through the extrapolated
+    `!isIigsRom03()` branch, ROM 03 through the `$C035` bit-5 test, because
+    Applecorn leaves `$C035 = $28` there (ROM 01: `$08`) — and the beam does not
+    care about either (§2, §4). So both showed the identical stale page, whose
+    surviving text was an earlier boot attempt's `ram too large **** Unable to
+    load APLCORN`. Fix: `iigsTextMainSource` / `iigsTextAuxSource` return Mega II
+    unconditionally. Verified in the real UI on both ROMs
+    (`Temp\opencode\gs_applecorn_ui.cjs [waitS] [port] [rom]`: 213 changed canvas
+    rows after the keystroke, and `__romTracePeek` over `$E1/$E0:$0800` merges
+    back to the banner) and in jest: `gs_applecorn.test.ts` boots the volume on
+    ROM 01 and ROM 03, asserts the banner **and** that BBC BASIC answers a typed
+    `PRINT 6*7` with `42`, pins the bytes to the Mega II banks (the fast-RAM merge
+    must *not* hold them), and keeps the //e reading its own fast RAM. Restoring
+    either old branch turns both ROM cases red with exactly the garbage the user
+    reported.
 
 ---
 
@@ -1290,6 +1323,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | Replacing `$C050-$C05D` with gssquared's explicit bits is an improvement | Changed the palette and broke six suites |
 | `extractShrBuffer` was fine, the caller forgot to check | It silently adds `$2000`; the buffer was clamped short |
 | An 8-instruction batch is a free perf win | Starved SmartPort reads in the browser only |
+| The IIgs renderer must read text page 2 from fast RAM on ROM 01 (or whenever `$C035` bit 5 is set) | The beam only ever scans Mega II; `$C035` redirects *CPU* accesses. Applecorn writes `$E0/$E1:$0800` and leaves `$C035 = $28`, so both read-side branches showed the same stale page on their respective ROMs (§2, §4, §11.14) |
 | SenseiPlay's 37 rows/s is the authored tempo | Wrong NTP pattern offset (a stray `p++` in the header walk) made the tempo look self-consistent; the real average is ~2.735 ticks/row (~18.3 rows/s at 50 Hz). The 37 rows/s came from a build whose DOC march ran 1.5x fast; the (also wrong) 2.05-ticks/row estimate read only rows 0 and 3 of pattern 0 |
 | The MCS splash hangs unless a key arrives | The no-key timeout *is* the demo loader. It crashed because banks `$00`/`$01` kept routing `$C000-$CFFF` to the Mega II soft switches while `$C035` bit 6 asked for fast RAM, so the driver relocation poked I/O instead of copying |
 | A live Tool Locator / Event Manager means the guest publishes its cursor | freegemas keeps its own cursor and reads `$C024` directly; the holes stay `(0,0)` and closed-loop steering pinned its pointer in a corner. The flag says GS/OS is up, not that this program uses the EM cursor |
@@ -1370,6 +1404,10 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `gs_floppy35_basic` (a real Applesoft `SAVE`/`LOAD` on A2DeskTop-1.5.po through
   slot 5: `SAVE`, `NEW`/`LOAD`/`LIST`/`RUN`, then the spliced image is remounted
   and loaded again, §7),
+  `gs_applecorn` (Applecorn 0.54-beta from S5,D1 on both ROMs: the MOS banner
+  reaches the screen, BBC BASIC answers a typed `PRINT 6*7`, the banner bytes are
+  in the Mega II banks and not in fast RAM, and the //e still reads its own page,
+  §2, §4, §11.14),
   `gs_speed`, `gs_speed_default` (IIgs 2.8 MHz default, §8), `gs_boot`,
   `gs_hdd_boot`, `gs_slots_mockingboard`, `gs_boot_order` (browser message order
   on a fresh profile: slot config → machine switch → 3.5" boot, §7),

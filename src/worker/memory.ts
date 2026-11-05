@@ -1889,33 +1889,22 @@ const TEXT_PAGE2 = 0x800
 
 // Apple IIgs text-page sources for the video scanner.
 //
-// The IIgs's $C035 (STAT) shadow register decides which physical pages the
-// video scanner reads for the text screen:
-//   bit 0 ($01): text page 1  - clear => shadowed into Mega II main RAM
-//   bit 5 ($20): text page 2  - clear => shadowed into Mega II main RAM
-// 16-bit software (ProDOS 16 systems such as the SenseiPlayer disk) writes
-// its screen to $E0:$0400 (Mega II main) and $E1:$0400 (Mega II aux) and
-// expects the scanner to show those pages, so the renderer has to read them
-// from there rather than from the fast RAM the CPU sees in banks 00/01.
-const iigsTextMainSource = (pageOffset: number): Uint8Array => {
-  // Page 2 is only shadowed on ROM 03 (gssquared shadow_is_enabled / is_rom03).
-  if (pageOffset === TEXT_PAGE2 && !isIigsRom03()) return memory;
-  const shadowBit = (pageOffset === TEXT_PAGE2) ? 0x20 : 0x01;
-  if (!(iigsRegisters[0x35] & shadowBit)) return megaIIMain;
-  return memory;
-}
+// The IIgs's legacy display is scanned out of the Mega II RAM (banks $E0/$E1),
+// never out of the 65816 fast RAM in banks $00/$01. $C035 only decides whether
+// a CPU access to $0400/$0800 is *redirected* into that RAM (gssquared
+// shadow_is_enabled); it says nothing about what the beam reads. So the
+// renderer reads Mega II unconditionally, and the write-side mirror in
+// shadowIigsWrite is what decides whether an 8-bit store reaches the screen.
+//
+// Choosing fast RAM instead hides a program that writes the page through
+// $E0/$E1 directly - the only way to reach text page 2 on ROM 01, where TEXT2
+// shadowing does not exist (gssquared gates it on is_rom03), and no better on
+// ROM 03 when the guest sets the inhibit bit. Applecorn's MOS does both, and its
+// banner sat invisible behind a stale fast-RAM page on either ROM.
+const iigsTextMainSource = (): Uint8Array => megaIIMain
 
-const iigsTextAuxSource = (): Uint8Array | null => {
-  // The second half of the IIgs 80-column text screen lives in aux RAM.
-  // 16-bit software (ProDOS 16 systems) writes it straight into bank $E1
-  // (Mega II aux RAM = megaIIAux); 8-bit software reaches the same physical
-  // page through the $C003 aux switch, which lands in the fast RAM. Use
-  // whichever one the guest actually populated.
-  for (let i = 0x400; i < 0x800; i++) {
-    if (megaIIAux[i] !== 0x00 && megaIIAux[i] !== 0xA0) return megaIIAux;
-  }
-  return null;
-}
+const iigsTextAuxSource = (): Uint8Array => megaIIAux
+
 const offset = [
   0, 0x80, 0x100, 0x180, 0x200, 0x280, 0x300, 0x380, 0x28, 0xA8, 0x128, 0x1A8,
   0x228, 0x2A8, 0x328, 0x3A8, 0x50, 0xD0, 0x150, 0x1D0, 0x250, 0x2D0, 0x350,
@@ -1958,13 +1947,11 @@ export const getTextPage = (getLores = false) => {
     // Only select second 80-column text page if STORE80 is also OFF
     const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? TEXT_PAGE2 : TEXT_PAGE1
     const textPage = new Uint8Array(80 * (jend - jstart)).fill(0xA0)
-    // Apple IIgs: the text page lives in Mega II main/aux RAM when the
-    // $C035 shadow bits say so, not in the fast RAM the CPU sees in banks
-    // 00/01. 16-bit software (ProDOS 16, the SenseiPlay system) writes its
-    // screen to $E0/$E1:$0400, and the video scanner reads the same physical
-    // pages, so the renderer has to look there too.
+    // Apple IIgs: the video scanner reads the Mega II RAM (banks $E0/$E1), so
+    // both halves of the 80-column page come from there - including a page
+    // written straight through $E0/$E1, which is how ROM 01 reaches text page 2.
     const iigs = currentMachineName === "APPLE2GS"
-    const mainSrc = iigs ? iigsTextMainSource(pageOffset) : memory
+    const mainSrc = iigs ? iigsTextMainSource() : memory
     const auxSrc = iigs ? iigsTextAuxSource() : null
     for (let j = jstart; j < jend; j++) {
       const joffset = 80 * (j - jstart)
@@ -1998,8 +1985,8 @@ export const getTextPage = (getLores = false) => {
   // Normal 40-column text page
   const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? TEXT_PAGE2 : TEXT_PAGE1
   const textPage = new Uint8Array(40 * (jend - jstart))
-  // Apple IIgs: honour the $C035 text-page shadow (see the 80-column path).
-  const mainSrc = currentMachineName === "APPLE2GS" ? iigsTextMainSource(pageOffset) : memory
+  // Apple IIgs: the scanner reads the Mega II page (see the 80-column path).
+  const mainSrc = currentMachineName === "APPLE2GS" ? iigsTextMainSource() : memory
   for (let j = jstart; j < jend; j++) {
     const joffset = 40 * (j - jstart)
     const start = pageOffset + offset[j]
