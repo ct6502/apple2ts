@@ -633,6 +633,21 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 - A headerless 800 KB image is 3.5" media whatever its name (`.2mg`, `.po`,
   `.dsk`, `.do`); the 2IMG container adds 64 bytes and may carry a short trailing
   chunk.
+- **A `.woz` is classified by size, and the size gap is real.** A WOZ is a
+  *captured bitstream*, so its length is what was recorded rather than the volume
+  size: 5.25" media has at most 35 track-sides and stays under ~370 KB, while
+  3.5" media carries 160 and comes in around 1.2 MB (`Cavern_Cobra_IIgs.woz` is
+  1,296,147 B). `WOZ_525_MAX_SIZE = 512 KB` splits the two populations, and such
+  a capture is slot-5 media: `canDriveTakeImage` lets it into S5 and refuses S6,
+  and `getDefaultDiskDriveIndex` answers 4 on a IIgs but 2 when there is no
+  3.5" bay (slot 7 serves block data and cannot play a bitstream off either
+  disk size). The classifier runs on a bare file size for the disk catalog and
+  the swapper too, so it cannot read the INFO chunk — the gap is the only signal
+  available there. Two more consequences of the capture/block split: a 140 KB
+  `.po` is *not* accepted by the 3.5" bay (physically right, and the decoder
+  requires 3.5" block media there anyway), and a 800 KB `.dsk`/`.do` **is** a
+  block dump rather than a capture, so `isRawBlockImage` keeps it out of the
+  nibble family and it can still be served as block data from slot 7.
 - **A IIgs slot-5 bay stays media-driven: an *empty* bay must not report a 3.5"
   mechanism.** `is35` is a property of the media. Presenting the Sony status
   lines from an empty bay does make the ROM's built-in SMART PORT firmware
@@ -757,8 +772,23 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   decoder is the ground truth. Zoned layout is 16 cylinders each of
   12/11/10/9/8 sectors per side (160 track-sides, 1600 blocks). Writes splice the
   sector back into the block image at `64 + sectorOffset(track, sector, side)`,
-  flushed on a data-register read (`iwmFlushWrites35`). Captured 3.5" GCR images
-  (`.do`/`.woz` from real media) are still not supported.
+  flushed on a data-register read (`iwmFlushWrites35`). Captured 3.5" WOZ2 images
+  play directly (see the next bullet); captured `.do`/`.nib` 3.5" still has no
+  importer.
+- **WOZ2 declares its disk type in INFO byte 1, at file offset 21 — not 61.**
+  `decodeWoz2` used to read offset 61, which is the tail of the creator field and
+  *always 0*, so `driveState.is35` never became true and even a capture placed in
+  slot 5 was clocked as 5.25" media. Chunks start at offset 12 (the header is
+  12 bytes: `WOZ2` + 8 safety bytes) and INFO is the first one, so offset 20 is
+  the version, 21 the type (1 = 5.25", 2/3 = 3.5"), 22 write-protect, 23 sides
+  and 59 the optimal bit cell. A 3.5" capture declares 16 (= 2 µs, a 5.25" one 32)
+  and `getNextByte` advances by `optimalTiming/8` CPU cycles per bit in *both*
+  families, so the declared value needs no family adjustment — but the 3.5"
+  capture still runs on the machine-time media clock, which is what
+  `driveState.is35` selects (`blockMedia35` stays false, so the nibblizer
+  branches in `decodedisk.ts` are skipped and `driveBitstream` *is* the same
+  `Uint8Array` as `driveData` — a write edits the captured image in place, and
+  `iwmFlushWrites35` only has to raise `diskHasChanges`).
 - **The 3.5" track number is 7 bits, and the write-back decoder has to rebuild
   it.** The nibblizer writes six bits into the address field's low-track byte and
   puts bit 6 of the cylinder in **bit 0 of the side byte** (gssquared
@@ -1037,6 +1067,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\gs_da_drawer2.cjs` | real-UI DA drawer check: `node gs_da_drawer2.cjs <image> [waitS] [port] [driveIdx]` boots the volume on a fresh profile, clicks the machine-menu item, then sends the raw `rAlt`+`Esc` chord, saving `drawer_<TAG>_<n>.png` and printing per-step changed-row counts. The crop must start at the first **bright** canvas row: the IIgs black border puts the screen top at row 40 of the 818x511 canvas, so a strip taken from row 0 is blank |
 | `...\Temp\opencode\gs_rom_desk_button.cjs` | real-UI check of the one-click IIgs Desk Accessories button: `node gs_rom_desk_button.cjs [waitS] [port] [machine]` boots a fresh profile with **no disk**, reports `#tour-iigs-desk-button` (`present` + tooltip + rect), clicks it and prints the changed canvas-row count with `deskbtn_<machine>_<n>.png`. It doubles as the visibility probe (`present: false` on the IIe) and is the fastest way to see whether the ROM boot actually reached its desk manager |
 | `...\Temp\opencode\gs_applecorn_ui.cjs` | real-UI Applecorn check: `node gs_applecorn_ui.cjs [waitS] [port] [rom]` boots `applecorn-0.54-beta.po` on S5,D1 with a fresh profile, presses `1` with a raw CDP key, prints the changed canvas-row count, peeks `$E1`/`$E0:$0800` back into the 80-column merge (`__romTracePeek`) and saves `acui_rom<rom>.png` |
+| `...\Temp\opencode\gs_woz35_bay.cjs` | real-UI bay check for a large `.woz`: `node gs_woz35_bay.cjs <url> [waitS] [port]` boots a fresh profile on `?drive=N` and prints each bay's label + status (it walks up from every `.disk-label` to the smallest ancestor naming exactly one `S[567],D[12]`) plus any error dialog, and saves `%TEMP%\woz35_bay.png`. This is what proves a capture asked for slot 6 actually lands in S5,D1 and reaches its title screen |
 | `...\Temp\opencode\gs_linkbuilder.cjs` | real-UI Link Builder check: `build [waitS] [port]` boots a fresh-profile IIgs, opens 連結產生器 and dumps every `select` (name/value/options) plus the readonly link textarea; `emit [waitS] [port] [url]` also picks Custom URL on each drive row, types the URL into the 3.5" drive-1 field (matched by its language-independent `http://example.com/floppy35.dsk` placeholder) and prints the emitted link; `visit <port> <url> [waitS]` opens that link on its own fresh profile and reports `#tour-iigs-desk-button`, the footer (`2.61 MHz, 8 MB`), `.disk-label` texts and the `S5,S1…` bay statuses — the only way to prove a built link actually boots the machine it names |
 | `...\Temp\opencode\gs_chord_ui.cjs`, `gs_menu_visibility.cjs` | real-UI key-chord check: `node gs_chord_ui.cjs [waitS] [port]` boots GS/OS on a fresh profile and compares canvas **scanline row-sums** around raw host keys, so `bare W changed rows: 0` vs `Closed-Apple + W changed rows: 281` is the observed evidence (§6); the visibility variant takes a `[machine]` argument and stops before the keystrokes, which is how the IIgs-only menu item was confirmed absent on the IIe. Select menu entries by `/機器配置\|machine configuration/i` title text — headless Chrome renders the UI in the user's language, and the `basic-button` id is reused by several components |
 | `?romtrace=1` | PC histogram + `window.__romTrace`, `__romTracePeek(addrs)` reads guest memory (peekPc/peekCode/peekZp) |
@@ -1144,7 +1175,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
    window render correctly), and grayed-out menu items render as garbage glyphs
    while enabled items are fine. Both point at the mask/transfer path of QD II
    copybits (`TOOL034`), compare against `display.cpp`.
-6. **3.5" floppies — RESOLVED for 2MG block images.** `src/worker/devices/floppy35.ts`
+6. **3.5" floppies — RESOLVED for 2MG block images and WOZ2 captures.**
+   `src/worker/devices/floppy35.ts`
    expands the 800 KB volume into self-synchronising GCR fields per track-side
    (zoned 12/11/10/9/8 sectors, 160 track-sides), streams them on the machine
    clock and splices writes back into the block image. `SystemDisk.2mg` boots
@@ -1155,8 +1187,12 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
    the live IWM path. Writes were the weak half until the 7-bit track number was
    rebuilt in the decoder — cylinders 64-79 aliased to 0-15 and their written
    sectors were dropped (§7); now all 160 track-sides splice, verified through a
-   remount. Still open: captured real-media images (`.do`/`.woz` 3.5") have no
-   importer.
+   remount. A captured 3.5" WOZ2 now plays through slot 5 as well:
+   `Cavern_Cobra_IIgs.woz` (1,296,147 B, write-protected) reaches its Super
+   Hi-Res title from S5,D1 under **both** ROMs (`gs_floppy35_woz`), once the
+   classifier puts it in the bay and `decodeWoz2` reads the disk type from INFO
+   byte 1 instead of the creator padding (§7). Still open: captured `.do`/`.nib`
+   3.5" images have no importer.
 7. **SilkyGS ports render a blank SHR screen — RESOLVED.** Volume `SilkyGS.2mg`
    in S7D2 with `SystemDisk.2mg` in S7D1; picking e.g. Super Mario Bros left the
    screen a uniform palette-0 blue although the game blitted every frame. Every
@@ -1351,6 +1387,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | CDP-synthesised key events prove a chord is pressable | They bypass the OS. On Windows `Alt + Esc` is stolen (window cycling), so the physical `rAlt-Esc` a browser test "verified" cannot be typed; only the numpad bindings reach the page, and those were not driving `$C025` (§6) |
 | No local image has a `Desk Accs` folder | False — it came from scanning raw sectors for an ASCII needle. ProDOS stores names with bit-7 case flags, so nothing matched. Decoded directory blocks: GSOS601.po 4 entries, SystemDisk.2mg 1, MYCRATE.2MG 10, freegemas / AlterEgo 11 (§6) |
 | The missing menu-bar drawer hole is our renderer dropping it | Decoded from the guest's SHR buffer: the Finder wrote white there. gssquared and KEGS have no drawer code either — it is guest drawing (§6) |
+| A `.woz` is 5.25" media whatever its size | Only the *short* ones are. A WOZ stores captured flux, so length follows track-sides: 35 for 5.25" (under ~370 KB) against 160 for 3.5" (~1.2 MB). The old hard rule sent `Cavern_Cobra_IIgs.woz` out of the bay the user picked and into S6,D1, where the 5.25" LSS cannot decode it (§7) |
+| `driveState.is35` can come from WOZ offset 61 | Offset 61 is the tail of the *creator* field and always 0, so a genuine 3.5" capture read as 5.25" even inside slot 5. The declared type is INFO byte 1 = file offset 21; a 3.5" one declares optimal bit cell 16 at offset 59 (§7) |
 | "Other emulators read 3.5\" media at 1 MHz, so ours should too" | Those emulators have no 1 MHz IIgs: KEGS/GSplus follow `$C036` bit 7 (the ROM keeps it fast) and gssquared's 3.5" head is advanced by `vid_cycles`, which run at a fixed 1.02 MHz even in its 1.02 clock mode. 500 kbit/s leaves 16.3 CPU cycles per byte at 1.024 MHz while the tightest polled loop needs 22-23, so the stream overruns; at 2.8 MHz the budget is 45.8. The IIgs default is 2.8 MHz for this reason (§7, §8) |
 
 ---
@@ -1404,6 +1442,11 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `gs_floppy35_basic` (a real Applesoft `SAVE`/`LOAD` on A2DeskTop-1.5.po through
   slot 5: `SAVE`, `NEW`/`LOAD`/`LIST`/`RUN`, then the spliced image is remounted
   and loaded again, §7),
+  `gs_floppy35_woz` (a protected 3.5" WOZ capture — `Cavern_Cobra_IIgs.woz`,
+  1,296,147 B: INFO byte 1 declares the type and offset 61 does not, asking for
+  S6 moves it to S5 rather than the other way round, it mounts as a capture and
+  not a block volume with all 160 track-sides mapped, and ProDOS 16 boots to its
+  title from slot 5 under **both** ROM 01 and ROM 03, §7, §11.6),
   `gs_applecorn` (Applecorn 0.54-beta from S5,D1 on both ROMs: the MOS banner
   reaches the screen, BBC BASIC answers a typed `PRINT 6*7`, the banner bytes are
   in the Mega II banks and not in fast RAM, and the //e still reads its own page,

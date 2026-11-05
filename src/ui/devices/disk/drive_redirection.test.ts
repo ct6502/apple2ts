@@ -176,6 +176,7 @@ describe("handleSetDiskOrFileFromBuffer drive index redirection", () => {
   describe("IIgs slot-5 3.5\" media", () => {
     const threeInchBuffer = new ArrayBuffer(64 + 800 * 1024)
     const wozBuffer = new ArrayBuffer(368584)
+    const capture35Buffer = new ArrayBuffer(1_296_147)
 
     beforeEach(() => {
       ;(handleGetMachineName as jest.Mock).mockReturnValue("APPLE2GS")
@@ -218,6 +219,25 @@ describe("handleSetDiskOrFileFromBuffer drive index redirection", () => {
         undefined, true, false, true,
       )
       expect(mounted).toBe(2)
+    })
+
+    // A capture of 3.5" media is still a capture, but it is the slot-5 drive
+    // that is wired for it: it stays in the bay the user picked, and the 5.25"
+    // drive has to hand it over.
+    test("keeps a 3.5\" capture in the 3.5\" bay", () => {
+      const mounted = handleSetDiskOrFileFromBuffer(
+        4, capture35Buffer, "Cavern_Cobra_IIgs.woz", null, null,
+        undefined, true, false, true,
+      )
+      expect(mounted).toBe(4)
+    })
+
+    test("redirects a 3.5\" capture out of the 5.25\" drive", () => {
+      const mounted = handleSetDiskOrFileFromBuffer(
+        2, capture35Buffer, "Cavern_Cobra_IIgs.woz", null, null,
+        undefined, true, false, true,
+      )
+      expect(mounted).toBe(4)
     })
   })
 })

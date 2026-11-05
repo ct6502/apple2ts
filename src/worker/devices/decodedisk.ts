@@ -12,11 +12,14 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   if (!isWoz2) return false
   driveState.isWriteProtected = diskData[22] === 1
   driveState.isSynchronized = diskData[23] === 1
-  // WOZ INFO byte 1 (offset 61) is the disk type: 1 = 5.25", 2/3 = 3.5".
+  // WOZ2's INFO chunk is the first one (header 12 bytes + chunk header 8), and
+  // its byte 1 is the disk type: 1 = 5.25", 2/3 = 3.5". Offset 61, which an
+  // earlier version of this read, is the tail of the creator field and always
+  // 0 - so a real 3.5" capture never reached the slot-5 media clock.
   // The declared optimal bit timing is in the same units for both families
   // (3.5 media declares 16 for a 2 us cell), and getNextByte advances by
   // optimalTiming/8 CPU cycles per bit, so it needs no family adjustment.
-  driveState.is35 = diskData[61] === 2 || diskData[61] === 3
+  driveState.is35 = diskData[21] === 2 || diskData[21] === 3
   driveState.blockMedia35 = false
   driveState.optimalTiming = (diskData[59] > 0) ? diskData[59]
     : (driveState.is35 ? FLOPPY35_OPTIMAL_TIMING : 32)

@@ -638,6 +638,13 @@ export const getSymbolTables = (machineName: string) => {
 // amount of trailing container data.
 const FLOPPY35_BLOCK_SIZE = 800 * 1024
 const FLOPPY35_2IMG_MAX = 64 + FLOPPY35_BLOCK_SIZE + 4096
+// A .woz is a captured bitstream, so its length is what was recorded rather
+// than the volume size: 5.25" media has at most 35 track-sides and stays under
+// ~370 KB, while 3.5" media carries 160 and comes in around 1.2 MB. The INFO
+// chunk declares the type, but the bay rules also run on a bare file size (the
+// disk catalog, the swapper), so the gap between the two populations is what
+// the classifier has to work from.
+const WOZ_525_MAX_SIZE = 512 * 1024
 
 export const isThreePointFiveInchImage = (filename: string, fileSize: number) => {
   const f = filename.toLowerCase()
@@ -652,8 +659,10 @@ export const isThreePointFiveInchImage = (filename: string, fileSize: number) =>
   if (/\.2mg(?:$|[^a-z0-9])/.test(f)) {
     return fileSize >= 64 + FLOPPY35_BLOCK_SIZE && fileSize <= FLOPPY35_2IMG_MAX
   }
-  // Raw block images. A 140K .po/.dsk is 5.25" media, and a .woz is never a
-  // raw block image.
+  if (/\.woz(?:$|[^a-z0-9])/.test(f)) {
+    return fileSize > WOZ_525_MAX_SIZE
+  }
+  // Raw block images. A 140K .po/.dsk is 5.25" media, and a .woz is never one.
   if (/\.(?:po|img|dsk|do)(?:$|[^a-z0-9])/.test(f)) {
     return fileSize === FLOPPY35_BLOCK_SIZE
   }
@@ -693,6 +702,13 @@ export const isHardDriveImage = (filename: string, fileSize: number) => {
 const isNibbleImage = (filename: string) =>
   /\.(?:woz|dsk|do)(?:$|[^a-z0-9])/.test(filename.toLowerCase())
 
+// A .dsk/.do of exactly 1600 blocks is a block dump of 3.5" media, not a
+// capture - so it can also be served as block data. A .woz is always a capture,
+// whatever disk it was recorded from.
+const isRawBlockImage = (filename: string, fileSize: number) =>
+  fileSize === FLOPPY35_BLOCK_SIZE &&
+  /\.(?:dsk|do)(?:$|[^a-z0-9])/.test(filename.toLowerCase())
+
 // Only the IIgs wires indices 4/5: slot 5 is its built-in 3.5" drive pair. On
 // every other machine 3.5" media has to be served as a block volume.
 export const machineHasThreeInchBay = (machineName: string) => machineName === "APPLE2GS"
@@ -708,7 +724,7 @@ export const canDriveTakeImage = (
   }
   const threeInch = isThreePointFiveInchImage(filename, fileSize)
   // A raw 800 KB .dsk/.do is 3.5" block media, not 5.25" nibble media.
-  const nibble = isNibbleImage(filename) && !threeInch
+  const nibble = isNibbleImage(filename) && !isRawBlockImage(filename, fileSize)
   const hardDrive = isHardDriveImage(filename, fileSize)
   if (index <= 1) {
     return !nibble
@@ -716,16 +732,25 @@ export const canDriveTakeImage = (
   if (index <= 3) {
     return !threeInch && !hardDrive
   }
-  return hasThreeInchBay && !nibble && !hardDrive
+  return hasThreeInchBay && threeInch && !hardDrive
 }
 
 export const getDefaultDiskDriveIndex = (
   filename: string,
   fileSize: number,
   hasThreeInchBay = false,
-) => isThreePointFiveInchImage(filename, fileSize)
-  ? (hasThreeInchBay ? 4 : 0)
-  : isHardDriveImage(filename, fileSize) ? 0 : 2
+) => {
+  const threeInch = isThreePointFiveInchImage(filename, fileSize)
+  if (threeInch && hasThreeInchBay) {
+    return 4
+  }
+  // Without a 3.5" bay a capture still belongs in a floppy drive: slot 7 serves
+  // block data and cannot play a bitstream off either disk size.
+  if (isNibbleImage(filename) && !isRawBlockImage(filename, fileSize)) {
+    return 2
+  }
+  return threeInch || isHardDriveImage(filename, fileSize) ? 0 : 2
+}
 
 export const constructAudio = (mp3track: string) => {
   const audioDevice: AudioDevice = {

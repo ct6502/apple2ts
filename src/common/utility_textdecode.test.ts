@@ -31,6 +31,24 @@ test("the IIgs slot-5 drive is a real media family for mounting", () => {
   expect(canDriveTakeImage(4, "disk.dsk", 143360, true)).toBe(false)
 })
 
+// A protected 3.5" capture (Cavern_Cobra_IIgs.woz, 1,296,147 bytes) is 3.5"
+// media: the IIgs's slot-5 drive is the only bay wired for it, so it must land
+// there instead of being re-routed to the 5.25" drive - and a captured
+// bitstream still cannot be served as block data by slot 7. On a machine
+// without a 3.5" bay the floppy drive is the only sane fallback.
+test("a 3.5\" WOZ capture is slot-5 media, not 5.25\" media", () => {
+  const capture = 1_296_147
+  expect(getDefaultDiskDriveIndex("Cavern_Cobra_IIgs.woz", capture, true)).toBe(4)
+  expect(getDefaultDiskDriveIndex("Cavern_Cobra_IIgs.woz", capture, false)).toBe(2)
+  expect(canDriveTakeImage(4, "Cavern_Cobra_IIgs.woz", capture, true)).toBe(true)
+  expect(canDriveTakeImage(5, "Cavern_Cobra_IIgs.woz", capture, true)).toBe(true)
+  expect(canDriveTakeImage(2, "Cavern_Cobra_IIgs.woz", capture, true)).toBe(false)
+  expect(canDriveTakeImage(0, "Cavern_Cobra_IIgs.woz", capture, true)).toBe(false)
+  // A 5.25" capture is still 5.25" media at slot-5 sizes and below.
+  expect(canDriveTakeImage(4, "DOS33.woz", 234_496, true)).toBe(false)
+  expect(canDriveTakeImage(2, "DOS33.woz", 234_496, true)).toBe(true)
+})
+
 test("II+ decode maps 0x60/0x6C/0x6E to space/comma/period", () => {
   const isAltCharSet = false
   const hasMouseText = false
