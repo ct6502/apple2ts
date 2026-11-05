@@ -1,5 +1,4 @@
 import { COLOR_MODE, MONITOR_MODE, UI_THEME } from "../common/utility"
-import { t } from "../i18n"
 import { getPreferenceRetroSkin, RETRO_SKIN } from "./localstorage"
 import { isMinimalTheme } from "./ui_settings"
 import { Color, Palette } from "viridis"
@@ -107,7 +106,7 @@ export const setDialogMessageContext = (context: DialogMessageContext) => {
 }
 
 // Short display labels for cards in the Link Builder slot dropdowns
-export const cardShortLabels: Record<SLOT_CARD_ID, string> = {
+export const getCardShortLabels = (t: (key: string) => string): Record<SLOT_CARD_ID, string> => ({
     none: t("linkBuilder.slots.cardNone"),
     ssc: "Super Serial Card",
     softcard: "SoftCard (Z80)",
@@ -120,9 +119,9 @@ export const cardShortLabels: Record<SLOT_CARD_ID, string> = {
     passport: "Passport",
     disk2: "Disk II",
     smartport: "SmartPort",
-  }
+  })
 
-export const ramdiskValues = [
+export const getRamdiskValues = (t: (key: string) => string) => [
       t("linkBuilder.ramDiskSizes.default"),
       t("linkBuilder.ramDiskSizes.512"),
       t("linkBuilder.ramDiskSizes.1024"),
