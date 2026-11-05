@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faXmark, faGear, faMusic } from "@fortawesome/free-solid-svg-icons"
+import { faXmark, faGear } from "@fortawesome/free-solid-svg-icons"
 import { useTranslation } from "../../i18n/useTranslation"
 import { createControlContext } from "../retro/retromenucontext"
 import { settingsResetBinding } from "./resetcontrols"
@@ -13,9 +13,7 @@ import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, 
 import CheckBox from "../panels/checkbox"
 import { getModKeyName } from "../retro/retrocontrolmetadata"
 import { UI_THEMES } from "../../common/utility"
-import PopupMenu from "./popupmenu"
-import { controlsToPopupItems } from "./controlpopup"
-import { audioControlRegistry } from "../devices/audio/audioconfig"
+import { SlotAudioConfig } from "../devices/audio/audioconfig"
 import TabBase from "../tabbase"
 import Tab from "../tab"
 
@@ -256,22 +254,6 @@ export const SettingsDialog = (props: DisplayProps) => {
     )
   }
 
-  const mockingboardConfiguration = () => {
-    const [, mockingboardControl] = audioControlRegistry.resolve(
-      createControlContext(props, t, language, changeLanguage),
-      "sound",
-    )
-    return (
-      <PopupMenu
-        buttonTitle={t("audio.configuration")}
-        buttonIcon={<FontAwesomeIcon icon={faMusic} style={{ fontSize: "0.8em" }}/>}
-        menuItems={[[
-          ...controlsToPopupItems([mockingboardControl]),
-        ]]}
-      />
-    )
-  }
-
   const slotConfiguration = () => {
     return (
     <>
@@ -332,7 +314,8 @@ export const SettingsDialog = (props: DisplayProps) => {
                 }
               }}
             />
-            {currentCard === "mockingboard" &&  mockingboardConfiguration()}
+            {(currentCard === "mockingboard" || currentCard === "passport" || currentCard === "vera") &&
+              <SlotAudioConfig {...props} card={currentCard} slot={slot} />}
             </div>
           )
         })}
