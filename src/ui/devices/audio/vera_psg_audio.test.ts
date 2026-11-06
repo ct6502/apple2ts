@@ -5,7 +5,7 @@ jest.mock("./speaker", () => ({
 
 test.each([true, false])("audio initialization restores FM enabled=%s without opening settings", async enabled => {
   const savedPreference = localStorage.getItem("veraFmAudioEnabled")
-  const originals = ["AudioContext", "AudioWorkletNode", "fetch"].map(key =>
+  const originals = ["AudioContext", "AudioWorkletNode", "MessageChannel", "fetch"].map(key =>
     [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const)
   const postMessage = jest.fn()
   const compile = jest.spyOn(WebAssembly, "compileStreaming").mockResolvedValue({} as WebAssembly.Module)
@@ -17,6 +17,10 @@ test.each([true, false])("audio initialization restores FM enabled=%s without op
       state = "running"
       destination = {}
       audioWorklet = { addModule: async () => {} }
+    } })
+    Object.defineProperty(globalThis, "MessageChannel", { configurable: true, value: class {
+      port1 = { close: jest.fn() }
+      port2 = {}
     } })
     Object.defineProperty(globalThis, "AudioWorkletNode", { configurable: true, value: class {
       port = { postMessage }
