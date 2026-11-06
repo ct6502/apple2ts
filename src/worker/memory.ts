@@ -2227,6 +2227,86 @@ export const isIigsShr320 = (): boolean => {
   return (megaIIAux[physical] & 0x80) === 0
 }
 
+// ---- The displayed SHR picture, captured as the beam advances -------------------
+//
+// getShr() is the window as of *one instant*, and a whole refresh's snapshot taken
+// at the frame boundary lands wherever the beam happens to be. Raster-scheduled
+// games erase and redraw band by band behind the beam (TimePilot GS's
+// gameProcessThings erases everything above zScanLine, then redraws it), so an
+// end-of-refresh snapshot can catch the guest mid-pass with a layer erased and not
+// yet drawn - cloud bands that vanish on a quarter of the frames, i.e. flicker no
+// real IIgs shows. gssquared's scanner never does that: it fetches each scanline's
+// 160 bytes as it reaches them, the line's SCB at `hc == 6` and its palette right
+// after (VideoScannerIIgs.cpp: linear $2000 + vc*160, `hc >= 7 && hc <= 14`).
+// Reproduce that here: patch the display one line at a time as our beam crosses it.
+// Same 32 KB of traffic per frame as the snapshot it replaces, just in 200 pieces.
+const SHR_LINES = 200
+const SHR_LINE_BYTES = 160
+const SHR_BEAM_LINES = 192
+
+const shrBeamFrame = new Uint8Array(0x8000)
+let shrBeamValid = false
+
+// Called from doReset(): the next SHR frame must start from a full window rather
+// than from whatever the previous machine or session left behind.
+export const resetShrBeamFrame = () => { shrBeamValid = false }
+
+// Fold one linear run of the window into the frame. A run always starts on an
+// even offset, so under linearization it splits into two contiguous halves $4000
+// apart that interleave byte by byte - the same fold iigsAuxLinearToPhys() does
+// per address, without the call.
+const captureShrRun = (aux: Uint8Array, off: number, len: number, linear: boolean) => {
+  if (!linear) {
+    shrBeamFrame.set(aux.subarray(0x2000 + off, 0x2000 + off + len), off)
+    return
+  }
+  let a = 0x2000 + (off >> 1)
+  let b = 0x6000 + (off >> 1)
+  for (let i = 0; i < len; i += 2) {
+    shrBeamFrame[off + i] = aux[a++]
+    shrBeamFrame[off + i + 1] = aux[b++]
+  }
+}
+
+// beamLine is the run loop's 192-line visible grid - the one $C02E reports, and
+// therefore the one a raster-syncing guest is waiting on. SHR has 200 lines, so a
+// beam line covers 200/192 of them and the last 8 rows are crossed twice; copying
+// them again is free and keeps the phase tied to what the guest actually sees.
+export const captureShrBeamLine = (beamLine: number): void => {
+  if (!isIigsShrActive()) {
+    shrBeamValid = false
+    return
+  }
+  if (!shrBeamValid) {
+    // First SHR line since power-on / $C029 going high: take the whole window
+    // once so no row keeps the previous session's content.
+    shrBeamFrame.set(getShr())
+    shrBeamValid = true
+  }
+  const aux = megaIIAux
+  const linear = isIigsAuxLinear()
+  const y0 = Math.floor((beamLine * SHR_LINES) / SHR_BEAM_LINES)
+  const y1 = Math.min(SHR_LINES - 1,
+    Math.max(y0, Math.floor(((beamLine + 1) * SHR_LINES) / SHR_BEAM_LINES) - 1))
+  for (let y = y0; y <= y1; y++) {
+    captureShrRun(aux, y * SHR_LINE_BYTES, SHR_LINE_BYTES, linear)
+    const scbOff = 0x7d00 + y
+    shrBeamFrame[scbOff] = aux[linear ? iigsAuxLinearToPhys(0x9d00 + y) : 0x9d00 + y]
+  }
+  // The palette table is re-read at the start of every line by the real VGC, but
+  // it belongs to the whole frame in our renderer, so refresh it once per frame
+  // where the beam is earliest - same place the snapshot used to sample it.
+  if (beamLine === 0) {
+    captureShrRun(aux, 0x7e00, 0x200, linear)
+  }
+}
+
+// What the screen shows. Falls back to the raw window while SHR is off, so the
+// legacy Mega II display and classic machines are untouched - and so a frame
+// captured by a previous IIgs session cannot outlive the machine switch.
+export const getShrDisplayed = (): Uint8Array =>
+  shrBeamValid && isIigsShrActive() ? shrBeamFrame.slice() : getShr()
+
 // The 65816 ROM's live mouse position, as the guest sees it. ROM 01 publishes
 // it in the text-page screen holes ($047C/$057C = X, $04FC/$05FC = Y); ROM 03
 // leaves those holes at 0 and publishes it only in the bank-$E1 globals at

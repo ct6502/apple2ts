@@ -246,6 +246,19 @@ mouse dispatch that publishes the event record.
   II output stays 560x384 / 1.458. Rendering is destination-driven, so games and
   the desktop fill the same space and the window never resizes.
 - `getShr()` reads Mega II aux through the interleaved window; see §2.
+- **The displayed SHR picture is captured scanline by scanline, not snapshotted at
+  the refresh boundary.** `captureShrBeamLine(line)` runs from the run loop's beam
+  crossing, and `getShrDisplayed()` is what `MachineState.shr` posts. A
+  raster-scheduled guest erases and redraws band by band behind the beam, so a
+  whole-window snapshot lands wherever the beam happens to be and shows layers no
+  real IIgs ever displayed (TimePilot GS's clouds, §11.16). gssquared's VGC fetches
+  each line's 160 bytes as it scans it, the SCB at `hc == 6` and the palette right
+  after (`VideoScannerIIgs.cpp`: linear `$2000 + vc*160`), and that is what is
+  reproduced — the same 32 KB per frame, in 200 pieces. `getShr()` deliberately
+  stays the **raw window**: `getShrDump()` and ~15 `gs_*` assertions read memory,
+  not the screen, so do not route them through the displayed frame. While SHR is
+  off `getShrDisplayed()` falls back to it, which keeps the legacy Mega II display
+  and the classic machines untouched.
 - **Scanline interrupt**: while exporting a visible line, if
   `memGet24(0xE19D00 + line) & 0x40` (SCB bit 6) call `iigsSignalScanline()`
   (gssquared `VideoScannerIIgs.cpp`). Without it GS/OS's Event Manager never
@@ -952,6 +965,26 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   publishes the effective `speedMode` in `MACHINE_STATE`, so the dropdown still
   reads 2.8 MHz. Guard: `gs_speed_default.test.ts` (own module registry, so
   `speedModeExplicit` is still false).
+- **Speed modes 2 and 3 (7.1 / 14.3 MHz) boot no volume at all — open.** Those
+  rows only scale `cpuCyclesPerRefresh`; `$C036` still means exactly what §1
+  says (bit 7 = 1.024 or 2.8 MHz), so a "7.1 MHz" machine presents a CPU that is
+  never faster than 2.8 MHz in the ROM's own units. ROM 01's boot-time speed
+  calibration then never converges and the device scan is abandoned: measured
+  with `SystemDisk.2mg` on ROM 01 (so it is not an image defect), modes 0/1 reach
+  the slot-7 driver (`f=55 s7 pc=$c700` at 1.02 MHz, `f=0` at 2.8 MHz) while modes
+  2/3 **never enter `$C700`** — the first bank-0 slot visit is slot 6 (f=67) then
+  slot 5, preceded by an `INTCXROM` flip storm at `FF:9F8F`/`FF:A94F`/`FF:9FFB`/
+  `FF:A1B7`. The tell is `$C036`: modes 2/3 write `$84` at `FF:FCE9` then `$04` at
+  `FF:FCB2`, **once per refresh for ~90 frames** — that is ROM 01's own TRB-slow /
+  STA-fast pair (`FF:FCAC XBA / FF:FCAD LDA #$80 / FF:FCAF TRB $C036` …
+  `FF:FCDB` countdown … `FF:FCE5 XBA / FF:FCE6 STA $C036`) with the settle loop
+  between, i.e. the ROM keeps asking for slow, waiting, restoring fast, and asking
+  again. Modes 0/1 never issue the `$04` write. After ~90 frames the ROM falls to
+  `$FF:A0D0` → `$FF:A5A3` and parks at "Check startup device!". VBL/refresh
+  cadence is correct in every mode (+51/+51 per 50 frames), so this is not the
+  video clock. gssquared, KEGS and GSplus model no accelerator, so there is
+  nothing to port — making 7.1/14.3 mean anything needs a decision about what
+  `$C036` should offer beyond the two real clock pins (§11.15).
 
 ---
 
@@ -1067,6 +1100,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\gs_da_drawer2.cjs` | real-UI DA drawer check: `node gs_da_drawer2.cjs <image> [waitS] [port] [driveIdx]` boots the volume on a fresh profile, clicks the machine-menu item, then sends the raw `rAlt`+`Esc` chord, saving `drawer_<TAG>_<n>.png` and printing per-step changed-row counts. The crop must start at the first **bright** canvas row: the IIgs black border puts the screen top at row 40 of the 818x511 canvas, so a strip taken from row 0 is blank |
 | `...\Temp\opencode\gs_rom_desk_button.cjs` | real-UI check of the one-click IIgs Desk Accessories button: `node gs_rom_desk_button.cjs [waitS] [port] [machine]` boots a fresh profile with **no disk**, reports `#tour-iigs-desk-button` (`present` + tooltip + rect), clicks it and prints the changed canvas-row count with `deskbtn_<machine>_<n>.png`. It doubles as the visibility probe (`present: false` on the IIe) and is the fastest way to see whether the ROM boot actually reached its desk manager |
 | `...\Temp\opencode\gs_applecorn_ui.cjs` | real-UI Applecorn check: `node gs_applecorn_ui.cjs [waitS] [port] [rom]` boots `applecorn-0.54-beta.po` on S5,D1 with a fresh profile, presses `1` with a raw CDP key, prints the changed canvas-row count, peeks `$E1`/`$E0:$0800` back into the 80-column merge (`__romTracePeek`) and saves `acui_rom<rom>.png` |
+| `...\Temp\opencode\tp_cloud_census.cjs` | real-UI raster-flicker census (§11.16): `node tp_cloud_census.cjs [waitS] [port] [sampleMs] [tag]` boots TimePilot GS on a fresh profile, samples the canvas once per **painted** frame for `sampleMs` and prints how many scanline bands still carry cloud-white. The row set is chosen by the *maximum* over the run, not the median, so two builds of the emulator are comparable — a median would silently drop exactly the rows that flicker. Run it once with `captureShrBeamLine()` commented out to get the "before" number |
 | `...\Temp\opencode\gs_woz35_bay.cjs` | real-UI bay check for a large `.woz`: `node gs_woz35_bay.cjs <url> [waitS] [port]` boots a fresh profile on `?drive=N` and prints each bay's label + status (it walks up from every `.disk-label` to the smallest ancestor naming exactly one `S[567],D[12]`) plus any error dialog, and saves `%TEMP%\woz35_bay.png`. This is what proves a capture asked for slot 6 actually lands in S5,D1 and reaches its title screen |
 | `...\Temp\opencode\gs_linkbuilder.cjs` | real-UI Link Builder check: `build [waitS] [port]` boots a fresh-profile IIgs, opens 連結產生器 and dumps every `select` (name/value/options) plus the readonly link textarea; `emit [waitS] [port] [url]` also picks Custom URL on each drive row, types the URL into the 3.5" drive-1 field (matched by its language-independent `http://example.com/floppy35.dsk` placeholder) and prints the emitted link; `visit <port> <url> [waitS]` opens that link on its own fresh profile and reports `#tour-iigs-desk-button`, the footer (`2.61 MHz, 8 MB`), `.disk-label` texts and the `S5,S1…` bay statuses — the only way to prove a built link actually boots the machine it names |
 | `...\Temp\opencode\gs_chord_ui.cjs`, `gs_menu_visibility.cjs` | real-UI key-chord check: `node gs_chord_ui.cjs [waitS] [port]` boots GS/OS on a fresh profile and compares canvas **scanline row-sums** around raw host keys, so `bare W changed rows: 0` vs `Closed-Apple + W changed rows: 281` is the observed evidence (§6); the visibility variant takes a `[machine]` argument and stops before the keystrokes, which is how the IIgs-only menu item was confirmed absent on the IIe. Select menu entries by `/機器配置\|machine configuration/i` title text — headless Chrome renders the UI in the user's language, and the `basic-button` id is reused by several components |
@@ -1340,6 +1374,43 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     must *not* hold them), and keeps the //e reading its own fast RAM. Restoring
     either old branch turns both ROM cases red with exactly the garbage the user
     reported.
+15. **`doom-hd.hdv` "loads forever then freezes" — the guest aborts, and its own
+    fix is the one mode we cannot run.** The volume is a GSplus raw block image
+    (2,670,592 B) and its bundled readme says *"The game needs an accelerator and
+    4 MB of memory."* At the 2.8 MHz default it really does boot and runs its own
+    init — the WAD is clearly in (`ADDING DOOM1.WAD` / `SHAREWARE VERSION`) — but
+    dies mid-`R_Init`: the last thing on the text page is an unfinished progress
+    bar (`R_INIT: DOOM REFRESH DAEMON - [……]`), `$03:669A` (DOOM's own teardown /
+    error exit) is hit exactly once, and the machine then runs away through bank
+    `$00`'s `$C0xx-$CFxx` window while the stack unwinds, so a keypress changes
+    nothing on screen. That is the "卡很久、感覺當住" the user saw, and it is not a
+    bad read: nothing in our SmartPort path is failing. The accelerator the volume
+    asks for is speed mode 2 or 3, which currently boots **no** volume at all
+    (§8), so there is no working high-speed option to test it under. Open: whether
+    DOOM's abort is only the missing cycles or also a 65816 feature we model
+    wrong — deciding that needs modes 2/3 to boot first.
+16. **TimePilot GS clouds flicker — RESOLVED: the screen was a one-instant
+    snapshot of the SHR window.** Nothing was ever skipped for speed (§4): the
+    guest *is* drawing every frame. TimePilot schedules against the raster —
+    `gameProcessThings` erases every thing already above `zScanLine` and then
+    redraws it, and at wrap `gsRasterDone` forces one extra pass with
+    `zScanLine = #$7dff` — so for most of a refresh the window legitimately holds
+    a layer that is erased and not yet redrawn. Posting that as the picture made
+    the cloud bands vanish on a large share of frames. Measured on the same 200
+    frames (1550-1750, jest, counting the scanlines that carry cloud colour 1/9):
+    the raw end-of-refresh buffer has median 81 cloud rows with **53 frames below
+    70** and a minimum of 53 — whole bands, top to bottom, missing for a frame at a
+    time. The beam-captured picture over those identical frames: median 98,
+    **0 frames below 70**, minimum 76, and no single frame loses more than 22 rows
+    (the raw buffer loses 35). In the real UI the same difference shows as the
+    median number of cloud bands per painted frame going from 33 to 42 of the same
+    row set (361 painted samples, and both numbers reproduced on a second run),
+    with three bands never appearing at all without the fix. A handful of beam
+    frames still lose the top band — that is the guest genuinely racing the beam at
+    wrap, and gssquared would show it too.
+    Regression: `gs_timepilot_flicker.test.ts`, red both ways: not calling
+    `captureShrBeamLine()` and posting `getShr()` again makes the two buffers
+    identical (`framesDiffering = 0`) and fails all three census bounds.
 
 ---
 
@@ -1390,6 +1461,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | A `.woz` is 5.25" media whatever its size | Only the *short* ones are. A WOZ stores captured flux, so length follows track-sides: 35 for 5.25" (under ~370 KB) against 160 for 3.5" (~1.2 MB). The old hard rule sent `Cavern_Cobra_IIgs.woz` out of the bay the user picked and into S6,D1, where the 5.25" LSS cannot decode it (§7) |
 | `driveState.is35` can come from WOZ offset 61 | Offset 61 is the tail of the *creator* field and always 0, so a genuine 3.5" capture read as 5.25" even inside slot 5. The declared type is INFO byte 1 = file offset 21; a 3.5" one declares optimal bit cell 16 at offset 59 (§7) |
 | "Other emulators read 3.5\" media at 1 MHz, so ours should too" | Those emulators have no 1 MHz IIgs: KEGS/GSplus follow `$C036` bit 7 (the ROM keeps it fast) and gssquared's 3.5" head is advanced by `vid_cycles`, which run at a fixed 1.02 MHz even in its 1.02 clock mode. 500 kbit/s leaves 16.3 CPU cycles per byte at 1.024 MHz while the tightest polled loop needs 22-23, so the stream overruns; at 2.8 MHz the budget is 45.8. The IIgs default is 2.8 MHz for this reason (§7, §8) |
+| `$04`/`$1C` should be `TSB abs,X` / `TRB abs,X`, because a `$C036 <= $04` write looked like a bad opcode index | Our table is right and so is the ROM: `$04` = TSB direct, `$0C` = TSB absolute, `$14` = TRB direct, `$1C` = TRB absolute — identical in gssquared `opcodes.hpp:274-278`, KEGS/GSplus `instable.h` + `disas.h`, and apple2ts's own classic table (`instructions.ts:780-790`; core at `cpu65816.ts:649`). The `$04` value is what `TRB $C036` *writes* to a register holding `$84` (`$84 & ~$80`), not a mis-decoded instruction. The real question that write raises is which speed mode may issue it at all (§8) |
+| 「你有因為加快而減少drawing嗎」— the flicker means we skip drawing to keep up | No rendering is ever dropped for speed. The clouds vanished because the picture posted to the UI was the SHR window as of one instant, taken at the refresh boundary, while the guest erases and redraws band by band behind the beam (§4, §11.16) |
 
 ---
 
@@ -1399,12 +1472,15 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   IRQ sampling, `specialJumpTable`, `slot5DriverDirectPage` (slot-5 DP guard, §7)
 - `src/worker/memory.ts` — bank map (ROM 01/03 banks derived from the image
   size), Mega II main/aux, soft switches, `$C02x`/`$C03x` registers (`$C036`
-  speed + ROM-03 power-on latch), text-page sources, SHR extraction, floating
+  speed + ROM-03 power-on latch), text-page sources, SHR extraction (`getShr`,
+  raw window) and the beam-captured display frame (`captureShrBeamLine` /
+  `getShrDisplayed`, §4), floating
   bus, slot strobes, IWM status/handshake answers, `getIigsMousePos`
 - `src/worker/roms/rom_gs_system03.ts` — embedded 256 KB ROM 03 system image
   (banks `$FC-$FF`); `src/worker/roms/rom_gs_system.ts` is ROM 01 (banks `$FE-$FF`)
 - `src/worker/motherboard.ts` — run loop, video clock, VBL, housekeeping, Ensoniq
-  catch-up, speed modes, reset vs cold boot
+  catch-up, speed modes, reset vs cold boot; the run loop's beam crossing is also
+  what patches the displayed SHR picture
 - `src/worker/iigs_adb.ts` — ADB micro + device model, report latching, buttons,
   `$C025` modifiers driven from the event byte, the desk-manager report and the
   `$C027` bit layout (§3, §6)
@@ -1451,6 +1527,11 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   reaches the screen, BBC BASIC answers a typed `PRINT 6*7`, the banner bytes are
   in the Mega II banks and not in fast RAM, and the //e still reads its own page,
   §2, §4, §11.14),
+  `gs_timepilot_flicker` (TimePilot GS on a real volume: the picture the UI gets is
+  the beam-captured frame, and it keeps the cloud bands on every one of 200 sampled
+  frames while the raw end-of-refresh buffer loses them on a quarter of them — red
+  if the per-scanline capture is not run *or* if `MachineState.shr` goes back to
+  `getShr()`, §4, §11.16),
   `gs_speed`, `gs_speed_default` (IIgs 2.8 MHz default, §8), `gs_boot`,
   `gs_hdd_boot`, `gs_slots_mockingboard`, `gs_boot_order` (browser message order
   on a fresh profile: slot config → machine switch → 3.5" boot, §7),

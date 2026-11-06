@@ -23,7 +23,9 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   RamWorksBankGet,
   doSetRom,
   getZeroPage,
-  getShr,
+  getShrDisplayed,
+  captureShrBeamLine,
+  resetShrBeamFrame,
   memSet,
   exportMemoryToHiresLine,
   getDataBlock,
@@ -606,6 +608,10 @@ export const doReset = () => {
   clearInterrupts()
   resetSoftSwitches()
   resetIigsVideoClock()
+  // The displayed SHR frame is beam-captured, so a reset must drop the last
+  // frame's contents instead of letting them be posted until the beam repaints
+  // a line (which never happens while the machine sits paused).
+  resetShrBeamFrame()
   // Reset banked RAM
   memGet(0xC082, false)
   cpu.reset()
@@ -1247,7 +1253,7 @@ export const getExternalMachineState = () => {
     runMode: cpuRunMode,
     s6502: s6502,
     showDebugTab: showDebugTab,
-    shr: getShr(),
+    shr: getShrDisplayed(),
     slotConfig: currentSlotConfig,
     softSwitches: getSoftSwitches(),
     speedMode: speedMode,
@@ -1474,6 +1480,10 @@ const doAdvance6502 = () => {
       if (line !== currentLine && line < 192) {
         currentLine = line
         exportMemoryToHiresLine(line)
+        // IIgs: patch the displayed SHR picture for the lines this beam position
+        // covers, so what the screen shows is what the guest had drawn as the
+        // beam got there - not whatever memory looks like at one instant.
+        if (isIIgs) captureShrBeamLine(line)
         // IIgs SHR scanline interrupt: gssquared's VideoScannerIIgs raises the
         // VGC scanline IRQ while scanning a line whose SCB has bit 6 set. GS/OS
         // uses it to time its cursor draw/erase to the cursor's row, so without
