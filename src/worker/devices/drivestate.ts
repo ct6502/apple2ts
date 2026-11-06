@@ -1,7 +1,7 @@
 import { Buffer } from "buffer"
 import { passDriveProps, passDriveSound } from "../worker2main"
 import { decodeDiskData } from "./decodedisk"
-import { doPauseDiskDrive, doResetDiskDrive } from "./diskdata"
+import { doPauseDiskDrive, doResetDiskDrive, iwmDiskChange35 } from "./diskdata"
 import { enableHardDrive } from "./harddrivedata"
 import { DRIVE, canDriveTakeImage, isHardDriveImage, isThreePointFiveInchImage, updateWozCrc } from "../../common/utility"
 import { getCurrentMachineName } from "../memory"
@@ -290,6 +290,12 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   const savedQuarterTrack = preserveHead ? prevDrive.quarterTrack : 0
   const savedPrevQuarterTrack = preserveHead ? prevDrive.prevQuarterTrack : 0
   const savedCurrentPhase = preserveHead ? prevDrive.currentPhase : 0
+
+  // Changing 3.5" media under a running drive is a disk change as far as the
+  // IWM is concerned: hand it the outgoing image one last time.
+  if (prevDrive?.is35) {
+    iwmDiskChange35(index)
+  }
 
   driveState[index] = initDriveState(index, drive, isHardDrive)
   if (preserveHead) {

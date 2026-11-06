@@ -818,7 +818,10 @@ export const getPrimaryDiskUrl = (item?: Partial<DiskCollectionItem> | null): st
   } else if (Array.isArray(source)) {
     candidate = source[0] || ""
   } else if (typeof source === "object") {
-    const raw = source.s6d1 || source.s7d1 || source.d1 || source.hd1 || source.s6d2 || source.s7d2 || ""
+    // Floppy families first, then the block volumes: an item's "primary" disk is
+    // the one you'd hand the user, and on a IIgs that is the 3.5" boot floppy.
+    const raw = source.s6d1 || source.s5d1 || source.s7d1 || source.d1 || source.hd1
+      || source.s6d2 || source.s5d2 || source.s7d2 || ""
     if (Array.isArray(raw)) candidate = raw[0] || ""
     else candidate = raw || ""
   }

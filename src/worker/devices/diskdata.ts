@@ -50,6 +50,10 @@ let headPending35 = 0
 // Cycles the last iwmAdvance35() accounted for, for the read-cadence sampler.
 let iwmAdvanceCycles35 = 0
 let writeBurst35 = false
+// Which drive the in-flight burst is feeding. The IWM has one shift register
+// shared by both 3.5" bays, so a queued byte always belongs to exactly one of
+// them - that is what tells a media change whether it may discard it.
+let writeBurstDrive35 = -1
 // GCR tracks whose bytes were changed, per drive index, still waiting to be
 // spliced into that drive's block image.
 const dirtyTracks35 = new Map<number, Set<number>>()
@@ -860,7 +864,26 @@ export const iwmReset35Lines = () => {
   headRemainder35 = 0
   headPending35 = 0
   writeBurst35 = false
+  writeBurstDrive35 = -1
   dirtyTracks35.clear()
+}
+
+// A 3.5" bay is about to hold different media - what the standby disk swapper
+// does while the machine keeps running. Everything the IWM still holds describes
+// the disk that is leaving: a byte still sitting in the shift register, and the
+// dirty tracks queued behind it, would otherwise be clocked and spliced into the
+// image that just arrived. So hand the outgoing image its last flush and forget
+// the state. A write the guest never read back is dropped with the burst that
+// carried it, which is the same durability boundary the firmware's own verify
+// sets. A burst owned by the *other* bay is none of this disk change's business,
+// so only its own pending tracks go.
+export const iwmDiskChange35 = (driveIndex: number) => {
+  iwmFlushWrites35(driveIndex)
+  if (!writeBurst35 || writeBurstDrive35 === driveIndex) {
+    iwmReset35Lines()
+  } else {
+    dirtyTracks35.delete(driveIndex)
+  }
 }
 
 // Status register bit 7 for the currently selected 3.5" drive.
@@ -1113,6 +1136,7 @@ const advanceWrite35 = (ds: DriveState, bitCycles: number, record: boolean) => {
         // stops feeding bytes, which is the moment its final BVS poll clears.
         if (writeBurst35) {
           writeBurst35 = false
+          writeBurstDrive35 = -1
           burstEnded = true
         }
         handshake35 = 0x80
@@ -1143,6 +1167,7 @@ export const iwmWriteDataRegister35 = (
   asyncBufferValid35 = true
   handshake35 = 0x40
   writeBurst35 = true
+  writeBurstDrive35 = driveIndex
 }
 
 // $C0EC read with Q7=1/Q6=0: the async write handshake register.

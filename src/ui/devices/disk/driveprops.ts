@@ -253,11 +253,14 @@ export type StandbyDisk = {
   comment?: string
 }
 
-const standbyDisks: StandbyDisk[][] = [[], [], [], []]
-const standbyActiveIndex: number[] = [0, 0, 0, 0]
+// One standby list per bay, so the IIgs slot-5 3.5" pair (indices 4/5) can be a
+// swapper group too - it had four slots' worth of state and silently dropped the
+// pair, leaving S5,D1 with no badge and nothing to swap to.
+const standbyDisks: StandbyDisk[][] = Array.from({ length: MAX_DRIVES }, () => [])
+const standbyActiveIndex: number[] = Array.from({ length: MAX_DRIVES }, () => 0)
 
 export const getStandbyDisks = (driveIndex: number): StandbyDisk[] => {
-  if (driveIndex < 0 || driveIndex >= 4) return []
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return []
   const drive = driveProps[driveIndex]
   if (!drive || !drive.filename) {
     return [...standbyDisks[driveIndex]]
@@ -284,7 +287,7 @@ export const getStandbyActiveIndex = (driveIndex: number): number => {
 }
 
 export const syncActiveDiskToStandby = (driveIndex: number) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   const activeIdx = standbyActiveIndex[driveIndex]
   const drive = driveProps[driveIndex]
   if (drive && standbyDisks[driveIndex][activeIdx]) {
@@ -306,13 +309,13 @@ export const syncActiveDiskToStandby = (driveIndex: number) => {
 }
 
 export const setStandbyDisks = (driveIndex: number, disks: StandbyDisk[], activeIndex = 0) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   standbyDisks[driveIndex] = [...disks]
   standbyActiveIndex[driveIndex] = Math.max(0, Math.min(activeIndex, disks.length - 1))
 }
 
 export const appendStandbyDisks = (driveIndex: number, newDisks: StandbyDisk[]) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   getStandbyDisks(driveIndex)
   standbyDisks[driveIndex].push(...newDisks)
 }
@@ -323,7 +326,7 @@ export const swapStandbyDisk = async (
   saveActiveDiskCallback?: () => Promise<void>,
   updateDisplay?: UpdateDisplay,
 ) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   const currentDisks = standbyDisks[driveIndex]
   if (!currentDisks || newDiskIndex < 0 || newDiskIndex >= currentDisks.length) return
 
@@ -357,7 +360,7 @@ export const removeStandbyDisk = (
   removeIndex: number,
   updateDisplay?: UpdateDisplay,
 ) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   const disks = standbyDisks[driveIndex]
   if (!disks || removeIndex < 0 || removeIndex >= disks.length) return
 
@@ -381,7 +384,7 @@ export const removeStandbyDisk = (
 }
 
 export const ejectAllDisks = (driveIndex: number, updateDisplay?: UpdateDisplay) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   standbyDisks[driveIndex] = []
   standbyActiveIndex[driveIndex] = 0
   handleEjectDisk(driveIndex)

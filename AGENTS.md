@@ -843,6 +843,27 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   only the in-session bit stream. Regression: `gs_floppy35_basic` (patches the
   root `desktop.system` record in memory to point at `BASIC.SYSTEM`, so no
   fixture disk is stored in the repo).
+- **Swapping 3.5" media under a running drive is a disk change, and the IWM has
+  to be told.** The standby swapper changes the volume without resetting the
+  machine, and the IWM keeps *one* async shift register shared by both Sony bays
+  (`asyncShift35`/`asyncBuffer35` plus the per-drive `dirtyTracks35`). Anything it
+  still holds describes the disk that is leaving: `iwmDiskChange35(driveIndex)`
+  (`drivestate.ts`, in `doSetEmuDriveNewData`) hands the outgoing image one last
+  flush and then forgets the burst — but only when that burst belongs to *this*
+  bay (`writeBurstDrive35`), because truncating the other bay's in-flight field
+  would corrupt a disk that did not change. A write the guest never read back
+  goes with the burst that carried it, which is the same durability boundary the
+  firmware's own verify loop sets. Left alone, the queued byte gets
+  clocked on the next handshake and `writeBit35` edits the *incoming* nibblized
+  stream in place, then `iwmFlushWrites35` splices that track into the fresh image:
+  media corruption plus a false `diskHasChanges` that offers to save a clean disk.
+  A capture (WOZ) has nothing to reset — it is written in place, and a machine
+  reset already clears this state through `iigsResetIwm()`, which is why only a
+  *swap* exposes it. Beware the vacuous test: a sector with a broken field fails
+  the guest's own BVS, so asserting only the decoded sectors or only the image
+  bytes passes with the bug in. Compare against a snapshot of the freshly
+  nibblized stream. Regression: `gs_floppy35_swapper` (turns red with bytes
+  `53,106 → 21,127` at the field prologue when the guard goes).
 - **A 1.02 MHz CPU cannot read 3.5" media, and that is not an emulator defect.**
   500 kbit/s = 2 µs per bit cell = 62.5 KB/s, which at 1.024 MHz leaves 16.3 CPU
   cycles per byte; the tightest polled loop (`LDA $C0EC / BPL / LDA $C0ED /
@@ -1005,6 +1026,24 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   Any landed `sNdM=` already posts `NEED_BOOT` (inputparams.ts:647), so `boot=true`
   is optional with a named bay. Regression: `inputparams` (s5 pair → indices 4/5 and
   the query-only rule).
+- **The multi-disk swapper is a six-bay feature, slot 5 included.** `standbyDisks`
+  and `standbyActiveIndex` in `driveprops.ts` were hard-coded to four entries, so
+  indices 4/5 silently got no standby list at all: no `faLayerGroup` badge, no swap
+  menu, and "Load Additional Disk(s)" had nowhere to put the disk. Both arrays are
+  now sized `MAX_DRIVES` and every accessor guards on `MAX_DRIVES`, so `?s5d1={A,B}`
+  behaves like `?d1={A,B}`. Two adjacent gaps had to close for that to be true:
+  `getMultiDiskConfigFromItem` (`diskpanel_utils.ts`) needed the `s5d1`/`s5d2` keys
+  in *both* the diskUrl-object and the `item.params` branches — without them a
+  collection entry naming the pair fell through to the primary-URL fallback and the
+  two disks landed in the slot-7 block bays, where there is no 3.5" media clock at
+  all — and `getPrimaryDiskUrl`'s key list (`s6d1 || s5d1 || s7d1 || …`) so an IIgs
+  item's "primary" disk is the floppy a user would actually be handed. Regressions:
+  `diskswapper` (per-bay groups for all six bays, a slot-5 swap re-posts
+  `doSetEmuDriveNewData` with `forceIndex=true`, `ejectAllDisks(5)` clears only bay
+  5), `diskpanel_utils` (the s5 keys), `gs_floppy35_swapper` (§7). Verified in the
+  real UI on a fresh profile: the badge appears on S5,D1, its menu lists both disks
+  with a tick on the active one, and clicking the second entry leaves
+  `A2DeskTop-1.5-en_800k.2mg` at Trk 0 with the badge still there.
 - **The Link Builder emits a IIgs link only if it names the machine.** A link with
   `slot*=gs*` and no `?machine=` is useless twice over: it opens whatever machine the
   visitor last used (so a IIgs volume gets scanned by an IIe), and `inputparams`
@@ -1102,6 +1141,7 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\gs_applecorn_ui.cjs` | real-UI Applecorn check: `node gs_applecorn_ui.cjs [waitS] [port] [rom]` boots `applecorn-0.54-beta.po` on S5,D1 with a fresh profile, presses `1` with a raw CDP key, prints the changed canvas-row count, peeks `$E1`/`$E0:$0800` back into the 80-column merge (`__romTracePeek`) and saves `acui_rom<rom>.png` |
 | `...\Temp\opencode\tp_cloud_census.cjs` | real-UI raster-flicker census (§11.16): `node tp_cloud_census.cjs [waitS] [port] [sampleMs] [tag]` boots TimePilot GS on a fresh profile, samples the canvas once per **painted** frame for `sampleMs` and prints how many scanline bands still carry cloud-white. The row set is chosen by the *maximum* over the run, not the median, so two builds of the emulator are comparable — a median would silently drop exactly the rows that flicker. Run it once with `captureShrBeamLine()` commented out to get the "before" number |
 | `...\Temp\opencode\gs_woz35_bay.cjs` | real-UI bay check for a large `.woz`: `node gs_woz35_bay.cjs <url> [waitS] [port]` boots a fresh profile on `?drive=N` and prints each bay's label + status (it walks up from every `.disk-label` to the smallest ancestor naming exactly one `S[567],D[12]`) plus any error dialog, and saves `%TEMP%\woz35_bay.png`. This is what proves a capture asked for slot 6 actually lands in S5,D1 and reaches its title screen |
+| `...\Temp\opencode\gs_s5_swapper.cjs` | real-UI check of the slot-5 multi-disk swapper: `node gs_s5_swapper.cjs <urlA> <urlB> [waitS] [port]` boots a fresh profile on `?machine=apple2gs&boot=true&s5d1={A,B}`, reports which bay holds which file plus whether it carries a `.disk-multidisk-badge`, clicks the badge, dumps the menu and clicks the second entry, then re-reads the bay. **PopupMenu items are `div.droplist-option`** — the obvious `.popupmenu-item` / `[class*=popup] div` selectors match nothing and make an open menu look empty. Its `Network.requestWillBeSent` log counts the disk-server fetches, but remember the page URL itself contains `6503/` in its query, so the navigation always shows up as an extra "request" |
 | `...\Temp\opencode\gs_linkbuilder.cjs` | real-UI Link Builder check: `build [waitS] [port]` boots a fresh-profile IIgs, opens 連結產生器 and dumps every `select` (name/value/options) plus the readonly link textarea; `emit [waitS] [port] [url]` also picks Custom URL on each drive row, types the URL into the 3.5" drive-1 field (matched by its language-independent `http://example.com/floppy35.dsk` placeholder) and prints the emitted link; `visit <port> <url> [waitS]` opens that link on its own fresh profile and reports `#tour-iigs-desk-button`, the footer (`2.61 MHz, 8 MB`), `.disk-label` texts and the `S5,S1…` bay statuses — the only way to prove a built link actually boots the machine it names |
 | `...\Temp\opencode\gs_chord_ui.cjs`, `gs_menu_visibility.cjs` | real-UI key-chord check: `node gs_chord_ui.cjs [waitS] [port]` boots GS/OS on a fresh profile and compares canvas **scanline row-sums** around raw host keys, so `bare W changed rows: 0` vs `Closed-Apple + W changed rows: 281` is the observed evidence (§6); the visibility variant takes a `[machine]` argument and stops before the keystrokes, which is how the IIgs-only menu item was confirmed absent on the IIe. Select menu entries by `/機器配置\|machine configuration/i` title text — headless Chrome renders the UI in the user's language, and the `basic-button` id is reused by several components |
 | `?romtrace=1` | PC histogram + `window.__romTrace`, `__romTracePeek(addrs)` reads guest memory (peekPc/peekCode/peekZp) |
@@ -1518,6 +1558,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `gs_floppy35_basic` (a real Applesoft `SAVE`/`LOAD` on A2DeskTop-1.5.po through
   slot 5: `SAVE`, `NEW`/`LOAD`/`LIST`/`RUN`, then the spliced image is remounted
   and loaded again, §7),
+  `gs_floppy35_swapper` (changing the disk in a slot-5 bay while the machine runs:
+  the incoming volume replays its own GCR stream, and an async write burst still
+  in flight from the outgoing one cannot edit the image that just arrived, §7),
   `gs_floppy35_woz` (a protected 3.5" WOZ capture — `Cavern_Cobra_IIgs.woz`,
   1,296,147 B: INFO byte 1 declares the type and offset 61 does not, asking for
   S6 moves it to S5 rather than the other way round, it mounts as a capture and
@@ -1552,12 +1595,19 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `linkbuilder` (IIgs links: `machine=apple2gs` and no `speed=` at the GS default,
   the GS speed table in `retrieveFromEmulatorSettings`, the S5 3.5" rows emitting
   `s5d1=`, and reseeding `slotConfig` so no classic card reaches a GS link, §9),
+  `diskswapper` (the standby-disk group is per bay for **all six** bays: a slot-5
+  pair gets its own list and badge, a swap installs that disk and re-posts it with
+  `forceIndex=true`, and ejecting one bay leaves the others, §9),
   `adbmodifiers` (which host key carries which IIgs Apple-key role — Alt / Meta /
   numpad bindings, so a Windows user can actually press a chord, §6)
 
-Known failures that are not this branch's last change: `vera.test.ts` (CMDR-DOS,
-fails on a clean tree too), and `gs_silky.test.ts`, whose SHR byte count is 2874
-against a `> 5000` assertion. The latter was measured identical at `HEAD` with the
-ADB work reverted, so it is a pre-existing coverage regression, not a desk-panel
-one: SHR mode is on and more than 100 scanlines carry bytes, but the title screen
-is far sparser than when the test was written (§11.7).
+Known failures that are not this branch's last change: `gs_silky.test.ts`, whose
+SHR byte count is 2874 against a `> 5000` assertion. The latter was measured
+identical at `HEAD` with the ADB work reverted, so it is a pre-existing coverage
+regression, not a desk-panel one: SHR mode is on and more than 100 scanlines carry
+bytes, but the title screen is far sparser than when the test was written (§11.7).
+Also `gs_trace_boot.test.ts` (slot-7 `A2DeskTop-VERA.hdv`): its first check, the
+ProDOS 8 MACHID byte at `$BF98`, reads `$55` where `$2A` is expected, so none of the
+A2DeskTop/DHIRES assertions below it ever run. Measured byte-identical with the
+swapper work reverted, and the test file itself has not been touched since
+`ab11575f`. `vera.test.ts`, previously listed here, now passes.

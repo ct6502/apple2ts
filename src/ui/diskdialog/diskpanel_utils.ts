@@ -247,6 +247,8 @@ export const getMultiDiskConfigFromItem = (
         else if (key === "s7d2" || key === "hd2") assignDrive(1, rawVal)
         else if (key === "s6d1" || key === "d1") assignDrive(2, rawVal)
         else if (key === "s6d2" || key === "d2") assignDrive(3, rawVal)
+        else if (key === "s5d1") assignDrive(4, rawVal)
+        else if (key === "s5d2") assignDrive(5, rawVal)
         else if (key === "s2d1" || key === "s4d1" || key === "verasd" || key === "sd") {
           if (typeof rawVal === "string") assignVera(rawVal)
           else if (Array.isArray(rawVal) && rawVal[0]) assignVera(rawVal[0])
@@ -267,6 +269,8 @@ export const getMultiDiskConfigFromItem = (
         else if (key === "s7d2" || key === "hd2") assignDrive(1, val)
         else if (key === "s6d1" || key === "d1") assignDrive(2, val)
         else if (key === "s6d2" || key === "d2") assignDrive(3, val)
+        else if (key === "s5d1") assignDrive(4, val)
+        else if (key === "s5d2") assignDrive(5, val)
         else if (key === "s2d1" || key === "s4d1" || key === "verasd" || key === "sd") assignVera(val)
       }
     } catch {
