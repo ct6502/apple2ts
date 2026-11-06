@@ -162,6 +162,9 @@ export const resetIigsVideoClock = () => {
   ensoniqOutCursor = 0
   ensoniqSamplesPerRefresh = 0
 }
+// $C02E/$C02F are a pure function of this clock, so pinning the frame layout the
+// CPU sees means being able to place the beam at a chosen position in a refresh.
+export const setIigsVideoClockForTesting = (value: number) => { iigsVideoClock = value }
 let cpuSpeed = 0
 export let isDebugging = false
 let appMode = "default"

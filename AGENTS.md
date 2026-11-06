@@ -204,7 +204,7 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
 | `$C026` | ADB micro data: write = command register, read = the micro's own report byte **first**, then the queued command response (KEGS `adb_read_c026` ADB_IDLE). |
 | `$C027` | ADB micro status. bit 7 mouse data, bit 5 data register full, bit 3 keyboard data, bit 1 next `$C024` read is Y; bits 6/4/2 are the mouse / data / keyboard interrupt enables and the only writable ones. **Bit 0 always reads 0** — the ROM's boot-time command loop (`FF:851E`) spins on it before writing the next argument byte, so publishing "the micro still wants arguments" there deadlocks the self-test into 「Fatal system error-> 0911」. gssquared never sets `command_register_full`; KEGS masks bit 0 out. ROM 01 writes `$10` here at `FF:F9E0` (the data-interrupt enable, which is how the desk manager is woken), GS/OS `$40` at `$C47C`. |
 | `$C02D` | `SLTROMSEL`, default `0b11110110` (slots 7,6,5,4,2,1 = card). Must track the configured cards. |
-| `$C02E/$C02F` | video counter. `$C02E = (vcounter >> 1) & 0xFF` (`$80-$DF` visible, `$E0-$FF` VBL, `$E8` = scanline 240); `$C02F = ((vcounter & 1) << 7) \| hcounter`, `hcounter` runs `$00` then `$40-$7F`. Tass Times spins at `$2F90` until `$C02E == $E8`. |
+| `$C02E/$C02F` | video counter. The counter is 9 bits and runs `$100-$1BF` over the 192 visible rows, `$1C0-$1FF` over the first 64 VBL rows, and **`$0FA-$0FF` over the last six** (gssquared `get_vcounter()`: `$1FF + 1` is `$000`, which it then forces to `$0FA`). `$C02E = (vcounter >> 1) & 0xFF` (`$80-$DF` visible, `$E0-$FF` VBL, `$7D-$7F` in those last six rows); `$C02F = ((vcounter & 1) << 7) \| hcounter`, `hcounter` runs `$00` then `$40-$7F`. Tass Times spins at `$2F90` until `$C02E == $E8`. Reading the pair as one 16-bit value and doing `ASL / ADC #$0000 / AND #$01FF` on it rebuilds the raw 9 bits, which is how Stars & Planets waits for `$00FA` — modelling the wrap as `$1FA-$1FF` makes that value unreachable, and its title screen then never hands control to the program (§11.17). |
 | `$C029` | bit 7 SHR, bit 6 aux linearize, bit 5 mono |
 | `$C030` | speaker. The cone toggles on **reads as well as writes** (Applesoft `BELL` is `LDA $C030`); both paths must call `checkSoftSwitches`. |
 | `$C031` | disk control: bit 6 `EN35` selects the 3.5"/5.25" family, bit 7 `HDSEL` |
@@ -234,8 +234,14 @@ ROM takes the fatal-error path.
 **Interrupt dispatchers** installed by `iigsInitInterrupts()`: the ROM overwrites
 them with its own (`$E1:0010 = JML $FFB7CC`, the full manager), so the
 hand-written minimal manager is dead code — harmless, do not build on it.
-`$E1:0034 = JML $FEC5C8` **is** needed (the ROM never writes it); it is the ADB
-mouse dispatch that publishes the event record.
+`$E1:0034 = JML $FEC5C8` (the ADB mouse dispatch that publishes the event
+record) is **order-dependent, not a permanent install**: the ROM's own startup
+loop at `$FF:FA62` re-stubs the whole `$E1:$0030-$0053` block with
+`JML $FF:B5DE` after our cold-boot write, and a booted guest may replace it
+again. Measured on Stars & Planets (ProDOS 16) it ends as the ROM's stub, and on
+GS/OS 6.0.1 the mouse that actually arrives comes from the `$FF:C4xx`
+Mouse-Card-compatible firmware, not from this vector (§11.18). So nothing may
+assume the emulator's install is what runs.
 
 ---
 
@@ -1139,6 +1145,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\gs_da_drawer2.cjs` | real-UI DA drawer check: `node gs_da_drawer2.cjs <image> [waitS] [port] [driveIdx]` boots the volume on a fresh profile, clicks the machine-menu item, then sends the raw `rAlt`+`Esc` chord, saving `drawer_<TAG>_<n>.png` and printing per-step changed-row counts. The crop must start at the first **bright** canvas row: the IIgs black border puts the screen top at row 40 of the 818x511 canvas, so a strip taken from row 0 is blank |
 | `...\Temp\opencode\gs_rom_desk_button.cjs` | real-UI check of the one-click IIgs Desk Accessories button: `node gs_rom_desk_button.cjs [waitS] [port] [machine]` boots a fresh profile with **no disk**, reports `#tour-iigs-desk-button` (`present` + tooltip + rect), clicks it and prints the changed canvas-row count with `deskbtn_<machine>_<n>.png`. It doubles as the visibility probe (`present: false` on the IIe) and is the fastest way to see whether the ROM boot actually reached its desk manager |
 | `...\Temp\opencode\gs_applecorn_ui.cjs` | real-UI Applecorn check: `node gs_applecorn_ui.cjs [waitS] [port] [rom]` boots `applecorn-0.54-beta.po` on S5,D1 with a fresh profile, presses `1` with a raw CDP key, prints the changed canvas-row count, peeks `$E1`/`$E0:$0800` back into the 80-column merge (`__romTracePeek`) and saves `acui_rom<rom>.png` |
+| `...\Temp\opencode\gs_stars_play.cjs` | real-UI Stars & Planets check: `node gs_stars_play.cjs <bootWaitS> [port] [stepWaitS]` boots the volume on a fresh profile and diffs the canvas **per pixel** over the screen bounding box after each step, which is what proves the app is alive: Return changes 240623 of 417999 pixels, a digit 13622, a panel button 1833. `stepWaitS` must be ≥ 25 s — the program's own module load takes ~20 s at 1990 disk speed, and a shorter wait reads the whole thing as frozen (§11.17) |
+| `...\Temp\opencode\gs_stars_ui.cjs` | superseded by `gs_stars_play.cjs`: it waits 3 s per keystroke and counts changed canvas **row sums**, so it reports 0 changed rows for keystrokes that actually redraw the screen. Kept only for the PNG series `stars_<disk>_d<n>_k<n>.png`. Two traps, both real: too short a window, and a metric too coarse to see SHR changes (§11.17) |
 | `...\Temp\opencode\tp_cloud_census.cjs` | real-UI raster-flicker census (§11.16): `node tp_cloud_census.cjs [waitS] [port] [sampleMs] [tag]` boots TimePilot GS on a fresh profile, samples the canvas once per **painted** frame for `sampleMs` and prints how many scanline bands still carry cloud-white. The row set is chosen by the *maximum* over the run, not the median, so two builds of the emulator are comparable — a median would silently drop exactly the rows that flicker. Run it once with `captureShrBeamLine()` commented out to get the "before" number |
 | `...\Temp\opencode\gs_woz35_bay.cjs` | real-UI bay check for a large `.woz`: `node gs_woz35_bay.cjs <url> [waitS] [port]` boots a fresh profile on `?drive=N` and prints each bay's label + status (it walks up from every `.disk-label` to the smallest ancestor naming exactly one `S[567],D[12]`) plus any error dialog, and saves `%TEMP%\woz35_bay.png`. This is what proves a capture asked for slot 6 actually lands in S5,D1 and reaches its title screen |
 | `...\Temp\opencode\gs_s5_swapper.cjs` | real-UI check of the slot-5 multi-disk swapper: `node gs_s5_swapper.cjs <urlA> <urlB> [waitS] [port]` boots a fresh profile on `?machine=apple2gs&boot=true&s5d1={A,B}`, reports which bay holds which file plus whether it carries a `.disk-multidisk-badge`, clicks the badge, dumps the menu and clicks the second entry, then re-reads the bay. **PopupMenu items are `div.droplist-option`** — the obvious `.popupmenu-item` / `[class*=popup] div` selectors match nothing and make an open menu look empty. Its `Network.requestWillBeSent` log counts the disk-server fetches, but remember the page URL itself contains `6503/` in its query, so the navigation always shows up as an extra "request" |
@@ -1451,6 +1459,67 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     Regression: `gs_timepilot_flicker.test.ts`, red both ways: not calling
     `captureShrBeamLine()` and posting `getShr()` again makes the two buffers
     identical (`framesDiffering = 0`) and fails all three census bounds.
+17. **Stars & Planets (1990, Advanced Ideas) freezes — RESOLVED: the video
+    counter's last six rows were one bank too high.** `stars & planets
+    (1990)(advanced ideas).2mg` is a self-contained 800 KB GS/OS volume, so it
+    boots straight to its own title. Booted from slot 5 in the real UI it stopped
+    on "Welcome to the //gs" with the head parked (Trk 66) and the same picture
+    forever — and the same stall from **slot 7**, where no nibblizer is involved,
+    exonerated the 3.5" media path immediately. The PC histogram was a
+    six-instruction spin at `$01:A06B-$A079` (~4.7M hits in 4000 frames) inside
+    GS/OS's bank-01 startup: `LDA $E0C02E / ASL / ADC #$0000 / AND #$01FF / CMP
+    #$00FA / BNE`. With M=16 the 4-byte `LDA abs,long` reads **both** counters,
+    and `ASL; ADC #$0000` rotates `$C02F` bit 7 (the counter's bit 0) back into
+    bit 0, so the sequence rebuilds the raw 9-bit vertical counter and waits for
+    `$00FA`. Our model produced the wrap rows as `$1FA-$1FF` instead of
+    gssquared's `$0FA-$0FF`, so `$C02E` reported `$FD-$FF` where hardware reports
+    `$7D-$7F` and the value `$0FA` never existed. Fix: `readIigsVideoCounter`
+    wraps to `0xfa + (line - 64)` (§3).
+    - Measured on the fix from slot 7 in jest: the title screen arrives (SHR on,
+      `$C029 = $C1`, 31311 of the 32768 window bytes non-zero) and Return starts
+      the program, whose solar system then changes the SHR picture 119 times over
+      the next 2400 frames, the first change at frame 1200. That 1200-frame wait
+      is the program's own module load running at 1990 disk speed (~20 s), so any
+      window shorter than that reads as "frozen" — which is exactly how the 3 s
+      per keystroke harness misled the first round of this investigation.
+    - With the `$1FA` wrap restored the title screen *does* paint (32489 non-zero,
+      the same static picture) and then nothing ever changes again: 0 changes
+      across the identical 2400-frame window. So the visible symptom is "title,
+      then dead", and from the 3.5" drive the boot is slow enough that it never
+      even reaches that title inside a short wait, which is the "splash" reading
+      above.
+    - Verified in the real UI with `Temp\opencode\gs_stars_play.cjs [bootWaitS]
+      [port] [stepWaitS]`, which waits 25 s per step and diffs the canvas
+      **per pixel** over the screen bounding box: 240623 of 417999 pixels change
+      after Return, 13622 after a digit key, 1833 after clicking a panel button.
+      The older row-sum harness (`gs_stars_ui.cjs`) reported 0 changed *rows* for
+      those same keystrokes — small SHR changes do not move a row mean.
+    - Regressions: `gs_vcounter.test.ts` (all 262 row values of a refresh in
+      order, the reconstructed 9-bit counter reaches `$0FA`, and Tass Times'
+      `$C02E == $E8` stays reachable — all three red with the `$1FA` wrap) and
+      `gs_stars.test.ts` (the same red end-to-end on the volume: the frozen build
+      fails with `firstChangeFrame = -1` and `changes = 0`).
+18. **Stars & Planets does not respond to the mouse — not a defect: the volume
+    never asks for ADB.** Listed here only because it looks like one. The title
+    screen is keyboard-driven: it polls `$C000` ~10 times a
+    frame from `$01:109F0` and `$C08B` from `$01:9E59/$9E5D`, and measurement over
+    the whole post-boot run shows it **never** writes `$C027` bit 6 (the mouse
+    interrupt enable), never reads `$C024` or `$C026`, issues no ADB command after
+    the ROM's own boot self-test, and makes zero `$E10000` tool calls while idle.
+    `$E1:0030` is rewritten by the guest OS, but `$E1:0034` stays the ROM's
+    unclaimed `JML $FF:B5DE` stub. The ROM is therefore right to refuse the
+    pointer: its mouse dispatch at `$FF:B973` is `LDA $C027 / STA $E100C5 / ASL /
+    BPL $B989 / BCC $B989 / JSL $E10034`, so it needs **both** bit 7 (mouse data)
+    and bit 6 (mouse interrupt enabled) before it will call the task — and bit 6
+    is the enable this guest never sets. Our status byte is not the difference:
+    `readStatus()` reports bit 7 unconditionally, as KEGS `adb_read_c027` and
+    gssquared `ADB_Micro.hpp::read_status` do, and only the *interrupt* follows
+    the enable bits. `$C027` ends at `$98` (mouse and keyboard data pending,
+    unread) — authentic for a guest that ignores ADB and polls `$C000` instead.
+    GS/OS 6.0.1 applications get their mouse through the `$FF:C4xx`
+    Mouse-Card-compatible firmware instead (`$C479 TSB $C027` sets bit 6, `$C4D2`
+    reads `$C024`); a ProDOS 16-era program that never enters it gets none.
+    Digit keys do work (13622 pixels change), so the app is usable.
 
 ---
 
@@ -1503,6 +1572,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | "Other emulators read 3.5\" media at 1 MHz, so ours should too" | Those emulators have no 1 MHz IIgs: KEGS/GSplus follow `$C036` bit 7 (the ROM keeps it fast) and gssquared's 3.5" head is advanced by `vid_cycles`, which run at a fixed 1.02 MHz even in its 1.02 clock mode. 500 kbit/s leaves 16.3 CPU cycles per byte at 1.024 MHz while the tightest polled loop needs 22-23, so the stream overruns; at 2.8 MHz the budget is 45.8. The IIgs default is 2.8 MHz for this reason (§7, §8) |
 | `$04`/`$1C` should be `TSB abs,X` / `TRB abs,X`, because a `$C036 <= $04` write looked like a bad opcode index | Our table is right and so is the ROM: `$04` = TSB direct, `$0C` = TSB absolute, `$14` = TRB direct, `$1C` = TRB absolute — identical in gssquared `opcodes.hpp:274-278`, KEGS/GSplus `instable.h` + `disas.h`, and apple2ts's own classic table (`instructions.ts:780-790`; core at `cpu65816.ts:649`). The `$04` value is what `TRB $C036` *writes* to a register holding `$84` (`$84 & ~$80`), not a mis-decoded instruction. The real question that write raises is which speed mode may issue it at all (§8) |
 | 「你有因為加快而減少drawing嗎」— the flicker means we skip drawing to keep up | No rendering is ever dropped for speed. The clouds vanished because the picture posted to the UI was the SHR window as of one instant, taken at the refresh boundary, while the guest erases and redraws band by band behind the beam (§4, §11.16) |
+| Stars & Planets stalls because the 3.5" drive cannot deliver its data | It stalls identically from slot 7, where there is no nibblizer at all. The wait was on `$C02E/$C02F`: the counter's last six rows are `$0FA-$0FF`, and we produced `$1FA-$1FF`, so the value its raster-sync loop polls for never existed (§3, §11.17) |
+| Stars & Planets is frozen because its title screen does not react | Two different things. The load behind Return takes ~20 s (1200 frames) at 1990 disk speed, so a short measurement window reads "dead"; and with the `$1FA` wrap the title paints but nothing ever changes again — the same missing `$0FA` wait (§11.17) |
+| Stars & Planets ignoring the mouse means our ADB mouse is broken | The volume never enables `$C027` bit 6, never reads `$C024`/`$C026` and makes no tool call while idle, so the ROM's own gate at `$FF:B973` correctly refuses to dispatch. It is keyboard-driven and its digit keys work; our status byte already matches KEGS and gssquared (§11.18) |
 
 ---
 
@@ -1543,7 +1615,12 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 - `src/ui/inputparams.ts`, `main2worker.ts` — URL params, debug-hook plumbing
 - Tests worth knowing: `gsos_boot`, `gs_cycles`, `gs_adc_flags`, `gs_mouse_sync`,
   `gs_mouse_neg`, `gs_mouse_capture`, `gs_cursor_repaint`, `gs_cursor_draw`,
-  `gs_cursor_y`, `gs_adb_button`, `gs_vbl_cadence`, `gs_rom_adb_task`,
+  `gs_cursor_y`, `gs_adb_button`, `gs_vbl_cadence`,
+  `gs_vcounter` (the `$C02E/$C02F` frame layout row by row, the 9-bit value a
+  guest rebuilds from the pair, and that `$C02E == $E8` is still reachable, §3,
+  §11.17), `gs_stars` (Stars & Planets from slot 7: its SHR title screen and the
+  solar-system animation that Return starts — red with the `$1FA` wrap, §11.17),
+  `gs_rom_adb_task`,
   `gs_ensoniq`, `gs_doc_clock`, `gs_tass`, `gs_tass_title_tempo`,
   `gs_tass_click_freeze`, `gs_textpage`, `gs_floppy_late`, `gs_ctrl_reset`,
   `gs_keyboard_adb`, `gs_mcs_nokey`, `gs_silky`, `gs_freegemas`,

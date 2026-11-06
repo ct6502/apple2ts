@@ -209,14 +209,25 @@ export const iigsInterruptPending = (): boolean => {
 };
 
 // The Mega II video scanner counters, exposed to the CPU at $C02E/$C02F.
-// Format per the Apple IIgs Hardware Reference / gssquared Docs/VideoScanner.md:
-//   9-bit vertical counter: visible rows count $100-$1BF, VBL rows $1C0-$1FF
-//   and the final six rows wrap to $1FA-$1FF. $C02E returns the top 8 of the
-//   9 bits ($80-$DF visible, $E0-$FF in VBL); $C02F the low bit in bit 7 plus
-//   the 7-bit horizontal counter in bits 0-6.
-// Software polls $C02E inside a tight `LDA $C02E / CMP #$E8 / BNE` to catch a
+// Format per the Apple IIgs Hardware Reference and gssquared
+// `VideoScannerII.hpp::get_vcounter()`, which counts scanlines as
+//   vert < 192  -> $100 + vert      (visible)
+//   vert < 256  -> $1C0 + vert-192  (VBL)
+//   else        -> $0FA + vert-256  (the last six rows)
+// The wrap is the part that is easy to get wrong: the counter is 9 bits, so
+// $1FF + 1 is $000, and gssquared then forces it to $0FA - the final six rows
+// are $0FA-$0FF, *not* $1FA-$1FF. So $C02E (`vcounter >> 1`) is $80-$DF visible,
+// $E0-$FF for the first 64 VBL rows and $7D-$7F for the last six, and $C02F
+// carries bit 0 of the counter in bit 7 plus the 7-bit horizontal counter.
+// Software polls these inside a tight `LDA $C02E / CMP #$E8 / BNE` to catch a
 // spot in VBL for flicker-free drawing (Tass Times cursor refresh froze forever
 // because this register read a static 0), so it must track the frame clock.
+// Reading $C02E *and* $C02F as one 16-bit access and reassembling the 9-bit
+// counter is the same wait in the other direction, and real GS/OS code does it:
+// Stars & Planets spins on the reconstructed counter `== $00FA`, which only the
+// $0FA-$0FF wrap produces, so with the wrap modelled as $1FA-$1FF its title
+// screen paints and then the program never starts - the screen freezes on the
+// keystroke (gs_stars.test.ts).
 // The frame layout mirrors motherboard.ts: the first vblCycles of every frame
 // are the VBL rows (that is what $C019/VBLIRQ are keyed to), then 192 visible
 // rows.
@@ -233,9 +244,10 @@ const readIigsVideoCounter = (wantHorz: boolean): number => {
   const cyc = getIigsVideoClock() % frameCycles;
   let vert: number;
   if (cyc < vblCycles) {
-    // VBL rows 192-261: 64 values at $1C0-$1FF then the 6-value wrap $1FA-$1FF.
+    // VBL rows 192-261: 64 values at $1C0-$1FF, then the six-row wrap, which
+    // drops the 9th bit and restarts at $0FA (gssquared `vcount == 0 -> 0xFA`).
     const line = Math.min(70, Math.floor(cyc / (vblCycles / 70)));
-    vert = line < 64 ? 0x1c0 + line : 0x1fa + (line - 64);
+    vert = line < 64 ? 0x1c0 + line : 0xfa + (line - 64);
   } else {
     const cyclesPerLine = ((frameCycles - vblCycles) / 192) || 1;
     const line = Math.min(191, Math.floor((cyc - vblCycles) / cyclesPerLine));
