@@ -17,6 +17,7 @@ const initVeraPsgAudio = async () => {
   if (initPromise) return initPromise
 
   initPromise = (async () => {
+    isVeraFmAudioEnabled = localStorage.getItem("veraFmAudioEnabled") !== "false"
     veraPsgContext = new AudioContext({ latencyHint: "interactive" })
     console.log("VERA PSG sample rate", veraPsgContext.sampleRate)
     registerAudioContext(enableContext)

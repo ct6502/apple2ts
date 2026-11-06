@@ -14,7 +14,7 @@ import { useTranslation } from "../../i18n/useTranslation"
 import { SLOT_NUMBERS, getSlotOptions } from "../devices/machineconfig"
 import TabBase from "../tabbase"
 import Tab from "../tab"
-import { cardShortLabels, ramdiskParams, ramdiskValues } from "../ui_utilities"
+import { getCardShortLabels, ramdiskParams, getRamdiskValues } from "../ui_utilities"
 
 export enum TAB {
   DISK,
@@ -44,6 +44,8 @@ const dialogPosition = [Math.max(window.innerWidth / 2 - 275, 0), Math.max(windo
 
 const LinkBuilder = () => {
   const { t } = useTranslation()
+  const cardShortLabels = getCardShortLabels(t)
+  const ramdiskValues = getRamdiskValues(t)
   const [showBuilder, setShowBuilder] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState([0, 0])

@@ -18,7 +18,6 @@ import {
 import { SpeedDropdown } from "./speeddropdown"
 import { getLowercaseMode, getTheme, getUIStateBoolean, isGameMode } from "../ui_settings"
 import { useTranslation } from "../../i18n/useTranslation"
-import { AudioConfig } from "../devices/audio/audioconfig"
 import LinkBuilder from "./linkbuilder"
 import { ControlAvailabilityIcon } from "./controlavailabilityicon"
 import type { RetroControlMetadata } from "../retro/retromenucontext"
@@ -97,8 +96,6 @@ const ConfigButtons = (props: DisplayProps) => {
         </ControlAvailabilityIcon>
       </button>
     </div>
-
-    {!isGameMode() && <AudioConfig {...props} />}
 
     <SettingsDialog {...props} />
 

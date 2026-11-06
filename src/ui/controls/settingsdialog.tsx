@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faXmark, faGear, faMusic } from "@fortawesome/free-solid-svg-icons"
+import { faXmark, faGear } from "@fortawesome/free-solid-svg-icons"
 import { useTranslation } from "../../i18n/useTranslation"
 import { createControlContext } from "../retro/retromenucontext"
 import { settingsResetBinding } from "./resetcontrols"
@@ -8,14 +8,12 @@ import { Droplist } from "../panels/droplist"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, handleGetSpeedMode } from "../main2worker"
 import { getPreferenceBoolean, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
 import { getSlotOptions, SLOT_NUMBERS } from "../devices/machineconfig"
-import { cardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, ramdiskValues, themeLabels } from "../ui_utilities"
+import { getCardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, getRamdiskValues, themeLabels } from "../ui_utilities"
 import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import CheckBox from "../panels/checkbox"
 import { getModKeyName } from "../retro/retrocontrolmetadata"
-import { themeToName, UI_THEMES } from "../../common/utility"
-import PopupMenu from "./popupmenu"
-import { controlsToPopupItems } from "./controlpopup"
-import { audioControlRegistry } from "../devices/audio/audioconfig"
+import { UI_THEMES } from "../../common/utility"
+import { SlotAudioConfig } from "../devices/audio/audioconfig"
 import TabBase from "../tabbase"
 import Tab from "../tab"
 
@@ -23,6 +21,8 @@ const dialogPosition = [Math.max(window.innerWidth / 2 - 275, 0), Math.max(windo
 
 export const SettingsDialog = (props: DisplayProps) => {
   const { t, language, changeLanguage } = useTranslation()
+  const cardShortLabels = getCardShortLabels(t)
+  const ramdiskValues = getRamdiskValues(t)
   const [showDialog, setShowDialog] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState([0, 0])
@@ -107,7 +107,7 @@ export const SettingsDialog = (props: DisplayProps) => {
   const themeConfig = () => {
     return (
       <Droplist name={t("config.theme")}
-        value={themeToName(getTheme())}
+        value={themeLabels(t)[UI_THEMES.findIndex(option => option.value === getTheme())]}
         values={themeLabels(t)}
         setValue={(val: string) => {
           const i = themeLabels(t).indexOf(val)
@@ -254,22 +254,6 @@ export const SettingsDialog = (props: DisplayProps) => {
     )
   }
 
-  const mockingboardConfiguration = () => {
-    const [, mockingboardControl] = audioControlRegistry.resolve(
-      createControlContext(props, t, language, changeLanguage),
-      "sound",
-    )
-    return (
-      <PopupMenu
-        buttonTitle={t("audio.configuration")}
-        buttonIcon={<FontAwesomeIcon icon={faMusic} style={{ fontSize: "0.8em" }}/>}
-        menuItems={[[
-          ...controlsToPopupItems([mockingboardControl]),
-        ]]}
-      />
-    )
-  }
-
   const slotConfiguration = () => {
     return (
     <>
@@ -330,7 +314,8 @@ export const SettingsDialog = (props: DisplayProps) => {
                 }
               }}
             />
-            {currentCard === "mockingboard" &&  mockingboardConfiguration()}
+            {(currentCard === "mockingboard" || currentCard === "passport" || currentCard === "vera") &&
+              <SlotAudioConfig {...props} card={currentCard} slot={slot} />}
             </div>
           )
         })}

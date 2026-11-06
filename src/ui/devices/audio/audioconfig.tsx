@@ -55,42 +55,42 @@ export const retroAudioControls: RetroControlMetadata[] = controlsFromJson("audi
 
 export const audioControlRegistry = new ControlRegistry(retroAudioControls)
 
-export const AudioConfig = (props: DisplayProps) => {
+export type SlotAudioCard = "mockingboard" | "passport" | "vera"
+
+export const SlotAudioConfig = (props: DisplayProps & { card: SlotAudioCard, slot: number }) => {
   const { t, language, changeLanguage } = useTranslation()
-
-  const veraFmEnabled = getPreferenceVeraFmAudioEnabled()
-  setVeraFmAudioEnabled(veraFmEnabled)
-
-  const [, , midiControl] = audioControlRegistry.resolve(
-    createControlContext(props, t, language, changeLanguage),
-    "sound",
+  const controls = audioControlRegistry.resolve(
+    createControlContext(props, t, language, changeLanguage), "sound",
   )
+  const cardName = props.card === "mockingboard" ? "Mockingboard"
+    : props.card === "passport" ? "Passport MIDI" : "VERA"
+  const controlId = props.card === "mockingboard" ? "sound.mockingboard" : "sound.midi"
+  const control = controls.find(item => item.id === controlId)
+  const items: PopupMenuItem[] = props.card === "vera" ? [
+    { label: "VERA", isHeading: true },
+    {
+      label: "Enable FM Audio",
+      isSelected: getPreferenceVeraFmAudioEnabled,
+      onClick: () => {
+        setPreferenceVeraFmAudioEnabled(true, "external")
+        setVeraFmAudioEnabled(true)
+      },
+    },
+    {
+      label: "Disable FM Audio",
+      isSelected: () => !getPreferenceVeraFmAudioEnabled(),
+      onClick: () => {
+        setPreferenceVeraFmAudioEnabled(false, "external")
+        setVeraFmAudioEnabled(false)
+      },
+    },
+  ] : control ? controlsToPopupItems([control]) : []
 
   return (
     <PopupMenu
-      buttonTitle={t("audio.configuration")}
-      buttonIcon={<FontAwesomeIcon icon={faMusic} />}
-      menuItems={[[
-        ...controlsToPopupItems([midiControl]),
-        { label: "-" },
-        { label: "VERA", isHeading: true },
-        {
-          label: "Enable FM Audio",
-          isSelected: () => getPreferenceVeraFmAudioEnabled(),
-          onClick: () => {
-            setPreferenceVeraFmAudioEnabled(true, "retro")
-            setVeraFmAudioEnabled(true)
-          },
-        },
-        {
-          label: "Disable FM Audio",
-          isSelected: () => !getPreferenceVeraFmAudioEnabled(),
-          onClick: () => {
-            setPreferenceVeraFmAudioEnabled(false, "retro")
-            setVeraFmAudioEnabled(false)
-          },
-        },
-      ]]}
+      buttonTitle={`${t("linkBuilder.slots.slot", { slot: String(props.slot) })}: ${cardName} - ${t("audio.configuration")}`}
+      buttonIcon={<FontAwesomeIcon icon={faMusic} style={{ fontSize: "0.8em" }} />}
+      menuItems={[items]}
     />
   )
 }
