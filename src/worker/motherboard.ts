@@ -1,3 +1,4 @@
+import { FrameClock } from "./frameclock"
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
@@ -87,7 +88,7 @@ let executionBreakpointAddress: number | null = null
 let executionMemoryWrite: MemoryWriteEvent | null = null
 // let heatMapGetMem = false
 let memoryDumpState: MEMORY_DUMP_STATE = MEMORY_DUMP_STATE.NONE
-let nextFrameTime = 0
+const frameClock = new FrameClock()
 let machineName: MACHINE_NAME = "APPLE2EE"
 let veraSlot: VERA_SLOT = 0
 let autoSnapshot: AUTO_SNAPSHOT = AUTO_SNAPSHOT.AUTO_OFF
@@ -723,7 +724,7 @@ export const doStepOut = () => {
 
 const resetRefreshCounter = () => {
   speedTracker = [{time: performance.now(), cycles: s6502.cycleCount}]
-  nextFrameTime = performance.now()
+  frameClock.reset(performance.now())
 }
 
 export const doSetRunMode = (
@@ -1104,19 +1105,27 @@ const doAdvance6502 = () => {
 }
 
 
-const doAdvance6502Timer = () => {
-  doAdvance6502()
-  nextFrameTime += refreshTime
-  // Calculate exactly how long until the next frame is due
-  const now = performance.now()
-  let delay = nextFrameTime - now
-  if (delay < 0) {
-    // If we're already past the time for the next frame, we were probably
-    // stopped at a breakpoint or the browser was paused. In that case,
-    // just set the next frame time to now.
-    nextFrameTime = now
-    delay = 0
+let audioClockPort: MessagePort | null = null
+const advanceScheduledFrame = () => frameClock.advance(
+  performance.now(), refreshTime, doAdvance6502, () => performance.now(),
+)
+
+export const attachAudioClockPort = (port: MessagePort) => {
+  audioClockPort?.close()
+  audioClockPort = port
+  port.onmessage = () => {
+    // Audio wakes the worker if background timer throttling made it late.
+    // The shared deadline prevents duplicate frames and catch-up bursts.
+    try {
+      advanceScheduledFrame()
+    } finally {
+      port.postMessage({ type: "ack" })
+    }
   }
-  delay = (cpuRunMode === RUN_MODE.PAUSED) ? 20 : Math.max(1, delay)
+}
+
+const doAdvance6502Timer = () => {
+  advanceScheduledFrame()
+  const delay = cpuRunMode === RUN_MODE.PAUSED ? 20 : frameClock.delay(performance.now())
   setTimeout(doAdvance6502Timer, delay)
 }

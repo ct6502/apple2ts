@@ -194,6 +194,15 @@ the "test" script, and select 'Debug Script'.
 
 ## Testing
 
+### VERA audio testing
+
+Run `npx jest src/worker/devices/vera/vera.test.ts --runInBand` and
+`npm run test:vera-audio-clock` for VERA FIFO timing and audio tests. For a
+browser check, run at normal speed, boot a Freegemas VERA disk image, and
+listen to gameplay music for at least 30 seconds, both with and without sound
+effects. Continuous playback exercises the relationship between the emulated
+CPU clock and the AudioWorklet's audio clock.
+
 ### MIDI Testing
 
 Apple2TS uses its built-in software synthesizer by default. Selecting **Enable External MIDI…** from the **Audio Configuration** menu may trigger a browser permission prompt before external MIDI outputs are listed. If the selected output disappears, Apple2TS returns to its Built-in MIDI Synthesizer. On macOS, the [built-in IAC Driver](https://support.apple.com/guide/audio-midi-setup/transfer-midi-information-between-apps-ams1013/mac) can provide virtual MIDI buses for testing.

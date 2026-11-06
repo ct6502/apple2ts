@@ -1,3 +1,4 @@
+import { AudioClock } from "./audio-clock.js"
 import createYmfm from "../js/vera-ym.js"
 const WF_PULSE = 0
 const WF_SAWTOOTH = 1
@@ -52,6 +53,7 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
     this.pcmCurL = 0
     this.pcmCurR = 0
     this.pcmPhase = 0
+    this.audioClock = null
     this.fmModule = null
     this.fmBuffer = 0
     this.fmCapacity = 128
@@ -59,6 +61,10 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
     this.pendingFmWrites = []
     this.fmReady = this.initFm(options.processorOptions.fmWasmModule)
     this.port.onmessage = (e) => {
+      if (e.data.type === "clock-port") {
+        this.audioClock = new AudioClock(sampleRate, e.data.port)
+        return
+      }
       if (Array.isArray(e.data)) {
         for (let i = 0; i < e.data.length; i++) {
           const item = e.data[i]
@@ -130,14 +136,13 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
   }
 
   renderFm(count) {
-    if (!this.fmModule) return null
+    if (!this.fmModule || !this.fmEnabled) return null
     if (count > this.fmCapacity) {
       this.fmModule._free(this.fmBuffer)
       this.fmCapacity = count
       this.fmBuffer = this.fmModule._malloc(this.fmCapacity * 2 * Int16Array.BYTES_PER_ELEMENT)
     }
     this.fmModule._ymfm_render(this.fmBuffer, count, sampleRate)
-    if (!this.fmEnabled) return null
     return this.fmModule.HEAP16.subarray(this.fmBuffer >> 1, (this.fmBuffer >> 1) + count * 2)
   }
 
@@ -184,6 +189,9 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
         ch.noiseval = (this.noiseState >> 1) & 0x3f
       }
       ch.phase = newPhase
+      // Keep phase/noise evolution even while silent, so unmuting is exact.
+      // Waveform and mixing work cannot contribute when volume or pan is off.
+      if (ch.volume === 0 || (!ch.left && !ch.right)) continue
 
       let v = 0
       switch (ch.waveform) {
@@ -337,6 +345,7 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
     const left = output[0]
     const right = output[1] || output[0]
 
+    this.audioClock?.advance(left.length)
     const fm = this.renderFm(left.length)
     for (let i = 0; i < left.length; i++) {
       const psg = this.renderSample()

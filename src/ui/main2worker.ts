@@ -365,6 +365,11 @@ export const passSetMachineName = (name: MACHINE_NAME) => {
   machineState.machineName = name
 }
 
+export const passAudioClockPort = (port: MessagePort) => {
+  if (worker) worker.postMessage({ msg: MSG_MAIN.AUDIO_CLOCK, payload: null }, [port])
+  else port.close()
+}
+
 export const passSetVeraFmEnabled = (enabled: boolean) => {
   doPostMessage(MSG_MAIN.VERA_FM_ENABLED, enabled)
 }

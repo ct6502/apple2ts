@@ -4,7 +4,7 @@ import { video_step, video_get_framebuffer, video_reset } from "./video"
 import { vera_spi_step, sdcard_set_write_protected, sdcard_clear_changes, sdcard_get_write_seq } from "./sdcard"
 import { memGet, memSet } from "../../memory"
 import { doBoot } from "../../motherboard"
-import { s6502, setPC } from "../../instructions"
+import { s6502, setPC, setCycleCount } from "../../instructions"
 import { processInstruction } from "../../cpu6502"
 import { getVeraSpriteDemoAssembly, getVeraMode7DemoAssembly, buildVeraDemo } from "./vera_demos"
 
@@ -22,6 +22,23 @@ describe("VERA Graphics & Sound Card Emulation on Apple II", () => {
     resetVera()
     video_reset()
     enableVera(true, 2)
+  })
+
+  test("PCM FIFO status drains at the normal CPU clock rate", () => {
+    memSet(0xC21B, 0x80)
+    for (let i = 0; i < 4095; i++) memSet(0xC21D, 0x55)
+    memSet(0xC21C, 21)
+    const start = s6502.cycleCount
+    // One quarter second at the motherboard's 17,030 cycles / 16.6881 ms.
+    setCycleCount(start + Math.round(17030 / 0.0166881 / 4))
+    let freed = 0
+    while (!(memGet(0xC21B, false) & 0x80) && freed < 4095) {
+      memSet(0xC21D, 0x55)
+      freed++
+    }
+    // 21 * 25 MHz / 512 / 128 samples per second.
+    expect(freed).toBeGreaterThanOrEqual(2002)
+    expect(freed).toBeLessThanOrEqual(2003)
   })
 
   test("I/O registers map correctly to Slot 2 ($C200-$C21F)", () => {
