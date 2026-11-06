@@ -22,6 +22,7 @@ jest.mock("../../main2worker", () => ({
   handleGetVeraFrame: jest.fn(() => ({
     fb: new Uint8ClampedArray(640 * 480 * 4),
     dcVideo: 3,
+    sequence: 1,
   })),
   handleGetShowAppleMouse: jest.fn(() => true),
   passMouseEvent: jest.fn(),
