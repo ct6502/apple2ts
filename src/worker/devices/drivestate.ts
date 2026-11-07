@@ -298,6 +298,9 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   }
 
   driveState[index] = initDriveState(index, drive, isHardDrive)
+  // An insert must not clear the latch the preceding eject raised (KEGS config.c).
+  driveState[index].diskSwitched =
+    Boolean(prevDrive?.diskSwitched) || hasRequestedMedia || (prevDrive?.filename ?? "") !== ""
   if (preserveHead) {
     driveState[index].quarterTrack = savedQuarterTrack
     driveState[index].prevQuarterTrack = savedPrevQuarterTrack
@@ -320,6 +323,8 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
     enableHardDrive(true)
   }
   driveState[index].motorRunning = props.motorRunning
+  driveState[index].diskHasChanges = props.diskHasChanges
+  driveState[index].lastAppleWriteTime = props.lastAppleWriteTime
   driveState[index].cloudData = props.cloudData
   driveState[index].writableFileHandle = props.writableFileHandle
   driveState[index].lastLocalFileWriteTime = props.lastLocalFileWriteTime

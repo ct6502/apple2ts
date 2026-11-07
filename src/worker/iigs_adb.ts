@@ -495,6 +495,8 @@ export class IIGSADB {
   // The report has to be in the device register too, because that is where
   // GS/OS reads it from.
   private latchMouseReport() {
+    // Keep unread X/Y together; later motion stays pending until this pair is consumed.
+    if (this.mouseHasData || this.reportInProgress) return
     const clamp = (v: number) => Math.max(-63, Math.min(63, v));
     const dx = clamp(this.pendingX);
     const dy = clamp(this.pendingY);

@@ -127,11 +127,12 @@ const getSmartPortDataLength = (unit: number) =>
 //  3    1 = format allowed
 //  2    1 = media write-protected (block devices only)
 //  1    Reserved; must = 0
-//  0    1 = device currently open (character devices only)
+//  0    1 = disk switched since last status (block) / device open (character)
 // Values match gssquared pdblock3.cpp get_drive_info() / status code $00.
 const SP_STATUS_ONLINE = 0b1111_0000     // 0xF0
 const SP_STATUS_WRITEPROT = 0b1011_0100   // 0xB4
 const SP_STATUS_OFFLINE = 0b1110_0000     // 0xE0, no disk in drive: bit 4 clear
+const SP_STATUS_DISK_SWITCHED = 0b0000_0001
 
 // ProDOS-16 SmartPort error codes (gssquared pdb_structures.hpp)
 const SP_ERROR_IO = 0x27
@@ -144,7 +145,14 @@ const fixBlockCount32MB = (nblocks: number) => nblocks === 0x10000 ? 0xFFFF : nb
 
 const getSmartPortStatusByte = (unitNumber: number, dataLen: number) => {
   if (dataLen === 0) return SP_STATUS_OFFLINE
-  return getHardDriveState(unitNumber)?.isWriteProtected ? SP_STATUS_WRITEPROT : SP_STATUS_ONLINE
+  const ds = getHardDriveState(unitNumber)
+  const base = ds?.isWriteProtected ? SP_STATUS_WRITEPROT : SP_STATUS_ONLINE
+  // Reading the status acknowledges the change, exactly as pdblock3 does.
+  if (ds?.diskSwitched) {
+    ds.diskSwitched = false
+    return base | SP_STATUS_DISK_SWITCHED
+  }
+  return base
 }
 
 

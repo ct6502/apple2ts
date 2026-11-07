@@ -811,12 +811,8 @@ const DiskDrive = (props: DiskDriveProps) => {
                 onClick: async () => {
                   setSwapperPopupLocation(undefined)
                   if (idx !== standbyActiveIndex) {
-                    if (dprops.diskHasChanges) {
-                      if (dprops.writableFileHandle) {
-                        await handleSaveWritableFile(dprops.index)
-                      } else if (isFileSystemApiSupported()) {
-                        await showDiskSaveFilePicker(props.index)
-                      }
+                    if (dprops.diskHasChanges && dprops.writableFileHandle) {
+                      await handleSaveWritableFile(dprops.index)
                     }
                     await swapStandbyDisk(props.index, idx, undefined, triggerStandbyUpdate)
                   }

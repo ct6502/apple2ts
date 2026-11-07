@@ -570,6 +570,20 @@ register 0 byte 1:  bit7 = LEFT  button (1 = up) | bit6 = moved up    | bits5-0 
   `hasMouseData()` must include an unread report, and `consumeReport()` re-latches
   any leftover motion, so the IRQ deasserts and re-asserts per chunk instead of
   latching forever (one latched IRQ starved the Finder).
+- **An unread report is never overwritten; queued motion waits behind it.**
+  `latchMouseReport()` returns while `mouseHasData || reportInProgress`, so host
+  events that arrive before the guest reads register 0 stay in
+  `pendingX/pendingY` and go out as one clamped chunk when `consumeReport()`
+  clears both flags. Without that guard every host move re-latched over the
+  unread pair, so a burst of eight `-1` reports reached the guest as a single
+  `-1`. That matters because a guest may decode the field itself: Excalibur masks
+  a negative report with `& $3F`, XORs `$3F`, and subtracts the result, so `-1`
+  (field `$7F`) subtracts zero and a collapsed burst produces no motion at all.
+  The seven-bit encoding above is unchanged — the bug was dropping queued motion,
+  not encoding it wrong. KEGS `adb.c` keeps the same target-minus-delivered
+  accumulator. Regression: `gs_mouse_capture` (two × eight ±1 events must drain
+  as ±8, and motion arriving between the X and Y reads must not replace the Y
+  byte of the report already in progress).
 - **Closed-loop cursor sync** (`devices/mouse.ts`): the host pointer sets a target
   (`round(normX * 639)`, `round(normY * 399) >> 1`, halved again in 320-mode SHR);
   `iigsMouseStep()` (once per frame) reads the guest cursor from the holes and
@@ -763,11 +777,15 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     bits through `iwmReadHandshake35`.
 - **SmartPort** (`src/worker/devices/harddrivedata.ts`): status `$F0` on line,
   `$B4` write-protected, `$E0` offline (returns offline for an empty unit so
-  GS/OS skips it instead of offering to initialise it). Unit 0 reports the card's
-  full unit count. DIB subtype `$20` (hard disk). 0x10000 blocks must report
-  `$FFFF`. **Do not set the extended bits `$C0`**: GS/OS switches to the extended
-  command set, whose parameter lists carry a 3-byte pointer, and we only decode
-  the 2-byte form — the boot stalls on the welcome screen.
+  GS/OS skips it instead of offering to initialise it). **Bit 0 is the
+  disk-switched flag** for a block device (see the latch below); it is not
+  "device currently open", which is the character-device meaning. Unit 0 reports
+  the card's full unit count. DIB subtype `$20` (hard disk). 0x10000 blocks must
+  report `$FFFF`. **Do not set the extended bits `$C0`**: GS/OS switches to the
+  extended command set, whose parameter lists carry a 3-byte pointer, and we only
+  decode the 2-byte form — the boot stalls on the welcome screen. Bit 0 needs no
+  extended advertisement, which is why it is the usable half of KEGS's `$2E`
+  DISKSW response.
 - ProDOS block driver hook `$C7C0`: `$42` cmd, `$43` drive, `$44/$45` buffer,
   `$46/$47` block. Error codes: `$27` I/O, `$28` no device, `$2B` write-protected,
   `$2F` offline.
@@ -870,6 +888,51 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   bytes passes with the bug in. Compare against a snapshot of the freshly
   nibblized stream. Regression: `gs_floppy35_swapper` (turns red with bytes
   `53,106 → 21,127` at the field prologue when the guard goes).
+- **A host disk swap has to be *announced*, or the guest keeps the volume it
+  cached.** Resetting the IWM burst (above) protects the bytes; it says nothing
+  to the OS. Every status call a guest makes about a bay is a pure function of
+  "is there media, how many blocks, is it write-protected", so swapping one
+  800 KB volume for another is **byte-identical** to all of them and GS/OS never
+  re-reads the directory. The fix is a per-bay `diskSwitched` latch
+  (`driveState`, initialised false) that `doSetEmuDriveNewData` raises on a mount
+  *and* on an eject, and that the guest acknowledges:
+  - **Slot 7 (SmartPort)**: `getSmartPortStatusByte` ORs `SP_STATUS_DISK_SWITCHED`
+    (bit 0) into `$F0`/`$B4` and **clears the latch on that read** — gssquared
+    `pdblock3.cpp get_drive_info()` does exactly this with its per-unit
+    `disk_switched[PDB3_MAX_UNITS]`, set on mount (:453, :563) and unmount
+    (:580, :598, :608). An empty bay returns plain `$E0` with no latch: there is
+    no media whose switch to report. Both the STATUS and the DIB path use the
+    same helper, so either one acknowledges.
+  - **Slot 5 (Sony 3.5")**: the mechanism already had the plumbing —
+    `refreshSense35` selector `0b0110` returns `diskSwitched ? 1 : 0` (gssquared
+    `Floppy35_woz::refresh_sense`, "reversed sense"), CONT35 `$9` clears it and
+    `$E` (guest eject) sets it. What was missing is the *host* side:
+    `initDriveState` wiped the flag on every mount, so a swap looked like a disk
+    that had never changed.
+  - **The insert that follows an eject must not clear the latch.** KEGS says so
+    in as many words (`config.c:1733-1736`, "DO NOT change dsk->just_ejected"),
+    and its insert path ejects the outgoing image first (`config.c:1738` →
+    `iwm_eject_disk`, `iwm.c:3624`), so a swap leaves the flag set for the next
+    poll. Hence
+    `Boolean(prevDrive?.diskSwitched) || hasRequestedMedia || prevDrive.filename !== ""`.
+    gssquared is only half a model here: `pdblock3` latches on mount, but
+    `Floppy35_woz::mount()` clears `disk_switched` *after* the `unmount()` that
+    `Floppy_woz::mount()` performs internally (`Floppy35_woz.cpp:36,52,67`), so a
+    same-call 3.5" swap clears that latch there too. We use `pdblock3` as the
+    SmartPort precedent and KEGS's preserved latch on the Sony side.
+    Neither reference raises an interrupt or resets the machine on a swap:
+    detection is purely poll-based, so the indicator has to survive until the
+    guest reads it.
+  - Measured on **Spirit of Excalibur** (three 800 KB volumes, 1 → 3 → 2 → 3):
+    without the latch the first swap is invisible and the game sits on its red
+    `INSERT DISK 3 INTO DRIVE AND PRESS THE SPACE BAR` prompt forever (SHR
+    `nz = 3764`, hash `930559076`). With it, the same swap draws
+    `INSERT DISK 2` (`nz = 3764`, hash
+    `-1342674185`) and the sequence reaches the England map and its
+    `START A NEW GAME / LOAD A SAVED GAME` menu. **The two red screens have the
+    same non-zero byte count** — only the hash and a rendered PNG tell them
+    apart, which is how the first red run was misread as "the swap worked".
+    Regression: `gs_excalibur`, both bays.
 - **A 1.02 MHz CPU cannot read 3.5" media, and that is not an emulator defect.**
   500 kbit/s = 2 µs per bit cell = 62.5 KB/s, which at 1.024 MHz leaves 16.3 CPU
   cycles per byte; the tightest polled loop (`LDA $C0EC / BPL / LDA $C0ED /
@@ -1050,6 +1113,21 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   real UI on a fresh profile: the badge appears on S5,D1, its menu lists both disks
   with a tick on the active one, and clicking the second entry leaves
   `A2DeskTop-1.5-en_800k.2mg` at Trk 0 with the badge still there.
+- **Swapping standby media must not force Save As.** Excalibur writes its
+  URL-loaded Disk 1 during boot, so `diskHasChanges` is true but there is no
+  writable file handle. The graphical `diskdrive.tsx` menu used to await
+  `showSaveFilePicker()` before swapping; cancellation throws `AbortError`,
+  leaving Disk 1 mounted. Like the Retro menu, it now saves only an existing
+  writable handle. `swapStandbyDisk` first copies outgoing bytes and dirty state
+  into the standby list, so an unsaved disk stays available without a native
+  dialog. On return, `doSetEmuDriveNewData` restores `diskHasChanges` and
+  `lastAppleWriteTime` from the standby props **after decoding** (the decoder
+  clears the dirty flag), so the worker's reply cannot silently mark an unsaved
+  image clean. `gs_excalibur` covers that remount in both bays with synthetic
+  media. Explicit Save As remains available. `diskswapper` tests the actual
+  graphical callbacks with and without FileSystem API support, checks the dirty
+  bytes survive a round trip, and waits for an existing handle's save to finish
+  before mounting another disk.
 - **The Link Builder emits a IIgs link only if it names the machine.** A link with
   `slot*=gs*` and no `?machine=` is useless twice over: it opens whatever machine the
   visitor last used (so a IIgs volume gets scanned by an IIe), and `inputparams`
@@ -1152,6 +1230,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 | `...\Temp\opencode\gs_s5_swapper.cjs` | real-UI check of the slot-5 multi-disk swapper: `node gs_s5_swapper.cjs <urlA> <urlB> [waitS] [port]` boots a fresh profile on `?machine=apple2gs&boot=true&s5d1={A,B}`, reports which bay holds which file plus whether it carries a `.disk-multidisk-badge`, clicks the badge, dumps the menu and clicks the second entry, then re-reads the bay. **PopupMenu items are `div.droplist-option`** — the obvious `.popupmenu-item` / `[class*=popup] div` selectors match nothing and make an open menu look empty. Its `Network.requestWillBeSent` log counts the disk-server fetches, but remember the page URL itself contains `6503/` in its query, so the navigation always shows up as an extra "request" |
 | `...\Temp\opencode\gs_linkbuilder.cjs` | real-UI Link Builder check: `build [waitS] [port]` boots a fresh-profile IIgs, opens 連結產生器 and dumps every `select` (name/value/options) plus the readonly link textarea; `emit [waitS] [port] [url]` also picks Custom URL on each drive row, types the URL into the 3.5" drive-1 field (matched by its language-independent `http://example.com/floppy35.dsk` placeholder) and prints the emitted link; `visit <port> <url> [waitS]` opens that link on its own fresh profile and reports `#tour-iigs-desk-button`, the footer (`2.61 MHz, 8 MB`), `.disk-label` texts and the `S5,S1…` bay statuses — the only way to prove a built link actually boots the machine it names |
 | `...\Temp\opencode\gs_chord_ui.cjs`, `gs_menu_visibility.cjs` | real-UI key-chord check: `node gs_chord_ui.cjs [waitS] [port]` boots GS/OS on a fresh profile and compares canvas **scanline row-sums** around raw host keys, so `bare W changed rows: 0` vs `Closed-Apple + W changed rows: 281` is the observed evidence (§6); the visibility variant takes a `[machine]` argument and stops before the keystrokes, which is how the IIgs-only menu item was confirmed absent on the IIe. Select menu entries by `/機器配置\|machine configuration/i` title text — headless Chrome renders the UI in the user's language, and the `basic-button` id is reused by several components |
+| `...\Temp\opencode\gs_excalibur_ui.cjs` | `node gs_excalibur_ui.cjs <s7d1\|s5d1> [bootWaitS] [port] [stepWaitS]` boots all three Excalibur volumes in one standby group, selects leaf `.droplist-option` items through 3 → 2 → 3 and presses Space after each swap. Use 180 s boot / 45 s steps for the 3.5" path; PNGs and per-pixel diffs distinguish prompts from the final menu. It asserts each mounted filename, logs browser exceptions, and returns to Disk 1 if it was dirty to verify the unsaved marker survives. |
+| `...\Temp\opencode\bmp2png.cjs`, `shr2png.cjs` | Convert a 32-bit BMP or raw 32 KB SHR window to PNG. PNG chunk lengths, CRC and IHDR dimensions are big-endian; SHR palettes follow each scanline's SCB. |
 | `?romtrace=1` | PC histogram + `window.__romTrace`, `__romTracePeek(addrs)` reads guest memory (peekPc/peekCode/peekZp) |
 | `?iwmgaps=1` | IWM read-cadence stats on `window.__iwmStats` |
 | `?adbtrace=1` | ADB log ring on `window.__adbLog` (pc-stamped) |
@@ -1520,6 +1600,44 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     Mouse-Card-compatible firmware instead (`$C479 TSB $C027` sets bit 6, `$C4D2`
     reads `$C024`); a ProDOS 16-era program that never enters it gets none.
     Digit keys do work (13622 pixels change), so the app is usable.
+19. **Spirit of Excalibur ignores disk swaps — RESOLVED.** Both S7,D1 and
+    S5,D1 accepted the new image without telling the guest. Same-size volumes
+    returned identical status, so the game stayed on `INSERT DISK 3`. Mounts
+    and ejects now latch `diskSwitched`: SmartPort reports and clears it through
+    status bit 0, while Sony sense selector 6 reports it until CONT35 `$9`
+    acknowledges (§7). `gs_excalibur` boots disk 1 and swaps 3 → 2 → 3 through
+    both bays to the England map and new-game menu; removing the latch makes
+    both cases fail with only 3764 non-zero SHR bytes instead of >20000.
+    The graphical swapper had a second blocker: Disk 1 becomes dirty during
+    slot-5 boot, and its forced Save As picker aborted the swap on cancellation.
+    It now retains unsaved URL media in standby without prompting (§9), and
+    remounting restores the dirty flag and write timestamp after decoding.
+    Verified in fresh Chrome profiles through both bays: 1 → 3 → 2 → 3 reaches
+    the England map and `START A NEW GAME / LOAD A SAVED GAME`; returning to
+    Disk 1 in S5,D1 keeps its `*` unsaved marker after the worker reply.
+20. **Spirit of Excalibur's captured cursor cannot reach the upper-left —
+    RESOLVED.** With F1 held the pointer lock and the relative path both work
+    (queued counts reach `iigsADB.queueMouse`), but the in-game cursor stayed in
+    the lower-right. The game keeps its own cursor, so `getIigsMousePos()`
+    (text-page holes / `$E1:0190`) is the wrong reader and stays `(0,0)`; the raw
+    disk operands `$000299`/`$00029B` are relocation inputs, and the live
+    addresses come from the `STA long` operands at `$06:8A2E` (X) and `$06:89EF`
+    (Y) — `$02:0DCB`/`$02:0DCD` in the observed boot. Its decoder clamps a
+    positive delta at 319/199, and for a negative one masks `& $3F`, XORs `$3F`
+    and subtracts, so a `-1` report subtracts zero. Eight host `-1` events per
+    frame should therefore arrive as one `-8` chunk, but the latch re-ran on every
+    event and overwrote the unread pair, so the guest only ever saw `-1` and the
+    cursor never moved. Fix: `latchMouseReport()` refuses to relatch while
+    `mouseHasData || reportInProgress`, leaving later motion pending until
+    `consumeReport()` (the seven-bit encoding is untouched). Measured: captured
+    ±8 bursts drain as ±8 and a mid-pair move no longer replaces the Y byte
+    (`gs_mouse_capture`), and on a real boot in both S7,D1 and S5,D1 the game's
+    cursor goes `(319,199)` → `(0,0)` after 960 single-count events, where the old
+    code left it at `(319,199)` (`gs_excalibur`). In headed Chrome with a real F1
+    pointer lock the same peek went `(319,199)` → `(0,0)` twice, and a second F1
+    released the lock. The screenshots at that point show the England map
+    question page, not a drawn pointer, so the evidence is the guest's cursor
+    variables, not a visible sprite.
 
 ---
 
@@ -1527,10 +1645,13 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
 
 | theory | reality |
 |---|---|
+| The swapper changed the filename, so GS/OS knows the disk changed | Mounting same-size media leaves ordinary status identical. SmartPort must latch status bit 0; Sony must retain its disk-switched sense until guest acknowledgement. Excalibur otherwise keeps asking for disk 3 in both bays (§7, §11.19) |
 | The Event Manager is broken / events never reach GS/OS | They did; one click arrived as two transitions because both report bytes carried the button bit |
 | `$AA` must become PLY in native mode | gssquared uses TAX in all cores |
 | PostEvent is called twice, dedup it in the CPU | Symptom of the report layout; dedup removed |
 | `$47C/$4FC` cursor holes never move, nothing reads `$C024` | True only before the Finder is up (~1100 frames); at ~4000 they track |
+| Excalibur's cursor still cannot reach the upper-left, so the seven-bit encoding must be wrong | The encoding is right. Eight `-1` events were collapsed into one by the latch, and the game's own decoder turns a `-1` report into a zero delta. Preserving the burst is the fix; do not add a game-specific sensitivity or write the cursor (§6, §11.20) |
+| `getIigsMousePos()` is where a game's cursor lives | It reads the GS/OS / ROM cursor (text holes, `$E1:0190`). A self-contained game can keep its own variables: Excalibur's are reached through relocated `STA long` operands at `$06:8A2E`/`$06:89EF`, and the raw disk addresses are only relocation inputs (§11.20) |
 | The VBL path / ROM task queue is dead | The ROM's full manager runs constantly; GS/OS replaces `$E1:0030` with its own |
 | Publish the host pointer into `$E1:00E9` | Removed; the closed-loop stepper does it without touching guest memory |
 | `$E1:00FF` is the 80-column text-page register | It is the ROM's interrupt-nesting counter |
@@ -1638,6 +1759,19 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `gs_floppy35_swapper` (changing the disk in a slot-5 bay while the machine runs:
   the incoming volume replays its own GCR stream, and an async write burst still
   in flight from the outgoing one cannot edit the image that just arrived, §7),
+  `gs_excalibur` (Spirit of Excalibur disk 1 → 3 → 2 → 3 in S7,D1 and S5,D1:
+  both paths reach the England map/menu, and removing the disk-change latch
+  leaves the game on its first disk-3 request; synthetic-media cases also pin
+  the dirty flag and write timestamp on remount. The shipped cases then drive
+  960 captured single-count moves and require the game's own relocated cursor to
+  reach `(0,0)` from `(319,199)`, which stays put without the ADB latch guard,
+  §7, §9, §11.19, §11.20),
+  `gs_mouse_capture` (the F1 capture path into the ADB: +40/−40 counts, a move
+  past the edge that keeps queueing instead of clamping, two screen widths that
+  drain completely, leaving capture without replaying the captured distance, and
+  the two burst cases that pin an unread report against overwriting — eight ±1
+  events must drain as ±8, and motion between the X and Y reads must not replace
+  the Y byte, §6, §11.20),
   `gs_floppy35_woz` (a protected 3.5" WOZ capture — `Cavern_Cobra_IIgs.woz`,
   1,296,147 B: INFO byte 1 declares the type and offset 61 does not, asking for
   S6 moves it to S5 rather than the other way round, it mounts as a capture and
@@ -1674,7 +1808,8 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `s5d1=`, and reseeding `slotConfig` so no classic card reaches a GS link, §9),
   `diskswapper` (the standby-disk group is per bay for **all six** bays: a slot-5
   pair gets its own list and badge, a swap installs that disk and re-posts it with
-  `forceIndex=true`, and ejecting one bay leaves the others, §9),
+  `forceIndex=true`, ejecting one bay leaves the others, and graphical swaps keep
+  unsaved URL media without forcing Save As while existing handles save first, §9),
   `adbmodifiers` (which host key carries which IIgs Apple-key role — Alt / Meta /
   numpad bindings, so a Windows user can actually press a chord, §6)
 
