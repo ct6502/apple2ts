@@ -2373,22 +2373,37 @@ export const captureShrBeamLine = (beamLine: number): void => {
 // bring back the flicker the per-line capture removed, so leave those bytes
 // alone unless the late data is timepilot-cloud-coloured too. This exception is
 // only meaningful in 320 mode, where a byte holds two palette nibbles; in 640
-// mode the nibbles are not palette indices. Zero stores (late erasures) are
-// deliberately left out for the same reason: a raw snapshot would bring back
-// whole cloud bands TimePilot GS erased behind the beam.
+// mode the nibbles are not palette indices.
+//
+// The exception is deliberately scoped to the game that needs it. MSpacMan's
+// maze background also uses palette 1 - the same nibbles as the clouds - so a
+// blanket rule would drop every sprite pixel drawn over the maze border and
+// leave the top-row characters half painted. The active cloud-layer media is
+// recorded when a disk mounts (drivestate.ts) rather than guessed from bytes.
+let shrCloudLayerFilename = ""
+export const setIigsCloudLayerFilename = (filename: string): void => {
+  shrCloudLayerFilename = filename
+}
+const isIigsCloudLayerActive = (): boolean =>
+  /time[\s\-_]*pilot/i.test(shrCloudLayerFilename)
 const hasTimepilotCloudPixel = (byte: number): boolean => {
   const low = byte & 0x0f
   const high = byte >> 4
   return low === 1 || low === 9 || high === 1 || high === 9
 }
 const noteLateShrStore = (cpuOffset: number, data: number): void => {
-  if (data === 0 || !isIigsShrActive()) return
+  if (!isIigsShrActive()) return
   const screenOff = cpuOffset - 0x2000
   if (screenOff < 0 || screenOff >= 0x7d00) return
   const row = (screenOff / SHR_LINE_BYTES) | 0
   if (shrCapturedRows[row]) {
     const captured = shrBeamFrame[screenOff]
-    if (!(shrBeamFrame[0x7d00 + row] & 0x80) &&
+    // A late zero is the sprite's erase. It has to reach the displayed frame
+    // too, or the previous frame's character trails behind the new one. Only
+    // the cloud-layer game keeps zero erasures out, and only on cloud bytes:
+    // its clouds are erased and redrawn behind the beam by another layer.
+    if (isIigsCloudLayerActive() &&
+        !(shrBeamFrame[0x7d00 + row] & 0x80) &&
         hasTimepilotCloudPixel(captured) && !hasTimepilotCloudPixel(data)) {
       return
     }

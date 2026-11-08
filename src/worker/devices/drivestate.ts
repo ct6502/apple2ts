@@ -4,7 +4,7 @@ import { decodeDiskData } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive, iwmDiskChange35 } from "./diskdata"
 import { enableHardDrive } from "./harddrivedata"
 import { DRIVE, canDriveTakeImage, isHardDriveImage, isThreePointFiveInchImage, updateWozCrc } from "../../common/utility"
-import { getCurrentMachineName } from "../memory"
+import { getCurrentMachineName, setIigsCloudLayerFilename } from "../memory"
 import { buildFloppy35Bitstream, FLOPPY35_OPTIMAL_TIMING } from "./floppy35"
 
 const initDriveState = (index: number, drive: number, hardDrive: boolean): DriveState => {
@@ -307,6 +307,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
     driveState[index].currentPhase = savedCurrentPhase
   }
   driveState[index].filename = props.filename
+  if (props.filename) setIigsCloudLayerFilename(props.filename)
   // Mounting new media keeps the user's write-protect choice for that drive;
   // the UI sends it in the new-data message, and dropping it here silently
   // unprotects a protected disk every time an image is inserted.
@@ -339,6 +340,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
 export const doSetEmuDriveProps = (props: DriveProps) => {
   const index = props.index
   driveState[index].filename = props.filename
+  if (props.filename) setIigsCloudLayerFilename(props.filename)
   driveState[index].motorRunning = props.motorRunning
   driveState[index].isWriteProtected = props.isWriteProtected
   driveState[index].diskHasChanges = props.diskHasChanges
