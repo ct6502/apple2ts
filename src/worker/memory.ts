@@ -2300,7 +2300,18 @@ const shrCapturedRows = new Uint8Array(SHR_LINES)
 
 // Called from doReset(): the next SHR frame must start from a full window rather
 // than from whatever the previous machine or session left behind.
-export const resetShrBeamFrame = () => { shrBeamValid = false }
+export const resetShrBeamFrame = () => {
+  shrBeamValid = false
+  shrCapturedRows.fill(0)
+}
+
+// Called at the video refresh boundary, before VBL: the rows captured for the
+// new frame start empty there. Resetting at beam line 0 instead is too late -
+// the guest writes during VBL after the refresh boundary but before the beam
+// reaches line 0, and those stores would still see the old frame's rows marked
+// captured and be folded as late draws. That falsely folded TimePilot's mask
+// pass over the plane and erased it from the picture.
+export const beginShrFrame = () => { shrCapturedRows.fill(0) }
 
 // Fold one linear run of the window into the frame. A run always starts on an
 // even offset, so under linearization it splits into two contiguous halves $4000
@@ -2339,7 +2350,6 @@ export const captureShrBeamLine = (beamLine: number): void => {
   }
   const aux = megaIIAux
   const linear = isIigsAuxLinear()
-  if (beamLine === 0) shrCapturedRows.fill(0)
   const y0 = Math.floor((beamLine * SHR_LINES) / SHR_BEAM_LINES)
   const y1 = Math.min(SHR_LINES - 1,
     Math.max(y0, Math.floor(((beamLine + 1) * SHR_LINES) / SHR_BEAM_LINES) - 1))
@@ -2368,12 +2378,14 @@ export const captureShrBeamLine = (beamLine: number): void => {
 // foreground and the top of MsPacMan's maze.
 //
 // There is one exception. TimePilot GS's cloud layer uses palette entries 1 and
-// 9, which it erases and redraws behind the beam. A late write from another
-// layer into a cloud byte would destroy the band the beam already captured and
-// bring back the flicker the per-line capture removed, so leave those bytes
-// alone unless the late data is timepilot-cloud-coloured too. This exception is
-// only meaningful in 320 mode, where a byte holds two palette nibbles; in 640
-// mode the nibbles are not palette indices.
+// 9, which it erases and redraws behind the beam. A late erase byte (zero) or
+// opaque mask (0xFF) landing on a cloud byte would wipe the band the beam
+// already captured and bring back the flicker the per-line capture removed.
+// Coloured bytes still paint: the plane sprites are opaque pixels drawn over
+// the already-captured clouds, and holding them back is exactly what made the
+// aircraft flicker and lose body pixels. This exception is only meaningful in
+// 320 mode, where a byte holds two palette nibbles; in 640 mode the nibbles are
+// not palette indices.
 //
 // The exception is deliberately scoped to the game that needs it. MSpacMan's
 // maze background also uses palette 1 - the same nibbles as the clouds - so a
@@ -2401,10 +2413,17 @@ const noteLateShrStore = (cpuOffset: number, data: number): void => {
     // A late zero is the sprite's erase. It has to reach the displayed frame
     // too, or the previous frame's character trails behind the new one. Only
     // the cloud-layer game keeps zero erasures out, and only on cloud bytes:
-    // its clouds are erased and redrawn behind the beam by another layer.
+    // its cloud layer erases behind the beam, and a zero there would wipe the
+    // band the beam already captured. Plane erasures land on the old plane
+    // pixels, never on cloud bytes, so they still clear as usual.
+    // Opaque mask bytes (0xFF) come from the mask pass, which erases the old
+    // cloud band behind the beam before drawing the sprites' own pixels.
+    // Folding that erase into the displayed frame would wipe the clouds the
+    // beam already captured; the redraw still lands in the raw window, so the
+    // next pass picks up the sprite pixels.
     if (isIigsCloudLayerActive() &&
         !(shrBeamFrame[0x7d00 + row] & 0x80) &&
-        hasTimepilotCloudPixel(captured) && !hasTimepilotCloudPixel(data)) {
+        hasTimepilotCloudPixel(captured) && (data === 0 || data === 0xff)) {
       return
     }
     shrBeamFrame[screenOff] = data

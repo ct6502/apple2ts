@@ -25,6 +25,7 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   getZeroPage,
   getShrDisplayed,
   captureShrBeamLine,
+  beginShrFrame,
   resetShrBeamFrame,
   memSet,
   exportMemoryToHiresLine,
@@ -1403,6 +1404,11 @@ const doAdvance6502 = () => {
   const videoStart = isIIgs ? iigsVideoClock : s6502.cycleCount
   // Last emulated refresh the IIgs mouse sync ran on (see iigsMouseStep).
   let lastMouseSyncFrame = -1
+  // Last refresh boundary the SHR captured-row state was cleared at. The guest
+  // may store to the previous frame's rows during VBL, so the reset has to happen
+  // at the frame boundary rather than when the beam reaches line 0 (see
+  // beginShrFrame).
+  let lastShrFrame = -1
 
   for (;;) {
     let cycles = 0
@@ -1451,6 +1457,10 @@ const doAdvance6502 = () => {
     const videoPos = isIIgs ? iigsVideoClock : s6502.cycleCount
     const cycleInFrame = videoPos % frameCycles
     const nowFrame = frameCycles > 0 ? Math.floor(videoPos / frameCycles) : 0
+    if (isIIgs && nowFrame !== lastShrFrame) {
+      lastShrFrame = nowFrame
+      beginShrFrame()
+    }
     if (cycleInFrame < vblCycles) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
       // Note that VBLINV is the inverse of the vertical blanking status,
