@@ -80,6 +80,11 @@ export const KeyboardControl = () => {
           break
         case KEY.CAPSLOCK:
           setPreferenceBoolean("lowercaseMode", !getLowercaseMode())
+          // Caps Lock is a hardware toggle on the ADB: the micro flips the bit
+          // on key-up. Without this, the on-screen button only moved the legacy
+          // UI preference, and the GS/OS letters kept the physical caps state.
+          passAdbModifierKey("CapsLock", true)
+          passAdbModifierKey("CapsLock", false)
           break
         case KEY.OPEN_APPLE:
           passAppleCommandKeyPress(true)

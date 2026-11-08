@@ -573,6 +573,7 @@ const shadowIigsWrite = (offset: number, data: number, aux: boolean) => {
     if (aux) {
         if (!(shadow & 0x08) || (offset < 0x6000 && !(shadow & 0x10))) {
             megaIIAux[isIigsAuxLinear() ? iigsAuxLinearToPhys(offset) : offset] = data
+            noteLateShrStore(offset, data)
         }
     } else if (offset < 0x4000) {
         if (!(shadow & 0x02)) megaIIMain[offset] = data
@@ -612,6 +613,7 @@ const shadowIigsBankWrite = (bank: number, offset: number, data: number) => {
     if (shadowed) {
         if (odd && (iigsRegisters[0x29] & 0x01)) {
             megaIIAux[isIigsAuxLinear() ? iigsAuxLinearToPhys(offset) : offset] = data
+            noteLateShrStore(offset, data)
         } else {
             megaIIMain[offset] = data
         }
@@ -675,9 +677,10 @@ export const memSet24 = (address: number, data: number) => {
         // folded back. gssquared's megaiiRead/megaiiWrite do exactly this.
         if (offset >= 0x2000 && offset < 0xa000) {
             shrDbg.e1++
-            if (shrDbg.trace) noteShrWrite(getCpuPc(), offset)
+            if (shrDbg.trace) noteShrWrite(getCpuPc(), offset, data)
         }
         megaIIAux[isIigsAuxLinear() ? iigsAuxLinearToPhys(offset) : offset] = data;
+        noteLateShrStore(offset, data)
         return;
     }
 
@@ -691,13 +694,13 @@ export const memSet24 = (address: number, data: number) => {
         if (offset >= 0x2000 && offset < 0x6000) {
             if (aux) {
                 shrDbg.b00aux++
-                if (shrDbg.trace && offset < 0xa000) noteShrWrite(getCpuPc(), offset)
+                if (shrDbg.trace) noteShrWrite(getCpuPc(), offset, data)
             } else {
                 shrDbg.b00++
             }
         } else if (aux && offset >= 0x6000 && offset < 0xa000) {
             shrDbg.b00aux++
-            if (shrDbg.trace) noteShrWrite(getCpuPc(), offset)
+            if (shrDbg.trace) noteShrWrite(getCpuPc(), offset, data)
         }
         shadowIigsWrite(offset, data, aux)
         return
@@ -718,12 +721,30 @@ export const memSet24 = (address: number, data: number) => {
             return;
         }
         memory[RamWorksMemoryStart + offset] = data;
+        // Bank-$01 text stores reach the video scanner only through the Mega II
+        // shadow. The scanner reads Mega II main/aux, never fast RAM, so a guest
+        // that keeps its text page in bank $01 leaves the displayed page stale
+        // unless the store is mirrored too. This is exactly how Merlin 16+
+        // renders its 80-column screen: it writes alternate columns into bank
+        // $00 (main) and bank $01 (the aux half), so without this the aux half
+        // stays as spaces and every visible character sits behind a blank gap.
+        // The target follows the same switches as the bank-$00 path: $C035 bit
+        // 0 gates text page 1 (clear = shadow), bit 5 gates page 2 on ROM 03,
+        // and $C029 bit 0 selects Mega II aux over main.
+        const shadow = iigsRegisters[0x35]
+        const shadowPage2 = offset >= 0x0800 && offset < 0x0c00 && isIigsRom03() && !(shadow & 0x20)
+        if ((offset >= 0x0400 && offset < 0x0800 && !(shadow & 0x01)) || shadowPage2) {
+            const target = (iigsRegisters[0x29] & 0x01) !== 0 ? megaIIAux : megaIIMain
+            target[offset] = data
+        }
         // Super Hi-Res ($2000-$9FFF) shadowing into Mega II Bank E1. The aux
         // window is linearized in CPU space and interleaved physically, so the
         // shadow target has to be folded like a direct $E1 access.
         if (offset >= 0x2000 && offset < 0xA000 && !(iigsRegisters[0x35] & 0x08)) {
             shrDbg.b01++
+            if (shrDbg.trace) noteShrWrite(getCpuPc(), offset, data)
             megaIIAux[isIigsAuxLinear() ? iigsAuxLinearToPhys(offset) : offset] = data;
+            noteLateShrStore(offset, data)
         }
         return;
     }
@@ -2256,8 +2277,26 @@ const SHR_LINES = 200
 const SHR_LINE_BYTES = 160
 const SHR_BEAM_LINES = 192
 
+// The real VGC reads line y's SCB (and raises its bit-6 scanline interrupt) for
+// every SHR row 0-199, but our beam crossing only knows the 192-line legacy grid.
+// Rows 192-199 are still SHR rows with their own SCB bytes, so a scanline IRQ
+// keyed to one of them has to survive the 192/200 mapping as well: Modulae puts
+// its timer interrupt on line 199's SCB and waits for it at $FF6.
+export const iigsShrScanlineAtBeam = (beamLine: number): boolean => {
+  const y0 = Math.floor((beamLine * SHR_LINES) / SHR_BEAM_LINES)
+  const y1 = Math.min(SHR_LINES - 1,
+    Math.max(y0, Math.floor(((beamLine + 1) * SHR_LINES) / SHR_BEAM_LINES) - 1))
+  for (let y = y0; y <= y1; y++) {
+    if (iigsShrScb(y) & 0x40) return true
+  }
+  return false
+}
+
 const shrBeamFrame = new Uint8Array(0x8000)
 let shrBeamValid = false
+// Rows already captured for this frame. A store reaching one of these rows
+// happens behind the beam: the capture will never see it again this frame.
+const shrCapturedRows = new Uint8Array(SHR_LINES)
 
 // Called from doReset(): the next SHR frame must start from a full window rather
 // than from whatever the previous machine or session left behind.
@@ -2285,6 +2324,9 @@ const captureShrRun = (aux: Uint8Array, off: number, len: number, linear: boolea
 // beam line covers 200/192 of them and the last 8 rows are crossed twice; copying
 // them again is free and keeps the phase tied to what the guest actually sees.
 export const captureShrBeamLine = (beamLine: number): void => {
+  if (shrDbg.trace && shrDbg.events.length < 8192) {
+    shrDbg.events.push({ pc: -2, offset: beamLine, clock: getIigsVideoClock() })
+  }
   if (!isIigsShrActive()) {
     shrBeamValid = false
     return
@@ -2297,6 +2339,7 @@ export const captureShrBeamLine = (beamLine: number): void => {
   }
   const aux = megaIIAux
   const linear = isIigsAuxLinear()
+  if (beamLine === 0) shrCapturedRows.fill(0)
   const y0 = Math.floor((beamLine * SHR_LINES) / SHR_BEAM_LINES)
   const y1 = Math.min(SHR_LINES - 1,
     Math.max(y0, Math.floor(((beamLine + 1) * SHR_LINES) / SHR_BEAM_LINES) - 1))
@@ -2304,12 +2347,52 @@ export const captureShrBeamLine = (beamLine: number): void => {
     captureShrRun(aux, y * SHR_LINE_BYTES, SHR_LINE_BYTES, linear)
     const scbOff = 0x7d00 + y
     shrBeamFrame[scbOff] = aux[linear ? iigsAuxLinearToPhys(0x9d00 + y) : 0x9d00 + y]
+    shrCapturedRows[y] = 1
   }
   // The palette table is re-read at the start of every line by the real VGC, but
   // it belongs to the whole frame in our renderer, so refresh it once per frame
   // where the beam is earliest - same place the snapshot used to sample it.
   if (beamLine === 0) {
     captureShrRun(aux, 0x7e00, 0x200, linear)
+  }
+}
+
+// A nonzero store landing on a row that the beam has already captured for this
+// frame is a late sprite draw: fold it into the displayed frame immediately.
+// The next real refresh would show it, but painting every frame means the
+// picture should be complete now, not torn between the capture and the memory.
+//
+// The destination is deliberately not tested for zero: a transparent sprite's
+// pixels land on whatever background the beam already captured, and requiring
+// an empty byte there is exactly what dropped Pitfall's player over the green
+// foreground and the top of MsPacMan's maze.
+//
+// There is one exception. TimePilot GS's cloud layer uses palette entries 1 and
+// 9, which it erases and redraws behind the beam. A late write from another
+// layer into a cloud byte would destroy the band the beam already captured and
+// bring back the flicker the per-line capture removed, so leave those bytes
+// alone unless the late data is timepilot-cloud-coloured too. This exception is
+// only meaningful in 320 mode, where a byte holds two palette nibbles; in 640
+// mode the nibbles are not palette indices. Zero stores (late erasures) are
+// deliberately left out for the same reason: a raw snapshot would bring back
+// whole cloud bands TimePilot GS erased behind the beam.
+const hasTimepilotCloudPixel = (byte: number): boolean => {
+  const low = byte & 0x0f
+  const high = byte >> 4
+  return low === 1 || low === 9 || high === 1 || high === 9
+}
+const noteLateShrStore = (cpuOffset: number, data: number): void => {
+  if (data === 0 || !isIigsShrActive()) return
+  const screenOff = cpuOffset - 0x2000
+  if (screenOff < 0 || screenOff >= 0x7d00) return
+  const row = (screenOff / SHR_LINE_BYTES) | 0
+  if (shrCapturedRows[row]) {
+    const captured = shrBeamFrame[screenOff]
+    if (!(shrBeamFrame[0x7d00 + row] & 0x80) &&
+        hasTimepilotCloudPixel(captured) && !hasTimepilotCloudPixel(data)) {
+      return
+    }
+    shrBeamFrame[screenOff] = data
   }
 }
 
@@ -2416,12 +2499,17 @@ export const shrDbg = {
   // "still wrong" has a fixed meaning: the picture before the sprite started
   // moving, not the previous frame.
   ref: null as Uint8Array | null,
+  // Chronological trace of the last stores into the SHR window: PC, CPU-window
+  // offset and video-clock position. Sparse and bounded; used only by probes that
+  // need to know *when* a raster-scanned guest wrote each byte.
+  events: [] as { pc: number, offset: number, clock: number, data?: number }[],
 }
 
 export const setShrDbgTrace = (on: boolean) => {
   shrDbg.trace = on
   if (!on) {
     shrDbg.writers.clear()
+    shrDbg.events.length = 0
     shrDbg.nextSiteId = 1
     shrDbg.last.fill(0)
     shrDbg.first.fill(0)
@@ -2430,7 +2518,7 @@ export const setShrDbgTrace = (on: boolean) => {
   }
 }
 
-const noteShrWrite = (pc: number, offset: number) => {
+const noteShrWrite = (pc: number, offset: number, data?: number) => {
   const index = offset - 0x2000
   const h = shrDbg.hits[index]
   let w = shrDbg.writers.get(pc)
@@ -2445,6 +2533,9 @@ const noteShrWrite = (pc: number, offset: number) => {
   w.n++
   if (offset < w.lo) w.lo = offset
   if (offset > w.hi) w.hi = offset
+  if (shrDbg.events.length < 8192) {
+    shrDbg.events.push({ pc, offset, clock: getIigsVideoClock(), data })
+  }
 }
 
 const shrWindowHash = (arr: Uint8Array): number => {

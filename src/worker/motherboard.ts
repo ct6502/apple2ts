@@ -49,7 +49,7 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   iigsSignalQuarterSecond,
   iigsSignalOneSecond,
   iigsSignalScanline,
-  iigsShrScb,
+  iigsShrScanlineAtBeam,
   iigsInterruptPending,
   iigsInitInterrupts,
   iigsClearInterrupts,
@@ -1492,7 +1492,7 @@ const doAdvance6502 = () => {
         // uses it to time its cursor draw/erase to the cursor's row, so without
         // it the Event Manager never repaints the pointer and the factory
         // cursor stays parked wherever it was first shown.
-        if (isIIgs && SWITCHES.NEWVIDEO.isSet && (iigsShrScb(line) & 0x40)) {
+        if (isIIgs && SWITCHES.NEWVIDEO.isSet && iigsShrScanlineAtBeam(line)) {
           iigsSignalScanline()
         }
       }
@@ -1582,13 +1582,22 @@ const doAdvance6502Timer = () => {
   // (4 frames ≈ 67ms) keeps a truly stalled tab from free-wheeling the
   // machine forward on resume.
   const now = performance.now()
-  let framesDue = (now >= nextFrameTime) ? 1 + Math.floor((now - nextFrameTime) / refreshTime) : 1
-  if (framesDue > 4) framesDue = 1 // far behind: resync rather than sprint
+  // Warp mode (speedMode 4) deliberately sets refreshTime to 0 so the next
+  // callback can fire immediately. It is not a cadence to divide by: doing so
+  // makes framesDue Infinity and runs the machine synchronously forever, which
+  // starves the worker's message queue (pause, keys and mouse stop arriving).
+  const framesDue = (refreshTime > 0 && now >= nextFrameTime)
+    ? 1 + Math.floor((now - nextFrameTime) / refreshTime)
+    : 1
+  // Run every overdue refresh. Dropping frames to save CPU loses animation
+  // state and leaves characters half-drawn; completeness beats headroom.
   for (let f = 0; f < framesDue; f++) {
     doAdvance6502()
     if (cpuRunMode !== RUN_MODE.RUNNING) break
   }
-  nextFrameTime = Math.max(nextFrameTime, now - refreshTime) + framesDue * refreshTime
+  nextFrameTime = refreshTime > 0
+    ? Math.max(nextFrameTime, now - refreshTime) + framesDue * refreshTime
+    : now
   // Calculate exactly how long until the next frame is due
   let delay = nextFrameTime - performance.now()
   if (delay < 0) {

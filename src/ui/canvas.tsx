@@ -15,7 +15,6 @@ import {
   handleGetMachineName,
   handleGetState6502,
   handleGetSoftSwitches,
-  handleGetSpeedMode,
   handleGetTextPage,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, UI_THEME } from "../common/utility"
@@ -53,7 +52,6 @@ const Apple2Canvas = (props: DisplayProps) => {
   const [magnifierMouseLoc, setMagnifierMouseLoc] = useState([-1, -1])
   const [isCanvasFullScreen, setIsCanvasFullScreen] = useState(false)
   const [withinScreen, setWithinScreen] = useState(false)
-  const lastFrameTimeRef = useRef(0)
   const startTimeForMaxFramesRef = useRef(0)
   const lastFPSLogRef = useRef(0)
   // Always points at the newest RenderCanvas closure so the perpetual rAF loop
@@ -285,8 +283,10 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   // The Apple keys are whichever host key this app binds as Open/Closed Apple,
   // not Alt alone: Windows takes Alt+Esc for its own window switcher, so the
-  // numpad and Meta bindings have to carry a chord too. Caps lock stays out — it
-  // is a hardware toggle and a browser reports its key-up inconsistently.
+  // numpad and Meta bindings have to carry a chord too. Caps Lock also goes
+  // through this path now: the worker consumes its key-up as a toggle of $C025
+  // bit 2 (gssquared ADB_Micro.hpp:505), so leaving it out made the guest see
+  // the unmodified lowercase keycode for every letter.
   const sendAdbModifier = (e: keyEvent, isDown: boolean) => {
     if (e.repeat) return
     const role = adbModifierRole(e.code, getUIStateBoolean("useOpenAppleKey"))
@@ -515,43 +515,29 @@ const Apple2Canvas = (props: DisplayProps) => {
   const [width, height] = getCanvasSize()
 
   const RenderCanvas = (timestamp: number) => {
-    const elapsed = timestamp - lastFrameTimeRef.current
-    // Some odd "race the beam" graphics demos require 60 FPS, but only do this
-    // for 1 MHz or slower speeds. Throttle the frame rate at higher CPU
-    // speed to help reduce CPU usage.
-    // Test image from Brendan:
-    // https://github.com/badvision/a2-pseudocolor/raw/refs/heads/main/disks/flicker.po
-    // The Apple IIgs is exempt: Super Hi-Res frames carry no beam-race
-    // artifacts, and the 45 Hz paint cap was starving the FPS readout to ~30
-    // and delaying Ensoniq audio block scheduling on the main thread (the
-    // "2.8 MHz shows 30 FPS / Tass Times audio lag" symptom).
-    const targetFrameRate = (handleGetSpeedMode() <= 0 || handleGetMachineName() === "APPLE2GS") ? 75 : 45 // Hz
-    const targetInterval = 1000 / targetFrameRate
-
-    if (elapsed >= targetInterval) {
-      if (mainCanvas && hiddenCanvas.current) {
-        // Note: Do not add { willReadFrequently: true }, as it increased CPU
-        // usage by about 20% in Chrome.
-        const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d")
-        const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
-        if (ctx && hiddenCtx) {
-          const [w, h] = getCanvasSize()   // always current
-          ProcessDisplay(ctx, hiddenCtx, w, h)
-        }
-        checkGamepad()
+    // Paint on every animation frame, never deliberately skip one. Race-the-beam
+    // graphics demos and games whose animation cadence depends on a smooth
+    // display need every emulated frame shown, even at the cost of more CPU.
+    if (mainCanvas && hiddenCanvas.current) {
+      // Note: Do not add { willReadFrequently: true }, as it increased CPU
+      // usage by about 20% in Chrome.
+      const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d")
+      const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
+      if (ctx && hiddenCtx) {
+        const [w, h] = getCanvasSize()   // always current
+        ProcessDisplay(ctx, hiddenCtx, w, h)
       }
+      checkGamepad()
+    }
 
-      // Calculate and log FPS
-      lastFPSLogRef.current++
-      if (lastFPSLogRef.current >= maxFrameSamples) {
-        const avgFPS = (lastFPSLogRef.current / (timestamp - startTimeForMaxFramesRef.current)) * 1000
-        const fps = avgFPS.toFixed(1)
-        props.setAvgFPS(fps)
-        lastFPSLogRef.current = 0
-        startTimeForMaxFramesRef.current = timestamp
-      }
-
-      lastFrameTimeRef.current = timestamp
+    // Calculate and log FPS for every displayed frame.
+    lastFPSLogRef.current++
+    if (lastFPSLogRef.current >= maxFrameSamples) {
+      const avgFPS = (lastFPSLogRef.current / (timestamp - startTimeForMaxFramesRef.current)) * 1000
+      const fps = avgFPS.toFixed(1)
+      props.setAvgFPS(fps)
+      lastFPSLogRef.current = 0
+      startTimeForMaxFramesRef.current = timestamp
     }
 
     // Changing this refresh interval to be less often has no effect on the "fast" speed.

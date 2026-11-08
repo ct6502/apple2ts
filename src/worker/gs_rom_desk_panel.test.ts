@@ -27,7 +27,7 @@ const STATUS_DATA_AVAILABLE = 0x20
 const DESK_MANAGER_REPORT = 0x20
 const STATUS_DATA_INTERRUPT = 0x10
 const MOD_CONTROL = 0x02
-const MOD_OPEN = 0x40
+const MOD_OPEN = 0x80
 
 const down = (domCode: string, key = -1) =>
   setKeyboardState({ key, isDown: true, repeat: false, domCode })

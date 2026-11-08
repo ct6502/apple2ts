@@ -25,12 +25,12 @@ test("the Meta pair joins the bindings only when the user asked for the Cmd keys
   expect(adbModifierRole("MetaRight", true)).toBe(CLOSED_APPLE)
 })
 
-test("Shift and Control keep their own codes; ordinary keys post no modifier", () => {
-  for (const code of ["ControlLeft", "ControlRight", "ShiftLeft", "ShiftRight"]) {
+test("Shift, Control and Caps Lock keep their own codes; ordinary keys post no modifier", () => {
+  for (const code of ["ControlLeft", "ControlRight", "ShiftLeft", "ShiftRight", "CapsLock"]) {
     expect(adbModifierRole(code, true)).toBe(code)
   }
   // The chord's other half, and the numpad arrows that are joystick axes.
-  for (const code of ["Escape", "KeyW", "Numpad8", "Numpad2", "CapsLock"]) {
+  for (const code of ["Escape", "KeyW", "Numpad8", "Numpad2"]) {
     expect(adbModifierRole(code, true)).toBe(null)
   }
 })

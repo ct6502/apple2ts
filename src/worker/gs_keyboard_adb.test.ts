@@ -15,12 +15,15 @@ import { setKeyboardState } from "./devices/keyboard"
 import { iigsADB } from "./iigs_adb"
 import { memGetC000 } from "./memory"
 
-// $C025 bit assignments (KEGS adb.c:153-157, gssquared adb_mod_key_t).
+// $C025 bit assignments (gssquared adb_mod_key_t ADB_Keyboard.hpp:6).
+// bit6 is closed, bit7 is open - ADB_COMMAND ($37) drives open and ADB_OPTION
+// ($3A) drives closed (ADB_Micro.hpp:503-504).
 const MOD_SHIFT = 0x01
 const MOD_CONTROL = 0x02
+const MOD_CAPS = 0x04
 const MOD_LATCH = 0x20
-const MOD_OPEN = 0x40
-const MOD_CLOSED = 0x80
+const MOD_CLOSED = 0x40
+const MOD_OPEN = 0x80
 
 beforeEach(() => {
   doSetMachineName("APPLE2GS")
@@ -73,6 +76,44 @@ test("modifier keys drive $C025 and release with their own keycode", () => {
   expect(iigsADB.peekModifiers() & MOD_CONTROL).toBe(MOD_CONTROL)
 })
 
+test("Caps Lock toggles on key-up and feeds the legacy letter case", () => {
+  // The old UI preference uppercased every host key in convertAppleKey, and a
+  // browser's Caps Lock never reached $C025. Toggling the ADB modifier on
+  // key-up (gssquared ADB_Micro.hpp:505) and deriving $C000 from keycode +
+  // modifiers is what makes the case follow the physical caps state.
+  setKeyboardState({ key: -1, isDown: true, repeat: false, domCode: "CapsLock" })
+  expect(iigsADB.peekModifiers() & MOD_CAPS).toBe(0)
+  setKeyboardState({ key: -1, isDown: false, repeat: false, domCode: "CapsLock" })
+  expect(iigsADB.peekModifiers() & MOD_CAPS).toBe(MOD_CAPS)
+
+  setKeyboardState({ key: 97, isDown: true, repeat: false, domCode: "KeyA" })
+  expect(memGetC000(0xC000)).toBe(0x80 | "A".charCodeAt(0))
+
+  // A second press/release puts the toggle back off; the ADB letter returns to
+  // lowercase regardless of the host keyboard event's own text.
+  iigsADB.readModifiers() // clear the updated latch so the caps-off edge is observable
+  setKeyboardState({ key: -1, isDown: true, repeat: false, domCode: "CapsLock" })
+  expect(iigsADB.peekModifiers() & MOD_CAPS).toBe(MOD_CAPS)
+  setKeyboardState({ key: -1, isDown: false, repeat: false, domCode: "CapsLock" })
+  expect(iigsADB.peekModifiers() & MOD_CAPS).toBe(0)
+  expect(iigsADB.peekModifiers() & MOD_LATCH).toBe(MOD_LATCH)
+  setKeyboardState({ key: 97, isDown: true, repeat: false, domCode: "KeyA" })
+  expect(memGetC000(0xC000)).toBe(0x80 | "a".charCodeAt(0))
+})
+
+test("Shift changes ADB letters and Backspace maps to delete 0x7F", () => {
+  setKeyboardState({ key: -1, isDown: true, repeat: false, domCode: "ShiftLeft" })
+  expect(iigsADB.peekModifiers() & MOD_SHIFT).toBe(MOD_SHIFT)
+  setKeyboardState({ key: 97, isDown: true, repeat: false, domCode: "KeyA" })
+  expect(memGetC000(0xC000)).toBe(0x80 | "A".charCodeAt(0))
+
+  // The host convertAppleKey special case emitted 0x08 for Backspace under the
+  // default COUT; GS/OS reads that as the left-arrow key. ADB_DELETE is 0x7F.
+  setKeyboardState({ key: 8, isDown: true, repeat: false, domCode: "Backspace" })
+  expect(memGetC000(0xC000)).toBe(0x80 | 0x7F)
+  expect(iigsADB.getKeyboardEvent()[0]).toBe(0x33)
+})
+
 test("Open Apple and Closed Apple are different keys", () => {
   // The chord the guest acts on is chosen by which of these two bits is set, so
   // mapping both Alt keys to Option ($3A) made Closed Apple unreachable.
@@ -95,7 +136,7 @@ test("a chord releases only the key let go first", () => {
   expect(iigsADB.peekModifiers() & MOD_CLOSED).toBe(MOD_CLOSED)
   setKeyboardState({ key: -1, isDown: false, repeat: false, domCode: "AltRight" })
   expect(iigsADB.peekModifiers() & MOD_CLOSED).toBe(0)
-  expect(iigsADB.getKeyboardEvent()[0]).toBe(0x80 | 0x37)
+  expect(iigsADB.getKeyboardEvent()[0]).toBe(0x80 | 0x3A)
   setKeyboardState({ key: 27, isDown: false, repeat: false, domCode: "Escape" })
   expect(iigsADB.getKeyboardEvent()[0]).toBe(0x80 | 0x35)
 })

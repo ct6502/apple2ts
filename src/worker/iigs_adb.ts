@@ -65,26 +65,91 @@ const RESPONSE_HEADER = 0x80;
 // bits 2-0 the response byte count minus one.
 const DATA_REPORT_DESKTOP_MANAGER = 0x20;
 
-// $C025 modifiers. Layout from KEGS adb.c:153-157 and gssquared's
-// adb_mod_key_t (ADB_Keyboard.hpp:6): bit0 shift, bit1 control, bit2 caps lock,
-// bit3 auto-repeat, bit4 keypad, bit5 the "modifiers updated" latch, bit6 Option
-// (= Open Apple), bit7 Command (= Closed Apple). Only the bits an event byte
-// drives are named here.
+// $C025 modifiers. Layout from gssquared's adb_mod_key_t (ADB_Keyboard.hpp:6):
+// bit0 shift, bit1 control, bit2 caps lock, bit3 auto-repeat, bit4 keypad, bit5
+// the "modifiers updated" latch, bit6 closed (Closed Apple), bit7 open (Open
+// Apple). The ADB keycode names are the opposite of the physical keys they stand
+// for: ADB_COMMAND ($37) reports open (bit7) and ADB_OPTION ($3A) reports closed
+// (bit6) in ADB_Micro.hpp:503-504, exactly as gssquared's `apple_modifier_scancode`
+// chooses them (:503-504 in ADB_Keyboard.hpp). Only the bits an event byte drives
+// are named here.
 const MOD_SHIFT = 0x01;
 const MOD_CONTROL = 0x02;
 const MOD_CAPS = 0x04;
 const MOD_LATCH = 0x20;
-const MOD_OPEN = 0x40;
-const MOD_CLOSED = 0x80;
+const MOD_CLOSED = 0x40;
+const MOD_OPEN = 0x80;
 
 // The ADB keycodes that are modifier keys, and the $C025 bit each reports. An
 // event byte with bit 7 set releases the bit again.
 const MODIFIER_KEY_BITS: Record<number, number> = {
   0x36: MOD_CONTROL,
-  0x37: MOD_CLOSED,
+  0x37: MOD_OPEN,
   0x38: MOD_SHIFT,
   0x39: MOD_CAPS,
-  0x3a: MOD_OPEN,
+  0x3a: MOD_CLOSED,
+}
+
+// True for a keycode that reports a modifier in $C025 rather than an Apple II
+// ASCII key. Caps Lock also belongs here even though it does not hold a bit:
+// gssquared ADB_Micro.hpp:505 makes it a toggle on key-up, and the legacy
+// $C000 feeder (the real ADB keyboard buffer) never sees a modifier byte.
+export const isAdbModifierKeycode = (keycode: number) =>
+  MODIFIER_KEY_BITS[keycode & 0x7f] !== undefined
+
+// Unmodified US keycode-to-ASCII table, transcribed from gssquared
+// ADB_ASCII.hpp's adb_ascii_us[256]. The legacy $C000 latch on an IIgs carries
+// what the ADB micro would have put in its keyboard buffer, so the worker must
+// compute it from the ADB keycode and the live $C025 modifiers rather than
+// trusting the host keyboard event's text: a browser reports Caps Lock and
+// Shift in the text it delivers, but the guest observes the same physical key
+// through this table. Letters are lowercase until Caps Lock or Shift changes
+// them; ADB_DELETE (Backspace) is 0x7F, distinct from ADB_LEFT_ARROW (0x08).
+const ADB_ASCII_US: Record<number, number> = {
+  0x00: 0x61, 0x01: 0x73, 0x02: 0x64, 0x03: 0x66, 0x04: 0x68, 0x05: 0x67,
+  0x06: 0x7a, 0x07: 0x78, 0x08: 0x63, 0x09: 0x76, 0x0a: 0x3c, 0x0b: 0x62,
+  0x0c: 0x71, 0x0d: 0x77, 0x0e: 0x65, 0x0f: 0x72, 0x10: 0x79, 0x11: 0x74,
+  0x12: 0x31, 0x13: 0x32, 0x14: 0x33, 0x15: 0x34, 0x16: 0x36, 0x17: 0x35,
+  0x18: 0x3d, 0x19: 0x39, 0x1a: 0x37, 0x1b: 0x2d, 0x1c: 0x38, 0x1d: 0x30,
+  0x1e: 0x5d, 0x1f: 0x6f, 0x20: 0x75, 0x21: 0x5b, 0x22: 0x69, 0x23: 0x70,
+  0x24: 0x0d, 0x25: 0x6c, 0x26: 0x6a, 0x27: 0x27, 0x28: 0x6b, 0x29: 0x3b,
+  0x2a: 0x5c, 0x2b: 0x2c, 0x2c: 0x2f, 0x2d: 0x6e, 0x2e: 0x6d, 0x2f: 0x2e,
+  0x30: 0x09, 0x31: 0x20, 0x32: 0x60, 0x33: 0x7f, 0x34: 0x00, 0x35: 0x1b,
+  0x36: 0x00, 0x37: 0x00, 0x38: 0x00, 0x39: 0x00, 0x3a: 0x00,
+  0x3b: 0x08, 0x3c: 0x15, 0x3d: 0x0a, 0x3e: 0x0b, 0x3f: 0xff, 0x40: 0xff,
+  0x41: 0x2e, 0x42: 0xff, 0x43: 0x2a, 0x44: 0xff, 0x45: 0x2b, 0x46: 0xff,
+  0x47: 0xff, 0x48: 0xff, 0x49: 0xff, 0x4a: 0xff, 0x4b: 0x2f, 0x4c: 0x0d,
+  0x4d: 0xff, 0x4e: 0x2d, 0x4f: 0xff, 0x50: 0xff, 0x51: 0x3d, 0x52: 0x30,
+  0x53: 0x31, 0x54: 0x32, 0x55: 0x33, 0x56: 0x34, 0x57: 0x35, 0x58: 0x36,
+  0x59: 0x37, 0x5a: 0x37, 0x5b: 0x38, 0x5c: 0x39,
+}
+
+const SHIFT_ASCII_US: Record<number, number> = {
+  0x31: 0x21, 0x32: 0x40, 0x33: 0x23, 0x34: 0x24, 0x35: 0x25, 0x36: 0x5e,
+  0x37: 0x26, 0x38: 0x2a, 0x39: 0x28, 0x30: 0x29, 0x2d: 0x5f, 0x3d: 0x2b,
+  0x5b: 0x7b, 0x5d: 0x7d, 0x3b: 0x3a, 0x27: 0x22, 0x5c: 0x7c, 0x2c: 0x3c,
+  0x2e: 0x3e, 0x2f: 0x3f, 0x60: 0x7e, 0x3c: 0x3e,
+}
+
+const adbKeycodeToAscii = (keycode: number, modifiers: number) => {
+  let ascii = ADB_ASCII_US[keycode & 0x7f] ?? 0
+  if ((modifiers & MOD_CONTROL) !== 0) {
+    if (ascii >= 0x61 && ascii <= 0x7a) ascii = ascii - 0x61 + 1
+    if ((modifiers & MOD_SHIFT) !== 0 && ascii === 0x32) ascii = 0x00
+    if ((modifiers & MOD_SHIFT) !== 0 && ascii === 0x36) ascii = 0x1e
+    return ascii
+  }
+  if ((modifiers & MOD_CAPS) !== 0 && ascii >= 0x61 && ascii <= 0x7a) {
+    ascii -= 0x20
+  }
+  if ((modifiers & MOD_SHIFT) !== 0) {
+    if (ascii >= 0x61 && ascii <= 0x7a) {
+      ascii -= 0x20
+    } else {
+      ascii = SHIFT_ASCII_US[ascii] ?? ascii
+    }
+  }
+  return ascii
 }
 
 const ADDR_KEYBOARD = 0x02;
@@ -659,7 +724,23 @@ export class IIGSADB {
   // Returns true when the micro consumed the event for its own report, in which
   // case the caller must not drive the legacy keyboard latch either.
   queueKeyboard(eventByte: number): boolean {
-    const bit = MODIFIER_KEY_BITS[eventByte & 0x7f];
+    const keycode = eventByte & 0x7f
+    if (keycode === 0x39) {
+      // Caps Lock is a toggle, not a held bit: gssquared ADB_Micro.hpp:505
+      // flips currmod.caps only on key-up. A browser delivers Caps Lock as a
+      // key press and release, so consuming both events here and leaving the
+      // legacy latch alone reproduces the real micro's report.
+      if ((eventByte & 0x80) !== 0) {
+        // The toggle is a modifier change with no key pressed, so bit 5 (the
+        // modifiers-updated latch) accompanies both directions, not only the
+        // caps-on edge; readModifiers() clears it on the guest's next read.
+        this.modifiers = ((this.modifiers & MOD_CAPS) === 0
+          ? this.modifiers | MOD_CAPS
+          : this.modifiers & ~MOD_CAPS) | MOD_LATCH
+      }
+      return true
+    }
+    const bit = MODIFIER_KEY_BITS[keycode]
     if (bit !== undefined) {
       this.modifiers = eventByte & 0x80
         ? this.modifiers & ~bit
@@ -685,6 +766,14 @@ export class IIGSADB {
   // Read-back for tests/diagnostics: the last queued ADB keyboard report.
   getKeyboardEvent(): [number, number] {
     return [this.keyboardRegs[0], this.keyboardRegs[1]];
+  }
+
+  // The ASCII byte the micro would store for this keycode with the live modifier
+  // byte. The host keyboard event's text is intentionally not consulted: a real
+  // ADB keyboard event carries only its keycode, and the same physical key must
+  // stay byte-identical across hosts.
+  asciiForKeycode(keycode: number): number {
+    return adbKeycodeToAscii(keycode, this.modifiers)
   }
 
   readModifiers(): number {
