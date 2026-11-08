@@ -6,13 +6,13 @@ import { s6502 } from "../../instructions"
 import { setSlotIOCallback } from "../../memory"
 import { passVeraFmReset, passVeraFmWrite } from "../../worker2main"
 import { getCpuCyclesPerRefresh } from "../../motherboard"
-import { video_init, video_step, video_update, video_reset, video_read, video_write, video_get_irq_out } from "./video"
+import { video_cycles_until_next_event, video_init, video_step, video_update, video_reset, video_read, video_write, video_get_irq_out } from "./video"
 import { vera_spi_init, vera_spi_step, sdcard_select } from "./sdcard"
 
 let slot: number = 5
 let curInter: boolean = false
 let prevCycleCount = 0
-let pendingCycles = 0
+let nextSyncCycle = 0
 let ymBusyUntil = 0
 let fmEnabled = true
 export const setVeraFmEnabled = (enabled: boolean) => {
@@ -37,33 +37,44 @@ const veraInit = (): boolean => {
   return result
 }
 
-export const syncVera = (): void => {
-  if (pendingCycles > 0) {
-    const cycleDelta = pendingCycles
-    pendingCycles = 0
-    const newFrame = video_step(1, cycleDelta, false)
-    vera_spi_step(cycleDelta)
-    if (newFrame)
-      video_update()
+const scheduleNextSync = () => {
+  nextSyncCycle = s6502.cycleCount + video_cycles_until_next_event()
+}
 
-    // maintain interrupt state
-    interrupt(video_get_irq_out())
+export const syncVera = (): void => {
+  const cycleDelta = s6502.cycleCount - prevCycleCount
+  if (cycleDelta < 0) {
+    // Save-state restoration, time travel, and debugger edits can move the
+    // global counter backward. Resynchronize at the new position.
+    prevCycleCount = s6502.cycleCount
+    scheduleNextSync()
+    return
   }
+  if (cycleDelta === 0) return
+
+  const newFrame = video_step(1, cycleDelta, false)
+  vera_spi_step(cycleDelta)
+  if (newFrame) video_update()
+  interrupt(video_get_irq_out())
+  prevCycleCount = s6502.cycleCount
+  scheduleNextSync()
 }
 
 export const initVera = () => {
-  pendingCycles = 0
-  prevCycleCount = 0
   video_reset()
   sdcard_select(false)
+  interrupt(false)
+  prevCycleCount = s6502.cycleCount
+  scheduleNextSync()
   ymBusyUntil = 0
   passVeraFmReset()
 }
 
 export const resetVera = () => {
-  pendingCycles = 0
-  prevCycleCount = 0
   video_reset()
+  interrupt(false)
+  prevCycleCount = s6502.cycleCount
+  scheduleNextSync()
   ymBusyUntil = 0
   passVeraFmReset()
 }
@@ -78,6 +89,8 @@ export const enableVera = (enable = true, aslot = 3) => {
     return
 
   slot = aslot
+  prevCycleCount = s6502.cycleCount
+  scheduleNextSync()
 
   // this card has no ROM, but has registers in the ROM area
   setSlotIOCallback(slot, handleVeraIO)
@@ -86,15 +99,8 @@ export const enableVera = (enable = true, aslot = 3) => {
 
 const cycleCountCallback = (_slot: number) => {
   void _slot
-  if (prevCycleCount)
-  {
-    const cycleDelta = s6502.cycleCount - prevCycleCount
-    pendingCycles += cycleDelta
-    if (pendingCycles >= 16) {
-      syncVera()
-    }
-  }
-  prevCycleCount = s6502.cycleCount
+  if (s6502.cycleCount >= prevCycleCount && s6502.cycleCount < nextSyncCycle) return
+  syncVera()
 }
 
 const handleVeraIO = (addr: number, val = -1): number => {
@@ -117,14 +123,18 @@ const handleVeraIO = (addr: number, val = -1): number => {
   }
   // We dont have any ROM, but we have vera regs starting at Cx00
   if (addr >= 0xc100) {
-    if (prevCycleCount) {
-      const cycleDelta = s6502.cycleCount - prevCycleCount
-      pendingCycles += cycleDelta
-    }
-    prevCycleCount = s6502.cycleCount
+    // Register accesses must observe VERA at the current CPU cycle even though
+    // background stepping is scheduled only at observable events.
     syncVera()
     if (val >= 0) {
-      video_write(addr&0xff, val)
+      const reg = addr & 0x1f
+      video_write(reg, val)
+      if ((reg >= 0x05 && reg <= 0x0c) || (reg >= 0x1b && reg <= 0x1d)) {
+        // Interrupt control, display timing, reset, and PCM writes can change
+        // the next observable deadline without advancing CPU time.
+        interrupt(video_get_irq_out())
+        scheduleNextSync()
+      }
       return 0
     }
     else
