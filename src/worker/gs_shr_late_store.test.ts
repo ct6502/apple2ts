@@ -1,4 +1,5 @@
 import { beginShrFrame, captureShrBeamLine, getShrDisplayed, iigsAuxLinearToPhys, iigsRegisters, megaIIAux, memSet24, resetShrBeamFrame, setIigsCloudLayerFilename } from "./memory"
+import { doSetSpeedMode, getLastShrFrameForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 
 const resetShr = () => {
@@ -24,15 +25,32 @@ test("a late nonzero SHR store over a non-zero captured byte still paints", () =
   expect(getShrDisplayed()[0]).toBe(0x55)
 })
 
-test("a late zero SHR store erases the previous sprite pixel", () => {
+test("a late zero SHR store leaves the beam-captured background alone", () => {
   resetShr()
 
   megaIIAux[0x2000] = 0xaa
   captureShrBeamLine(0)
   expect(getShrDisplayed()[0]).toBe(0xaa)
 
-  // A sprite erase lands after the capture. It has to clear the old pixel, or
-  // the character trails behind its new position on the next frame.
+  // An erase lands after the capture. The beam already took the background
+  // byte, and the real screen keeps that captured pixel until the next refresh;
+  // folding the zero would wipe the captured layer (Kernkompetenz's cube apex).
+  memSet24(0x012000, 0)
+  expect(getShrDisplayed()[0]).toBe(0xaa)
+})
+
+test("a late zero SHR store erases the late-painted sprite pixel", () => {
+  resetShr()
+
+  megaIIAux[0x2000] = 0xaa
+  captureShrBeamLine(0)
+  expect(getShrDisplayed()[0]).toBe(0xaa)
+
+  // A sprite pixel is painted behind the beam, replacing the captured
+  // background. An erase that follows has to clear that sprite pixel, or the
+  // character trails behind its new position on the next frame.
+  memSet24(0x012000, 0x55)
+  expect(getShrDisplayed()[0]).toBe(0x55)
   memSet24(0x012000, 0)
   expect(getShrDisplayed()[0]).toBe(0)
 })
@@ -152,4 +170,54 @@ test("the cloud exception ignores late zero erasures in 640-mode pixels", () => 
 
   memSet24(0x012000, 0)
   expect(getShrDisplayed()[0]).toBe(0)
+})
+
+test("a late SCB table store replaces the displayed line's control byte", () => {
+  resetShr()
+
+  captureShrBeamLine(0)
+  expect(getShrDisplayed()[0x7d00]).toBe(0)
+
+  // The guest changes a line's SCB after the beam captured that row. The table
+  // byte belongs to the displayed frame at once, so the fold must reach it even
+  // though the line's pixel bytes are behind the beam too.
+  memSet24(0x019d00, 0x80)
+  expect(getShrDisplayed()[0x7d00]).toBe(0x80)
+
+  memSet24(0x019d01, 0x40)
+  expect(getShrDisplayed()[0x7d01]).toBe(0x40)
+})
+
+test("a late palette table store replaces the displayed palette byte", () => {
+  resetShr()
+
+  captureShrBeamLine(0)
+  expect(getShrDisplayed()[0x7e00]).toBe(0)
+
+  // The palette is latched at the start of the frame, but a guest can still
+  // rewrite it after the beam has taken every line. Folding the table keeps the
+  // displayed colours on the guest's current palette rather than a stale one.
+  memSet24(0x019e00, 0x55)
+  expect(getShrDisplayed()[0x7e00]).toBe(0x55)
+
+  memSet24(0x019e01, 0x2a)
+  expect(getShrDisplayed()[0x7e01]).toBe(0x2a)
+})
+
+test("a speed-mode switch keeps the captured rows in the current boundary", () => {
+  resetShr()
+
+  megaIIAux[0x2000] = 0x01
+  captureShrBeamLine(0)
+  expect(getShrDisplayed()[0]).toBe(0x01)
+
+  // Ctrl+4 / any speed switch restarts the video clock in the middle of a
+  // refresh. It must set frame 0 as current instead of -1, or the next timer
+  // callback would call beginShrFrame() and make the already-captured top-row
+  // byte early again, dropping the sprite draw behind the beam.
+  doSetSpeedMode(3)
+  expect(getLastShrFrameForTesting()).toBe(0)
+
+  memSet24(0x012000, 0x33)
+  expect(getShrDisplayed()[0]).toBe(0x33)
 })

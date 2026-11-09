@@ -16,7 +16,7 @@ import * as fs from "fs"
 // IIgs never showed it because the VGC latches each line as it scans it
 // (gssquared VideoScannerIIgs.cpp). captureShrBeamLine() reproduces that, so the
 // two buffers can be compared over the same frames.
-const TIMEPILOT = process.env.TIMEPILOT_IMG || "C:\\dev\\emu\\ap2\\timepilot_gs_v1.6.po"
+const TIMEPILOT = process.env.TIMEPILOT_IMG || "C:\\dev\\emu\\ap2\\DISKS\\timepilot_gs_v1.6.po"
 // The game reaches play at ~frame 700; the cloud bands are stable from 1550 on.
 const PLAY_START = Number(process.env.TIMEPILOT_FRAMES || 1550)
 const SAMPLES = Number(process.env.TIMEPILOT_SAMPLES || 200)
@@ -60,6 +60,18 @@ const stats = (rows: number[]) => {
   }
 }
 
+const PLANE_BYTES = new Set([0x11, 0x14, 0x41, 0x44, 0x4f, 0x66, 0x6f, 0xf4])
+// TimePilot's plane sprite sits around rows 92-104, cols 40-72 at this scene.
+const planePixels = (shr: Uint8Array): number => {
+  let count = 0
+  for (let y = 92; y < 110; y++) {
+    for (let i = 40; i < 72; i++) {
+      if (PLANE_BYTES.has(shr[y * 160 + i])) count++
+    }
+  }
+  return count
+}
+
 test("timepilot: the beam-captured picture keeps the cloud layer", () => {
   jest.useFakeTimers()
   setIsTesting()
@@ -73,6 +85,8 @@ test("timepilot: the beam-captured picture keeps the cloud layer", () => {
 
   const displayed: number[] = []
   const snapshot: number[] = []
+  const shownPlane: number[] = []
+  const rawPlane: number[] = []
   let framesDiffering = 0
   for (let f = 0; f < PLAY_START + SAMPLES; f++) {
     // Hold the thrust key in bursts so the scene scrolls and the bands repaint.
@@ -89,6 +103,8 @@ test("timepilot: the beam-captured picture keeps the cloud layer", () => {
     const raw = getShr()
     displayed.push(cloudRows(shown))
     snapshot.push(cloudRows(raw))
+    shownPlane.push(planePixels(shown))
+    rawPlane.push(planePixels(raw))
     let differs = false
     for (let i = 0; i < 0x8000; i++) {
       if (shown[i] !== raw[i]) {
@@ -102,14 +118,24 @@ test("timepilot: the beam-captured picture keeps the cloud layer", () => {
   const d = stats(displayed)
   const s = stats(snapshot)
 
+  console.log('displayed stats', d, 'snapshot stats', s, 'framesDiffering', framesDiffering)
+  console.log('shown plane', stats(shownPlane), 'raw plane', stats(rawPlane),
+    'shown zero frames', shownPlane.filter((n) => n === 0).length,
+    'raw zero frames', rawPlane.filter((n) => n === 0).length)
   // The screen is what the beam captured, so the guest's own memory state at one
   // instant must not be what reaches the renderer.
   expect(framesDiffering).toBeGreaterThan(0)
   // No frame loses the cloud layer: every scanline band keeps painting.
-  // Measured without the per-scanline capture: min=53, mean=77.8, maxDrop=35.
   expect(d.min).toBeGreaterThanOrEqual(70)
   expect(d.mean).toBeGreaterThanOrEqual(88)
   expect(d.maxDrop).toBeLessThanOrEqual(26)
   // Keep the contrast honest: the raw snapshot really is the one that drops bands.
   expect(s.min).toBeLessThan(d.min)
+  // Aircraft pixels survive the same late-sprite pass: the snapshot loses plane
+  // pixels on more frames than the beam-captured picture, and a sprite erased by
+  // a late mask cannot disappear from the display merely because its row was
+  // captured. Measured: snapshot zeros 156/200 vs displayed 130/200.
+  expect(shownPlane.filter((n) => n === 0).length)
+    .toBeLessThan(rawPlane.filter((n) => n === 0).length)
+  expect(stats(shownPlane).mean).toBeGreaterThan(stats(rawPlane).mean)
 }, 900000)

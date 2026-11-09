@@ -23,7 +23,7 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   RamWorksBankGet,
   doSetRom,
   getZeroPage,
-  getShrDisplayed,
+  getShrCompletedDisplay,
   captureShrBeamLine,
   beginShrFrame,
   resetShrBeamFrame,
@@ -154,9 +154,30 @@ let ensoniqSamplesPerRefresh = 0
 let ensoniqScratch = new Int16Array(2048 * 2)
 
 export const getIigsVideoClock = () => iigsVideoClock
+// Test-only readback of the SHR captured-row boundary. Production code only
+// compares it inside doAdvance6502; a speed-mode switch must leave it at frame
+// 0 so the next timer callback does not fake a mid-refresh beginShrFrame().
+export const getLastShrFrameForTesting = () => lastShrFrame
 export const getIigsFrameUnits = () => cpuCyclesPerRefresh
-export const resetIigsVideoClock = () => {
+// Last refresh boundary at which the captured SHR rows were cleared. This is
+// machine state, not per-call state: doAdvance6502 is entered once per timer
+// callback, and a callback can run while the machine is already *inside* the
+// new refresh. Declaring it in the run loop made every invocation start with
+// lastShrFrame = -1 and therefore call beginShrFrame immediately, mid-refresh;
+// that cleared the row-captured flags while the beam had already passed them,
+// so a sprite draw landing behind the beam was no longer folded into the
+// displayed picture. The symptom is a missing/partial top-row character or a
+// flickering aircraft under heavy timer jitter. Keep it at module scope and
+// reset it only when the machine's video clock (and frame numbering) resets.
+let lastShrFrame = -1
+// A speed-mode switch resets the video clock without clearing the SHR display:
+// the beam-captured rows are still the last ones the guest painted, and a late
+// top-row sprite store arriving after the switch should still fold into them.
+// A reset at boot calls resetShrBeamFrame() for the picture itself, so there
+// -1 (no boundary yet) is correct; the speed switch keeps frame 0 as current.
+export const resetIigsVideoClock = (preserveShrFrame = false) => {
   iigsVideoClock = 0
+  lastShrFrame = preserveShrFrame ? 0 : -1
   // The DOC catch-up is phased against this clock, so its anchor has to restart
   // with it (boot, Ctrl-Reset and speed-mode changes all reset the clock).
   ensoniqRefreshId = -1
@@ -715,7 +736,11 @@ export const doSetSpeedMode = (speedModeIn: number, operationId?: number) => {
   refreshTime = (speedMode === 4) ? 0 : 16.6881
   const cyclesTable = (machineName === "APPLE2GS") ? GS_CYCLES_PER_REFRESH : IIE_CYCLES_PER_REFRESH
   cpuCyclesPerRefresh = cyclesTable[speedMode + 2]
-  resetIigsVideoClock()
+  // The new CPU rate changes frame length, so restart the clock in the new
+  // frame — but not the captured-row boundary: the guest is still painting
+  // the frame the beam is halfway through, and -1 here would make the next run
+  // loop call beginShrFrame() mid-refresh and drop those late draws.
+  resetIigsVideoClock(true)
   resetRefreshCounter()
   updateExternalMachineState()
   if (operationId !== undefined) passWorkerOperationResult(operationId)
@@ -1257,7 +1282,7 @@ export const getExternalMachineState = () => {
     runMode: cpuRunMode,
     s6502: s6502,
     showDebugTab: showDebugTab,
-    shr: getShrDisplayed(),
+    shr: getShrCompletedDisplay(),
     slotConfig: currentSlotConfig,
     softSwitches: getSoftSwitches(),
     speedMode: speedMode,
@@ -1404,11 +1429,11 @@ const doAdvance6502 = () => {
   const videoStart = isIIgs ? iigsVideoClock : s6502.cycleCount
   // Last emulated refresh the IIgs mouse sync ran on (see iigsMouseStep).
   let lastMouseSyncFrame = -1
-  // Last refresh boundary the SHR captured-row state was cleared at. The guest
-  // may store to the previous frame's rows during VBL, so the reset has to happen
-  // at the frame boundary rather than when the beam reaches line 0 (see
-  // beginShrFrame).
-  let lastShrFrame = -1
+  // The SHR captured-row state is cleared at the refresh boundary, not at beam
+  // line 0: the guest may store to the previous frame's rows during VBL, and
+  // only a boundary crossing makes those stores belong to the new frame (see
+  // beginShrFrame). lastShrFrame is module-scoped so a timer callback entering
+  // this loop mid-refresh does not fake a boundary and clear the flags early.
 
   for (;;) {
     let cycles = 0
@@ -1583,31 +1608,50 @@ const doAdvance6502 = () => {
 }
 
 
+// How many refreshes a timer callback may run. A callback that arrives before
+// the next refresh is due must run none: counting the negative interval as one
+// made the machine run ahead of wall time whenever the timer fired early. Only
+// overdue refreshes count, and every one of them runs: a cap here would drop whole
+// refreshes from emulated time, losing animation state and tearing sprites. A
+// stalled tab therefore catches up every refresh it missed on resume.
+// Warp mode (speedMode 4) deliberately sets refreshTime to 0 so the next
+// callback can fire immediately; it is not a cadence to divide by, or framesDue
+// becomes Infinity and the machine runs synchronously forever, starving the
+// worker's message queue (pause, keys and mouse stop arriving).
+// Exported so the arithmetic has a direct regression test (gs_timer_catchup).
+export const iigsRefreshCatchUpPlan = (
+  now: number, nextFrameTime: number, refreshTime: number,
+): { overdueFrames: number, framesDue: number } => {
+  if (refreshTime <= 0) return { overdueFrames: 0, framesDue: 1 }
+  if (now < nextFrameTime) return { overdueFrames: 0, framesDue: 0 }
+  const overdueFrames = 1 + Math.floor((now - nextFrameTime) / refreshTime)
+  return { overdueFrames, framesDue: overdueFrames }
+}
+
 const doAdvance6502Timer = () => {
   // Catch-up: the timer fires once per refresh cadence, but if a callback
   // lands late (heavy browser jank, background throttling) the machine must
   // not silently lose emulated time — music tempo and everything else is tied
-  // to emulated time. Execute up to a bounded number of whole refreshes so a
-  // late callback resumes where the machine clock says it should. The bound
-  // (4 frames ≈ 67ms) keeps a truly stalled tab from free-wheeling the
-  // machine forward on resume.
+  // to emulated time. Execute every whole refresh the clock says is overdue so
+  // a late callback resumes where the machine clock says it should. There is no
+  // frame cap: a cap drops animation state and tears sprites across the gap.
   const now = performance.now()
-  // Warp mode (speedMode 4) deliberately sets refreshTime to 0 so the next
-  // callback can fire immediately. It is not a cadence to divide by: doing so
-  // makes framesDue Infinity and runs the machine synchronously forever, which
-  // starves the worker's message queue (pause, keys and mouse stop arriving).
-  const framesDue = (refreshTime > 0 && now >= nextFrameTime)
-    ? 1 + Math.floor((now - nextFrameTime) / refreshTime)
-    : 1
+  const { framesDue } = iigsRefreshCatchUpPlan(now, nextFrameTime, refreshTime)
   // Run every overdue refresh. Dropping frames to save CPU loses animation
   // state and leaves characters half-drawn; completeness beats headroom.
   for (let f = 0; f < framesDue; f++) {
     doAdvance6502()
     if (cpuRunMode !== RUN_MODE.RUNNING) break
   }
-  nextFrameTime = refreshTime > 0
-    ? Math.max(nextFrameTime, now - refreshTime) + framesDue * refreshTime
-    : now
+  if (refreshTime > 0) {
+    if (framesDue > 0) {
+      // Count from the scheduled cadence, not from wall time: late callbacks must
+      // consume their whole refresh slots so the next delay stays aligned.
+      nextFrameTime += framesDue * refreshTime
+    }
+  } else {
+    nextFrameTime = now
+  }
   // Calculate exactly how long until the next frame is due
   let delay = nextFrameTime - performance.now()
   if (delay < 0) {

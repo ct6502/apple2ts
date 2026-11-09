@@ -205,6 +205,28 @@ type STATE6502 = {
   flagNMI: boolean
 }
 
+type CPU65816SaveState = {
+  A: number,
+  X: number,
+  Y: number,
+  S: number,
+  D: number,
+  PC: number,
+  PB: number,
+  DB: number,
+  P: number,
+  emulationMode: boolean,
+  enteredNativeMode: boolean,
+  stopped: boolean,
+  waiting: boolean,
+  irqPending: boolean,
+  cycles: number,
+  addrMode: number,
+  addrCrossed: boolean,
+  blockMoveFirst: boolean,
+  slot5Dp?: { dp: number; bytes: number[] } | null
+}
+
 type Apple2SaveState = {
   s6502: STATE6502,
   extraRamSize: number,
@@ -215,7 +237,18 @@ type Apple2SaveState = {
   stackDump: Array<string>,
   memvalid: string,
   memC000: string,
-  memory: string
+  memory: string,
+  // Added with SAVE_STATE_VERSION 2. Old files lack these and fall back to
+  // the power-on Mega II contents. Mega II SHR lives here, not in memory[].
+  megaIIMain?: string,
+  megaIIAux?: string,
+  // Raw VGC bank registers ($C020-$C04F): C029 selects SHR linearization and
+  // the Mega II bank, C035 shadowing, C036 speed. Without them a restored GS
+  // save renders SHR with linear=false and the palette/SCB tables read zero.
+  iigsRegisters?: string,
+  // The 65816 core keeps its native PC/PB/DB outside the legacy s6502 object,
+  // so a GS save without this reloads at PC 0 and reboots over the SHR screen.
+  cpu65816?: CPU65816SaveState
 }
 
 type SlotCardSaveState = {

@@ -276,18 +276,31 @@ assume the emulator's install is what runs.
   not the screen, so do not route them through the displayed frame. While SHR is
   off `getShrDisplayed()` falls back to it, which keeps the legacy Mega II display
   and the classic machines untouched.
-- **Late stores fold into the captured picture, but TimePilot's cloud bytes keep
-  erasures.** A store that lands after the beam has taken that row is folded into
-  `shrBeamFrame` immediately: a late nonzero paints over whatever the beam
-  captured (MsPacMan's top-row character would otherwise come out half painted
-  over the maze), and a late zero clears the previous frame's sprite pixel. The
-  exception is a TimePilot GS cloud byte (palette nibble 1 or 9): a late zero or
-  opaque `0xFF` mask landing there is the cloud layer/mask erasing behind the
-  beam, so the captured band stays; a coloured sprite pixel still paints.
+- **Late stores fold into the captured picture, but only pixels painted late may
+  be erased, and TimePilot's cloud bytes keep their existing erasures.** A store
+  that lands after the beam has taken that row is folded into `shrBeamFrame`
+  immediately: a late nonzero paints over whatever the beam captured (MsPacMan's
+  top-row character would otherwise come out half painted over the maze) and
+  marks that byte in `shrLatePainted`. A late zero clears only a byte that a late
+  nonzero painted this refresh; a zero landing on a byte the beam captured as
+  background is an erase behind the beam and leaves the captured picture alone.
+  That is hardware behaviour: the VGC already took the background, and the real
+  screen keeps it until the next refresh. A blanket zero fold wiped the captured
+  top/back band of Kernkompetenz's rotating cube and made its apex disappear.
+  `captureShrBeamLine()` clears the mark for the rows it captures, so a mark from
+  the previous refresh cannot leak into this one. The exception is a TimePilot GS
+  cloud byte (palette nibble 1 or 9): a late zero or opaque `0xFF` mask landing
+  there is the cloud layer/mask erasing behind the beam, so the captured band
+  stays; a coloured sprite pixel still paints.
   MSpacMan's maze uses the same palette nibble, so the exception is scoped by the
-  mounted media (`setIigsCloudLayerFilename`), never guessed from bytes.
-  Regression: `gs_shr_late_store.test.ts`; `gs_timepilot_flicker` is the end-to-end
-  census.
+  mounted media (`setIigsCloudLayerFilename`), never guessed from bytes. The fold
+  takes the whole SCB table (`$7D00-$7DFF`) and palette table (`$7E00-$7FFF`)
+  unconditionally: those bytes are latched per line / per frame, not per-row pixel
+  draws, so a late rewrite must reach the displayed table or a stale fill bit or
+  palette byte can make a folded sprite invisible. Regression:
+  `gs_shr_late_store.test.ts` (late paint, background-preserving zero,
+  late-painted erase, cloud exceptions, tables); `gs_timepilot_flicker` is the
+  end-to-end census.
 - **Capture rows reset at the refresh boundary, not at beam line 0.** The guest
   writes during VBL after a refresh has ended but before the beam reaches line 0;
   clearing `shrCapturedRows` at line 0 leaves those stores seeing the previous
@@ -295,8 +308,16 @@ assume the emulator's install is what runs.
   already-captured plane and erases it, giving TimePilot's aircraft exactly the
   flicker the late-sprite fold was meant to remove. `beginShrFrame()` runs at the
   `cycleInFrame` wrap (`motherboard.ts` run loop) and clears only the row flags;
-  `captureShrBeamLine()` just captures. Regression: `gs_shr_late_store` ("a store
-  before beam line 0...") and the browser plane census (`gs_timepilot_flicker`).
+  `captureShrBeamLine()` just captures. `lastShrFrame` itself is module-scope,
+  because `doAdvance6502` is entered once per timer callback and a callback can
+  arrive while the machine is already inside the new refresh; a per-call local
+  initialized to `-1` would call `beginShrFrame()` on every callback and clear the
+  flags mid-refresh. A speed-mode switch also resets the video clock but keeps
+  frame 0 as the current boundary (`resetIigsVideoClock(true)`), so the rows the
+  guest painted before the switch still fold late stores; starting at `-1` there
+  would fake another mid-refresh reset. Regression: `gs_shr_late_store` ("a
+  store before beam line 0...") and the browser plane census
+  (`gs_timepilot_flicker`).
 - **Scanline interrupt**: while exporting a visible line, if
   `memGet24(0xE19D00 + line) & 0x40` (SCB bit 6) call `iigsSignalScanline()`
   (gssquared `VideoScannerIIgs.cpp`). Without it GS/OS's Event Manager never
@@ -320,6 +341,13 @@ assume the emulator's install is what runs.
 - MouseText decoding must be enabled for `APPLE2GS` as well as `APPLE2EE`
   (`graphics.ts`, `copycanvas.ts`), or the startup bar shows `@ A L` instead of
   the Apple glyphs and lines.
+- **VERA video renders every layer every frame.** `src/worker/devices/vera/video.ts`
+  used to carry a `warp_mode` + `frame_count` shortcut that skipped layer/palette
+  composition on 63 of every 64 frames "for performance". That is lost animation
+  and missing lines, never acceptable. The shortcut is removed: if a frame is
+  drawn, every enabled layer must be composed for it. A future optimisation must
+  keep the picture complete, not drop frames or scanlines to buy CPU. Regression:
+  `vera.test.ts` (Sprite Demo frames) and the full `video_step` frame checks.
 - Known rendering defects still open: see §11.
 
 ---
@@ -1085,7 +1113,9 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   every `$C036` write moved the beam backwards by up to a whole frame: `$C02E`
   could go back in time, scanline/VBL windows were re-scanned, and the DOC and
   mouse anchors inherited the jump. Reset the clock in `doReset()` and
-  `doSetSpeedMode()`.
+  `doSetSpeedMode()`; the speed-mode reset keeps the captured-row boundary at
+  frame 0 (`resetIigsVideoClock(true)`) rather than `-1`, or the next timer
+  callback calls `beginShrFrame()` mid-refresh and drops a late SHR draw (§4).
 - VBL is the first `vblCycles` of each frame and must agree with `$C019` and
   `readIigsVideoCounter`.
 - Verified: 4074 VBLs / 4074 refreshes over 4000 frames with `$C036` flipping
@@ -1109,6 +1139,13 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   welcome page is only on screen for a few hundred frames at 2.8 MHz before
   A2DeskTop takes over, so `gs_floppy_late` watches every frame instead of
   sampling the end of the run.
+- **The refresh timer follows wall time.** `doAdvance6502Timer` runs no frame
+  when the callback arrives early (a negative interval used to count as one), and
+  consumes every overdue refresh slot — there is no catch-up cap. Dropping whole
+  refreshes loses animation state and tears sprites across the gap; quality beats
+  headroom. Warp mode (`speedMode` 4) deliberately sets `refreshTime = 0` to fire
+  immediately instead of dividing by zero. Regression: `gs_timer_catchup.test.ts`
+  (a stalled callback runs all 102 overdue refreshes).
 - **Nothing in the UI may post a speed before `doSetMachineName`.** `display.tsx`
   used to call `passSpeedMode(0)` while starting up, which marked the mode as an
   explicit user choice and pinned the IIgs to 1.02 MHz in the real UI. Jest hid
@@ -1606,19 +1643,44 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
     identical (`framesDiffering = 0`) and fails all three census bounds.
     - Late draws: `noteLateShrStore` folds a store after the beam captures its row
       into the displayed frame immediately. A late nonzero paints (MSpacMan's top
-      row stays complete), a late zero clears the frame's old sprite pixel. TimePilot's
-      cloud bytes are the exception: a late zero or opaque `0xFF` mask there is the
-      cloud layer/mask erasing behind the beam and stays captured; a coloured plane
-      pixel still paints. A blanket "leave every cloud byte alone" rule dropped the
-      plane pixels and made the aircraft flicker. The mask wrongly folded at all
+      row stays complete) and marks the byte; a late zero clears only that
+      late-painted byte, so an erase landing on captured background does not wipe
+      the captured layer. TimePilot's cloud bytes are the exception: a late zero
+      or opaque `0xFF` mask there is the cloud layer/mask erasing behind the beam
+      and stays captured; a coloured plane pixel still paints. A blanket "leave
+      every cloud byte alone" rule dropped the plane pixels and made the aircraft
+      flicker. The mask wrongly folded at all
       because `shrCapturedRows` was reset at beam line 0, so VBL stores still saw
       the previous frame as captured; reset at the refresh boundary (`beginShrFrame`)
       is what fixed the aircraft. Browser census (Chrome, fixed crop): before the
       boundary reset the player sprite drew only 8 plane pixels in two of 28
       gameplay frames and 33 in a third; after it the same 36 plane pixels
-      appeared in every one of 28.
-    - Regression: `gs_shr_late_store.test.ts` (late paint/erase, TimePilot cloud
-      zero and mask skip, MSpacMan scoping, and the refresh-boundary store case), §4.
+      appeared in every one of 28. The late-zero background rule fixed
+      Kernkompetenz's cube apex: offline frames 6140/6160 complete the cube where
+      the zero fold had flattened its top, and the marker is cleared per captured
+      row in `captureShrBeamLine()`.
+      The SCB table and palette table are folded whole as well: a late rewrite
+      landing there belongs to the displayed frame even though no pixel row flag
+      applies, because the VGC latches the SCB per line and the palette at the
+      frame's start. A stale control or palette byte can otherwise make an
+      otherwise-folded sprite invisible under load.
+    - Module-scope `lastShrFrame` and the uncapped timer are part of the same
+      fix: a per-callback `-1` fake boundary cleared the flags on every timer
+      jitter, and a speed-mode switch (`Ctrl+4` Fast) reset the video clock
+      without preserving that boundary until `doSetSpeedMode` used
+      `resetIigsVideoClock(true)`. The timer must run every overdue refresh; a
+      cap would be a frame drop, not a scheduling convenience.
+    - Regression: `gs_shr_late_store.test.ts` (late paint, background-preserving
+      zero, late-painted erase, TimePilot cloud zero and mask skip, MSpacMan
+      scoping, SCB/palette table folds, and the refresh-boundary store case),
+      `gs_timer_catchup.test.ts` (early/late/all-overdue/warp scheduling), §4.
+    - Browser verification (Chrome canvas clips, 14.3 MHz after Ctrl+4):
+      MSpacMan active gameplay captured 160 frames at 50 ms over the same maze
+      and character sprites — the posted picture kept 5822-5929 non-zero bytes on
+      every frame, with the top row and sprites intact. TimePilot GS enemy waves
+      under the same speed show yellow enemy aircraft in every sampled heavy
+      frame (player sprite and enemies both present). These are the exact scenes
+      the complaint named, not only synthetic buffer comparisons.
 17. **Stars & Planets (1990, Advanced Ideas) freezes — RESOLVED: the video
     counter's last six rows were one bank too high.** `stars & planets
     (1990)(advanced ideas).2mg` is a self-contained 800 KB GS/OS volume, so it

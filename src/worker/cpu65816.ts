@@ -170,6 +170,45 @@ export class CPU65816 implements ICPU {
         this.writeMemory = writeMemory;
     }
 
+    // The native core's registers and its mid-instruction bookkeeping are not
+    // part of the legacy s6502 state. Save/restore has to carry them explicitly
+    // or a GS state reloads with PC=0 and reboots over the SHR screen.
+    public getSaveState(): CPU65816SaveState {
+        return {
+            A: this.A, X: this.X, Y: this.Y, S: this.S, D: this.D,
+            PC: this.PC, PB: this.PB, DB: this.DB, P: this.P,
+            emulationMode: this.emulationMode,
+            enteredNativeMode: this.enteredNativeMode,
+            stopped: this.stopped, waiting: this.waiting,
+            irqPending: this.irqPending,
+            cycles: this.cycles, addrMode: this.addrMode,
+            addrCrossed: this.addrCrossed, blockMoveFirst: this.blockMoveFirst,
+            slot5Dp: this.slot5Dp ? { dp: this.slot5Dp.dp, bytes: this.slot5Dp.bytes.slice() } : null,
+        };
+    }
+
+    public setSaveState(state: CPU65816SaveState) {
+        this.A = state.A;
+        this.X = state.X;
+        this.Y = state.Y;
+        this.S = state.S;
+        this.D = state.D;
+        this.PC = state.PC;
+        this.PB = state.PB;
+        this.DB = state.DB;
+        this.P = state.P;
+        this.emulationMode = state.emulationMode;
+        this.enteredNativeMode = state.enteredNativeMode;
+        this.stopped = state.stopped;
+        this.waiting = state.waiting;
+        this.irqPending = state.irqPending;
+        this.cycles = state.cycles;
+        this.addrMode = state.addrMode;
+        this.addrCrossed = state.addrCrossed;
+        this.blockMoveFirst = state.blockMoveFirst;
+        this.slot5Dp = state.slot5Dp ? { dp: state.slot5Dp.dp, bytes: state.slot5Dp.bytes.slice() } : null;
+    }
+
     public setVectorReadCallback(cb: VectorReadCallback) {
         this.readVector = cb;
     }

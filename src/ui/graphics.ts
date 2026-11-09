@@ -602,8 +602,12 @@ let surroundLayerCache: { key: string, canvas: HTMLCanvasElement } | null = null
 const crtDistortedCanvas = document.createElement("canvas")
 const crtClippedCanvas = document.createElement("canvas")
 const crtOverrideFrameCanvas = document.createElement("canvas")
-const crtSourceWidth = 560
-const crtSourceHeight = 384
+// The distortion map has to be built for the geometry of the picture actually
+// drawn into the hidden canvas: 560x384 legacy output and 640x400 IIgs SHR are
+// both valid sources. A fixed 560x384 crop clipped the right 80 columns and
+// bottom 16 rows of SHR when CRT distortion was enabled.
+let crtDistortionSourceWidth = 0
+let crtDistortionSourceHeight = 0
 const crtOutsideSource = 0xFFFFFFFF
 let crtDistortionMap: Uint32Array | null = null
 let crtDistortionWeightX: Uint16Array | null = null
@@ -628,9 +632,10 @@ const loadMonitorOpeningMask = () => {
   image.src = window.assetRegistry.monitorOpeningMask
 }
 
-const getCrtDistortionMap = () => {
+const getCrtDistortionMap = (sourceWidth: number, sourceHeight: number) => {
   if (crtDistortionMap && crtDistortionWeightX && crtDistortionWeightY &&
-    crtDistortionEdgeSource && crtDistortionEdgeWeight) {
+    crtDistortionEdgeSource && crtDistortionEdgeWeight &&
+    crtDistortionSourceWidth === sourceWidth && crtDistortionSourceHeight === sourceHeight) {
     return {
       map: crtDistortionMap,
       weightX: crtDistortionWeightX,
@@ -639,43 +644,43 @@ const getCrtDistortionMap = () => {
       edgeWeight: crtDistortionEdgeWeight,
     }
   }
-  const map = new Uint32Array(crtSourceWidth * crtSourceHeight)
+  const map = new Uint32Array(sourceWidth * sourceHeight)
   const weightX = new Uint16Array(map.length)
   const weightY = new Uint16Array(map.length)
   const edgeSource = new Uint32Array(map.length)
   const edgeWeight = new Uint16Array(map.length)
-  const centerX = crtSourceWidth / 2
-  const centerY = crtSourceHeight / 2
-  for (let y = 0; y < crtSourceHeight; y++) {
+  const centerX = sourceWidth / 2
+  const centerY = sourceHeight / 2
+  for (let y = 0; y < sourceHeight; y++) {
     const normalizedY = (y - centerY) / centerY
-    for (let x = 0; x < crtSourceWidth; x++) {
+    for (let x = 0; x < sourceWidth; x++) {
       const normalizedX = (x - centerX) / centerX
       const distance = normalizedX * normalizedX + normalizedY * normalizedY
       const sourceX = centerX + normalizedX * centerX * (1 + 0.015 * distance)
       const sourceY = centerY + normalizedY * centerY * (1 + 0.04 * distance)
-      const index = y * crtSourceWidth + x
-      if (sourceX < 0 || sourceX >= crtSourceWidth || sourceY < 0 || sourceY >= crtSourceHeight) {
+      const index = y * sourceWidth + x
+      if (sourceX < 0 || sourceX >= sourceWidth || sourceY < 0 || sourceY >= sourceHeight) {
         map[index] = crtOutsideSource
-        const edgeX = Math.max(0, Math.min(crtSourceWidth - 1, Math.round(sourceX)))
-        const edgeY = Math.max(0, Math.min(crtSourceHeight - 1, Math.round(sourceY)))
+        const edgeX = Math.max(0, Math.min(sourceWidth - 1, Math.round(sourceX)))
+        const edgeY = Math.max(0, Math.min(sourceHeight - 1, Math.round(sourceY)))
         const coverageX = sourceX < 0
           ? Math.max(0, sourceX + 1)
-          : sourceX >= crtSourceWidth ? Math.max(0, crtSourceWidth - sourceX) : 1
+          : sourceX >= sourceWidth ? Math.max(0, sourceWidth - sourceX) : 1
         const coverageY = sourceY < 0
           ? Math.max(0, sourceY + 1)
-          : sourceY >= crtSourceHeight ? Math.max(0, crtSourceHeight - sourceY) : 1
-        edgeSource[index] = edgeY * crtSourceWidth + edgeX
+          : sourceY >= sourceHeight ? Math.max(0, sourceHeight - sourceY) : 1
+        edgeSource[index] = edgeY * sourceWidth + edgeX
         edgeWeight[index] = Math.round(coverageX * coverageY * 256)
       } else {
         const sourceFloorX = Math.floor(sourceX)
         const sourceFloorY = Math.floor(sourceY)
-        const sourceBaseX = Math.min(sourceFloorX, crtSourceWidth - 2)
-        const sourceBaseY = Math.min(sourceFloorY, crtSourceHeight - 2)
-        map[index] = sourceBaseY * crtSourceWidth + sourceBaseX
-        weightX[index] = sourceFloorX === crtSourceWidth - 1
+        const sourceBaseX = Math.min(sourceFloorX, sourceWidth - 2)
+        const sourceBaseY = Math.min(sourceFloorY, sourceHeight - 2)
+        map[index] = sourceBaseY * sourceWidth + sourceBaseX
+        weightX[index] = sourceFloorX === sourceWidth - 1
           ? 256
           : Math.round((sourceX - sourceFloorX) * 256)
-        weightY[index] = sourceFloorY === crtSourceHeight - 1
+        weightY[index] = sourceFloorY === sourceHeight - 1
           ? 256
           : Math.round((sourceY - sourceFloorY) * 256)
       }
@@ -686,6 +691,8 @@ const getCrtDistortionMap = () => {
   crtDistortionWeightY = weightY
   crtDistortionEdgeSource = edgeSource
   crtDistortionEdgeWeight = edgeWeight
+  crtDistortionSourceWidth = sourceWidth
+  crtDistortionSourceHeight = sourceHeight
   return { map, weightX, weightY, edgeSource, edgeWeight }
 }
 
@@ -697,13 +704,15 @@ const blendPixels = (first: number, second: number, weight: number) => {
   return (0xFF000000 | redBlue | green) >>> 0
 }
 
-const distortLayer = (source: HTMLCanvasElement, outsideColor: string | null) => {
+const distortLayer = (source: HTMLCanvasElement, outsideColor: string | null,
+  sourceWidth: number, sourceHeight: number) => {
   const sourceContext = source.getContext("2d", { willReadFrequently: true })!
-  const sourceData = sourceContext.getImageData(0, 0, crtSourceWidth, crtSourceHeight)
-  const distortedData = sourceContext.createImageData(crtSourceWidth, crtSourceHeight)
+  const sourceData = sourceContext.getImageData(0, 0, sourceWidth, sourceHeight)
+  const distortedData = sourceContext.createImageData(sourceWidth, sourceHeight)
   const sourcePixels = new Uint32Array(sourceData.data.buffer)
   const distortedPixels = new Uint32Array(distortedData.data.buffer)
-  const { map, weightX, weightY, edgeSource, edgeWeight } = getCrtDistortionMap()
+  const { map, weightX, weightY, edgeSource, edgeWeight } =
+    getCrtDistortionMap(sourceWidth, sourceHeight)
   const [outsideRed, outsideGreen, outsideBlue] =
     outsideColor?.match(/\d+/g)?.map(Number) ?? [0, 0, 0]
   const outsidePixel = (0xFF000000 | outsideBlue << 16 |
@@ -719,13 +728,13 @@ const distortLayer = (source: HTMLCanvasElement, outsideColor: string | null) =>
     } else {
       const xWeight = weightX[index]
       const yWeight = weightY[index]
-      const lowerIndex = sourceIndex + crtSourceWidth
+      const lowerIndex = sourceIndex + sourceWidth
       const top = blendPixels(sourcePixels[sourceIndex], sourcePixels[sourceIndex + 1], xWeight)
       const bottom = blendPixels(sourcePixels[lowerIndex], sourcePixels[lowerIndex + 1], xWeight)
       distortedPixels[index] = blendPixels(top, bottom, yWeight)
     }
   }
-  resizeWorkCanvas(crtDistortedCanvas, crtSourceWidth, crtSourceHeight)
+  resizeWorkCanvas(crtDistortedCanvas, sourceWidth, sourceHeight)
   crtDistortedCanvas.getContext("2d")!.putImageData(distortedData, 0, 0)
   return crtDistortedCanvas
 }
@@ -786,11 +795,14 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
     processTextPage(ctx, hiddenContext, colorMode, width, height, true, foreground, background)
   }
 
-  const hiddenData = hiddenContext.getImageData(0, 0, crtSourceWidth, crtSourceHeight)
+  const sourceWidth = hiddenWidth
+  const sourceHeight = hiddenHeight
+  const hiddenData = hiddenContext.getImageData(0, 0, sourceWidth, sourceHeight)
   replaceBlackPixels(hiddenData, background)
   hiddenContext.putImageData(hiddenData, 0, 0)
 
-  const distorted = distortLayer(hiddenContext.canvas, borderColor ?? background)
+  const distorted = distortLayer(hiddenContext.canvas, borderColor ?? background,
+    sourceWidth, sourceHeight)
 
   const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC &&
     document.fullscreenElement === null && !isCanvasOnlyTheme()

@@ -2293,7 +2293,20 @@ export const iigsShrScanlineAtBeam = (beamLine: number): boolean => {
 }
 
 const shrBeamFrame = new Uint8Array(0x8000)
+// Bytes in shrBeamFrame that a late non-zero store painted. A later late zero
+// may only erase one of those; a zero landing on a byte the beam captured as
+// background is an erase behind the beam and must leave the captured picture
+// alone. Otherwise a raster animation that erases its top band behind the beam
+// loses that band in our displayed frame - Kernkompetenz's cube loses its apex.
+const shrLatePainted = new Uint8Array(0x8000)
+// The last *finished* refresh. A timer callback can begin inside one refresh
+// and end inside the next, so the working frame above can hold the end of one
+// refresh with the start of another. Sealing the working frame at the boundary
+// and posting that completed picture keeps the torn capture out of the UI.
+// Nothing is dropped: every boundary seals the frame just finished.
+const shrCompleteFrame = new Uint8Array(0x8000)
 let shrBeamValid = false
+let shrCompleteValid = false
 // Rows already captured for this frame. A store reaching one of these rows
 // happens behind the beam: the capture will never see it again this frame.
 const shrCapturedRows = new Uint8Array(SHR_LINES)
@@ -2302,7 +2315,9 @@ const shrCapturedRows = new Uint8Array(SHR_LINES)
 // than from whatever the previous machine or session left behind.
 export const resetShrBeamFrame = () => {
   shrBeamValid = false
+  shrCompleteValid = false
   shrCapturedRows.fill(0)
+  shrLatePainted.fill(0)
 }
 
 // Called at the video refresh boundary, before VBL: the rows captured for the
@@ -2311,7 +2326,18 @@ export const resetShrBeamFrame = () => {
 // reaches line 0, and those stores would still see the old frame's rows marked
 // captured and be folded as late draws. That falsely folded TimePilot's mask
 // pass over the plane and erased it from the picture.
-export const beginShrFrame = () => { shrCapturedRows.fill(0) }
+export const beginShrFrame = () => {
+  // Seal the refresh that just ended before clearing its row flags. The run
+  // loop can start inside one refresh and stop inside the next, so the working
+  // buffer can hold the tail of one picture and the head of another; posting the
+  // sealed frame is what keeps that torn half-picture off the screen.
+  if (shrBeamValid) {
+    shrCompleteFrame.set(shrBeamFrame)
+    shrCompleteValid = true
+    shrBeamFrame.set(shrCompleteFrame)
+  }
+  shrCapturedRows.fill(0)
+}
 
 // Fold one linear run of the window into the frame. A run always starts on an
 // even offset, so under linearization it splits into two contiguous halves $4000
@@ -2354,6 +2380,9 @@ export const captureShrBeamLine = (beamLine: number): void => {
   const y1 = Math.min(SHR_LINES - 1,
     Math.max(y0, Math.floor(((beamLine + 1) * SHR_LINES) / SHR_BEAM_LINES) - 1))
   for (let y = y0; y <= y1; y++) {
+    // The beam is taking this row from memory, so the pixels before and after
+    // it are no longer late paint; let a following late erase apply to them.
+    shrLatePainted.fill(0, y * SHR_LINE_BYTES, (y + 1) * SHR_LINE_BYTES)
     captureShrRun(aux, y * SHR_LINE_BYTES, SHR_LINE_BYTES, linear)
     const scbOff = 0x7d00 + y
     shrBeamFrame[scbOff] = aux[linear ? iigsAuxLinearToPhys(0x9d00 + y) : 0x9d00 + y]
@@ -2406,7 +2435,18 @@ const hasTimepilotCloudPixel = (byte: number): boolean => {
 const noteLateShrStore = (cpuOffset: number, data: number): void => {
   if (!isIigsShrActive()) return
   const screenOff = cpuOffset - 0x2000
-  if (screenOff < 0 || screenOff >= 0x7d00) return
+  if (screenOff < 0 || screenOff >= 0x8000) return
+  // The SCB table and the palette table are latched along with the picture
+  // (SCB per line, palette at the start of the frame), so a late write there is
+  // not a late pixel draw and has no captured-row flag to consult. Leaving these
+  // bytes unfolded kept the displayed frame on a stale palette or fill bit: a
+  // guest that updates its palette or SCB dynamically under load could make a
+  // captured sprite invisible even though the pixel bytes were folded. Fold the
+  // whole table; only pixel bytes take part in the TimePilot cloud exception.
+  if (screenOff >= 0x7d00) {
+    shrBeamFrame[screenOff] = data
+    return
+  }
   const row = (screenOff / SHR_LINE_BYTES) | 0
   if (shrCapturedRows[row]) {
     const captured = shrBeamFrame[screenOff]
@@ -2426,6 +2466,16 @@ const noteLateShrStore = (cpuOffset: number, data: number): void => {
         hasTimepilotCloudPixel(captured) && (data === 0 || data === 0xff)) {
       return
     }
+    // A zero clears only a byte that a late nonzero painted; a zero landing on
+    // a background byte the beam already captured stays behind the beam.
+    if (data === 0) {
+      if (shrLatePainted[screenOff]) {
+        shrLatePainted[screenOff] = 0
+        shrBeamFrame[screenOff] = 0
+      }
+      return
+    }
+    shrLatePainted[screenOff] = 1
     shrBeamFrame[screenOff] = data
   }
 }
@@ -2435,6 +2485,13 @@ const noteLateShrStore = (cpuOffset: number, data: number): void => {
 // captured by a previous IIgs session cannot outlive the machine switch.
 export const getShrDisplayed = (): Uint8Array =>
   shrBeamValid && isIigsShrActive() ? shrBeamFrame.slice() : getShr()
+
+// What the run loop posts to the UI. Unlike the working capture above, this is
+// only replaced when a refresh ends, so it never mixes the tail of one refresh
+// with the head of the next. The working frame is still what tests and probes
+// inspect while a refresh is in progress; getShrDisplayed() keeps that meaning.
+export const getShrCompletedDisplay = (): Uint8Array =>
+  shrCompleteValid && isIigsShrActive() ? shrCompleteFrame.slice() : getShrDisplayed()
 
 // The 65816 ROM's live mouse position, as the guest sees it. ROM 01 publishes
 // it in the text-page screen holes ($047C/$057C = X, $04FC/$05FC = Y); ROM 03

@@ -4,8 +4,9 @@ import path, { resolve } from "node:path"
 import { doGetSaveState, doGoBackInTime, doRestoreSaveState, doSnapshot, getApple2State } from "./save_restore"
 import { setIsTesting } from "./worker2main"
 import { doSetEmuDriveNewData, getDriveSaveState } from "./devices/drivestate"
-import { getTextPage, memory } from "./memory"
-import { doBoot, doSetRunMode } from "./motherboard"
+import { getTextPage, iigsRegisters, megaIIAux, megaIIMain, memory } from "./memory"
+import { doBoot, doSetMachineName, doSetRunMode, getCPU } from "./motherboard"
+import type { CPU65816 } from "./cpu65816"
 import { RUN_MODE, SAVE_STATE_VERSION } from "../common/utility"
 import { processInstruction } from "./cpu6502"
 import { sendTextToEmulator } from "./devices/keyboard"
@@ -95,6 +96,63 @@ test.each(saveStates)("run Aztec %s", (filename) => {
   asciiText = asciiText.replaceAll(/\s+/g, " ").slice(0, 89) // Example slice, adjust as needed
   const want = " AZTEC A FEW WEEKS AGO A RUMOR SURFACED THAT PROFESSOR G. VON FORSTER , NOTED TOMB ROBBER"
   expect(asciiText).toBe(want)
+})
+
+test("65816 native registers survive save/restore", () => {
+  setIsTesting()
+  doSetMachineName("APPLE2GS", false, false)
+  const cpu = getCPU() as CPU65816
+  cpu.PC = 0x1234
+  cpu.PB = 0x12
+  cpu.DB = 0x34
+  cpu.A = 0x5678
+  cpu.P = 0xa0
+  cpu.emulationMode = false
+  cpu.enteredNativeMode = true
+  iigsRegisters[0x29] = 0x80
+  iigsRegisters[0x35] = 0x08
+  const sState = doGetSaveState(false)
+  expect(sState.state6502.cpu65816?.PC).toBe(0x1234)
+  expect(sState.state6502.iigsRegisters).toBeTruthy()
+  cpu.PC = 0
+  cpu.PB = 0
+  cpu.DB = 0
+  cpu.A = 0
+  iigsRegisters[0x29] = 0
+  iigsRegisters[0x35] = 0
+  doRestoreSaveState(sState, false, false, SAVE_STATE_VERSION)
+  const restored = getCPU() as CPU65816
+  expect(restored.PC).toBe(0x1234)
+  expect(restored.PB).toBe(0x12)
+  expect(restored.DB).toBe(0x34)
+  expect(restored.A).toBe(0x5678)
+  expect(iigsRegisters[0x29]).toBe(0x80)
+  expect(iigsRegisters[0x35]).toBe(0x08)
+  expect(restored.emulationMode).toBe(false)
+  expect(restored.enteredNativeMode).toBe(true)
+  // Leave the machine as the classic IIe for the following Aztec round trip.
+  doSetMachineName("APPLE2EE", false, false)
+})
+
+test("Mega II main and aux survive save/restore", () => {
+  setIsTesting()
+  megaIIAux.fill(0)
+  megaIIMain.fill(0)
+  megaIIAux[0x2000] = 0xaa
+  megaIIAux[0x7d00] = 0x80
+  megaIIMain[0x0400] = 0x55
+  const sState = doGetSaveState(false)
+  expect(sState.state6502.megaIIAux).toBe(Buffer.from(megaIIAux).toString("base64"))
+  expect(sState.state6502.megaIIMain).toBe(Buffer.from(megaIIMain).toString("base64"))
+  // Mangle before restoring: an SHR screen must come back from Mega II, not
+  // from the fast-RAM `memory` pages.
+  megaIIAux[0x2000] = 0
+  megaIIAux[0x7d00] = 0
+  megaIIMain[0x0400] = 0
+  doRestoreSaveState(sState, false, false, SAVE_STATE_VERSION)
+  expect(megaIIAux[0x2000]).toBe(0xaa)
+  expect(megaIIAux[0x7d00]).toBe(0x80)
+  expect(megaIIMain[0x0400]).toBe(0x55)
 })
 
 test("Current save/restore round trip", () => {
