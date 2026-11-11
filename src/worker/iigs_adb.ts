@@ -64,6 +64,14 @@ const RESPONSE_HEADER = 0x80;
 // desk-manager key sequence, bit 4 buffer flush, bit 3 service request valid,
 // bits 2-0 the response byte count minus one.
 const DATA_REPORT_DESKTOP_MANAGER = 0x20;
+// Bit 3 of the $C026 interrupt-time report: a valid ADB service request is
+// pending.  The ROM's IRQ dispatcher (FF:BE5A in ROM 01) saves DATAREG, tests
+// bit 3 with `AND #$08`, and calls IRQ_SRQ, which is how the ROM handles a
+// keyboard that has disabled auto-polling (XRick's own ADB driver, Wolf3D).
+// Without this report a queued keyboard byte is visible through $C027 bit 3
+// but no interrupt ever asserts: the keyboard interrupt-enable bit 2 is not
+// set in SRQ mode, so the request sits in the device register forever.
+const DATA_REPORT_SERVICE_REQUEST = 0x08;
 
 // $C025 modifiers. Layout from gssquared's adb_mod_key_t (ADB_Keyboard.hpp:6):
 // bit0 shift, bit1 control, bit2 caps lock, bit3 auto-repeat, bit4 keypad, bit5
@@ -156,6 +164,10 @@ const ADDR_KEYBOARD = 0x02;
 const ADDR_MOUSE = 0x03;
 // ADB micro-controller mode bits (set by $04, cleared by $05, set by $07 synch).
 // KEGs's adb_set_new_mode() prints "Disabling keyboard/mouse" for both.
+// gssquared calls bit 0's mask `keyboard_auto_poll_enabled` (ADB_Micro.hpp:25),
+// but `process_event()` takes the SRQ branch when the bit is set
+// (ADB_Micro.hpp:983), matching this name: the reference's mask name is a
+// misnomer, as its own "auto-poll is disabled" comment says. XRick sets it.
 export const ADB_MODE_KBD_AUTOPOLL_OFF = 0x01;
 export const ADB_MODE_MOUSE_OFF = 0x02;
 
@@ -444,9 +456,28 @@ export class IIGSADB {
       case 0x0f:                          // layouts available
         this.postResponse([1, 0]);
         break;
-      case 0x11:                          // send an FDB keycode: raw event byte
-        this.queueKeyboard(a1);
-        break;
+      case 0x11:                          // send an FDB keycode: echo a key
+        // A guest that has taken over the ADB keyboard hands the event back
+        // through this command (XRick's SRQ completion routine does exactly
+        // that).  It goes into the micro's own key latch, not the service
+        // request report: only a real host event advertises the report, and
+        // treating the echo as another event makes the driver re-inject its
+        // own key forever.  gssquared ADB_Micro.hpp:603/608 does the same -
+        // store_key_to_buffer() there never touches send_data_register.
+        //
+        // The latch carries the mapped Apple II ASCII with the key-present bit,
+        // not the raw FDB keycode: gssquared maps `cmd[1]` through
+        // map_key(lang, keycode, empty modifiers) before store_key_to_buffer()
+        // and that helper sets `keycode | 0x80` (ADB_Micro.hpp:700). For K,
+        // $28 maps to lowercase 'k' ($6B) and the latch is $EB. An unmapped
+        // keycode becomes $80 (no ASCII, only "a key is present").
+        {
+          const keycode = a1 & 0x7f;
+          const keypad = keycode >= 0x43 && keycode <= 0x5c ? 0x10 : 0
+          this.keyboardRegs[0] = (adbKeycodeToAscii(keycode, 0) | 0x80) & 0xff;
+          this.keyboardRegs[1] = keypad;
+          break;
+        }
     }
   }
 
@@ -707,6 +738,26 @@ export class IIGSADB {
     return this.keyboardRegs[0] !== 0xff || this.keyboardRegs[1] !== 0xff;
   }
 
+  // A key event while the micro-controller has disabled keyboard auto-polling
+  // has to be advertised as an ADB service request.  The XRick/Wolf3D driver
+  // sends $04,$01 to setModes and relies on the keyboard's own SRQ path, never
+  // on the ROM polling the keyboard device: gssquared's ADB_Micro::process_event
+  // (line 983) sets service_request_valid/data_register_full/send_data_register.
+  // The $C027 keyboard interrupt-enable bit (2) is not set in that mode, so
+  // without this data-register report the queued key is visible through $C027
+  // bit 3 (kb_register_full) but interruptPending() stays false and the guest
+  // never receives it.  The report's bit 3 is exactly what the ROM's IRQ
+  // dispatcher at FF:BE5A tests (`LDA DATAREG / AND #$08`) before calling IRQ_SRQ.
+  private latchServiceRequest() {
+    if ((this.modes & ADB_MODE_KBD_AUTOPOLL_OFF) === 0) return
+    // Preserve a pending desk-manager report instead of dropping it: the ROM
+    // handles both bits separately.  The byte count bits are 0 ("status byte,
+    // no response bytes) as gssquared leaves response_bytes at zero here.
+    this.reportByte = this.reportByte === DATA_REPORT_DESKTOP_MANAGER
+      ? DATA_REPORT_DESKTOP_MANAGER | DATA_REPORT_SERVICE_REQUEST
+      : DATA_REPORT_SERVICE_REQUEST;
+  }
+
   // Queue one ADB keyboard event byte into register 0, with the live modifier
   // byte beside it. The event byte's bit 7 is the KEY-UP flag per the Apple IIgs
   // Hardware Reference and gssquared (ADB_Keyboard.hpp:477:
@@ -723,6 +774,10 @@ export class IIGSADB {
   //
   // Returns true when the micro consumed the event for its own report, in which
   // case the caller must not drive the legacy keyboard latch either.
+  //
+  // The $11 "send FDB keycode" controller command is the guest's echo, not a
+  // host event: it writes keyboardRegs directly (see the $11 case) and never
+  // calls this, so only a host event advertises an ADB service request.
   queueKeyboard(eventByte: number): boolean {
     const keycode = eventByte & 0x7f
     if (keycode === 0x39) {
@@ -738,6 +793,14 @@ export class IIGSADB {
           ? this.modifiers | MOD_CAPS
           : this.modifiers & ~MOD_CAPS) | MOD_LATCH
       }
+      // Caps Lock still has to reach an SRQ driver's completion routine: the
+      // micro's keyboard register carries the event byte even though the
+      // legacy $C000 feeder suppresses the modifier.  No legacy strobe is
+      // driven here because that would clear the any-key-down line for the
+      // key actually being held under a chord.
+      this.keyboardRegs[0] = eventByte & 0xff
+      this.keyboardRegs[1] = this.modifiers
+      this.latchServiceRequest()
       return true
     }
     const bit = MODIFIER_KEY_BITS[keycode]
@@ -760,6 +823,7 @@ export class IIGSADB {
     }
     this.keyboardRegs[0] = eventByte & 0xff;
     this.keyboardRegs[1] = this.modifiers;
+    this.latchServiceRequest();
     return false;
   }
 

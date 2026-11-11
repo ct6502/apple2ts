@@ -12,7 +12,7 @@
 
 import { doSetMachineName } from "./motherboard"
 import { setKeyboardState } from "./devices/keyboard"
-import { iigsADB } from "./iigs_adb"
+import { iigsADB, ADB_MODE_KBD_AUTOPOLL_OFF } from "./iigs_adb"
 import { memGetC000 } from "./memory"
 
 // $C025 bit assignments (gssquared adb_mod_key_t ADB_Keyboard.hpp:6).
@@ -24,6 +24,19 @@ const MOD_CAPS = 0x04
 const MOD_LATCH = 0x20
 const MOD_CLOSED = 0x40
 const MOD_OPEN = 0x80
+
+// $C027: bit 5 data register full, bit 4 data interrupt enable, bit 3 keyboard
+// data available. The data interrupt's report byte carries bit 3 as "service
+// request valid" - both status bit 3 and report bit 3 are 0x08.
+const STATUS_DATA_AVAILABLE = 0x20
+const STATUS_KEYBOARD_DATA = 0x08
+const STATUS_DATA_INTERRUPT = 0x10
+const REPORT_SERVICE_REQUEST = 0x08
+
+const enableAdbSrqMode = () => {
+  iigsADB.writeCommand(0x04) // set modes
+  iigsADB.writeCommand(ADB_MODE_KBD_AUTOPOLL_OFF)
+}
 
 beforeEach(() => {
   doSetMachineName("APPLE2GS")
@@ -161,4 +174,75 @@ test("the Apple IIe path still uses the $C000 softswitch", () => {
 test("an unknown DOM code is not delivered and does not throw", () => {
   setKeyboardState({ key: 32, isDown: true, repeat: false, domCode: "F13" })
   expect(iigsADB.hasKeyData()).toBe(false)
+})
+
+test("an SRQ-mode host key latches the data-interrupt service request report", () => {
+  // XRick/Wolf3D's driver turns keyboard auto-poll off ($04,$01) and installs
+  // an SRQ completion routine. The keyboard interrupt enable (bit 2) is not set
+  // in that mode; the data interrupt (bit 4) is what carries the key. Its report
+  // byte's bit 3 is the service-request-valid bit the ROM's IRQ dispatcher tests
+  // before calling IRQ_SRQ, so the key must latch a report, not just fill the
+  // keyboard register.
+  iigsADB.writeStatus(STATUS_DATA_INTERRUPT)
+  enableAdbSrqMode()
+  setKeyboardState({ key: 97, isDown: true, repeat: false, domCode: "KeyA" })
+
+  expect(iigsADB.getKeyboardEvent()[0]).toBe(0x00) // ADB_Keyboard keycode for A
+  expect(iigsADB.readStatus() & STATUS_DATA_AVAILABLE).toBe(STATUS_DATA_AVAILABLE)
+  expect(iigsADB.interruptPending()).toBe(true)
+  expect(iigsADB.readData()).toBe(REPORT_SERVICE_REQUEST)
+  expect(iigsADB.readStatus() & STATUS_DATA_AVAILABLE).toBe(0)
+  expect(iigsADB.interruptPending()).toBe(false)
+})
+
+test("without SRQ mode a host key makes no data report", () => {
+  // The ordinary GS/OS/ROM path leaves auto-poll on, so the key stays in the
+  // keyboard register for the ROM's polling task and raises no service request.
+  // Without this distinction the fix would inject every ordinary key into a
+  // data register that no one has enabled.
+  iigsADB.writeStatus(STATUS_DATA_INTERRUPT)
+  setKeyboardState({ key: 97, isDown: true, repeat: false, domCode: "KeyA" })
+
+  expect(iigsADB.hasKeyData()).toBe(true)
+  expect(iigsADB.readStatus() & STATUS_DATA_AVAILABLE).toBe(0)
+  expect(iigsADB.interruptPending()).toBe(false)
+  expect(iigsADB.readData()).toBe(0x00)
+})
+
+test("a guest $11 echo writes the key latch without latching another report", () => {
+  // XRick's SRQ completion routine receives the key bytes and forwards them back
+  // to the micro with $11 "send FDB keycode". That is an echo into the micro's
+  // own latch, not a fresh host event: re-latching the service request here
+  // makes the driver interrupt itself forever. gssquared's
+  // store_key_to_buffer() (ADB_Micro.hpp:698/608) does not touch
+  // send_data_register, and its $11 path maps the raw keycode through
+  // map_key() first (ADB_Micro.hpp:608): $28 (K) becomes ASCII 'k' ($6B) with
+  // the key-present bit, so the latch is $EB.
+  iigsADB.writeStatus(STATUS_DATA_INTERRUPT)
+  enableAdbSrqMode()
+  iigsADB.writeCommand(0x11)
+  iigsADB.writeCommand(0x28) // the raw K keycode the guest echoed
+
+  expect(iigsADB.getKeyboardEvent()[0]).toBe(0xeb)
+  expect(iigsADB.getKeyboardEvent()[1]).toBe(0) // K is not in the keypad range
+  expect(iigsADB.readStatus() & STATUS_KEYBOARD_DATA).toBe(STATUS_KEYBOARD_DATA)
+  expect(iigsADB.readStatus() & STATUS_DATA_AVAILABLE).toBe(0)
+  expect(iigsADB.interruptPending()).toBe(false)
+  expect(iigsADB.readData()).toBe(0x00)
+})
+
+test("a guest $11 echo keeps the keypad flag for keypad keycodes", () => {
+  // gssquared's $11 sets the keypad flag for raw keycodes in $43-$5C
+  // (ADB_Micro.hpp:605) and stores it in the modifier byte, so a keypad key
+  // reaches $C025 bit 4. K is outside that range, hence the 0 above.
+  iigsADB.writeStatus(STATUS_DATA_INTERRUPT)
+  enableAdbSrqMode()
+  iigsADB.writeCommand(0x11)
+  iigsADB.writeCommand(0x50) // keypad keycode in $43-$5C
+
+  expect(iigsADB.getKeyboardEvent()[1]).toBe(0x10)
+  expect(iigsADB.readStatus() & STATUS_KEYBOARD_DATA).toBe(STATUS_KEYBOARD_DATA)
+  expect(iigsADB.readStatus() & STATUS_DATA_AVAILABLE).toBe(0)
+  expect(iigsADB.interruptPending()).toBe(false)
+  expect(iigsADB.readData()).toBe(0x00)
 })

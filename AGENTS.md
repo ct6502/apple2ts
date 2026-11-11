@@ -91,6 +91,12 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   in the real-time browser loop.
 - **Peripheral hooks**: `specialJumpTable[$C7C0]` / `[$C7C3]` are checked before
   the opcode fetch in bank 00, syncing A/X/Y/S/P with `s6502`.
+- **Absolute-indirect pointer bank**: `JMP (abs)` (`$6C`) fetches its 16-bit
+  operand from the instruction's bank, but reads the target word itself from
+  bank `$00`, not from PB. Reading the pointer through PB sent execution into
+  bank `$11`'s data buffer and drove it into a BRK/COP there (XRick's interrupt
+  code). `addrAbsoluteIndirect()` therefore uses the 16-bit bank-0 address,
+  matching gssquared's `OP_JMP_IND`. Regression: `gs_jmp_indirect.test.ts`.
 
 ---
 
@@ -635,6 +641,41 @@ latch starts at `$FF,$FF` (zeros read as a keypress). Commands `$04`/`$05`
 (modes) and `$06` (config, bytes = `mouse_ctl << 4 | kbd_ctl`) change whether
 motion is reported at all — KEGS drops `$C024` and the mouse IRQ when
 `modes & 0x02` or the device/controller addresses disagree.
+
+**Keyboard auto-poll off means SRQ mode.** Bit 0 of the modes byte
+(`ADB_MODE_KBD_AUTOPOLL_OFF`) is what XRick/Wolf3D's ADB driver sets with
+`$04,$01` before installing a `_SRQPoll` completion routine. gssquared calls the
+mask `keyboard_auto_poll_enabled` (`ADB_Micro.hpp:25`) although its
+`process_event` comment says auto-poll is disabled and it branches into SRQ when
+the bit is set; the reference's mask name is a misnomer. In that mode the
+ROM's keyboard interrupt enable (`$C027` bit 2) is not what carries a key: a
+host key event must instead latch the micro's data-register report with bit 3
+("service request valid", `DATA_REPORT_SERVICE_REQUEST`) so the report byte is
+`$08`; the data interrupt enable (`$C027` bit 4) then raises the interrupt and
+the ROM dispatcher (`FF:BE5A` in ROM 01's area) calls its SRQ service. Without
+the report the key is only visible through `$C027` bit 3 and no interrupt ever
+asserts. The report's byte-count field stays 0 (status byte, no response bytes),
+as gssquared's `read_data_register()` leaves `response_bytes` at zero for this
+path. A host key up latches the same report; the auto-repeat guard above still
+applies. Regression: `gs_keyboard_adb.test.ts` ("an SRQ-mode host key latches
+the data-interrupt service request report" and "without SRQ mode a host key
+makes no data report").
+
+**`$11` ("send FDB keycode") is an echo of a key, not a new host event.** A
+driver that has received a key through SRQ hands it back to the micro with
+`$11` (XRick's `PassADBKeyIfOk` does this). That writes the micro's own key
+latch but must **not** latch another service-request report: doing so makes the
+completion routine interrupt itself forever, which is the XRick/Wolf3D key loop.
+gssquared `store_key_to_buffer()` (`ADB_Micro.hpp:698/608`) writes `key_latch`
+and leaves `send_data_register` alone. The latch holds a mapped Apple II ASCII
+byte plus the key-present bit, not the raw FDB keycode: `$11` runs the keycode
+through `map_key(lang, code, empty modifiers)` before storing it, so K `$28`
+becomes `'k' | $80 = $EB`; an unmapped keycode becomes `$80` (present, no ASCII).
+The modifier byte beside it carries the keypad flag (`0x10`) for raw keycodes
+`$43-$5C` (gssquared `ADB_Micro.hpp:605`), not the live modifiers. Regression:
+`gs_keyboard_adb.test.ts` ("a guest `$11` echo writes the key latch without
+latching another report", "a guest `$11` echo keeps the keypad flag for keypad
+keycodes").
 
 **Mouse report layout** (gssquared `ADB_Mouse.hpp`, KEGS `adb.c:1557`):
 

@@ -1801,8 +1801,12 @@ export class CPU65816 implements ICPU {
     protected addrAbsoluteIndirect(): number {
         this.addrMode = ADDR_MODE_816.ABSOLUTE_INDIRECT
         const ptr = this.fetch16();
-        const lo = this.read8((this.PB << 16) | ptr);
-        const hi = this.read8((this.PB << 16) | ((ptr + 1) & 0xFFFF));
+        // JMP/JSRL (absolute indirect): fetch the pointer operand from the
+        // instruction's bank, but always read the 16-bit target from bank $00.
+        // Reading the pointer through PB sent execution into bank $11's data
+        // buffer and drove it into a BRK/COP there.
+        const lo = this.read8(ptr);
+        const hi = this.read8((ptr + 1) & 0xFFFF);
         return lo | (hi << 8);
     }
 
