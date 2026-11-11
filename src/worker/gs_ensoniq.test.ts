@@ -7,7 +7,7 @@
 // and check both the register plumbing and that the synthesizer produces
 // non-silent PCM.
 
-import { doSetMachineName } from "./motherboard"
+import { doSetMachineName, ensoniqCatchUp, setIigsVideoClockForTesting } from "./motherboard"
 import { memSet24, memGet24 } from "./memory"
 import { iigsEnsoniq, ensoniqDocRam } from "./devices/iigs_ensoniq"
 
@@ -312,4 +312,117 @@ test("reading $E0 acknowledges a pending oscillator interrupt", () => {
   const e0 = readReg(0xe0)
   expect(e0 & 0x41).toBe(0x41)
   expect(iigsEnsoniq.irqPending()).toBe(false)
+})
+
+// gssquared ensoniq.cpp CPU-written halt: when the write has halt bit 0 and
+// bit 1 set, halt_osc() runs with the old (playing) control before the write is
+// applied. A type 0 halt only pend an IRQ if the *new* control has bit 3 set.
+test("a CPU-written halt runs halt_osc and pends only when the new IRQ bit is set", () => {
+  writeReg(0x00, 0x40)   // oscillator 0 plays at a real frequency
+  writeReg(0x20, 0x00)
+  writeReg(0xa0, 0x08)   // free-run + IRQ enable (halt bit clear)
+  expect(iigsEnsoniq.oscillators[0].control).toBe(0x08)
+
+  writeReg(0xa0, 0x0b)   // halt bit + bit 1, IRQ still enabled
+  expect(iigsEnsoniq.oscillators[0].control & 1).toBe(1)
+  expect(iigsEnsoniq.hasActiveOscillators()).toBe(false)
+  expect(iigsEnsoniq.irqPending()).toBe(true)
+  expect(iigsEnsoniq.haltCount).toBe(1)
+
+  // Same CPU halt with the new IRQ bit clear must not leave an IRQ pending.
+  iigsEnsoniq.reset()
+  writeReg(0x00, 0x40)
+  writeReg(0x20, 0x00)
+  writeReg(0xa0, 0x08)
+  writeReg(0xa0, 0x03)   // halt bit + bit 1, IRQ bit 3 clear
+  expect(iigsEnsoniq.hasActiveOscillators()).toBe(false)
+  expect(iigsEnsoniq.irqPending()).toBe(false)
+})
+
+// Swap mode is 11: halt_osc() starts the odd partner (clears its halt bit and
+// zeroes its accumulator) before the CPU's new control value lands.
+test("a swap-mode CPU halt starts the partner oscillator", () => {
+  writeReg(0x00, 0x40)   // oscillator 0 frequency
+  writeReg(0x20, 0x00)
+  writeReg(0x01, 0x40)   // oscillator 1 frequency
+  writeReg(0x21, 0x00)
+  writeReg(0xa1, 0x01)   // park the partner halted
+  writeReg(0xa0, 0x06)   // swap mode, halt bit clear
+  expect(iigsEnsoniq.oscillators[0].control & 1).toBe(0)
+  expect(iigsEnsoniq.oscillators[1].control & 1).toBe(1)
+
+  writeReg(0xa0, 0x03)   // CPU halt: bit 0 and bit 1, old control in swap mode
+  expect(iigsEnsoniq.oscillators[0].control & 1).toBe(1)
+  expect(iigsEnsoniq.oscillators[1].control & 1).toBe(0)
+  expect(iigsEnsoniq.oscillators[1].accumulator).toBe(0)
+})
+
+// gssquared assigns the entire wave-table pointer from $80+n (data << 8), so
+// the bank bit 16 that $C0+n owns cannot survive a register-mode pointer write.
+test("writing $80 clears the wave-table pointer bank bit", () => {
+  writeReg(0x80, 0x20)          // pointer $2000
+  writeReg(0xc0, 0x40)          // $C0 bit 6 sets pointer bit 16
+  expect(readReg(0xc0) & 0x40).toBe(0x40)
+  expect(iigsEnsoniq.oscillators[0].wavetblpointer).toBe(0x12000)
+
+  writeReg(0x80, 0x20)          // same page byte: pointer becomes $2000 again
+  expect(iigsEnsoniq.oscillators[0].wavetblpointer).toBe(0x2000)
+  expect(readReg(0x80)).toBe(0x20)
+  expect(readReg(0xc0) & 0x40).toBe(0)
+})
+
+// The sample clock is catch-up-based, not per refresh. A register-mode $E1 write
+// changes the output rate mid-refresh; samples generated before it must keep
+// their old rate, and the remainder must be labelled with the new rate. The
+// real bug was relabelling the whole block with whichever rate was current at
+// the refresh boundary, which sped/slowed the already-rendered segment.
+test("an $E1 rate change splits the refresh block into old-rate and new-rate segments", () => {
+  const blocks: Array<{ rate: number, frames: number }> = []
+  const w2m = require("./worker2main")
+  const original = w2m.passEnsoniqSound
+  w2m.passEnsoniqSound = (samples: Int16Array, rate: number) => {
+    blocks.push({ rate, frames: samples.length / 2 })
+  }
+
+  try {
+    setIigsVideoClockForTesting(0)
+    ensoniqCatchUp()               // start refresh 0 (osce 1)
+    writeReg(0xe1, 0x3e)           // 32 oscillators -> rate 26320
+    setIigsVideoClockForTesting(23363)  // 46727-cycle refresh, halfway
+    ensoniqCatchUp()
+    writeReg(0xe1, 0x02)           // 2 oscillators -> rate 223721
+    setIigsVideoClockForTesting(46727)  // refresh boundary
+    ensoniqCatchUp()               // finishes refresh 0 and posts its segments
+  } finally {
+    w2m.passEnsoniqSound = original
+  }
+
+  expect(blocks.length).toBe(2)
+  expect(blocks[0].rate).toBe(26320)
+  expect(blocks[0].frames).toBe(219)
+  expect(blocks[1].rate).toBe(223721)
+  expect(blocks[1].frames).toBe(1864)
+  expect(blocks[0].frames + blocks[1].frames).toBe(2083)
+})
+
+// gssquared calls ensoniq_catch_up() before applying any $C03C-$C03F access, so
+// samples due before the access are rendered with the old register state. The
+// run-loop integration is only one caller; the device methods have to catch up
+// themselves or a write performed inside an instruction becomes audible early.
+test("a DOC write catches up before applying the new register value", () => {
+  iigsEnsoniq.writeDoc(0x00, 0x07)  // current oscillator 0 frequency = 7
+  const original = iigsEnsoniq.docAccessCatchUp
+  let observedFrequency = -1
+  iigsEnsoniq.docAccessCatchUp = () => {
+    // Runs before writeData applies $C03D; this must still be the old value.
+    observedFrequency = iigsEnsoniq.oscillators[0].freq
+    original?.()
+  }
+  try {
+    writeReg(0x00, 0x40)  // register-mode data write to frequency low byte
+  } finally {
+    iigsEnsoniq.docAccessCatchUp = original
+  }
+  expect(observedFrequency).toBe(7)
+  expect(iigsEnsoniq.oscillators[0].freq).toBe(0x40)
 })

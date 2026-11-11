@@ -149,9 +149,30 @@ let iigsVideoClock = 0
 // block), so SenseiPlay's NTP player ran its timer oscillator at ~76 Hz instead
 // of 50 Hz — everything 1.5x too fast with correct pitch.
 let ensoniqRefreshId = -1
+// Total DOC frames generated for the current refresh block. A rate change
+// ($E1 write) starts a new segment at this cursor, so the block is posted as a
+// sequence of rate-labelled segments rather than relabelled at the wrong rate.
 let ensoniqOutCursor = 0
-let ensoniqSamplesPerRefresh = 0
+// DOC frames at the start of the current rate segment, plus the refresh
+// fraction at which that segment began. `rate` is frames per DOC second.
+interface DocRateSegment {
+  startCursor: number
+  endCursor: number
+  rate: number
+}
+interface DocActiveSegment {
+  startCursor: number
+  startFraction: number
+  rate: number
+}
+let ensoniqSegments: DocRateSegment[] = []
+let ensoniqActiveSegment: DocActiveSegment | null = null
 let ensoniqScratch = new Int16Array(2048 * 2)
+// Catch-up may be entered recursively from a DOC access made inside a halt IRQ
+// callback (that callback may program registers from the run loop's generate
+// call). Guard it, and defer an $E1 rate re-base until generation finishes.
+let ensoniqCatchUpBusy = false
+let ensoniqRebasePending = false
 
 export const getIigsVideoClock = () => iigsVideoClock
 // Test-only readback of the SHR captured-row boundary. Production code only
@@ -182,7 +203,11 @@ export const resetIigsVideoClock = (preserveShrFrame = false) => {
   // with it (boot, Ctrl-Reset and speed-mode changes all reset the clock).
   ensoniqRefreshId = -1
   ensoniqOutCursor = 0
-  ensoniqSamplesPerRefresh = 0
+  ensoniqSegments = []
+  ensoniqActiveSegment = null
+  ensoniqScratch.fill(0)
+  ensoniqCatchUpBusy = false
+  ensoniqRebasePending = false
 }
 // $C02E/$C02F are a pure function of this clock, so pinning the frame layout the
 // CPU sees means being able to place the beam at a chosen position in a refresh.
@@ -194,6 +219,149 @@ let showDebugTab = false
 let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 export const getCpuCyclesPerRefresh = () => cpuCyclesPerRefresh
+
+// ---- Ensoniq DOC catch-up (shared by the run loop and every DOC access) ----
+// gssquared calls ensoniq_catch_up() before applying any $C03C-$C03F access,
+// on its periodic cycle handler and at frame end. A DOC write therefore has
+// all earlier samples rendered with the old register state. Our old run-loop
+// call ran only after the instruction that performed the write, so those
+// samples were generated with the new state instead.
+//
+// Each refresh block is posted as one or more rate-labelled segments. A rate
+// change ($E1 write) ends the active segment and starts a new one at the
+// current refresh fraction, so the frames already generated are never relabelled
+// at the new output rate. gssquared drops the fractional catch-up remainder on
+// $E1 and re-anchors time at the new rate; this is the same re-base, with the
+// already-rendered samples kept for the frame block.
+const ensoniqEnsureScratch = (frames: number) => {
+  const needed = frames * 2
+  if (needed <= ensoniqScratch.length) return
+  const next = new Int16Array(needed)
+  const copySamples = Math.min(ensoniqOutCursor * 2, ensoniqScratch.length)
+  next.set(ensoniqScratch.subarray(0, copySamples))
+  ensoniqScratch = next
+}
+
+const ensoniqGenChunk = (endSample: number) => {
+  const n = endSample - ensoniqOutCursor
+  if (n <= 0) return
+  ensoniqEnsureScratch(endSample)
+  iigsEnsoniq.lastCyc = s6502.cycleCount
+  iigsEnsoniq.lastCyclesPerRefresh = cpuCyclesPerRefresh
+  iigsEnsoniq.lastSpeedMode = speedMode
+  iigsEnsoniq.generateSamples(n, ensoniqScratch.subarray(ensoniqOutCursor * 2, endSample * 2))
+  ensoniqOutCursor = endSample
+}
+
+const ensoniqPostSegments = () => {
+  for (const segment of ensoniqSegments) {
+    if (segment.endCursor <= segment.startCursor) continue
+    // Never relabel a segment with whatever rate happens to be current now:
+    // the segment was generated at segment.rate and its duration is frames/rate.
+    passEnsoniqSound(
+      ensoniqScratch.subarray(segment.startCursor * 2, segment.endCursor * 2),
+      segment.rate,
+    )
+  }
+  ensoniqSegments = []
+}
+
+const ensoniqFinishRefreshBlock = () => {
+  if (ensoniqRefreshId < 0 || !ensoniqActiveSegment) return
+  const active = ensoniqActiveSegment
+  // Finish the active segment at the refresh boundary (fraction 1). Intermediate
+  // catch-ups used floor() per elapsed fraction; the boundary uses round() so
+  // a stable-rate refresh posts exactly round(rate / 60) frames, 439 at osce=32.
+  const endCursor = active.startCursor +
+    Math.round(active.rate * (1 - active.startFraction) / 60)
+  ensoniqGenChunk(endCursor)
+  ensoniqSegments.push({
+    startCursor: active.startCursor,
+    endCursor: ensoniqOutCursor,
+    rate: active.rate,
+  })
+  ensoniqPostSegments()
+}
+
+const ensoniqStartRefreshBlock = () => {
+  const rate = iigsEnsoniq.outputRate()
+  ensoniqActiveSegment = { startCursor: 0, startFraction: 0, rate }
+  ensoniqEnsureScratch(Math.max(1, Math.round(rate / 60)))
+  ensoniqScratch.fill(0)
+}
+
+const ensoniqRebaseRateNow = () => {
+  if (!ensoniqActiveSegment) return
+  const frameCycles = Math.max(1, cpuCyclesPerRefresh)
+  const fraction = (iigsVideoClock % frameCycles) / frameCycles
+  const active = ensoniqActiveSegment
+  // End the old-rate segment at the frames already rendered. This keeps the
+  // pre-$E1 samples at their old rate; the new segment starts here with the new
+  // rate and runs to the refresh boundary.
+  if (ensoniqOutCursor > active.startCursor) {
+    ensoniqSegments.push({
+      startCursor: active.startCursor,
+      endCursor: ensoniqOutCursor,
+      rate: active.rate,
+    })
+  }
+  const nextActive = {
+    startCursor: ensoniqOutCursor,
+    startFraction: fraction,
+    rate: iigsEnsoniq.outputRate(),
+  }
+  ensoniqActiveSegment = nextActive
+  const expectedEnd = ensoniqOutCursor +
+    Math.round(nextActive.rate * (1 - fraction) / 60)
+  ensoniqEnsureScratch(expectedEnd)
+}
+
+export function ensoniqCatchUp() {
+  if (ensoniqCatchUpBusy) return
+  ensoniqCatchUpBusy = true
+  try {
+    const frameCycles = Math.max(1, cpuCyclesPerRefresh)
+    // Video-clock position, not cycleCount: the DOC's sample clock is hardware
+    // time, so a $C036 slow-mode flip must not move it.
+    const refreshId = Math.floor(iigsVideoClock / frameCycles)
+    if (refreshId !== ensoniqRefreshId) {
+      // Complete the elapsed refresh, post its rate-labelled segments, then
+      // start the new block at the new boundary.
+      if (ensoniqRefreshId >= 0) ensoniqFinishRefreshBlock()
+      ensoniqRefreshId = refreshId
+      ensoniqOutCursor = 0
+      ensoniqSegments = []
+      ensoniqStartRefreshBlock()
+    }
+    if (!ensoniqActiveSegment) {
+      ensoniqActiveSegment = { startCursor: 0, startFraction: 0, rate: iigsEnsoniq.outputRate() }
+    }
+    const fraction = (iigsVideoClock % frameCycles) / frameCycles
+    const active = ensoniqActiveSegment
+    const due = active.startCursor +
+      Math.floor(active.rate * (fraction - active.startFraction) / 60)
+    if (due > ensoniqOutCursor) ensoniqGenChunk(due)
+  } finally {
+    ensoniqCatchUpBusy = false
+    if (ensoniqRebasePending) {
+      ensoniqRebasePending = false
+      ensoniqRebaseRateNow()
+    }
+  }
+}
+
+export function ensoniqRebaseAfterRateChange() {
+  if (ensoniqCatchUpBusy) {
+    ensoniqRebasePending = true
+    return
+  }
+  ensoniqRebaseRateNow()
+}
+
+// Module-level registration: DOC device methods call these before applying a
+// write and after a register-mode $E1 write.
+iigsEnsoniq.docAccessCatchUp = ensoniqCatchUp
+iigsEnsoniq.docRateRebase = ensoniqRebaseAfterRateChange
 let cpuRunMode = RUN_MODE.IDLE
 export const getCpuRunMode = () => cpuRunMode
 
@@ -1364,49 +1532,10 @@ const doAdvance6502 = () => {
   // Tass Times title music measured exactly 2.0x slower than real hardware
   // (bassline motif cycle 4.0s vs 2.0s) while every pitch stayed correct.
   //
-  // The state (ensoniqRefreshId / ensoniqOutCursor / ensoniqSamplesPerRefresh /
-  // ensoniqScratch) is module-scoped: see its declaration. Keep it that way.
-  // Write one chunk of DOC output owed by elapsed cycles. Never generates past
-  // the current refresh boundary: the march must stay at exactly the machine's
-  // sample clock, otherwise sequencer tempo scales with the look-ahead.
-  const ensoniqCatchUp = () => {
-    const genChunk = (endSample: number) => {
-      const n = endSample - ensoniqOutCursor
-      if (n <= 0) return
-      // Always march, even when every oscillator is halted: generateSamples'
-      // silence path keeps the chip's sample clock (and therefore the GUI's
-      // block timing) running. Gating the call on "an oscillator is active"
-      // paused the DOC clock whenever all voices happened to halt — about a
-      // quarter of every tracker refresh — and the music played ~0.76x.
-      iigsEnsoniq.lastCyc = s6502.cycleCount
-      iigsEnsoniq.lastCyclesPerRefresh = frameCycles
-      iigsEnsoniq.lastSpeedMode = speedMode
-      iigsEnsoniq.generateSamples(n, ensoniqScratch.subarray(ensoniqOutCursor * 2))
-      ensoniqOutCursor = endSample
-    }
-    // Video-clock position, not cycleCount: the DOC's sample clock is hardware
-    // time, so a $C036 slow-mode flip must not move it (see iigsVideoClock).
-    const refreshId = Math.floor(iigsVideoClock / frameCycles)
-    if (refreshId !== ensoniqRefreshId) {
-      // Refresh rollover: complete the elapsed refresh, post its block, then
-      // zero the scratch for the next one.
-      genChunk(ensoniqSamplesPerRefresh)
-      if (ensoniqRefreshId >= 0 && ensoniqOutCursor > 0) {
-        passEnsoniqSound(ensoniqScratch.subarray(0, ensoniqOutCursor * 2), iigsEnsoniq.outputRate())
-      }
-      ensoniqRefreshId = refreshId
-      ensoniqOutCursor = 0
-      ensoniqSamplesPerRefresh = Math.max(1, Math.round(iigsEnsoniq.outputRate() / 60))
-      if (ensoniqSamplesPerRefresh * 2 > ensoniqScratch.length) {
-        ensoniqScratch = new Int16Array(ensoniqSamplesPerRefresh * 2)
-      }
-      ensoniqScratch.fill(0, 0, ensoniqSamplesPerRefresh * 2)
-    }
-    if (ensoniqOutCursor >= ensoniqSamplesPerRefresh) return
-    const due = Math.min(ensoniqSamplesPerRefresh,
-      Math.floor((iigsVideoClock % frameCycles) * ensoniqSamplesPerRefresh / frameCycles))
-    genChunk(due)
-  }
+  // The DOC catch-up state and implementation are module-scoped (see
+  // ensoniqCatchUp near the state declaration). A DOC access inside an
+  // instruction can use the same state to catch up before applying its register
+  // change, matching gssquared's access-time catch-up.
 
 
   // Hoisted invariants: machineName, speedMode and tracing do not change while

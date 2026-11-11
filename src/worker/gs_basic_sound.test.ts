@@ -109,6 +109,10 @@ test("Applesoft POKE programs the DOC and it produces a non-silent block", async
 
     // Render a block and check it is not silence. This is exactly what the worker
     // posts to the UI, so a non-silent block means the whole chain works.
+    // The run-loop catch-up has already advanced the oscillator's phase; reset it
+    // to the start of the waveform so this direct render tests the audio chain,
+    // not which zero-crossing byte the phase happens to land on.
+    o0.accumulator = 0
     const block = iigsEnsoniq.generateSamples(1024)
     let peak = 0
     for (const s of block) peak = Math.max(peak, Math.abs(s))

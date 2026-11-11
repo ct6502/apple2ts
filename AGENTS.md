@@ -408,11 +408,25 @@ Rules that are easy to get wrong:
   the buffer is posted once per refresh. Generating one block per frame capped
   the timer oscillator's halt rate at 60/s and played Tass Times' title at
   **exactly half tempo** with correct pitch — a bug an FFT cannot see.
-- **The per-refresh budget *is* the tempo.** `ensoniqSamplesPerRefresh =
-  outputRate/60` (439 at `osce=32`); generating more than that per refresh clocks
+- **The per-refresh budget *is* the tempo.** At `osce=32` a refresh posts
+  `round(26320/60) = 439` frames; generating more than that per refresh clocks
   the whole march fast, so both the TN #23 timer tick and streamed samples speed
   up together. The 667/refresh overshoot was the module-state lookahead bug; the
   333/refresh shortfall was the active-oscillator gate. Both are fixed (see §11.2).
+- **Catch up before the access, and keep the rate segments.** Every `$C03C-$C03F`
+  access calls `docAccessCatchUp` before applying the write/read, exactly like
+  gssquared's `ensoniq_write_C0xx` / `ensoniq_read_C0xx`; a register-mode `$E1`
+  write calls `docRateRebase` after the chip write. A refresh is posted as
+  rate-labelled segments, so frames rendered before the `$E1` change keep their
+  old-rate duration instead of being relabelled by the rate current at the
+  boundary. `ensoniqCatchUp` guards recursion from a halt-IRQ callback and defers
+  the re-base until generation finishes. Regression: `gs_ensoniq.test.ts` ("a DOC
+  write catches up before applying the new register value" and "an $E1 rate change
+  splits the refresh block into old-rate and new-rate segments").
+- **XRick is the ear test.** Its DOC streamed effects and music were confirmed
+  audibly correct once catches ran before the access and rate segments landed;
+  the raw PCM boundaries stay continuous (1.03x the interior slope, so no clicks),
+  and the boot probe showed ≤30 frames of drift over 1631 refreshes.
 - UI transport: `iigs_ensoniq_audio.ts` queues blocks with
   `nextTime += frames / rate`, and the gain is **1.0** (unity, as gssquared's
   `apply_volume=false` stream).

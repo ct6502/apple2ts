@@ -5,6 +5,13 @@
 
 export const ensoniqDocRam = new Uint8Array(0x10000)
 
+// The ES5503 address-resolution shift table from gssquared (ensoniq.cpp).
+// Module scope because both sample generation and the CPU-written halt in
+// writeDoc() need the exact same values: halt_osc() receives
+// resshifts[resolution], not a value already adjusted for the wave-table size.
+const DOC_RESSHIFTS = [9, 10, 11, 12, 13, 14, 15, 16]
+const DOC_WAVESIZES = [256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+
 interface Oscillator {
   freq: number
   wtsize: number
@@ -66,6 +73,15 @@ export class IigsEnsoniq {
   osce = 1
   rege0 = 0xff
   irqCallback: ((state: boolean) => void) | null = null
+  // Registered by motherboard.ts. Every $C03C-$C03F access first catches the
+  // DOC sample clock up to now, so samples before the write are generated with
+  // the old register state - gssquared's ensoniq_write_C0xx calls catch-up
+  // before applying the write, and ensoniq_read_C0xx does the same before reads.
+  docAccessCatchUp?: () => void
+  // Called after a register-mode $E1 write has changed the oscillator count
+  // (and therefore the output sample rate). The catch-up state drops its
+  // fractional remainder and re-anchors at the new rate, matching gssquared.
+  docRateRebase?: () => void
   // $C03D is a pipeline: see readData(). Tracks whether $E0 was already
   // fetched in the current transaction so the two-read idiom cannot ack twice.
   e0FetchedThisTxn = false
@@ -206,10 +222,11 @@ export class IigsEnsoniq {
         case 0x40: this.oscillators[osc].vol = data & 0xff; break
         case 0x60: break // ignore writes
         case 0x80: {
-          // Wave table pointer high byte. Bit 16 is owned by the $C0 register,
-          // so preserve it; everything below bit 16 comes from this byte.
-          this.oscillators[osc].wavetblpointer =
-            (this.oscillators[osc].wavetblpointer & 0x10000) | ((data & 0xff) << 8)
+          // Wave table pointer high byte. gssquared assigns the whole pointer
+          // (data << 8), clearing bit 16 and the low byte. Only $C0 owns bit 16.
+          // Preserving bit 16 here let a stale bank bit survive a register-mode
+          // pointer rewrite, so a voice could read from +$10000 after a reload.
+          this.oscillators[osc].wavetblpointer = ((data & 0xff) << 8)
           break
         }
         case 0xa0: {
@@ -222,7 +239,15 @@ export class IigsEnsoniq {
             o.keyOnSample = this.samplesGenerated
             o.lastHaltSegment = 0
           }
-          // handle cpu halt
+          // CPU-written halt: gssquared checks the pre-write control was playing
+          // and the new data has halt bit 0 plus bit 1 set. halt_osc() runs with
+          // the held accumulator before the new control takes effect, so swap
+          // mode can start its partner and IRQ type 0 honours the new IRQ bit.
+          if (!(o.control & 1) && (data & 1) && ((data >> 1) & 1)) {
+            const holder = { v: o.accumulator }
+            this.haltOsc(osc, 0, holder, DOC_RESSHIFTS[o.resolution], data & 0xff)
+            o.accumulator = holder.v
+          }
           o.control = data & 0xff
           break
         }
@@ -231,9 +256,7 @@ export class IigsEnsoniq {
           if (data & 0x40) o.wavetblpointer |= 0x10000
           else o.wavetblpointer &= ~0x10000 & 0xFFFFFF
           o.wavetblsize = (data >> 3) & 7
-          // wavesizes: [256,512,...]
-          const wavesizes = [256,512,1024,2048,4096,8192,16384,32768]
-          o.wtsize = wavesizes[o.wavetblsize]
+          o.wtsize = DOC_WAVESIZES[o.wavetblsize]
           o.resolution = (data & 0x07)
           break
         }
@@ -245,6 +268,9 @@ export class IigsEnsoniq {
   }
 
   readControl(): number {
+    // Fast-forward the sample clock before reading, like gssquared's
+    // ensoniq_read_C0xx: the read must see IRQ state caught up to now.
+    this.docAccessCatchUp?.()
     // sound control read returns soundctl | 0x0F
     return (this.soundctl & 0x70) | 0x0F
   }
@@ -260,6 +286,7 @@ export class IigsEnsoniq {
   // stale or wrong data and the caller spun or acted on garbage - which is what
   // hung Music Construction Set right after its main screen appeared.
   readData(): number {
+    this.docAccessCatchUp?.()
     const ret = this.sounddata
     const fullAddr = ((this.soundadrh << 8) | this.soundadrl) & 0xffff
     if (this.soundctl & 0x40) {
@@ -285,13 +312,16 @@ export class IigsEnsoniq {
   }
 
   readAddrLow(): number {
+    this.docAccessCatchUp?.()
     return this.soundadrl & 0xff
   }
   readAddrHigh(): number {
+    this.docAccessCatchUp?.()
     return this.soundadrh & 0xff
   }
 
   writeControl(data: number) {
+    this.docAccessCatchUp?.()
     // Bit 7 (busy) is read-only and always clears on write.
     this.soundctl = (data & 0x7F)
     this.e0FetchedThisTxn = false
@@ -307,14 +337,23 @@ export class IigsEnsoniq {
   }
 
   writeData(data: number) {
+    // Catch up BEFORE applying the write: samples due so far must be rendered
+    // with the old register/RAM state (gssquared ensoniq_write_C0xx).
+    this.docAccessCatchUp?.()
     // A data write also loads the latch, so a following $C03D read returns it
     // (the pipeline returns the previous latch, not the just-written byte).
     this.sounddata = data & 0xff
     const fullAddr = ((this.soundadrh << 8) | this.soundadrl) & 0xffff
-    if (this.soundctl & 0x40) {
+    const registerMode = !(this.soundctl & 0x40)
+    // Register-mode $E1 (oscillator enable) changes the chip's sample rate.
+    // The gssquared Sound GLU drops the catch-up remainder and re-anchors time
+    // after the chip write, so the new rate never applies to pre-write samples.
+    const e1Write = registerMode && this.soundadrl === 0xe1
+    if (!registerMode) {
       ensoniqDocRam[fullAddr] = data & 0xff
     } else {
       this.writeDoc(this.soundadrl, data & 0xff)
+      if (e1Write) this.docRateRebase?.()
     }
     if (this.soundctl & 0x20) {
       let a = (fullAddr + 1) & 0xffff
@@ -324,11 +363,13 @@ export class IigsEnsoniq {
   }
 
   writeAddrLow(data: number) {
+    this.docAccessCatchUp?.()
     this.e0FetchedThisTxn = false
     this.soundadrl = data & 0xff
   }
 
   writeAddrHigh(data: number) {
+    this.docAccessCatchUp?.()
     this.e0FetchedThisTxn = false
     this.soundadrh = data & 0xff
   }
@@ -423,7 +464,6 @@ export class IigsEnsoniq {
   generateSamples(numFrames: number, out?: Int16Array): Int16Array {
     const wavemasks = [0x1ff00,0x1fe00,0x1fc00,0x1f800,0x1f000,0x1e000,0x1c000,0x18000]
     const accmasks = [0xff,0x1ff,0x3ff,0x7ff,0xfff,0x1fff,0x3fff,0x7fff]
-    const resshifts = [9,10,11,12,13,14,15,16]
     const ossecs = Math.max(1, this.osce)
     const chan = 2
     const buffer = out ?? new Int16Array(numFrames * chan)
@@ -455,7 +495,7 @@ export class IigsEnsoniq {
         const achan = (chan === 2) ? (assigned ^ 1) : assigned
         if (achan !== ch) continue
         const wtptr = o.wavetblpointer & wavemasks[o.wavetblsize]
-        const resshift = resshifts[o.resolution] - o.wavetblsize
+        const resshift = DOC_RESSHIFTS[o.resolution] - o.wavetblsize
         const sizemask = accmasks[o.wavetblsize]
         const vol = o.vol
         const freq = o.freq
