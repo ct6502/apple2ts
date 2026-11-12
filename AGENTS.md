@@ -922,6 +922,15 @@ intact. Regression: `save_restore_adb.test.ts`.
   read and write block fields.
 - `doResetDiskDrive()` must set `quarterTrack = 0` (real drives spring back to
   track 0). Parked at the outer stop, a Ctrl-Reset read the wrong track.
+- **The SmartPort inline pointer is a sequence, not a fixed stride.** The slot
+  firmware saved the caller's return address at inline start minus one; after
+  consuming the sequence it must expose the standard 3-byte / extended 5-byte
+  boundary, and `RTS`'s increment completes the normal return. Using one stride
+  for both forms is what made Coke Utilities.2mg resume on the extended pointer's
+  trailing `$00` byte and execute `BRK` at `$0958`. The sequence length has to
+  live in firmware scratch (the stack byte below the saved address) so the
+  generated driver can branch on standard/extended correctly; do not reintroduce
+  a fixed `INC` count.
 - **Ctrl-Reset**: clear the `$03F2-$03F4` signature (`$03F3 ^ $A5 == $03F4`) when
   any media is mounted (floppy *or* hard drive, `iigsHasAnyDiskMedia()`), so the
   ROM takes the cold device scan; leave it alone otherwise, which is what keeps
@@ -951,11 +960,34 @@ intact. Regression: `save_restore_adb.test.ts`.
   disk-switched flag** for a block device (see the latch below); it is not
   "device currently open", which is the character-device meaning. Unit 0 reports
   the card's full unit count. DIB subtype `$20` (hard disk). 0x10000 blocks must
-  report `$FFFF`. **Do not set the extended bits `$C0`**: GS/OS switches to the
-  extended command set, whose parameter lists carry a 3-byte pointer, and we only
-  decode the 2-byte form — the boot stalls on the welcome screen. Bit 0 needs no
-  extended advertisement, which is why it is the usable half of KEGS's `$2E`
-  DISKSW response.
+  report `$FFFF`. **Bit 0 needs no extended advertisement**, which is why it is
+  the usable half of KEGS's `$2E` DISKSW response; the standard DIB is
+  deliberately advertised as standard-only.
+  - **Extended inline forms have to decode, even though the DIB advertises
+    standard-only.** The inline command byte's bit `0x40` selects the extended
+    form, and the dispatch mask is `commandByte & 0x3F`. A standard SmartPort
+    inline sequence is 3 bytes (command + 2-byte parameter-list pointer); an
+    extended one is 5 bytes (command + 4-byte pointer). The extended parameter
+    list also uses a 32-bit buffer and 32-bit block field (the standard form uses
+    a 16-bit buffer and 24-bit block), so extended DMA uses
+    `memGet24`/`memSet24`. Extended status/DIB replies shift the block count to
+    32 bits and move the following fields by the extra byte; the standard reply
+    stays standard. A guest may issue extended commands without our DIB
+    advertising them, so do not fall back to the old 2-byte-only decoder.
+  - **The `$C7C3` slot firmware must skip the entire inline sequence.** The
+    caller's `JSR` saved address is inline start minus one. The firmware
+    therefore has to add the sequence length to that saved address before `RTS`
+    adds one: **3** for standard, **5** for extended. The generated firmware
+    keeps the sequence length as scratch in the byte below the saved address,
+    read back with `TSX`/`LDA $100,X`/`TAY`, then runs an `INC $100,X` loop
+    before `RTS`. Hardcoding 3 for an extended call is the bug that produced
+    `BRK at 00:0958` with Coke Utilities.2mg: its `$0952 JSR $098A` reaches the
+    `$C7C3` inline bytes at `$0955` (`$41` + 4-byte pointer, 5 bytes total) with
+    saved address `$0954`. The old firmware advanced it to `$0957`, `RTS` added
+    one and resumed at `$0958` — the `$00` byte at the tail of the pointer, which
+    became BRK. Adding 5 lands at `$095A`, the next real instruction. Regression:
+    `harddrivedata.test.ts` drives both forms through the generated `$C7C3`
+    firmware and requires PC `$0F58` / scratch 3 and PC `$0F5A` / scratch 5.
 - ProDOS block driver hook `$C7C0`: `$42` cmd, `$43` drive, `$44/$45` buffer,
   `$46/$47` block. Error codes: `$27` I/O, `$28` no device, `$2B` write-protected,
   `$2F` offline.
