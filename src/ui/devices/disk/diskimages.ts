@@ -124,7 +124,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Pitch Dark",
-    diskUrl: "https://github.com/anomixer/pitch-dark/releases/download/R6/Pitch_Dark.hdv.zip",
+    diskUrl: "https://github.com/anomixer/pitch-dark/releases/latest/download/Pitch_Dark.hdv.zip",
     helpFile: "PitchDark.txt",
     // diskUrl: "https://archive.org/download/PitchDark/00playable.hdv",
     imageUrl: "disks/Pitch%20Dark.png",
