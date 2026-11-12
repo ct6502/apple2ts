@@ -97,6 +97,15 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   bank `$11`'s data buffer and drove it into a BRK/COP there (XRick's interrupt
   code). `addrAbsoluteIndirect()` therefore uses the 16-bit bank-0 address,
   matching gssquared's `OP_JMP_IND`. Regression: `gs_jmp_indirect.test.ts`.
+- **Absolute-indexed addresses carry over the 16-bit word into the bank.** In
+  `addrAbsoluteX()`/`addrAbsoluteY()` the effective address is
+  `(DB << 16) + operand + index`, *not* `(DB << 16) | ((operand + index) &
+  $FFFF)`: gssquared's `address_abs_x`/`address_abs_y` deliberately leave the
+  carry. Masking it made NFCDemo's MegaDemo `BBS-DEMO` copy loop (`DB=$11`,
+  `STA $FC23,X`, X rising through `$E3xx`) write `$11DFFF/$11E000` instead of
+  `$12DFFF/$12E000`, overwriting the loop's own `$11:E009/$11:E00C` until it hit
+  a COP. The same test file carries the regression
+  ("9D STA abs,X carries the index into the next bank"): `gs_jmp_indirect.test.ts`.
 
 ---
 

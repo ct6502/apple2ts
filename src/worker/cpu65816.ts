@@ -1494,19 +1494,21 @@ export class CPU65816 implements ICPU {
     protected addrAbsoluteX(): number {
         this.addrMode = ADDR_MODE_816.ABSOLUTE_X
         const lo = this.fetch16();
-        // X index wraps around in PB bank
-        const addr = (lo + this.X) & 0xFFFF;
+        // The index add carries out of the 16-bit word into the bank, as on
+        // hardware (gssquared address_abs_x: eaddr = full_db | base + index).
+        const addr = (this.DB << 16) + lo + this.X;
         this.addrCrossed = (lo & 0xFF00) !== (addr & 0xFF00);
-        return (this.DB << 16) | addr;
+        return addr;
     }
 
     protected addrAbsoluteY(): number {
         this.addrMode = ADDR_MODE_816.ABSOLUTE_Y
         const lo = this.fetch16();
-        // Y index wraps around in PB bank
-        const addr = (lo + this.Y) & 0xFFFF;
+        // The index add carries out of the 16-bit word into the bank, as on
+        // hardware (gssquared address_abs_y: eaddr = full_db | base + index).
+        const addr = (this.DB << 16) + lo + this.Y;
         this.addrCrossed = (lo & 0xFF00) !== (addr & 0xFF00);
-        return (this.DB << 16) | addr;
+        return addr;
     }
 
     protected addrAbsoluteLongX(): number {
