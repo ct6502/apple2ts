@@ -248,7 +248,51 @@ type Apple2SaveState = {
   iigsRegisters?: string,
   // The 65816 core keeps its native PC/PB/DB outside the legacy s6502 object,
   // so a GS save without this reloads at PC 0 and reboots over the SHR screen.
-  cpu65816?: CPU65816SaveState
+  cpu65816?: CPU65816SaveState,
+  // The ADB micro-controller's own state. The soft-switch bytes in memory only
+  // describe what the CPU wrote, not what the controller latched: a restore
+  // without this leaves $C027's mouse/data/keyboard interrupt enables at zero,
+  // so the guest's IRQ handler never runs even though $C027 reads enabled.
+  // Missing in older saves and reset to power-on state on restore.
+  iigsADB?: IIGSADBSaveState,
+  // The VGC's own interrupt register and pending flags, which live outside the
+  // $C020-$C04F bytes saved in `iigsRegisters`. The scanline-enable bit is what
+  // lets GS/OS's Event Manager erase and redraw its cursor. Without it a
+  // restored desktop keeps its factory cursor in the top-left corner even
+  // though ADB motion reaches the guest.
+  iigsVgc?: IIGSVGCSaveState
+}
+
+type IIGSVGCSaveState = {
+  vgcIntReg: number,
+  vblPending: boolean,
+  quarterSecondPending: boolean
+}
+
+type IIGSADBSaveState = {
+  response: number[],
+  reportByte: number | null,
+  modes: number,
+  configuration: number[],
+  ucMemory: number[],
+  errorByte: number,
+  mouseAddr: number,
+  mouseCtlAddr: number,
+  mouseRegs: number[],
+  mouseHasData: boolean,
+  keyboardAddr: number,
+  keyboardRegs: number[],
+  pendingX: number,
+  pendingY: number,
+  button0Down: number,
+  button1Down: number,
+  buttonChanged: boolean,
+  reportInProgress: boolean,
+  modifiers: number,
+  interruptEnables: number,
+  cmd: number[],
+  argumentsExpected: number,
+  romTaskPollCycle: number
 }
 
 type SlotCardSaveState = {

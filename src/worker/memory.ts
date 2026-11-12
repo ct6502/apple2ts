@@ -198,6 +198,36 @@ export const iigsClearInterrupts = () => {
   (globalThis as any).cpu?.clearIrq?.();
 };
 
+// The VGC interrupt register has latched enable bits that are not rebuilt by
+// resetting the $C020-$C04F bytes in `iigsRegisters`: the register itself is a
+// module variable, and after a restore it stays at zero while the RAM byte reads
+// back the enables GS/OS wrote. The scanline enable in particular is what makes
+// the Event Manager erase and redraw its cursor - without it a restored desktop
+// keeps the factory cursor in the top-left corner even though ADB motion reaches
+// the guest. Save the register and its pending flags as their own block.
+export const iigsGetVgcSaveState = (): IIGSVGCSaveState => ({
+  vgcIntReg,
+  vblPending,
+  quarterSecondPending,
+});
+
+export const iigsRestoreVgcSaveState = (state: IIGSVGCSaveState | undefined) => {
+  if (state) {
+    vgcIntReg = state.vgcIntReg;
+    vblPending = state.vblPending;
+    quarterSecondPending = state.quarterSecondPending;
+    iigsRegisters[0x23] = state.vgcIntReg;
+    return;
+  }
+  // Older save states only carry the $C023 byte through `iigsRegisters`. Its
+  // asserted bits describe the moment of the save, not the restored machine, so
+  // keep only the enables; the next VGC line can assert the interrupt again.
+  vgcIntReg = iigsRegisters[0x23] & 0x07;
+  iigsRegisters[0x23] = vgcIntReg;
+  vblPending = false;
+  quarterSecondPending = false;
+};
+
 export const iigsInterruptPending = (): boolean => {
   if (iigsADB.interruptPending()) return true;
   if (vblPending && (iigsRegisters[0x41] & 0x08)) return true;

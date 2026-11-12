@@ -372,15 +372,7 @@ export const resetMouse = () => {
   clampidx = 0
   // The IIgs ADB path dead-reckons a guest-space position, so the baseline has
   // to be dropped too or the first report after a reset jumps.
-  adbLastX = -1
-  adbLastY = -1
-  adbTargetX = -1
-  adbTargetY = -1
-  adbStepOutstanding = false
-  adbSyncStaleFrames = 0
-  adbFeedbackStale = false
-  adbLastSeenX = 0
-  adbLastSeenY = 0
+  resetADBTracking()
 }
 
 let mousex = 0

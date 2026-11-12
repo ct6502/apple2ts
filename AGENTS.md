@@ -340,6 +340,15 @@ assume the emulator's install is what runs.
   forever. **The emulator no longer draws a cursor overlay** — the guest does
   (`drawIigsCursor`, `setHostCursorNorm`, `cursorX/Y` in `MachineState` are all
   deleted; do not bring them back).
+- **Save-state completeness for the scanline interrupt**: the enable lives in
+  `vgcIntReg`, not only in the `$C023` byte inside `iigsRegisters`, so a save
+  must carry it outside RAM. `iigsGetVgcSaveState()` /
+  `iigsRestoreVgcSaveState()` (in `src/worker/memory.ts`) persist
+  `vgcIntReg`, `vblPending` and `quarterSecondPending`; a legacy save without
+  the block falls back to `iigsRegisters[$C023] & $07` and loses only stale
+  asserted bits, so the next scanline can raise the interrupt again. Without
+  this a restored GS/OS desktop stops repainting the cursor even though ADB
+  motion reaches the guest. Regression: `save_restore_vgc.test.ts`.
 - **Text page source**: the IIgs legacy scanner reads **Mega II main/aux RAM**
   (banks `$E0`/`$E1`) and nothing else — `iigsTextMainSource` /
   `iigsTextAuxSource` return `megaIIMain` / `megaIIAux` unconditionally, for both
@@ -799,6 +808,16 @@ it (gssquared `keygloo_mouse_sync.hpp read_em_mouse_pos`):
   `$0191/$0193`; `megaIIAux[0x190] | (megaIIAux[0x192] << 8)`). ROM 03 leaves the
   text-page holes at 0, so reading them pins the closed-loop stepper at the
   origin and the guest cursor never follows the host pointer.
+
+**Save-state completeness.** The CPU's `$C027` bytes record only what the guest
+wrote; the micro-controller's own `interruptEnables`, modes/configuration,
+device registers, staged mouse/keyboard reports and command framing are emulator
+state and cannot be rebuilt from RAM. `IIGSADB.getSaveState()` /
+`restoreSaveState()` persist all of it, and a legacy save without `iigsADB`
+restores the controller to power-on defaults. Missing that block leaves `$C027`
+reading enabled while the controller's enables are zero, so a restored GS/OS
+desktop or startup dialog appears frozen although its code and cursor holes are
+intact. Regression: `save_restore_adb.test.ts`.
 
 ---
 

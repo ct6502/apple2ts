@@ -95,6 +95,7 @@ import { SoftCard } from "./devices/softcard"
 import { setSlotIOCallback } from "./memory"
 import { hasHardDriveMounted } from "./devices/drivestate"
 import { findMemory, getMemoryView, resolveMemoryRangeRequest } from "./memory_view"
+import { iigsADB } from "./iigs_adb"
 
 let speedMode = 0
 // True once the UI or a test has chosen a speed. The IIgs defaults to 2.8 MHz
@@ -745,6 +746,10 @@ const resetMachine = () => {
   resetFloppyDrives()
   setButtonState()
   resetMouse()
+  // The ADB micro has its own modes, interrupt enables and device state that
+  // are not in RAM. A reset or a save-state restore must put them back to
+  // power-on defaults before a saved ADB block is reinstated.
+  iigsADB.reset()
   resetPassport()
   if (veraSlot !== 0) {
     resetVera()

@@ -856,6 +856,71 @@ export class IIGSADB {
       || ((this.interruptEnables & STATUS_DATA_INTERRUPT) !== 0 && this.dataRegisterFull());
   }
 
+  // The soft-switch bytes in RAM hold only what the CPU wrote to $C027. The
+  // micro-controller's latched interrupt enables, modes and queued reports are
+  // emulator state and cannot be rebuilt from memory. A save state that leaves
+  // them out restores $C027 with mouse/data/keyboard interrupt bits set while
+  // the controller has interruptEnables = 0, so the guest's mouse interrupt
+  // never fires and a restored desktop or startup dialog appears frozen even
+  // though its own code and cursor holes are intact.
+  getSaveState(): IIGSADBSaveState {
+    return {
+      response: this.response.slice(),
+      reportByte: this.reportByte,
+      modes: this.modes,
+      configuration: Array.from(this.configuration),
+      ucMemory: Array.from(this.ucMemory),
+      errorByte: this.errorByte,
+      mouseAddr: this.mouseAddr,
+      mouseCtlAddr: this.mouseCtlAddr,
+      mouseRegs: Array.from(this.mouseRegs),
+      mouseHasData: this.mouseHasData,
+      keyboardAddr: this.keyboardAddr,
+      keyboardRegs: Array.from(this.keyboardRegs),
+      pendingX: this.pendingX,
+      pendingY: this.pendingY,
+      button0Down: this.button0Down,
+      button1Down: this.button1Down,
+      buttonChanged: this.buttonChanged,
+      reportInProgress: this.reportInProgress,
+      modifiers: this.modifiers,
+      interruptEnables: this.interruptEnables,
+      cmd: this.cmd.slice(),
+      argumentsExpected: this.argumentsExpected,
+      romTaskPollCycle: this.romTaskPollCycle,
+    }
+  }
+
+  // A save without the ADB block predates this field; reset() has already put
+  // the controller at power-on defaults, so leaving it there is a clean boot.
+  restoreSaveState(state: IIGSADBSaveState | undefined) {
+    this.reset()
+    if (!state) return
+    this.response = state.response.slice()
+    this.reportByte = state.reportByte
+    this.modes = state.modes
+    this.configuration = Uint8Array.from(state.configuration)
+    this.ucMemory = Uint8Array.from(state.ucMemory)
+    this.errorByte = state.errorByte
+    this.mouseAddr = state.mouseAddr
+    this.mouseCtlAddr = state.mouseCtlAddr
+    this.mouseRegs = Uint8Array.from(state.mouseRegs)
+    this.mouseHasData = state.mouseHasData
+    this.keyboardAddr = state.keyboardAddr
+    this.keyboardRegs = Uint8Array.from(state.keyboardRegs)
+    this.pendingX = state.pendingX
+    this.pendingY = state.pendingY
+    this.button0Down = state.button0Down
+    this.button1Down = state.button1Down
+    this.buttonChanged = state.buttonChanged
+    this.reportInProgress = state.reportInProgress
+    this.modifiers = state.modifiers
+    this.interruptEnables = state.interruptEnables
+    this.cmd = state.cmd.slice()
+    this.argumentsExpected = state.argumentsExpected
+    this.romTaskPollCycle = state.romTaskPollCycle
+  }
+
   reset() {
     this.response = [];
     this.reportByte = null;
@@ -877,6 +942,7 @@ export class IIGSADB {
     this.interruptEnables = 0;
     this.cmd = [];
     this.argumentsExpected = 0;
+    this.romTaskPollCycle = -1e15;
   }
 }
 

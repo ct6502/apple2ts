@@ -239,6 +239,14 @@ Apple2TS uses its built-in software synthesizer by default. Selecting **Enable E
     ```
 1. Confirm that the disk label briefly turns red with an asterisk. After a second or less, the label turns white again, with no asterisk.
 1. Refresh browser, click on hard drive 1, choose _Load Disk from Device (Read/Write)_, choose your `Test.po`. After disk boots, verify that your `TEST` file is at the bottom of the file list.
+
+### If you change save-state code
+
+1. On a booted IIgs (GS/OS or a program that reads its cursor), move the pointer, then click _File save_ and download the `.a2ts` file.
+1. Refresh/reopen the page, load the `.a2ts` file from _File open_, and verify the pointer still moves and clicks still reach the guest (a restored startup dialog can be clicked rather than frozen).
+1. Restore an older save made before the controller fields existed and verify the machine boots to power-on defaults instead of carrying stale interrupts.
+1. Run `npm test -- src/worker/save_restore_adb.test.ts src/worker/save_restore_vgc.test.ts`.
+
 1. Multi-disk and archive testing:
     - Drag or load a multi-disk `.zip`, `.7z`, or `.gz` archive into floppy drive 1.
     - Verify that all disk images in the archive are loaded into the swapper list, the drive displays the multi-disk badge icon, and the first disk boots.
