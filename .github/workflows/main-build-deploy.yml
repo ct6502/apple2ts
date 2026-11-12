@@ -27,6 +27,10 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
     - uses: actions/checkout@v7
+      with:
+        # The apple2gts deploy step below authenticates with its own token, so
+        # the checkout must not leave competing credentials in the git config.
+        persist-credentials: false
     - name: Setup GitHub Pages
       if: github.event.repository.has_pages
       uses: actions/configure-pages@v6
@@ -54,3 +58,19 @@ jobs:
       if: github.event.repository.has_pages
       id: deployment
       uses: actions/deploy-pages@v4
+    # Second copy of the same build, published from the ct6502/apple2gts
+    # repository. That repository runs .github/workflows/deploy-pages.yml on
+    # pushes to its gh-pages branch, which is what actually publishes
+    # apple2gts.com.
+    - name: Point custom domain at apple2gts.com
+      run: echo "apple2gts.com" > dist/CNAME
+    - name: Deploy to ct6502/apple2gts
+      uses: JamesIves/github-pages-deploy-action@v4.7.3
+      with:
+        token: ${{ secrets.APPLE2GTS_TOKEN }}
+        repository-name: ct6502/apple2gts
+        branch: gh-pages
+        folder: dist
+        clean: true
+        single-commit: true
+        commit-message: Deploy apple2ts ${{ github.sha }}
