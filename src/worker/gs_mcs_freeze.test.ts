@@ -163,8 +163,8 @@ test("MCS freeze: does the ROM VBL / system-task path ever run, and what is in $
     // Phase 1: boot to the MCS title screen.
     for (let f = 0; f < 1200; f++) jest.advanceTimersByTime(17)
     console.log(`[MCS] after boot: instr=${count} PB=${cpu.PB.toString(16)} PC=${cpu.PC.toString(16)}`)
-    console.log(`[MCS] top PCs at title screen:\n  ` + spinTop(hist).join("\n  "))
-    console.log(`[MCS] ROM ranges at title screen:`)
+    console.log("[MCS] top PCs at title screen:\n  " + spinTop(hist).join("\n  "))
+    console.log("[MCS] ROM ranges at title screen:")
     for (const r of RANGES) console.log(`  ${r.name}: ${r.n}${r.firstAt >= 0 ? " (first at instr#" + r.firstAt + ")" : ""}`)
     reportScreen("title")
     reportSpin(cpu, hist)
@@ -182,8 +182,8 @@ test("MCS freeze: does the ROM VBL / system-task path ever run, and what is in $
     for (let f = 0; f < 900; f++) jest.advanceTimersByTime(17)
 
     console.log(`[MCS] after click: instr=${count} PB=${cpu.PB.toString(16)} PC=${cpu.PC.toString(16)}`)
-    console.log(`[MCS] top PCs after click:\n  ` + spinTop(hist).join("\n  "))
-    console.log(`[MCS] ROM ranges after click:`)
+    console.log("[MCS] top PCs after click:\n  " + spinTop(hist).join("\n  "))
+    console.log("[MCS] ROM ranges after click:")
     for (const r of RANGES) console.log(`  ${r.name}: ${r.n}`)
     reportScreen("after click")
     reportSpin(cpu, hist)
@@ -206,7 +206,7 @@ test("MCS freeze: does the ROM VBL / system-task path ever run, and what is in $
     }
     console.log(`[MCS] DOC: osce=${chip.osce} soundadrl=$${chip.soundadrl.toString(16)} ` +
       `systemVolume=${chip.systemVolume.toFixed(3)} startedOscillators=${started}`)
-    console.log(`[MCS] DOC access (control/data/addrLow/addrHigh writes, reads): ` +
+    console.log("[MCS] DOC access (control/data/addrLow/addrHigh writes, reads): " +
       `${docAccess.control} ${docAccess.data} ${docAccess.addrLow} ${docAccess.addrHigh} ${docAccess.reads}`)
     // Phase 3: the screen still shows the ProDOS 8 startup banner, which waits for
     // a keypress. Send one and see whether MCS actually loads in this harness.
@@ -217,8 +217,8 @@ test("MCS freeze: does the ROM VBL / system-task path ever run, and what is in $
     setKeyboardState({ isDown: false, key: 0, repeat: false })
     for (let f = 0; f < 1500; f++) jest.advanceTimersByTime(17)
     console.log(`[MCS] after keypress: instr=${count} PB=${cpu.PB.toString(16)} PC=${cpu.PC.toString(16)}`)
-    console.log(`[MCS] top PCs after keypress:\n  ` + spinTop(hist).join("\n  "))
-    console.log(`[MCS] ROM ranges after keypress:`)
+    console.log("[MCS] top PCs after keypress:\n  " + spinTop(hist).join("\n  "))
+    console.log("[MCS] ROM ranges after keypress:")
     for (const r of RANGES) console.log(`  ${r.name}: ${r.n}`)
     reportScreen("after keypress")
     reportSpin(cpu, hist)

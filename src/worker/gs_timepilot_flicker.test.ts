@@ -118,10 +118,10 @@ test("timepilot: the beam-captured picture keeps the cloud layer", () => {
   const d = stats(displayed)
   const s = stats(snapshot)
 
-  console.log('displayed stats', d, 'snapshot stats', s, 'framesDiffering', framesDiffering)
-  console.log('shown plane', stats(shownPlane), 'raw plane', stats(rawPlane),
-    'shown zero frames', shownPlane.filter((n) => n === 0).length,
-    'raw zero frames', rawPlane.filter((n) => n === 0).length)
+  console.log("displayed stats", d, "snapshot stats", s, "framesDiffering", framesDiffering)
+  console.log("shown plane", stats(shownPlane), "raw plane", stats(rawPlane),
+    "shown zero frames", shownPlane.filter((n) => n === 0).length,
+    "raw zero frames", rawPlane.filter((n) => n === 0).length)
   // The screen is what the beam captured, so the guest's own memory state at one
   // instant must not be what reaches the renderer.
   expect(framesDiffering).toBeGreaterThan(0)

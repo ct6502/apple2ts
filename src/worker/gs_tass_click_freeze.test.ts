@@ -122,7 +122,7 @@ const screenText = () => {
     for (let f = 0; f < 1; f++) jest.advanceTimersByTime(17)
   }
   console.log(`[HOLES] after moves ${holes()}`)
-  console.log(`[CLICK] press at 0.5,0.5`)
+  console.log("[CLICK] press at 0.5,0.5")
   MouseCardEvent({ x: 0.5, y: 0.5, buttons: 0x10 })
   for (let f = 0; f < 30; f++) jest.advanceTimersByTime(17)
   MouseCardEvent({ x: 0.5, y: 0.5, buttons: 0x00 })

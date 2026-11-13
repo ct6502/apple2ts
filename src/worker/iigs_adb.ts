@@ -43,27 +43,27 @@ const ROM_ADB_TASK_PC_HI = 0xFFC560
 // it here: ROM 01 writes $10 at FF:F9E0 (enable the *data* interrupt, which is
 // how the desk manager is woken) and GS/OS writes $40 at $C47C (enable the
 // mouse interrupt).
-const STATUS_MOUSE_DATA = 0x80;          // bit 7: a mouse report is waiting
-const STATUS_MOUSE_INTERRUPT = 0x40;     // bit 6: mouse interrupt enable
-const STATUS_DATA_AVAILABLE = 0x20;      // bit 5: the data register holds a byte
-const STATUS_DATA_INTERRUPT = 0x10;      // bit 4: data interrupt enable
-const STATUS_KEYBOARD_DATA = 0x08;       // bit 3: key data available
-const STATUS_KEYBOARD_INTERRUPT = 0x04;  // bit 2: keyboard interrupt enable
-const STATUS_MOUSE_Y_NEXT = 0x02;        // bit 1: next $C024 read returns Y
+const STATUS_MOUSE_DATA = 0x80          // bit 7: a mouse report is waiting
+const STATUS_MOUSE_INTERRUPT = 0x40     // bit 6: mouse interrupt enable
+const STATUS_DATA_AVAILABLE = 0x20      // bit 5: the data register holds a byte
+const STATUS_DATA_INTERRUPT = 0x10      // bit 4: data interrupt enable
+const STATUS_KEYBOARD_DATA = 0x08       // bit 3: key data available
+const STATUS_KEYBOARD_INTERRUPT = 0x04  // bit 2: keyboard interrupt enable
+const STATUS_MOUSE_Y_NEXT = 0x02        // bit 1: next $C024 read returns Y
 // Bit 0 is the command-register-full flag. It is deliberately never set - see
 // readStatus().
 // The three interrupt enables are the only writable bits (gssquared
 // write_status_register's readonly_flags = 0b10101011).
-const STATUS_INTERRUPT_ENABLES = 0x54;   // bits 6, 4 and 2
+const STATUS_INTERRUPT_ENABLES = 0x54   // bits 6, 4 and 2
 
 // First byte of every $C026 response.
-const RESPONSE_HEADER = 0x80;
+const RESPONSE_HEADER = 0x80
 
 // The data register's report byte, as the micro hands it out when the CPU reads
 // $C026 after a data interrupt: bit 7 response/status, bit 6 abort, bit 5 the
 // desk-manager key sequence, bit 4 buffer flush, bit 3 service request valid,
 // bits 2-0 the response byte count minus one.
-const DATA_REPORT_DESKTOP_MANAGER = 0x20;
+const DATA_REPORT_DESKTOP_MANAGER = 0x20
 // Bit 3 of the $C026 interrupt-time report: a valid ADB service request is
 // pending.  The ROM's IRQ dispatcher (FF:BE5A in ROM 01) saves DATAREG, tests
 // bit 3 with `AND #$08`, and calls IRQ_SRQ, which is how the ROM handles a
@@ -71,7 +71,7 @@ const DATA_REPORT_DESKTOP_MANAGER = 0x20;
 // Without this report a queued keyboard byte is visible through $C027 bit 3
 // but no interrupt ever asserts: the keyboard interrupt-enable bit 2 is not
 // set in SRQ mode, so the request sits in the device register forever.
-const DATA_REPORT_SERVICE_REQUEST = 0x08;
+const DATA_REPORT_SERVICE_REQUEST = 0x08
 
 // $C025 modifiers. Layout from gssquared's adb_mod_key_t (ADB_Keyboard.hpp:6):
 // bit0 shift, bit1 control, bit2 caps lock, bit3 auto-repeat, bit4 keypad, bit5
@@ -81,12 +81,12 @@ const DATA_REPORT_SERVICE_REQUEST = 0x08;
 // (bit6) in ADB_Micro.hpp:503-504, exactly as gssquared's `apple_modifier_scancode`
 // chooses them (:503-504 in ADB_Keyboard.hpp). Only the bits an event byte drives
 // are named here.
-const MOD_SHIFT = 0x01;
-const MOD_CONTROL = 0x02;
-const MOD_CAPS = 0x04;
-const MOD_LATCH = 0x20;
-const MOD_CLOSED = 0x40;
-const MOD_OPEN = 0x80;
+const MOD_SHIFT = 0x01
+const MOD_CONTROL = 0x02
+const MOD_CAPS = 0x04
+const MOD_LATCH = 0x20
+const MOD_CLOSED = 0x40
+const MOD_OPEN = 0x80
 
 // The ADB keycodes that are modifier keys, and the $C025 bit each reports. An
 // event byte with bit 7 set releases the bit again.
@@ -160,18 +160,18 @@ const adbKeycodeToAscii = (keycode: number, modifiers: number) => {
   return ascii
 }
 
-const ADDR_KEYBOARD = 0x02;
-const ADDR_MOUSE = 0x03;
+const ADDR_KEYBOARD = 0x02
+const ADDR_MOUSE = 0x03
 // ADB micro-controller mode bits (set by $04, cleared by $05, set by $07 synch).
 // KEGs's adb_set_new_mode() prints "Disabling keyboard/mouse" for both.
 // gssquared calls bit 0's mask `keyboard_auto_poll_enabled` (ADB_Micro.hpp:25),
 // but `process_event()` takes the SRQ branch when the bit is set
 // (ADB_Micro.hpp:983), matching this name: the reference's mask name is a
 // misnomer, as its own "auto-poll is disabled" comment says. XRick sets it.
-export const ADB_MODE_KBD_AUTOPOLL_OFF = 0x01;
-export const ADB_MODE_MOUSE_OFF = 0x02;
+export const ADB_MODE_KBD_AUTOPOLL_OFF = 0x01
+export const ADB_MODE_MOUSE_OFF = 0x02
 
-const ADB_VERSION = 0x06;               // GS/OS 6 reports version 6
+const ADB_VERSION = 0x06               // GS/OS 6 reports version 6
 
 // Debug event ring for ?adbtrace=1 (browser: window.__adbLog, jest: getAdbLog()).
 // Records the UI events that reach the ADB, every report latch, and every byte
@@ -215,70 +215,70 @@ const argumentCount = (value: number): number => {
   switch (value & 0xc0) {
     case 0x00:
       switch (value) {
-        case 0x04: return 1;              // set modes
-        case 0x05: return 1;              // clear modes
-        case 0x06: return 3;              // set configuration
-        case 0x07: return 4;              // synch (modes + 3 config bytes)
-        case 0x08: return 2;              // write uC memory
-        case 0x09: return 2;              // read uC memory
-        case 0x11: return 1;              // send FDB keycode
-        default: return 0;
+        case 0x04: return 1              // set modes
+        case 0x05: return 1              // clear modes
+        case 0x06: return 3              // set configuration
+        case 0x07: return 4              // synch (modes + 3 config bytes)
+        case 0x08: return 2              // write uC memory
+        case 0x09: return 2              // read uC memory
+        case 0x11: return 1              // send FDB keycode
+        default: return 0
       }
     case 0x40:
-      if (value === 0x48) return 2;       // receive bytes
-      if ((value & 0xf8) === 0x48) return (value & 0x07) + 1;  // transmit N bytes
-      return 0;
+      if (value === 0x48) return 2       // receive bytes
+      if ((value & 0xf8) === 0x48) return (value & 0x07) + 1  // transmit N bytes
+      return 0
     case 0x80:
-      return 2;                          // transmit 2 bytes to a device
+      return 2                          // transmit 2 bytes to a device
     default:
-      return 0;                          // poll FDB device
+      return 0                          // poll FDB device
   }
 }
 
 export class IIGSADB {
   // $C026 response queue
-  private response: number[] = [];
+  private response: number[] = []
 
   // A micro-generated report waiting in the data register (KEGS's
   // g_adb_interrupt_byte, gssquared's `send_data_register` + `datareg`). It is
   // read out *before* any queued command response, because that is what the
   // interrupt byte is: the micro's own event, not an answer to a command.
-  private reportByte: number | null = null;
+  private reportByte: number | null = null
 
   // Controller state
-  private modes = 0;
-  private configuration = new Uint8Array(3);
-  private ucMemory = new Uint8Array(256);
-  private errorByte = 0;
+  private modes = 0
+  private configuration = new Uint8Array(3)
+  private ucMemory = new Uint8Array(256)
+  private errorByte = 0
 
   // Devices. Each has 4 two-byte registers. Register 3 is the device status
   // word: byte 0 is the exceptional-event/address byte (0 unless changed by a
   // "transmit 2 bytes"), byte 1 carries the device address, the handler id and
   // the SRQ-enable flag. GS/OS identifies devices by reading this.
-  private mouseAddr = ADDR_MOUSE;
+  private mouseAddr = ADDR_MOUSE
   // Where the ADB micro-controller thinks the mouse is, set by the "set
   // configuration" command. KEGS keeps the same split (g_mouse_dev_addr vs
   // g_mouse_ctl_addr) and stops reporting the mouse when they diverge.
-  private mouseCtlAddr = ADDR_MOUSE;
-  private mouseRegs = new Uint8Array(8);
-  private mouseHasData = false;
+  private mouseCtlAddr = ADDR_MOUSE
+  private mouseRegs = new Uint8Array(8)
+  private mouseHasData = false
 
-  private keyboardAddr = ADDR_KEYBOARD;
+  private keyboardAddr = ADDR_KEYBOARD
   // Register 0 holds the key latch. It reads back as $FF,$FF while empty, so
   // it must start out empty - zeros would look like a key press.
-  private keyboardRegs = Uint8Array.from([0xff, 0xff, 0, 0, 0, 0, 0, ADDR_KEYBOARD | 0x20]);
+  private keyboardRegs = Uint8Array.from([0xff, 0xff, 0, 0, 0, 0, 0, ADDR_KEYBOARD | 0x20])
 
   private initDeviceRegisters() {
-    this.mouseRegs = new Uint8Array(8);
-    this.mouseRegs[6] = 0x00;
-    this.mouseRegs[7] = ADDR_MOUSE | 0x20;
-    this.mouseHasData = false;
-    this.keyboardRegs = Uint8Array.from([0xff, 0xff, 0, 0, 0, 0, 0, ADDR_KEYBOARD | 0x20]);
+    this.mouseRegs = new Uint8Array(8)
+    this.mouseRegs[6] = 0x00
+    this.mouseRegs[7] = ADDR_MOUSE | 0x20
+    this.mouseHasData = false
+    this.keyboardRegs = Uint8Array.from([0xff, 0xff, 0, 0, 0, 0, 0, ADDR_KEYBOARD | 0x20])
   }
 
   // $C024 mouse report staging
-  private pendingX = 0;
-  private pendingY = 0;
+  private pendingX = 0
+  private pendingY = 0
   // The two buttons live in *different* bytes of register 0 (gssquared
   // ADB_Mouse::update_button_down: byte 0 is button 1 / RIGHT, byte 1 is
   // button 0 / LEFT). Both default to 0x80 ("released"); 0x00 means pressed.
@@ -287,17 +287,17 @@ export class IIGSADB {
   // button from the X byte's bit 7 - so putting the same state in both bytes
   // makes one physical click look like two, which GS/OS reads as a double
   // click.
-  private button0Down = 0x80;   // LEFT
-  private button1Down = 0x80;   // RIGHT
-  private buttonChanged = false;
-  private reportInProgress = false;
+  private button0Down = 0x80   // LEFT
+  private button1Down = 0x80   // RIGHT
+  private buttonChanged = false
+  private reportInProgress = false
 
-  private modifiers = 0;
-  private interruptEnables = 0;
+  private modifiers = 0
+  private interruptEnables = 0
 
   // Command register framing
-  private cmd: number[] = [];
-  private argumentsExpected = 0;
+  private cmd: number[] = []
+  private argumentsExpected = 0
 
   // Cycle stamp of the last *polling* $C027 read made from inside the ROM ADB
   // task (see ROM_ADB_TASK_PC_*): a read with nothing to report.
@@ -307,44 +307,44 @@ export class IIGSADB {
   // forever, while GS/OS only runs the task when a report was latched, so it
   // reads $C027 with data available and never polls. Stamping every read made
   // the UI pointer overlay flicker off for a few frames after each report.
-  private romTaskPollCycle = -1e15;
+  private romTaskPollCycle = -1e15
 
   // True while the guest's classic ROM cursor/mouse machinery is polling.
   romAdbTaskActive(): boolean {
-    return s6502.cycleCount - this.romTaskPollCycle < 100000;
+    return s6502.cycleCount - this.romTaskPollCycle < 100000
   }
 
   // --- Status / data registers ---
   // The data register counts as full for a micro report as well as for a queued
   // command response - the ROM polls bit 5 before reading $C026 either way.
   private dataRegisterFull(): boolean {
-    return this.reportByte !== null || this.response.length > 0;
+    return this.reportByte !== null || this.response.length > 0
   }
 
   readStatus(): number {
-    let status = 0;
-    if (this.dataRegisterFull()) status |= STATUS_DATA_AVAILABLE;
-    if (this.hasKeyData()) status |= STATUS_KEYBOARD_DATA;
-    if (this.hasMouseData()) status |= STATUS_MOUSE_DATA;
-    if (this.reportInProgress) status |= STATUS_MOUSE_Y_NEXT;
+    let status = 0
+    if (this.dataRegisterFull()) status |= STATUS_DATA_AVAILABLE
+    if (this.hasKeyData()) status |= STATUS_KEYBOARD_DATA
+    if (this.hasMouseData()) status |= STATUS_MOUSE_DATA
+    if (this.reportInProgress) status |= STATUS_MOUSE_Y_NEXT
     // Bit 0 is the real "command register full" flag, and it is never reported:
     // the ROM's boot-time command loop at FF:851E spins on it before writing the
     // next byte, so publishing the awaiting-arguments state there deadlocks the
     // self-test and the machine ends at 「Fatal system error-> 0911」. KEGS masks
     // it out of adb_read_c027 (ADB_C027_NEG_MASK) and gssquared never sets it.
-    status |= this.interruptEnables;
-    noteAdbLog("stat", status);
-    const pc = getCpuPc();
+    status |= this.interruptEnables
+    noteAdbLog("stat", status)
+    const pc = getCpuPc()
     if (pc >= ROM_ADB_TASK_PC_LO && pc < ROM_ADB_TASK_PC_HI
       && (status & (STATUS_MOUSE_DATA | STATUS_MOUSE_Y_NEXT)) === 0) {
-      this.romTaskPollCycle = s6502.cycleCount;
+      this.romTaskPollCycle = s6502.cycleCount
     }
-    return status;
+    return status
   }
 
   writeStatus(v: number) {
-    noteAdbLog("wstat", v);
-    this.interruptEnables = v & STATUS_INTERRUPT_ENABLES;
+    noteAdbLog("wstat", v)
+    this.interruptEnables = v & STATUS_INTERRUPT_ENABLES
   }
 
   readData(): number {
@@ -352,14 +352,14 @@ export class IIGSADB {
     // adb_read_c026's ADB_IDLE branch, gssquared read_data_register's
     // send_data_register path).
     if (this.reportByte !== null) {
-      const v = this.reportByte;
-      this.reportByte = null;
-      noteAdbLog("report", v);
-      return v;
+      const v = this.reportByte
+      this.reportByte = null
+      noteAdbLog("report", v)
+      return v
     }
-    const v = this.response.length > 0 ? (this.response.shift() as number) : 0x00;
-    noteAdbLog("data", v);
-    return v;
+    const v = this.response.length > 0 ? (this.response.shift() as number) : 0x00
+    noteAdbLog("data", v)
+    return v
   }
 
   // Queue a reply for the CPU to read out of $C026. Two different framings are
@@ -372,90 +372,90 @@ export class IIGSADB {
   //     and bits 2-0 hold (byte count - 1).
   private postResponse(bytes: number[], withHeader = false) {
     if (withHeader) {
-      this.response.push(RESPONSE_HEADER | (bytes.length > 0 ? bytes.length - 1 : 0));
+      this.response.push(RESPONSE_HEADER | (bytes.length > 0 ? bytes.length - 1 : 0))
     }
-    for (const b of bytes) this.response.push(b);
+    for (const b of bytes) this.response.push(b)
   }
 
   // --- Command register ---
   // cmd[0] is the command byte, cmd[1..] are its arguments. A command is
   // complete once cmd.length - 1 === argumentsExpected.
   writeCommand(v: number) {
-    noteAdbLog("cmd", v, this.cmd.length, this.argumentsExpected);
+    noteAdbLog("cmd", v, this.cmd.length, this.argumentsExpected)
     if (this.cmd.length > 0 && this.cmd.length - 1 < this.argumentsExpected) {
-      this.cmd.push(v);
-      if (this.cmd.length - 1 === this.argumentsExpected) this.executeCommand();
-      return;
+      this.cmd.push(v)
+      if (this.cmd.length - 1 === this.argumentsExpected) this.executeCommand()
+      return
     }
-    this.cmd = [v];
-    this.argumentsExpected = argumentCount(v);
-    if (this.argumentsExpected === 0) this.executeCommand();
+    this.cmd = [v]
+    this.argumentsExpected = argumentCount(v)
+    if (this.argumentsExpected === 0) this.executeCommand()
   }
 
   private executeCommand() {
-    const value = this.cmd[0] as number;
+    const value = this.cmd[0] as number
     switch (value & 0xc0) {
-      case 0x00: this.controllerCommand(value); break;
-      case 0x40: this.fdbCommand(value); break;
-      case 0x80: this.transmitTwoBytes(value); break;
-      case 0xc0: this.pollFdbDevice(value); break;
+      case 0x00: this.controllerCommand(value); break
+      case 0x40: this.fdbCommand(value); break
+      case 0x80: this.transmitTwoBytes(value); break
+      case 0xc0: this.pollFdbDevice(value); break
     }
-    this.cmd = [];
-    this.argumentsExpected = 0;
+    this.cmd = []
+    this.argumentsExpected = 0
   }
 
   // 00xxxxxx - commands addressed to the ADB micro-controller itself.
   private controllerCommand(value: number) {
-    const a1 = this.cmd[1] ?? 0;
+    const a1 = this.cmd[1] ?? 0
     switch (value) {
       case 0x01:                          // abort
       case 0x02:                          // reset the micro-controller
       case 0x03:                          // flush
-        this.response = [];
-        this.modes = 0;
-        this.errorByte = 0;
-        break;
+        this.response = []
+        this.modes = 0
+        this.errorByte = 0
+        break
       case 0x04:                          // set modes
-        this.modes |= a1;
-        break;
+        this.modes |= a1
+        break
       case 0x05:                          // clear modes
-        this.modes &= ~a1;
-        break;
+        this.modes &= ~a1
+        break
       case 0x06:                         // set configuration bytes
-        this.setConfiguration(a1, this.cmd[2] ?? 0, this.cmd[3] ?? 0);
-        break;
+        this.setConfiguration(a1, this.cmd[2] ?? 0, this.cmd[3] ?? 0)
+        break
       case 0x07:                          // synch
-        this.modes = a1;
-        this.setConfiguration(this.cmd[2] ?? 0, this.cmd[3] ?? 0, this.cmd[4] ?? 0);
-        break;
+        this.modes = a1
+        this.setConfiguration(this.cmd[2] ?? 0, this.cmd[3] ?? 0, this.cmd[4] ?? 0)
+        break
       case 0x08:                          // write micro-controller memory
-        this.ucMemory[a1 & 0xff] = this.cmd[2] ?? 0;
-        break;
+        this.ucMemory[a1 & 0xff] = this.cmd[2] ?? 0
+        break
       case 0x09:                          // read micro-controller memory
-        this.postResponse([this.ucMemory[((this.cmd[2] ?? 0) << 8 | a1) & 0xff]]);
-        break;
+        this.postResponse([this.ucMemory[((this.cmd[2] ?? 0) << 8 | a1) & 0xff]])
+        break
       case 0x0a:                          // read modes byte
-        this.postResponse([this.modes]);
-        break;
+        this.postResponse([this.modes])
+        break
       case 0x0b:                          // read configuration bytes
-        this.postResponse([this.configuration[0], this.configuration[1], this.configuration[2]]);
-        break;
+        this.postResponse([this.configuration[0], this.configuration[1], this.configuration[2]])
+        break
       case 0x0c:                          // read then clear the error byte
-        this.postResponse([this.errorByte]);
-        this.errorByte = 0;
-        break;
+        this.postResponse([this.errorByte])
+        this.errorByte = 0
+        break
       case 0x0d:                          // version
-        this.postResponse([ADB_VERSION]);
-        break;
+        this.postResponse([ADB_VERSION])
+        break
       case 0x0e:                          // charsets available
         // The count is "how many are available", followed by that many indices.
         // GS/OS reads exactly count more bytes, so offering only index 0 keeps
         // the reply length in step with what it consumes.
-        this.postResponse([1, 0]);
-        break;
+        this.postResponse([1, 0])
+        break
       case 0x0f:                          // layouts available
-        this.postResponse([1, 0]);
-        break;
+        this.postResponse([1, 0])
+        break
       case 0x11:                          // send an FDB keycode: echo a key
         // A guest that has taken over the ADB keyboard hands the event back
         // through this command (XRick's SRQ completion routine does exactly
@@ -472,11 +472,11 @@ export class IIGSADB {
         // $28 maps to lowercase 'k' ($6B) and the latch is $EB. An unmapped
         // keycode becomes $80 (no ASCII, only "a key is present").
         {
-          const keycode = a1 & 0x7f;
+          const keycode = a1 & 0x7f
           const keypad = keycode >= 0x43 && keycode <= 0x5c ? 0x10 : 0
-          this.keyboardRegs[0] = (adbKeycodeToAscii(keycode, 0) | 0x80) & 0xff;
-          this.keyboardRegs[1] = keypad;
-          break;
+          this.keyboardRegs[0] = (adbKeycodeToAscii(keycode, 0) | 0x80) & 0xff
+          this.keyboardRegs[1] = keypad
+          break
         }
     }
   }
@@ -491,20 +491,20 @@ export class IIGSADB {
   // KEGS's non-autopoll shape), so KEGS's g_adb_mode & 0x01 check has nothing to
   // switch here and tracking it would be another field nothing reads.
   private setConfiguration(val0: number, val1: number, val2: number) {
-    this.configuration[0] = val0;
-    this.configuration[1] = val1;
-    this.configuration[2] = val2;
-    this.mouseCtlAddr = (val0 >> 4) & 0x0f;
+    this.configuration[0] = val0
+    this.configuration[1] = val1
+    this.configuration[2] = val2
+    this.mouseCtlAddr = (val0 >> 4) & 0x0f
   }
 
   // 01xxxxxx - commands addressed to the FDB (bus) controller.
   private fdbCommand(value: number) {
     if (value === 0x40) {
       // Reset the FDB: both devices go back to their power-on state.
-      this.mouseAddr = ADDR_MOUSE;
-      this.mouseCtlAddr = ADDR_MOUSE;
-      this.keyboardAddr = ADDR_KEYBOARD;
-      this.initDeviceRegisters();
+      this.mouseAddr = ADDR_MOUSE
+      this.mouseCtlAddr = ADDR_MOUSE
+      this.keyboardAddr = ADDR_KEYBOARD
+      this.initDeviceRegisters()
     }
     // 0x48 receive bytes, 0x50s/0x60s/0x70s enable SRQ / flush / disable SRQ:
     // the emulator's devices answer synchronously, so there is nothing to do.
@@ -513,50 +513,50 @@ export class IIGSADB {
   // 10xxxxxx - "transmit 2 bytes": a two byte FDB *listen* into a device
   // register. Only register 3 (address / handler) has any effect.
   private transmitTwoBytes(value: number) {
-    const addr = value & 0x0f;
-    const reg = (value >> 4) & 0x03;
-    if (reg !== 3) return;
+    const addr = value & 0x0f
+    const reg = (value >> 4) & 0x03
+    if (reg !== 3) return
     if (addr === this.mouseAddr) {
       // Register 3 is written as <event byte><address|handler|SRQ byte>.
-      this.mouseRegs[6] = this.cmd[1] ?? 0;
-      this.mouseRegs[7] = this.cmd[2] ?? 0;
+      this.mouseRegs[6] = this.cmd[1] ?? 0
+      this.mouseRegs[7] = this.cmd[2] ?? 0
     } else if (addr === this.keyboardAddr) {
-      this.keyboardRegs[6] = this.cmd[1] ?? 0;
-      this.keyboardRegs[7] = this.cmd[2] ?? 0;
+      this.keyboardRegs[6] = this.cmd[1] ?? 0
+      this.keyboardRegs[7] = this.cmd[2] ?? 0
     }
   }
 
   // 11xxxxxx - "poll FDB device": an FDB *talk*. The two register bytes come
   // back through the $C026 response queue. This is how GS/OS reads the mouse.
   private pollFdbDevice(value: number) {
-    const addr = value & 0x0f;
-    const reg = (value >> 4) & 0x03;
-    let lo = 0;
-    let hi = 0;
+    const addr = value & 0x0f
+    const reg = (value >> 4) & 0x03
+    let lo = 0
+    let hi = 0
     if (addr === this.mouseAddr) {
       if (this.mouseHasData) {
         // Same read-time button snapshot as $C024: register 0 carries the live
         // button state when the guest polls it. Only for register 0 - registers
         // 1-2 are other mouse registers, not the motion/button report.
         if (reg === 0 && !this.reportInProgress) {
-          this.patchReportButton();
-          noteAdbLog("poll", this.mouseRegs[0], this.mouseRegs[1], value);
+          this.patchReportButton()
+          noteAdbLog("poll", this.mouseRegs[0], this.mouseRegs[1], value)
         }
-        lo = this.mouseRegs[reg * 2] ?? 0;
-        hi = this.mouseRegs[reg * 2 + 1] ?? 0;
-        if (reg === 0 && !this.reportInProgress) this.consumeReport();
+        lo = this.mouseRegs[reg * 2] ?? 0
+        hi = this.mouseRegs[reg * 2 + 1] ?? 0
+        if (reg === 0 && !this.reportInProgress) this.consumeReport()
       } else if (reg === 0) {
-        noteAdbLog("poll", -1, -1, value);
+        noteAdbLog("poll", -1, -1, value)
       }
     } else if (addr === this.keyboardAddr) {
-      lo = this.keyboardRegs[reg * 2] ?? 0;
-      hi = this.keyboardRegs[reg * 2 + 1] ?? 0;
+      lo = this.keyboardRegs[reg * 2] ?? 0
+      hi = this.keyboardRegs[reg * 2 + 1] ?? 0
       if (reg === 0) {
-        this.keyboardRegs[0] = 0xff;
-        this.keyboardRegs[1] = 0xff;
+        this.keyboardRegs[0] = 0xff
+        this.keyboardRegs[1] = 0xff
       }
     }
-    this.postResponse([lo, hi], true);
+    this.postResponse([lo, hi], true)
   }
 
   // --- Mouse ---
@@ -573,7 +573,7 @@ export class IIGSADB {
       || this.mouseHasData
       || this.pendingX !== 0
       || this.pendingY !== 0
-      || this.buttonChanged;
+      || this.buttonChanged
   }
 
   // True while the guest still owes us a read: either the latched device
@@ -593,14 +593,14 @@ export class IIGSADB {
   private latchMouseReport() {
     // Keep unread X/Y together; later motion stays pending until this pair is consumed.
     if (this.mouseHasData || this.reportInProgress) return
-    const clamp = (v: number) => Math.max(-63, Math.min(63, v));
-    const dx = clamp(this.pendingX);
-    const dy = clamp(this.pendingY);
+    const clamp = (v: number) => Math.max(-63, Math.min(63, v))
+    const dx = clamp(this.pendingX)
+    const dy = clamp(this.pendingY)
     // Only replace the register when there is something new to report, so an
     // unread report is not wiped out.
-    if (dx === 0 && dy === 0 && !this.buttonChanged) return;
-    this.pendingX -= dx;
-    this.pendingY -= dy;    // Bits 6-0 are a *seven-bit two's complement* displacement, not a direction
+    if (dx === 0 && dy === 0 && !this.buttonChanged) return
+    this.pendingX -= dx
+    this.pendingY -= dy    // Bits 6-0 are a *seven-bit two's complement* displacement, not a direction
     // bit plus a magnitude. gssquared encodes it as (delta & 0x3F) with bit 6
     // set for a negative delta (ADB_Mouse::encode_relative_motion), so -63 goes
     // out as $41 and -1 as $7F. The IIgs ROM's accumulator (FF:9D49-FF:9D9E)
@@ -610,12 +610,12 @@ export class IIGSADB {
     // the absolute magnitude made every negative report arrive as
     // (magnitude - 64): a -63 move read as -1 and a -1 move as -63, so
     // leftward motion was essentially lost and the cursor only ever climbed.
-    this.mouseRegs[0] = (dx & 0x3f) | (dx < 0 ? 0x40 : 0x00);
-    this.mouseRegs[1] = (dy & 0x3f) | (dy < 0 ? 0x40 : 0x00);
-    this.mouseHasData = true;
-    this.buttonChanged = false;
-    this.updateButtonDown();
-    noteAdbLog("latch", dx, dy, this.mouseRegs[0]);
+    this.mouseRegs[0] = (dx & 0x3f) | (dx < 0 ? 0x40 : 0x00)
+    this.mouseRegs[1] = (dy & 0x3f) | (dy < 0 ? 0x40 : 0x00)
+    this.mouseHasData = true
+    this.buttonChanged = false
+    this.updateButtonDown()
+    noteAdbLog("latch", dx, dy, this.mouseRegs[0])
   }
 
   // The OS has just finished a report (both $C024 bytes, or a poll of device
@@ -623,9 +623,9 @@ export class IIGSADB {
   // carry is delivered as another report, otherwise the interrupt line would
   // stay asserted forever and the machine would do nothing but service IRQs.
   private consumeReport() {
-    this.mouseHasData = false;
-    this.reportInProgress = false;
-    this.latchMouseReport();
+    this.mouseHasData = false
+    this.reportInProgress = false
+    this.latchMouseReport()
   }
 
   // Read-back for tests/diagnostics: the live register 0 pair. Byte 0 carries
@@ -646,7 +646,7 @@ export class IIGSADB {
     // KEGs's adb_read_c024() returns 0 when the mouse is off, rather than
     // whatever happens to be latched.
     if (!this.hasMouseData()) {
-      noteAdbLog("byte", -1);
+      noteAdbLog("byte", -1)
       return 0
     }    // The report is already latched into the device register by queueMouse /
     // setMouseButton; reading $C024 just hands it out one byte at a time.
@@ -654,18 +654,18 @@ export class IIGSADB {
       // Grab the Y byte before queueing up the next report, which overwrites
       // the register. The button bits were snapshotted (into both bytes) when
       // the X byte was handed out, so Y matches X.
-      const y = this.mouseRegs[1];
-      this.consumeReport();
-      noteAdbLog("byte", 1, y, this.pendingX);
-      return y;
+      const y = this.mouseRegs[1]
+      this.consumeReport()
+      noteAdbLog("byte", 1, y, this.pendingX)
+      return y
     }
     // First byte of a fresh report: snapshot the live button state now, so the
     // report the guest is about to read reflects any press that happened after
     // this motion was latched but before it was polled.
-    this.patchReportButton();
-    this.reportInProgress = true;
-    noteAdbLog("byte", 0, this.mouseRegs[0], this.pendingX);
-    return this.mouseRegs[0];
+    this.patchReportButton()
+    this.reportInProgress = true
+    noteAdbLog("byte", 0, this.mouseRegs[0], this.pendingX)
+    return this.mouseRegs[0]
   }
 
   // The button state travels in bit 7 of *both* report bytes, and a report is
@@ -679,35 +679,35 @@ export class IIGSADB {
   // a long move leaves in pendingX/pendingY, so after "move then click" the
   // guest kept reading stale button-up reports and the click was lost.
   private patchReportButton() {
-    this.updateButtonDown();
+    this.updateButtonDown()
   }
 
   // gssquared ADB_Mouse::update_button_down, verbatim: the RIGHT button goes
   // in byte 0 and the LEFT button in byte 1, leaving the motion bits alone.
   private updateButtonDown() {
-    this.mouseRegs[0] = this.button1Down | (this.mouseRegs[0] & 0x7f);
-    this.mouseRegs[1] = this.button0Down | (this.mouseRegs[1] & 0x7f);
+    this.mouseRegs[0] = this.button1Down | (this.mouseRegs[0] & 0x7f)
+    this.mouseRegs[1] = this.button0Down | (this.mouseRegs[1] & 0x7f)
   }
 
   queueMouse(dx: number, dy: number) {
-    noteAdbLog("queue", dx, dy);
-    this.pendingX += dx;
-    this.pendingY += dy;
+    noteAdbLog("queue", dx, dy)
+    this.pendingX += dx
+    this.pendingY += dy
     // Make the report visible to a poll of the device register straight away,
     // which is how GS/OS normally picks the mouse up.
-    this.latchMouseReport();
+    this.latchMouseReport()
   }
 
   // button: 0 = left (button 0), 1 = right (button 1).
   setMouseButton(button: 0 | 1, pressed: boolean) {
-    noteAdbLog("button", button, pressed ? 1 : 0);
-    const value = pressed ? 0x00 : 0x80;
+    noteAdbLog("button", button, pressed ? 1 : 0)
+    const value = pressed ? 0x00 : 0x80
     if (button === 0) {
-      if (this.button0Down === value) return;
-      this.button0Down = value;
+      if (this.button0Down === value) return
+      this.button0Down = value
     } else {
-      if (this.button1Down === value) return;
-      this.button1Down = value;
+      if (this.button1Down === value) return
+      this.button1Down = value
     }
     if (this.mouseHasData && !this.reportInProgress) {
       // A motion report is sitting unread in the register. gssquared lets the
@@ -717,25 +717,25 @@ export class IIGSADB {
       // Deferring used to leave the press stuck behind the leftover-motion
       // reports of a long move, and a press that arrives after a motion but
       // before any poll must still be seen by the guest.
-      this.patchReportButton();
-      return;
+      this.patchReportButton()
+      return
     }
     if (this.reportInProgress) {
       // The guest is partway through $C024 (X byte out, Y byte to come) and the
       // report is frozen with its own button snapshot; this report may be
       // committed to the guest. consumeReport() latches the next one, so make
       // sure it happens even with no motion pending.
-      this.buttonChanged = true;
-      return;
+      this.buttonChanged = true
+      return
     }
     // Nothing unread: make the change visible immediately as its own report.
-    this.buttonChanged = true;
-    this.latchMouseReport();
+    this.buttonChanged = true
+    this.latchMouseReport()
   }
 
   // --- Keyboard ---
   hasKeyData(): boolean {
-    return this.keyboardRegs[0] !== 0xff || this.keyboardRegs[1] !== 0xff;
+    return this.keyboardRegs[0] !== 0xff || this.keyboardRegs[1] !== 0xff
   }
 
   // A key event while the micro-controller has disabled keyboard auto-polling
@@ -755,7 +755,7 @@ export class IIGSADB {
     // no response bytes) as gssquared leaves response_bytes at zero here.
     this.reportByte = this.reportByte === DATA_REPORT_DESKTOP_MANAGER
       ? DATA_REPORT_DESKTOP_MANAGER | DATA_REPORT_SERVICE_REQUEST
-      : DATA_REPORT_SERVICE_REQUEST;
+      : DATA_REPORT_SERVICE_REQUEST
   }
 
   // Queue one ADB keyboard event byte into register 0, with the live modifier
@@ -807,7 +807,7 @@ export class IIGSADB {
     if (bit !== undefined) {
       this.modifiers = eventByte & 0x80
         ? this.modifiers & ~bit
-        : this.modifiers | bit | MOD_LATCH;
+        : this.modifiers | bit | MOD_LATCH
     }
     // Control + Open Apple + Escape is not a key the ROM can be told about
     // through the keyboard register: the ADB micro intercepts it and answers
@@ -817,19 +817,19 @@ export class IIGSADB {
     // buffered, so the menu does not immediately see it as a dismiss.
     if ((eventByte & 0x7f) === 0x35 && (eventByte & 0x80) === 0
       && (this.modifiers & (MOD_CONTROL | MOD_OPEN)) === (MOD_CONTROL | MOD_OPEN)) {
-      this.reportByte = DATA_REPORT_DESKTOP_MANAGER;
-      noteAdbLog("desk", this.modifiers);
-      return true;
+      this.reportByte = DATA_REPORT_DESKTOP_MANAGER
+      noteAdbLog("desk", this.modifiers)
+      return true
     }
-    this.keyboardRegs[0] = eventByte & 0xff;
-    this.keyboardRegs[1] = this.modifiers;
-    this.latchServiceRequest();
-    return false;
+    this.keyboardRegs[0] = eventByte & 0xff
+    this.keyboardRegs[1] = this.modifiers
+    this.latchServiceRequest()
+    return false
   }
 
   // Read-back for tests/diagnostics: the last queued ADB keyboard report.
   getKeyboardEvent(): [number, number] {
-    return [this.keyboardRegs[0], this.keyboardRegs[1]];
+    return [this.keyboardRegs[0], this.keyboardRegs[1]]
   }
 
   // The ASCII byte the micro would store for this keycode with the live modifier
@@ -841,19 +841,19 @@ export class IIGSADB {
   }
 
   readModifiers(): number {
-    const m = this.modifiers;
-    this.modifiers &= ~MOD_LATCH;
-    return m;
+    const m = this.modifiers
+    this.modifiers &= ~MOD_LATCH
+    return m
   }
 
   peekModifiers(): number {
-    return this.modifiers;
+    return this.modifiers
   }
 
   interruptPending(): boolean {
     return ((this.interruptEnables & STATUS_MOUSE_INTERRUPT) !== 0 && this.hasMouseData())
       || ((this.interruptEnables & STATUS_KEYBOARD_INTERRUPT) !== 0 && this.hasKeyData())
-      || ((this.interruptEnables & STATUS_DATA_INTERRUPT) !== 0 && this.dataRegisterFull());
+      || ((this.interruptEnables & STATUS_DATA_INTERRUPT) !== 0 && this.dataRegisterFull())
   }
 
   // The soft-switch bytes in RAM hold only what the CPU wrote to $C027. The
@@ -922,28 +922,28 @@ export class IIGSADB {
   }
 
   reset() {
-    this.response = [];
-    this.reportByte = null;
-    this.modes = 0;
-    this.configuration = new Uint8Array(3);
-    this.ucMemory = new Uint8Array(256);
-    this.errorByte = 0;
-    this.mouseAddr = ADDR_MOUSE;
-    this.mouseCtlAddr = ADDR_MOUSE;
-    this.keyboardAddr = ADDR_KEYBOARD;
-    this.initDeviceRegisters();
-    this.pendingX = 0;
-    this.pendingY = 0;
-    this.button0Down = 0x80;
-    this.button1Down = 0x80;
-    this.buttonChanged = false;
-    this.reportInProgress = false;
-    this.modifiers = 0;
-    this.interruptEnables = 0;
-    this.cmd = [];
-    this.argumentsExpected = 0;
-    this.romTaskPollCycle = -1e15;
+    this.response = []
+    this.reportByte = null
+    this.modes = 0
+    this.configuration = new Uint8Array(3)
+    this.ucMemory = new Uint8Array(256)
+    this.errorByte = 0
+    this.mouseAddr = ADDR_MOUSE
+    this.mouseCtlAddr = ADDR_MOUSE
+    this.keyboardAddr = ADDR_KEYBOARD
+    this.initDeviceRegisters()
+    this.pendingX = 0
+    this.pendingY = 0
+    this.button0Down = 0x80
+    this.button1Down = 0x80
+    this.buttonChanged = false
+    this.reportInProgress = false
+    this.modifiers = 0
+    this.interruptEnables = 0
+    this.cmd = []
+    this.argumentsExpected = 0
+    this.romTaskPollCycle = -1e15
   }
 }
 
-export const iigsADB = new IIGSADB();
+export const iigsADB = new IIGSADB()

@@ -128,10 +128,10 @@ test("the ROM VBL path: does it survive GS/OS, and does a mouse move reach it", 
     console.log(`[VBL] ADB hasMouseData after the move: ${(iigsADB as unknown as { hasMouseData: () => boolean }).hasMouseData()}`)
 
     // Did the cursor holes move? Section 29a measured them advancing.
-    console.log(`[VBL] cursor holes $047C/$057C/$04FC/$05FC = ` +
+    console.log("[VBL] cursor holes $047C/$057C/$04FC/$05FC = " +
       `${memGet24(0x047c).toString(16)}/${memGet24(0x057c).toString(16)}/` +
       `${memGet24(0x04fc).toString(16)}/${memGet24(0x05fc).toString(16)}`)
-    console.log(`[VBL] $E1:0190-$E1:0193 = ` +
+    console.log("[VBL] $E1:0190-$E1:0193 = " +
       Array.from(megaIIAux.subarray(0x0190, 0x0194)).map((b) => "$" + b.toString(16)).join(""))
     expect(true).toBe(true)
   } finally {

@@ -39,7 +39,7 @@ test("Test boot with C:\\dev\\emu\\ap2\\GSOS601.po", () => {
     ;(globalThis as any).cpu = cpu
     const ringBuffer: string[] = []
     const origPI = cpu.processInstruction.bind(cpu)
-    let past681d = false
+    const past681d = false
     let dumpedBrk = false
     cpu.processInstruction = (cb?: any) => {
       const pb = cpu.PB, pc = cpu.PC
@@ -67,15 +67,15 @@ test("Test boot with C:\\dev\\emu\\ap2\\GSOS601.po", () => {
       }
 
       if (pb === 0 && pc === 0x8315 && (!cpu.lastA8315 || cpu.A > cpu.lastA8315)) {
-        console.log(`[MVN START AT 00:8315] destBank=${memGet24(0x8316).toString(16)} srcBank=${memGet24(0x8317).toString(16)} A=${cpu.A.toString(16)} X=${cpu.X.toString(16)} Y=${cpu.Y.toString(16)}`);
+        console.log(`[MVN START AT 00:8315] destBank=${memGet24(0x8316).toString(16)} srcBank=${memGet24(0x8317).toString(16)} A=${cpu.A.toString(16)} X=${cpu.X.toString(16)} Y=${cpu.Y.toString(16)}`)
       }
       if (pb === 0 && pc === 0x8315) {
-        cpu.lastA8315 = cpu.A;
+        cpu.lastA8315 = cpu.A
       }
       if (pb === 0 && pc === 0xd46e) {
-        console.log(`[AT 00:D46E] S=${cpu.S.toString(16)}`);
+        console.log(`[AT 00:D46E] S=${cpu.S.toString(16)}`)
         for (let s = 1; s <= 30; s++) {
-          console.log(`S+${s}=$${memGet24(cpu.S + s).toString(16).padStart(2, "0")}`);
+          console.log(`S+${s}=$${memGet24(cpu.S + s).toString(16).padStart(2, "0")}`)
         }
       }
 
@@ -209,7 +209,7 @@ test("Test boot with C:\\dev\\emu\\ap2\\GSOS601.po", () => {
     saveShrToBmp(shrPage, "gsos_screen.bmp")
 
     // Dump text screen if any
-    let textLines: string[] = []
+    const textLines: string[] = []
     for (let row = 0; row < 24; row++) {
       let line = ""
       const base = 0x400 + (row % 8) * 0x80 + Math.floor(row / 8) * 0x28
@@ -257,7 +257,7 @@ function saveShrToBmp(shrData: Uint8Array, filepath: string) {
   const fileSize = 54 + pixelArraySize
   const bmp = Buffer.alloc(fileSize)
 
-  bmp.write('BM', 0)
+  bmp.write("BM", 0)
   bmp.writeUInt32LE(fileSize, 2)
   bmp.writeUInt32LE(54, 10)
   bmp.writeUInt32LE(40, 14)

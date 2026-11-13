@@ -67,8 +67,8 @@ import { ICPU } from "./icpu"
 import { CPU6502Wrapper } from "./cpu6502_wrapper"
 import { CPU65816 } from "./cpu65816"
 
-let cpu: ICPU = new CPU6502Wrapper();
-export const getCPU = (): ICPU => cpu;
+let cpu: ICPU = new CPU6502Wrapper()
+export const getCPU = (): ICPU => cpu
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"

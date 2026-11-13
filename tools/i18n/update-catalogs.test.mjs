@@ -180,7 +180,7 @@ msgstr "Enregistrer le disque"
 
     if (result.error?.code === "ENOENT") {
       // Skip test if msgmerge is not installed locally
-      return;
+      return
     }
 
     assert.equal(result.status, 0)

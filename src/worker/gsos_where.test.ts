@@ -52,11 +52,11 @@ test("GSOS601: where does the boot actually stop?", () => {
 
     // GS/OS / ROM state that says how far the boot got.
     console.log(`[STOP] $C029 NewVideo=${hex(iigsRegisters[0x29])} $C035 Shadow=${hex(iigsRegisters[0x35])} $C041 INTEN=${hex(iigsRegisters[0x41])} $C046 INTFLAG=${hex(iigsRegisters[0x46])}`)
-    console.log(`[STOP] Tool Locator $E1:03C0..$E1:03D0 = ` +
+    console.log("[STOP] Tool Locator $E1:03C0..$E1:03D0 = " +
       Array.from(megaIIAux.subarray(0x03c0, 0x03d0)).map((b) => hex(b)).join(" "))
-    console.log(`[STOP] $E1:00D8 task queue = ` +
+    console.log("[STOP] $E1:00D8 task queue = " +
       Array.from(megaIIAux.subarray(0x00d8, 0x00e0)).map((b) => hex(b)).join(" "))
-    console.log(`[STOP] $03F2-$03F4 warm reset sig = ` +
+    console.log("[STOP] $03F2-$03F4 warm reset sig = " +
       [0, 1, 2].map((i) => hex(memGet24(0x03f2 + i))).join(" "))
 
     // The SHR page, read the way the renderer reads it. Indexing megaIIAux at
@@ -66,11 +66,11 @@ test("GSOS601: where does the boot actually stop?", () => {
     console.log(`[RENDER] isIigsAuxLinear=${isIigsAuxLinear()} getShr().length=${shr.length}`)
     const rc = new Map<number, number>()
     for (const b of shr) rc.set(b, (rc.get(b) || 0) + 1)
-    console.log(`[RENDER] getShr byte histogram: ` +
+    console.log("[RENDER] getShr byte histogram: " +
       Array.from(rc.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([b, c]) => `${hex(b)}:${c}`).join(" "))
-    console.log(`[RENDER] first 8 SCB = ` +
+    console.log("[RENDER] first 8 SCB = " +
       Array.from(shr.slice(0x7d00, 0x7d08)).map((b) => hex(b)).join(" ") +
-      `   palette $7E00 = ` + Array.from(shr.slice(0x7e00, 0x7e10)).map((b) => hex(b)).join(" "))
+      "   palette $7E00 = " + Array.from(shr.slice(0x7e00, 0x7e10)).map((b) => hex(b)).join(" "))
 
     // A short buffer here is what makes processSuperHiRes() bail out and leave
     // the Super Hi-Res screen black, so assert on it directly.

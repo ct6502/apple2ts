@@ -394,7 +394,7 @@ test("writing $80 clears the wave-table pointer bank bit", () => {
 // the refresh boundary, which sped/slowed the already-rendered segment.
 test("an $E1 rate change splits the refresh block into old-rate and new-rate segments", () => {
   const blocks: Array<{ rate: number, frames: number }> = []
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const w2m = require("./worker2main")
   const original = w2m.passEnsoniqSound
   w2m.passEnsoniqSound = (samples: Int16Array, rate: number) => {

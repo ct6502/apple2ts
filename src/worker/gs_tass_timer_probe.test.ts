@@ -87,7 +87,7 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
     }
     // Progress the screens the way gs_tass.test.ts does.
     for (let f = 0; f < 1000; f++) jest.advanceTimersByTime(17)
-    console.log(`[TICK] boot: oscs not-halted: ` +
+    console.log("[TICK] boot: oscs not-halted: " +
       iigsEnsoniq.oscillators.filter(o => !(o.control & 1)).map((o, i) => `f${o.freq}/c${o.control}`).join(" "))
     {
       const wavesizes2 = [256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
@@ -112,7 +112,7 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
             `traverse=${traverse.toFixed(0)} samp pitch=${pitch.toFixed(1)}Hz midi=${midi.toFixed(2)} ctrl=$${o.control.toString(16)}`)
         }
       }
-      console.log(`[TICK] melody voices after BOOT (docRate=26320):\n  ` + rows.join("\n  "))
+      console.log("[TICK] melody voices after BOOT (docRate=26320):\n  " + rows.join("\n  "))
       rows.length = 0
     }
     // Zero-run structure of DOC RAM: long zero RUNS beside the 8-byte end
@@ -177,7 +177,7 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
             `traverse=${traverse.toFixed(0)} samp pitch=${pitch.toFixed(1)}Hz midi=${midi.toFixed(2)} ctrl=$${o.control.toString(16)}`)
         }
       }
-      console.log(`[TICK] melody voices after BOOT 1000 frames (docRate=26320):\n  ` + rows.join("\n  "))
+      console.log("[TICK] melody voices after BOOT 1000 frames (docRate=26320):\n  " + rows.join("\n  "))
     }
 
     // --- Clear the event log, then measure an interval of pure music time. ---
@@ -240,7 +240,7 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
       const arr = byOsc.get(e.onum) ?? (byOsc.set(e.onum, []), byOsc.get(e.onum)!)
       arr.push(e.cycles)
     }
-    console.log(`[TICK] halt events by oscillator: ` +
+    console.log("[TICK] halt events by oscillator: " +
       Array.from(byOsc.entries()).sort((a, b) => b[1].length - a[1].length).slice(0, 10)
         .map(([o, arr]) => `osc${o}: ${arr.length} events (${arr.every(c => true) ? "type-mixed" : ""})`).join("  "))
 
@@ -277,7 +277,7 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
         `resolution=${o.resolution} acc=${o.accumulator} irq=${o.irqpend}`
     }
     if (hotOsc >= 0) console.log(`[TICK] hot osc state: ${oscDump(hotOsc)}`)
-    console.log(`[TICK] all oscs: ` + iigsEnsoniq.oscillators.map((o, i) =>
+    console.log("[TICK] all oscs: " + iigsEnsoniq.oscillators.map((o, i) =>
       o.control & 1 ? "" : `o${i}:c${o.control}/f${o.freq}/v${o.vol}/w$${o.wavetblpointer.toString(16)}`).filter(Boolean).join(" "))
 
     // --- Wavetable content of the hot oscillator: the stride between
@@ -341,8 +341,8 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
       `((+${iigsEnsoniq.irqTicks - ticksStart}) over ${(t1 - t0) / CPU_CYCLES_PER_SEC} s), haltEvents=${haltEvents.length}`)
     // What the game writes back into osc31 registers right after each halt:
     // log freq/ctrl changes in the window so the re-key cadence is visible.
-    console.log(`[TICK] osc31 halt events in measure window (first 24):\n  ` + haltDump.slice(0, 24).join("\n  "))
-    console.log(`[TICK] march probe (first 40 blocks):\n  ` + marchProbe.slice(0, 40).join("\n  "))
+    console.log("[TICK] osc31 halt events in measure window (first 24):\n  " + haltDump.slice(0, 24).join("\n  "))
+    console.log("[TICK] march probe (first 40 blocks):\n  " + marchProbe.slice(0, 40).join("\n  "))
     console.log(`[TICK] note-onset / tick writes in measure window (${keyOns.length}):\n  ` + keyOns.slice(0, 70).join("\n  "))
     // Melody-voice pitch reconstruction: for each oscillator ever seen RUNNING
     // during the measure window, collect its (freq, wave length, resolution,
@@ -416,7 +416,7 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
         }
         return origWriteData.call(iigsEnsoniq, data)
       }
-    regWrites.push(`(start)` )
+    regWrites.push("(start)" )
     for (let f = 0; f < 120; f++) jest.advanceTimersByTime(17) // one tick interval
     console.log(`[TICK] osc31 DOC register writes during one tick interval (${regWrites.length}):\n  ` +
       regWrites.slice(0, 40).join("\n  "))

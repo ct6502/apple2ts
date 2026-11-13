@@ -104,7 +104,7 @@ test("Applesoft POKE programs the DOC and it produces a non-silent block", async
     console.log(`[BASIC] osc0 ctrl=$${o0.control.toString(16)} vol=$${o0.vol.toString(16)} ` +
       `freq=$${o0.freq.toString(16)} wtptr=$${o0.wavetblpointer.toString(16)} ` +
       `size=$${o0.wavetblsize.toString(16)}`)
-    console.log(`[BASIC] DOC RAM $0000: ` +
+    console.log("[BASIC] DOC RAM $0000: " +
       Array.from(ensoniqDocRam.subarray(0, 8)).map((b) => "$" + b.toString(16)).join(" "))
 
     // Render a block and check it is not silence. This is exactly what the worker

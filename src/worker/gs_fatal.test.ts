@@ -71,7 +71,7 @@ test("IIgs boot via motherboard path, catch fatal 0202", () => {
       probes.push(`sig-check $0310=${hx(memGet24(0x000310) | (memGet24(0x000311) << 8), 4)} expected=${hx(memGet24(0xff7350) | (memGet24(0xff7351) << 8), 4)} $0316=${hx(memGet24(0x000316), 2)}`)
     }
     if (pb === 0xff && pc === 0x740a && probes.length < 40) {
-      let src = `e1-src dump @740a:`
+      let src = "e1-src dump @740a:"
       for (let a = 0xE10361; a <= 0xE10376; a++) src += ` ${hx(memGet24(a), 2)}`
       probes.push(src)
     }
