@@ -28,6 +28,7 @@ jest.mock("./save_restore_ui", () => ({
 import { APP_DEFAULT_MACHINE } from "../common/app_target"
 import { AUTO_SNAPSHOT, DEFAULT_SLOT_CONFIG, UI_THEME } from "../common/utility"
 import {
+  getPreferenceDiskCollectionSort,
   getPreferenceIigsRomVersion,
   getPreferenceMachineName,
   getPreferenceSlotConfig,
@@ -38,6 +39,7 @@ import {
   loadPreferences,
   resetPreferences,
   setPreferenceAutoSnapshot,
+  setPreferenceDiskCollectionSort,
   setPreferenceIigsRomVersion,
   setPreferenceMachineName,
   setPreferenceSlotConfig,
@@ -134,6 +136,19 @@ describe("slot preference reset", () => {
     loadPreferences()
 
     expect(localStorage.getItem("apple2ts_save_state")).toBe(savedState)
+  })
+
+  test("clears disk collection sorting preferences during reset", () => {
+    setPreferenceDiskCollectionSort(0, "date-oldest")
+    setPreferenceDiskCollectionSort(2, "name-desc")
+    expect(getPreferenceDiskCollectionSort(0)).toBe("date-oldest")
+
+    resetPreferences()
+
+    expect(getPreferenceDiskCollectionSort(0)).toBeUndefined()
+    expect(getPreferenceDiskCollectionSort(2)).toBeUndefined()
+    expect(localStorage.getItem("diskCollectionSort.0")).toBeNull()
+    expect(localStorage.getItem("diskCollectionSort.2")).toBeNull()
   })
 
   test("turns Auto Snapshot off during reset", () => {

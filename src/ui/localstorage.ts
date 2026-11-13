@@ -753,6 +753,12 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceDebugTabLeftWidth(-1)
   setPreferencePrinterDialogPosition({ x: -1, y: -1 })
   setPreferencePageLength(-1)
+  // Disk collection sorting is persisted per tab under keys that the boolean
+  // UI preference loop never visits. Clear them too so Reset Settings restores
+  // the default collection order instead of keeping a custom sort mode.
+  Object.keys(localStorage)
+    .filter(key => key.startsWith("diskCollectionSort."))
+    .forEach(key => localStorage.removeItem(key))
 }
 
 export const getPreferencePageLength = (): number => {
