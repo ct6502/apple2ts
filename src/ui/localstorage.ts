@@ -702,6 +702,10 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceRetroIIGSColor("background")
   setPreferenceRetroIIGSColor("border")
   setPreferenceMockingboardMode(0, origin)
+  // VERA card placement and FM audio are separate preferences; reset them too
+  // or the worker keeps steering the card's SD interface at an old slot.
+  setPreferenceVeraSlot(0)
+  setPreferenceVeraFmAudioEnabled(true, origin)
   // Clear both machine slot backups first so setPreferenceMachineName loads
   // the built-in default layout instead of restoring a custom one.
   localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)

@@ -31,12 +31,16 @@ import {
   getPreferenceIigsRomVersion,
   getPreferenceMachineName,
   getPreferenceSlotConfig,
+  getPreferenceVeraFmAudioEnabled,
+  getPreferenceVeraSlot,
   PREFERENCE_SLOT_CONFIG_CLASSIC_KEY,
   PREFERENCE_SLOT_CONFIG_GS_KEY,
   resetPreferences,
   setPreferenceIigsRomVersion,
   setPreferenceMachineName,
   setPreferenceSlotConfig,
+  setPreferenceVeraFmAudioEnabled,
+  setPreferenceVeraSlot,
 } from "./localstorage"
 import * as main2worker from "./main2worker"
 
@@ -91,5 +95,21 @@ describe("slot preference reset", () => {
     expect(localStorage.getItem("iigsRom")).toBeNull()
     expect(getPreferenceIigsRomVersion()).toBe("01")
     expect(jest.mocked(main2worker.passSetIigsRomVersion).mock.lastCall).toEqual(["01"])
+  })
+
+  test("clears VERA placement and restores FM audio during reset", () => {
+    setPreferenceVeraSlot(4)
+    setPreferenceVeraFmAudioEnabled(false)
+    expect(getPreferenceVeraSlot()).toBe(4)
+    expect(getPreferenceVeraFmAudioEnabled()).toBe(false)
+
+    resetPreferences()
+
+    expect(localStorage.getItem("veraSlot")).toBeNull()
+    expect(localStorage.getItem("veraFmAudioEnabled")).toBeNull()
+    expect(getPreferenceVeraSlot()).toBe(0)
+    expect(getPreferenceVeraFmAudioEnabled()).toBe(true)
+    expect(jest.mocked(main2worker.passSetVeraSlot).mock.lastCall).toEqual([0])
+    expect(jest.mocked(main2worker.passSetVeraFmEnabled).mock.lastCall).toEqual([true])
   })
 })
