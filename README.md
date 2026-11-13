@@ -204,6 +204,24 @@ The `ct6502/apple2gts` deployment requires one repository secret:
 
 The optional Cloudflare Pages workflow remains apple2ts-only and is unchanged.
 
+### Deployment Readiness Checklist
+
+Dual deployment is implemented in the workflows, but it is not yet activated for production. Before merging the workflow to the upstream `main` branch, verify all of these:
+
+1. Set `APPLE2GTS_TOKEN` in the upstream repository. The token must be able to push `gh-pages` and dispatch the `apple2ts-deploy` event in `ct6502/apple2gts`.
+2. Confirm the `ct6502/apple2gts` Pages workflow listens for `repository_dispatch` type `apple2ts-deploy`, checks out `gh-pages`, and deploys Pages.
+3. Configure the `apple2gts.com` custom domain and DNS records, then enable HTTPS. Leave the existing `apple2ts.com` Pages setup untouched.
+4. Make the CI gates pass. The workflow runs `npm run lint` and `npm test` before building/deploying, so a repo-wide lint failure or a failing test blocks both sites.
+5. Push the workflow change to `main` and run the workflow once manually. Verify `apple2ts.com` and `apple2gts.com`, including the `CNAME` files in each artifact.
+
+The branch currently carries pre-existing repo-wide lint failures (diagnostic scripts) and known test failures; these are not caused by the target code and must be cleaned up or quarantined separately before relying on CI as a deploy gate.
+
+### Target-specific Follow-ups
+
+- The machine menu hides Apple IIgs in the `apple2ts` target, but other machine pickers (for example the link builder) still list the full machine set.
+- Deeper target isolation for the debugger and preferences panels is still shared.
+- A persisted `APPLE2GS` preference can outrank the `apple2ts` default machine; decide whether the `apple2ts` build should force a classic machine.
+
 ## Upgrade Packages
 
 <https://www.hostingadvice.com/how-to/update-npm-packages/>

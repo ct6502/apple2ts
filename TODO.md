@@ -59,6 +59,27 @@
     - Target 2: 部署至 `apple2gts.com`（CNAME: `apple2gts.com`）。
     - `ct6502/apple2gts` 採 `gh-pages` 分支 + `apple2ts-deploy` repository dispatch；需設定 `APPLE2GTS_TOKEN` secret。
 
+### Priority 3b: Deployment Activation & CI Cleanup
+- [ ] **設定 `APPLE2GTS_TOKEN`**：
+  - 上游 repo 需設定 token；需能 push `ct6502/apple2gts` 的 `gh-pages` 並發 `apple2ts-deploy` dispatch。
+- [ ] **啟用 Workflow**：
+  - Push trigger 目前只在 `main`；將 workflow 合併到 `main`（或建立 staging trigger）。
+  - 手動跑一次 workflow，確認兩站 build / deploy 都成功。
+- [ ] **清理 CI Gate**：
+  - repo-wide `npm run lint` 目前被既有 diagnostic `.cjs` / `.tmp` 檔卡住。
+  - 追蹤/忽略這些既有檔案，或調整 lint gate，讓 workflow 能通過。
+- [ ] **修 test gate**：
+  - 目前看到至少 `gs_basic_sound`、`gs_timepilot_flicker`、`gs_rom03_reloc` 等既有失敗；需修掉或隔離。
+- [ ] **確認 Pages / Domain**：
+  - `ct6502/apple2gts` Pages 指向 `gh-pages`。
+  - `apple2gts.com` DNS / CNAME / HTTPS 設定完成；`apple2ts.com` 不受影響。
+- [ ] **Target UI 收尾**：
+  - linkbuilder 等機型清單仍未 target 過濾。
+  - debugger / preferences 的 target 隔離仍共用。
+  - 已存的 `APPLE2GS` preference 仍可能覆蓋 `apple2ts` 預設機型。
+- [ ] **Cloudflare 雙站（可選）**：
+  - 若要 Cloudflare 也雙站，需處理 `dist/<target>` 與 worker 輸出路徑。
+
 ### Priority 4: IIgs 相容性與核心穩定度衝刺 (90~95%+)
 - [ ] **延續 65816 / MMU / Video / Timing 修復**：
   - 檢視 `src/worker/cpu65816.ts` 的 `addrAbsoluteIndirect` 等修復與對應測試。
