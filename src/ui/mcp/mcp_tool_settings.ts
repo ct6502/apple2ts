@@ -64,16 +64,18 @@ export function toolSetSpeed(speed: number): MCPToolResult {
   }
 }
 
+export const MCP_MACHINE_TYPES: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
+
 /**
  * Set the machine type
- * @param machineType "APPLE2P" (Apple II+), "APPLE2EU" (Apple IIe unenhanced), "APPLE2EE" (Apple IIe enhanced)
+ * @param machineType "APPLE2P" (Apple II+), "APPLE2EU" (Apple IIe unenhanced), "APPLE2EE" (Apple IIe enhanced), "APPLE2GS" (Apple IIgs)
  */
 export function toolSetMachineType(machineType: string): MCPToolResult {
   try {
-    if (machineType !== "APPLE2P" && machineType !== "APPLE2EU" && machineType !== "APPLE2EE") {
+    if (!MCP_MACHINE_TYPES.includes(machineType as MACHINE_NAME)) {
       return {
         success: false,
-        error: "Machine type must be \"APPLE2P\", \"APPLE2EU\", or \"APPLE2EE\"",
+        error: "Machine type must be \"APPLE2P\", \"APPLE2EU\", \"APPLE2EE\", or \"APPLE2GS\"",
       }
     }
 
