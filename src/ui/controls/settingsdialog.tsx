@@ -106,7 +106,7 @@ export const SettingsDialog = (props: DisplayProps) => {
     }
 
     newConfig[slot] = cardId
-    setPreferenceSlotConfig(newConfig)
+    setPreferenceSlotConfig(newConfig, "external", machineName)
     props.updateDisplay()
   }
 

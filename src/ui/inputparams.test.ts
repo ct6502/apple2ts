@@ -26,7 +26,7 @@ jest.mock("./devices/vera/verasdicon", () => ({
 }))
 
 import { handleFragment, handleInputParams } from "./inputparams"
-import { getPreferenceSlotConfig, getPreferenceVeraSlot } from "./localstorage"
+import { getPreferenceSlotConfig, getPreferenceVeraSlot, PREFERENCE_SLOT_CONFIG_GS_KEY } from "./localstorage"
 import { getTabView, getUIStateBoolean } from "./ui_settings"
 import { handleSetDiskFromURL, handleSetDiskSwapperFromURLs, resetAllDiskDrives } from "./devices/disk/driveprops"
 import { handleSetVeraSdFromURL } from "./devices/vera/verasdicon"
@@ -77,6 +77,27 @@ describe("handleInputParams slot configuration", () => {
     expect(getPreferenceVeraSlot()).toBe(2)
     expect(getTabView()).toBe(4)
     expect(getUIStateBoolean("infoPanel")).toBe(true)
+  })
+
+  test("boots a GS URL with the saved IIgs slot layout, not classic defaults", () => {
+    const custom: SlotConfig = {
+      1: "ssc",
+      2: "gsModem",
+      3: "gsText80",
+      4: "mockingboard",
+      5: "gsSmartPort",
+      6: "gsDiskPort",
+      7: "smartport",
+    }
+    localStorage.setItem("machineName", JSON.stringify("APPLE2EE"))
+    localStorage.setItem(PREFERENCE_SLOT_CONFIG_GS_KEY, JSON.stringify(custom))
+    const passSetSlotConfig = jest.spyOn(main2worker, "passSetSlotConfig")
+    try {
+      handleInputParams("machine=apple2gs")
+      expect(passSetSlotConfig).toHaveBeenLastCalledWith(custom)
+    } finally {
+      passSetSlotConfig.mockRestore()
+    }
   })
 })
 

@@ -65,7 +65,7 @@ const selectRetroSlotCard = (context: RetroMenuContext, slot: SlotNumber, option
     setPreferenceRamWorks(ramSizeKb, context.settingsOrigin)
   }
   nextConfig[slot] = card
-  setPreferenceSlotConfig(nextConfig, context.settingsOrigin)
+  setPreferenceSlotConfig(nextConfig, context.settingsOrigin, handleGetMachineName())
   context.displayProps.updateDisplay()
 }
 

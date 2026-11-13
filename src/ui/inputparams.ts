@@ -9,7 +9,7 @@ import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setColorMode, setMonitorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
-import { getPreferenceMachineName, getPreferenceSlotConfig, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
+import { getPreferenceIigsSlotConfig, getPreferenceMachineName, getPreferenceSlotConfig, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
 import { sanitizeSlotConfig } from "../common/slot_options"
 import { Expectin } from "./api/expectin"
 import { notifySettingsChanged } from "./settingschange"
@@ -218,7 +218,10 @@ export const handleInputParams = (paramString = "") => {
     }
   }
 
-  const currentSlotConfig = getPreferenceSlotConfig()
+  // A GS URL boot must use the saved IIgs Control Panel card choices, not the
+  // classic slot config that loadPreferences() posted before the machine name.
+  const urlGsSlotConfig = urlMachine === "APPLE2GS" ? getPreferenceIigsSlotConfig() : null
+  const currentSlotConfig = urlGsSlotConfig ?? getPreferenceSlotConfig()
   const nextSlotConfig = { ...currentSlotConfig }
   let slotConfigChanged = false
 
@@ -314,9 +317,12 @@ export const handleInputParams = (paramString = "") => {
   }
 
   if (slotConfigChanged) {
-    const sanitized = sanitizeSlotConfig(nextSlotConfig, urlMachine ?? getPreferenceMachineName())
-    setPreferenceSlotConfig(sanitized)
+    const machine = urlMachine ?? getPreferenceMachineName()
+    const sanitized = sanitizeSlotConfig(nextSlotConfig, machine)
+    setPreferenceSlotConfig(sanitized, "external", machine)
     passSetSlotConfig(sanitized)
+  } else if (urlGsSlotConfig) {
+    passSetSlotConfig(urlGsSlotConfig)
   }
 
   const theme = params.get("theme")
