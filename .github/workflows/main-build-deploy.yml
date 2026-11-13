@@ -65,6 +65,7 @@ jobs:
       id: deployment
       uses: actions/deploy-pages@v4
     - name: Deploy Apple2GTS build
+      if: ${{ secrets.APPLE2GTS_TOKEN != '' }}
       uses: JamesIves/github-pages-deploy-action@v4.7.3
       with:
         token: ${{ secrets.APPLE2GTS_TOKEN }}
@@ -75,6 +76,7 @@ jobs:
         single-commit: true
         commit-message: "Deploy Apple2GTS from ${{ github.repository }}"
     - name: Dispatch Apple2GTS Pages deployment
+      if: ${{ secrets.APPLE2GTS_TOKEN != '' }}
       env:
         APPLE2GTS_TOKEN: ${{ secrets.APPLE2GTS_TOKEN }}
       run: |
