@@ -699,9 +699,18 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceRetroIIGSColor("background")
   setPreferenceRetroIIGSColor("border")
   setPreferenceMockingboardMode(0, origin)
-  setPreferenceMachineName(APP_DEFAULT_MACHINE, origin)
+  // Clear both machine slot backups first so setPreferenceMachineName loads
+  // the built-in default layout instead of restoring a custom one.
   localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
   localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
+  localStorage.removeItem("slotConfig")
+  setPreferenceMachineName(APP_DEFAULT_MACHINE, origin)
+  // The machine helper writes the fallback and its backup; reset must remove
+  // those persisted values too, or getPreferenceSlotConfig would restore the
+  // custom slots on the next Settings/URL load even though reset ran.
+  localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+  localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
+  localStorage.removeItem("slotConfig")
   setPreferenceRamWorks(64, origin)
   setPreferenceNewReleasesChecked()
   toggleScanlines(false)
