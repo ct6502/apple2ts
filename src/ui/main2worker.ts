@@ -1,9 +1,10 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
-  DEFAULT_SLOT_CONFIG, VeraSdStatus, 
+  DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, VeraSdStatus,
   MEMORY_DUMP_STATE,
   AUTO_SNAPSHOT,
   ERROR_CODE} from "../common/utility"
+import { APP_DEFAULT_MACHINE } from "../common/app_target"
 import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -667,14 +668,16 @@ let machineState: MachineState = {
   isTracing: TEST_DEBUG,
   iTempState: 0,
   lores: new Uint8Array(),
-  machineName: "APPLE2EE",
+  machineName: APP_DEFAULT_MACHINE,
   memoryDump: new Uint8Array(),
   noDelayMode: false,
   ramWorksBank: 0,
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
   showDebugTab: false,
-  slotConfig: { ...DEFAULT_SLOT_CONFIG },
+  slotConfig: APP_DEFAULT_MACHINE === "APPLE2GS"
+    ? { ...DEFAULT_SLOT_CONFIG_GS }
+    : { ...DEFAULT_SLOT_CONFIG },
   speedMode: 0,
   softSwitches: {} as unknown as MachineState["softSwitches"],
   stackString: "",
@@ -1098,7 +1101,11 @@ export const handleGetVeraSlot = () => {
 }
 
 export const handleGetSlotConfig = (): SlotConfig => {
-  return machineState.slotConfig || { ...DEFAULT_SLOT_CONFIG }
+  return machineState.slotConfig || (
+    handleGetMachineName() === "APPLE2GS"
+      ? { ...DEFAULT_SLOT_CONFIG_GS }
+      : { ...DEFAULT_SLOT_CONFIG }
+  )
 }
 
 export const handleGetSoftSwitchDescriptions = () => {

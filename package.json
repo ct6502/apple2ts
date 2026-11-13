@@ -28,6 +28,8 @@
     "start": "vite --open",
     "host": "vite --open --host",
     "build": "node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc && vite build",
+    "build:apple2ts": "npm run prebuild && node tools/build-target.mjs apple2ts",
+    "build:apple2gts": "npm run prebuild && node tools/build-target.mjs apple2gts",
     "build:cloudflare": "npm run build && node tools/build-cloudflare-worker.mjs",
     "prelint": "npm run generate-i18n-catalogs",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",

@@ -23,7 +23,10 @@ jobs:
         cache: 'npm'
     - run: npm ci --ignore-scripts
     - run: npm run lint
-    - run: npm run build
+    - name: Build apple2ts target
+      run: npm run build:apple2ts
+    - name: Build apple2gts target
+      run: npm run build:apple2gts
     - name: Install GNU gettext
       run: |
         sudo apt-get update

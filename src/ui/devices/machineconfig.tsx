@@ -15,6 +15,7 @@ import { notifySettingsChanged } from "../settingschange"
 import PopupMenu from "../controls/popupmenu"
 import { useTranslation } from "../../i18n/useTranslation"
 import { DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, RUN_MODE } from "../../common/utility"
+import { APP_TARGET } from "../../common/app_target"
 import { isIigsBuiltinSlot } from "../../common/iigs_slots"
 import { handleSetCPUState } from "../controller"
 import { isCanvasFullscreen, setCanvasFullscreen } from "../controls/fullscreenbutton"
@@ -182,8 +183,12 @@ export const MachineConfig = (props: DisplayProps) => {
     setPopupLocation([event.clientX, event.clientY])
   }
 
-  const machineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
-  const roms = [t("machine.models.apple2p"), t("machine.models.apple2eu"), t("machine.models.apple2ee"), "Apple IIgs"]
+  const machineNames: MACHINE_NAME[] = APP_TARGET === "apple2gts"
+    ? ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
+    : ["APPLE2P", "APPLE2EU", "APPLE2EE"]
+  const roms = APP_TARGET === "apple2gts"
+    ? [t("machine.models.apple2p"), t("machine.models.apple2eu"), t("machine.models.apple2ee"), "Apple IIgs"]
+    : [t("machine.models.apple2p"), t("machine.models.apple2eu"), t("machine.models.apple2ee")]
   const extraMemSize = handleGetMemSize()
   const machineName = handleGetMachineName()
   const slotConfig = handleGetSlotConfig()

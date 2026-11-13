@@ -1,6 +1,7 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
+import { APP_DEFAULT_MACHINE } from "../common/app_target"
 import { sanitizeSlotConfig } from "../common/slot_options"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetIigsRomVersion, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
@@ -214,15 +215,16 @@ export const getPreferenceMachineName = (): MACHINE_NAME => {
       if (parsed === "APPLE2P" || parsed === "APPLE2EU" || parsed === "APPLE2EE" || parsed === "APPLE2GS") {
         return parsed
       }
+      localStorage.removeItem("machineName")
     } catch {
-      // Clear invalid machineName
+      localStorage.removeItem("machineName")
     }
   }
-  return "APPLE2EE"
+  return APP_DEFAULT_MACHINE
 }
 
 export const setPreferenceMachineName = (
-  name: MACHINE_NAME = "APPLE2EE",
+  name: MACHINE_NAME = APP_DEFAULT_MACHINE,
   origin: SettingsChangeOrigin = "external",
 ) => {
   if (name === "APPLE2EE") {
@@ -577,15 +579,8 @@ export const loadPreferences = () => {
     }
   }
 
-  const machineName = localStorage.getItem("machineName")
   passSetIigsRomVersion(getPreferenceIigsRomVersion())
-  if (machineName) {
-    try {
-      passSetMachineName(JSON.parse(machineName))
-    } catch {
-      localStorage.removeItem("machineName")
-    }
-  }
+  passSetMachineName(getPreferenceMachineName())
 
   const mockingboardMode = localStorage.getItem("mockingboardMode")
   if (mockingboardMode) {
@@ -635,7 +630,7 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceRetroIIGSColor("background")
   setPreferenceRetroIIGSColor("border")
   setPreferenceMockingboardMode(0, origin)
-  setPreferenceMachineName("APPLE2EE", origin)
+  setPreferenceMachineName(APP_DEFAULT_MACHINE, origin)
   setPreferenceRamWorks(64, origin)
   setPreferenceNewReleasesChecked()
   toggleScanlines(false)

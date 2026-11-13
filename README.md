@@ -171,11 +171,38 @@ It correctly bundles React in production mode and optimizes the build for best p
 
 There should be no errors generated. If you see errors, be sure to check that your version of node and npm are up to date. If there are still errors, contact the author.
 
+### Deployment Targets
+
+The same source tree serves two sites. Set `BUILD_TARGET` to select the deployment identity; unset means `apple2ts` for ordinary development and Jest runs.
+
+```sh
+npm run build:apple2ts   # BUILD_TARGET=apple2ts, output: dist/apple2ts
+npm run build:apple2gts  # BUILD_TARGET=apple2gts, output: dist/apple2gts
+```
+
+The target selects the default machine (Apple IIe for `apple2ts`, Apple IIgs for `apple2gts`), the page title / description / favicon, the PWA manifest name and description, and the `CNAME` (`apple2ts.com` or `apple2gts.com`). Both builds still contain the full emulator; the target mainly decides how the site presents itself. A plain `npm run build` remains available and writes the generic `dist` used by the optional Cloudflare Pages workflow.
+
+For local development with the IIgs identity, set the variable before `npm start`:
+
+```sh
+BUILD_TARGET=apple2gts npm start
+```
+
+On PowerShell: `$env:BUILD_TARGET="apple2gts"; npm start`.
+
 **Note**: This project uses Github Pages to host the emulator. You should not need to build the package, except to confirm that the build will work correctly when changes are committed.
 
 ### Deployment
 
-When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. Both workflows lint, build, and test the code. For pushes to `main`, the workflow also deploys the build to Github Pages using the built-in `GITHUB_TOKEN` — no Personal Access Token or repository secret is required.
+When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. Both workflows lint, build, and test the code. For pushes to `main`, the workflow builds both deployment targets.
+
+The `apple2ts` target is uploaded to Github Pages as before. The `apple2gts` target is pushed to the separate `ct6502/apple2gts` repository's `gh-pages` branch (with its own `apple2gts.com` CNAME), and then the `apple2ts-deploy` repository-dispatch event tells that repository's workflow to deploy Pages.
+
+The `ct6502/apple2gts` deployment requires one repository secret:
+
+- **`APPLE2GTS_TOKEN`**: a GitHub token with write access to `ct6502/apple2gts`. It is used both for pushing the `gh-pages` branch and for sending the deployment dispatch. Set it under **Settings → Secrets and variables → Actions**.
+
+The optional Cloudflare Pages workflow remains apple2ts-only and is unchanged.
 
 ## Upgrade Packages
 
