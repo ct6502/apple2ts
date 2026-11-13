@@ -179,4 +179,26 @@ describe("slot preference reset", () => {
     expect(jest.mocked(main2worker.passSetVeraSlot).mock.lastCall).toEqual([0])
     expect(jest.mocked(main2worker.passSetVeraFmEnabled).mock.lastCall).toEqual([true])
   })
+
+  test("keeps a classic custom VERA slot through a GS reload and round trip", () => {
+    const customClassic: SlotConfig = { ...DEFAULT_SLOT_CONFIG, 4: "vera" }
+    setPreferenceMachineName("APPLE2EE")
+    setPreferenceSlotConfig(customClassic, "external", "APPLE2EE")
+    setPreferenceVeraSlot(4)
+    loadPreferences()
+    expect(getPreferenceVeraSlot()).toBe(4)
+
+    // Reloading on the IIgs has no VERA card in its own layout, but it must
+    // not erase the classic slot preference: switching back restores the
+    // classic custom layout with the card in slot 4.
+    setPreferenceMachineName("APPLE2GS")
+    loadPreferences()
+    expect(getPreferenceVeraSlot()).toBe(4)
+    expect(jest.mocked(main2worker.passSetVeraSlot).mock.lastCall).toEqual([4])
+
+    setPreferenceMachineName("APPLE2EE")
+    expect(getPreferenceSlotConfig()[4]).toBe("vera")
+    expect(getPreferenceVeraSlot()).toBe(4)
+    expect(jest.mocked(main2worker.passSetVeraSlot).mock.lastCall).toEqual([4])
+  })
 })

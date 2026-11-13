@@ -291,6 +291,15 @@ export const setPreferenceMachineName = (
     newSlotConfig[3] = newSlot3
   }
   setPreferenceSlotConfig(newSlotConfig, origin)
+  // Keep the VERA preference aligned when the restored layout contains the
+  // card. A GS layout has no VERA slot, so leave the existing preference alone
+  // there: the classic backup may still carry slot 4 for the switch back.
+  const veraSlot = newSlotConfig[2] === "vera"
+    ? 2
+    : newSlotConfig[4] === "vera"
+      ? 4
+      : getPreferenceVeraSlot()
+  setPreferenceVeraSlot(veraSlot)
   notifySettingsChanged([1, 2, 3, 4, 5, 6, 7].map(slot => `slots.${slot}`), origin)
 }
 
@@ -681,7 +690,14 @@ export const loadPreferences = () => {
 
   const slotConfig = getPreferenceSlotConfig()
   passSetSlotConfig(slotConfig)
-  const veraSlot = slotConfig[2] === "vera" ? 2 : slotConfig[4] === "vera" ? 4 : 0
+  // The slot backup for the other machine family may still carry a VERA card,
+  // so do not erase a saved preference just because this machine's layout has
+  // no VERA slot. The machine helper re-aligns it when the card returns.
+  const veraSlot = slotConfig[2] === "vera"
+    ? 2
+    : slotConfig[4] === "vera"
+      ? 4
+      : getPreferenceVeraSlot()
   setPreferenceVeraSlot(veraSlot)
 
   const traceSettings = getPreferenceTraceSettings()

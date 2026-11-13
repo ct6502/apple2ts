@@ -19,6 +19,7 @@ jest.mock("../main2worker", () => ({
   passSetRamWorks: jest.fn(),
   passSetSlotConfig: jest.fn(),
   passSetIigsRomVersion: jest.fn(),
+  passSetVeraSlot: jest.fn(),
   passSetVeraFmEnabled: jest.fn(),
 }))
 
