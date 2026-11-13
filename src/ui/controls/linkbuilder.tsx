@@ -171,20 +171,22 @@ const LinkBuilder = () => {
   const [tabSection, setTabSection] = useState(TAB.DISK)
   const [slotConfig, setSlotConfig] = useState<SlotConfig>({ ...DEFAULT_SLOT_CONFIG })
 
+  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs.
   const machineValues = [
-    t("machine.models.apple2ee"),
-    t("machine.models.apple2eu"),
     t("machine.models.apple2p"),
+    t("machine.models.apple2eu"),
+    t("machine.models.apple2ee"),
     "Apple IIgs"
   ]
   // Each droplist row and the MACHINE_NAME it stands for. Retrieving the running
   // machine and reading a user choice both go through this table so the two
   // cannot drift apart - the reason a running IIgs used to come back as an IIe.
-  const MACHINE_NAMES: MACHINE_NAME[] = ["APPLE2EE", "APPLE2EU", "APPLE2P", "APPLE2GS"]
+  const MACHINE_NAMES: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
   const machineNameFor = (row: string): MACHINE_NAME =>
     MACHINE_NAMES[machineValues.indexOf(row)] ?? "APPLE2EE"
   const machineRowFor = (name: MACHINE_NAME): string =>
-    machineValues[MACHINE_NAMES.indexOf(name)] ?? machineValues[0]
+    machineValues[MACHINE_NAMES.indexOf(name)]
+    ?? machineValues[MACHINE_NAMES.indexOf("APPLE2EE")]
   const lbMachineName = machineNameFor(machine)
 
   // The IIgs shares speed indices with the classic machines but names rows 2-5
@@ -418,7 +420,10 @@ const LinkBuilder = () => {
     setTextBlock("")
     setLoadBlock("")
     setHexBlock("")
-    setMachine(machineValues[0])
+    // Reset to the app's default machine (IIe enhanced), not the first row:
+    // the rows are user-facing order, while the default machine still keeps
+    // the machine= parameter out of a fresh link.
+    setMachine(machineRowFor("APPLE2EE"))
     setRamdisk(ramdiskValues[0])
     setScanlines(false)
     setSelectedDisk("")

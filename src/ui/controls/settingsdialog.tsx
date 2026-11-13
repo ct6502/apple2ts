@@ -6,7 +6,7 @@ import { createControlContext } from "../retro/retromenucontext"
 import { settingsResetBinding } from "./resetcontrols"
 import { Droplist } from "../panels/droplist"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, handleGetSpeedMode } from "../main2worker"
-import { getPreferenceBoolean, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
+import { getPreferenceBoolean, getPreferenceIigsRomVersion, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot, setPreferenceIigsRomVersion } from "../localstorage"
 import { getSlotOptions, SLOT_NUMBERS } from "../../common/slot_options"
 import { getCardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, getRamdiskValues, themeLabels } from "../ui_utilities"
 import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
@@ -61,11 +61,12 @@ export const SettingsDialog = (props: DisplayProps) => {
   }
 
   const machineName = handleGetMachineName()
-  const machineNames: MACHINE_NAME[] = ["APPLE2EE", "APPLE2EU", "APPLE2P", "APPLE2GS"]
+  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs.
+  const machineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
   const machineStrings = [
-    t("machine.models.apple2ee"),
-    t("machine.models.apple2eu"),
     t("machine.models.apple2p"),
+    t("machine.models.apple2eu"),
+    t("machine.models.apple2ee"),
     "Apple IIgs",
   ]
   const machineIndex = machineNames.indexOf(machineName)
@@ -150,6 +151,19 @@ export const SettingsDialog = (props: DisplayProps) => {
           if (!newIsIIp) setPreferenceRamWorks() // reset to 64KB default
         }
       }}
+      />
+    )
+  }
+
+  const romConfig = () => {
+    return (
+      <Droplist name="ROM Version"
+        value={getPreferenceIigsRomVersion() === "03" ? "ROM 03" : "ROM 01"}
+        values={["ROM 01", "ROM 03"]}
+        setValue={(val: string) => {
+          setPreferenceIigsRomVersion(val === "ROM 03" ? "03" : "01")
+          props.updateDisplay()
+        }}
       />
     )
   }
@@ -411,6 +425,7 @@ export const SettingsDialog = (props: DisplayProps) => {
                 <div className="flex-column" style={{gap: "3px"}}>
                   {themeConfig()}
                   {machineConfig()}
+                  {machineName === "APPLE2GS" && romConfig()}
                   {speedConfig()}
                   {slotConfiguration()}
                 </div>

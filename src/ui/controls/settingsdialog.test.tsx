@@ -17,6 +17,7 @@ jest.mock("../main2worker", () => ({
   passSetMachineName: jest.fn(),
   passSetRamWorks: jest.fn(),
   passSetSlotConfig: jest.fn(),
+  passSetIigsRomVersion: jest.fn(),
   passSetVeraFmEnabled: jest.fn(),
 }))
 
@@ -150,7 +151,12 @@ test("shows the IIgs machine and its built-in slot configuration in Settings", (
     const machine = selectByName(t("linkBuilder.machine"))
     expect(machine.value).toBe("Apple IIgs")
     expect(Array.from(machine.querySelectorAll("option")).map(option => option.value))
-      .toContain("Apple IIgs")
+      .toEqual([
+        "Apple II+",
+        "Apple IIe (unenhanced)",
+        "Apple IIe (enhanced)",
+        "Apple IIgs",
+      ])
 
     const expectedSlots = [
       ["Slot 1:", "Printer Port"],
@@ -210,6 +216,41 @@ test("switching from Apple II+ to the IIgs keeps its built-in slot defaults", ()
     else localStorage.setItem("machineName", savedMachine)
     if (savedSlotConfig === null) localStorage.removeItem("slotConfig")
     else localStorage.setItem("slotConfig", savedSlotConfig)
+    slotsMock.mockReturnValue({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })
+    machineMock.mockReturnValue("APPLE2EE")
+    i18n.setLanguage(language)
+  }
+})
+
+test("shows ROM 01/ROM 03 for the IIgs and stores the ROM choice", () => {
+  const language = i18n.getLanguage()
+  const savedRom = localStorage.getItem("iigsRom")
+  const container = document.createElement("div")
+  document.body.appendChild(container)
+  const root = createRoot(container)
+  const machineMock = jest.mocked(workerMessages.handleGetMachineName).mockReturnValue("APPLE2GS")
+  const slotsMock = jest.mocked(workerMessages.handleGetSlotConfig).mockReturnValue(DEFAULT_SLOT_CONFIG_GS)
+  try {
+    localStorage.removeItem("iigsRom")
+    i18n.setLanguage("en")
+    act(() => root.render(<SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />))
+    act(() => container.querySelector<HTMLButtonElement>("#tour-settings")!.click())
+
+    const romSelect = Array.from(container.querySelectorAll("select"))
+      .find(candidate => candidate.name === "ROM Version") as HTMLSelectElement
+    expect(romSelect.value).toBe("ROM 01")
+    expect(Array.from(romSelect.querySelectorAll("option")).map(option => option.value))
+      .toEqual(["ROM 01", "ROM 03"])
+    act(() => {
+      romSelect.value = "ROM 03"
+      romSelect.dispatchEvent(new Event("change", { bubbles: true }))
+    })
+    expect(localStorage.getItem("iigsRom")).toBe("03")
+  } finally {
+    act(() => root.unmount())
+    container.remove()
+    if (savedRom === null) localStorage.removeItem("iigsRom")
+    else localStorage.setItem("iigsRom", savedRom)
     slotsMock.mockReturnValue({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })
     machineMock.mockReturnValue("APPLE2EE")
     i18n.setLanguage(language)

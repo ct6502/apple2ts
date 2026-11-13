@@ -72,8 +72,16 @@ describe("LinkBuilder", () => {
       root.render(<LinkBuilder />)
     })
     openBuilder(container)
-    // Rows 1 and 2 of the machine droplist; row 0 deliberately emits nothing so a
-    // link follows the visitor's own saved machine.
+    expect(Array.from(container.querySelectorAll('select[name="Machine:"] option'))
+      .map(option => (option as HTMLOptionElement).value))
+      .toEqual([
+        "Apple II+",
+        "Apple IIe (unenhanced)",
+        "Apple IIe (enhanced)",
+        "Apple IIgs",
+      ])
+    // Classic rows 1 and 2 emit their machine= parameter; the IIe enhanced row
+    // deliberately emits nothing so a link follows the visitor's own saved machine.
     pickOption(container, "Machine:", "Apple IIe (unenhanced)")
     expect(builtLink(container)).toContain("machine=apple2eu")
     pickOption(container, "Machine:", "Apple II+")
