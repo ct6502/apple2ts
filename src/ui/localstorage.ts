@@ -600,6 +600,24 @@ export const loadPreferences = () => {
     }
   }
 
+  // Auto Snapshot is a numeric enum stored outside the boolean UI keys, so it
+  // needs an explicit restore here. Without this the preference survives reload
+  // in localStorage but the UI and worker silently revert to AUTO_OFF.
+  const autoSnapshot = localStorage.getItem("autoSnapshot")
+  if (autoSnapshot) {
+    try {
+      const parsed: unknown = JSON.parse(autoSnapshot)
+      if (parsed === AUTO_SNAPSHOT.AUTO_100K || parsed === AUTO_SNAPSHOT.AUTO_1M) {
+        setAutoSnapshot(parsed as AUTO_SNAPSHOT)
+        passAutoSnapshot(parsed as AUTO_SNAPSHOT)
+      } else {
+        localStorage.removeItem("autoSnapshot")
+      }
+    } catch {
+      localStorage.removeItem("autoSnapshot")
+    }
+  }
+
   // Keep for backwards-compatibility
   const darkMode = localStorage.getItem("darkMode")
   if (darkMode) {

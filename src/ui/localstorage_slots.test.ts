@@ -35,6 +35,7 @@ import {
   getPreferenceVeraSlot,
   PREFERENCE_SLOT_CONFIG_CLASSIC_KEY,
   PREFERENCE_SLOT_CONFIG_GS_KEY,
+  loadPreferences,
   resetPreferences,
   setPreferenceAutoSnapshot,
   setPreferenceIigsRomVersion,
@@ -97,6 +98,17 @@ describe("slot preference reset", () => {
     expect(localStorage.getItem("iigsRom")).toBeNull()
     expect(getPreferenceIigsRomVersion()).toBe("01")
     expect(jest.mocked(main2worker.passSetIigsRomVersion).mock.lastCall).toEqual(["01"])
+  })
+
+  test("restores the Auto Snapshot preference on page load", () => {
+    localStorage.setItem("autoSnapshot", JSON.stringify(AUTO_SNAPSHOT.AUTO_1M))
+
+    loadPreferences()
+
+    expect(localStorage.getItem("autoSnapshot")).toBe(JSON.stringify(AUTO_SNAPSHOT.AUTO_1M))
+    expect(getAutoSnapshot()).toBe(AUTO_SNAPSHOT.AUTO_1M)
+    expect(jest.mocked(main2worker.passAutoSnapshot).mock.lastCall)
+      .toEqual([AUTO_SNAPSHOT.AUTO_1M])
   })
 
   test("turns Auto Snapshot off during reset", () => {
