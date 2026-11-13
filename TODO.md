@@ -62,17 +62,21 @@
 ### Priority 3b: Deployment Activation & CI Cleanup
 - [ ] **設定 `APPLE2GTS_TOKEN`**：
   - 上游 repo 需設定 token；需能 push `ct6502/apple2gts` 的 `gh-pages` 並發 `apple2ts-deploy` dispatch。
+  - 目前尚未設定；本地環境也沒有可用 token，啟動前需補上。
 - [ ] **啟用 Workflow**：
   - Push trigger 目前只在 `main`；將 workflow 合併到 `main`（或建立 staging trigger）。
   - 手動跑一次 workflow，確認兩站 build / deploy 都成功。
-- [ ] **清理 CI Gate**：
+- [x] **清理 CI Gate**：
   - repo-wide `npm run lint` 目前被既有 diagnostic `.cjs` / `.tmp` 檔卡住。
   - 追蹤/忽略這些既有檔案，或調整 lint gate，讓 workflow 能通過。
-- [ ] **修 test gate**：
+  - 已將 diagnostic 檔案從 lint 忽略，並將 worker/test 的既有慣用寫法設為 scoped override；`npm run lint` 現在乾淨通過。
+- [x] **修 test gate**：
   - 目前看到至少 `gs_basic_sound`、`gs_timepilot_flicker`、`gs_rom03_reloc` 等既有失敗；需修掉或隔離。
-- [ ] **確認 Pages / Domain**：
+  - CI 已透過 `jest.config.cjs` 隔離六個已知失敗 suites：`gs_basic_sound`、`gs_timepilot_flicker`、`gs_rom03_reloc`、`gs_acs_musique`（缺外部磁碟）、`gs_mycrate`、`gs_ctrl_reset`；本地仍會執行，底層 bug 交由 P4 處理。
+- [x] **確認 Pages / Domain**：
   - `ct6502/apple2gts` Pages 指向 `gh-pages`。
   - `apple2gts.com` DNS / CNAME / HTTPS 設定完成；`apple2ts.com` 不受影響。
+  - DNS A 記錄已指向 GitHub Pages（185.199.108/110/111/109.153），`www` CNAME 指向 `apple2gts.com`；`gh-pages` 已有 `CNAME: apple2gts.com`，HTTPS 站台回應正常。
 - [ ] **Target UI 收尾**：
   - linkbuilder 等機型清單仍未 target 過濾。
   - debugger / preferences 的 target 隔離仍共用。

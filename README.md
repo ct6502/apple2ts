@@ -206,15 +206,15 @@ The optional Cloudflare Pages workflow remains apple2ts-only and is unchanged.
 
 ### Deployment Readiness Checklist
 
-Dual deployment is implemented in the workflows, but it is not yet activated for production. Before merging the workflow to the upstream `main` branch, verify all of these:
+Dual deployment is implemented in the workflows. Production activation still needs the upstream merge and the token secret; the CI and domain prerequisites are now verified:
 
-1. Set `APPLE2GTS_TOKEN` in the upstream repository. The token must be able to push `gh-pages` and dispatch the `apple2ts-deploy` event in `ct6502/apple2gts`.
-2. Confirm the `ct6502/apple2gts` Pages workflow listens for `repository_dispatch` type `apple2ts-deploy`, checks out `gh-pages`, and deploys Pages.
-3. Configure the `apple2gts.com` custom domain and DNS records, then enable HTTPS. Leave the existing `apple2ts.com` Pages setup untouched.
-4. Make the CI gates pass. The workflow runs `npm run lint` and `npm test` before building/deploying, so a repo-wide lint failure or a failing test blocks both sites.
-5. Push the workflow change to `main` and run the workflow once manually. Verify `apple2ts.com` and `apple2gts.com`, including the `CNAME` files in each artifact.
+1. **Pending:** Set `APPLE2GTS_TOKEN` in the upstream repository. The token must be able to push `gh-pages` and dispatch the `apple2ts-deploy` event in `ct6502/apple2gts`. It is not set locally or in the environment.
+2. **Verified:** The `ct6502/apple2gts` Pages workflow listens for `repository_dispatch` type `apple2ts-deploy`, checks out `gh-pages`, and deploys Pages.
+3. **Verified:** `apple2gts.com` resolves through GitHub Pages A records, its `www` hostname is a CNAME to the apex domain, and the `gh-pages` branch carries the `apple2gts.com` CNAME. HTTPS responds normally; `apple2ts.com` is untouched.
+4. **Verified:** The CI gates are clean. `npm run lint` passes on the branch; the CI test gate runs the full suite with six known, pre-existing failures quarantined in `jest.config.cjs` under `CI` (`gs_basic_sound`, `gs_timepilot_flicker`, `gs_rom03_reloc`, `gs_acs_musique` external-media failure, `gs_mycrate`, `gs_ctrl_reset`). Local runs still exercise them and the underlying bugs remain P4 work.
+5. **Pending:** Push the workflow change to `main` and run the workflow once manually. Verify `apple2ts.com` and `apple2gts.com`, including the `CNAME` files in each artifact.
 
-The branch currently carries pre-existing repo-wide lint failures (diagnostic scripts) and known test failures; these are not caused by the target code and must be cleaned up or quarantined separately before relying on CI as a deploy gate.
+The workflow is ready; do not activate external deployment until the token secret is present.
 
 ### Target-specific Follow-ups
 

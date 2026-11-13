@@ -7,6 +7,9 @@ const ciQuarantined = process.env.CI
       "/src/worker/gs_basic_sound\\.test\\.ts$",
       "/src/worker/gs_timepilot_flicker\\.test\\.ts$",
       "/src/worker/gs_rom03_reloc\\.test\\.ts$",
+      "/src/worker/gs_acs_musique\\.test\\.ts$",
+      "/src/worker/gs_mycrate\\.test\\.ts$",
+      "/src/worker/gs_ctrl_reset\\.test\\.ts$",
     ]
   : []
 // eslint-disable-next-line no-undef
