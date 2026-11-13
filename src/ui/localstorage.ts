@@ -1,8 +1,11 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
-import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
+import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
+import { APP_DEFAULT_MACHINE } from "../common/app_target"
+import { sanitizeSlotConfig } from "../common/slot_options"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passSetVeraFmEnabled, passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
+import { passSetVeraFmEnabled, passSetIigsRomVersion, passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
+
 import { getTheme, getUIState, initialBooleanUIKeys, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode, isDefaultTrueBooleanKey, setAutoSnapshot } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
@@ -219,8 +222,24 @@ export const setPreferenceBreakpoints = (breakpoints: BreakpointMap) => {
   passBreakpoints(breakpoints)
 }
 
+export const getPreferenceMachineName = (): MACHINE_NAME => {
+  const saved = localStorage.getItem("machineName")
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved)
+      if (parsed === "APPLE2P" || parsed === "APPLE2EU" || parsed === "APPLE2EE" || parsed === "APPLE2GS") {
+        return parsed
+      }
+      localStorage.removeItem("machineName")
+    } catch {
+      localStorage.removeItem("machineName")
+    }
+  }
+  return APP_DEFAULT_MACHINE
+}
+
 export const setPreferenceMachineName = (
-  name: MACHINE_NAME = "APPLE2EE",
+  name: MACHINE_NAME = APP_DEFAULT_MACHINE,
   origin: SettingsChangeOrigin = "external",
 ) => {
   if (name === "APPLE2EE") {
@@ -230,18 +249,38 @@ export const setPreferenceMachineName = (
   }
   passSetMachineName(name)
 
-  const slotConfig = getPreferenceSlotConfig()
-  let newSlot3 = slotConfig[3]
-  if (name === "APPLE2P") {
-    if (newSlot3 !== "none" && newSlot3 !== "videoterm" && newSlot3 !== "vidhd") newSlot3 = "videoterm"
+  let newSlotConfig: SlotConfig
+  if (name === "APPLE2GS") {
+    newSlotConfig = { ...DEFAULT_SLOT_CONFIG_GS }
   } else {
-    if (newSlot3 !== "none" && newSlot3 !== "aux" && newSlot3 !== "vidhd") newSlot3 = "aux"
+    const slotConfig = getPreferenceSlotConfig()
+    newSlotConfig = { ...slotConfig }
+    let newSlot3 = newSlotConfig[3]
+    if (name === "APPLE2P") {
+      if (newSlot3 !== "none" && newSlot3 !== "videoterm" && newSlot3 !== "vidhd") newSlot3 = "videoterm"
+    } else {
+      if (newSlot3 !== "none" && newSlot3 !== "aux" && newSlot3 !== "vidhd") newSlot3 = "aux"
+    }
+    newSlotConfig[3] = newSlot3
   }
-  if (slotConfig[3] !== newSlot3) {
-    slotConfig[3] = newSlot3
-    setPreferenceSlotConfig(slotConfig, origin)
+  setPreferenceSlotConfig(newSlotConfig, origin)
+  notifySettingsChanged([1, 2, 3, 4, 5, 6, 7].map(slot => `slots.${slot}`), origin)
+}
+
+export const getPreferenceIigsRomVersion = (): IigsRomVersion =>
+  localStorage.getItem("iigsRom") === "03" ? "03" : "01"
+
+export const setPreferenceIigsRomVersion = (
+  version: IigsRomVersion,
+  origin: SettingsChangeOrigin = "external",
+) => {
+  if (version === "03") {
+    localStorage.setItem("iigsRom", version)
+  } else {
+    localStorage.removeItem("iigsRom")
   }
-  notifySettingsChanged(["slots.3"], origin)
+  passSetIigsRomVersion(version)
+  notifySettingsChanged(["machine.iigsRom"], origin)
 }
 
 export const setPreferenceMockingboardMode = (
@@ -298,19 +337,20 @@ export const setPreferenceVeraSlot = (slot: VERA_SLOT = 0) => {
 }
 
 export const getPreferenceSlotConfig = (): SlotConfig => {
+  const machine = getPreferenceMachineName()
   const saved = localStorage.getItem("slotConfig")
   if (saved) {
     try {
       const parsed = JSON.parse(saved)
       if (parsed && typeof parsed === "object" && parsed[1] && parsed[7]) {
-        return parsed as SlotConfig
+        return sanitizeSlotConfig(parsed as SlotConfig, machine)
       }
     } catch {
       // Clear invalid slotConfig
     }
     localStorage.removeItem("slotConfig")
   }
-  return { ...DEFAULT_SLOT_CONFIG }
+  return machine === "APPLE2GS" ? { ...DEFAULT_SLOT_CONFIG_GS } : { ...DEFAULT_SLOT_CONFIG }
 }
 
 export const setPreferenceSlotConfig = (
@@ -554,14 +594,8 @@ export const loadPreferences = () => {
     }
   }
 
-  const machineName = localStorage.getItem("machineName")
-  if (machineName) {
-    try {
-      passSetMachineName(JSON.parse(machineName))
-    } catch {
-      localStorage.removeItem("machineName")
-    }
-  }
+  passSetIigsRomVersion(getPreferenceIigsRomVersion())
+  passSetMachineName(getPreferenceMachineName())
 
   const mockingboardMode = localStorage.getItem("mockingboardMode")
   if (mockingboardMode) {
@@ -622,7 +656,7 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceRetroIIGSColor("background")
   setPreferenceRetroIIGSColor("border")
   setPreferenceMockingboardMode(0, origin)
-  setPreferenceMachineName("APPLE2EE", origin)
+  setPreferenceMachineName(APP_DEFAULT_MACHINE, origin)
   setPreferenceRamWorks(64, origin)
   setPreferenceNewReleasesChecked()
   toggleScanlines(false)

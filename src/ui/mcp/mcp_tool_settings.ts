@@ -4,7 +4,7 @@
  */
 
 import { COLOR_MODE } from "../../common/utility"
-import { passSetMachineName, passSpeedMode } from "../main2worker"
+import { handleGetMachineName, passSetMachineName, passSpeedMode } from "../main2worker"
 import { setPreferenceColorMode } from "../localstorage"
 import {
   audioEnable,
@@ -28,7 +28,16 @@ export function toolSetSpeed(speed: number): MCPToolResult {
 
     passSpeedMode(speed)
     
-    const speedNames = [
+    const isGS = handleGetMachineName() === "APPLE2GS"
+    const speedNames = isGS ? [
+      "0.1 MHz (Snail)",
+      "0.5 MHz (Slow)",
+      "1.02 MHz (Normal)",
+      "2.8 MHz",
+      "7.1 MHz",
+      "14.3 MHz (Fast)",
+      "Ludicrous"
+    ] : [
       "0.1 MHz (Snail)",
       "0.5 MHz (Slow)",
       "1 MHz (Normal)",
@@ -73,7 +82,8 @@ export function toolSetMachineType(machineType: string): MCPToolResult {
     const machineNames: Record<MACHINE_NAME, string> = {
       "APPLE2P": "Apple II+",
       "APPLE2EU": "Apple IIe (Unenhanced)",
-      "APPLE2EE": "Apple IIe (Enhanced)"
+      "APPLE2EE": "Apple IIe (Enhanced)",
+      "APPLE2GS": "Apple IIgs"
     }
     const machineName = machineNames[machineType as MACHINE_NAME]
 

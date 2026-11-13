@@ -80,6 +80,63 @@ describe("handleInputParams slot configuration", () => {
   })
 })
 
+describe("handleFragment disk drive selection", () => {
+  const { handleSetDiskFromURL } = jest.requireMock("./devices/disk/driveprops")
+
+  // The URL fragment carries the disk to mount; the query string carries
+  // ?drive=. Drive indices map to slots as 0/1 = S7, 2/3 = S6 (5.25"),
+  // 4/5 = S5 (3.5"). On the Apple IIgs a 5.25" disk has to go into S6 or the
+  // ROM never looks at it, so ?drive= is what makes one deep-linkable.
+  const DISK = "http://example.com/disk.po"
+  const setUrl = (query: string) =>
+    window.history.replaceState({}, "", `/${query}#${DISK}`)
+
+  beforeEach(() => {
+    localStorage.clear()
+    ;(handleSetDiskFromURL as jest.Mock).mockClear()
+  })
+
+  afterEach(() => {
+    window.history.replaceState({}, "", "/")
+  })
+
+  test("defaults to drive 0 when no drive is given", async () => {
+    setUrl("")
+    await handleFragment(jest.fn(), false)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(DISK, expect.anything())
+  })
+
+  test("mounts into drive 2 (S6,D1) with ?drive=2", async () => {
+    setUrl("?drive=2")
+    await handleFragment(jest.fn(), false)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(DISK, expect.anything(), 2)
+  })
+
+  test("mounts into drive 3 (S6,D2) with ?drive=3", async () => {
+    setUrl("?drive=3")
+    await handleFragment(jest.fn(), false)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(DISK, expect.anything(), 3)
+  })
+
+  test("mounts into drive 4 (S5,D1) with ?drive=4", async () => {
+    setUrl("?drive=4")
+    await handleFragment(jest.fn(), false)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(DISK, expect.anything(), 4)
+  })
+
+  test("ignores an out-of-range drive", async () => {
+    setUrl("?drive=9")
+    await handleFragment(jest.fn(), false)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(DISK, expect.anything())
+  })
+
+  test("ignores a non-numeric drive", async () => {
+    setUrl("?drive=abc")
+    await handleFragment(jest.fn(), false)
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(DISK, expect.anything())
+  })
+})
+
 describe("handleFragment multi-disk loading", () => {
   let passSetRunModeSpy: jest.SpyInstance
 
@@ -174,6 +231,54 @@ describe("handleFragment multi-disk loading", () => {
       true,
     )
     expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("mounts the IIgs 3.5\" pair via s5d1 and s5d2", async () => {
+    await handleFragment(
+      undefined,
+      false,
+      "?s5d1=SystemDisk.2mg&s5d2=MYCRATE.2MG",
+      "",
+    )
+
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "SystemDisk.2mg",
+      undefined,
+      4, // s5d1 -> index 4
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(
+      "MYCRATE.2MG",
+      undefined,
+      5, // s5d2 -> index 5
+      undefined,
+      undefined,
+      undefined,
+      true,
+      false,
+      true,
+      true,
+    )
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("reads bay parameters from the query only, never from the hash", async () => {
+    // The hash carries exactly one disk URL, so "…#s5d1=disk.2mg" asks for a
+    // disk named "s5d1=disk.2mg" in the default bay rather than the 3.5" drive.
+    await handleFragment(
+      undefined,
+      false,
+      "",
+      "#s5d1=SystemDisk.2mg",
+    )
+
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith("s5d1=SystemDisk.2mg", undefined)
   })
 
   test("falls back to hash fragment when no multi-drive parameters exist", async () => {
@@ -336,6 +441,60 @@ describe("handleFragment multi-disk loading", () => {
       expect.anything(),
       expect.anything(),
     )
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+})
+
+describe("handleFragment boot deferral with a fragment disk", () => {
+  const { handleSetDiskFromURL } = jest.requireMock("./devices/disk/driveprops")
+  const DISK = "http://localhost:6503/SystemDisk.2mg"
+  let passSetRunModeSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    localStorage.clear()
+    jest.clearAllMocks()
+    passSetRunModeSpy = jest.spyOn(main2worker, "passSetRunMode").mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    passSetRunModeSpy.mockRestore()
+    window.history.replaceState({}, "", "/")
+    jest.useRealTimers()
+  })
+
+  // ?boot=true next to a fragment disk asks for a cold boot once the image has
+  // landed, because the ROM's device scan sees an empty bay otherwise. The
+  // deferral used to be a fixed 100 ms timer fired from the synchronous tail of
+  // handleFragment, so a fetch slower than that still scanned an empty drive.
+  test("waits for the mount instead of a fixed delay", async () => {
+    jest.useFakeTimers()
+    window.history.replaceState({}, "", `/?machine=apple2gs&boot=true&drive=4#${DISK}`)
+    handleInputParams("machine=apple2gs&boot=true&drive=4")
+
+    let settleMount: (v: boolean) => void = () => {}
+    handleSetDiskFromURL.mockImplementation(
+      () => new Promise<boolean>((resolve) => { settleMount = resolve }),
+    )
+    void handleFragment(jest.fn(), false)
+    await Promise.resolve()
+
+    expect(handleSetDiskFromURL).toHaveBeenCalledWith(DISK, expect.anything(), 4)
+    expect(passSetRunModeSpy).not.toHaveBeenCalled()
+
+    settleMount(true)
+    await jest.advanceTimersByTimeAsync(200)
+    expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
+  })
+
+  test("a failed mount still boots", async () => {
+    jest.useFakeTimers()
+    window.history.replaceState({}, "", `/?machine=apple2gs&boot=true&drive=4#${DISK}`)
+    handleInputParams("machine=apple2gs&boot=true&drive=4")
+    handleSetDiskFromURL.mockResolvedValue(false)
+
+    await handleFragment(jest.fn(), false)
+    await jest.advanceTimersByTimeAsync(200)
+
     expect(passSetRunModeSpy).toHaveBeenCalledWith(RUN_MODE.NEED_BOOT)
   })
 })

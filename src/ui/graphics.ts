@@ -22,6 +22,33 @@ export const nColsHgrMagnifier = 2
 export let xmargin = 0
 export let ymargin = 0
 
+// The Apple II and //e draw into a 560x192 image (40 columns x 24 rows of 7x8
+// pixel characters / lo-res blocks) which is then emitted twice per scanline
+// to land on a 560x384 canvas. The Apple IIgs Super Hi-Res screen is 640x200
+// instead, so it follows exactly the same pattern: emit each of the 200 SHR
+// scanlines twice to get 640x400. Squeezing 640x200 straight into the legacy
+// 560x384 image is what made the GS/OS desktop look stretched.
+const LEGACY_WIDTH = 560
+const LEGACY_HEIGHT = 384
+const SHR_SOURCE_WIDTH = 640
+const SHR_SOURCE_HEIGHT = 200
+const SHR_WIDTH = SHR_SOURCE_WIDTH
+const SHR_HEIGHT = SHR_SOURCE_HEIGHT * 2
+const LEGACY_ASPECT = 1.4583334       // (20 * 40) / (24 * 24)
+const SHR_ASPECT = SHR_WIDTH / SHR_HEIGHT
+
+// Size of the image currently in the hidden canvas. Every frame starts out
+// legacy-sized; processSuperHiRes widens it when the IIgs is showing SHR.
+let hiddenWidth = LEGACY_WIDTH
+let hiddenHeight = LEGACY_HEIGHT
+
+export const getScreenSize = (): [number, number] => [hiddenWidth, hiddenHeight]
+
+// True while the Apple IIgs is displaying Super Hi-Res, which is the only mode
+// that uses the 640x200 geometry.
+export const isSuperHiResScreen = (): boolean =>
+  handleGetMachineName() === "APPLE2GS" && handleGetVidhdActive()
+
 const doBlurring = () => {
   return getMonitorMode() !== MONITOR_MODE.RGB
 }
@@ -162,7 +189,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const isAltCharSet = machineName === "APPLE2P" ? false : handleGetAltCharSet()
   const colorFill = skinForeground ??
     ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
-  const hasMouseText = machineName === "APPLE2EE"
+  const hasMouseText = machineName === "APPLE2EE" || machineName === "APPLE2GS"
   const hasLowerCase = (nchars === 80) || (machineName !== "APPLE2P")
   const useApple2PlusMap = (nchars !== 80) && (machineName === "APPLE2P")
   const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
@@ -537,7 +564,9 @@ const drawImage = (ctx: CanvasRenderingContext2D,
   const ymarginPx = ymargin * height
   const imgHeight = Math.floor(height * (1 - 2 * ymargin))
   const imgWidth = Math.floor(width * (1 - 2 * xmargin))
-  ctx.drawImage(hiddenContext.canvas, 0, 0, 560, 384,
+  // The hidden canvas is big enough for either geometry; blit only the part
+  // this frame actually drew into.
+  ctx.drawImage(hiddenContext.canvas, 0, 0, hiddenWidth, hiddenHeight,
     xmarginPx, ymarginPx, imgWidth, imgHeight)
   if (doOverride) {
     ctx.strokeStyle = "#FF0000"
@@ -573,8 +602,12 @@ let surroundLayerCache: { key: string, canvas: HTMLCanvasElement } | null = null
 const crtDistortedCanvas = document.createElement("canvas")
 const crtClippedCanvas = document.createElement("canvas")
 const crtOverrideFrameCanvas = document.createElement("canvas")
-const crtSourceWidth = 560
-const crtSourceHeight = 384
+// The distortion map has to be built for the geometry of the picture actually
+// drawn into the hidden canvas: 560x384 legacy output and 640x400 IIgs SHR are
+// both valid sources. A fixed 560x384 crop clipped the right 80 columns and
+// bottom 16 rows of SHR when CRT distortion was enabled.
+let crtDistortionSourceWidth = 0
+let crtDistortionSourceHeight = 0
 const crtOutsideSource = 0xFFFFFFFF
 let crtDistortionMap: Uint32Array | null = null
 let crtDistortionWeightX: Uint16Array | null = null
@@ -599,9 +632,10 @@ const loadMonitorOpeningMask = () => {
   image.src = window.assetRegistry.monitorOpeningMask
 }
 
-const getCrtDistortionMap = () => {
+const getCrtDistortionMap = (sourceWidth: number, sourceHeight: number) => {
   if (crtDistortionMap && crtDistortionWeightX && crtDistortionWeightY &&
-    crtDistortionEdgeSource && crtDistortionEdgeWeight) {
+    crtDistortionEdgeSource && crtDistortionEdgeWeight &&
+    crtDistortionSourceWidth === sourceWidth && crtDistortionSourceHeight === sourceHeight) {
     return {
       map: crtDistortionMap,
       weightX: crtDistortionWeightX,
@@ -610,43 +644,43 @@ const getCrtDistortionMap = () => {
       edgeWeight: crtDistortionEdgeWeight,
     }
   }
-  const map = new Uint32Array(crtSourceWidth * crtSourceHeight)
+  const map = new Uint32Array(sourceWidth * sourceHeight)
   const weightX = new Uint16Array(map.length)
   const weightY = new Uint16Array(map.length)
   const edgeSource = new Uint32Array(map.length)
   const edgeWeight = new Uint16Array(map.length)
-  const centerX = crtSourceWidth / 2
-  const centerY = crtSourceHeight / 2
-  for (let y = 0; y < crtSourceHeight; y++) {
+  const centerX = sourceWidth / 2
+  const centerY = sourceHeight / 2
+  for (let y = 0; y < sourceHeight; y++) {
     const normalizedY = (y - centerY) / centerY
-    for (let x = 0; x < crtSourceWidth; x++) {
+    for (let x = 0; x < sourceWidth; x++) {
       const normalizedX = (x - centerX) / centerX
       const distance = normalizedX * normalizedX + normalizedY * normalizedY
       const sourceX = centerX + normalizedX * centerX * (1 + 0.015 * distance)
       const sourceY = centerY + normalizedY * centerY * (1 + 0.04 * distance)
-      const index = y * crtSourceWidth + x
-      if (sourceX < 0 || sourceX >= crtSourceWidth || sourceY < 0 || sourceY >= crtSourceHeight) {
+      const index = y * sourceWidth + x
+      if (sourceX < 0 || sourceX >= sourceWidth || sourceY < 0 || sourceY >= sourceHeight) {
         map[index] = crtOutsideSource
-        const edgeX = Math.max(0, Math.min(crtSourceWidth - 1, Math.round(sourceX)))
-        const edgeY = Math.max(0, Math.min(crtSourceHeight - 1, Math.round(sourceY)))
+        const edgeX = Math.max(0, Math.min(sourceWidth - 1, Math.round(sourceX)))
+        const edgeY = Math.max(0, Math.min(sourceHeight - 1, Math.round(sourceY)))
         const coverageX = sourceX < 0
           ? Math.max(0, sourceX + 1)
-          : sourceX >= crtSourceWidth ? Math.max(0, crtSourceWidth - sourceX) : 1
+          : sourceX >= sourceWidth ? Math.max(0, sourceWidth - sourceX) : 1
         const coverageY = sourceY < 0
           ? Math.max(0, sourceY + 1)
-          : sourceY >= crtSourceHeight ? Math.max(0, crtSourceHeight - sourceY) : 1
-        edgeSource[index] = edgeY * crtSourceWidth + edgeX
+          : sourceY >= sourceHeight ? Math.max(0, sourceHeight - sourceY) : 1
+        edgeSource[index] = edgeY * sourceWidth + edgeX
         edgeWeight[index] = Math.round(coverageX * coverageY * 256)
       } else {
         const sourceFloorX = Math.floor(sourceX)
         const sourceFloorY = Math.floor(sourceY)
-        const sourceBaseX = Math.min(sourceFloorX, crtSourceWidth - 2)
-        const sourceBaseY = Math.min(sourceFloorY, crtSourceHeight - 2)
-        map[index] = sourceBaseY * crtSourceWidth + sourceBaseX
-        weightX[index] = sourceFloorX === crtSourceWidth - 1
+        const sourceBaseX = Math.min(sourceFloorX, sourceWidth - 2)
+        const sourceBaseY = Math.min(sourceFloorY, sourceHeight - 2)
+        map[index] = sourceBaseY * sourceWidth + sourceBaseX
+        weightX[index] = sourceFloorX === sourceWidth - 1
           ? 256
           : Math.round((sourceX - sourceFloorX) * 256)
-        weightY[index] = sourceFloorY === crtSourceHeight - 1
+        weightY[index] = sourceFloorY === sourceHeight - 1
           ? 256
           : Math.round((sourceY - sourceFloorY) * 256)
       }
@@ -657,6 +691,8 @@ const getCrtDistortionMap = () => {
   crtDistortionWeightY = weightY
   crtDistortionEdgeSource = edgeSource
   crtDistortionEdgeWeight = edgeWeight
+  crtDistortionSourceWidth = sourceWidth
+  crtDistortionSourceHeight = sourceHeight
   return { map, weightX, weightY, edgeSource, edgeWeight }
 }
 
@@ -668,13 +704,15 @@ const blendPixels = (first: number, second: number, weight: number) => {
   return (0xFF000000 | redBlue | green) >>> 0
 }
 
-const distortLayer = (source: HTMLCanvasElement, outsideColor: string | null) => {
+const distortLayer = (source: HTMLCanvasElement, outsideColor: string | null,
+  sourceWidth: number, sourceHeight: number) => {
   const sourceContext = source.getContext("2d", { willReadFrequently: true })!
-  const sourceData = sourceContext.getImageData(0, 0, crtSourceWidth, crtSourceHeight)
-  const distortedData = sourceContext.createImageData(crtSourceWidth, crtSourceHeight)
+  const sourceData = sourceContext.getImageData(0, 0, sourceWidth, sourceHeight)
+  const distortedData = sourceContext.createImageData(sourceWidth, sourceHeight)
   const sourcePixels = new Uint32Array(sourceData.data.buffer)
   const distortedPixels = new Uint32Array(distortedData.data.buffer)
-  const { map, weightX, weightY, edgeSource, edgeWeight } = getCrtDistortionMap()
+  const { map, weightX, weightY, edgeSource, edgeWeight } =
+    getCrtDistortionMap(sourceWidth, sourceHeight)
   const [outsideRed, outsideGreen, outsideBlue] =
     outsideColor?.match(/\d+/g)?.map(Number) ?? [0, 0, 0]
   const outsidePixel = (0xFF000000 | outsideBlue << 16 |
@@ -690,13 +728,13 @@ const distortLayer = (source: HTMLCanvasElement, outsideColor: string | null) =>
     } else {
       const xWeight = weightX[index]
       const yWeight = weightY[index]
-      const lowerIndex = sourceIndex + crtSourceWidth
+      const lowerIndex = sourceIndex + sourceWidth
       const top = blendPixels(sourcePixels[sourceIndex], sourcePixels[sourceIndex + 1], xWeight)
       const bottom = blendPixels(sourcePixels[lowerIndex], sourcePixels[lowerIndex + 1], xWeight)
       distortedPixels[index] = blendPixels(top, bottom, yWeight)
     }
   }
-  resizeWorkCanvas(crtDistortedCanvas, crtSourceWidth, crtSourceHeight)
+  resizeWorkCanvas(crtDistortedCanvas, sourceWidth, sourceHeight)
   crtDistortedCanvas.getContext("2d")!.putImageData(distortedData, 0, 0)
   return crtDistortedCanvas
 }
@@ -757,11 +795,14 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
     processTextPage(ctx, hiddenContext, colorMode, width, height, true, foreground, background)
   }
 
-  const hiddenData = hiddenContext.getImageData(0, 0, crtSourceWidth, crtSourceHeight)
+  const sourceWidth = hiddenWidth
+  const sourceHeight = hiddenHeight
+  const hiddenData = hiddenContext.getImageData(0, 0, sourceWidth, sourceHeight)
   replaceBlackPixels(hiddenData, background)
   hiddenContext.putImageData(hiddenData, 0, 0)
 
-  const distorted = distortLayer(hiddenContext.canvas, borderColor ?? background)
+  const distorted = distortLayer(hiddenContext.canvas, borderColor ?? background,
+    sourceWidth, sourceHeight)
 
   const hasClassicMonitorFrame = getTheme() === UI_THEME.CLASSIC &&
     document.fullscreenElement === null && !isCanvasOnlyTheme()
@@ -792,14 +833,37 @@ const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
   return true
 }
 
-const shrRgbaBuffer = new Uint8ClampedArray(560 * 384 * 4)
+// 640x400, which is the same buffer budget whatever the current mode: in 320
+// mode each source pixel is emitted twice horizontally (srcX = floor(x / 2)),
+// and every source line is emitted twice vertically.
+const shrRgbaBuffer = new Uint8ClampedArray(SHR_WIDTH * SHR_HEIGHT * 4)
 
-const processSuperHiRes = (hiddenContext: CanvasRenderingContext2D, colorMode: COLOR_MODE): boolean => {
+// SHR fill mode (scan-line control byte bit 5), 320-pixel lines only: a pixel
+// value of 0 does not select palette colour 0, it repeats the last non-zero
+// colour on that scanline. Sprites are erased by writing zeros and letting the
+// background run in from the left, so ignoring the bit leaves stale sprite
+// pixels on screen. The line starts from this initial colour index, measured
+// on hardware by John Brooks and transcribed by gssquared
+// (VideoScanGenerator.cpp:170).
+const FILLMODE_INIT = [
+  2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+]
+
+const processSuperHiRes = (hiddenContext: CanvasRenderingContext2D, colorMode: COLOR_MODE,
+  backgroundCss?: string | null): boolean => {
   const shrData = handleGetShr()
   if (shrData.length < 0x8000) return false
 
-  const outWidth = 560
-  const outHeight = 384
+  // Emit the Apple IIgs Super Hi-Res screen at 640x400: each of the 200 SHR
+  // scanlines is drawn twice, mirroring how the Apple II 560x192 image is
+  // doubled to 560x384. That keeps every emulator window mode at one constant
+  // size and square pixels. In 320 mode each source pixel is also emitted
+  // twice horizontally, so games fill the same 640x400 space.
+  const outWidth = SHR_WIDTH
+  const outHeight = SHR_HEIGHT
+  hiddenWidth = outWidth
+  hiddenHeight = outHeight
 
   // Decode 16 palettes (each has 16 colors, 2 bytes 0x0RGB)
   const palR = new Uint8Array(256)
@@ -846,7 +910,30 @@ const processSuperHiRes = (hiddenContext: CanvasRenderingContext2D, colorMode: C
     }
   }
 
-    // Destination-driven sampling for 560x384 canvas
+  // Retro-skin background: the legacy path swaps pure-black pixels for the
+  // skin background via a whole-canvas getImageData/putImageData round trip,
+  // which is expensive for the 640x400 SHR screen. Doing it in the palette
+  // here is free — a palette entry that decodes to exactly (0,0,0) (including
+  // the Green/Amber/monochrome conversion above and SVGA black) maps to the
+  // same pixels replaceBlackPixels would have caught.
+  if (backgroundCss) {
+    const parts = backgroundCss.match(/\d+/g)?.map(Number) ?? []
+    const br = parts[0]
+    const bg = parts[1]
+    const bb = parts[2]
+    if (br !== undefined && bg !== undefined && bb !== undefined) {
+      for (let idx = 0; idx < 256; idx++) {
+        if (palR[idx] === 0 && palG[idx] === 0 && palB[idx] === 0) {
+          palR[idx] = br
+          palG[idx] = bg
+          palB[idx] = bb
+        }
+      }
+    }
+  }
+
+    // Destination-driven sampling into SHR_WIDTH x SHR_HEIGHT. The Y step is
+    // the vertical doubling; the X step widens 320 mode to 640.
     for (let ty = 0; ty < outHeight; ty++) {
       const srcY = Math.min(199, Math.floor((ty * 200) / outHeight))
       const lineOffset = srcY * 160
@@ -857,11 +944,14 @@ const processSuperHiRes = (hiddenContext: CanvasRenderingContext2D, colorMode: C
 
       if (!is640) {
         // 320 mode
+        const fill = (scb & 0x20) !== 0
+        let lastColour = FILLMODE_INIT[srcY & 0x1f]
         for (let x = 0; x < outWidth; x++) {
           const srcX = Math.min(319, Math.floor((x * 320) / outWidth))
           const byteVal = shrData[lineOffset + (srcX >> 1)]
           const color4Bit = (srcX & 1) ? (byteVal & 0x0F) : ((byteVal >> 4) & 0x0F)
-          const c = palIdx | color4Bit
+          if (!fill || color4Bit !== 0) lastColour = color4Bit
+          const c = palIdx | lastColour
 
           const px = rowOffset + x * 4
           shrRgbaBuffer[px] = palR[c]
@@ -871,12 +961,14 @@ const processSuperHiRes = (hiddenContext: CanvasRenderingContext2D, colorMode: C
         }
       } else {
         // 640 mode
+        const quarterOffsets = [8, 12, 0, 4]
         for (let x = 0; x < outWidth; x++) {
           const srcX = Math.min(639, Math.floor((x * 640) / outWidth))
           const byteVal = shrData[lineOffset + (srcX >> 2)]
-          const shift = (3 - (srcX & 3)) * 2
+          const pixelInByte = srcX & 3
+          const shift = (3 - pixelInByte) * 2
           const color2Bit = (byteVal >> shift) & 0x03
-          const colorIndex = (srcX % 4) * 4 + color2Bit
+          const colorIndex = quarterOffsets[pixelInByte] + color2Bit
           const c = palIdx | colorIndex
 
           const px = rowOffset + x * 4
@@ -931,6 +1023,14 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     // Clear all our drawing and let the background show through again.
     ctx.clearRect(0, 0, width, height)
   }
+
+  // Each frame starts out assuming the legacy geometry; processSuperHiRes
+  // widens it when the Apple IIgs is showing SHR. The hidden canvas is big
+  // enough for both, but rows outside the current image would otherwise leak
+  // into the background/ghosting passes below.
+  hiddenWidth = LEGACY_WIDTH
+  hiddenHeight = LEGACY_HEIGHT
+  hiddenContext.clearRect(0, 0, hiddenContext.canvas.width, hiddenContext.canvas.height)
 
   if (borderColor) {
     if (!crtDistortion) paintScreenSurround(ctx, width, height, borderColor, ghosting)
@@ -1015,16 +1115,23 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     return
   }
 
-  if (effectBackground) {
-    const hiddenData = hiddenContext.getImageData(0, 0, 560, 384)
-    replaceBlackPixels(hiddenData, effectBackground)
-    hiddenContext.putImageData(hiddenData, 0, 0)
-  }
-
+  // Super Hi-Res draws first: the SHR renderer substitutes black palette
+  // entries with the retro-skin background itself (cheap — one palette pass),
+  // so the whole-canvas getImageData/putImageData black-pixel swap below is
+  // skipped whenever SHR drew the full opaque 640x400 canvas. That round trip
+  // (1MB readback + 256K-pixel JS loop over the hidden canvas) was the main
+  // per-frame cost of IIgs rendering and pushed the main-thread paint loop
+  // down to ~30 FPS at the IIgs speed settings.
   const isVidhdActive = handleGetVidhdActive()
   let didDraw = false
+  let drewShr = false
   if (isVidhdActive) {
-    didDraw = processSuperHiRes(hiddenContext, colorMode)
+    didDraw = drewShr = processSuperHiRes(hiddenContext, colorMode, effectBackground)
+  }
+  if (effectBackground && !drewShr) {
+    const hiddenData = hiddenContext.getImageData(0, 0, hiddenWidth, hiddenHeight)
+    replaceBlackPixels(hiddenData, effectBackground)
+    hiddenContext.putImageData(hiddenData, 0, 0)
   }
   if (!didDraw) {
     didDraw = processLoRes(hiddenContext, colorMode)
@@ -1089,9 +1196,11 @@ export const getCanvasSize = () => {
   const margin = (handleGetMachineName() === "APPLE2P" && !isCanvasFullScreen) ? 0.12 : 0.075
   xmargin = (noBackgroundImage || isTouchDevice) ? 0.02 : margin
   ymargin = (noBackgroundImage || isTouchDevice) ? 0.02 : margin
-  const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
+  const screenRatio = isSuperHiResScreen() ? SHR_ASPECT : LEGACY_ASPECT
   if (TEST_GRAPHICS) {
-    return [659, 452]  // This will give an actual size of 560 x 384
+    // 659 x 452 leaves a 560 x 384 screen once the margins are subtracted;
+    // the other entry is the equivalent for a 640 x 400 screen.
+    return isSuperHiResScreen() ? [754, 472] : [659, 452]
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)

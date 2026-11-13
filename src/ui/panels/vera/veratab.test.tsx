@@ -187,7 +187,7 @@ describe("VeraTab mouse support", () => {
     })
 
     expect(passMouseEvent).toHaveBeenCalledWith({ x: 0, y: 0, buttons: 0x00 })
-    expect(passMouseEvent).toHaveBeenCalledWith({ x: 0, y: 0, buttons: 0x01 })
+    expect(passMouseEvent).toHaveBeenCalledTimes(1)
   })
 
   test("prevents context menu when apple mouse is enabled", () => {

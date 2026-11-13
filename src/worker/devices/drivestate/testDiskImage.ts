@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any */
+ 
 // Shared helper for the per-game isolated disk-boot tests in this directory.
 // Each test file that imports this pulls in its own fresh copy of every
 // module it transitively depends on (Jest isolates modules per test FILE),

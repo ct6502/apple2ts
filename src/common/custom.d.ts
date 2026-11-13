@@ -101,6 +101,7 @@ type KeyboardState = {
   isDown: boolean,
   repeat: boolean,
   saveSnapShot?: boolean,
+  domCode?: string,
 }
 
 type KeySequenceRequest = {
@@ -209,6 +210,28 @@ type STATE6502 = {
   flagNMI: boolean
 }
 
+type CPU65816SaveState = {
+  A: number,
+  X: number,
+  Y: number,
+  S: number,
+  D: number,
+  PC: number,
+  PB: number,
+  DB: number,
+  P: number,
+  emulationMode: boolean,
+  enteredNativeMode: boolean,
+  stopped: boolean,
+  waiting: boolean,
+  irqPending: boolean,
+  cycles: number,
+  addrMode: number,
+  addrCrossed: boolean,
+  blockMoveFirst: boolean,
+  slot5Dp?: { dp: number; bytes: number[] } | null
+}
+
 type Apple2SaveState = {
   s6502: STATE6502,
   extraRamSize: number,
@@ -219,7 +242,62 @@ type Apple2SaveState = {
   stackDump: Array<string>,
   memvalid: string,
   memC000: string,
-  memory: string
+  memory: string,
+  // Added with SAVE_STATE_VERSION 2. Old files lack these and fall back to
+  // the power-on Mega II contents. Mega II SHR lives here, not in memory[].
+  megaIIMain?: string,
+  megaIIAux?: string,
+  // Raw VGC bank registers ($C020-$C04F): C029 selects SHR linearization and
+  // the Mega II bank, C035 shadowing, C036 speed. Without them a restored GS
+  // save renders SHR with linear=false and the palette/SCB tables read zero.
+  iigsRegisters?: string,
+  // The 65816 core keeps its native PC/PB/DB outside the legacy s6502 object,
+  // so a GS save without this reloads at PC 0 and reboots over the SHR screen.
+  cpu65816?: CPU65816SaveState,
+  // The ADB micro-controller's own state. The soft-switch bytes in memory only
+  // describe what the CPU wrote, not what the controller latched: a restore
+  // without this leaves $C027's mouse/data/keyboard interrupt enables at zero,
+  // so the guest's IRQ handler never runs even though $C027 reads enabled.
+  // Missing in older saves and reset to power-on state on restore.
+  iigsADB?: IIGSADBSaveState,
+  // The VGC's own interrupt register and pending flags, which live outside the
+  // $C020-$C04F bytes saved in `iigsRegisters`. The scanline-enable bit is what
+  // lets GS/OS's Event Manager erase and redraw its cursor. Without it a
+  // restored desktop keeps its factory cursor in the top-left corner even
+  // though ADB motion reaches the guest.
+  iigsVgc?: IIGSVGCSaveState
+}
+
+type IIGSVGCSaveState = {
+  vgcIntReg: number,
+  vblPending: boolean,
+  quarterSecondPending: boolean
+}
+
+type IIGSADBSaveState = {
+  response: number[],
+  reportByte: number | null,
+  modes: number,
+  configuration: number[],
+  ucMemory: number[],
+  errorByte: number,
+  mouseAddr: number,
+  mouseCtlAddr: number,
+  mouseRegs: number[],
+  mouseHasData: boolean,
+  keyboardAddr: number,
+  keyboardRegs: number[],
+  pendingX: number,
+  pendingY: number,
+  button0Down: number,
+  button1Down: number,
+  buttonChanged: boolean,
+  reportInProgress: boolean,
+  modifiers: number,
+  interruptEnables: number,
+  cmd: number[],
+  argumentsExpected: number,
+  romTaskPollCycle: number
 }
 
 type SlotCardSaveState = {
@@ -245,7 +323,9 @@ type DisplayProps = {
   setShowFileOpenDialog: (show: boolean, index: number, append?: boolean) => void,
 }
 
-type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P"
+type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P" | "APPLE2GS"
+
+type IigsRomVersion = "01" | "03"
 
 type VERA_SLOT = 0 | 2 | 4
 
@@ -256,8 +336,13 @@ type Video7Override = {
   enabled: boolean,
 }
 
-type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "videoterm" |
-  "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "smartport" | "vidhd"
+// "gs*" ids are the Apple IIgs Control Panel's built-in slot functions: the
+// motherboard's own slot firmware stays mapped ($C02D bit clear). Every other
+// id is a card in the slot ("Your Card" in the Control Panel), including "none"
+// which leaves an empty card slot. "disk35" is retained only so old saved
+// configurations still parse; it migrates to "gsSmartPort".
+type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "videoterm" | "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "disk35" | "smartport" | "vidhd" | "gsPrinter" | "gsModem" | "gsText80" | "gsMouse" | "gsSmartPort" | "gsDiskPort"
+
 
 type SlotConfig = {
   1: SLOT_CARD_ID,
@@ -439,6 +524,18 @@ type DriveState = {
   writableFileHandle: WritableFileHandle | null,
   lastLocalFileWriteTime: number
   optimalTiming: number,
+  // Apple IIgs 3.5" (Sony) drive state. is35 marks the drive/media family;
+  // blockMedia35 means driveData holds a raw 800K block image and the GCR bit
+  // stream the IWM reads was generated separately (see
+  // getDriveBitstreamByIndex). Spindle/track mechanics are separate from the
+  // 5.25" motor and stepper phases.
+  is35: boolean,
+  blockMedia35: boolean,
+  spindleOn: boolean,
+  stepDirection: number,
+  diskSwitched: boolean,
+  stepEnd: number,
+  readyEnd: number,
 }
 
 type DriveProps = {
@@ -448,6 +545,10 @@ type DriveProps = {
   filename: string,
   status: string,
   motorRunning: boolean,
+  // The IIgs 3.5" drive has its own spindle latch (CONT35), so its activity lamp
+  // cannot follow the 5.25" motor line. Optional because the 3.5" bays are the
+  // only consumers and most fixtures describe a 5.25"/SmartPort drive.
+  spindleOn?: boolean,
   diskHasChanges: boolean,
   isWriteProtected: boolean,
   diskData: Uint8Array,

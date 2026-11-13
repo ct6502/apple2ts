@@ -60,7 +60,14 @@ const retroCardLabels = (context: RetroMenuContext): Record<SLOT_CARD_ID, string
   vera: context.t("retroControl.card.vera"),
   passport: context.t("retroControl.card.passport"),
   disk2: context.t("retroControl.card.disk2"),
+  disk35: "3.5\" Disk Drive",
   smartport: context.t("retroControl.card.smartport"),
+  gsPrinter: "Printer Port",
+  gsModem: "Modem Port",
+  gsText80: "80-Column Text",
+  gsMouse: "Mouse Port",
+  gsSmartPort: "Smart Port",
+  gsDiskPort: "Disk Port",
 })
 
 const getRetroSlotOptionLabel = (context: RetroMenuContext, option: SlotOption) =>

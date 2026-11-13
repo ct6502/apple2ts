@@ -28,6 +28,7 @@ jest.mock("../devices/vera/verasdicon", () => ({
 }))
 jest.mock("../main2worker", () => ({
   passSetRunMode: (...args: unknown[]) => mockPassSetRunMode(...args),
+  handleGetMachineName: () => "APPLE2E",
 }))
 jest.mock("../ui_utilities", () => ({
   showGlobalProgressModal: (...args: unknown[]) => mockShowGlobalProgressModal(...args),
@@ -221,6 +222,58 @@ describe("getMultiDiskConfigFromItem", () => {
     expect(config.isMultiDisk).toBe(true)
     expect(config.drives).toEqual([{ index: 0, url: "game.hdv" }])
     expect(config.veraSdUrl).toBe("sdcard.img")
+  })
+
+  // The IIgs 3.5" pair is a swapper-capable bay like the other two, so a
+  // collection entry naming s5d1/s5d2 has to reach indices 4/5. Without the
+  // keys those entries fell through to the primary-URL fallback and the pair
+  // landed in the slot-7 block bays, where no 3.5" media clock exists.
+  test("maps the slot-5 3.5\" pair from a diskUrl object", () => {
+    const item: DiskCollectionItem = {
+      type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+      title: "SonyPair",
+      diskUrl: { s5d1: "boot.2mg", s5d2: "data.2mg" },
+      fileSize: 819200,
+      lastUpdated: new Date(0),
+    }
+    const config = getMultiDiskConfigFromItem(item)
+    expect(config.drives).toEqual([
+      { index: 4, url: "boot.2mg" },
+      { index: 5, url: "data.2mg" },
+    ])
+    expect(getPrimaryDiskUrl(item)).toBe("boot.2mg")
+  })
+
+  test("builds a slot-5 swapper group from params", () => {
+    const item: DiskCollectionItem = {
+      type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+      title: "SonySwapper",
+      diskUrl: "boot.2mg",
+      params: "s5d1={boot.2mg,swap.2mg}&s5d2=data.2mg",
+      fileSize: 819200,
+      lastUpdated: new Date(0),
+    }
+    const config = getMultiDiskConfigFromItem(item)
+    expect(config.isSwapper).toBe(true)
+    expect(config.drives).toEqual([
+      { index: 4, url: "boot.2mg", swapperUrls: ["boot.2mg", "swap.2mg"] },
+      { index: 5, url: "data.2mg" },
+    ])
+  })
+
+  test("keeps a requested slot-5 bay paired across an array of disks", () => {
+    const item: DiskCollectionItem = {
+      type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
+      title: "SonyRequested",
+      diskUrl: ["boot.2mg", "data.2mg"],
+      fileSize: 819200,
+      lastUpdated: new Date(0),
+    }
+    const config = getMultiDiskConfigFromItem(item, 4)
+    expect(config.drives).toEqual([
+      { index: 4, url: "boot.2mg" },
+      { index: 5, url: "data.2mg" },
+    ])
   })
 })
 

@@ -177,7 +177,7 @@ export const decompressSingleFile = async (
   try {
     if (typeof globalThis.TextDecoder === "undefined") {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+         
         const util = require("util")
         globalThis.TextDecoder = util.TextDecoder
         globalThis.TextEncoder = util.TextEncoder
@@ -375,7 +375,7 @@ export const decompressAllDiskFiles = async (
   try {
     if (typeof globalThis.TextDecoder === "undefined") {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+         
         const util = require("util")
         globalThis.TextDecoder = util.TextDecoder
         globalThis.TextEncoder = util.TextEncoder

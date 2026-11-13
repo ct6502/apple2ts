@@ -27,6 +27,8 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
     - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
     - name: Setup GitHub Pages
       if: github.event.repository.has_pages
       uses: actions/configure-pages@v6
@@ -39,18 +41,49 @@ jobs:
     - run: node tools/check-node-version.mjs
     - run: npm ci --ignore-scripts
     - run: npm run lint
-    - run: npm run build
     - name: Install GNU gettext
       run: |
         sudo apt-get update
         sudo apt-get install --yes gettext
     - run: npm test
+    # Build both deployable targets from the same checkout. The scripts set
+    # BUILD_TARGET and land in dist/apple2ts and dist/apple2gts respectively.
+    - name: Build apple2ts target
+      run: npm run build:apple2ts
+    - name: Build apple2gts target
+      run: npm run build:apple2gts
+    - name: Verify deployment domains
+      run: |
+        test "$(cat dist/apple2ts/CNAME)" = "apple2ts.com"
+        test "$(cat dist/apple2gts/CNAME)" = "apple2gts.com"
     - name: Upload GitHub Pages artifact
       if: github.event.repository.has_pages
       uses: actions/upload-pages-artifact@v4
       with:
-        path: dist
+        path: dist/apple2ts
     - name: Deploy GitHub Pages
       if: github.event.repository.has_pages
       id: deployment
       uses: actions/deploy-pages@v4
+    - name: Deploy Apple2GTS build
+      if: ${{ secrets.APPLE2GTS_TOKEN != '' }}
+      uses: JamesIves/github-pages-deploy-action@v4.7.3
+      with:
+        token: ${{ secrets.APPLE2GTS_TOKEN }}
+        repository-name: ct6502/apple2gts
+        branch: gh-pages
+        folder: dist/apple2gts
+        clean: true
+        single-commit: true
+        commit-message: "Deploy Apple2GTS from ${{ github.repository }}"
+    - name: Dispatch Apple2GTS Pages deployment
+      if: ${{ secrets.APPLE2GTS_TOKEN != '' }}
+      env:
+        APPLE2GTS_TOKEN: ${{ secrets.APPLE2GTS_TOKEN }}
+      run: |
+        curl --fail --silent --show-error \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${APPLE2GTS_TOKEN}" \
+          https://api.github.com/repos/ct6502/apple2gts/dispatches \
+          -d '{"event_type":"apple2ts-deploy"}'
