@@ -691,6 +691,9 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   passSetShowDebugTab(false)
   
   setPreferenceSpeedMode(0, origin)
+  // The ROM choice is an independent GS preference; reset it back to ROM 01
+  // (and tell the worker) even though the machine itself returns to APPLE2EE.
+  setPreferenceIigsRomVersion("01", origin)
   setPreferenceColorMode(COLOR_MODE.COLOR, origin)
   setPreferenceMonitorMode(MONITOR_MODE.NTSC)
   setPreferenceTheme()

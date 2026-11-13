@@ -28,11 +28,13 @@ jest.mock("./save_restore_ui", () => ({
 import { APP_DEFAULT_MACHINE } from "../common/app_target"
 import { DEFAULT_SLOT_CONFIG } from "../common/utility"
 import {
+  getPreferenceIigsRomVersion,
   getPreferenceMachineName,
   getPreferenceSlotConfig,
   PREFERENCE_SLOT_CONFIG_CLASSIC_KEY,
   PREFERENCE_SLOT_CONFIG_GS_KEY,
   resetPreferences,
+  setPreferenceIigsRomVersion,
   setPreferenceMachineName,
   setPreferenceSlotConfig,
 } from "./localstorage"
@@ -79,11 +81,15 @@ describe("slot preference reset", () => {
       6: "gsDiskPort",
       7: "smartport",
     }, "external", "APPLE2GS")
+    setPreferenceIigsRomVersion("03")
 
     resetPreferences()
 
     expect(localStorage.getItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)).toBeNull()
     expect(localStorage.getItem(PREFERENCE_SLOT_CONFIG_GS_KEY)).toBeNull()
     expect(getPreferenceSlotConfig()).toEqual(DEFAULT_SLOT_CONFIG)
+    expect(localStorage.getItem("iigsRom")).toBeNull()
+    expect(getPreferenceIigsRomVersion()).toBe("01")
+    expect(jest.mocked(main2worker.passSetIigsRomVersion).mock.lastCall).toEqual(["01"])
   })
 })
