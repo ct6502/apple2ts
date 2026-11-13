@@ -5,7 +5,7 @@ import { i18n, t } from "../../i18n"
 import { setTheme } from "../ui_settings"
 import { DEFAULT_SLOT_CONFIG_GS, UI_THEME } from "../../common/utility"
 import { getCardShortLabels, getRamdiskValues } from "../ui_utilities"
-import { PREFERENCE_SLOT_CONFIG_GS_KEY, setPreferenceMachineName, setPreferenceSlotConfig } from "../localstorage"
+import { PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, PREFERENCE_SLOT_CONFIG_GS_KEY, setPreferenceMachineName, setPreferenceSlotConfig } from "../localstorage"
 import * as workerMessages from "../main2worker"
 import { handleMidiDeviceSelect } from "../devices/audio/midiselect"
 import { setVeraFmAudioEnabled } from "../devices/audio/vera_psg_audio"
@@ -202,6 +202,7 @@ test("switching from Apple II+ to the IIgs keeps its built-in slot defaults", ()
   const savedMachine = localStorage.getItem("machineName")
   const savedSlotConfig = localStorage.getItem("slotConfig")
   const savedGsSlotConfig = localStorage.getItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+  const savedClassicSlotConfig = localStorage.getItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
   const container = document.createElement("div")
   document.body.appendChild(container)
   const root = createRoot(container)
@@ -213,6 +214,7 @@ test("switching from Apple II+ to the IIgs keeps its built-in slot defaults", ()
     localStorage.removeItem("machineName")
     localStorage.removeItem("slotConfig")
     localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+    localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
     i18n.setLanguage("en")
     act(() => root.render(<SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />))
     act(() => container.querySelector<HTMLButtonElement>("#tour-settings")!.click())
@@ -238,6 +240,8 @@ test("switching from Apple II+ to the IIgs keeps its built-in slot defaults", ()
     else localStorage.setItem("slotConfig", savedSlotConfig)
     if (savedGsSlotConfig === null) localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
     else localStorage.setItem(PREFERENCE_SLOT_CONFIG_GS_KEY, savedGsSlotConfig)
+    if (savedClassicSlotConfig === null) localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
+    else localStorage.setItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, savedClassicSlotConfig)
     slotsMock.mockReturnValue({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })
     machineMock.mockReturnValue("APPLE2EE")
     i18n.setLanguage(language)
@@ -248,6 +252,7 @@ test("keeps custom IIgs slots across a classic machine round trip", () => {
   const savedMachine = localStorage.getItem("machineName")
   const savedSlotConfig = localStorage.getItem("slotConfig")
   const savedGsSlotConfig = localStorage.getItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+  const savedClassicSlotConfig = localStorage.getItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
   const custom = {
     1: "ssc",
     2: "gsModem",
@@ -261,6 +266,7 @@ test("keeps custom IIgs slots across a classic machine round trip", () => {
     localStorage.removeItem("machineName")
     localStorage.removeItem("slotConfig")
     localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+    localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
 
     setPreferenceMachineName("APPLE2GS")
     setPreferenceSlotConfig({ ...custom }, "external", "APPLE2GS")
@@ -271,6 +277,7 @@ test("keeps custom IIgs slots across a classic machine round trip", () => {
     const classicConfig = JSON.parse(localStorage.getItem("slotConfig")!)
     expect(classicConfig[2]).toBe("none")
     expect(classicConfig[4]).toBe("mockingboard")
+    expect(JSON.parse(localStorage.getItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)!)).toEqual(classicConfig)
     expect(JSON.parse(localStorage.getItem(PREFERENCE_SLOT_CONFIG_GS_KEY)!)).toEqual(custom)
 
     setPreferenceMachineName("APPLE2GS")
@@ -283,6 +290,49 @@ test("keeps custom IIgs slots across a classic machine round trip", () => {
     else localStorage.setItem("slotConfig", savedSlotConfig)
     if (savedGsSlotConfig === null) localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
     else localStorage.setItem(PREFERENCE_SLOT_CONFIG_GS_KEY, savedGsSlotConfig)
+    if (savedClassicSlotConfig === null) localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
+    else localStorage.setItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, savedClassicSlotConfig)
+  }
+})
+
+test("keeps custom classic slots across a GS machine round trip", () => {
+  const savedMachine = localStorage.getItem("machineName")
+  const savedSlotConfig = localStorage.getItem("slotConfig")
+  const savedGsSlotConfig = localStorage.getItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+  const savedClassicSlotConfig = localStorage.getItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
+  const custom = {
+    1: "ssc",
+    2: "vera",
+    3: "aux",
+    4: "mockingboard",
+    5: "mouse",
+    6: "disk2",
+    7: "smartport",
+  } as const
+  try {
+    localStorage.removeItem("machineName")
+    localStorage.removeItem("slotConfig")
+    localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+    localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
+
+    setPreferenceMachineName("APPLE2EE")
+    setPreferenceSlotConfig({ ...custom }, "external", "APPLE2EE")
+    expect(JSON.parse(localStorage.getItem("slotConfig")!)).toEqual(custom)
+    expect(JSON.parse(localStorage.getItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)!)).toEqual(custom)
+
+    setPreferenceMachineName("APPLE2GS")
+    setPreferenceMachineName("APPLE2EE")
+    expect(JSON.parse(localStorage.getItem("slotConfig")!)).toEqual(custom)
+    expect(JSON.parse(localStorage.getItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)!)).toEqual(custom)
+  } finally {
+    if (savedMachine === null) localStorage.removeItem("machineName")
+    else localStorage.setItem("machineName", savedMachine)
+    if (savedSlotConfig === null) localStorage.removeItem("slotConfig")
+    else localStorage.setItem("slotConfig", savedSlotConfig)
+    if (savedGsSlotConfig === null) localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+    else localStorage.setItem(PREFERENCE_SLOT_CONFIG_GS_KEY, savedGsSlotConfig)
+    if (savedClassicSlotConfig === null) localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
+    else localStorage.setItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, savedClassicSlotConfig)
   }
 })
 

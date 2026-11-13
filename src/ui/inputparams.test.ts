@@ -26,7 +26,7 @@ jest.mock("./devices/vera/verasdicon", () => ({
 }))
 
 import { handleFragment, handleInputParams } from "./inputparams"
-import { getPreferenceSlotConfig, getPreferenceVeraSlot, PREFERENCE_SLOT_CONFIG_GS_KEY } from "./localstorage"
+import { getPreferenceSlotConfig, getPreferenceVeraSlot, PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, PREFERENCE_SLOT_CONFIG_GS_KEY } from "./localstorage"
 import { getTabView, getUIStateBoolean } from "./ui_settings"
 import { handleSetDiskFromURL, handleSetDiskSwapperFromURLs, resetAllDiskDrives } from "./devices/disk/driveprops"
 import { handleSetVeraSdFromURL } from "./devices/vera/verasdicon"
@@ -94,6 +94,27 @@ describe("handleInputParams slot configuration", () => {
     const passSetSlotConfig = jest.spyOn(main2worker, "passSetSlotConfig")
     try {
       handleInputParams("machine=apple2gs")
+      expect(passSetSlotConfig).toHaveBeenLastCalledWith(custom)
+    } finally {
+      passSetSlotConfig.mockRestore()
+    }
+  })
+
+  test("boots a classic URL with the saved classic slot layout", () => {
+    const custom: SlotConfig = {
+      1: "ssc",
+      2: "vera",
+      3: "aux",
+      4: "mockingboard",
+      5: "mouse",
+      6: "disk2",
+      7: "smartport",
+    }
+    localStorage.setItem("machineName", JSON.stringify("APPLE2GS"))
+    localStorage.setItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, JSON.stringify(custom))
+    const passSetSlotConfig = jest.spyOn(main2worker, "passSetSlotConfig")
+    try {
+      handleInputParams("machine=apple2ee")
       expect(passSetSlotConfig).toHaveBeenLastCalledWith(custom)
     } finally {
       passSetSlotConfig.mockRestore()

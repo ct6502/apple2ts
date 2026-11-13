@@ -9,7 +9,7 @@ import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setColorMode, setMonitorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
-import { getPreferenceIigsSlotConfig, getPreferenceMachineName, getPreferenceSlotConfig, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
+import { getPreferenceMachineName, getPreferenceSlotConfig, getPreferenceSlotConfigBackup, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
 import { sanitizeSlotConfig } from "../common/slot_options"
 import { Expectin } from "./api/expectin"
 import { notifySettingsChanged } from "./settingschange"
@@ -218,10 +218,12 @@ export const handleInputParams = (paramString = "") => {
     }
   }
 
-  // A GS URL boot must use the saved IIgs Control Panel card choices, not the
-  // classic slot config that loadPreferences() posted before the machine name.
-  const urlGsSlotConfig = urlMachine === "APPLE2GS" ? getPreferenceIigsSlotConfig() : null
-  const currentSlotConfig = urlGsSlotConfig ?? getPreferenceSlotConfig()
+  // A machine URL boot must use that machine's saved layout, not the config
+  // loadPreferences() posted before the URL changed the worker's machine name.
+  const urlSlotConfig = urlMachine
+    ? getPreferenceSlotConfigBackup(urlMachine)
+    : null
+  const currentSlotConfig = urlSlotConfig ?? getPreferenceSlotConfig()
   const nextSlotConfig = { ...currentSlotConfig }
   let slotConfigChanged = false
 
@@ -321,8 +323,8 @@ export const handleInputParams = (paramString = "") => {
     const sanitized = sanitizeSlotConfig(nextSlotConfig, machine)
     setPreferenceSlotConfig(sanitized, "external", machine)
     passSetSlotConfig(sanitized)
-  } else if (urlGsSlotConfig) {
-    passSetSlotConfig(urlGsSlotConfig)
+  } else if (urlSlotConfig) {
+    passSetSlotConfig(urlSlotConfig)
   }
 
   const theme = params.get("theme")

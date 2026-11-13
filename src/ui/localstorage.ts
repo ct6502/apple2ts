@@ -239,6 +239,7 @@ export const getPreferenceMachineName = (): MACHINE_NAME => {
 }
 
 export const PREFERENCE_SLOT_CONFIG_GS_KEY = "slotConfigGS"
+export const PREFERENCE_SLOT_CONFIG_CLASSIC_KEY = "slotConfigClassic"
 
 const readSlotConfigStorage = (raw: string | null): SlotConfig | null => {
   if (!raw) return null
@@ -276,6 +277,9 @@ export const setPreferenceMachineName = (
       ? sanitizeSlotConfig(savedGsSlotConfig, name)
       : { ...DEFAULT_SLOT_CONFIG_GS }
   } else {
+    // Like the IIgs backup, keep a custom classic layout across a
+    // classic -> GS -> classic round trip instead of replacing it with the
+    // IIgs sanitised config when coming back from the GS Control Panel.
     const slotConfig = getPreferenceSlotConfig()
     newSlotConfig = { ...slotConfig }
     let newSlot3 = newSlotConfig[3]
@@ -359,22 +363,25 @@ export const setPreferenceVeraSlot = (slot: VERA_SLOT = 0) => {
   passSetVeraSlot(slot)
 }
 
-export const getPreferenceIigsSlotConfig = (): SlotConfig | null => {
-  const backupRaw = localStorage.getItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+export const getPreferenceSlotConfigBackup = (
+  machine: MACHINE_NAME,
+): SlotConfig | null => {
+  const key = machine === "APPLE2GS"
+    ? PREFERENCE_SLOT_CONFIG_GS_KEY
+    : PREFERENCE_SLOT_CONFIG_CLASSIC_KEY
+  const backupRaw = localStorage.getItem(key)
   const backup = readSlotConfigStorage(backupRaw)
   if (!backup) {
-    if (backupRaw) localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+    if (backupRaw) localStorage.removeItem(key)
     return null
   }
-  return sanitizeSlotConfig(backup, "APPLE2GS")
+  return sanitizeSlotConfig(backup, machine)
 }
 
 export const getPreferenceSlotConfig = (): SlotConfig => {
   const machine = getPreferenceMachineName()
-  if (machine === "APPLE2GS") {
-    const backup = getPreferenceIigsSlotConfig()
-    if (backup) return backup
-  }
+  const backup = getPreferenceSlotConfigBackup(machine)
+  if (backup) return backup
   const saved = localStorage.getItem("slotConfig")
   const parsed = readSlotConfigStorage(saved)
   if (parsed) return sanitizeSlotConfig(parsed, machine)
@@ -388,9 +395,12 @@ export const setPreferenceSlotConfig = (
   machine: MACHINE_NAME = getPreferenceMachineName(),
 ) => {
   localStorage.setItem("slotConfig", JSON.stringify(config))
-  if (machine === "APPLE2GS") {
-    localStorage.setItem(PREFERENCE_SLOT_CONFIG_GS_KEY, JSON.stringify(config))
-  }
+  localStorage.setItem(
+    machine === "APPLE2GS"
+      ? PREFERENCE_SLOT_CONFIG_GS_KEY
+      : PREFERENCE_SLOT_CONFIG_CLASSIC_KEY,
+    JSON.stringify(config),
+  )
   passSetSlotConfig(config)
   notifySettingsChanged([1, 2, 3, 4, 5, 6, 7].map(slot => `slots.${slot}`), origin)
 }
@@ -691,6 +701,7 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceMockingboardMode(0, origin)
   setPreferenceMachineName(APP_DEFAULT_MACHINE, origin)
   localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+  localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
   setPreferenceRamWorks(64, origin)
   setPreferenceNewReleasesChecked()
   toggleScanlines(false)
