@@ -121,6 +121,21 @@ describe("slot preference reset", () => {
     expect(getTheme()).toBe(UI_THEME.DARK)
   })
 
+  test("preserves a local save state after reset and reload", () => {
+    const savedState = JSON.stringify({ emulator: { test: true } })
+    localStorage.setItem("saveStateToLocalStorage", "true")
+    localStorage.setItem("apple2ts_save_state", savedState)
+
+    resetPreferences()
+
+    expect(localStorage.getItem("saveStateToLocalStorage")).toBeNull()
+    expect(localStorage.getItem("apple2ts_save_state")).toBe(savedState)
+
+    loadPreferences()
+
+    expect(localStorage.getItem("apple2ts_save_state")).toBe(savedState)
+  })
+
   test("turns Auto Snapshot off during reset", () => {
     setPreferenceAutoSnapshot(AUTO_SNAPSHOT.AUTO_1M)
     expect(localStorage.getItem("autoSnapshot")).toBe("2")

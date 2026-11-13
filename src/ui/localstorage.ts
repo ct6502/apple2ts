@@ -695,9 +695,11 @@ export const loadPreferences = () => {
       RestoreSaveState(saveState)
       handleSaveStateToLocalStorage()
     }
-  } else {
-    localStorage.removeItem("apple2ts_save_state")
   }
+  // Reset Settings explicitly promises to preserve save states, but it also
+  // clears saveStateToLocalStorage. Do not delete the local snapshot here just
+  // because the preference is off: it was preserved by the reset dialog and
+  // remains available until auto-save is enabled again.
 }
 
 export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
