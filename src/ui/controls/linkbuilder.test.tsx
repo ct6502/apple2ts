@@ -72,8 +72,10 @@ describe("LinkBuilder", () => {
       root.render(<LinkBuilder />)
     })
     openBuilder(container)
-    expect(Array.from(container.querySelectorAll('select[name="Machine:"] option'))
-      .map(option => (option as HTMLOptionElement).value))
+    const machineSelect = Array.from(container.querySelectorAll("select"))
+      .find(select => select.name === "Machine:") as HTMLSelectElement
+    expect(Array.from(machineSelect.querySelectorAll("option"))
+      .map(option => option.value))
       .toEqual([
         "Apple II+",
         "Apple IIe (unenhanced)",
