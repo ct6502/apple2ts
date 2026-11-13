@@ -26,7 +26,7 @@ jest.mock("./save_restore_ui", () => ({
 }))
 
 import { APP_DEFAULT_MACHINE } from "../common/app_target"
-import { DEFAULT_SLOT_CONFIG } from "../common/utility"
+import { AUTO_SNAPSHOT, DEFAULT_SLOT_CONFIG } from "../common/utility"
 import {
   getPreferenceIigsRomVersion,
   getPreferenceMachineName,
@@ -36,6 +36,7 @@ import {
   PREFERENCE_SLOT_CONFIG_CLASSIC_KEY,
   PREFERENCE_SLOT_CONFIG_GS_KEY,
   resetPreferences,
+  setPreferenceAutoSnapshot,
   setPreferenceIigsRomVersion,
   setPreferenceMachineName,
   setPreferenceSlotConfig,
@@ -43,6 +44,7 @@ import {
   setPreferenceVeraSlot,
 } from "./localstorage"
 import * as main2worker from "./main2worker"
+import { getAutoSnapshot } from "./ui_settings"
 
 describe("slot preference reset", () => {
   beforeEach(() => {
@@ -95,6 +97,19 @@ describe("slot preference reset", () => {
     expect(localStorage.getItem("iigsRom")).toBeNull()
     expect(getPreferenceIigsRomVersion()).toBe("01")
     expect(jest.mocked(main2worker.passSetIigsRomVersion).mock.lastCall).toEqual(["01"])
+  })
+
+  test("turns Auto Snapshot off during reset", () => {
+    setPreferenceAutoSnapshot(AUTO_SNAPSHOT.AUTO_1M)
+    expect(localStorage.getItem("autoSnapshot")).toBe("2")
+    expect(getAutoSnapshot()).toBe(AUTO_SNAPSHOT.AUTO_1M)
+
+    resetPreferences()
+
+    expect(localStorage.getItem("autoSnapshot")).toBeNull()
+    expect(getAutoSnapshot()).toBe(AUTO_SNAPSHOT.AUTO_OFF)
+    expect(jest.mocked(main2worker.passAutoSnapshot).mock.lastCall)
+      .toEqual([AUTO_SNAPSHOT.AUTO_OFF])
   })
 
   test("clears VERA placement and restores FM audio during reset", () => {

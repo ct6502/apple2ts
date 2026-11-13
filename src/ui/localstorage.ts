@@ -689,6 +689,9 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   passReverseYAxis(false)
   passSiriusJoyport(false)
   passSetShowDebugTab(false)
+  // Auto Snapshot is a numeric enum, not one of the boolean UI keys; the loop
+  // above therefore leaves both the UI preference and worker mode untouched.
+  setPreferenceAutoSnapshot(AUTO_SNAPSHOT.AUTO_OFF)
   
   setPreferenceSpeedMode(0, origin)
   // The ROM choice is an independent GS preference; reset it back to ROM 01
