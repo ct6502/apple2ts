@@ -1,5 +1,5 @@
-import { handleSetDiskOrFileFromBuffer } from "./driveprops"
-import { handleGetMachineName } from "../../main2worker"
+import { handleSetDiskOrFileFromBuffer, setDefaultBinaryAddress } from "./driveprops"
+import { handleGetMachineName, passSetBinaryBlock } from "../../main2worker"
 
 jest.mock("../../main2worker", () => ({
   passSetDriveNewData: jest.fn(),
@@ -167,6 +167,33 @@ describe("handleSetDiskOrFileFromBuffer drive index redirection", () => {
         true,
       )
       expect(mounted).toBe(0)
+    })
+  })
+
+  describe("generic binary run address", () => {
+    beforeEach(() => localStorage.clear())
+    afterEach(() => localStorage.clear())
+
+    const loadBin = () => handleSetDiskOrFileFromBuffer(
+      2, new ArrayBuffer(4), "program.bin", null, null,
+      undefined, false, false, true,
+    )
+
+    test("loads a generic .bin file at the saved run address", () => {
+      localStorage.setItem("binaryRunAddress", "0900")
+      loadBin()
+      expect(passSetBinaryBlock).toHaveBeenLastCalledWith(0x900, expect.any(Uint8Array), true)
+    })
+
+    test("a URL-supplied address persists and Reset Settings restores 0300", () => {
+      setDefaultBinaryAddress(0x900)
+      expect(localStorage.getItem("binaryRunAddress")).toBe("0900")
+      loadBin()
+      expect(passSetBinaryBlock).toHaveBeenLastCalledWith(0x900, expect.any(Uint8Array), true)
+
+      localStorage.removeItem("binaryRunAddress")
+      loadBin()
+      expect(passSetBinaryBlock).toHaveBeenLastCalledWith(0x300, expect.any(Uint8Array), true)
     })
   })
 

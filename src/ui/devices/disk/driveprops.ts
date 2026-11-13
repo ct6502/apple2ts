@@ -437,9 +437,27 @@ export const findMatchingDiskImage = (url: string) => {
     } as DiskCollectionItem
 }
 
-let binaryRunAddress = 0x300
+const getSavedBinaryRunAddress = (): number => {
+  const saved = localStorage.getItem("binaryRunAddress")
+  if (!saved) return 0x300
+  const parsed = parseInt(saved, 16)
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 0xFFFF) return 0x300
+  return parsed
+}
+
+// The dialog and URL override share one persisted address. Keeping a module
+// copy here made a saved custom address invisible to generic .bin loads and
+// survived Reset Settings, which only removes the storage key.
 export const setDefaultBinaryAddress = (address: number) => {
-  binaryRunAddress = address
+  if (!Number.isFinite(address) || address < 0 || address > 0xFFFF) {
+    localStorage.removeItem("binaryRunAddress")
+    return
+  }
+  if (address === 0x300) {
+    localStorage.removeItem("binaryRunAddress")
+  } else {
+    localStorage.setItem("binaryRunAddress", address.toString(16).toUpperCase().padStart(4, "0"))
+  }
 }
 
 const setDiskOrFileFromBuffer = (
@@ -509,7 +527,7 @@ const setDiskOrFileFromBuffer = (
   clearDialogMessageContext()
 
   if (fname.endsWith(".bin")) {
-    passSetBinaryBlock(binaryRunAddress, new Uint8Array(buffer), true)
+    passSetBinaryBlock(getSavedBinaryRunAddress(), new Uint8Array(buffer), true)
   } else if (fname.endsWith(".bas") || fname.endsWith(".a")) {
     const decoder = new TextDecoder("utf-8")
     const basic = decoder.decode(buffer)
