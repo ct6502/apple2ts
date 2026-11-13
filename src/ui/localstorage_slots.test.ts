@@ -26,7 +26,7 @@ jest.mock("./save_restore_ui", () => ({
 }))
 
 import { APP_DEFAULT_MACHINE } from "../common/app_target"
-import { AUTO_SNAPSHOT, DEFAULT_SLOT_CONFIG } from "../common/utility"
+import { AUTO_SNAPSHOT, DEFAULT_SLOT_CONFIG, UI_THEME } from "../common/utility"
 import {
   getPreferenceIigsRomVersion,
   getPreferenceMachineName,
@@ -45,7 +45,7 @@ import {
   setPreferenceVeraSlot,
 } from "./localstorage"
 import * as main2worker from "./main2worker"
-import { getAutoSnapshot } from "./ui_settings"
+import { getAutoSnapshot, getTheme } from "./ui_settings"
 
 describe("slot preference reset", () => {
   beforeEach(() => {
@@ -109,6 +109,16 @@ describe("slot preference reset", () => {
     expect(getAutoSnapshot()).toBe(AUTO_SNAPSHOT.AUTO_1M)
     expect(jest.mocked(main2worker.passAutoSnapshot).mock.lastCall)
       .toEqual([AUTO_SNAPSHOT.AUTO_1M])
+  })
+
+  test("migrates legacy darkMode into the persisted theme preference", () => {
+    localStorage.setItem("darkMode", "true")
+
+    loadPreferences()
+
+    expect(localStorage.getItem("darkMode")).toBeNull()
+    expect(localStorage.getItem("theme")).toBe(JSON.stringify(UI_THEME.DARK))
+    expect(getTheme()).toBe(UI_THEME.DARK)
   })
 
   test("turns Auto Snapshot off during reset", () => {

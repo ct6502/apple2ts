@@ -623,7 +623,10 @@ export const loadPreferences = () => {
   if (darkMode) {
     try {
       if (JSON.parse(darkMode)) {
-        setTheme(UI_THEME.DARK)
+        // Migrate the legacy key into the persisted theme preference. Calling
+        // setTheme alone leaves theme absent, so the next reload silently falls
+        // back to CLASSIC after this migration key has been removed.
+        setPreferenceTheme(UI_THEME.DARK)
       }
     } catch {
       localStorage.removeItem("darkMode")
