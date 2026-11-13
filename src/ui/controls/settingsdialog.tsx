@@ -7,7 +7,7 @@ import { settingsResetBinding } from "./resetcontrols"
 import { Droplist } from "../panels/droplist"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, handleGetSpeedMode } from "../main2worker"
 import { getPreferenceBoolean, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
-import { getSlotOptions, SLOT_NUMBERS } from "../devices/machineconfig"
+import { getSlotOptions, SLOT_NUMBERS } from "../../common/slot_options"
 import { getCardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, getRamdiskValues, themeLabels } from "../ui_utilities"
 import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import CheckBox from "../panels/checkbox"
@@ -61,8 +61,13 @@ export const SettingsDialog = (props: DisplayProps) => {
   }
 
   const machineName = handleGetMachineName()
-  const machineNames: MACHINE_NAME[] = ["APPLE2EE", "APPLE2EU", "APPLE2P"]
-  const machineStrings = [t("machine.models.apple2ee"), t("machine.models.apple2eu"), t("machine.models.apple2p")]
+  const machineNames: MACHINE_NAME[] = ["APPLE2EE", "APPLE2EU", "APPLE2P", "APPLE2GS"]
+  const machineStrings = [
+    t("machine.models.apple2ee"),
+    t("machine.models.apple2eu"),
+    t("machine.models.apple2p"),
+    "Apple IIgs",
+  ]
   const machineIndex = machineNames.indexOf(machineName)
 
   const slotConfig = handleGetSlotConfig()
@@ -128,10 +133,17 @@ export const SettingsDialog = (props: DisplayProps) => {
       values={machineStrings}
       setValue={(val: string) => {
         const i = machineStrings.indexOf(val)
-        setPreferenceMachineName(machineNames[i])
+        if (i < 0) return
+        const nextMachine = machineNames[i]
+        setPreferenceMachineName(nextMachine)
         props.updateDisplay()
-        // // Adjust slot 3 when crossing between II+ and IIe families
-        const newIsIIp = val === machineStrings[2]
+        // The IIgs has its own built-in slot layout (and no RAMWorks slot 3),
+        // so switching to or from it must keep setPreferenceMachineName's
+        // GS defaults / sanitization instead of applying the classic slot-3
+        // Videoterm/Aux switch.
+        if (nextMachine === "APPLE2GS" || machineName === "APPLE2GS") return
+        // Adjust slot 3 when crossing between II+ and IIe families
+        const newIsIIp = nextMachine === "APPLE2P"
         const wasIIp = machineName === "APPLE2P"
         if (newIsIIp !== wasIIp) {
           handleSelectSlotCard(3, newIsIIp ? "videoterm" : "aux")

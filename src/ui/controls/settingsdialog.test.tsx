@@ -3,17 +3,20 @@ import { createRoot } from "react-dom/client"
 import { SettingsDialog } from "./settingsdialog"
 import { i18n, t } from "../../i18n"
 import { setTheme } from "../ui_settings"
-import { UI_THEME } from "../../common/utility"
+import { DEFAULT_SLOT_CONFIG_GS, UI_THEME } from "../../common/utility"
 import { getCardShortLabels, getRamdiskValues } from "../ui_utilities"
 import * as workerMessages from "../main2worker"
 import { handleMidiDeviceSelect } from "../devices/audio/midiselect"
 import { setVeraFmAudioEnabled } from "../devices/audio/vera_psg_audio"
 
 jest.mock("../main2worker", () => ({
-  handleGetMachineName: () => "APPLE2EE",
-  handleGetMemSize: () => 64,
-  handleGetSpeedMode: () => 0,
+  handleGetMachineName: jest.fn(() => "APPLE2EE"),
+  handleGetMemSize: jest.fn(() => 64),
+  handleGetSpeedMode: jest.fn(() => 0),
   handleGetSlotConfig: jest.fn((): SlotConfig => ({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })),
+  passSetMachineName: jest.fn(),
+  passSetRamWorks: jest.fn(),
+  passSetSlotConfig: jest.fn(),
   passSetVeraFmEnabled: jest.fn(),
 }))
 
@@ -121,6 +124,94 @@ test("installed cards expose their own audio menus and actions", async () => {
     slots.mockReturnValue({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })
     if (fmPreference === null) localStorage.removeItem("veraFmAudioEnabled")
     else localStorage.setItem("veraFmAudioEnabled", fmPreference)
+    i18n.setLanguage(language)
+  }
+})
+
+test("shows the IIgs machine and its built-in slot configuration in Settings", () => {
+  const language = i18n.getLanguage()
+  const container = document.createElement("div")
+  document.body.appendChild(container)
+  const root = createRoot(container)
+  const machineMock = jest.mocked(workerMessages.handleGetMachineName).mockReturnValue("APPLE2GS")
+  const slotsMock = jest.mocked(workerMessages.handleGetSlotConfig).mockReturnValue(DEFAULT_SLOT_CONFIG_GS)
+  try {
+    i18n.setLanguage("en")
+    act(() => root.render(<SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />))
+    act(() => container.querySelector<HTMLButtonElement>("#tour-settings")!.click())
+
+    const selectByName = (name: string) => {
+      const select = Array.from(container.querySelectorAll("select"))
+        .find(candidate => candidate.name === name)
+      expect(select).toBeDefined()
+      return select as HTMLSelectElement
+    }
+
+    const machine = selectByName(t("linkBuilder.machine"))
+    expect(machine.value).toBe("Apple IIgs")
+    expect(Array.from(machine.querySelectorAll("option")).map(option => option.value))
+      .toContain("Apple IIgs")
+
+    const expectedSlots = [
+      ["Slot 1:", "Printer Port"],
+      ["Slot 2:", "Modem Port"],
+      ["Slot 3:", "80-Column Text"],
+      ["Slot 4:", "Mouse Port"],
+      ["Slot 5:", "Smart Port"],
+      ["Slot 6:", "Disk Port"],
+      ["Slot 7:", "SmartPort"],
+    ] as const
+    for (const [slotName, cardLabel] of expectedSlots) {
+      expect(selectByName(slotName).value).toBe(cardLabel)
+    }
+  } finally {
+    act(() => root.unmount())
+    container.remove()
+    machineMock.mockReturnValue("APPLE2EE")
+    slotsMock.mockReturnValue({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })
+    i18n.setLanguage(language)
+  }
+})
+
+test("switching from Apple II+ to the IIgs keeps its built-in slot defaults", () => {
+  const language = i18n.getLanguage()
+  const savedMachine = localStorage.getItem("machineName")
+  const savedSlotConfig = localStorage.getItem("slotConfig")
+  const container = document.createElement("div")
+  document.body.appendChild(container)
+  const root = createRoot(container)
+  const machineMock = jest.mocked(workerMessages.handleGetMachineName).mockReturnValue("APPLE2P")
+  const slotsMock = jest.mocked(workerMessages.handleGetSlotConfig).mockReturnValue({
+    1: "ssc", 2: "none", 3: "videoterm", 4: "mockingboard", 5: "mouse", 6: "disk2", 7: "smartport",
+  })
+  try {
+    localStorage.removeItem("machineName")
+    localStorage.removeItem("slotConfig")
+    i18n.setLanguage("en")
+    act(() => root.render(<SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />))
+    act(() => container.querySelector<HTMLButtonElement>("#tour-settings")!.click())
+
+    const machine = Array.from(container.querySelectorAll("select"))
+      .find(candidate => candidate.name === t("linkBuilder.machine")) as HTMLSelectElement
+    expect(machine.value).toBe("Apple II+")
+    expect(Array.from(machine.querySelectorAll("option")).map(option => option.value))
+      .toContain("Apple IIgs")
+    act(() => {
+      machine.value = "Apple IIgs"
+      machine.dispatchEvent(new Event("change", { bubbles: true }))
+    })
+
+    expect(localStorage.getItem("machineName")).toBe(JSON.stringify("APPLE2GS"))
+    expect(JSON.parse(localStorage.getItem("slotConfig")!)).toEqual(DEFAULT_SLOT_CONFIG_GS)
+  } finally {
+    act(() => root.unmount())
+    container.remove()
+    if (savedMachine === null) localStorage.removeItem("machineName")
+    else localStorage.setItem("machineName", savedMachine)
+    if (savedSlotConfig === null) localStorage.removeItem("slotConfig")
+    else localStorage.setItem("slotConfig", savedSlotConfig)
+    slotsMock.mockReturnValue({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })
+    machineMock.mockReturnValue("APPLE2EE")
     i18n.setLanguage(language)
   }
 })

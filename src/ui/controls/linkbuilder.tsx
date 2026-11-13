@@ -11,7 +11,7 @@ import { DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, UI_THEMES } from "../../co
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode, handleGetSlotConfig } from "../main2worker"
 import { useTranslation } from "../../i18n/useTranslation"
-import { SLOT_NUMBERS, getSlotOptions } from "../devices/machineconfig"
+import { SLOT_NUMBERS, getSlotOptions } from "../../common/slot_options"
 import TabBase from "../tabbase"
 import Tab from "../tab"
 import { getCardShortLabels, ramdiskParams, getRamdiskValues } from "../ui_utilities"
