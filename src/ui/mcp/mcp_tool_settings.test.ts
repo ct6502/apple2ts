@@ -16,6 +16,14 @@ jest.mock("../localstorage", () => ({
   setPreferenceMachineName: jest.fn(),
 }))
 
+jest.mock("../../common/app_target", () => {
+  const actual = jest.requireActual("../../common/app_target") as Record<string, unknown>
+  return {
+    ...actual,
+    APP_MACHINE_NAMES: ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"],
+  }
+})
+
 import { setPreferenceMachineName } from "../localstorage"
 import { listMCPTools } from "./mcp_tools"
 import { toolSetMachineType, toolSetSound } from "./mcp_tool_settings"

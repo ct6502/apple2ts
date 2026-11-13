@@ -11,6 +11,17 @@ jest.mock("../devices/audio/speaker", () => ({
   isAudioEnabled: jest.fn(() => true),
 }))
 
+// The linkbuilder suite exercises all four machines in one process, so show
+// the unfiltered table here; deployment-target filtering has dedicated tests.
+jest.mock("../../common/app_target", () => {
+  const actual = jest.requireActual("../../common/app_target") as Record<string, unknown>
+  return {
+    ...actual,
+    APP_DEFAULT_MACHINE: "APPLE2EE",
+    APP_MACHINE_NAMES: ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"],
+  }
+})
+
 jest.mock("../main2worker", () => ({
   handleGetIsDebugging: jest.fn(() => false),
   handleGetMachineName: jest.fn(() => "APPLE2EE"),

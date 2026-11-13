@@ -52,9 +52,17 @@ export const getAppManifestDescription = (target: AppTarget): string =>
     ? "Pure-TypeScript Apple IIgs emulator with a 2.8 MHz 65816, Ensoniq DOC, ADB input, and Super Hi-Res graphics. Written in TypeScript and hosted on GitHub Pages. Chris Torrence, CT6502"
     : "Apple II Emulator in TypeScript. Emulates an enhanced Apple IIe with 128k of memory, a hard drive, two floppy disk drives, and gamepad support. Written in TypeScript, using the React JS library, and hosted on Github Pages. Chris Torrence, CT6502"
 
+// The two sites share one source tree but not one machine menu: apple2ts.com
+// keeps the classic II+/IIe family, while apple2gts.com is IIgs-only. Keep the
+// visible order stable (II+, IIe unenhanced, IIe enhanced, IIgs).
+export const getAppMachineNames = (target: AppTarget): MACHINE_NAME[] =>
+  target === GTS_TARGET ? ["APPLE2GS"] : ["APPLE2P", "APPLE2EU", "APPLE2EE"]
+
 export const APP_TARGET = parseAppTarget(process.env.BUILD_TARGET)
 
 export const IS_APPLE2GTS = APP_TARGET === GTS_TARGET
+
+export const APP_MACHINE_NAMES = getAppMachineNames(APP_TARGET)
 
 export const APP_NAME = getAppName(APP_TARGET)
 export const APP_TITLE = getAppTitle(APP_TARGET)
@@ -64,3 +72,14 @@ export const APP_FAVICON = getAppFavicon(APP_TARGET)
 export const APP_DEFAULT_MACHINE = getAppDefaultMachine(APP_TARGET)
 export const APP_MANIFEST_NAME = getAppManifestName(APP_TARGET)
 export const APP_MANIFEST_DESCRIPTION = getAppManifestDescription(APP_TARGET)
+
+// Any requested machine outside this target's menu falls back to the target's
+// own default (IIe enhanced on apple2ts, IIgs on apple2gts) instead of booting
+// the wrong family through a URL parameter or an old saved preference.
+export const getAppMachineNameOrDefault = (
+  name: MACHINE_NAME | undefined,
+  target: AppTarget = APP_TARGET,
+): MACHINE_NAME => {
+  const allowed = getAppMachineNames(target)
+  return name && allowed.includes(name) ? name : getAppDefaultMachine(target)
+}

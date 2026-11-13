@@ -36,6 +36,17 @@ jest.mock("../devices/audio/vera_psg_audio", () => ({
   setVeraFmAudioEnabled: jest.fn(),
 }))
 
+// These suites cover both families in one process, so present the pre-filter
+// four-machine menu to them; the deployment-target filtering itself lives in
+// app_target tests and the dedicated target-menu suites.
+jest.mock("../../common/app_target", () => {
+  const actual = jest.requireActual("../../common/app_target") as Record<string, unknown>
+  return {
+    ...actual,
+    APP_MACHINE_NAMES: ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"],
+  }
+})
+
 // @ts-expect-error React act environment flag
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 

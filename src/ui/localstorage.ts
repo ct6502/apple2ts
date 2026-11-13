@@ -1,7 +1,7 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
-import { APP_DEFAULT_MACHINE } from "../common/app_target"
+import { APP_DEFAULT_MACHINE, APP_MACHINE_NAMES } from "../common/app_target"
 import { sanitizeSlotConfig } from "../common/slot_options"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passSetVeraFmEnabled, passSetIigsRomVersion, passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
@@ -227,7 +227,8 @@ export const getPreferenceMachineName = (): MACHINE_NAME => {
   if (saved) {
     try {
       const parsed = JSON.parse(saved)
-      if (parsed === "APPLE2P" || parsed === "APPLE2EU" || parsed === "APPLE2EE" || parsed === "APPLE2GS") {
+      if ((parsed === "APPLE2P" || parsed === "APPLE2EU" || parsed === "APPLE2EE" || parsed === "APPLE2GS")
+        && APP_MACHINE_NAMES.includes(parsed)) {
         return parsed
       }
       localStorage.removeItem("machineName")

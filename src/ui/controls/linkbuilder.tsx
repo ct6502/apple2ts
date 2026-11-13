@@ -7,6 +7,7 @@ import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import CheckBox from "../panels/checkbox"
 import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode, getUIStateBoolean } from "../ui_settings"
+import { APP_DEFAULT_MACHINE, APP_MACHINE_NAMES } from "../../common/app_target"
 import { DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, UI_THEMES } from "../../common/utility"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode, handleGetSlotConfig } from "../main2worker"
@@ -171,22 +172,28 @@ const LinkBuilder = () => {
   const [tabSection, setTabSection] = useState(TAB.DISK)
   const [slotConfig, setSlotConfig] = useState<SlotConfig>({ ...DEFAULT_SLOT_CONFIG })
 
-  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs.
-  const machineValues = [
-    t("machine.models.apple2p"),
-    t("machine.models.apple2eu"),
-    t("machine.models.apple2ee"),
-    "Apple IIgs"
+  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs, then
+  // filter to what this deployment target supports. Both sites are otherwise
+  // the same build, so the table also keeps whichever running machine is valid.
+  const allMachines = [
+    { name: "APPLE2P" as MACHINE_NAME, label: t("machine.models.apple2p") },
+    { name: "APPLE2EU" as MACHINE_NAME, label: t("machine.models.apple2eu") },
+    { name: "APPLE2EE" as MACHINE_NAME, label: t("machine.models.apple2ee") },
+    { name: "APPLE2GS" as MACHINE_NAME, label: "Apple IIgs" },
   ]
+  const visibleMachines = allMachines.filter(({ name }) => APP_MACHINE_NAMES.includes(name))
+  const machineValues = visibleMachines.map(({ label }) => label)
   // Each droplist row and the MACHINE_NAME it stands for. Retrieving the running
   // machine and reading a user choice both go through this table so the two
   // cannot drift apart - the reason a running IIgs used to come back as an IIe.
-  const MACHINE_NAMES: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
+  const MACHINE_NAMES: MACHINE_NAME[] = visibleMachines.map(({ name }) => name)
   const machineNameFor = (row: string): MACHINE_NAME =>
-    MACHINE_NAMES[machineValues.indexOf(row)] ?? "APPLE2EE"
-  const machineRowFor = (name: MACHINE_NAME): string =>
-    machineValues[MACHINE_NAMES.indexOf(name)]
-    ?? machineValues[MACHINE_NAMES.indexOf("APPLE2EE")]
+    MACHINE_NAMES[machineValues.indexOf(row)] ?? APP_DEFAULT_MACHINE
+  const machineRowFor = (name: MACHINE_NAME): string => {
+    const exactRow = machineValues[MACHINE_NAMES.indexOf(name)]
+    if (exactRow !== undefined) return exactRow
+    return machineValues[Math.max(MACHINE_NAMES.indexOf(APP_DEFAULT_MACHINE), 0)]
+  }
   const lbMachineName = machineNameFor(machine)
 
   // The IIgs shares speed indices with the classic machines but names rows 2-5
@@ -420,10 +427,10 @@ const LinkBuilder = () => {
     setTextBlock("")
     setLoadBlock("")
     setHexBlock("")
-    // Reset to the app's default machine (IIe enhanced), not the first row:
-    // the rows are user-facing order, while the default machine still keeps
-    // the machine= parameter out of a fresh link.
-    setMachine(machineRowFor("APPLE2EE"))
+    // Reset to the target's default machine (IIe enhanced on apple2ts, IIgs on
+    // apple2gts), not the first row: the rows are user-facing order, while the
+    // default machine still keeps the machine= parameter out of a fresh link.
+    setMachine(machineRowFor(APP_DEFAULT_MACHINE))
     setRamdisk(ramdiskValues[0])
     setScanlines(false)
     setSelectedDisk("")

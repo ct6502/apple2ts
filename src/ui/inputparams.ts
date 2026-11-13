@@ -10,6 +10,7 @@ import { setAppMode, setColorMode, setMonitorMode, setTabView, setTheme, setUISt
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { getPreferenceMachineName, getPreferenceSlotConfig, getPreferenceSlotConfigBackup, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
+import { APP_MACHINE_NAMES } from "../common/app_target"
 import { sanitizeSlotConfig } from "../common/slot_options"
 import { Expectin } from "./api/expectin"
 import { notifySettingsChanged } from "./settingschange"
@@ -194,18 +195,18 @@ export const handleInputParams = (paramString = "") => {
   const machineName = params.get("machine")?.toUpperCase()
   let urlMachine: MACHINE_NAME | undefined
   if (machineName) {
-    if (machineName === "APPLE2P") {
-      urlMachine = "APPLE2P"
-      passSetMachineName("APPLE2P")
-    } else if (machineName === "APPLE2EU") {
-      urlMachine = "APPLE2EU"
-      passSetMachineName("APPLE2EU")
-    } else if (machineName === "APPLE2GS") {
-      urlMachine = "APPLE2GS"
-      passSetMachineName("APPLE2GS")
-    } else {
-      urlMachine = "APPLE2EE"
-      passSetMachineName("APPLE2EE")
+    // Keep unknown machine values on the existing fallback, but first make the
+    // resolved name part of this site's menu. A classic site must not boot a
+    // IIgs from ?machine=apple2gs, nor may an old link inject the IIe family
+    // into apple2gts.com.
+    const resolvedMachine: MACHINE_NAME =
+      machineName === "APPLE2P" ? "APPLE2P"
+        : machineName === "APPLE2EU" ? "APPLE2EU"
+          : machineName === "APPLE2GS" ? "APPLE2GS"
+            : "APPLE2EE"
+    if (APP_MACHINE_NAMES.includes(resolvedMachine)) {
+      urlMachine = resolvedMachine
+      passSetMachineName(resolvedMachine)
     }
   }
 
@@ -220,6 +221,10 @@ export const handleInputParams = (paramString = "") => {
 
   // A machine URL boot must use that machine's saved layout, not the config
   // loadPreferences() posted before the URL changed the worker's machine name.
+  // Validate slot cards against the machine this URL will actually run. A
+  // rejected ?machine= leaves urlMachine undefined, so the saved preference
+  // (itself target-filtered) decides whether this is a classic or GS layout.
+  const slotMachine = urlMachine ?? getPreferenceMachineName()
   const urlSlotConfig = urlMachine
     ? getPreferenceSlotConfigBackup(urlMachine)
     : null
@@ -227,7 +232,7 @@ export const handleInputParams = (paramString = "") => {
   const nextSlotConfig = { ...currentSlotConfig }
   let slotConfigChanged = false
 
-  const validCards: Record<number, string[]> = urlMachine === "APPLE2GS"
+  const validCards: Record<number, string[]> = slotMachine === "APPLE2GS"
     ? {
         // IIgs Control Panel slot functions; "none" is an empty "Your Card".
         1: ["gsPrinter", "ssc"],
@@ -319,9 +324,8 @@ export const handleInputParams = (paramString = "") => {
   }
 
   if (slotConfigChanged) {
-    const machine = urlMachine ?? getPreferenceMachineName()
-    const sanitized = sanitizeSlotConfig(nextSlotConfig, machine)
-    setPreferenceSlotConfig(sanitized, "external", machine)
+    const sanitized = sanitizeSlotConfig(nextSlotConfig, slotMachine)
+    setPreferenceSlotConfig(sanitized, "external", slotMachine)
     passSetSlotConfig(sanitized)
   } else if (urlSlotConfig) {
     passSetSlotConfig(urlSlotConfig)

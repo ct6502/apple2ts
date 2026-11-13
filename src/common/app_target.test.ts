@@ -3,6 +3,8 @@ import {
   getAppDescription,
   getAppDomain,
   getAppFavicon,
+  getAppMachineNameOrDefault,
+  getAppMachineNames,
   getAppName,
   getAppTitle,
   parseAppTarget,
@@ -47,5 +49,26 @@ describe("target-specific metadata and defaults", () => {
     expect(getAppDefaultMachine("apple2gts")).toBe("APPLE2GS")
     expect(getAppTitle("apple2gts")).toContain("Apple IIgs")
     expect(getAppDescription("apple2gts")).toContain("Apple IIgs")
+  })
+})
+
+describe("target machine menus", () => {
+  test("apple2ts offers only the classic machines in fixed order", () => {
+    expect(getAppMachineNames("apple2ts")).toEqual(["APPLE2P", "APPLE2EU", "APPLE2EE"])
+  })
+
+  test("apple2gts offers only the IIgs", () => {
+    expect(getAppMachineNames("apple2gts")).toEqual(["APPLE2GS"])
+  })
+
+  test("an unsupported machine falls back to the target default", () => {
+    // Jest builds default to apple2ts, whose default is the enhanced IIe.
+    expect(getAppMachineNameOrDefault("APPLE2GS")).toBe("APPLE2EE")
+    expect(getAppMachineNameOrDefault("APPLE2EU")).toBe("APPLE2EU")
+    expect(getAppMachineNameOrDefault(undefined)).toBe("APPLE2EE")
+
+    expect(getAppMachineNameOrDefault("APPLE2GS", "apple2gts")).toBe("APPLE2GS")
+    expect(getAppMachineNameOrDefault("APPLE2EE", "apple2gts")).toBe("APPLE2GS")
+    expect(getAppMachineNameOrDefault("APPLE2EU", "apple2ts")).toBe("APPLE2EU")
   })
 })

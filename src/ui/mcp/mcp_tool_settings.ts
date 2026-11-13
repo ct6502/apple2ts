@@ -3,6 +3,7 @@
  * Tools for controlling emulator configuration (speed, machine type, color, sound)
  */
 
+import { APP_MACHINE_NAMES } from "../../common/app_target"
 import { COLOR_MODE } from "../../common/utility"
 import { handleGetMachineName, passSpeedMode } from "../main2worker"
 import { setPreferenceColorMode, setPreferenceMachineName } from "../localstorage"
@@ -64,7 +65,8 @@ export function toolSetSpeed(speed: number): MCPToolResult {
   }
 }
 
-export const MCP_MACHINE_TYPES: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
+// The MCP surface advertises exactly the machines this deployed site offers.
+export const MCP_MACHINE_TYPES: MACHINE_NAME[] = APP_MACHINE_NAMES
 
 /**
  * Set the machine type
@@ -73,9 +75,13 @@ export const MCP_MACHINE_TYPES: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2
 export function toolSetMachineType(machineType: string): MCPToolResult {
   try {
     if (!MCP_MACHINE_TYPES.includes(machineType as MACHINE_NAME)) {
+      const quoted = MCP_MACHINE_TYPES.map(name => `"${name}"`)
+      const choices = quoted.length > 1
+        ? `${quoted.slice(0, -1).join(", ")}, or ${quoted.at(-1)}`
+        : quoted[0]
       return {
         success: false,
-        error: "Machine type must be \"APPLE2P\", \"APPLE2EU\", \"APPLE2EE\", or \"APPLE2GS\"",
+        error: `Machine type must be ${choices}`,
       }
     }
 

@@ -12,6 +12,7 @@ import { getCardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorMod
 import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import CheckBox from "../panels/checkbox"
 import { getModKeyName } from "../retro/retrocontrolmetadata"
+import { APP_MACHINE_NAMES } from "../../common/app_target"
 import { UI_THEMES } from "../../common/utility"
 import { SlotAudioConfig } from "../devices/audio/audioconfig"
 import TabBase from "../tabbase"
@@ -61,14 +62,21 @@ export const SettingsDialog = (props: DisplayProps) => {
   }
 
   const machineName = handleGetMachineName()
-  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs.
-  const machineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
-  const machineStrings = [
+  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs. The
+  // deployment target then decides which rows are visible: apple2ts.com keeps
+  // the classic family, and apple2gts.com only offers the IIgs.
+  const allMachineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
+  const allMachineStrings = [
     t("machine.models.apple2p"),
     t("machine.models.apple2eu"),
     t("machine.models.apple2ee"),
     "Apple IIgs",
   ]
+  const visibleMachines = allMachineNames
+    .map((name, index) => ({ name, label: allMachineStrings[index] }))
+    .filter(({ name }) => APP_MACHINE_NAMES.includes(name))
+  const machineNames: MACHINE_NAME[] = visibleMachines.map(({ name }) => name)
+  const machineStrings = visibleMachines.map(({ label }) => label)
   const machineIndex = machineNames.indexOf(machineName)
 
   const slotConfig = handleGetSlotConfig()

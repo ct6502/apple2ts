@@ -20,6 +20,16 @@ jest.mock("./devices/audio/mockingboard_audio", () => ({
   changeMockingboardMode: jest.fn(),
 }))
 
+// These tests deliberately exercise GS/classic round trips even though Jest
+// builds the classic target by default; keep the unfiltered menu in this suite.
+jest.mock("../common/app_target", () => {
+  const actual = jest.requireActual("../common/app_target") as Record<string, unknown>
+  return {
+    ...actual,
+    APP_MACHINE_NAMES: ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"],
+  }
+})
+
 jest.mock("./save_restore_ui", () => ({
   handleSaveStateToLocalStorage: jest.fn(),
   RestoreSaveState: jest.fn(),
