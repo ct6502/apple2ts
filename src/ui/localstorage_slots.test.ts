@@ -28,6 +28,7 @@ jest.mock("./save_restore_ui", () => ({
 import { APP_DEFAULT_MACHINE } from "../common/app_target"
 import { AUTO_SNAPSHOT, DEFAULT_SLOT_CONFIG, UI_THEME } from "../common/utility"
 import {
+  getPreferenceByString,
   getPreferenceDiskCollectionSort,
   getPreferenceIigsRomVersion,
   getPreferenceMachineName,
@@ -39,6 +40,7 @@ import {
   loadPreferences,
   resetPreferences,
   setPreferenceAutoSnapshot,
+  setPreferenceByString,
   setPreferenceDiskCollectionSort,
   setPreferenceIigsRomVersion,
   setPreferenceMachineName,
@@ -149,6 +151,16 @@ describe("slot preference reset", () => {
     expect(getPreferenceDiskCollectionSort(2)).toBeUndefined()
     expect(localStorage.getItem("diskCollectionSort.0")).toBeNull()
     expect(localStorage.getItem("diskCollectionSort.2")).toBeNull()
+  })
+
+  test("clears the heat map palette preference during reset", () => {
+    setPreferenceByString("heatMapColorTable", "Plasma", "Spectral")
+    expect(getPreferenceByString("heatMapColorTable", "Spectral")).toBe("Plasma")
+
+    resetPreferences()
+
+    expect(getPreferenceByString("heatMapColorTable", "Spectral")).toBe("Spectral")
+    expect(localStorage.getItem("heatMapColorTable")).toBeNull()
   })
 
   test("turns Auto Snapshot off during reset", () => {

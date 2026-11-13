@@ -763,7 +763,6 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceRamWorks(64, origin)
   setPreferenceNewReleasesChecked()
   toggleScanlines(false)
-  window.dispatchEvent(new CustomEvent(PREFERENCES_RESET_EVENT))
   localStorage.removeItem("binaryRunAddress")
   setPreferenceTraceSettings()
   setPreferenceDebugTabLeftWidth(-1)
@@ -775,6 +774,10 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   Object.keys(localStorage)
     .filter(key => key.startsWith("diskCollectionSort."))
     .forEach(key => localStorage.removeItem(key))
+  // The heat-map palette is a string preference, so the boolean UI key loop
+  // never visits it. Reset it with the other debug presentation preferences.
+  localStorage.removeItem("heatMapColorTable")
+  window.dispatchEvent(new CustomEvent(PREFERENCES_RESET_EVENT))
 }
 
 export const getPreferencePageLength = (): number => {
