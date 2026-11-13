@@ -112,13 +112,12 @@ const ensureContext = (): AudioContext | null => {
     if (!Ctor) return null
     const ctx = new Ctor()
     const gain = ctx.createGain()
-    // Unity, matching gssquared: its DOC stream is created with
-    // apply_volume=false, so nothing scales the chip's output after the
-    // int16 mix. 0.6 here measured 1.66x (-3.7 dB) quieter than the
-    // pre-signed-int8 build once the unsigned mix's DC offset is filtered
-    // out, and that drop is what made the Tass Times title bass and drums
-    // disappear by ear. The DOC mix peaks at ~0.51 of full scale, so unity
-    // still leaves 6 dB of headroom.
+    // Unity. gssquared creates the DOC stream with apply_volume=false because
+    // the chip itself applies the $C03C analog gain and fixed makeup inside
+    // generate_samples, so nothing may scale the int16 mix again here. 0.6 was
+    // measured 1.66x (-3.7 dB) quieter than the pre-signed-int8 build once the
+    // unsigned mix's DC offset is filtered out, and that drop is what made the
+    // Tass Times title bass and drums disappear by ear.
     gain.gain.value = 1.0
     gain.connect(ctx.destination)
     audioContext = ctx

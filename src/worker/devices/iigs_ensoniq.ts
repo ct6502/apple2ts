@@ -12,6 +12,19 @@ export const ensoniqDocRam = new Uint8Array(0x10000)
 const DOC_RESSHIFTS = [9, 10, 11, 12, 13, 14, 15, 16]
 const DOC_WAVESIZES = [256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
 
+// gssquared ensoniq.cpp $C03C system-volume attenuator, Q8. Step 0 is mute;
+// step 15 is 256 (no cut); every other step is a ~2 dB cut. The chip averages
+// the oscillator slots (osce + 2) then applies this and a fixed +36 dB makeup
+// of 64. The analog control voltage does not follow sub-ms $C03C blips: 20 ms
+// one-pole glide.
+const DOC_SYS_ATTEN_Q8 = [
+  0,
+  6434, 5108, 4058, 3222, 2560, 2034, 1615,
+  1283, 1019, 809, 643, 511, 406, 322, 256,
+]
+const DOC_MAKEUP = 64
+const DOC_VOL_SLEW_MS = 20
+
 interface Oscillator {
   freq: number
   wtsize: number
@@ -40,11 +53,11 @@ export class IigsEnsoniq {
       this.oscillators[i] = { freq: 0, wtsize: 256, control: 0, vol: 0, data: 0x80, wavetblpointer: 0, wavetblsize: 0, resolution: 0, accumulator: 0, irqpend: 0, keyOnSample: 0, lastHaltSegment: 0 }
     }
     this.setIrqCallback((state) => {
-      if (state) {
-        (globalThis as any).cpu?.irq?.()
-      } else {
-        (globalThis as any).cpu?.clearIrq?.()
+      const host = globalThis as typeof globalThis & {
+        cpu?: { irq?: () => void, clearIrq?: () => void }
       }
+      if (state) host.cpu?.irq?.()
+      else host.cpu?.clearIrq?.()
     })
   }
   setIrqCallback(cb: (state: boolean) => void) {
@@ -85,11 +98,13 @@ export class IigsEnsoniq {
   // $C03D is a pipeline: see readData(). Tracks whether $E0 was already
   // fetched in the current transaction so the two-read idiom cannot ack twice.
   e0FetchedThisTxn = false
-  // Analog system volume from the low nibble of $C03C, 0..1. Reported for
-  // diagnostics only: gssquared does not attenuate the DOC stream with it
-  // (its per-sample slew is compiled out behind `#if 0` and its DOC audio
-  // stream is created with apply_volume=false), so neither do we.
-  systemVolume = 1
+  // Analog system volume nibble from $C03C, raw 0..15: 0 mute, 15 no cut.
+  // gssquared's AudioSystem starts at 6; the chip applies the Q8 attenuator
+  // and fixed makeup in generateSamples() by itself, not via SDL gain.
+  systemVolume = 6
+  // Current analog gain (0..~1) gliding toward the $C03C target. -1 = snap on
+  // the first sample, matching gssquared ensoniq.hpp.
+  private volGain = -1
 
   // ---- Diagnostics (?ensoniqdbg=1) ----
   // Counts, not guesses: mirrorMonoCount = mono-chorus mirror applications,
@@ -133,7 +148,8 @@ export class IigsEnsoniq {
     this.rege1 = 2
     this.osce = 1
     this.e0FetchedThisTxn = false
-    this.systemVolume = 1
+    this.systemVolume = 6
+    this.volGain = -1
     this.monoMirrorCount = 0
     this.mirrorCountAtGenStart = 0
     this.irqTicks = 0
@@ -325,10 +341,10 @@ export class IigsEnsoniq {
     // Bit 7 (busy) is read-only and always clears on write.
     this.soundctl = (data & 0x7F)
     this.e0FetchedThisTxn = false
-    // The low nibble is the analog system volume. Ignoring it means software
-    // that sets volume 0 still makes noise; ignoring silence means the chip is
-    // simply mute.
-    this.systemVolume = (data & 0x0f) / 15
+    // The low nibble is the analog system volume, raw 0..15. gssquared's
+    // AudioSystem stores this nibble (default 6) and the chip applies it in
+    // generateSamples; volume 0 is true mute, not just quieter.
+    this.systemVolume = data & 0x0f
     // In register mode (bit 6 clear) only the low address byte is meaningful;
     // a leftover RAM pointer must not leak into register accesses.
     if (!(this.soundctl & 0x40)) {
@@ -356,7 +372,7 @@ export class IigsEnsoniq {
       if (e1Write) this.docRateRebase?.()
     }
     if (this.soundctl & 0x20) {
-      let a = (fullAddr + 1) & 0xffff
+      const a = (fullAddr + 1) & 0xffff
       this.soundadrl = a & 0xff
       this.soundadrh = (a >> 8) & 0xff
     }
@@ -456,12 +472,29 @@ export class IigsEnsoniq {
     }
   }
 
+  // Advance the analog gain on a silent block too. gssquared walks the same
+  // 20 ms one-pole glide over the zero mix; keeping it here avoids a gain step
+  // when the next block starts sounding.
+  private advanceVolumeGain(numFrames: number, sysVolume: number) {
+    if (numFrames <= 0) return
+    const atten = DOC_SYS_ATTEN_Q8[sysVolume & 0x0f]
+    const target = atten === 0 ? 0 : 256 / atten
+    if (this.volGain < 0) this.volGain = target
+    const dt = 1 / this.outputRate()
+    const alpha = 1 - Math.exp(-dt / (DOC_VOL_SLEW_MS * 0.001))
+    let g = this.volGain
+    for (let s = 0; s < numFrames; s++) {
+      g += alpha * (target - g)
+    }
+    this.volGain = g
+  }
+
   // Produce DOC PCM (Int16 samples) at the chip's output rate. When an output
   // buffer is supplied (the run loop's sub-refresh catch-up path) the samples
   // are written there and it is returned; otherwise a fresh buffer is
   // allocated (the old per-video-frame path, kept for tests and callers that
   // take ownership of the block).
-  generateSamples(numFrames: number, out?: Int16Array): Int16Array {
+  generateSamples(numFrames: number, out?: Int16Array, sysVolume = this.systemVolume): Int16Array {
     const wavemasks = [0x1ff00,0x1fe00,0x1fc00,0x1f800,0x1f000,0x1e000,0x1c000,0x18000]
     const accmasks = [0xff,0x1ff,0x3ff,0x7ff,0xfff,0x1fff,0x3fff,0x7fff]
     const ossecs = Math.max(1, this.osce)
@@ -484,6 +517,9 @@ export class IigsEnsoniq {
     // tick lands late.
     if (!this.hasActiveOscillators()) {
       buffer.fill(0, 0, numFrames * chan)
+      // gssquared still walks the volume glide when the mix is silent; keep the
+      // gain continuous so the next sounding block does not step.
+      this.advanceVolumeGain(numFrames, sysVolume)
       if (buffer !== out) this.recordBlock(numFrames, false)
       return buffer
     }
@@ -506,7 +542,7 @@ export class IigsEnsoniq {
         for (let s = 0; s < numFrames; s++) {
           const shift = resshift < 1 ? 1 : resshift
           const altram = acc >> shift
-          let ramptr = altram & sizemask
+          const ramptr = altram & sizemask
           acc += freq
           const waveByte = ensoniqDocRam[(ramptr + wtptr) & 0xffff]
           let data = waveByte ^ 0x80
@@ -553,15 +589,31 @@ export class IigsEnsoniq {
         o.control = ctrl & 0xff
       }
     }
-    // mix -> buffer. gssquared divides by 8 and does NOT apply the $C03C
-    // volume nibble per-sample (it is routed to the system volume instead,
-    // and applying it per-sample caused amplitude modulation / distortion).
-    for (let i = 0; i < numFrames * chan; i++) {
-      let sample = Math.trunc(mix[i] / 8)
-      if (sample > 32767) sample = 32767
-      if (sample < -32768) sample = -32768
-      buffer[i] = sample
+    // mix -> buffer, ported from gssquared ensoniq.cpp: the oscillator sum is
+    // averaged over the DAC slots (osce + 2), then the $C03C Q8 attenuator and
+    // the fixed +36 dB makeup (64) are applied. The gain glides toward the
+    // target on a 20 ms one-pole, so volume steps do not click/zip; volume 0 is
+    // mute. The exact int64 product is safe as a JS number at these ranges.
+    const slots = ossecs + 2
+    const atten = DOC_SYS_ATTEN_Q8[sysVolume & 0x0f]
+    const target = atten === 0 ? 0 : 256 / atten
+    if (this.volGain < 0) this.volGain = target
+    const dt = 1 / this.outputRate()
+    const alpha = 1 - Math.exp(-dt / (DOC_VOL_SLEW_MS * 0.001))
+    const denom = slots * 65536
+    let g = this.volGain
+    for (let s = 0; s < numFrames; s++) {
+      g += alpha * (target - g)
+      const volQ16 = Math.trunc(g * 65536)
+      for (let c = 0; c < chan; c++) {
+        let sample = Math.trunc((mix[s * chan + c] * volQ16 * DOC_MAKEUP) / denom)
+        if (sample > 32767) sample = 32767
+        if (sample < -32768) sample = -32768
+        buffer[s * chan + c] = sample
+      }
     }
+    this.volGain = g
+
     this.mirrorMonoToStereo(buffer, numFrames, chan)
     if (buffer === out) {
       // The caller assembles per-refresh blocks from short chunks; recording

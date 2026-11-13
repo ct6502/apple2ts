@@ -413,12 +413,17 @@ Rules that are easy to get wrong:
   subtracts `(wtsize - 1) << resshift` to keep fractional phase; in every case
   `if (control & 0x08) irqpend = 1`. A CPU-written halt with bit 3 clear does
   not IRQ.
-- **Wave data is signed int8**: `d = (byte ^ 0x80)`, sign-extended; mix is
-  `trunc(sum / 8)`. gssquared does exactly this (`ensoniq.cpp:181,194`), and the
-  unsigned version's DC rail made the old build *look* 1.7x bassier and ~3.7 dB
-  louder while adding clipping harmonics. The `$C03C` low nibble (analog volume)
-  is **not** applied to the DOC stream in gssquared (its slew is behind `#if 0`,
-  `apply_volume=false`); keep it for diagnostics only.
+- **Wave data is signed int8**: `d = (byte ^ 0x80)`, sign-extended, and the
+  oscillator sum is averaged over the DAC slots (`osce + 2`). The unsigned
+  version's DC rail made the old build *look* 1.7x bassier and ~3.7 dB louder
+  while adding clipping harmonics. Current gssquared `ensoniq.cpp` applies the
+  **`$C03C` low nibble as the analog system volume** inside `generate_samples`:
+  raw 0..15 indexes `k_sys_atten_q8` (0 mute, 15 no cut), the analog gain glides
+  toward that target over 20 ms, and a fixed 64x (+36 dB) makeup follows. The cold
+  `AudioSystem` default is 6; the DOC's own SDL stream is still
+  `apply_volume=false` because the chip already applies its own gain. Regression:
+  `gs_ensoniq.test.ts` ("$C03C volume attenuates the DOC..." and "a $C03C volume
+  change glides...").
 - **Mono mirror**: if every non-halted enabled oscillator shares the same CA0,
   copy that channel to both L and R (`ensoniq_mirror_mono_to_stereo`).
 - **Sampling is interleaved, not per frame**: `ensoniqCatchUp` in the run loop
@@ -446,8 +451,9 @@ Rules that are easy to get wrong:
   the raw PCM boundaries stay continuous (1.03x the interior slope, so no clicks),
   and the boot probe showed ≤30 frames of drift over 1631 refreshes.
 - UI transport: `iigs_ensoniq_audio.ts` queues blocks with
-  `nextTime += frames / rate`, and the gain is **1.0** (unity, as gssquared's
-  `apply_volume=false` stream).
+  `nextTime += frames / rate`, and the gain is **1.0**. gssquared creates the DOC
+  stream with `apply_volume=false` because the chip applies `$C03C` analog volume
+  inside `generate_samples`; scaling again here would double-count it.
 - **The transport resamples, not the AudioContext.** `resampleDocBlock` carries a
   fractional read position (plus the previous block's last frame) across blocks and
   builds every `AudioBuffer` at `ctx.sampleRate`. Handing the context one

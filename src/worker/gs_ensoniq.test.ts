@@ -15,12 +15,17 @@ const set = (addr: number, value: number) => memSet24(0x000000 + addr, value & 0
 const get = (addr: number) => memGet24(0x000000 + addr)
 
 // Write one DOC register. Control bit 6 clear = register mode (oscillator
-// registers), bit 6 set = RAM mode (wave RAM). Bit 5 auto-increments.
+// registers), bit 6 set = RAM mode (wave RAM). Bit 5 auto-increments. The
+// volume nibble is 0 here (the DOC is muted), so PCM tests set the analog
+// volume explicitly after configuring the last register.
 const writeReg = (reg: number, value: number) => {
   set(0xC03C, 0x00)        // register mode, no auto-increment
   set(0xC03E, reg & 0xff)
   set(0xC03D, value)
 }
+
+// Set the $C03C analog system-volume nibble without moving the register address.
+const setSystemVolume = (nibble: number) => set(0xC03C, nibble & 0x0f)
 
 // Read one DOC register. $C03D is a one-access pipeline (it returns the
 // previous latch and fetches the current address), so priming read then data
@@ -99,6 +104,7 @@ test("a keyed-on oscillator with wave RAM produces audible PCM", () => {
   writeReg(0xa0, 0x00)   // bit4 = 0 selects (per achan mapping) channel 1
   expect(iigsEnsoniq.hasActiveOscillators()).toBe(true)
 
+  setSystemVolume(0x06)
   const pcm = iigsEnsoniq.generateSamples(512)
   expect(pcm.length).toBe(1024)
   let peak = 0
@@ -132,6 +138,7 @@ test("mono voices are mirrored onto both L and R", () => {
   writeReg(0xa0, 0x00)
   expect(iigsEnsoniq.hasActiveOscillators()).toBe(true)
 
+  setSystemVolume(0x06)
   const pcm = iigsEnsoniq.generateSamples(512)
   let leftNonzero = false
   let rightNonzero = false
@@ -160,8 +167,9 @@ test("true stereo is left untouched by the mono mirror", () => {
   writeReg(0xc1, 0x00)
   writeReg(0x80, 0x00)
   writeReg(0x81, 0x00)
-  writeReg(0x40, 0xff)
-  writeReg(0x41, 0x80)
+  // Keep both below the $C03C gain makeup so neither channel clips to int16.
+  writeReg(0x40, 0x02)
+  writeReg(0x41, 0x01)
   writeReg(0x00, 0x40)
   writeReg(0x20, 0x00)
   writeReg(0x01, 0x40)
@@ -170,6 +178,7 @@ test("true stereo is left untouched by the mono mirror", () => {
   writeReg(0xa1, 0x00)   // CA0=0 -> right(1)
   expect(iigsEnsoniq.hasActiveOscillators()).toBe(true)
 
+  setSystemVolume(0x06)
   const pcm = iigsEnsoniq.generateSamples(512)
   let leftNonzero = false
   let rightNonzero = false
@@ -198,6 +207,8 @@ test("a halted oscillator produces silence", () => {
   writeReg(0x20, 0x00)
   writeReg(0xa0, 0x01)  // halted
   expect(iigsEnsoniq.hasActiveOscillators()).toBe(false)
+  // Keep the volume unmuted: the silence must come from the halt, not $C03C.
+  setSystemVolume(0x06)
   const pcm = iigsEnsoniq.generateSamples(256)
   for (let i = 0; i < pcm.length; i++) {
     expect(pcm[i]).toBe(0)
@@ -286,11 +297,16 @@ test("$C03D reads are pipelined: priming read then data read", () => {
   expect(get(0xC03D)).toBe(0x22)
 })
 
-test("sound control low nibble is the analog system volume", () => {
+test("sound control low nibble is the raw analog system volume", () => {
+  // A cold AudioSystem starts at 6 (gssquared AudioSystem.hpp volume_setting),
+  // not at 15: the full-volume nibble must be asked for explicitly.
+  expect(iigsEnsoniq.systemVolume).toBe(6)
   set(0xC03C, 0x0f)  // full volume
-  expect(iigsEnsoniq.systemVolume).toBeCloseTo(1)
+  expect(iigsEnsoniq.systemVolume).toBe(15)
+  set(0xC03C, 0x06)  // gssquared's cold default
+  expect(iigsEnsoniq.systemVolume).toBe(6)
   set(0xC03C, 0x00)  // mute
-  expect(iigsEnsoniq.systemVolume).toBeCloseTo(0)
+  expect(iigsEnsoniq.systemVolume).toBe(0)
   // A read never reports busy, and bit 7 is not echoed back.
   expect(get(0xC03C) & 0x80).toBe(0)
 })
@@ -378,6 +394,7 @@ test("writing $80 clears the wave-table pointer bank bit", () => {
 // the refresh boundary, which sped/slowed the already-rendered segment.
 test("an $E1 rate change splits the refresh block into old-rate and new-rate segments", () => {
   const blocks: Array<{ rate: number, frames: number }> = []
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const w2m = require("./worker2main")
   const original = w2m.passEnsoniqSound
   w2m.passEnsoniqSound = (samples: Int16Array, rate: number) => {
@@ -425,4 +442,64 @@ test("a DOC write catches up before applying the new register value", () => {
   }
   expect(observedFrequency).toBe(7)
   expect(iigsEnsoniq.oscillators[0].freq).toBe(0x40)
+})
+
+// gssquared ensoniq.cpp: slot average (osce + 2) then the $C03C Q8 attenuator
+// and the fixed 64x makeup. Step 0 is mute, step 15 is no cut, and the analog
+// gain glides over 20 ms instead of stepping. The waveform below is deliberately
+// tiny (volume 1, signed byte 1) so full volume stays far below int16 clipping.
+const configureTinyWaveVoice = () => {
+  set(0xC03C, 0x40 | 0x20)  // RAM mode + auto-increment
+  set(0xC03E, 0x00)
+  set(0xC03F, 0x00)
+  for (let i = 0; i < 256; i++) {
+    set(0xC03D, 0x81)       // ^0x80 -> signed +1, never zero-byte halt
+  }
+  writeReg(0xc0, 0x00)       // 256-byte wave, 8-bit resolution
+  writeReg(0x80, 0x00)       // wave pointer $0000
+  writeReg(0x40, 0x01)       // tiny oscillator volume
+  writeReg(0x00, 0x40)       // frequency $0040
+  writeReg(0x20, 0x00)
+  writeReg(0xa0, 0x00)       // free-run, halt bit clear
+}
+
+const docPeak = (frames: number) => {
+  const pcm = iigsEnsoniq.generateSamples(frames)
+  let peak = 0
+  for (const sample of pcm) peak = Math.max(peak, Math.abs(sample))
+  return peak
+}
+
+test("$C03C volume attenuates the DOC: mute is silent and full volume is louder", () => {
+  iigsEnsoniq.reset()
+  configureTinyWaveVoice()
+  setSystemVolume(0x0f)
+  const full = docPeak(512)
+
+  iigsEnsoniq.reset()
+  configureTinyWaveVoice()
+  setSystemVolume(0x06)
+  const mid = docPeak(512)
+
+  iigsEnsoniq.reset()
+  configureTinyWaveVoice()  // last register write leaves the volume nibble at 0
+  const mute = docPeak(512)
+
+  expect(mute).toBe(0)
+  expect(mid).toBeGreaterThan(0)
+  expect(full).toBeGreaterThan(mid)
+})
+
+test("a $C03C volume change glides on the 20 ms analog gain, not a step", () => {
+  iigsEnsoniq.reset()
+  configureTinyWaveVoice()
+  setSystemVolume(0x00)     // prime gain at mute
+  docPeak(512)              // gain is now exactly 0
+  setSystemVolume(0x0f)     // ask for full volume
+  docPeak(1)                // one DOC sample after the change
+  const gain = (iigsEnsoniq as unknown as { volGain: number }).volGain
+  expect(gain).toBeGreaterThan(0)
+  // It must be nowhere near the new target yet: 20 ms is thousands of samples
+  // at the DOC's ~298 kHz default rate (osce 1 -> 894886 / 8 / 3).
+  expect(gain).toBeLessThan(0.01)
 })
