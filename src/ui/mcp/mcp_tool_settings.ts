@@ -4,8 +4,8 @@
  */
 
 import { COLOR_MODE } from "../../common/utility"
-import { handleGetMachineName, passSetMachineName, passSpeedMode } from "../main2worker"
-import { setPreferenceColorMode } from "../localstorage"
+import { handleGetMachineName, passSpeedMode } from "../main2worker"
+import { setPreferenceColorMode, setPreferenceMachineName } from "../localstorage"
 import {
   audioEnable,
   getAudioStatus,
@@ -79,7 +79,10 @@ export function toolSetMachineType(machineType: string): MCPToolResult {
       }
     }
 
-    passSetMachineName(machineType as MACHINE_NAME)
+    // Use the same machine-switch path as Settings: persist the choice and
+    // reset slot defaults (the IIgs gets its own built-in slot list), then
+    // send the machine name to the worker.
+    setPreferenceMachineName(machineType as MACHINE_NAME)
     
     const machineNames: Record<MACHINE_NAME, string> = {
       "APPLE2P": "Apple II+",

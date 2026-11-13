@@ -9,14 +9,14 @@ jest.mock("../devices/audio/speaker", () => ({
 }))
 jest.mock("../main2worker", () => ({
   handleGetMachineName: jest.fn(),
-  passSetMachineName: jest.fn(),
   passSpeedMode: jest.fn(),
 }))
 jest.mock("../localstorage", () => ({
   setPreferenceColorMode: jest.fn(),
+  setPreferenceMachineName: jest.fn(),
 }))
 
-import { passSetMachineName } from "../main2worker"
+import { setPreferenceMachineName } from "../localstorage"
 import { listMCPTools } from "./mcp_tools"
 import { toolSetMachineType, toolSetSound } from "./mcp_tool_settings"
 
@@ -43,7 +43,7 @@ describe("toolSetMachineType", () => {
         message: "Machine type set to Apple IIgs",
       },
     })
-    expect(passSetMachineName).toHaveBeenCalledWith("APPLE2GS")
+    expect(setPreferenceMachineName).toHaveBeenCalledWith("APPLE2GS")
   })
 
   it("rejects an unknown machine type", () => {
@@ -51,7 +51,7 @@ describe("toolSetMachineType", () => {
       success: false,
       error: "Machine type must be \"APPLE2P\", \"APPLE2EU\", \"APPLE2EE\", or \"APPLE2GS\"",
     })
-    expect(passSetMachineName).not.toHaveBeenCalled()
+    expect(setPreferenceMachineName).not.toHaveBeenCalled()
   })
 })
 
