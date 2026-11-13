@@ -136,6 +136,7 @@ test("shows the IIgs machine and its built-in slot configuration in Settings", (
   const root = createRoot(container)
   const machineMock = jest.mocked(workerMessages.handleGetMachineName).mockReturnValue("APPLE2GS")
   const slotsMock = jest.mocked(workerMessages.handleGetSlotConfig).mockReturnValue(DEFAULT_SLOT_CONFIG_GS)
+  const speedMock = jest.mocked(workerMessages.handleGetSpeedMode).mockReturnValue(1)
   try {
     i18n.setLanguage("en")
     act(() => root.render(<SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />))
@@ -170,10 +171,26 @@ test("shows the IIgs machine and its built-in slot configuration in Settings", (
     for (const [slotName, cardLabel] of expectedSlots) {
       expect(selectByName(slotName).value).toBe(cardLabel)
     }
+
+    // GS speed indices are clock labels, not classic multiplier labels; the
+    // Settings speed dropdown must match SpeedDropdown's GS names.
+    const speed = selectByName(t("config.speed"))
+    expect(speed.value).toBe("2.8 MHz")
+    expect(Array.from(speed.querySelectorAll("option")).map(option => option.value))
+      .toEqual([
+        "Snail",
+        "Slow",
+        "1.02 MHz",
+        "2.8 MHz",
+        "7.1 MHz",
+        "14.3 MHz",
+        "Warp",
+      ])
   } finally {
     act(() => root.unmount())
     container.remove()
     machineMock.mockReturnValue("APPLE2EE")
+    speedMock.mockReturnValue(0)
     slotsMock.mockReturnValue({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })
     i18n.setLanguage(language)
   }

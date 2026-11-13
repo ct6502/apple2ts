@@ -182,12 +182,26 @@ export const SettingsDialog = (props: DisplayProps) => {
       t("retroControl.fast"),
       t("retroControl.warp"),
     ]
+    // The IIgs uses the same speed indices as the classic machines but labels
+    // them by clock instead of by multiplier. Keep that distinction here as
+    // SpeedDropdown does; a classic label on a GS index cannot round-trip.
+    const SPEED_LABELS = machineName === "APPLE2GS"
+      ? [
+        t("retroControl.snail"),
+        t("retroControl.slow"),
+        "1.02 MHz",
+        "2.8 MHz",
+        "7.1 MHz",
+        "14.3 MHz",
+        t("retroControl.warp"),
+      ]
+      : SPEED_LABEL_KEYS
     return (
       <Droplist name={t("config.speed")}
-        value={SPEED_LABEL_KEYS[speedIndex]}
-        values={SPEED_LABEL_KEYS}
+        value={SPEED_LABELS[speedIndex]}
+        values={SPEED_LABELS}
         setValue={(val: string) => {
-          const index = SPEED_LABEL_KEYS.indexOf(val)
+          const index = SPEED_LABELS.indexOf(val)
           setPreferenceSpeedMode(SPEED_MODES[index])
           props.updateDisplay()
         }}
