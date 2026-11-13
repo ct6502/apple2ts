@@ -115,6 +115,7 @@ export default [
     files: ["**/*.test.ts", "**/*.test.tsx", "**/*.test.mjs"],
     rules: {
       "@typescript-eslint/no-var-requires": "off",
+      "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "no-control-regex": "off",
@@ -126,6 +127,8 @@ export default [
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "no-case-declarations": "off",
+      "no-unused-expressions": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
     }
   },
   {
@@ -142,6 +145,7 @@ export default [
     ],
     rules: {
       "@typescript-eslint/no-var-requires": "off",
+      "@typescript-eslint/no-require-imports": "off",
     }
   },
 ]
