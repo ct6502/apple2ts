@@ -54,9 +54,12 @@ export const getAppManifestDescription = (target: AppTarget): string =>
     ? "Pure-TypeScript Apple IIgs emulator with a 2.8 MHz 65816, Ensoniq DOC, ADB input, and Super Hi-Res graphics. Written in TypeScript and hosted on GitHub Pages. Chris Torrence, CT6502"
     : "Apple II Emulator in TypeScript. Emulates an enhanced Apple IIe with 128k of memory, a hard drive, two floppy disk drives, and gamepad support. Written in TypeScript, using the React JS library, and hosted on Github Pages. Chris Torrence, CT6502"
 
-// The two sites share one source tree but not one machine menu: apple2ts.com
-// keeps the classic II+/IIe family, while apple2gts.com is IIgs-only. Keep the
-// visible order stable (II+, IIe unenhanced, IIe enhanced, IIgs).
+// The two sites share one source tree but not one Settings machine menu:
+// apple2ts.com keeps the classic II+/IIe family, while apple2gts.com is
+// IIgs-only. This menu filter is for the Settings droplist (and the MCP
+// machine enum); explicit title-link surfaces deliberately use
+// ALL_MACHINE_NAMES instead. Keep the visible order stable
+// (II+, IIe unenhanced, IIe enhanced, IIgs).
 export const getAppMachineNames = (target: AppTarget): MACHINE_NAME[] =>
   target === GTS_TARGET ? [...GS_PROFILE.machines] : [...CLASSIC_PROFILE.machines]
 
@@ -92,9 +95,10 @@ export const APP_DEFAULT_MACHINE = getAppDefaultMachine(APP_TARGET)
 export const APP_MANIFEST_NAME = getAppManifestName(APP_TARGET)
 export const APP_MANIFEST_DESCRIPTION = getAppManifestDescription(APP_TARGET)
 
-// Any requested machine outside this target's menu falls back to the target's
-// own default (IIe enhanced on apple2ts, IIgs on apple2gts) instead of booting
-// the wrong family through a URL parameter or an old saved preference.
+// A menu-driven request outside this target's menu falls back to the target's
+// own default (IIe enhanced on apple2ts, IIgs on apple2gts). This remains the
+// Settings-menu contract and the remote API's persisted choice; explicit
+// title-link URLs and the Link Builder bypass it with ALL_MACHINE_NAMES.
 export const getAppMachineNameOrDefault = (
   name: MACHINE_NAME | undefined,
   target: AppTarget = APP_TARGET,

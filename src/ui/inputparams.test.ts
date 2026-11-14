@@ -25,15 +25,9 @@ jest.mock("./devices/vera/verasdicon", () => ({
   handleSetVeraSdFromURL: jest.fn().mockResolvedValue(true),
 }))
 
-// Existing URL-machine cases cover both families in the default classic test
-// target. Keep the full table here; target rejection has app_target coverage.
-jest.mock("../common/app_target", () => {
-  const actual = jest.requireActual("../common/app_target") as Record<string, unknown>
-  return {
-    ...actual,
-    APP_MACHINE_NAMES: ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"],
-  }
-})
+// The Jest build target is apple2ts, whose Settings menu is classic-only, but
+// an explicit ?machine= title link still accepts the full ALL_MACHINE_NAMES
+// table. The cases below intentionally do not mock APP_MACHINE_NAMES.
 
 import { handleFragment, handleInputParams } from "./inputparams"
 import { getPreferenceSlotConfig, getPreferenceVeraSlot, PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, PREFERENCE_SLOT_CONFIG_GS_KEY } from "./localstorage"

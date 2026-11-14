@@ -79,7 +79,7 @@ describe("target machine menus", () => {
     expect(getAppMachineNameOrDefault("APPLE2EU", "apple2gts", true)).toBe("APPLE2EU")
   })
 
-  test("an unsupported machine falls back to the target default", () => {
+  test("a menu-driven unsupported machine falls back to the target default", () => {
     // Jest builds default to apple2ts, whose default is the enhanced IIe.
     expect(getAppMachineNameOrDefault("APPLE2GS")).toBe("APPLE2EE")
     expect(getAppMachineNameOrDefault("APPLE2EU")).toBe("APPLE2EU")

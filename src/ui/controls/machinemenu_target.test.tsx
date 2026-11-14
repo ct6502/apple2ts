@@ -56,7 +56,7 @@ const machineOptions = (container: HTMLElement) => {
   return Array.from(select.querySelectorAll("option")).map(option => option.value)
 }
 
-test("classic deployment exposes only the non-IIgs machines", () => {
+test("classic deployment keeps Settings classic-only but lets Link Builder cross to the IIgs", () => {
   const language = i18n.getLanguage()
   const settingsContainer = document.createElement("div")
   const linkContainer = document.createElement("div")
@@ -70,6 +70,7 @@ test("classic deployment exposes only the non-IIgs machines", () => {
       t("machine.models.apple2eu"),
       t("machine.models.apple2ee"),
     ]
+    const allOptions = [...classicOptions, "Apple IIgs"]
 
     act(() => settingsRoot.render(
       <SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />,
@@ -77,11 +78,13 @@ test("classic deployment exposes only the non-IIgs machines", () => {
     act(() => settingsContainer.querySelector<HTMLButtonElement>("#tour-settings")!.click())
     expect(machineOptions(settingsContainer)).toEqual(classicOptions)
 
+    // apple2ts.com can still build a IIgs title link even though its Settings
+    // custom machine droplist is classic-only.
     act(() => linkRoot.render(<LinkBuilder />))
     act(() => linkContainer.querySelector("button")!.dispatchEvent(
       new MouseEvent("click", { bubbles: true }),
     ))
-    expect(machineOptions(linkContainer)).toEqual(classicOptions)
+    expect(machineOptions(linkContainer)).toEqual(allOptions)
   } finally {
     act(() => settingsRoot.unmount())
     act(() => linkRoot.unmount())

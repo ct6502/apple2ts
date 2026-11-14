@@ -104,10 +104,18 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   plus `GS_PROFILE.machines`) before the deployment menu filter. Do not hard-code
   the four names again in preference loading, speed-context migration, or URL
   parsing; use `ALL_MACHINE_NAMES` and keep the target fallback as it is.
-- Deployment targets still filter their menus, but local development is
-  intentional: Vite's serve mode sets `A2TS_DEV_MACHINES` (`vite.config.ts`), so
-  `app_target.ts` lists both families locally. A target build exposes only its
-  production family. Menu order stays II+, IIe unenhanced, IIe enhanced, IIgs.
+- Deployment targets still filter their Settings/MCP remote menus, but local
+  development is intentional: Vite's serve mode sets `A2TS_DEV_MACHINES`
+  (`vite.config.ts`), so `app_target.ts` lists both families locally. A target
+  build exposes only its production family in Settings. Explicit title-link
+  surfaces deliberately cross the boundary: `inputparams.ts` accepts every
+  `ALL_MACHINE_NAMES` machine from `?machine=` (no `APP_MACHINE_NAMES` filter),
+  and Link Builder always offers all four rows. So apple2ts.com can boot a IIgs
+  title through a link or `?machine=apple2gs` while its Settings droplist stays
+  classic-only, and apple2gts.com can boot a classic title the same way while
+  Settings stays GS-only. `getAppMachineNameOrDefault` remains the
+  Settings/remote-API fallback contract. Menu order stays II+, IIe unenhanced,
+  IIe enhanced, IIgs.
 - Regressions: `machine_profile.test.ts` (profile identity, GS built-ins/no VERA,
   classic slot-3 variants, stale classic VERA sanitizes on GS, CPU tables, boot/
   disk bays, defaults) and `gs_slots_mockingboard.test.ts` (machine switch keeps

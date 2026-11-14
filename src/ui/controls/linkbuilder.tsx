@@ -7,7 +7,7 @@ import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import CheckBox from "../panels/checkbox"
 import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode, getUIStateBoolean } from "../ui_settings"
-import { APP_DEFAULT_MACHINE, APP_MACHINE_NAMES } from "../../common/app_target"
+import { APP_DEFAULT_MACHINE } from "../../common/app_target"
 import { UI_THEMES } from "../../common/utility"
 import { getMachineProfile, getProfileDefaultSlotConfig, getProfileDefaultSpeedMode, getProfileSlotChoices, getProfileSpeedLabel, getProfileSpeedOptions } from "../../common/machine_profile"
 import { isAudioEnabled } from "../devices/audio/speaker"
@@ -175,16 +175,18 @@ const LinkBuilder = () => {
     getProfileDefaultSlotConfig(getMachineProfile(APP_DEFAULT_MACHINE), APP_DEFAULT_MACHINE),
   )
 
-  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs, then
-  // filter to what this deployment target supports. Both sites are otherwise
-  // the same build, so the table also keeps whichever running machine is valid.
+  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs.
+  // Unlike Settings, the Link Builder is an explicit title-link surface: both
+  // deployments offer every profile so apple2ts.com can build a GS title link
+  // and apple2gts.com can build a classic title link. The target default still
+  // decides which machine a fresh/reset link starts from.
   const allMachines = [
     { name: "APPLE2P" as MACHINE_NAME, label: t("machine.models.apple2p") },
     { name: "APPLE2EU" as MACHINE_NAME, label: t("machine.models.apple2eu") },
     { name: "APPLE2EE" as MACHINE_NAME, label: t("machine.models.apple2ee") },
     { name: "APPLE2GS" as MACHINE_NAME, label: "Apple IIgs" },
   ]
-  const visibleMachines = allMachines.filter(({ name }) => APP_MACHINE_NAMES.includes(name))
+  const visibleMachines = allMachines
   const machineValues = visibleMachines.map(({ label }) => label)
   // Each droplist row and the MACHINE_NAME it stands for. Retrieving the running
   // machine and reading a user choice both go through this table so the two
@@ -216,8 +218,10 @@ const LinkBuilder = () => {
     .some(choice => choice.card === "aux")
 
   // A shared link must name the machine unless it is the classic enhanced default,
-  // where leaving ?machine= out follows the visitor's own saved choice. The IIgs
-  // is always named because otherwise a GS volume can be scanned by an IIe.
+  // where leaving ?machine= out follows the visitor's own saved choice. Both
+  // cross-target rows are named too, so a GS title built on the classic site
+  // carries machine=apple2gs and a classic title built on the GS site carries
+  // machine=apple2ee / apple2p.
   const MACHINE_QUERY_PARAMS: Partial<Record<MACHINE_NAME, string>> = {
     APPLE2EU: "machine=apple2eu",
     APPLE2P: "machine=apple2p",

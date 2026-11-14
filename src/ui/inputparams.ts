@@ -10,7 +10,6 @@ import { setAppMode, setColorMode, setMonitorMode, setTabView, setTheme, setUISt
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { getPreferenceMachineName, getPreferenceSlotConfig, getPreferenceSlotConfigBackup, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
-import { APP_MACHINE_NAMES } from "../common/app_target"
 import { getSlotOptions, sanitizeSlotConfig, SLOT_NUMBERS } from "../common/slot_options"
 import { ALL_MACHINE_NAMES, getMachineProfile } from "../common/machine_profile"
 import { Expectin } from "./api/expectin"
@@ -196,12 +195,13 @@ export const handleInputParams = (paramString = "") => {
   const machineParam = params.get("machine")?.toUpperCase()
   let urlMachine: MACHINE_NAME | undefined
   if (machineParam) {
-    // Resolve the URL text against every profile machine name, then require it to
-    // be part of this site's menu. A classic site must not boot a IIgs from
-    // ?machine=apple2gs, nor may an old link inject the IIe family into
-    // apple2gts.com. Unknown values keep today's fallback behaviour.
+    // A title link is not a Settings menu: it may name either family even when
+    // this deployment's Settings droplist offers only its own machines. Resolve
+    // against ALL_MACHINE_NAMES so apple2ts.com can boot a GS title and
+    // apple2gts.com can boot a classic title from an explicit ?machine= link.
+    // Unknown values keep today's fallback behaviour.
     const resolvedMachine = ALL_MACHINE_NAMES.find(name => name === machineParam)
-    if (resolvedMachine && APP_MACHINE_NAMES.includes(resolvedMachine)) {
+    if (resolvedMachine) {
       urlMachine = resolvedMachine
       passSetMachineName(resolvedMachine)
     }
@@ -228,6 +228,8 @@ export const handleInputParams = (paramString = "") => {
   // Validate slot cards against the machine this URL will actually run. A
   // rejected ?machine= leaves urlMachine undefined, so the saved preference
   // (itself target-filtered) decides whether this is a classic or GS layout.
+  // A cross-family URL is still accepted, so a GS title on a classic site uses
+  // the saved GS layout and a classic title on the GS site uses the classic one.
   const slotMachine = urlMachine ?? getPreferenceMachineName()
   const urlSlotConfig = urlMachine
     ? getPreferenceSlotConfigBackup(urlMachine)

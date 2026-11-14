@@ -180,7 +180,7 @@ npm run build:apple2ts   # BUILD_TARGET=apple2ts, output: dist/apple2ts
 npm run build:apple2gts  # BUILD_TARGET=apple2gts, output: dist/apple2gts
 ```
 
-The target selects the default machine (Apple IIe for `apple2ts`, Apple IIgs for `apple2gts`), the page title / description / favicon, the PWA manifest name and description, and the `CNAME` (`apple2ts.com` or `apple2gts.com`). Both builds still contain the full emulator; the target mainly decides how the site presents itself. A plain `npm run build` remains available and writes the generic `dist` used by the optional Cloudflare Pages workflow. Local development deliberately exposes both families: `npm start` lists Apple II+, IIe unenhanced, IIe enhanced, and IIgs because Vite's serve mode sets `A2TS_DEV_MACHINES`; target builds filter the menu down to their production family. Menu order is II+, IIe unenhanced, IIe enhanced, IIgs.
+The target selects the default machine (Apple IIe for `apple2ts`, Apple IIgs for `apple2gts`), the page title / description / favicon, the PWA manifest name and description, and the `CNAME` (`apple2ts.com` or `apple2gts.com`). Both builds still contain the full emulator; the target mainly decides how the site presents itself, and target builds filter the Settings custom machine droplist down to their production family. Explicit title links still cross families: the Link Builder always lists all four profiles, and `?machine=` accepts `ALL_MACHINE_NAMES`, so apple2ts.com can run a IIgs title link and apple2gts.com can run a classic title link even though each site's Settings droplist stays in its own family. A plain `npm run build` remains available and writes the generic `dist` used by the optional Cloudflare Pages workflow. Local development deliberately exposes both families: `npm start` lists Apple II+, IIe unenhanced, IIe enhanced, and IIgs because Vite's serve mode sets `A2TS_DEV_MACHINES`. Menu order is II+, IIe unenhanced, IIe enhanced, IIgs.
 
 For local development with the IIgs identity, set the variable before `npm start`:
 
@@ -218,9 +218,9 @@ The workflow is ready; do not activate external deployment until the token secre
 
 ### Target-specific Follow-ups
 
-- Machine capabilities, slot defaults, and Link Builder speed/slot options are profile-driven now. The Link Builder is still shared code, but production builds filter its machine rows to the target menu; local development intentionally shows all four profiles.
+- Machine capabilities, slot defaults, and Link Builder speed/slot options are profile-driven. Settings custom machine rows remain target-filtered, while the Link Builder always lists all four profiles and title `?machine=` links accept all profiles, enabling cross-target titles without changing the Settings menu.
 - Deeper target isolation for the debugger and preferences panels is still shared.
-- A persisted `APPLE2GS` preference can outrank the `apple2ts` default machine; decide whether the `apple2ts` build should force a classic machine.
+- Persisted machine preferences remain target-filtered, so a saved `APPLE2GS` cannot outrank the `apple2ts` default; an explicit title link can still request the IIgs.
 
 ## Upgrade Packages
 
