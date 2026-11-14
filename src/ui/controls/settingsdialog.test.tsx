@@ -5,7 +5,7 @@ import { i18n, t } from "../../i18n"
 import { setTheme } from "../ui_settings"
 import { DEFAULT_SLOT_CONFIG_GS, UI_THEME } from "../../common/utility"
 import { getCardShortLabels, getRamdiskValues } from "../ui_utilities"
-import { PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, PREFERENCE_SLOT_CONFIG_GS_KEY, setPreferenceMachineName, setPreferenceSlotConfig } from "../localstorage"
+import { PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, PREFERENCE_SLOT_CONFIG_GS_KEY, SPEED_MODE_MACHINE_KEY, setPreferenceMachineName, setPreferenceSlotConfig } from "../localstorage"
 import * as workerMessages from "../main2worker"
 import { handleMidiDeviceSelect } from "../devices/audio/midiselect"
 import { setVeraFmAudioEnabled } from "../devices/audio/vera_psg_audio"
@@ -16,6 +16,7 @@ jest.mock("../main2worker", () => ({
   handleGetSpeedMode: jest.fn(() => 0),
   handleGetSlotConfig: jest.fn((): SlotConfig => ({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })),
   passSetMachineName: jest.fn(),
+  passSpeedMode: jest.fn(),
   passSetRamWorks: jest.fn(),
   passSetSlotConfig: jest.fn(),
   passSetIigsRomVersion: jest.fn(),
@@ -256,6 +257,81 @@ test("switching from Apple II+ to the IIgs keeps its built-in slot defaults", ()
     else localStorage.setItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, savedClassicSlotConfig)
     slotsMock.mockReturnValue({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })
     machineMock.mockReturnValue("APPLE2EE")
+    i18n.setLanguage(language)
+  }
+})
+
+test("cross-family Settings machine switches restore the profile default speed", () => {
+  const language = i18n.getLanguage()
+  const savedMachine = localStorage.getItem("machineName")
+  const savedSpeed = localStorage.getItem("speedMode")
+  const savedSpeedMachine = localStorage.getItem(SPEED_MODE_MACHINE_KEY)
+  const container = document.createElement("div")
+  document.body.appendChild(container)
+  const root = createRoot(container)
+  const machineMock = jest.mocked(workerMessages.handleGetMachineName).mockReturnValue("APPLE2P")
+  const speedMock = jest.mocked(workerMessages.handleGetSpeedMode).mockReturnValue(0)
+  const passSetMachineNameMock = jest.mocked(workerMessages.passSetMachineName)
+  passSetMachineNameMock.mockImplementation((name: MACHINE_NAME) => machineMock.mockReturnValue(name))
+  const slotsMock = jest.mocked(workerMessages.handleGetSlotConfig).mockReturnValue({
+    1: "ssc", 2: "none", 3: "videoterm", 4: "mockingboard", 5: "mouse", 6: "disk2", 7: "smartport",
+  })
+  const selectByName = (name: string) => Array.from(container.querySelectorAll("select"))
+    .find(candidate => candidate.name === name) as HTMLSelectElement
+  try {
+    localStorage.removeItem("machineName")
+    localStorage.removeItem("speedMode")
+    localStorage.removeItem(SPEED_MODE_MACHINE_KEY)
+    i18n.setLanguage("en")
+    act(() => root.render(<SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />))
+    act(() => container.querySelector<HTMLButtonElement>("#tour-settings")!.click())
+    expect(selectByName(t("linkBuilder.machine")).value).toBe("Apple II+")
+
+    act(() => {
+      const machine = selectByName(t("linkBuilder.machine"))
+      machine.value = "Apple IIgs"
+      machine.dispatchEvent(new Event("change", { bubbles: true }))
+    })
+    expect(workerMessages.passSpeedMode).toHaveBeenLastCalledWith(1)
+    expect(JSON.parse(localStorage.getItem("speedMode")!)).toBe(1)
+    expect(JSON.parse(localStorage.getItem(SPEED_MODE_MACHINE_KEY)!)).toBe("APPLE2GS")
+
+    // Render the new machine state the worker reports, then switch back.
+    machineMock.mockReturnValue("APPLE2GS")
+    speedMock.mockReturnValue(1)
+    slotsMock.mockReturnValue(DEFAULT_SLOT_CONFIG_GS)
+    act(() => root.render(<SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />))
+    expect(selectByName(t("linkBuilder.machine")).value).toBe("Apple IIgs")
+    expect(selectByName(t("config.speed")).value).toBe("2.8 MHz")
+
+    act(() => {
+      const machine = selectByName(t("linkBuilder.machine"))
+      machine.value = "Apple IIe (enhanced)"
+      machine.dispatchEvent(new Event("change", { bubbles: true }))
+    })
+    expect(workerMessages.passSpeedMode).toHaveBeenLastCalledWith(0)
+    expect(localStorage.getItem("speedMode")).toBeNull()
+    expect(localStorage.getItem(SPEED_MODE_MACHINE_KEY)).toBeNull()
+
+    machineMock.mockReturnValue("APPLE2EE")
+    speedMock.mockReturnValue(0)
+    slotsMock.mockReturnValue({ 1: "ssc", 2: "none", 3: "aux", 4: "mockingboard", 5: "mouse", 6: "disk2", 7: "smartport" })
+    act(() => root.render(<SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />))
+    expect(selectByName(t("linkBuilder.machine")).value).toBe("Apple IIe (enhanced)")
+    expect(selectByName(t("config.speed")).value).toBe("Normal")
+  } finally {
+    act(() => root.unmount())
+    container.remove()
+    if (savedMachine === null) localStorage.removeItem("machineName")
+    else localStorage.setItem("machineName", savedMachine)
+    if (savedSpeed === null) localStorage.removeItem("speedMode")
+    else localStorage.setItem("speedMode", savedSpeed)
+    if (savedSpeedMachine === null) localStorage.removeItem(SPEED_MODE_MACHINE_KEY)
+    else localStorage.setItem(SPEED_MODE_MACHINE_KEY, savedSpeedMachine)
+    slotsMock.mockReturnValue({ 1: "none", 2: "vera", 3: "aux", 4: "none", 5: "none", 6: "disk2", 7: "smartport" })
+    machineMock.mockReturnValue("APPLE2EE")
+    speedMock.mockReturnValue(0)
+    passSetMachineNameMock.mockReset()
     i18n.setLanguage(language)
   }
 })

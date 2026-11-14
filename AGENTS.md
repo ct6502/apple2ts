@@ -88,8 +88,12 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   which physical bay accepts a disk.
 - A machine switch to GS resets slots to the GS defaults; a classic selection
   keeps the classic card layout and only re-keys slot 3 to a valid classic
-  choice. Worker slot configuration is sanitized against the selected profile,
-  and `doSetVeraSlot` rejects VERA on GS and clears stale `veraSlot`. UI audio
+  choice. Crossing the family boundary also resets the speed preference to
+  `getProfileDefaultSpeedMode` (classic index 0 is Normal ≈1 MHz; the GS default
+  is index 1 = 2.8 MHz). Speed indices are per-family clock-table positions, so
+  a numeric index must never be carried across the boundary. Worker slot
+  configuration is sanitized against the selected profile, and `doSetVeraSlot`
+  rejects VERA on GS and clears stale `veraSlot`. UI audio
   controls hide the FM/VERA section from capabilities, not from a machine id.
   The Settings dialog and Link Builder call `getProfileDefaultSlotConfig` for the
   new machine and compare the per-model slot-3 defaults instead of branching on

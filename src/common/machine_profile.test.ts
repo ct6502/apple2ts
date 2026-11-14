@@ -7,6 +7,7 @@ import {
   getMachineProfile,
   getMachineTraits,
   getProfileCyclesPerRefresh,
+  getProfileDefaultSpeedMode,
   getProfileDefaultSlotConfig,
   getProfileSlotChoices,
   getProfileSpeedOptions,
@@ -94,6 +95,8 @@ describe("machine profiles", () => {
     expect(getProfileCyclesPerRefresh(CLASSIC_PROFILE, 1)).toBe(34060)
     expect(getProfileCyclesPerRefresh(GS_PROFILE, 1)).toBe(46727)
     expect(getProfileCyclesPerRefresh(GS_PROFILE, 2)).toBe(118486)
+    expect(getProfileDefaultSpeedMode(CLASSIC_PROFILE)).toBe(0)
+    expect(getProfileDefaultSpeedMode(GS_PROFILE)).toBe(1)
     expect(gs.find(o => o.mode === 0)?.label).toBe("1.02 MHz")
     expect(gs.find(o => o.mode === 1)?.label).toBe("2.8 MHz")
   })

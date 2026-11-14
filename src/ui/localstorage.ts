@@ -260,12 +260,20 @@ export const setPreferenceMachineName = (
   name: MACHINE_NAME = APP_DEFAULT_MACHINE,
   origin: SettingsChangeOrigin = "external",
 ) => {
+  const previousMachine = getPreferenceMachineName()
   if (name === CLASSIC_PROFILE.defaultMachine) {
     localStorage.removeItem("machineName")
   } else {
     localStorage.setItem("machineName", JSON.stringify(name))
   }
   passSetMachineName(name)
+  // Speed indices mean different clocks in the classic and GS tables. A custom
+  // or explicit speed must not survive a family switch: classic 0 is Normal
+  // (~1 MHz) but GS 0 is 1.02 MHz, and GS index 1 is 2.8 MHz. Start each family
+  // from its own default instead of carrying the other profile's index.
+  if (getMachineProfile(previousMachine).family !== getMachineProfile(name).family) {
+    setPreferenceSpeedMode(getProfileDefaultSpeedMode(getMachineProfile(name)), origin)
+  }
 
   let newSlotConfig: SlotConfig
   if (getMachineProfile(name).family === "gs") {
