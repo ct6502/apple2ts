@@ -666,25 +666,28 @@ guest could never have been sent.
   - UI: `passIigsDeskPanel()` posts `MSG_MAIN.IIGS_DESK_PANEL` (fire-and-forget) and the
     worker runs `openIigsRomDeskPanel()` while `RUN_MODE.RUNNING`. It injects ADB events
     only — no `$C000`, no closed loop — because the micro answers the sequence itself.
-    Two entries carry it, both `machineName === "APPLE2GS"` only: a one-click
-    `faDesktop` push-button in the top bar (`src/ui/controls/configbuttons.tsx`, id
-    `tour-iigs-desk-button`, tooltip `machine.iigsDeskPanel`) and the machine-menu item
-    under it. The button exists because the menu path costs two clicks (gear → item) and
-    the real chord costs three held keys.
-  - Regression: `gs_rom_desk_panel.test.ts` — the micro in isolation (report latched and
-    read back as `$20`, the interrupt raised and cleared, two-key forms left as ordinary
-    keys, report ahead of a queued command response, and `$C027` bit 0 clear while a
-    multi-argument command is still being framed), plus a no-disk ROM boot that first
-    asserts the boot *finished* (`Check startup device!`, no 「Fatal system error->
-    0911」) and then that its text page really shows
-    `Desk Accessories / Control Panel / Alternate Display Mode`.
+    One entry carries it: a one-click `faDesktop` push-button in the toolbar's
+    `ConfigButtons` (`src/ui/controls/configbuttons.tsx`, id `tour-iigs-desk-button`,
+    tooltip `machine.iigsDeskPanel`). It appears only when
+    `handleGetMachineName() === "APPLE2GS"` and sits immediately to the right of the
+    Control Panel icon (`config.openRetroControlPanel`), not beside the Settings gear.
+    The button exists because the settings machine menu costs two clicks and the real
+    chord costs three held keys.
+  - Regression: `configbuttons.test.tsx` pins GS-only visibility, the button's DOM
+    position directly after the Control Panel icon, and that clicking it posts the desk
+    panel message; `gs_rom_desk_panel.test.ts` covers the micro and ROM boot — the micro
+    in isolation (report latched and read back as `$20`, the interrupt raised and
+    cleared, two-key forms left as ordinary keys, report ahead of a queued command
+    response, and `$C027` bit 0 clear while a multi-argument command is still being
+    framed), plus a no-disk ROM boot that first asserts the boot *finished*
+    (`Check startup device!`, no 「Fatal system error-> 0911」) and then that its text
+    page really shows `Desk Accessories / Control Panel / Alternate Display Mode`.
     Disabling the intercept turns 4 cases red and the boot stays at
     `Check startup device!`; re-adding the bit-0 report turns 3 red, including the boot.
   - **Verified in the real UI** (`Temp\opencode\gs_rom_desk_ui.cjs`,
     `gs_rom_desk_chord.cjs`, `gs_rom_desk_button.cjs`, no disk, fresh Chrome profile):
-    the one-click top-bar button changes 68 canvas rows, clicking the machine-menu item
-    changes 90, and pressing the physical chord
-    `Ctrl + Numpad0 (Open Apple) + Esc` changes 89 — all three draw the same screen:
+    the one-click toolbar DA button changes 68 canvas rows and pressing the physical
+    chord `Ctrl + Numpad0 (Open Apple) + Esc` changes 89 — both draw the same screen:
     title `Desk Accessories`, `Control Panel`, `Alternate Display Mode`, `Quit`, and the
     `Select: ↓↑   Open: ↵` footer. `gs_rom_desk_button.cjs [waitS] [port] [machine]`
     also answers the visibility question: `present: true` with the `桌面配件（…）`
@@ -733,8 +736,8 @@ injection that would corrupt a sequence already in flight.
   `$C000` while the Closed Apple bit (6) is still held in `$C025`) but there is
   nothing on this media for it to open. *Why* the Finder ends with an empty DA list after reading the DA files is an
   open guest-side question, plausibly the same family as the QuickDraw II mask/transfer
-  defects (§11.5). This is why the machine-menu item is labelled and wired for the
-  **ROM** menu above rather than the drawer: it is the DA screen that demonstrably
+  defects (§11.5). This is why the one-click DA button is wired for the **ROM**
+  menu above rather than the drawer: it is the DA screen that demonstrably
   appears, and the drawer chord stays covered as a chord, not as a visible result.
 
 ### ADB micro-controller (`src/worker/iigs_adb.ts`)

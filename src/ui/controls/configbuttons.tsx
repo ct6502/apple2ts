@@ -1,11 +1,13 @@
 import { UI_THEME, UI_THEMES } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
+  faDesktop,
   faVolumeHigh,
   faVolumeXmark,
 } from "@fortawesome/free-solid-svg-icons"
 import { faWindowMaximize as faWindowMaximizeOutline } from "@fortawesome/free-regular-svg-icons"
 import { notifySettingsChanged, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
+import { handleGetMachineName, passIigsDeskPanel } from "../main2worker"
 import RunTour from "../tours/runtour"
 import { useSyncExternalStore } from "react"
 import {
@@ -109,6 +111,18 @@ const ConfigButtons = (props: DisplayProps) => {
       onClick={openRetroControlPanel}>
       <FontAwesomeIcon icon={faWindowMaximizeOutline} />
     </button>
+
+    {/* The ROM Desk Accessories menu belongs to the IIgs, so this one-click
+        escape hatch appears only in GS mode. Place it immediately to the right
+        of the Control Panel icon rather than the settings gear. */}
+    {handleGetMachineName() === "APPLE2GS" &&
+      <button className="push-button"
+        id="tour-iigs-desk-button"
+        title={t("machine.iigsDeskPanel")}
+        aria-label={t("machine.iigsDeskPanel")}
+        onClick={() => { passIigsDeskPanel() }}>
+        <FontAwesomeIcon icon={faDesktop} />
+      </button>}
 
   </div>
 }
