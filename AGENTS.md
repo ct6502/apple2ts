@@ -59,6 +59,40 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   offline analysis of buffer contents (a UI-gain or render-side fault is
   invisible in the PCM we hand to the audio graph).
 
+**Machine profiles and deployment targets**
+
+- `src/common/machine_profile.ts` is the single source of truth for the two
+  hardware families: slots and per-machine defaults, speed tables, boot/disk bay
+  rules and UI capabilities. `CLASSIC_PROFILE` has `profileName:
+  "classic_profile"` and covers `APPLE2P` / `APPLE2EU` / `APPLE2EE`;
+  `GS_PROFILE` has `profileName: "gs_profile"` and covers `APPLE2GS`. Do not
+  reintroduce scattered `machine === "APPLE2GS"` checks where a profile helper or
+  capability exists.
+- Use `getMachineProfile`, `getMachineCapabilities`, `getMachineBootDisk`, and
+  the slot/speed helpers `getProfileSlotChoices`, `getProfileDefaultSlotConfig`,
+  `getProfileCyclesPerRefresh`, `getProfileSpeedLabel`. Classic slot 3 differs by
+  exact model: `APPLE2P` exposes `videoterm`, while `APPLE2EU` / `APPLE2EE`
+  expose the aux-card RAM variants.
+- Capabilities also drive parsing and UI visibility. The GS has no VERA,
+  Passport, classic mouse card or auxiliary slot 3, and uses built-in slot
+  functions; the classic family has VERA in slots 2/4 and Passport but no 3.5"
+  bay. `bootDisk.driveIndices` (**0/1 = S7**, **2/3 = S6**, **4/5 = S5**) decides
+  which physical bay accepts a disk.
+- A machine switch to GS resets slots to the GS defaults; a classic selection
+  keeps the classic card layout and only re-keys slot 3 to a valid classic
+  choice. Worker slot configuration is sanitized against the selected profile,
+  and `doSetVeraSlot` rejects VERA on GS and clears stale `veraSlot`. UI audio
+  controls hide the FM/VERA section from capabilities, not from a machine id.
+- Deployment targets still filter their menus, but local development is
+  intentional: Vite's serve mode sets `A2TS_DEV_MACHINES` (`vite.config.ts`), so
+  `app_target.ts` lists both families locally. A target build exposes only its
+  production family. Menu order stays II+, IIe unenhanced, IIe enhanced, IIgs.
+- Regressions: `machine_profile.test.ts` (profile identity, GS built-ins/no VERA,
+  classic slot-3 variants, stale classic VERA sanitizes on GS, CPU tables, boot/
+  disk bays, defaults) and `gs_slots_mockingboard.test.ts` (machine switch keeps
+  classic layout, stale VERA rejects on GS). Update both families together when
+  a hardware capability changes.
+
 ---
 
 ## 1. CPU (65816)
@@ -69,7 +103,13 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   RMW), plus per-instruction extras (implied +1, shifts +1, pushes +1, pulls +2,
   taken branch +1 (+1 on page cross), JSR +1, JSL +1, RTS +3, RTI +2, RTL +2,
   BRK/COP +1, PER +1, MVN/MVP +2 first pass / +1 after). `processInstruction()`
-  returns the accumulator and the run loop does `s6502.cycleCount += cycles`.
+  returns the accumulator, but the two cores complete cycles differently: the
+  classic 6502 writes `s6502.cycleCount` inside `cpu6502.processInstruction()`,
+  while the 65816 returns cycle counts without updating it, so the run loop does
+  `s6502.cycleCount += cycles` **only for the IIgs**. Adding it for classic too
+  double-clocked the machine (Normal measured ~2.03 MHz) and starved S6 floppy
+  reads. `motherboard.test.ts` pins one classic refresh at the profile rate, and
+  `classic_s6_boot.test.ts` pins a Normal S6 boot end to end.
   `src/worker/gs_cycles.test.ts` pins published WDC counts (128 cases) and
   asserts emulation-mode instr/cycle parity with the IIe (~0.36-0.38).
 - **`$AA` = TAX, `$8A` = TXA, `$CA` = DEX in every mode.** gssquared does the
@@ -837,8 +877,10 @@ intact. Regression: `save_restore_adb.test.ts`.
 
 ## 7. Storage
 
-- Drive indices: **0/1 = S7** (hard drives / SmartPort), **2/3 = S6** (5.25"),
-  **4/5 = S5** (3.5"). `MAX_DRIVES = 6`.
+- Drive indices come from the profile's `bootDisk.driveIndices`: **0/1 = S7**
+  (hard drives / SmartPort), **2/3 = S6** (5.25"), and **4/5 = S5** (3.5") only
+  for the GS profile. `MAX_DRIVES = 6`, and `getMachineBootDisk` is the helper
+  for bay-slot rules.
 - **Mounting keeps the bay the user chose.** `canDriveTakeImage(index, filename,
   size, hasThreeInchBay)` (in `src/common/utility.ts`) is the only rule allowed to
   move a disk, and it moves one only when that bay physically cannot hold the
@@ -1387,10 +1429,11 @@ intact. Regression: `save_restore_adb.test.ts`.
 - **`?boot=true` must wait for the fragment disk to mount** (`__pendingBootAfterDisk`
   + `.finally`, so a failed mount still boots). Booting first scanned an empty
   drive.
-- Slot configuration for the IIgs is fixed: S1 printer/ssc, S2 modem, S3 80-col
-  (no cards), S4 mouse/mockingboard, S5 3.5", S6 5.25", S7 SmartPort. Drives are
-  motherboard hardware, so the drive panel must **not** grey them out when the
-  slot says `"none"` except for slot 7.
+- The IIgs slot configuration comes from the GS profile's per-machine defaults and
+  options in `src/common/machine_profile.ts`: S1 printer/ssc, S2 modem, S3 80-col
+  (no cards), S4 mouse/mockingboard, S5 3.5", S6 5.25", S7 SmartPort. Do not add
+  a UI-only literal table. Drives are motherboard hardware, so the drive panel must
+  **not** grey them out when the slot says `"none"` except for slot 7.
 - The drive panel picks its art per bay: `floppy35{on,off}[-empty].png` for the
   IIgs slot-5 pair, `disk2*` for slot 6, `harddrive*` for slot 7. The 3.5" lamp is
   the **spindle** (`dprops.spindleOn`, latched by CONT35), not `motorRunning` —
@@ -1417,8 +1460,12 @@ intact. Regression: `save_restore_adb.test.ts`.
   already dark there and a translucent box inside it showed up as a chipped corner.
 - `iigsInitInterrupts()` runs on **cold boot only**. Ctrl-Reset must preserve low
   memory and `$03F2-$03F4`.
-- IIgs speed labels in the dropdown and in `linkbuilder` / MCP settings must match
-  `SPEED_MODES`.
+- Speed options and labels for the dropdown, settings dialog, and MCP settings come
+  from the selected profile's `speed` table (`getProfileSpeedOptions` /
+  `getProfileSpeedLabel`); `SPEED_MODES` is only the ordered mode-index list in
+  `speeddropdown.tsx`. The Link Builder has its own display names, but it must map
+  them back to the selected machine's mode index instead of assuming one family's
+  labels.
 - **The footer RAM readout follows the machine, not the slot-3 card.**
   `getMemorySizeLabel` (`src/common/utility.ts`) prints the IIgs as **8 MB**: the
   FPI's 23-bit RAM decode caps the installed 8 MB expansion card at banks

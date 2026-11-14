@@ -14,7 +14,7 @@ Note: The integrated server and CLI were moved out of this repository into `appl
 
 ## Dynamic Expansion Slot Configuration
 
-Apple2TS features a flexible **Expansion Slot Configuration** system allowing real-time configuration of expansion cards across Slots 1 through 7 via the Machine Settings menu:
+Apple2TS features a flexible **Expansion Slot Configuration** system allowing real-time configuration of expansion cards across Slots 1 through 7 via the Machine Settings menu. The table below describes the classic (II+/IIe) family profile:
 
 - **Slot 1**: *Super Serial Card (Printer / Serial Communications)
 - **Slot 2**: *Microsoft Z-80 SoftCard (CP/M), VERA Graphics Card, Passport MIDI Card
@@ -26,7 +26,7 @@ Apple2TS features a flexible **Expansion Slot Configuration** system allowing re
 
 * = Default Card
 
-Single-instance cards automatically handle slot exclusivity, and UI peripheral buttons (printer, floppy drives, hard drives) dynamically disable and grey out when their respective slot is set to `None`.
+The explicit `CLASSIC_PROFILE` / `GS_PROFILE` models in `src/common/machine_profile.ts` are the source of truth for slot defaults, speed tables, boot/disk bay rules, and UI capabilities. Classic defaults vary by exact model (`APPLE2P`: slot 3 `videoterm`; `APPLE2EU`/`APPLE2EE`: aux-card RAM variants), while the IIgs profile exposes built-in slot functions and has no VERA or Passport entry. Single-instance cards automatically handle slot exclusivity, and UI peripheral buttons (printer, floppy drives, hard drives) dynamically disable and grey out when their respective slot is set to `None`.
 
 ---
 
@@ -180,7 +180,7 @@ npm run build:apple2ts   # BUILD_TARGET=apple2ts, output: dist/apple2ts
 npm run build:apple2gts  # BUILD_TARGET=apple2gts, output: dist/apple2gts
 ```
 
-The target selects the default machine (Apple IIe for `apple2ts`, Apple IIgs for `apple2gts`), the page title / description / favicon, the PWA manifest name and description, and the `CNAME` (`apple2ts.com` or `apple2gts.com`). Both builds still contain the full emulator; the target mainly decides how the site presents itself. A plain `npm run build` remains available and writes the generic `dist` used by the optional Cloudflare Pages workflow.
+The target selects the default machine (Apple IIe for `apple2ts`, Apple IIgs for `apple2gts`), the page title / description / favicon, the PWA manifest name and description, and the `CNAME` (`apple2ts.com` or `apple2gts.com`). Both builds still contain the full emulator; the target mainly decides how the site presents itself. A plain `npm run build` remains available and writes the generic `dist` used by the optional Cloudflare Pages workflow. Local development deliberately exposes both families: `npm start` lists Apple II+, IIe unenhanced, IIe enhanced, and IIgs because Vite's serve mode sets `A2TS_DEV_MACHINES`; target builds filter the menu down to their production family. Menu order is II+, IIe unenhanced, IIe enhanced, IIgs.
 
 For local development with the IIgs identity, set the variable before `npm start`:
 
@@ -218,7 +218,7 @@ The workflow is ready; do not activate external deployment until the token secre
 
 ### Target-specific Follow-ups
 
-- The machine menu hides Apple IIgs in the `apple2ts` target, but other machine pickers (for example the link builder) still list the full machine set.
+- Machine capabilities are profile-driven now; the Link Builder remains shared and can list machines outside the selected production menu.
 - Deeper target isolation for the debugger and preferences panels is still shared.
 - A persisted `APPLE2GS` preference can outrank the `apple2ts` default machine; decide whether the `apple2ts` build should force a classic machine.
 
