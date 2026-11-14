@@ -41,6 +41,7 @@ const SCREEN_HEIGHT = 480
 const printf = console.log
 const INT_MAX = Number.MAX_SAFE_INTEGER
 const INT_MIN = Number.MIN_SAFE_INTEGER
+const warp_mode: boolean = false
 const log_video: boolean = false
 const enable_midline: boolean = false
 const opcode_addr: number = 0
@@ -153,6 +154,7 @@ let vga_scan_pos_x: number = 0
 let vga_scan_pos_y: number = 0
 let ntsc_half_cnt: number = 0
 let ntsc_scan_pos_y: number = 0
+let frame_count: number = 0
 const framebuffer = new Uint8ClampedArray(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
 const framebuffer32 = new Uint32Array(framebuffer.buffer)
 const scanline_tile_bytes = new Uint8Array(512) // Shared zero-allocation scanline buffer
@@ -1006,6 +1008,12 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		render_sprite_line(eff_y)
 	}
 
+	if (warp_mode && (frame_count & 63)) {
+		// sprites were needed for the collision IRQ, but we can skip
+		// everything else if we're in warp mode, most of the time
+		return
+	}
+
 	if (layer_line_enable[0]) {
 		if (prev_layer_properties[1][0].text_mode) {
 			render_layer_line_text(0, eff_y)
@@ -1171,6 +1179,7 @@ export const video_step = (mhz: number, steps: number, midline: boolean): boolea
 				vga_scan_pos_y = 0
 				if (!ntsc_mode) {
 					new_frame = true
+					frame_count++
 				}
 			}
 			if (!ntsc_mode) {
@@ -1204,6 +1213,7 @@ export const video_step = (mhz: number, steps: number, midline: boolean): boolea
 				reg_composer[0] |= 0x80
 				if (ntsc_mode) {
 					new_frame = true
+					frame_count++
 				}
 			}
 			if (ntsc_scan_pos_y == SCAN_HEIGHT*2) {
@@ -1211,6 +1221,7 @@ export const video_step = (mhz: number, steps: number, midline: boolean): boolea
 				ntsc_scan_pos_y = 0
 				if (ntsc_mode) {
 					new_frame = true
+					frame_count++
 				}
 			}
 			if (ntsc_mode) {

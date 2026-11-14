@@ -1,5 +1,5 @@
 import { ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, classifyImageKind, stripTwoImgHeader, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_TEXT, PRODOS_FILE_TYPE_DOS_MASTER, MenuDiskEntry, buildProDosHdv, VTOC_REFRESH, determineVtocType, FourCadeExportFailure } from "../../common/prodos_hdv"
-import { getDefaultDiskDriveIndex, getPrimaryDiskUrl, machineHasThreeInchBay, parseDiskSwapperParam, resolveDiskSwapperUrls, separateUrlAndComment, RUN_MODE } from "../../common/utility"
+import { getDefaultDiskDriveIndex, getPrimaryDiskUrl, parseDiskSwapperParam, resolveDiskSwapperUrls, separateUrlAndComment, RUN_MODE } from "../../common/utility"
 import { i18n } from "../../i18n"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { diskImages } from "../devices/disk/diskimages"
@@ -7,7 +7,7 @@ import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL
 import { handleSetVeraSdFromURL } from "../devices/vera/verasdicon"
 import { handleInputParams } from "../inputparams"
 import { DiskCollectionSortMode, getPreferenceDiskCollectionSort, getPreferenceVtocType } from "../localstorage"
-import { handleGetMachineName, passSetRunMode } from "../main2worker"
+import { passSetRunMode } from "../main2worker"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
 
@@ -229,12 +229,11 @@ export const getMultiDiskConfigFromItem = (
           if (idx === 0) {
             const primaryIdx = requestedDriveIndex >= 0
               ? requestedDriveIndex
-              : getDefaultDiskDriveIndex(url, item.fileSize || 0, machineHasThreeInchBay(handleGetMachineName()))
+              : getDefaultDiskDriveIndex(url, item.fileSize || 0)
             assignDrive(primaryIdx, url)
           } else if (idx === 1) {
             const primaryIdx = driveMap.keys().next().value ?? 2
-            const secondIdx = primaryIdx === 4 ? 5
-              : primaryIdx === 0 || primaryIdx === 1 ? 1 : 3
+            const secondIdx = primaryIdx === 0 || primaryIdx === 1 ? 1 : 3
             assignDrive(secondIdx, url)
           }
         }
@@ -247,8 +246,6 @@ export const getMultiDiskConfigFromItem = (
         else if (key === "s7d2" || key === "hd2") assignDrive(1, rawVal)
         else if (key === "s6d1" || key === "d1") assignDrive(2, rawVal)
         else if (key === "s6d2" || key === "d2") assignDrive(3, rawVal)
-        else if (key === "s5d1") assignDrive(4, rawVal)
-        else if (key === "s5d2") assignDrive(5, rawVal)
         else if (key === "s2d1" || key === "s4d1" || key === "verasd" || key === "sd") {
           if (typeof rawVal === "string") assignVera(rawVal)
           else if (Array.isArray(rawVal) && rawVal[0]) assignVera(rawVal[0])
@@ -269,8 +266,6 @@ export const getMultiDiskConfigFromItem = (
         else if (key === "s7d2" || key === "hd2") assignDrive(1, val)
         else if (key === "s6d1" || key === "d1") assignDrive(2, val)
         else if (key === "s6d2" || key === "d2") assignDrive(3, val)
-        else if (key === "s5d1") assignDrive(4, val)
-        else if (key === "s5d2") assignDrive(5, val)
         else if (key === "s2d1" || key === "s4d1" || key === "verasd" || key === "sd") assignVera(val)
       }
     } catch {
@@ -283,7 +278,7 @@ export const getMultiDiskConfigFromItem = (
   if (primaryUrl && primaryUrl.trim().length > 0) {
     const primaryIdx = requestedDriveIndex >= 0
       ? requestedDriveIndex
-      : getDefaultDiskDriveIndex(primaryUrl, item.fileSize || 0, machineHasThreeInchBay(handleGetMachineName()))
+      : getDefaultDiskDriveIndex(primaryUrl, item.fileSize || 0)
     if (!driveMap.has(primaryIdx)) {
       let alreadyPresent = false
       for (const entry of driveMap.values()) {

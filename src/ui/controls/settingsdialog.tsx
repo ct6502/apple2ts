@@ -6,13 +6,12 @@ import { createControlContext } from "../retro/retromenucontext"
 import { settingsResetBinding } from "./resetcontrols"
 import { Droplist } from "../panels/droplist"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, handleGetSpeedMode } from "../main2worker"
-import { getPreferenceBoolean, getPreferenceIigsRomVersion, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot, setPreferenceIigsRomVersion } from "../localstorage"
-import { getSlotOptions, SLOT_NUMBERS } from "../../common/slot_options"
+import { getPreferenceBoolean, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
+import { getSlotOptions, SLOT_NUMBERS } from "../devices/machineconfig"
 import { getCardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, getRamdiskValues, themeLabels } from "../ui_utilities"
 import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import CheckBox from "../panels/checkbox"
 import { getModKeyName } from "../retro/retrocontrolmetadata"
-import { APP_MACHINE_NAMES } from "../../common/app_target"
 import { UI_THEMES } from "../../common/utility"
 import { SlotAudioConfig } from "../devices/audio/audioconfig"
 import TabBase from "../tabbase"
@@ -62,21 +61,8 @@ export const SettingsDialog = (props: DisplayProps) => {
   }
 
   const machineName = handleGetMachineName()
-  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs. The
-  // deployment target then decides which rows are visible: apple2ts.com keeps
-  // the classic family, and apple2gts.com only offers the IIgs.
-  const allMachineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
-  const allMachineStrings = [
-    t("machine.models.apple2p"),
-    t("machine.models.apple2eu"),
-    t("machine.models.apple2ee"),
-    "Apple IIgs",
-  ]
-  const visibleMachines = allMachineNames
-    .map((name, index) => ({ name, label: allMachineStrings[index] }))
-    .filter(({ name }) => APP_MACHINE_NAMES.includes(name))
-  const machineNames: MACHINE_NAME[] = visibleMachines.map(({ name }) => name)
-  const machineStrings = visibleMachines.map(({ label }) => label)
+  const machineNames: MACHINE_NAME[] = ["APPLE2EE", "APPLE2EU", "APPLE2P"]
+  const machineStrings = [t("machine.models.apple2ee"), t("machine.models.apple2eu"), t("machine.models.apple2p")]
   const machineIndex = machineNames.indexOf(machineName)
 
   const slotConfig = handleGetSlotConfig()
@@ -114,7 +100,7 @@ export const SettingsDialog = (props: DisplayProps) => {
     }
 
     newConfig[slot] = cardId
-    setPreferenceSlotConfig(newConfig, "external", machineName)
+    setPreferenceSlotConfig(newConfig)
     props.updateDisplay()
   }
 
@@ -142,36 +128,16 @@ export const SettingsDialog = (props: DisplayProps) => {
       values={machineStrings}
       setValue={(val: string) => {
         const i = machineStrings.indexOf(val)
-        if (i < 0) return
-        const nextMachine = machineNames[i]
-        setPreferenceMachineName(nextMachine)
+        setPreferenceMachineName(machineNames[i])
         props.updateDisplay()
-        // The IIgs has its own built-in slot layout (and no RAMWorks slot 3),
-        // so switching to or from it must keep setPreferenceMachineName's
-        // GS defaults / sanitization instead of applying the classic slot-3
-        // Videoterm/Aux switch.
-        if (nextMachine === "APPLE2GS" || machineName === "APPLE2GS") return
-        // Adjust slot 3 when crossing between II+ and IIe families
-        const newIsIIp = nextMachine === "APPLE2P"
+        // // Adjust slot 3 when crossing between II+ and IIe families
+        const newIsIIp = val === machineStrings[2]
         const wasIIp = machineName === "APPLE2P"
         if (newIsIIp !== wasIIp) {
           handleSelectSlotCard(3, newIsIIp ? "videoterm" : "aux")
           if (!newIsIIp) setPreferenceRamWorks() // reset to 64KB default
         }
       }}
-      />
-    )
-  }
-
-  const romConfig = () => {
-    return (
-      <Droplist name="ROM Version"
-        value={getPreferenceIigsRomVersion() === "03" ? "ROM 03" : "ROM 01"}
-        values={["ROM 01", "ROM 03"]}
-        setValue={(val: string) => {
-          setPreferenceIigsRomVersion(val === "ROM 03" ? "03" : "01")
-          props.updateDisplay()
-        }}
       />
     )
   }
@@ -190,26 +156,12 @@ export const SettingsDialog = (props: DisplayProps) => {
       t("retroControl.fast"),
       t("retroControl.warp"),
     ]
-    // The IIgs uses the same speed indices as the classic machines but labels
-    // them by clock instead of by multiplier. Keep that distinction here as
-    // SpeedDropdown does; a classic label on a GS index cannot round-trip.
-    const SPEED_LABELS = machineName === "APPLE2GS"
-      ? [
-        t("retroControl.snail"),
-        t("retroControl.slow"),
-        "1.02 MHz",
-        "2.8 MHz",
-        "7.1 MHz",
-        "14.3 MHz",
-        t("retroControl.warp"),
-      ]
-      : SPEED_LABEL_KEYS
     return (
       <Droplist name={t("config.speed")}
-        value={SPEED_LABELS[speedIndex]}
-        values={SPEED_LABELS}
+        value={SPEED_LABEL_KEYS[speedIndex]}
+        values={SPEED_LABEL_KEYS}
         setValue={(val: string) => {
-          const index = SPEED_LABELS.indexOf(val)
+          const index = SPEED_LABEL_KEYS.indexOf(val)
           setPreferenceSpeedMode(SPEED_MODES[index])
           props.updateDisplay()
         }}
@@ -447,7 +399,6 @@ export const SettingsDialog = (props: DisplayProps) => {
                 <div className="flex-column" style={{gap: "3px"}}>
                   {themeConfig()}
                   {machineConfig()}
-                  {machineName === "APPLE2GS" && romConfig()}
                   {speedConfig()}
                   {slotConfiguration()}
                 </div>

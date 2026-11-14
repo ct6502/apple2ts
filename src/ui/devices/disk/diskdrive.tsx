@@ -22,13 +22,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { setDiskImageToLocalStorage } from "../../localstorage"
-import React from "react"
 import { CLOUD_SYNC, FILE_SUFFIXES_ALL, getCleanDiskFilename, isWozData, getBlobFromDiskData, getDiskBlobForSync, RUN_MODE } from "../../../common/utility"
 import { decompressAllDiskFiles, compareDiskFilenames } from "../../../common/zip_utils"
 import PopupMenu from "../../controls/popupmenu"
 import { svgDemoZooLogo } from "../../img/icon_demozoo"
-import { passSetDriveProps, handleGetSlotConfig, handleGetMachineName, handleGetRunMode } from "../../main2worker"
+import { passSetDriveProps, handleGetSlotConfig, handleGetRunMode } from "../../main2worker"
 import InternetArchivePopup from "./internetarchivedialog"
 import DemoZooDialog from "./demozoodialog"
 
@@ -41,7 +39,7 @@ import { faInternetArchive } from "@fortawesome/free-brands-svg-icons"
 import { RestoreSaveState } from "../../save_restore_ui"
 import { DISK_LOAD_SUCCESS_EVENT } from "../../ui_settings"
 
-export const DISK_DRIVE_LABELS = ["S7,D1", "S7,D2", "S6,D1", "S6,D2", "S5,D1", "S5,D2"]
+export const DISK_DRIVE_LABELS = ["S7,D1", "S7,D2", "S6,D1", "S6,D2"]
 
 export const loadDiskFromCloudDrive = async (cloudDrive: CloudProvider, driveIndex: number) => {
   const result = await cloudDrive.download(FILE_SUFFIXES_ALL)
@@ -232,7 +230,6 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const ejectDisk = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null, null, -1)
-    setDiskImageToLocalStorage(index, null)
     triggerStandbyUpdate()
   }
 
@@ -376,18 +373,8 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const slotConfig = handleGetSlotConfig()
-  const isIIgs = handleGetMachineName() === "APPLE2GS"
-  // Drive indices map to slots as: 0/1 -> slot 7 (SmartPort), 2/3 -> slot 6
-  // (5.25"), 4/5 -> slot 5 (3.5").
-  const slot = dprops.index < 2 ? 7 : (dprops.index < 4 ? 6 : 5)
-  // The Apple IIgs 5.25" and 3.5" drives are motherboard hardware, not cards:
-  // there is nothing to insert and nothing to switch off, and they are always
-  // present. Gating them on the slot config left S6,D1/D2 greyed out under the
-  // default IIgs profile (which has slot 6 = "none" because no card is needed),
-  // which made it impossible to mount a 5.25" disk at all. Only slot 7 is a
-  // real removable-card choice on the IIgs.
-  const isBuiltInDrive = isIIgs && slot !== 7
-  const isSlotDisabled = !isBuiltInDrive && slotConfig[slot] === "none"
+  const slot = dprops.index < 2 ? 7 : 6
+  const isSlotDisabled = slotConfig[slot] === "none"
 
   const handleMenuClick = (event: React.MouseEvent) => {
     if (isSlotDisabled) return
@@ -415,19 +402,11 @@ const DiskDrive = (props: DiskDriveProps) => {
     return new URL(hiddenCanvas.toDataURL("image/jpeg", 0.1))
   }
 
-  // The IIgs slot-5 pair is a 3.5" drive: its own face art, and its activity lamp
-  // follows the CONT35 spindle latch rather than the 5.25" motor line.
-  const isThreeInch = isIIgs && slot === 5
-  const hasDisk = dprops.filename.length > 0
   let img1: string
   if (dprops.hardDrive) {
     img1 = dprops.motorRunning ? window.assetRegistry.hardDriveOn : window.assetRegistry.hardDriveOff
-  } else if (isThreeInch) {
-    img1 = dprops.spindleOn ?
-      (hasDisk ? window.assetRegistry.floppy35on : window.assetRegistry.floppy35onEmpty) :
-      (hasDisk ? window.assetRegistry.floppy35off : window.assetRegistry.floppy35offEmpty)
   } else {
-    img1 = hasDisk ?
+    img1 = (dprops.filename.length > 0) ?
       (dprops.motorRunning ? window.assetRegistry.disk2on : window.assetRegistry.disk2off) :
       (dprops.motorRunning ? window.assetRegistry.disk2onEmpty : window.assetRegistry.disk2offEmpty)
   }
@@ -436,8 +415,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   status += dprops.status
   const isElectron = navigator.userAgent.includes("Electron")
   const isTouchDevice = "ontouchstart" in document.documentElement
-  const diskLabelClass = `disk-label${dprops.diskHasChanges ? " disk-label-unsaved" : ""}` +
-    `${isTouchDevice ? " disk-label-small" : ""}`
+  const diskLabelClass = `disk-label${dprops.diskHasChanges ? " disk-label-unsaved" : ""}${isTouchDevice ? " disk-label-small" : ""}`
 
   const loadDiskSubMenu = [
     {
@@ -811,8 +789,12 @@ const DiskDrive = (props: DiskDriveProps) => {
                 onClick: async () => {
                   setSwapperPopupLocation(undefined)
                   if (idx !== standbyActiveIndex) {
-                    if (dprops.diskHasChanges && dprops.writableFileHandle) {
-                      await handleSaveWritableFile(dprops.index)
+                    if (dprops.diskHasChanges) {
+                      if (dprops.writableFileHandle) {
+                        await handleSaveWritableFile(dprops.index)
+                      } else if (isFileSystemApiSupported()) {
+                        await showDiskSaveFilePicker(props.index)
+                      }
                     }
                     await swapStandbyDisk(props.index, idx, undefined, triggerStandbyUpdate)
                   }

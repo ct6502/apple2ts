@@ -1,4 +1,3 @@
-import { MCP_MACHINE_TYPES } from "./mcp_tool_settings"
 import { MCPToolName } from "./mcp_server"
 
 /**
@@ -411,8 +410,8 @@ export function listMCPTools(): Array<{
         properties: {
           machineType: {
             type: "string",
-            description: "Machine type: APPLE2P (Apple II+), APPLE2EU (Apple IIe Unenhanced), APPLE2EE (Apple IIe Enhanced), APPLE2GS (Apple IIgs)",
-            enum: [...MCP_MACHINE_TYPES],
+            description: "Machine type: APPLE2P (Apple II+), APPLE2EU (Apple IIe Unenhanced), APPLE2EE (Apple IIe Enhanced)",
+            enum: ["APPLE2P", "APPLE2EU", "APPLE2EE"],
           },
         },
         required: ["machineType"],

@@ -2,7 +2,7 @@ import * as fflate from "fflate"
 import { unzipSingleFile, decompressSingleFile, unzipAllDiskFiles, decompressAllDiskFiles } from "./zip_utils"
 
 if (typeof globalThis.TextDecoder === "undefined") {
-   
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const util = require("util")
   globalThis.TextDecoder = util.TextDecoder
   globalThis.TextEncoder = util.TextEncoder
@@ -144,7 +144,7 @@ describe("zip_utils decompression", () => {
   test("decompresses *.7z archive with sevenzip-wasm", async () => {
     const SevenZipModule = await import("sevenzip-wasm")
     const SevenZip = (SevenZipModule as { default?: unknown }).default || SevenZipModule
-     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sz = await (SevenZip as () => Promise<any>)()
 
     const rawDisk = new Uint8Array(1024)

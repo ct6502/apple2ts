@@ -51,13 +51,11 @@ export const audioEnable = (enable: boolean) => {
   isAudioButtonEnabled = enable
   changeAudioContexts()
   emitAudioStatus()
-  noteAudioDebug()
 }
 
 export const emulatorSoundEnable = (enable: boolean) => {
   emulatorSoundEnabled = enable
   changeAudioContexts()
-  noteAudioDebug()
 }
 
 const changeAudioContexts = () => {
@@ -87,7 +85,6 @@ const closeContext = (context: AudioContext) => {
 
 const makeAudioUnavailable = (message: string, error: unknown) => {
   console.error(message, error)
-  noteAudioDebug()
   const failedContext = audioContext
   unregisterSpeakerContext?.()
   unregisterSpeakerContext = undefined
@@ -98,33 +95,6 @@ const makeAudioUnavailable = (message: string, error: unknown) => {
   changeAudioContexts()
   emitAudioStatus()
   if (failedContext) closeContext(failedContext)
-}
-
-// Debug-only audio diagnostics (window.__audioDebug). A user reporting "the
-// browser is silent" needs the state of every link: was the worklet ever
-// created, did its module load fail, how many clicks arrived, and what the
-// context state is right now. audioUnavailable being true silences ALL audio
-// (Ensoniq isAudioEnabled() includes it), so that one flag is decisive.
-const audioDebug = {
-  clickCalls: 0,
-  workletReady: false,
-  initStage: "",
-  initError: "",
-}
-
-export const getAudioDebug = () => ({
-  ...audioDebug,
-  audioUnavailable,
-  isAudioButtonEnabled,
-  emulatorSoundEnabled,
-  contextState: audioContext ? audioContext.state : "none",
-  speakerWorklet: !!speaker,
-})
-
-const noteAudioDebug = () => {
-  if (typeof window !== "undefined") {
-    ;(window as unknown as { __audioDebug?: unknown }).__audioDebug = getAudioDebug()
-  }
 }
 
 type SpeakerInitializationStage =
@@ -149,18 +119,12 @@ const initializeOscillator = async () => {
     audioContext = createdContext
     speaker = node
     audioUnavailable = false
-    audioDebug.workletReady = true
-    audioDebug.initStage = "ready"
     unregisterSpeakerContext = registerAudioContext(
       enable => enableContext(createdContext, enable),
     )
     changeAudioContexts()
     emitAudioStatus()
-    noteAudioDebug()
   } catch (error) {
-    audioDebug.initStage = stage
-    audioDebug.initError = String(error)
-    noteAudioDebug()
     makeAudioUnavailable(
       `Unable to initialize speaker audio while ${stage}.`,
       error,
@@ -182,11 +146,7 @@ export const retrySpeakerAudio = async () => {
 
 // https://marcgg.com/blog/2016/11/01/javascript-audio/
 export const clickSpeaker = (cycleCount: number) => {
-  audioDebug.clickCalls++
-  if (!(isAudioEnabled())) {
-    noteAudioDebug()
-    return
-  }
+  if (!(isAudioEnabled())) return
   if (!audioContext || !speaker) {
     void startOscillator()
     return
@@ -196,7 +156,6 @@ export const clickSpeaker = (cycleCount: number) => {
   }
   try {
     speaker.port.postMessage(cycleCount)
-    noteAudioDebug()
   } catch (error) {
     makeAudioUnavailable(
       "Unable to send a speaker event to the audio worklet.",

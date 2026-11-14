@@ -26,7 +26,6 @@ export default [
       "react/jsx-uses-react": "off", // Disable rule that checks for React usage in JSX
       "@stylistic/quotes": ["error", "double"],
       "@stylistic/semi": ["error", "never"],
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
     settings: {
       react: {
@@ -46,20 +45,7 @@ export default [
   },
   {
     // this needs to be outside of the curly braces above, so it acts as "global" ignores
-    ignores: [
-      "**/dist",
-      "**/.eslintrc.cjs",
-      "**/public",
-      "vendor/**",
-      ".worktrees/**",
-      "src/i18n/**/*.cjs",
-      // Diagnostic scripts left in the repository root. Keep CI focused on the
-      // application, tests, and build tooling rather than these scratch tools.
-      "**/*.cjs",
-      "**/.tmp-*",
-      "**/.tmp_*",
-    ],
-
+    ignores: ["vendor/**", "**/dist", "**/.eslintrc.cjs", "**/public", ".worktrees/**", "src/i18n/**/*.cjs"],
   },
   // Custom rules for src/ui and src/worker, to prevent imports between them
   {
@@ -109,43 +95,5 @@ export default [
     rules: {
       "no-restricted-imports": "off"
     }
-  },
-  {
-    // Tests intentionally use dynamic loading and untyped fixtures.
-    files: ["**/*.test.ts", "**/*.test.tsx", "**/*.test.mjs"],
-    rules: {
-      "@typescript-eslint/no-var-requires": "off",
-      "@typescript-eslint/no-require-imports": "off",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "no-control-regex": "off",
-    }
-  },
-  {
-    // Worker diagnostics keep dynamic/typed as any and use lexical case blocks.
-    files: ["src/worker/**/*.{ts,tsx}"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "no-case-declarations": "off",
-      "no-unused-expressions": "off",
-      "@typescript-eslint/no-unused-expressions": "off",
-    }
-  },
-  {
-    files: ["src/ui/inputparams.ts"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-    }
-  },
-  {
-    // Browser/node parity helpers load node built-ins conditionally.
-    files: [
-      "src/common/zip_utils.ts",
-      "src/worker/devices/drivestate/testDiskImage.ts",
-    ],
-    rules: {
-      "@typescript-eslint/no-var-requires": "off",
-      "@typescript-eslint/no-require-imports": "off",
-    }
-  },
+  }
 ]

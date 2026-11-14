@@ -16,7 +16,7 @@ You have access to various tools that let you control and inspect the emulator:
 - Access screen content and system state
 - Change configuration, for example:
     - Speed: Use set_speed tool with values -2 (0.1 MHz) through 4 (ludicrous). 0 = normal 1 MHz Apple II speed
-    - Machine type: Use set_machine_type with "APPLE2P" (Apple II+), "APPLE2EU" (IIe unenhanced), "APPLE2EE" (IIe enhanced), or "APPLE2GS" (Apple IIgs)
+    - Machine type: Use set_machine_type with "APPLE2P" (Apple II+), "APPLE2EU" (IIe unenhanced), or "APPLE2EE" (IIe enhanced)
     - Color mode: Use set_color_mode with "COLOR", "NOFRINGE", "GREEN", "AMBER", "BLACKANDWHITE", or "INVERSEBLACKANDWHITE"
     - Sound: Use set_sound with true/false to enable/disable emulator audio
 

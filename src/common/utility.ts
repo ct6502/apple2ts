@@ -12,7 +12,7 @@ const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.do,.nib"
 const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po,.2meg,.img"
 export const FILE_SUFFIXES_DISK = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
 export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK},.zip,.gz,.7z,.tar`
-export const MAX_DRIVES = 6
+export const MAX_DRIVES = 4
 // export const DISK_CONVERSION_SUFFIXES = new Map<string, string>([[".dsk", ".woz"]])
 
 // Put memory offset constants here so we can use them in the worker and main thread.
@@ -22,24 +22,6 @@ export const ROMpage = 0x100
 export const RamWorksPage = 0x17F
 export const ROMmemoryStart = 256 * ROMpage
 export const RamWorksMemoryStart = 256 * RamWorksPage
-
-// The IIgs FPI decodes 23 address bits for RAM, so the installed 8 MB memory
-// expansion card is capped at 8 MB (banks $00-$7F) on both ROM revisions
-// (gssquared iigs_memory.hpp). memory.ts keeps exactly that much fast RAM.
-export const IIGS_MEMORY_KB = 8 * 1024
-
-// Footer RAM readout. The IIgs has no slot-3 auxiliary card; its memory is the
-// FPI fast RAM above, so the aux-card branch must not decide its label.
-export const getMemorySizeLabel = (
-  machineName: string,
-  extraRamKb: number,
-  hasAuxCard: boolean,
-): string => {
-  let memKb = 64
-  if (machineName === "APPLE2GS") memKb = IIGS_MEMORY_KB
-  else if (machineName !== "APPLE2P" && hasAuxCard) memKb = extraRamKb + 64
-  return (memKb > 1100) ? `${(memKb / 1024).toFixed()} MB` : `${memKb} KB`
-}
 
 export enum RUN_MODE {
   IDLE = 0,
@@ -78,11 +60,6 @@ export enum MSG_WORKER {
   OPERATION_RESULT,
   VERA_SD_STATUS,
   VERA_SD_IMAGE_DATA,
-  IWM_READ_STATS,
-  ROM_TRACE,
-  ENSONIQ_SOUND,
-  ENSONIQ_DOC_STATS,
-  ADB_TRACE,
 }
 
 export interface VeraSdStatus {
@@ -113,8 +90,6 @@ export enum MSG_MAIN {
   GET_SAVE_STATE,
   GET_SAVE_STATE_SNAPSHOTS,
   GET_SAVE_STATE_LOCAL_STORAGE,
-  IIGS_ROM,
-
   KEYBOARD_STATE,
   KEY_SEQUENCE,
   KEYPRESS,
@@ -150,8 +125,6 @@ export enum MSG_MAIN {
   AUDIO_CLOCK,
   VIDEO7_OVERRIDE,
   SLOT_CONFIG,
-  IWM_STATS_REQUEST,
-  ROM_TRACE_REQUEST,
   RUN_BINARY,
   LOAD_BINARY,
   GET_MEMORY_VIEW,
@@ -168,9 +141,6 @@ export enum MSG_MAIN {
   VERA_SD_GET_IMAGE,
   VERA_SD_WRITE_PROTECT,
   VERA_SD_CLEAR_CHANGES,
-  ENSONIQ_DOC_REQUEST,
-  ADB_TRACE_REQUEST,
-  IIGS_DESK_PANEL,
 }
 
 export const DEFAULT_SLOT_CONFIG: SlotConfig = {
@@ -180,16 +150,6 @@ export const DEFAULT_SLOT_CONFIG: SlotConfig = {
   4: "mockingboard",
   5: "mouse",
   6: "disk2",
-  7: "smartport",
-}
-
-export const DEFAULT_SLOT_CONFIG_GS: SlotConfig = {
-  1: "gsPrinter",
-  2: "gsModem",
-  3: "gsText80",
-  4: "gsMouse",
-  5: "gsSmartPort",
-  6: "gsDiskPort",
   7: "smartport",
 }
 
@@ -252,10 +212,6 @@ export type MouseEventSimple = {
   //  0x01:  button 1 up
   //  0x11:  button 1 down
   buttons : number;
-  // Captured (pointer-locked) motion: x and y are signed fractions of the screen
-  // size rather than an absolute position, so the guest's relative-motion
-  // accumulator is fed directly and motion never stops at a screen edge.
-  relative?: boolean;
 }
 
 export enum MEMORY_DUMP_STATE {
@@ -639,51 +595,9 @@ export const getSymbolTables = (machineName: string) => {
   return [machineSymbolTable, userSymbolTable]
 }
 
-// An Apple IIgs 3.5" disk holds 1600 x 512-byte blocks. Raw images (.po/.img/
-// .dsk/.3mg) are exactly that size; 2IMG containers add a 64-byte header and
-// may append a short comment/creator chunk after the payload, so allow a small
-// amount of trailing container data.
-const FLOPPY35_BLOCK_SIZE = 800 * 1024
-const FLOPPY35_2IMG_MAX = 64 + FLOPPY35_BLOCK_SIZE + 4096
-// A .woz is a captured bitstream, so its length is what was recorded rather
-// than the volume size: 5.25" media has at most 35 track-sides and stays under
-// ~370 KB, while 3.5" media carries 160 and comes in around 1.2 MB. The INFO
-// chunk declares the type, but the bay rules also run on a bare file size (the
-// disk catalog, the swapper), so the gap between the two populations is what
-// the classifier has to work from.
-const WOZ_525_MAX_SIZE = 512 * 1024
-
-export const isThreePointFiveInchImage = (filename: string, fileSize: number) => {
-  const f = filename.toLowerCase()
-  // A headerless image of exactly 1600 blocks is 3.5" media whatever the name.
-  if (fileSize === FLOPPY35_BLOCK_SIZE &&
-    /\.(?:2mg|3mg|po|img|dsk|do)(?:$|[^a-z0-9])/.test(f)) {
-    return true
-  }
-  if (/\.3mg(?:$|[^a-z0-9])/.test(f)) {
-    return fileSize <= 1_474_560
-  }
-  if (/\.2mg(?:$|[^a-z0-9])/.test(f)) {
-    return fileSize >= 64 + FLOPPY35_BLOCK_SIZE && fileSize <= FLOPPY35_2IMG_MAX
-  }
-  if (/\.woz(?:$|[^a-z0-9])/.test(f)) {
-    return fileSize > WOZ_525_MAX_SIZE
-  }
-  // Raw block images. A 140K .po/.dsk is 5.25" media, and a .woz is never one.
-  if (/\.(?:po|img|dsk|do)(?:$|[^a-z0-9])/.test(f)) {
-    return fileSize === FLOPPY35_BLOCK_SIZE
-  }
-  return false
-}
-
 export const isHardDriveImage = (filename: string, fileSize: number) => {
   const f = filename.toLowerCase()
   if (/\.(?:woz|dsk|do)(?:$|[^a-z0-9])/.test(f)) {
-    // A .dsk/.do is a floppy (5.25", or a raw 800K 3.5" block image), never a
-    // hard drive.
-    return false
-  }
-  if (isThreePointFiveInchImage(filename, fileSize)) {
     return false
   }
   if (/\.(?:hdv|2mg|2meg)(?:$|[^a-z0-9])/.test(f)) {
@@ -692,8 +606,8 @@ export const isHardDriveImage = (filename: string, fileSize: number) => {
   if (/\.(?:po|img)(?:$|[^a-z0-9])/.test(f)) {
     // 5.25" ProDOS floppy disk is 140KB (143360 bytes).
     // Converted WOZ2 floppy images from 140KB disks are ~234KB - 236KB (35-40 tracks).
-    // Anything larger (e.g. 2MB, 16MB, 32MB hard drive images) is treated as a
-    // Slot 7 SmartPort hard drive image.
+    // Anything larger (e.g. 800KB 3.5" disk, 2MB, 16MB, 32MB hard drive images)
+    // is treated as a Slot 7 SmartPort hard drive image.
     if (fileSize >= 230000 && fileSize <= 275000) {
       return false
     }
@@ -702,62 +616,10 @@ export const isHardDriveImage = (filename: string, fileSize: number) => {
   return false
 }
 
-// The drive bays come in three media families: indices 0/1 are the slot-7
-// SmartPort block device, 2/3 the slot-6 5.25" floppy, and 4/5 the IIgs's
-// built-in slot-5 3.5" drive. A bay can hold the media it is wired for, and a
-// block image additionally fits any block-capable bay.
-const isNibbleImage = (filename: string) =>
-  /\.(?:woz|dsk|do)(?:$|[^a-z0-9])/.test(filename.toLowerCase())
-
-// A .dsk/.do of exactly 1600 blocks is a block dump of 3.5" media, not a
-// capture - so it can also be served as block data. A .woz is always a capture,
-// whatever disk it was recorded from.
-const isRawBlockImage = (filename: string, fileSize: number) =>
-  fileSize === FLOPPY35_BLOCK_SIZE &&
-  /\.(?:dsk|do)(?:$|[^a-z0-9])/.test(filename.toLowerCase())
-
-// Only the IIgs wires indices 4/5: slot 5 is its built-in 3.5" drive pair. On
-// every other machine 3.5" media has to be served as a block volume.
-export const machineHasThreeInchBay = (machineName: string) => machineName === "APPLE2GS"
-
-export const canDriveTakeImage = (
-  index: number,
-  filename: string,
-  fileSize: number,
-  hasThreeInchBay: boolean,
-) => {
-  if (index < 0 || index >= MAX_DRIVES) {
-    return false
-  }
-  const threeInch = isThreePointFiveInchImage(filename, fileSize)
-  // A raw 800 KB .dsk/.do is 3.5" block media, not 5.25" nibble media.
-  const nibble = isNibbleImage(filename) && !isRawBlockImage(filename, fileSize)
-  const hardDrive = isHardDriveImage(filename, fileSize)
-  if (index <= 1) {
-    return !nibble
-  }
-  if (index <= 3) {
-    return !threeInch && !hardDrive
-  }
-  return hasThreeInchBay && threeInch && !hardDrive
-}
-
 export const getDefaultDiskDriveIndex = (
   filename: string,
   fileSize: number,
-  hasThreeInchBay = false,
-) => {
-  const threeInch = isThreePointFiveInchImage(filename, fileSize)
-  if (threeInch && hasThreeInchBay) {
-    return 4
-  }
-  // Without a 3.5" bay a capture still belongs in a floppy drive: slot 7 serves
-  // block data and cannot play a bitstream off either disk size.
-  if (isNibbleImage(filename) && !isRawBlockImage(filename, fileSize)) {
-    return 2
-  }
-  return threeInch || isHardDriveImage(filename, fileSize) ? 0 : 2
-}
+) => isHardDriveImage(filename, fileSize) ? 0 : 2
 
 export const constructAudio = (mp3track: string) => {
   const audioDevice: AudioDevice = {
@@ -825,10 +687,7 @@ export const getPrimaryDiskUrl = (item?: Partial<DiskCollectionItem> | null): st
   } else if (Array.isArray(source)) {
     candidate = source[0] || ""
   } else if (typeof source === "object") {
-    // Floppy families first, then the block volumes: an item's "primary" disk is
-    // the one you'd hand the user, and on a IIgs that is the 3.5" boot floppy.
-    const raw = source.s6d1 || source.s5d1 || source.s7d1 || source.d1 || source.hd1
-      || source.s6d2 || source.s5d2 || source.s7d2 || ""
+    const raw = source.s6d1 || source.s7d1 || source.d1 || source.hd1 || source.s6d2 || source.s7d2 || ""
     if (Array.isArray(raw)) candidate = raw[0] || ""
     else candidate = raw || ""
   }

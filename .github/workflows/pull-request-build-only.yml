@@ -24,10 +24,7 @@ jobs:
     - run: node tools/check-node-version.mjs
     - run: npm ci --ignore-scripts
     - run: npm run lint
-    - name: Build apple2ts target
-      run: npm run build:apple2ts
-    - name: Build apple2gts target
-      run: npm run build:apple2gts
+    - run: npm run build
     - name: Install GNU gettext
       run: |
         sudo apt-get update

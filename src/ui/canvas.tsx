@@ -5,7 +5,6 @@ import {
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
   passGoBackInTime,
   passGoForwardInTime,
-  passAdbModifierKey,
   passMouseEvent,
   passPasteText,
   handleGetShowAppleMouse,
@@ -15,6 +14,7 @@ import {
   handleGetMachineName,
   handleGetState6502,
   handleGetSoftSwitches,
+  handleGetSpeedMode,
   handleGetTextPage,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, UI_THEME } from "../common/utility"
@@ -26,7 +26,6 @@ import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
 import { getLowercaseMode, getShowScanlines, isCanvasOnlyTheme, isMinimalTheme, getTheme, getArrowKeysAsJoystick, isEmbedMode, getUIStateBoolean } from "./ui_settings"
 import { KeyboardControl } from "./controls/keyboardcontrol"
-import { OPEN_APPLE, CLOSED_APPLE, adbModifierRole, isOpenAppleCode, isClosedAppleCode } from "./adbmodifiers"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
 import { toggleScanlines } from "./ui_utilities"
@@ -52,6 +51,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const [magnifierMouseLoc, setMagnifierMouseLoc] = useState([-1, -1])
   const [isCanvasFullScreen, setIsCanvasFullScreen] = useState(false)
   const [withinScreen, setWithinScreen] = useState(false)
+  const lastFrameTimeRef = useRef(0)
   const startTimeForMaxFramesRef = useRef(0)
   const lastFPSLogRef = useRef(0)
   // Always points at the newest RenderCanvas closure so the perpetual rAF loop
@@ -62,12 +62,6 @@ const Apple2Canvas = (props: DisplayProps) => {
   const hiddenCanvas = useRef<HTMLCanvasElement>(null)
   const hardwareKeyboardKey = useRef<{ code: string, key: number } | null>(null)
   const didNavigateWithKeyboard = useRef(false)
-  // F1 pointer lock (mouse capture). While locked the host pointer stops moving
-  // and every mousemove carries movementX/Y instead, so motion is unbounded by
-  // the window and the guest gets relative counts rather than a screen position.
-  const mouseCaptured = useRef(false)
-  const lastMousePos = useRef({ x: 0.5, y: 0.5 })
-  const capturedMousePos = useRef({ x: 0.5, y: 0.5 })
 
   const pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById("apple2canvas")
@@ -127,7 +121,6 @@ const Apple2Canvas = (props: DisplayProps) => {
       passKeyboardState({
         key: hardwareKeyboardKey.current.key,
         isDown: false,
-        domCode: hardwareKeyboardKey.current?.code,
         repeat: false,
       })
     }
@@ -142,7 +135,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     passKeyboardState({
       key,
       isDown: true,
-      domCode: code,
       repeat: hardwareKeyboardRepeats(),
       saveSnapShot: getUIStateBoolean("snapshotOnKeyPress"),
     })
@@ -203,13 +195,25 @@ const Apple2Canvas = (props: DisplayProps) => {
   const isCopyShortcut = (e: keyEvent) =>
     e.key.toLowerCase() === "c" && (isMac ? e.metaKey : e.ctrlKey)
 
-  // Open/Closed Apple are whichever host keys this app binds to them, and the
-  // same keys mean the same thing on a press and a release.
-  const isOpenApple = (e: keyEvent) =>
-    isOpenAppleCode(e.code, getUIStateBoolean("useOpenAppleKey"))
+  const isOpenAppleDown = (e: keyEvent) => {
+    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
+    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft") || e.code === "Numpad0" || e.code === "Numpad5"
+  }
 
-  const isClosedApple = (e: keyEvent) =>
-    isClosedAppleCode(e.code, getUIStateBoolean("useOpenAppleKey"))
+  const isOpenAppleUp = (e: keyEvent) => {
+    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
+    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft") || e.code === "Numpad0" || e.code === "Numpad5"
+  }
+
+  const isClosedAppleDown = (e: keyEvent) => {
+    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
+    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight") || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
+  }
+
+  const isClosedAppleUp = (e: keyEvent) => {
+    const useOpenAppleKey = getUIStateBoolean("useOpenAppleKey")
+    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight") || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
+  }
 
   const isMetaSequence = (e: keyEvent): boolean => {
     if (e.shiftKey) {
@@ -228,26 +232,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     } else {
       return e.altKey && e.key !== "Alt"
     }
-  }
-
-  // F1 captures the mouse (pointer lock) so apps that need the pointer inside
-  // the emulator keep receiving motion even at the window edge; F1 again, or
-  // Escape, releases it. The lock is requested with unadjustedMovement where the
-  // browser supports it so a captured game gets raw counts, not OS acceleration.
-  const toggleMouseCapture = () => {
-    const canvas = myCanvas.current
-    if (!canvas) return
-    if (document.pointerLockElement === canvas) {
-      document.exitPointerLock()
-      return
-    }
-    const requestLock = (options?: PointerLockOptions) => {
-      const result = options ? canvas.requestPointerLock(options) : canvas.requestPointerLock()
-      if (result && typeof result.catch === "function") {
-        result.catch(() => { if (options) requestLock() })
-      }
-    }
-    requestLock({ unadjustedMovement: true })
   }
 
   const inKeyboardLoop = () => {
@@ -274,37 +258,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     return false
   }
 
-  // The IIgs keyboard is an ADB device, and a key *chord* exists only in its
-  // $C025 modifier byte. Host modifier presses convert to key -1 (no Apple II
-  // ASCII), so they used to stop here and no IIgs chord could ever be formed.
-  // Send them as ADB-only events, outside the single-key hardwareKeyboardKey
-  // tracker, so a modifier neither claims nor cancels the key under it.
-  const adbModifiersDown = useRef<Array<{ code: string, role: string }>>([])
-
-  // The Apple keys are whichever host key this app binds as Open/Closed Apple,
-  // not Alt alone: Windows takes Alt+Esc for its own window switcher, so the
-  // numpad and Meta bindings have to carry a chord too. Caps Lock also goes
-  // through this path now: the worker consumes its key-up as a toggle of $C025
-  // bit 2 (gssquared ADB_Micro.hpp:505), so leaving it out made the guest see
-  // the unmodified lowercase keycode for every letter.
-  const sendAdbModifier = (e: keyEvent, isDown: boolean) => {
-    if (e.repeat) return
-    const role = adbModifierRole(e.code, getUIStateBoolean("useOpenAppleKey"))
-    if (!role) return
-    // Track the physical key but report the role, so a release always clears the
-    // bit its own press set even when two host keys share a binding.
-    adbModifiersDown.current = adbModifiersDown.current.filter((held) => held.code !== e.code)
-    if (isDown) adbModifiersDown.current.push({ code: e.code, role })
-    passAdbModifierKey(role, isDown)
-  }
-
-  const releaseAdbModifiers = () => {
-    for (const held of adbModifiersDown.current) {
-      passAdbModifierKey(held.role, false)
-    }
-    adbModifiersDown.current = []
-  }
-
   const handleKeyDown = (e: keyEvent) => {
     // Let the browser copy the user's own selection instead of the Apple II screen.
     // Returning without preventDefault leaves the native clipboard behaviour intact;
@@ -312,22 +265,14 @@ const Apple2Canvas = (props: DisplayProps) => {
     // the Open/Closed Apple modifier state for a chord we are not going to send.
     if (isCopyShortcut(e) && hasUITextSelection()) return
 
-    if (e.code === "F1") {
-      e.preventDefault()
-      e.stopPropagation()
-      if (!e.repeat) toggleMouseCapture()
-      return
-    }
-
     let keyHandledLocal = false
-    const isBrowserAltKey = e.code === OPEN_APPLE || e.code === CLOSED_APPLE
-    if (isOpenApple(e)) {
+    const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
+    if (isOpenAppleDown(e)) {
       passAppleCommandKeyPress(true)
     }
-    if (isClosedApple(e)) {
+    if (isClosedAppleDown(e)) {
       passAppleCommandKeyPress(false)
     }
-    sendAdbModifier(e, true)
     const isNumpadFireButton = e.code === "Numpad0" || e.code === "Numpad5" || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
     if (getArrowKeysAsJoystick() && isNumpadFireButton) {
       e.preventDefault()
@@ -454,16 +399,15 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleKeyUp = (e: keyEvent) => {
-    const isBrowserAltKey = e.code === OPEN_APPLE || e.code === CLOSED_APPLE
+    const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
     stopHardwareKeyboard(e.code)
     const arrowKey = getArrowKeyName(e)
-    if (isOpenApple(e)) {
+    if (isOpenAppleUp(e)) {
       passAppleCommandKeyRelease(true)
     }
-    if (isClosedApple(e)) {
+    if (isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
     }
-    sendAdbModifier(e, false)
     const isNumpadFireButton = e.code === "Numpad0" || e.code === "Numpad5" || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
     if (getArrowKeysAsJoystick() && isNumpadFireButton) {
       e.preventDefault()
@@ -491,7 +435,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     stopHardwareKeyboard()
     passAppleCommandKeyRelease(true)
     passAppleCommandKeyRelease(false)
-    releaseAdbModifiers()
     passKeyRelease()
   }
 
@@ -515,29 +458,39 @@ const Apple2Canvas = (props: DisplayProps) => {
   const [width, height] = getCanvasSize()
 
   const RenderCanvas = (timestamp: number) => {
-    // Paint on every animation frame, never deliberately skip one. Race-the-beam
-    // graphics demos and games whose animation cadence depends on a smooth
-    // display need every emulated frame shown, even at the cost of more CPU.
-    if (mainCanvas && hiddenCanvas.current) {
-      // Note: Do not add { willReadFrequently: true }, as it increased CPU
-      // usage by about 20% in Chrome.
-      const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d")
-      const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
-      if (ctx && hiddenCtx) {
-        const [w, h] = getCanvasSize()   // always current
-        ProcessDisplay(ctx, hiddenCtx, w, h)
-      }
-      checkGamepad()
-    }
+    const elapsed = timestamp - lastFrameTimeRef.current
+    // Some odd "race the beam" graphics demos require 60 FPS, but only do this
+    // for 1 MHz or slower speeds. Throttle the frame rate at higher CPU
+    // speed to help reduce CPU usage.
+    // Test image from Brendan:
+    // https://github.com/badvision/a2-pseudocolor/raw/refs/heads/main/disks/flicker.po
+    const targetFrameRate = (handleGetSpeedMode() <= 0) ? 75 : 45 // Hz
+    const targetInterval = 1000 / targetFrameRate
 
-    // Calculate and log FPS for every displayed frame.
-    lastFPSLogRef.current++
-    if (lastFPSLogRef.current >= maxFrameSamples) {
-      const avgFPS = (lastFPSLogRef.current / (timestamp - startTimeForMaxFramesRef.current)) * 1000
-      const fps = avgFPS.toFixed(1)
-      props.setAvgFPS(fps)
-      lastFPSLogRef.current = 0
-      startTimeForMaxFramesRef.current = timestamp
+    if (elapsed >= targetInterval) {
+      if (mainCanvas && hiddenCanvas.current) {
+        // Note: Do not add { willReadFrequently: true }, as it increased CPU
+        // usage by about 20% in Chrome.
+        const ctx = (mainCanvas as HTMLCanvasElement).getContext("2d")
+        const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
+        if (ctx && hiddenCtx) {
+          const [w, h] = getCanvasSize()   // always current
+          ProcessDisplay(ctx, hiddenCtx, w, h)
+        }
+        checkGamepad()
+      }
+
+      // Calculate and log FPS
+      lastFPSLogRef.current++
+      if (lastFPSLogRef.current >= maxFrameSamples) {
+        const avgFPS = (lastFPSLogRef.current / (timestamp - startTimeForMaxFramesRef.current)) * 1000
+        const fps = avgFPS.toFixed(1)
+        props.setAvgFPS(fps)
+        lastFPSLogRef.current = 0
+        startTimeForMaxFramesRef.current = timestamp
+      }
+
+      lastFrameTimeRef.current = timestamp
     }
 
     // Changing this refresh interval to be less often has no effect on the "fast" speed.
@@ -556,50 +509,14 @@ const Apple2Canvas = (props: DisplayProps) => {
       if (x < 0 || x > 1 || y < 0 || y > 1) {
         return null
       }
-      lastMousePos.current = { x, y }
     }
     return { x, y, buttons: -1 }
   }
 
-  // Pointer-locked motion arrives as movementX/Y with clientX/Y frozen, so the
-  // captured position is maintained here. The IIgs is fed relative counts (its
-  // ADB mouse is relative); the other machines only take absolute positions, so
-  // for them the movement is accumulated into a virtual pointer clamped to the
-  // screen.
-  const getCapturedMouseEvent = (movementX: number, movementY: number, buttons = -1): MouseEventSimple => {
-    const canvas = myCanvas.current
-    const w = canvas?.clientWidth || canvas?.width || 0
-    const h = canvas?.clientHeight || canvas?.height || 0
-    const dx = w > 0 ? movementX / w : 0
-    const dy = h > 0 ? movementY / h : 0
-    if (handleGetMachineName() === "APPLE2GS") {
-      return { x: dx, y: dy, buttons, relative: true }
-    }
-    const pos = capturedMousePos.current
-    pos.x = Math.max(0, Math.min(1, pos.x + dx))
-    pos.y = Math.max(0, Math.min(1, pos.y + dy))
-    return { x: pos.x, y: pos.y, buttons }
-  }
-
-  // Clicks carry the host pointer position on every machine. The IIgs used to
-  // substitute the guest cursor here, but that cursor lags the pointer while
-  // the ADB closed loop catches up, so a fast move-then-click landed where the
-  // cursor still was. The worker now steers the guest cursor to this position
-  // and holds the button transition until it arrives.
-  const getClickEvent = (event: ReactMouseEvent<HTMLCanvasElement>, buttons: number): MouseEventSimple | null => {
-    const evt = scaleMouseEvent(event)
-    if (!evt) return null
-    evt.buttons = buttons
-    return evt
-  }
-
   const handleMouseDown = (event: ReactMouseEvent<HTMLCanvasElement>) => {
-    if (mouseCaptured.current) {
-      passMouseEvent(getCapturedMouseEvent(0, 0, event.button === 0 ? 0x10 : 0x11))
-      return
-    }
-    const evt = getClickEvent(event, event.button === 0 ? 0x10 : 0x11)
+    const evt = scaleMouseEvent(event)
     if (!evt) return
+    evt.buttons = event.button === 0 ? 0x10 : 0x11
     passMouseEvent(evt)
     if (handleGetOverrideHires()) {
       const newLockHgrMagnifier = !lockHgrMagnifier
@@ -609,21 +526,13 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleMouseUp = (event: ReactMouseEvent<HTMLCanvasElement>) => {
-    if (mouseCaptured.current) {
-      passMouseEvent(getCapturedMouseEvent(0, 0, event.button === 0 ? 0x00 : 0x01))
-      return
-    }
-    const evt = getClickEvent(event, event.button === 0 ? 0x00 : 0x01)
+    const evt = scaleMouseEvent(event)
     if (!evt) return
+    evt.buttons = event.button === 0 ? 0x00 : 0x01
     passMouseEvent(evt)
   }
 
   const handleMouseMove = (event: ReactMouseEvent<HTMLCanvasElement>) => {
-    if (mouseCaptured.current) {
-      const evt = getCapturedMouseEvent(event.movementX, event.movementY)
-      if (evt.x !== 0 || evt.y !== 0) passMouseEvent(evt)
-      return
-    }
     const evt = scaleMouseEvent(event)
     if (handleGetOverrideHires() && !lockHgrMagnifier) {
       setMagnifierMouseLoc([event.clientX, event.clientY])
@@ -773,25 +682,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // F1 toggles the pointer lock; Escape releases it without our involvement, so
-  // the capture flag follows the browser rather than our own guess.
-  useEffect(() => {
-    const handlePointerLockChange = () => {
-      const locked = !!myCanvas.current && document.pointerLockElement === myCanvas.current
-      if (locked === mouseCaptured.current) return
-      mouseCaptured.current = locked
-      if (locked) {
-        capturedMousePos.current = { ...lastMousePos.current }
-      } else {
-        // A lock lost mid-drag would otherwise leave the button held down.
-        passMouseEvent({ x: 0, y: 0, buttons: 0x00 })
-        passMouseEvent({ x: 0, y: 0, buttons: 0x01 })
-      }
-    }
-    document.addEventListener("pointerlockchange", handlePointerLockChange)
-    return () => document.removeEventListener("pointerlockchange", handlePointerLockChange)
-  }, [])
-
   const setFocus = () => {
     if (mainCanvas) {
       (mainCanvas as HTMLCanvasElement).focus({ preventScroll: true })
@@ -843,13 +733,11 @@ const Apple2Canvas = (props: DisplayProps) => {
         onFocus={() => { didNavigateWithKeyboard.current = false }}
       />
       {/* Use hidden canvas/context so image rescaling works in iOS < 15.
-          See graphics.ts drawImage(). Big enough for either geometry: the
-          legacy Apple II 560x384 image, or the Apple IIgs Super Hi-Res
-          640x400 screen (200 scanlines doubled). */}
+          See graphics.ts drawImage() */}
       <canvas ref={hiddenCanvas}
         id="hiddenCanvas"
         hidden={true}
-        width={640} height={400} />
+        width={560} height={384} />
       {handleGetOverrideHires() && <HgrMagnifier mainCanvas={mainCanvas}
         mouseLoc={magnifierMouseLoc} lockHgrMagnifier={lockHgrMagnifier} />}
       {!isEmbedMode() && <KeyboardControl />}

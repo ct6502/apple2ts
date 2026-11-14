@@ -1,5 +1,6 @@
 // Chris Torrence, 2022
 import {
+  passSpeedMode,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
   doOnMessage,
@@ -18,7 +19,7 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./save_restore_ui"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { getMemorySizeLabel, RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { RUN_MODE, TEST_DEBUG } from "../common/utility"
 import DiskCollectionPanel from "./diskdialog/diskcollectionpanel"
 import { handleSetTheme, hasDialogMessageContext } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
@@ -112,11 +113,7 @@ const DisplayApple2 = () => {
     // or whether just having the assets within that file is good enough
     // for the preloading.
     // preloadAssets()
-    // Don't post a speed here: that would mark it as an explicit user choice
-    // before doSetMachineName runs, so the IIgs never got its 2.8 MHz default
-    // and its 3.5" driver could not clock 500 kbit/s media (the ROM stopped at
-    // "Check startup device!"). The worker starts at mode 0 and doSetMachineName
-    // picks the per-machine default until the user actually chooses a speed.
+    passSpeedMode(0)
     loadPreferences()
     startRemoteControlBridge()
     const hasBasicProgram = handleInputParams()
@@ -217,7 +214,8 @@ const DisplayApple2 = () => {
   const slotConfig = handleGetSlotConfig()
   const isApple2Plus = machineName === "APPLE2P"
   const hasAuxCard = !isApple2Plus && (slotConfig[3] === "aux" || slotConfig[3] === "vidhd")
-  const memSize = getMemorySizeLabel(machineName, handleGetMemSize(), hasAuxCard)
+  const mem = isApple2Plus ? 64 : (hasAuxCard ? (handleGetMemSize() + 64) : 64)
+  const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = (isTouchDevice && isLandscape) ? <></> : <div className="default-font footer-item" translate="no">
     <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS}</>
   </div>

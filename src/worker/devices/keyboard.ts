@@ -1,7 +1,6 @@
 import { handleKeyMapping } from "../games/game_mappings"
-import { getCurrentMachineName, memGetC000, memSetC000 } from "../memory"
+import { memGetC000, memSetC000 } from "../memory"
 import { requestSnapshot } from "../motherboard"
-import { iigsADB, isAdbModifierKeycode } from "../iigs_adb"
 
 const setKeyStrobe = (key: number) => {
   // Sather, Understanding the Apple IIe p2-16, all addresses from $C000-$C01F
@@ -123,103 +122,16 @@ export const advanceKeySequence = () => {
   setKeyStrobe(sequence.keys[sequence.currentIndex])
 }
 
-// Map DOM KeyboardEvent.code onto Apple IIgs ADB keycodes. Table transcribed
-// from gssquared's ADB_Keyboard.hpp (the gold standard), standard subsets
-// first: letters, digits, punctuation, navigation and modifiers. Modifier
-// codes sit in the $36-$3A block; ADB marks modifier events in the event byte.
-// The two Apple keys are distinct ADB keycodes, and the keycode labels are the
-// reverse of the bits they set: ADB_COMMAND ($37) is Open Apple (gssquared
-// ADB_Keyboard.hpp:503-504 selects it when apple_modifier_scancode says is_open)
-// and ADB_OPTION ($3A) is Closed Apple, reporting $C025 bit 7 open and bit 6
-// closed respectively (ADB_Micro.hpp:503-504). Left/right mirrors that, because
-// every host binding in canvas.tsx treats the left key as Open and the right as
-// Closed; mapping both Alt keys to $3A made Closed Apple + Escape a bare Escape
-// and Open Apple + Escape a Command, so no IIgs key chord could be pressed.
-const DOM_TO_ADB: Record<string, number> = {
-  KeyA: 0x00, KeyS: 0x01, KeyD: 0x02, KeyF: 0x03, KeyH: 0x04, KeyG: 0x05,
-  KeyZ: 0x06, KeyX: 0x07, KeyC: 0x08, KeyV: 0x09, KeyB: 0x0B,
-  KeyQ: 0x0C, KeyW: 0x0D, KeyE: 0x0E, KeyR: 0x0F, KeyY: 0x10, KeyT: 0x11,
-  Digit1: 0x12, Digit2: 0x13, Digit3: 0x14, Digit4: 0x15, Digit6: 0x16,
-  Digit5: 0x17, Equal: 0x18, Digit9: 0x19, Digit7: 0x1A, Minus: 0x1B,
-  Digit8: 0x1C, Digit0: 0x1D, BracketRight: 0x1E, KeyO: 0x1F, KeyU: 0x20,
-  BracketLeft: 0x21, KeyI: 0x22, KeyP: 0x23, Enter: 0x24, NumpadEnter: 0x24,
-  KeyL: 0x25, KeyJ: 0x26, Quote: 0x27, KeyK: 0x28, Semicolon: 0x29,
-  Backslash: 0x2A, Comma: 0x2B, Slash: 0x2C, KeyN: 0x2D, KeyM: 0x2E,
-  Period: 0x2F, Tab: 0x30, Space: 0x31, Backquote: 0x32, Backspace: 0x33,
-  Escape: 0x35, ControlLeft: 0x36, ControlRight: 0x36, MetaLeft: 0x37,
-  MetaRight: 0x3A, ShiftLeft: 0x38, ShiftRight: 0x38, CapsLock: 0x39,
-  AltLeft: 0x37, AltRight: 0x3A, ArrowLeft: 0x3B, ArrowRight: 0x3C,
-  ArrowDown: 0x3D, ArrowUp: 0x3E,
-}
-
 export const setKeyboardState = (state: KeyboardState) => {
   interruptKeySequence()
-  let legacyKey = state.key
-  if (getCurrentMachineName() === "APPLE2GS" && state.domCode) {
-    // The IIgs's physical keyboard is ADB device address 2, and every event
-    // byte goes there: the keycode for a key down, keycode | 0x80 for a key up
-    // (see iigs_adb.ts). queueKeyboard() also drives $C025 from a modifier
-    // keycode, and that byte is where a *chord* lives - an event byte carries
-    // one key and no modifier field. Keyboard auto-repeat is the guest OS's
-    // job, so host repeats are not re-queued.
-    //
-    // The IIgs legacy $C000 latch is fed from the ADB keyboard buffer, so its
-    // ASCII comes from the keycode plus the live $C025 modifiers - not from the
-    // host event's text. A browser applies Caps Lock and Shift to e.key before
-    // we see it; feeding that text to $C000 made the old UI preference (or the
-    // physical caps state) decide the case, and ADB_DELETE arrived as 0x08
-    // (cursor-left) because the host Backspace special case ran first.
-    const code = DOM_TO_ADB[state.domCode]
-    let swallowedByMicro = false
-    let modifierKeycode = false
-    if (code !== undefined) {
-      modifierKeycode = isAdbModifierKeycode(code)
-      if (state.isDown) {
-        if (!state.repeat) {
-          swallowedByMicro = iigsADB.queueKeyboard(code)
-        }
-      } else {
-        // Every key-up reports its *own* keycode. Tracking only one "last down"
-        // code broke chords: hold Closed Apple, press Escape, then let go of the
-        // Apple key first, and the release was delivered as *Escape* going up,
-        // leaving the Command bit stuck in $C025. An up for a key whose down was
-        // never seen (focus loss, a browser that swallows key-up) still goes out,
-        // so a stuck key cannot survive a window switch.
-        iigsADB.queueKeyboard(code | 0x80)
-      }
-      if (!modifierKeycode) {
-        legacyKey = iigsADB.asciiForKeycode(code)
-      }
-    }
-    if (state.saveSnapShot) {
-      requestSnapshot()
-    }
-    // A pure modifier carries no Apple II ASCII ($C000 has nothing to strobe)
-    // and must not touch the held key's any-key-down line either, so it ends
-    // here. A key the micro swallowed to make its own report ends here too:
-    // on real hardware $C000 is fed from the ADB keyboard buffer, so a key the
-    // micro did not buffer never reaches the legacy latch.
-    if (modifierKeycode || swallowedByMicro || legacyKey < 0) {
-      return
-    }
-    // DELIBERATELY no early return for a real key: on IIgs hardware the
-    // physical keyboard also drives the Mega II's legacy keyboard register
-    // ($C000 / $C010 AKD/strobe), which runs in parallel with the ADB micro.
-    // Measured on GS/OS 6.0.1 the Finder consumes $C000 and polls $C025 every
-    // frame while never polling ADB device 2, so the legacy register is the
-    // key's carrier and $C025 the modifier's. ProDOS-8-era software such as
-    // Tass Times reads the legacy register in its game loop and never touches
-    // the ADB at all; the early return that shipped with ADB delivery left it
-    // with no keys. Fall through to the legacy path below instead.
-  }
-  if (!state.isDown || legacyKey < 0) {
+  if (!state.isDown || state.key < 0) {
     keyboardIsDown = false
     keyboardRepeatKey = 0
     apple2KeyRelease()
     return
   }
   keyboardIsDown = true
-  keyboardRepeatKey = handleKeyMapping(String.fromCharCode(legacyKey)).charCodeAt(0)
+  keyboardRepeatKey = handleKeyMapping(String.fromCharCode(state.key)).charCodeAt(0)
   setKeyStrobe(keyboardRepeatKey)
   if (state.saveSnapShot) {
     requestSnapshot()
@@ -229,27 +141,6 @@ export const setKeyboardState = (state: KeyboardState) => {
     return
   }
   nextKeyboardRepeatTime = performance.now() + Apple2eRepeatDelayMs
-}
-
-// The ROM's own Desk Accessories menu (Control Panel / Alternate Display Mode /
-// Visit Monitor / Memory Peeker / Quit) is not a key the guest can be handed:
-// the ADB micro intercepts Control + Open Apple + Escape and answers with a
-// data-register report, which is what wakes the desk manager. So this posts the
-// four ADB event bytes and nothing else - no legacy $C000 strobe, because the
-// micro never buffers the Escape and on real hardware $C000 comes out of that
-// buffer. It is available while the ROM owns the desk manager (the startup
-// screen and ProDOS 8); under GS/OS the report is delivered and ignored, exactly
-// as on the machine.
-export const openIigsRomDeskPanel = () => {
-  const control = DOM_TO_ADB.ControlLeft
-  const open = DOM_TO_ADB.AltLeft
-  const escape = DOM_TO_ADB.Escape
-  for (const code of [control, open, escape]) {
-    iigsADB.queueKeyboard(code)
-  }
-  for (const code of [escape, open, control]) {
-    iigsADB.queueKeyboard(code | 0x80)
-  }
 }
 
 export const pollKeyboardRepeat = () => {

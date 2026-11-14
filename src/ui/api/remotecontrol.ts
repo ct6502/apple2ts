@@ -1,5 +1,4 @@
 import { RUN_MODE } from "../../common/utility"
-import { getAppMachineNameOrDefault } from "../../common/app_target"
 import { BreakpointMap } from "../../common/breakpoint"
 import {
   handleGetBreakpoints,
@@ -477,11 +476,7 @@ export const executeCommand = async (action: string, payload: Record<string, unk
       return collectStatus()
 
     case "setMachineName":
-      // The remote API follows the same target menu as Settings: a classic site
-      // ignores a GS request and stays on its enhanced IIe default.
-      setPreferenceMachineName(
-        getAppMachineNameOrDefault(payload.machineName as MACHINE_NAME),
-      )
+      setPreferenceMachineName(payload.machineName as MACHINE_NAME)
       return collectStatus()
 
     case "setRamWorks":

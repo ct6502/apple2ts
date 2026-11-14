@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import HeatMapControls from "./heatmap_controls"
 import HeatMapView from "./heatmap_view"
 import type { PaletteName } from "viridis"
-import { getPreferenceByString, setPreferenceByString, PREFERENCES_RESET_EVENT } from "../../localstorage"
+import { getPreferenceByString, setPreferenceByString } from "../../localstorage"
 
 export enum HEATMAP_STATE {
   CPU,
@@ -24,14 +24,6 @@ const HeatMapPanel = (props: { isActive: boolean, updateDisplay: UpdateDisplay }
     setColorTable(value)
     props.updateDisplay()
   }
-
-  useEffect(() => {
-    const handlePreferencesReset = () => {
-      setColorTable(getPreferenceByString("heatMapColorTable", "Spectral") as PaletteName)
-    }
-    window.addEventListener(PREFERENCES_RESET_EVENT, handlePreferencesReset)
-    return () => window.removeEventListener(PREFERENCES_RESET_EVENT, handlePreferencesReset)
-  }, [])
 
   return (
     <div className="tall-panel"

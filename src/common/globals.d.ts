@@ -10,10 +10,6 @@ declare global {
       disk2on: string;
       disk2offEmpty: string;
       disk2onEmpty: string;
-      floppy35off: string;
-      floppy35on: string;
-      floppy35offEmpty: string;
-      floppy35onEmpty: string;
       hardDriveOff: string;
       hardDriveOn: string;
       diskicons: string;
