@@ -6,6 +6,8 @@
 // fall back to apple2ts so ordinary `npm start`, Jest, and local builds keep
 // working unchanged.
 
+import { CLASSIC_PROFILE, GS_PROFILE } from "./machine_profile"
+
 export type AppTarget = "apple2ts" | "apple2gts"
 
 const GTS_TARGET = "apple2gts"
@@ -42,7 +44,7 @@ export const getAppFavicon = (target: AppTarget): string =>
   target === GTS_TARGET ? "favicon-gts.svg" : "favicon.png"
 
 export const getAppDefaultMachine = (target: AppTarget): MACHINE_NAME =>
-  target === GTS_TARGET ? "APPLE2GS" : "APPLE2EE"
+  target === GTS_TARGET ? GS_PROFILE.defaultMachine : CLASSIC_PROFILE.defaultMachine
 
 export const getAppManifestName = (target: AppTarget): string =>
   target === GTS_TARGET ? "Apple2GTS" : "Apple2TS"
@@ -56,7 +58,7 @@ export const getAppManifestDescription = (target: AppTarget): string =>
 // keeps the classic II+/IIe family, while apple2gts.com is IIgs-only. Keep the
 // visible order stable (II+, IIe unenhanced, IIe enhanced, IIgs).
 export const getAppMachineNames = (target: AppTarget): MACHINE_NAME[] =>
-  target === GTS_TARGET ? ["APPLE2GS"] : ["APPLE2P", "APPLE2EU", "APPLE2EE"]
+  target === GTS_TARGET ? [...GS_PROFILE.machines] : [...CLASSIC_PROFILE.machines]
 
 // Local development is one checkout serving both families, so `npm start`
 // exposes every machine profile. A target build still gets the production
@@ -66,7 +68,7 @@ export const getAppMachineNamesForBuild = (
   localDevelopment: boolean,
 ): MACHINE_NAME[] =>
   localDevelopment
-    ? ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
+    ? [...CLASSIC_PROFILE.machines, ...GS_PROFILE.machines]
     : getAppMachineNames(target)
 
 export const APP_TARGET = parseAppTarget(process.env.BUILD_TARGET)

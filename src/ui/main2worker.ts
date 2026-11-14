@@ -1,10 +1,11 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
-  DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, VeraSdStatus,
+  VeraSdStatus,
   MEMORY_DUMP_STATE,
   AUTO_SNAPSHOT,
   ERROR_CODE} from "../common/utility"
 import { APP_DEFAULT_MACHINE } from "../common/app_target"
+import { getMachineCapabilities, getMachineProfile, getProfileDefaultSlotConfig } from "../common/machine_profile"
 import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -216,7 +217,7 @@ export const passKeyboardState = (payload: KeyboardState) => {
 // Only the IIgs has an ADB keyboard; on a classic machine a key -1 event would
 // clear the held key's any-key-down strobe, so the chord path stays closed.
 export const passAdbModifierKey = (domCode: string, isDown: boolean) => {
-  if (handleGetMachineName() !== "APPLE2GS") return
+  if (!getMachineCapabilities(handleGetMachineName()).hasAdbKeyboard) return
   passKeyboardState({ key: -1, isDown, domCode, repeat: false })
 }
 
@@ -690,9 +691,7 @@ let machineState: MachineState = {
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
   showDebugTab: false,
-  slotConfig: APP_DEFAULT_MACHINE === "APPLE2GS"
-    ? { ...DEFAULT_SLOT_CONFIG_GS }
-    : { ...DEFAULT_SLOT_CONFIG },
+  slotConfig: getProfileDefaultSlotConfig(getMachineProfile(APP_DEFAULT_MACHINE), APP_DEFAULT_MACHINE),
   speedMode: 0,
   softSwitches: {} as unknown as MachineState["softSwitches"],
   stackString: "",
@@ -1152,11 +1151,8 @@ export const handleGetVeraSlot = () => {
 }
 
 export const handleGetSlotConfig = (): SlotConfig => {
-  return machineState.slotConfig || (
-    handleGetMachineName() === "APPLE2GS"
-      ? { ...DEFAULT_SLOT_CONFIG_GS }
-      : { ...DEFAULT_SLOT_CONFIG }
-  )
+  return machineState.slotConfig || getProfileDefaultSlotConfig(
+    getMachineProfile(handleGetMachineName()), handleGetMachineName())
 }
 
 export const handleGetSoftSwitchDescriptions = () => {

@@ -4,6 +4,7 @@
  */
 
 import { APP_MACHINE_NAMES } from "../../common/app_target"
+import { getMachineProfile, getProfileSpeedOptions } from "../../common/machine_profile"
 import { COLOR_MODE } from "../../common/utility"
 import { handleGetMachineName, passSpeedMode } from "../main2worker"
 import { setPreferenceColorMode, setPreferenceMachineName } from "../localstorage"
@@ -29,25 +30,10 @@ export function toolSetSpeed(speed: number): MCPToolResult {
 
     passSpeedMode(speed)
     
-    const isGS = handleGetMachineName() === "APPLE2GS"
-    const speedNames = isGS ? [
-      "0.1 MHz (Snail)",
-      "0.5 MHz (Slow)",
-      "1.02 MHz (Normal)",
-      "2.8 MHz",
-      "7.1 MHz",
-      "14.3 MHz (Fast)",
-      "Ludicrous"
-    ] : [
-      "0.1 MHz (Snail)",
-      "0.5 MHz (Slow)",
-      "1 MHz (Normal)",
-      "2 MHz",
-      "3 MHz",
-      "4 MHz (Fast)",
-      "Ludicrous"
-    ]
-    const speedName = speedNames[speed + 2]
+    const profile = getMachineProfile(handleGetMachineName())
+    const speedNames = getProfileSpeedOptions(profile).map(option => option.mcpLabel)
+    const speedName = speedNames[getProfileSpeedOptions(profile)
+      .findIndex(option => option.mode === speed)]
 
     return {
       success: true,

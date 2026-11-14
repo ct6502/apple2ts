@@ -1,6 +1,7 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
-import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
+import { AUTO_SNAPSHOT, COLOR_MODE, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
+import { getMachineProfile, getProfileDefaultSlotConfig } from "../common/machine_profile"
 import { APP_DEFAULT_MACHINE, APP_MACHINE_NAMES } from "../common/app_target"
 import { sanitizeSlotConfig } from "../common/slot_options"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
@@ -267,7 +268,7 @@ export const setPreferenceMachineName = (
   passSetMachineName(name)
 
   let newSlotConfig: SlotConfig
-  if (name === "APPLE2GS") {
+  if (getMachineProfile(name).family === "gs") {
     // The GS Control Panel slot layout is independent of the classic machines.
     // Keep the user's custom GS slots across a GS -> classic -> GS round trip;
     // fall back to the built-in defaults for a first visit to the IIgs.
@@ -276,7 +277,7 @@ export const setPreferenceMachineName = (
     )
     newSlotConfig = savedGsSlotConfig
       ? sanitizeSlotConfig(savedGsSlotConfig, name)
-      : { ...DEFAULT_SLOT_CONFIG_GS }
+      : getProfileDefaultSlotConfig(getMachineProfile(name), name)
   } else {
     // Like the IIgs backup, keep a custom classic layout across a
     // classic -> GS -> classic round trip instead of replacing it with the
@@ -376,7 +377,7 @@ export const setPreferenceVeraSlot = (slot: VERA_SLOT = 0) => {
 export const getPreferenceSlotConfigBackup = (
   machine: MACHINE_NAME,
 ): SlotConfig | null => {
-  const key = machine === "APPLE2GS"
+  const key = getMachineProfile(machine).family === "gs"
     ? PREFERENCE_SLOT_CONFIG_GS_KEY
     : PREFERENCE_SLOT_CONFIG_CLASSIC_KEY
   const backupRaw = localStorage.getItem(key)
@@ -396,7 +397,7 @@ export const getPreferenceSlotConfig = (): SlotConfig => {
   const parsed = readSlotConfigStorage(saved)
   if (parsed) return sanitizeSlotConfig(parsed, machine)
   if (saved) localStorage.removeItem("slotConfig")
-  return machine === "APPLE2GS" ? { ...DEFAULT_SLOT_CONFIG_GS } : { ...DEFAULT_SLOT_CONFIG }
+  return getProfileDefaultSlotConfig(getMachineProfile(machine), machine)
 }
 
 export const setPreferenceSlotConfig = (
@@ -406,7 +407,7 @@ export const setPreferenceSlotConfig = (
 ) => {
   localStorage.setItem("slotConfig", JSON.stringify(config))
   localStorage.setItem(
-    machine === "APPLE2GS"
+    getMachineProfile(machine).family === "gs"
       ? PREFERENCE_SLOT_CONFIG_GS_KEY
       : PREFERENCE_SLOT_CONFIG_CLASSIC_KEY,
     JSON.stringify(config),
@@ -417,7 +418,7 @@ export const setPreferenceSlotConfig = (
 
 export const SPEED_MODE_MACHINE_KEY = "speedModeMachineName"
 const SPEED_FAMILIES = (machineName: string | null) =>
-  machineName === "APPLE2GS" ? "GS" : "CLASSIC"
+  getMachineProfile((machineName || "APPLE2EE") as MACHINE_NAME).family === "gs" ? "GS" : "CLASSIC"
 
 const savePreferenceSpeedMode = (mode: number) => {
   if (mode === 0) {

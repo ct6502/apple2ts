@@ -7,7 +7,8 @@ import { settingsResetBinding } from "./resetcontrols"
 import { Droplist } from "../panels/droplist"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, handleGetSpeedMode } from "../main2worker"
 import { getPreferenceBoolean, getPreferenceIigsRomVersion, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot, setPreferenceIigsRomVersion } from "../localstorage"
-import { getSlotOptions, SLOT_NUMBERS } from "../../common/slot_options"
+import { getSlotOptions, sanitizeSlotConfig, SLOT_NUMBERS } from "../../common/slot_options"
+import { getMachineCapabilities, getMachineProfile, getProfileSpeedOptions, getProfileSpeedLabel } from "../../common/machine_profile"
 import { getCardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, getRamdiskValues, themeLabels } from "../ui_utilities"
 import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import CheckBox from "../panels/checkbox"
@@ -79,14 +80,16 @@ export const SettingsDialog = (props: DisplayProps) => {
   const machineStrings = visibleMachines.map(({ label }) => label)
   const machineIndex = machineNames.indexOf(machineName)
 
-  const slotConfig = handleGetSlotConfig()
+  const machineProfile = getMachineProfile(machineName)
+  const machineCapabilities = getMachineCapabilities(machineName)
+  const slotConfig = sanitizeSlotConfig(handleGetSlotConfig(), machineName)
 
   const mem = handleGetMemSize()
   const memIndex = mem > 8000 ? 4 : mem > 4000 ? 3 : mem > 1000 ? 2 : mem > 500 ? 1 : 0
   const ramdisk = ramdiskValues[memIndex]
 
   const handleSelectSlotCard = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7, cardId: SLOT_CARD_ID, ramSizeKb = 64) => {
-    const currentConfig = handleGetSlotConfig()
+    const currentConfig = sanitizeSlotConfig(handleGetSlotConfig(), machineName)
     const newConfig = { ...currentConfig }
 
     // Single-instance cards (all except 'none' and 'mockingboard'): remove from other slots
@@ -150,10 +153,11 @@ export const SettingsDialog = (props: DisplayProps) => {
         // so switching to or from it must keep setPreferenceMachineName's
         // GS defaults / sanitization instead of applying the classic slot-3
         // Videoterm/Aux switch.
-        if (nextMachine === "APPLE2GS" || machineName === "APPLE2GS") return
-        // Adjust slot 3 when crossing between II+ and IIe families
-        const newIsIIp = nextMachine === "APPLE2P"
-        const wasIIp = machineName === "APPLE2P"
+        if (getMachineProfile(nextMachine).family === "gs" || getMachineProfile(machineName).family === "gs") return
+        // Adjust slot 3 when crossing between II+ and IIe families by profile,
+        // not by a second hard-coded machine table.
+        const newIsIIp = getMachineProfile(nextMachine).family === "classic" && nextMachine === "APPLE2P"
+        const wasIIp = getMachineProfile(machineName).family === "classic" && machineName === "APPLE2P"
         if (newIsIIp !== wasIIp) {
           handleSelectSlotCard(3, newIsIIp ? "videoterm" : "aux")
           if (!newIsIIp) setPreferenceRamWorks() // reset to 64KB default
@@ -178,39 +182,18 @@ export const SettingsDialog = (props: DisplayProps) => {
 
   const speedConfig = () => {
     const speedMode = handleGetSpeedMode()
-    const speedIndex = speedMode + 2
-    // const iconSize = 22
-    const SPEED_MODES = [-2, -1, 0, 1, 2, 3, 4] as const
-    const SPEED_LABEL_KEYS = [
-      t("retroControl.snail"),
-      t("retroControl.slow"),
-      t("retroControl.normal"),
-      t("retroControl.twoMhz"),
-      t("retroControl.threeMhz"),
-      t("retroControl.fast"),
-      t("retroControl.warp"),
-    ]
-    // The IIgs uses the same speed indices as the classic machines but labels
-    // them by clock instead of by multiplier. Keep that distinction here as
-    // SpeedDropdown does; a classic label on a GS index cannot round-trip.
-    const SPEED_LABELS = machineName === "APPLE2GS"
-      ? [
-        t("retroControl.snail"),
-        t("retroControl.slow"),
-        "1.02 MHz",
-        "2.8 MHz",
-        "7.1 MHz",
-        "14.3 MHz",
-        t("retroControl.warp"),
-      ]
-      : SPEED_LABEL_KEYS
+    const speedOptions = getProfileSpeedOptions(machineProfile)
+    const speedModes = speedOptions.map(option => option.mode)
+    const speedLabels = speedOptions.map(option =>
+      getProfileSpeedLabel(machineProfile, option.mode, t))
+    const speedIndex = speedModes.indexOf(speedMode)
     return (
       <Droplist name={t("config.speed")}
-        value={SPEED_LABELS[speedIndex]}
-        values={SPEED_LABELS}
+        value={speedLabels[speedIndex]}
+        values={speedLabels}
         setValue={(val: string) => {
-          const index = SPEED_LABELS.indexOf(val)
-          setPreferenceSpeedMode(SPEED_MODES[index])
+          const index = speedLabels.indexOf(val)
+          setPreferenceSpeedMode(speedModes[index] as -2 | -1 | 0 | 1 | 2 | 3 | 4)
           props.updateDisplay()
         }}
       />
@@ -362,7 +345,9 @@ export const SettingsDialog = (props: DisplayProps) => {
                 }
               }}
             />
-            {(currentCard === "mockingboard" || currentCard === "passport" || currentCard === "vera") &&
+            {(currentCard === "mockingboard" ||
+              (machineCapabilities.hasPassport && currentCard === "passport") ||
+              (machineCapabilities.hasVeraCard && currentCard === "vera")) &&
               <SlotAudioConfig {...props} card={currentCard} slot={slot} />}
             </div>
           )
@@ -447,7 +432,7 @@ export const SettingsDialog = (props: DisplayProps) => {
                 <div className="flex-column" style={{gap: "3px"}}>
                   {themeConfig()}
                   {machineConfig()}
-                  {machineName === "APPLE2GS" && romConfig()}
+                  {machineCapabilities.hasIigsRom && romConfig()}
                   {speedConfig()}
                   {slotConfiguration()}
                 </div>

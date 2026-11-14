@@ -3,7 +3,9 @@ import { FrameClock } from "./frameclock"
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { setCpuPcGetter } from "./cpu_pc"
 import { s6502, setState6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
-import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, MEMORY_DUMP_STATE, AUTO_SNAPSHOT } from "../common/utility"
+import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, MEMORY_DUMP_STATE, AUTO_SNAPSHOT } from "../common/utility"
+import { getMachineCapabilities, getMachineProfile, getProfileCyclesPerRefresh, getProfileDefaultSlotConfig, getProfileDefaultSpeedMode, getProfileSlotChoices } from "../common/machine_profile"
+import { sanitizeSlotConfig } from "../common/slot_options"
 import { iigsSlotRegisterFor } from "../common/iigs_slots"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 import { iigsEnsoniq } from "./devices/iigs_ensoniq"
@@ -539,7 +541,11 @@ export const softCard = new SoftCard(2)
 let currentSlotConfig: SlotConfig = { ...DEFAULT_SLOT_CONFIG }
 
 export const doSetSlotConfig = (config: SlotConfig) => {
-  currentSlotConfig = { ...config }
+  // The UI may post the saved classic layout first, before it applies a new
+  // machine name. Never let a card that the selected machine has no hardware for
+  // linger in the worker's slot config: a stale VERA at $C0xx otherwise keeps
+  // its audio control visible after switching to the IIgs.
+  currentSlotConfig = sanitizeSlotConfig(config, machineName)
   didConfiguration = false
   configureMachine()
   updateExternalMachineState()
@@ -882,34 +888,14 @@ export const doReset = () => {
 // Note that making the cyclesPerRefresh too large can cause games to be
 // less responsive to keyboard input, since we're checking the keyboard
 // less often.
-const IIE_CYCLES_PER_REFRESH = [
-  Math.round(17030 * 0.1),
-  Math.round(17030 * 0.5),
-  17030,
-  17030 * 2,
-  17030 * 3,
-  17030 * 4,
-  17030 * 24,
-]
-
-const GS_CYCLES_PER_REFRESH = [
-  Math.round(17030 * 0.1),            // -2: Snail (0.1 MHz)
-  Math.round(17030 * 0.5),            // -1: Slow (0.5 MHz)
-  17030,                              //  0: Normal (1.02 MHz)
-  Math.round(2800000 * 0.0166881),   //  1: 2.8 MHz (46727 cycles)
-  Math.round(7100000 * 0.0166881),   //  2: 7.1 MHz (118486 cycles)
-  Math.round(14300000 * 0.0166881),  //  3: Fast / 14.3 MHz (238640 cycles)
-  Math.round(17030 * 24),             //  4: Warp (unthrottled)
-]
-
 export const doSetSpeedMode = (speedModeIn: number, operationId?: number) => {
   speedMode = speedModeIn
   speedModeExplicit = true
-  // speedMode = -2 is slowest, but add 2 to it to make the arrays be zero based.
-  // speedMode = 0 is still 1 MHz, so no risk of backwards compatibility issues.
-  refreshTime = (speedMode === 4) ? 0 : 16.6881
-  const cyclesTable = (machineName === "APPLE2GS") ? GS_CYCLES_PER_REFRESH : IIE_CYCLES_PER_REFRESH
-  cpuCyclesPerRefresh = cyclesTable[speedMode + 2]
+  // Profiles own the refresh budget, so a machine switch cannot pair a GS
+  // cycle table with a classic refresh interval. Warp yields to the timer.
+  const profile = getMachineProfile(machineName)
+  refreshTime = speedMode === 4 ? 0 : profile.speed.refreshTime
+  cpuCyclesPerRefresh = getProfileCyclesPerRefresh(profile, speedMode)
   setJoystickCyclesPerRefresh(cpuCyclesPerRefresh)
   // The new CPU rate changes frame length, so restart the clock in the new
   // frame â€” but not the captured-row boundary: the guest is still painting
@@ -1033,23 +1019,23 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState 
     return c.PB !== undefined && c.PC !== undefined ? (c.PB << 16) | c.PC : -1
   })
 
-  if (name === "APPLE2GS") {
-    currentSlotConfig = { ...DEFAULT_SLOT_CONFIG_GS }
-  } else if (name === "APPLE2P") {
-    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "videoterm" && currentSlotConfig[3] !== "vidhd") {
-      currentSlotConfig[3] = "videoterm"
-    }
+  const profile = getMachineProfile(name)
+  if (profile.family === "gs") {
+    currentSlotConfig = getProfileDefaultSlotConfig(profile, name)
   } else {
-    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "aux" && currentSlotConfig[3] !== "vidhd") {
-      currentSlotConfig[3] = "aux"
+    // Switching between classic models keeps the user's card layout; only slot
+    // 3 has to change family (Videoterm on the II+, RAMWorks on the IIe).
+    const slot3Cards = getProfileSlotChoices(profile, name, 3).map(choice => choice.card)
+    if (!slot3Cards.includes(currentSlotConfig[3])) {
+      currentSlotConfig[3] = getProfileDefaultSlotConfig(profile, name)[3]
     }
   }
   didConfiguration = false
   doSetRom(machineName)
   configureMachine()
-  if (!speedModeExplicit) speedMode = (machineName === "APPLE2GS") ? 1 : 0
-  const cyclesTable = (machineName === "APPLE2GS") ? GS_CYCLES_PER_REFRESH : IIE_CYCLES_PER_REFRESH
-  cpuCyclesPerRefresh = cyclesTable[speedMode + 2]
+  if (!speedModeExplicit) speedMode = getProfileDefaultSpeedMode(profile)
+  refreshTime = speedMode === 4 ? 0 : profile.speed.refreshTime
+  cpuCyclesPerRefresh = getProfileCyclesPerRefresh(profile, speedMode)
   setJoystickCyclesPerRefresh(cpuCyclesPerRefresh)
   if (machineName === "APPLE2GS") {
     iigsInitInterrupts()
@@ -1079,6 +1065,18 @@ export const doSetIigsRomVersion = (version: IigsRomVersion, reset = true, publi
 
 export const doSetVeraSlot = (slot: VERA_SLOT) => {
   if (slot !== 0 && slot !== 2 && slot !== 4) return
+  if (!getMachineCapabilities(machineName).hasVeraCard) {
+    // Preferences keep a classic VERA slot across machine switches, but the
+    // IIgs has no slot card bus position for it. Clearing it here must not
+    // mutate the GS Control Panel's built-in slot assignments.
+    if (veraSlot !== 0) {
+      veraSlot = 0
+      didConfiguration = false
+      configureMachine()
+      updateExternalMachineState()
+    }
+    return
+  }
   if (veraSlot === slot) return
   veraSlot = slot
   if (slot === 2) {
@@ -1588,7 +1586,11 @@ const doAdvance6502 = () => {
       for (let bi = 0; bi < 1; bi++) {
         cycles = cpu.processInstruction(traceCb)
         if (cycles < 0) break
-        s6502.cycleCount += cycles
+        // The classic CPU writes s6502.cycleCount inside processInstruction(),
+        // so advancing it again here doubled the Apple II clock (~2.03 MHz at
+        // the Normal setting). The 65816 returns cycles without writing them
+        // and still needs the run-loop advance.
+        if (isIIgs) s6502.cycleCount += cycles
         cycleTotal += cycles
       }
       if (isIIgs) processCycleCountCallbacks()

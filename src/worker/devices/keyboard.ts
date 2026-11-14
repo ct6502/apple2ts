@@ -2,6 +2,7 @@ import { handleKeyMapping } from "../games/game_mappings"
 import { getCurrentMachineName, memGetC000, memSetC000 } from "../memory"
 import { requestSnapshot } from "../motherboard"
 import { iigsADB, isAdbModifierKeycode } from "../iigs_adb"
+import { getMachineCapabilities } from "../../common/machine_profile"
 
 const setKeyStrobe = (key: number) => {
   // Sather, Understanding the Apple IIe p2-16, all addresses from $C000-$C01F
@@ -155,7 +156,7 @@ const DOM_TO_ADB: Record<string, number> = {
 export const setKeyboardState = (state: KeyboardState) => {
   interruptKeySequence()
   let legacyKey = state.key
-  if (getCurrentMachineName() === "APPLE2GS" && state.domCode) {
+  if (getMachineCapabilities(getCurrentMachineName()).hasAdbKeyboard && state.domCode) {
     // The IIgs's physical keyboard is ADB device address 2, and every event
     // byte goes there: the keycode for a key down, keycode | 0x80 for a key up
     // (see iigs_adb.ts). queueKeyboard() also drives $C025 from a modifier

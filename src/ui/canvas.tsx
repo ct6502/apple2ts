@@ -18,6 +18,7 @@ import {
   handleGetTextPage,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, UI_THEME } from "../common/utility"
+import { getMachineCapabilities } from "../common/machine_profile"
 import { ProcessDisplay, getCanvasSize, handleGetOverrideHires, canvasCoordToNormScreenCoord, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey, handleDiagonalKey, ensureGamepadEventListeners } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
@@ -572,7 +573,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     const h = canvas?.clientHeight || canvas?.height || 0
     const dx = w > 0 ? movementX / w : 0
     const dy = h > 0 ? movementY / h : 0
-    if (handleGetMachineName() === "APPLE2GS") {
+    if (getMachineCapabilities(handleGetMachineName()).hasAdbMouse) {
       return { x: dx, y: dy, buttons, relative: true }
     }
     const pos = capturedMousePos.current

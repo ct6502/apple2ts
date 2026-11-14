@@ -4,6 +4,7 @@ import { decodeDiskData } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive, iwmDiskChange35 } from "./diskdata"
 import { enableHardDrive } from "./harddrivedata"
 import { DRIVE, canDriveTakeImage, isHardDriveImage, isThreePointFiveInchImage, updateWozCrc } from "../../common/utility"
+import { getMachineCapabilities } from "../../common/machine_profile"
 import { getCurrentMachineName, setIigsCloudLayerFilename } from "../memory"
 import { buildFloppy35Bitstream, FLOPPY35_OPTIMAL_TIMING } from "./floppy35"
 
@@ -269,7 +270,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   // exactly where the caller - that is, the user - chose to insert it.
   let isHardDrive = props.hardDrive
   const size = props.diskData?.length ?? 0
-  const hasThreeInchBay = getCurrentMachineName() === "APPLE2GS"
+  const hasThreeInchBay = getMachineCapabilities(getCurrentMachineName()).hasThreeInchBay
   if (!forceIndex && props.filename !== "") {
     if (canDriveTakeImage(index, props.filename, size, hasThreeInchBay)) {
       isHardDrive = index <= 1

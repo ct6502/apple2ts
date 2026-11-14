@@ -1,9 +1,9 @@
-import { DEFAULT_SLOT_CONFIG_GS } from "../common/utility"
+import { DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS } from "../common/utility"
 import { getSlotOptions, sanitizeSlotConfig } from "../common/slot_options"
 import { iigsSlotRegisterFor } from "../common/iigs_slots"
 import { doSetRom, memGet24, memSet24, memoryReset, iigsSlotRegister } from "./memory"
 import { CPU65816 } from "./cpu65816"
-import { doSetMachineName, doSetSlotConfig, getSlotConfig } from "./motherboard"
+import { doSetMachineName, doSetSlotConfig, doSetVeraSlot, getSlotConfig } from "./motherboard"
 import { s6502 } from "./instructions"
 
 describe("Apple IIgs Slot Management & Hardware Compatibility", () => {
@@ -90,7 +90,44 @@ describe("Apple IIgs Slot Management & Hardware Compatibility", () => {
     expect(getSlotConfig()).toEqual(DEFAULT_SLOT_CONFIG_GS)
   })
 
+  test("switching a classic VERA layout to the IIgs drops stale VERA state", () => {
+    doSetMachineName("APPLE2EE", false, false)
+    doSetSlotConfig({ ...DEFAULT_SLOT_CONFIG, 2: "vera" })
+    expect(getSlotConfig()[2]).toBe("vera")
+
+    doSetMachineName("APPLE2GS", false, false)
+    expect(getSlotConfig()).toEqual(DEFAULT_SLOT_CONFIG_GS)
+
+    // A preference restored after the switch still carries a classic VERA slot.
+    // It must sanitise to the GS built-in Modem Port instead of putting a VERA
+    // card in slot 2, which has no hardware bus position on this machine.
+    doSetSlotConfig({ ...DEFAULT_SLOT_CONFIG_GS, 2: "vera" })
+    expect(getSlotConfig()[2]).toBe("gsModem")
+    doSetVeraSlot(2)
+    expect(getSlotConfig()[2]).toBe("gsModem")
+  })
+
+  test("classic machine switches keep the card layout and only change slot 3", () => {
+    doSetMachineName("APPLE2EE", false, false)
+    doSetSlotConfig({
+      ...DEFAULT_SLOT_CONFIG,
+      1: "ssc",
+      2: "vera",
+      3: "aux",
+      4: "mockingboard",
+    })
+    doSetMachineName("APPLE2P", false, false)
+    expect(getSlotConfig()[1]).toBe("ssc")
+    expect(getSlotConfig()[2]).toBe("vera")
+    expect(getSlotConfig()[4]).toBe("mockingboard")
+    expect(getSlotConfig()[3]).toBe("videoterm")
+
+    doSetMachineName("APPLE2EE", false, false)
+    expect(getSlotConfig()[3]).toBe("aux")
+  })
+
   test("Slot 4 Mockingboard works on Apple IIgs (I/O, 6522 VIA registers, IRQ triggering)", () => {
+    doSetMachineName("APPLE2GS", false, false)
     memoryReset()
     doSetRom("APPLE2GS")
     doSetSlotConfig({

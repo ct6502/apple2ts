@@ -11,7 +11,8 @@ import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { getPreferenceMachineName, getPreferenceSlotConfig, getPreferenceSlotConfigBackup, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
 import { APP_MACHINE_NAMES } from "../common/app_target"
-import { sanitizeSlotConfig } from "../common/slot_options"
+import { getSlotOptions, sanitizeSlotConfig, SLOT_NUMBERS } from "../common/slot_options"
+import { getMachineProfile } from "../common/machine_profile"
 import { Expectin } from "./api/expectin"
 import { notifySettingsChanged } from "./settingschange"
 
@@ -239,26 +240,20 @@ export const handleInputParams = (paramString = "") => {
   const nextSlotConfig = { ...currentSlotConfig }
   let slotConfigChanged = false
 
-  const validCards: Record<number, string[]> = slotMachine === "APPLE2GS"
-    ? {
-        // IIgs Control Panel slot functions; "none" is an empty "Your Card".
-        1: ["gsPrinter", "ssc"],
-        2: ["gsModem"],
-        3: ["gsText80"],
-        4: ["gsMouse", "mockingboard"],
-        5: ["gsSmartPort", "disk35"], // disk35 = old id, sanitised below
-        6: ["gsDiskPort", "disk2"],
-        7: ["none", "smartport"],
+  // Validate the URL's slots against the chosen machine profile. Legacy IDs
+  // (disk35, disk2 in the GS built-in bays) are still accepted so old links
+  // survive; sanitizeSlotConfig converts them to the current profile IDs.
+  const validCards: Record<number, string[]> = Object.fromEntries(
+    SLOT_NUMBERS.map(slot => {
+      const cards = getSlotOptions(slot, slotMachine).map(o => o.card)
+      const legacy: string[] = []
+      if (getMachineProfile(slotMachine).family === "gs") {
+        if (slot === 5) legacy.push("disk35")
+        else if (slot === 6) legacy.push("disk2")
       }
-    : {
-        1: ["none", "ssc"],
-        2: ["none", "vera", "passport", "softcard"],
-        3: ["none", "aux", "videoterm", "vidhd"],
-        4: ["none", "mouse", "mockingboard", "vera", "softcard"],
-        5: ["none", "mouse", "mockingboard", "softcard"],
-        6: ["none", "disk2"],
-        7: ["none", "smartport"],
-      }
+      return [slot, [...cards, ...legacy]]
+    }),
+  )
 
   for (let slotNum = 1; slotNum <= 7; slotNum++) {
     const cardParam = params.get(`slot${slotNum}`)?.toLowerCase()

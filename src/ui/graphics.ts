@@ -13,6 +13,7 @@ import { doCRTStartup } from "./crtstartup"
 import { getPreferenceRetroIIGSColor, getPreferenceRetroSkin, RETRO_SKIN } from "./localstorage"
 import { RETRO_IIGS_COLORS } from "./retro/retroskincolors"
 import { UI_THEME } from "../common/utility"
+import { getMachineCapabilities } from "../common/machine_profile"
 let frameCount = 0
 let displayOverride: HTMLCanvasElement | null = null
 let displayOverrideRevision = 0
@@ -47,7 +48,7 @@ export const getScreenSize = (): [number, number] => [hiddenWidth, hiddenHeight]
 // True while the Apple IIgs is displaying Super Hi-Res, which is the only mode
 // that uses the 640x200 geometry.
 export const isSuperHiResScreen = (): boolean =>
-  handleGetMachineName() === "APPLE2GS" && handleGetVidhdActive()
+  getMachineCapabilities(handleGetMachineName()).hasSuperHiRes && handleGetVidhdActive()
 
 const doBlurring = () => {
   return getMonitorMode() !== MONITOR_MODE.RGB

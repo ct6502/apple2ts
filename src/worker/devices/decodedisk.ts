@@ -1,5 +1,6 @@
 import { convertdsk2woz } from "../../common/convertdsk2woz"
 import { crc32, ERROR_CODE, isHardDriveImage, isThreePointFiveInchImage } from "../../common/utility"
+import { getMachineCapabilities } from "../../common/machine_profile"
 import { getCurrentMachineName } from "../memory"
 import { FLOPPY35_BLOCK_BYTES, FLOPPY35_OPTIMAL_TIMING, getFloppy35PayloadInfo } from "./floppy35"
 import { passErrorMsg } from "../worker2main"
@@ -107,7 +108,7 @@ export const decodeDiskData = (
     // the GCR stream the IWM reads. Only the slot-5 pair (indices 4/5) is that
     // drive: the same image in slot 7 is a SmartPort block volume and in slot 6
     // it is 5.25" media it cannot hold.
-    if (!isWoz && getCurrentMachineName() === "APPLE2GS" &&
+    if (!isWoz && getMachineCapabilities(getCurrentMachineName()).hasThreeInchBay &&
       driveState.index >= 4 && driveState.index <= 5 &&
       isThreePointFiveInchImage(fname, diskData.length)) {
       const { size } = getFloppy35PayloadInfo(diskData)

@@ -1,5 +1,6 @@
 import { KeyboardEvent } from "react"
 import { convertwoz2dsk } from "./convertwoz2dsk"
+import { CLASSIC_PROFILE, GS_PROFILE, getMachineCapabilities, getProfileDefaultSlotConfig } from "./machine_profile"
 
 // Be sure to update this version whenever the save state format changes.
 export const SAVE_STATE_VERSION = 2.0
@@ -173,25 +174,13 @@ export enum MSG_MAIN {
   IIGS_DESK_PANEL,
 }
 
-export const DEFAULT_SLOT_CONFIG: SlotConfig = {
-  1: "ssc",
-  2: "none",
-  3: "aux",
-  4: "mockingboard",
-  5: "mouse",
-  6: "disk2",
-  7: "smartport",
-}
+// Compatibility exports for legacy callers. The source of truth now lives in
+// machine_profile.ts, keyed by the actual machine.
+export const DEFAULT_SLOT_CONFIG: SlotConfig =
+  getProfileDefaultSlotConfig(CLASSIC_PROFILE, "APPLE2EE")
 
-export const DEFAULT_SLOT_CONFIG_GS: SlotConfig = {
-  1: "gsPrinter",
-  2: "gsModem",
-  3: "gsText80",
-  4: "gsMouse",
-  5: "gsSmartPort",
-  6: "gsDiskPort",
-  7: "smartport",
-}
+export const DEFAULT_SLOT_CONFIG_GS: SlotConfig =
+  getProfileDefaultSlotConfig(GS_PROFILE, "APPLE2GS")
 
 export enum AUTO_SNAPSHOT {
   AUTO_OFF,
@@ -718,7 +707,8 @@ const isRawBlockImage = (filename: string, fileSize: number) =>
 
 // Only the IIgs wires indices 4/5: slot 5 is its built-in 3.5" drive pair. On
 // every other machine 3.5" media has to be served as a block volume.
-export const machineHasThreeInchBay = (machineName: string) => machineName === "APPLE2GS"
+export const machineHasThreeInchBay = (machineName: string) =>
+  getMachineCapabilities(machineName as MACHINE_NAME).hasThreeInchBay
 
 export const canDriveTakeImage = (
   index: number,

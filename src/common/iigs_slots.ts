@@ -1,4 +1,4 @@
-import { DEFAULT_SLOT_CONFIG_GS } from "./utility"
+import { getProfileDefaultSlotConfig, GS_PROFILE } from "./machine_profile"
 
 // Apple IIgs slot model.
 //
@@ -24,7 +24,7 @@ export const isIigsBuiltinSlot = (card: SLOT_CARD_ID): card is IigsBuiltinSlot =
   (IIGS_BUILTIN_SLOTS as readonly string[]).includes(card)
 
 export const getIigsSlotDefault = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7): SLOT_CARD_ID =>
-  DEFAULT_SLOT_CONFIG_GS[slot]
+  getProfileDefaultSlotConfig(GS_PROFILE, "APPLE2GS")[slot]
 
 // $C02D SLTROMSEL: bit N = 1 maps the ROM of the card in slot N, bit N = 0
 // leaves the motherboard's slot firmware mapped.

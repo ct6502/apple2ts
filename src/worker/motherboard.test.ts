@@ -482,6 +482,41 @@ test("warp speed mode yields between frames instead of spinning on a zero refres
   }
 })
 
+test("classic refresh accounts CPU cycles once, at the profile rate", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  const previousState = getExternalMachineState()
+  const previousBytes = Array.from(memory.slice(0x6000, 0x6003))
+  const previousPC = s6502.PC
+
+  try {
+    doSetMachineName("APPLE2EE")
+    doSetSpeedMode(0) // Classic Normal: 17030 cycles per refresh.
+    resetCpuSpeedForTesting()
+    memory.set([0x4C, 0x00, 0x60], 0x6000) // JMP $6000
+    updateAddressTables()
+    setPC(0x6000)
+    const before = s6502.cycleCount
+    doSetRunMode(RUN_MODE.RUNNING, false)
+
+    // cpu6502.processInstruction() already writes s6502.cycleCount. The run
+    // loop must not advance it again: doing so doubled the classic clock.
+    const elapsed = s6502.cycleCount - before
+    expect(elapsed).toBeGreaterThan(17000)
+    expect(elapsed).toBeLessThanOrEqual(17030 * 1.1)
+  } finally {
+    doSetRunMode(RUN_MODE.PAUSED, false)
+    doSetMachineName(previousState.machineName)
+    doSetSpeedMode(previousState.speedMode)
+    resetCpuSpeedForTesting()
+    memory.set(previousBytes, 0x6000)
+    setPC(previousPC)
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
+})
+
+
 test("run changes complete after publishing their state", () => {
   const previousState = getExternalMachineState()
   const passMachineState = jest.spyOn(worker2main, "passMachineState")

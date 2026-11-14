@@ -1,6 +1,7 @@
 import { DiskCollectionSortMode, setPreferenceDiskCollectionSort } from "../../localstorage"
 import { handleGetMachineName, handleGetSlotConfig, handleGetVeraSdStatus, handleSetVeraSdWriteProtected, passSetDriveProps } from "../../main2worker"
-import { CLOUD_SYNC, getCleanDiskFilename, getDefaultDiskDriveIndex, getPrimaryDiskUrl } from "../../../common/utility"
+import { CLOUD_SYNC, getCleanDiskFilename, getDefaultDiskDriveIndex, getPrimaryDiskUrl, machineHasThreeInchBay } from "../../../common/utility"
+import { getMachineCapabilities } from "../../../common/machine_profile"
 import {
   DISK_COLLECTION_ITEM_TYPE,
   TAB_INDEX,
@@ -118,7 +119,7 @@ const getCollectionDriveIndex = (disk: DiskCollectionItem) => {
   if (selectedCollectionDriveIndex !== undefined) return selectedCollectionDriveIndex
   const filename = disk.cloudData?.fileName || getPrimaryDiskUrl(disk)
   const fileSize = disk.cloudData?.fileSize ?? disk.fileSize
-  return getDefaultDiskDriveIndex(filename, fileSize, handleGetMachineName() === "APPLE2GS")
+  return getDefaultDiskDriveIndex(filename, fileSize, machineHasThreeInchBay(handleGetMachineName()))
 }
 
 const diskTemplateBindings: RetroControlBindings = {
@@ -1029,7 +1030,7 @@ const DiskInterface = (props: DisplayProps) => {
   const isVeraInstalled = slotConfig[2] === "vera" || slotConfig[4] === "vera"
   // The Apple IIgs has a second built-in floppy slot (slot 5, 3.5") alongside
   // slot 6 (5.25"). Drives 4 and 5 only exist on that machine.
-  const isIIgs = handleGetMachineName() === "APPLE2GS"
+  const isIIgs = getMachineCapabilities(handleGetMachineName()).isGS
   const allSlotsDisabled = slotConfig[1] === "none" && slotConfig[6] === "none" && slotConfig[7] === "none" && !isVeraInstalled
 
   return (

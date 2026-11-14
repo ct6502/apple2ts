@@ -5,6 +5,7 @@ import { setSlotDriver, setSlotIOCallback, memGet, memSet, memSetC000, memGetC00
 import { iigsADB, noteAdbLog } from "../iigs_adb"
 import { registerSlotCardState } from "./slot_card_state"
 import { MouseEventSimple } from "../../common/utility"
+import { getMachineCapabilities } from "../../common/machine_profile"
 import { interruptRequest } from "../cpu6502"
 import { s6502 } from "../instructions"
 import { passShowAppleMouse } from "../worker2main"
@@ -500,7 +501,7 @@ let mouseUiEventCount = 0
 export const getMouseUiEventCount = () => mouseUiEventCount
 export const MouseCardEvent = (event: MouseEventSimple) => {
   mouseUiEventCount++
-  if (getCurrentMachineName() === "APPLE2GS") {
+  if (getMachineCapabilities(getCurrentMachineName()).hasAdbMouse) {
     return iigsADBEvent(event)
   }
 
@@ -629,7 +630,7 @@ let adbLastSeenX = 0
 let adbLastSeenY = 0
 
 const iigsClosedLoopActive = (): boolean => {
-  if (getCurrentMachineName() !== "APPLE2GS" || !iigsEventManagerActive()) return false
+  if (!getMachineCapabilities(getCurrentMachineName()).hasAdbMouse || !iigsEventManagerActive()) return false
   if (adbFeedbackStale) return false
   const { x, y } = getIigsMousePos()
   return x !== 0 || y !== 0

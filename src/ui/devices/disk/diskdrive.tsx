@@ -27,6 +27,7 @@ import React from "react"
 import { CLOUD_SYNC, FILE_SUFFIXES_ALL, getCleanDiskFilename, isWozData, getBlobFromDiskData, getDiskBlobForSync, RUN_MODE } from "../../../common/utility"
 import { decompressAllDiskFiles, compareDiskFilenames } from "../../../common/zip_utils"
 import PopupMenu from "../../controls/popupmenu"
+import { getMachineCapabilities } from "../../../common/machine_profile"
 import { svgDemoZooLogo } from "../../img/icon_demozoo"
 import { passSetDriveProps, handleGetSlotConfig, handleGetMachineName, handleGetRunMode } from "../../main2worker"
 import InternetArchivePopup from "./internetarchivedialog"
@@ -376,7 +377,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const slotConfig = handleGetSlotConfig()
-  const isIIgs = handleGetMachineName() === "APPLE2GS"
+  const isIIgs = getMachineCapabilities(handleGetMachineName()).isGS
   // Drive indices map to slots as: 0/1 -> slot 7 (SmartPort), 2/3 -> slot 6
   // (5.25"), 4/5 -> slot 5 (3.5").
   const slot = dprops.index < 2 ? 7 : (dprops.index < 4 ? 6 : 5)
