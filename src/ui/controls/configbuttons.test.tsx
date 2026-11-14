@@ -37,12 +37,12 @@ const renderConfigButtons = () => {
 
 test("GS mode puts the DA button immediately right of the Control Panel icon", () => {
   const language = i18n.getLanguage()
+  i18n.setLanguage("en")
   const machineMock = jest.mocked(handleGetMachineName)
   const deskMock = jest.mocked(passIigsDeskPanel)
   machineMock.mockReturnValue("APPLE2GS")
   const { container, root } = renderConfigButtons()
   try {
-    i18n.setLanguage("en")
     const buttons = Array.from(container.querySelectorAll("button"))
     const controlPanel = buttons.find(button =>
       button.title === t("config.openRetroControlPanel"))
@@ -66,11 +66,11 @@ test("GS mode puts the DA button immediately right of the Control Panel icon", (
 
 test("classic mode hides the IIgs DA button", () => {
   const language = i18n.getLanguage()
+  i18n.setLanguage("en")
   const machineMock = jest.mocked(handleGetMachineName)
   machineMock.mockReturnValue("APPLE2EE")
   const { container, root } = renderConfigButtons()
   try {
-    i18n.setLanguage("en")
     expect(container.querySelector("#tour-iigs-desk-button")).toBeNull()
   } finally {
     act(() => root.unmount())
