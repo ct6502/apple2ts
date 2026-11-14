@@ -7,11 +7,12 @@ import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import CheckBox from "../panels/checkbox"
 import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode, getUIStateBoolean } from "../ui_settings"
-import { DEFAULT_SLOT_CONFIG, UI_THEMES } from "../../common/utility"
+import { APP_DEFAULT_MACHINE, APP_MACHINE_NAMES } from "../../common/app_target"
+import { DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, UI_THEMES } from "../../common/utility"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode, handleGetSlotConfig } from "../main2worker"
 import { useTranslation } from "../../i18n/useTranslation"
-import { SLOT_NUMBERS, getSlotOptions } from "../devices/machineconfig"
+import { SLOT_NUMBERS, getSlotOptions } from "../../common/slot_options"
 import TabBase from "../tabbase"
 import Tab from "../tab"
 import { getCardShortLabels, ramdiskParams, getRamdiskValues } from "../ui_utilities"
@@ -86,16 +87,6 @@ const LinkBuilder = () => {
     t("linkBuilder.colorNames.inverse")
   ]
   const colorModes = ["color", "nofringe", "green", "amber", "white", "inverse"]
-
-  const speedNames = [
-    t("linkBuilder.speedNames.snail"),
-    t("linkBuilder.speedNames.slow"),
-    t("linkBuilder.speedNames.normal"),
-    t("linkBuilder.speedNames.two"),
-    t("linkBuilder.speedNames.three"),
-    t("linkBuilder.speedNames.four"),
-    t("linkBuilder.speedNames.warp")
-  ]
   const speedParams = ["snail", "slow", "normal", "two", "three", "fast", "warp"]
 
   const gameModes = [
@@ -121,6 +112,10 @@ const LinkBuilder = () => {
   const [s6d1Url, setS6d1Url] = useState("")
   const [s6d2Disk, setS6d2Disk] = useState("")
   const [s6d2Url, setS6d2Url] = useState("")
+  const [s5d1Disk, setS5d1Disk] = useState("")
+  const [s5d1Url, setS5d1Url] = useState("")
+  const [s5d2Disk, setS5d2Disk] = useState("")
+  const [s5d2Url, setS5d2Url] = useState("")
   const [s7d1Disk, setS7d1Disk] = useState("")
   const [s7d1Url, setS7d1Url] = useState("")
   const [s7d2Disk, setS7d2Disk] = useState("")
@@ -132,6 +127,8 @@ const LinkBuilder = () => {
   const [extraDriveUrls, setExtraDriveUrls] = useState<Record<string, string[]>>({
     s6d1: [],
     s6d2: [],
+    s5d1: [],
+    s5d2: [],
     s7d1: [],
     s7d2: [],
     s2d1: [],
@@ -175,11 +172,51 @@ const LinkBuilder = () => {
   const [tabSection, setTabSection] = useState(TAB.DISK)
   const [slotConfig, setSlotConfig] = useState<SlotConfig>({ ...DEFAULT_SLOT_CONFIG })
 
-  const machineValues = [t("machine.models.apple2ee"), t("machine.models.apple2eu"), t("machine.models.apple2p")]
+  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs, then
+  // filter to what this deployment target supports. Both sites are otherwise
+  // the same build, so the table also keeps whichever running machine is valid.
+  const allMachines = [
+    { name: "APPLE2P" as MACHINE_NAME, label: t("machine.models.apple2p") },
+    { name: "APPLE2EU" as MACHINE_NAME, label: t("machine.models.apple2eu") },
+    { name: "APPLE2EE" as MACHINE_NAME, label: t("machine.models.apple2ee") },
+    { name: "APPLE2GS" as MACHINE_NAME, label: "Apple IIgs" },
+  ]
+  const visibleMachines = allMachines.filter(({ name }) => APP_MACHINE_NAMES.includes(name))
+  const machineValues = visibleMachines.map(({ label }) => label)
+  // Each droplist row and the MACHINE_NAME it stands for. Retrieving the running
+  // machine and reading a user choice both go through this table so the two
+  // cannot drift apart - the reason a running IIgs used to come back as an IIe.
+  const MACHINE_NAMES: MACHINE_NAME[] = visibleMachines.map(({ name }) => name)
+  const machineNameFor = (row: string): MACHINE_NAME =>
+    MACHINE_NAMES[machineValues.indexOf(row)] ?? APP_DEFAULT_MACHINE
+  const machineRowFor = (name: MACHINE_NAME): string => {
+    const exactRow = machineValues[MACHINE_NAMES.indexOf(name)]
+    if (exactRow !== undefined) return exactRow
+    return machineValues[Math.max(MACHINE_NAMES.indexOf(APP_DEFAULT_MACHINE), 0)]
+  }
+  const lbMachineName = machineNameFor(machine)
 
-  // Derive MACHINE_NAME from local machine state so slot options stay in sync
-  const lbMachineName: MACHINE_NAME = machine === machineValues[2] ? "APPLE2P"
-    : machine === machineValues[1] ? "APPLE2EU" : "APPLE2EE"
+  // The IIgs shares speed indices with the classic machines but names rows 2-5
+  // after the clock instead of the multiplier, so a label has to be read from the
+  // table of the machine it belongs to. Storing a classic label while the GS table
+  // is live makes speedNames.indexOf() answer -1 and drops the speed parameter.
+  const speedNamesFor = (name: MACHINE_NAME): string[] => {
+    const edges = [t("linkBuilder.speedNames.snail"), t("linkBuilder.speedNames.slow")]
+    const warp = t("linkBuilder.speedNames.warp")
+    const middle = name === "APPLE2GS"
+      ? ["1.02 MHz", "2.8 MHz", "7.1 MHz", "14.3 MHz"]
+      : [t("linkBuilder.speedNames.normal"), t("linkBuilder.speedNames.two"),
+        t("linkBuilder.speedNames.three"), t("linkBuilder.speedNames.four")]
+    return [...edges, ...middle, warp]
+  }
+  const speedNames = speedNamesFor(lbMachineName)
+
+  // Which floppy bays the current slot config actually exposes. On a IIgs the
+  // 5.25" pair is the Disk Port and the 3.5" pair the Smart Port in slot 5;
+  // "disk35" is the id an older saved configuration may still carry for the latter.
+  const isDiskPortSlot = slotConfig[6] === "disk2" || slotConfig[6] === "gsDiskPort"
+  const isThreeInchSlot = slotConfig[5] === "gsSmartPort" || slotConfig[5] === "disk35"
+
 
   const themeValues = [
     t("linkBuilder.themes.classic"),
@@ -242,11 +279,16 @@ const LinkBuilder = () => {
       params.push(`address=${encodeURIComponent(hexAddress)}`)
     }
 
-    const machineIndex = machineValues.indexOf(machine)
-    if (machineIndex === 1) { // unenhanced
+    if (lbMachineName === "APPLE2EU") {
       params.push("machine=apple2eu")
-    } else if (machineIndex === 2) { // II+
+    } else if (lbMachineName === "APPLE2P") {
       params.push("machine=apple2p")
+    } else if (lbMachineName === "APPLE2GS") {
+      // The Apple IIgs has to be named: a link that leaves ?machine= out opens
+      // whatever machine the visitor last used, so a IIgs volume would be
+      // scanned by an IIe. The classic entries stay silent because leaving the
+      // parameter off is how a link follows the visitor's own saved choice.
+      params.push("machine=apple2gs")
     }
 
     const ramIndex = ramdiskValues.indexOf(ramdisk)
@@ -268,7 +310,11 @@ const LinkBuilder = () => {
     }
 
     const speedIndex = speedNames.indexOf(speed)
-    if (speedIndex !== -1 && speedIndex !== 2) { // 2 is "1 MHz (default)"
+    // Classic machines boot at index 2 (1 MHz); the IIgs boots at 2.8 MHz, so
+    // that is the one choice a link need not spell out. Skipping the wrong row
+    // would silently hand back the other machine's default speed.
+    const defaultSpeedIndex = lbMachineName === "APPLE2GS" ? 3 : 2
+    if (speedIndex !== -1 && speedIndex !== defaultSpeedIndex) {
       params.push(`speed=${speedParams[speedIndex]}`)
     }
 
@@ -281,7 +327,8 @@ const LinkBuilder = () => {
     let hasVera = false
     SLOT_NUMBERS.forEach(slot => {
       const card = slotConfig[slot]
-      if (card !== DEFAULT_SLOT_CONFIG[slot]) {
+      const defaultCard = lbMachineName === "APPLE2GS" ? DEFAULT_SLOT_CONFIG_GS[slot] : DEFAULT_SLOT_CONFIG[slot]
+      if (card !== defaultCard) {
         params.push(`slot${slot}=${card}`)
         if (card === "vera") hasVera = true
       }
@@ -293,8 +340,10 @@ const LinkBuilder = () => {
 
     if (tabSection === TAB.DISK) {
       const drives = [
-        { key: "s6d1", disk: s6d1Disk, url: s6d1Url, enabled: slotConfig[6] === "disk2" },
-        { key: "s6d2", disk: s6d2Disk, url: s6d2Url, enabled: slotConfig[6] === "disk2" },
+        { key: "s5d1", disk: s5d1Disk, url: s5d1Url, enabled: isThreeInchSlot },
+        { key: "s5d2", disk: s5d2Disk, url: s5d2Url, enabled: isThreeInchSlot },
+        { key: "s6d1", disk: s6d1Disk, url: s6d1Url, enabled: isDiskPortSlot },
+        { key: "s6d2", disk: s6d2Disk, url: s6d2Url, enabled: isDiskPortSlot },
         { key: "s7d1", disk: s7d1Disk, url: s7d1Url, enabled: slotConfig[7] === "smartport" },
         { key: "s7d2", disk: s7d2Disk, url: s7d2Url, enabled: slotConfig[7] === "smartport" },
         { key: "s2d1", disk: s2d1Disk, url: s2d1Url, enabled: slotConfig[2] === "vera" },
@@ -331,7 +380,8 @@ const LinkBuilder = () => {
     }
 
     if (tabSection === TAB.DISK) {
-      const hasExplicitBootDrive = params.some(p => p.startsWith("s6d1=") || p.startsWith("s7d1="))
+      const hasExplicitBootDrive = params.some(p =>
+        p.startsWith("s5d1=") || p.startsWith("s6d1=") || p.startsWith("s7d1="))
       if (!hasExplicitBootDrive) {
         if (isCustomURL) {
           if (fragmentURL) {
@@ -377,7 +427,10 @@ const LinkBuilder = () => {
     setTextBlock("")
     setLoadBlock("")
     setHexBlock("")
-    setMachine(machineValues[0])
+    // Reset to the target's default machine (IIe enhanced on apple2ts, IIgs on
+    // apple2gts), not the first row: the rows are user-facing order, while the
+    // default machine still keeps the machine= parameter out of a fresh link.
+    setMachine(machineRowFor(APP_DEFAULT_MACHINE))
     setRamdisk(ramdiskValues[0])
     setScanlines(false)
     setSelectedDisk("")
@@ -386,6 +439,10 @@ const LinkBuilder = () => {
     setS6d1Url("")
     setS6d2Disk("")
     setS6d2Url("")
+    setS5d1Disk("")
+    setS5d1Url("")
+    setS5d2Disk("")
+    setS5d2Url("")
     setS7d1Disk("")
     setS7d1Url("")
     setS7d2Disk("")
@@ -415,8 +472,7 @@ const LinkBuilder = () => {
     setHexAddress("")
 
     const machineName = handleGetMachineName()
-    setMachine(machineName === "APPLE2P" ? machineValues[2] :
-      machineName === "APPLE2EU" ? machineValues[1] : machineValues[0])
+    setMachine(machineRowFor(machineName))
 
     const mem = handleGetMemSize()
     const memIndex = mem > 8000 ? 4 : mem > 4000 ? 3 : mem > 1000 ? 2 : mem > 500 ? 1 : 0
@@ -424,7 +480,9 @@ const LinkBuilder = () => {
 
     const currentSpeed = handleGetSpeedMode()
     if (currentSpeed >= -2 && currentSpeed <= 4) {
-      setSpeed(speedNames[currentSpeed + 2])
+      // Indexed against the retrieved machine's own labels, not the ones the
+      // panel happened to show before this click.
+      setSpeed(speedNamesFor(machineName)[currentSpeed + 2])
     } else {
       setSpeed("")
     }
@@ -435,6 +493,10 @@ const LinkBuilder = () => {
     setS6d1Url("")
     setS6d2Disk("")
     setS6d2Url("")
+    setS5d1Disk("")
+    setS5d1Url("")
+    setS5d2Disk("")
+    setS5d2Url("")
     setS7d1Disk("")
     setS7d1Url("")
     setS7d2Disk("")
@@ -472,9 +534,23 @@ const LinkBuilder = () => {
           value={machine}
           values={machineValues}
           setValue={(val: string) => {
+            const next = machineNameFor(val)
             setMachine(val)
+            const wasGS = lbMachineName === "APPLE2GS"
+            const isGS = next === "APPLE2GS"
+            if (wasGS !== isGS) {
+              // The two families share no slot cards: a classic config carried
+              // into a IIgs link would install a Mockingboard over the mouse
+              // port, and a GS config carried into a classic link dies in the
+              // URL parser because "gsMouse" is not a classic card. Either way
+              // the switch starts from that family's own defaults.
+              setSlotConfig(isGS ? { ...DEFAULT_SLOT_CONFIG_GS }
+                : { ...DEFAULT_SLOT_CONFIG, 3: next === "APPLE2P" ? "videoterm" : "aux" })
+              setRamdisk(ramdiskValues[0])
+              return
+            }
             // Adjust slot 3 when crossing between II+ and IIe families
-            const newIsIIp = val === machineValues[2]
+            const newIsIIp = next === "APPLE2P"
             const wasIIp = lbMachineName === "APPLE2P"
             if (newIsIIp !== wasIIp) {
               setSlotConfig(prev => ({
@@ -698,7 +774,23 @@ const LinkBuilder = () => {
       <div className="dialog-title" style={{ marginTop: "12px", marginBottom: "4px" }}>
         {t("linkBuilder.additionalDiskDrives")}
       </div>
-      {slotConfig[6] === "disk2" && (
+      {isThreeInchSlot && (
+        <>
+          <Droplist
+            name={t("linkBuilder.slot5Drive1")}
+            value={s5d1Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS5d1Disk} />
+          {s5d1Disk === customUrlOption && renderDriveCustomUrlInputs("s5d1", s5d1Url, setS5d1Url, "http://example.com/floppy35.dsk")}
+          <Droplist
+            name={t("linkBuilder.slot5Drive2")}
+            value={s5d2Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS5d2Disk} />
+          {s5d2Disk === customUrlOption && renderDriveCustomUrlInputs("s5d2", s5d2Url, setS5d2Url, "http://example.com/floppy35b.dsk")}
+        </>
+      )}
+      {isDiskPortSlot && (
         <>
           <Droplist
             name={t("linkBuilder.slot6Drive1")}

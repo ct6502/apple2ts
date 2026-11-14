@@ -7,38 +7,7 @@ import { handleSetCPUState } from "../controller"
 import { isCanvasFullscreen, setCanvasFullscreen } from "../controls/fullscreenbutton"
 import type { RetroControlMetadata, RetroMenuContext } from "../retro/retromenucontext"
 import { choiceBinding, controlsFromJson, type RetroControlBindings } from "../retro/retrocontrolmetadata"
-
-export const RAM_OPTIONS = [64, 512, 1024, 4096, 8192] as const
-
-export const SLOT_NUMBERS = [1, 2, 3, 4, 5, 6, 7] as const
-type SlotNumber = typeof SLOT_NUMBERS[number]
-
-type SlotOption = {
-  card: SLOT_CARD_ID
-  ramSizeKb?: typeof RAM_OPTIONS[number]
-}
-
-export const getSlotOptions = (slot: SlotNumber, machine: MACHINE_NAME): SlotOption[] => {
-  if (slot === 3) {
-    return machine === "APPLE2P"
-      ? [{ card: "none" }, { card: "videoterm" }, { card: "vidhd" }]
-      : [
-        { card: "none" },
-        ...RAM_OPTIONS.map(ramSizeKb => ({ card: "aux" as const, ramSizeKb })),
-        { card: "vidhd" },
-      ]
-  }
-  const options: Record<SlotNumber, SLOT_CARD_ID[]> = {
-    1: ["none", "ssc"],
-    2: ["none", "vera", "passport", "softcard"],
-    3: [],
-    4: ["none", "mouse", "mockingboard", "vera", "softcard"],
-    5: ["none", "mouse", "mockingboard", "softcard"],
-    6: ["none", "disk2"],
-    7: ["none", "smartport"],
-  }
-  return options[slot].map(card => ({ card }))
-}
+import { getSlotOptions, SLOT_NUMBERS, type SlotNumber, type SlotOption } from "../../common/slot_options"
 
 const getAuxCardLabel = (sizeKb: number): string => {
   if (sizeKb <= 64) {
@@ -60,7 +29,14 @@ const retroCardLabels = (context: RetroMenuContext): Record<SLOT_CARD_ID, string
   vera: context.t("retroControl.card.vera"),
   passport: context.t("retroControl.card.passport"),
   disk2: context.t("retroControl.card.disk2"),
+  disk35: "3.5\" Disk Drive",
   smartport: context.t("retroControl.card.smartport"),
+  gsPrinter: "Printer Port",
+  gsModem: "Modem Port",
+  gsText80: "80-Column Text",
+  gsMouse: "Mouse Port",
+  gsSmartPort: "Smart Port",
+  gsDiskPort: "Disk Port",
 })
 
 const getRetroSlotOptionLabel = (context: RetroMenuContext, option: SlotOption) =>
@@ -89,7 +65,7 @@ const selectRetroSlotCard = (context: RetroMenuContext, slot: SlotNumber, option
     setPreferenceRamWorks(ramSizeKb, context.settingsOrigin)
   }
   nextConfig[slot] = card
-  setPreferenceSlotConfig(nextConfig, context.settingsOrigin)
+  setPreferenceSlotConfig(nextConfig, context.settingsOrigin, handleGetMachineName())
   context.displayProps.updateDisplay()
 }
 

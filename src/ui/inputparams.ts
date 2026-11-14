@@ -1,6 +1,6 @@
 import { COLOR_MODE, MONITOR_MODE, RUN_MODE, UI_THEMES, parseDiskSwapperParam } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetIsDebugging, passEnableGamePatches } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetIsDebugging, passSetSlotConfig, passSetIwmStatsEnabled, passSetRomTraceEnabled, passResetRomTrace, passSetRomTracePeek, passSetRomTraceWatch, passShrDbgRequest, passShrCodeRequest, passShrWindowRequest, passShrDumpRequest, passShrTraceRequest, passSetAdbTraceEnabled, clearAdbTrace, setMouseEventLog, passSetEnsoniqDebugEnabled, passEnableGamePatches } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL, handleSetDiskSwapperFromURLs, resetAllDiskDrives } from "./devices/disk/driveprops"
 import { handleSetVeraSdFromURL } from "./devices/vera/verasdicon"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
@@ -9,7 +9,9 @@ import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setColorMode, setMonitorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
-import { getPreferenceSlotConfig, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
+import { getPreferenceMachineName, getPreferenceSlotConfig, getPreferenceSlotConfigBackup, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
+import { APP_MACHINE_NAMES } from "../common/app_target"
+import { sanitizeSlotConfig } from "../common/slot_options"
 import { Expectin } from "./api/expectin"
 import { notifySettingsChanged } from "./settingschange"
 
@@ -41,6 +43,73 @@ export const handleInputParams = (paramString = "") => {
     passSetIsDebugging(true)
     passSetShowDebugTab(true)
     notifySettingsChanged(["panels.tab"], "external")
+  }
+
+  // ?iwmgaps=1 turns on the Apple IIgs IWM read-cadence instrumentation, which
+  // is off in normal use. The latest sample is readable as window.__iwmStats.
+  if (params.get("iwmgaps") === "1") {
+    passSetIwmStatsEnabled(true)
+  }
+
+  // ?romtrace=1 turns on the debug 65816 PC trace, which is off in normal use.
+  // The latest sample is readable as window.__romTrace, and
+  // window.__romTraceReset() marks a fresh boot attempt.
+  if (params.get("romtrace") === "1") {
+    passSetRomTraceEnabled(true)
+    if (typeof window !== "undefined") {
+      const w = window as unknown as {
+        __romTraceReset?: () => void
+        __romTracePeek?: (addrs: number[]) => void
+        __romTraceWatch?: (addrs: number[], ranges?: number[]) => void
+        __shrDbgReset?: () => void
+        __shrDump?: (reset?: boolean) => void
+        __shrTrace?: (on: boolean) => void
+        __shrCode?: (addrs: number[]) => void
+        __shrWindow?: (regions: Array<{ a: number, n: number }>) => void
+      }
+      w.__romTraceReset = () => passResetRomTrace()
+      // Ask the worker for specific 24-bit addresses alongside each trace sample.
+      // The answer lands in window.__romTrace.peekValues, which is the only way to
+      // read emulator memory from the browser without a dedicated request.
+      w.__romTracePeek = (addrs: number[]) => passSetRomTracePeek(addrs)
+      // Capture the last 200 PCs before the first N executions of each watched
+      // 24-bit address, so a jump into unexpected memory names its branch site.
+      w.__romTraceWatch = (addrs: number[], ranges?: number[]) => passSetRomTraceWatch(addrs, ranges)
+      // Zero the SHR write census so the next sample covers only the window between
+      // the reset and the read. window.__romTrace.shrDbg carries the answer.
+      w.__shrDbgReset = () => passShrDbgRequest(true)
+      // Grab the raw displayed SHR buffer once, as {len, scb, b64}, in
+      // window.__romTrace.shrDump. Pass true to zero the census at the same time.
+      w.__shrDump = (reset?: boolean) => passShrDumpRequest(reset === true)
+      // Attribute every store into the displayed SHR window to the instruction
+      // that issued it, so "the erase never runs" and "the erase runs at the
+      // wrong address" can be told apart. Results: __romTrace.shrDbg.writers.
+      w.__shrTrace = (on: boolean) => passShrTraceRequest(on !== false)
+      // Fetch guest code bytes by 24-bit address; the answer lands in
+      // window.__romTrace.codeBlocks. Pairs with the write census: the census names
+      // the storing instruction, this reads it.
+      w.__shrCode = (addrs: number[]) => passShrCodeRequest(addrs)
+      // Or whole routines at once: the answers accumulate on
+      // window.__shrCodeResult as [{addr, bytes}], which is how a draw/erase pair
+      // spread over two routines gets read in one round trip instead of one
+      // 256-byte straddle at a time.
+      w.__shrWindow = (regions) => passShrWindowRequest(regions)
+    }
+  }
+
+  // ?adbtrace=1+clear turns on the ADB event ring and clears it, marking a
+  // fresh attempt; ?adbtrace=1 alone polls without touching the ring.
+  if (params.get("adbtrace")) {
+    passSetAdbTraceEnabled(true, params.get("adbtrace") === "1+clear")
+    setMouseEventLog(true)
+    if (typeof window !== "undefined") {
+      (window as unknown as { __adbLogClear?: () => void }).__adbLogClear =
+        () => clearAdbTrace()
+    }
+  }
+
+  if (params.get("ensoniqdbg")) {
+    passSetEnsoniqDebugEnabled(true)
   }
 
   if (params.get("gamepatches") === "off") {
@@ -81,6 +150,14 @@ export const handleInputParams = (paramString = "") => {
     two: 1,
     three: 2,
     fast: 3,
+    "1.02": 0,
+    "1.02mhz": 0,
+    "2.8": 1,
+    "2.8mhz": 1,
+    "7.1": 2,
+    "7.1mhz": 2,
+    "14.3": 3,
+    "14.3mhz": 3,
     warp: 4,
     ludicrous: 4,
   }
@@ -116,13 +193,20 @@ export const handleInputParams = (paramString = "") => {
   }
 
   const machineName = params.get("machine")?.toUpperCase()
+  let urlMachine: MACHINE_NAME | undefined
   if (machineName) {
-    if (machineName === "APPLE2P") {
-      passSetMachineName("APPLE2P")
-    } else if (machineName === "APPLE2EU") {
-      passSetMachineName("APPLE2EU")
-    } else {
-      passSetMachineName("APPLE2EE")
+    // Keep unknown machine values on the existing fallback, but first make the
+    // resolved name part of this site's menu. A classic site must not boot a
+    // IIgs from ?machine=apple2gs, nor may an old link inject the IIe family
+    // into apple2gts.com.
+    const resolvedMachine: MACHINE_NAME =
+      machineName === "APPLE2P" ? "APPLE2P"
+        : machineName === "APPLE2EU" ? "APPLE2EU"
+          : machineName === "APPLE2GS" ? "APPLE2GS"
+            : "APPLE2EE"
+    if (APP_MACHINE_NAMES.includes(resolvedMachine)) {
+      urlMachine = resolvedMachine
+      passSetMachineName(resolvedMachine)
     }
   }
 
@@ -135,19 +219,39 @@ export const handleInputParams = (paramString = "") => {
     }
   }
 
-  const currentSlotConfig = getPreferenceSlotConfig()
+  // A machine URL boot must use that machine's saved layout, not the config
+  // loadPreferences() posted before the URL changed the worker's machine name.
+  // Validate slot cards against the machine this URL will actually run. A
+  // rejected ?machine= leaves urlMachine undefined, so the saved preference
+  // (itself target-filtered) decides whether this is a classic or GS layout.
+  const slotMachine = urlMachine ?? getPreferenceMachineName()
+  const urlSlotConfig = urlMachine
+    ? getPreferenceSlotConfigBackup(urlMachine)
+    : null
+  const currentSlotConfig = urlSlotConfig ?? getPreferenceSlotConfig()
   const nextSlotConfig = { ...currentSlotConfig }
   let slotConfigChanged = false
 
-  const validCards: Record<number, string[]> = {
-    1: ["none", "ssc"],
-    2: ["none", "vera", "passport", "softcard"],
-    3: ["none", "aux", "videoterm", "vidhd"],
-    4: ["none", "mouse", "mockingboard", "vera", "softcard"],
-    5: ["none", "mouse", "mockingboard", "softcard"],
-    6: ["none", "disk2"],
-    7: ["none", "smartport"],
-  }
+  const validCards: Record<number, string[]> = slotMachine === "APPLE2GS"
+    ? {
+        // IIgs Control Panel slot functions; "none" is an empty "Your Card".
+        1: ["gsPrinter", "ssc"],
+        2: ["gsModem"],
+        3: ["gsText80"],
+        4: ["gsMouse", "mockingboard"],
+        5: ["gsSmartPort", "disk35"], // disk35 = old id, sanitised below
+        6: ["gsDiskPort", "disk2"],
+        7: ["none", "smartport"],
+      }
+    : {
+        1: ["none", "ssc"],
+        2: ["none", "vera", "passport", "softcard"],
+        3: ["none", "aux", "videoterm", "vidhd"],
+        4: ["none", "mouse", "mockingboard", "vera", "softcard"],
+        5: ["none", "mouse", "mockingboard", "softcard"],
+        6: ["none", "disk2"],
+        7: ["none", "smartport"],
+      }
 
   for (let slotNum = 1; slotNum <= 7; slotNum++) {
     const cardParam = params.get(`slot${slotNum}`)?.toLowerCase()
@@ -220,7 +324,11 @@ export const handleInputParams = (paramString = "") => {
   }
 
   if (slotConfigChanged) {
-    setPreferenceSlotConfig(nextSlotConfig)
+    const sanitized = sanitizeSlotConfig(nextSlotConfig, slotMachine)
+    setPreferenceSlotConfig(sanitized, "external", slotMachine)
+    passSetSlotConfig(sanitized)
+  } else if (urlSlotConfig) {
+    passSetSlotConfig(urlSlotConfig)
   }
 
   const theme = params.get("theme")
@@ -349,6 +457,19 @@ export const handleInputParams = (paramString = "") => {
     }, 100)
   }
 
+  const bootParam = params.get("boot")
+  if (bootParam === "true" || bootParam === "1") {
+    // Defer the boot if a fragment disk will be mounted by handleFragment(),
+    // so the cold boot runs AFTER the disk image has landed (otherwise the
+    // ROM scans an empty drive and the boot fails with "INSERT SYSTEM DISK").
+    const hasFragment = typeof window !== "undefined" && window.location && window.location.hash && window.location.hash.length >= 2
+    if (!hasFragment) {
+      passSetRunMode(RUN_MODE.NEED_BOOT)
+    } else {
+      (window as any).__pendingBootAfterDisk = true
+    }
+  }
+
   return hasBasicProgram
 }
 
@@ -368,6 +489,13 @@ const isOneDriveAuthRedirect = () => {
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""))
   const has = (key: string) => params.has(key) || hashParams.has(key)
   return has("oauth") || ((has("access_token") || has("error")) && has("state"))
+}
+
+const triggerPendingBoot = () => {
+  if ((window as any).__pendingBootAfterDisk) {
+    (window as any).__pendingBootAfterDisk = false
+    setTimeout(() => passSetRunMode(RUN_MODE.NEED_BOOT), 100)
+  }
 }
 
 export const handleFragment = async (
@@ -410,6 +538,7 @@ export const handleFragment = async (
   // Slot 7 Drive 2 (SmartPort 2): s7d2 or hd2 -> drive index 1
   // Slot 6 Drive 1 (Disk II 1):   s6d1 or d1  -> drive index 2
   // Slot 6 Drive 2 (Disk II 2):   s6d2 or d2  -> drive index 3
+  // Slot 5 Drive 1/2 (IIgs 3.5"): s5d1 / s5d2 -> drive index 4 / 5
   const params = new URLSearchParams(search.toLowerCase())
   const porig = new URLSearchParams(search)
 
@@ -418,6 +547,8 @@ export const handleFragment = async (
     { keys: ["s7d2", "hd2"], index: 1 },
     { keys: ["s6d1", "d1"],  index: 2 },
     { keys: ["s6d2", "d2"],  index: 3 },
+    { keys: ["s5d1"],        index: 4 },
+    { keys: ["s5d2"],        index: 5 },
   ]
 
   const driveConfigs: Array<{ index: number; url: string }> = []
@@ -522,10 +653,19 @@ export const handleFragment = async (
     }
     if (anyLoaded) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
+    } else {
+      // Nothing landed, but ?boot=true still asked for a boot.
+      triggerPendingBoot()
     }
     return
   }
 
+  // A mount started below owns the deferred boot: it fires when the image has
+  // actually landed. This tail used to fire unconditionally 100 ms in, which on
+  // a slow fetch consumed the flag before the disk arrived, so the ROM scanned
+  // an empty bay and parked at the BASIC prompt (?boot=true&drive=4 on a fresh
+  // profile). A fragment that is not a disk still owes the boot.
+  let diskPending = false
   if (fragment.length >= 2) {
     const cloudProvider = params.get("cloudProvider")
     const regex: RegExp = /access_token=([^&]+)/
@@ -538,12 +678,32 @@ export const handleFragment = async (
       window.close()
     } else {
       const url = decodeURI(fragment.substring(1))
-      handleSetDiskFromURL(url, updateDisplay)
+      // ?drive=N picks which drive the disk goes into: 0/1 = S7 (SmartPort),
+      // 2/3 = S6 (5.25"), 4/5 = S5 (3.5"). Needed on the Apple IIgs, where the
+      // 5.25" and 3.5" drives live in their own slots and a 5.25" disk in S7 is
+      // simply never looked for. Without it the disk goes to drive 0.
+      const driveParam = params.get("drive")
+      diskPending = true
+      if (driveParam === null) {
+        handleSetDiskFromURL(url, updateDisplay).finally(triggerPendingBoot)
+      } else {
+        const driveIndex = Number(driveParam)
+        if (!Number.isInteger(driveIndex) || driveIndex < 0 || driveIndex > 5) {
+          console.error(`Ignoring invalid ?drive=${driveParam} (expected 0-5)`)
+          handleSetDiskFromURL(url, updateDisplay).finally(triggerPendingBoot)
+        } else {
+          handleSetDiskFromURL(url, updateDisplay, driveIndex).finally(triggerPendingBoot)
+        }
+      }
     }
   } else if (hasBasicProgram) {
     // If we had a BASIC program in the URL, and we didn't have a floppy,
     // then boot our default blank ProDOS disk.
-    handleSetDiskFromURL("blank.woz", updateDisplay)
+    diskPending = true
+    handleSetDiskFromURL("blank.woz", updateDisplay).finally(triggerPendingBoot)
+  }
+  if (!diskPending) {
+    triggerPendingBoot()
   }
 }
 

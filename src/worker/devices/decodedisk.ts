@@ -1,5 +1,7 @@
 import { convertdsk2woz } from "../../common/convertdsk2woz"
-import { crc32, ERROR_CODE, isHardDriveImage } from "../../common/utility"
+import { crc32, ERROR_CODE, isHardDriveImage, isThreePointFiveInchImage } from "../../common/utility"
+import { getCurrentMachineName } from "../memory"
+import { FLOPPY35_BLOCK_BYTES, FLOPPY35_OPTIMAL_TIMING, getFloppy35PayloadInfo } from "./floppy35"
 import { passErrorMsg } from "../worker2main"
 
 let errorMsg: ErrorMsg | null = null
@@ -10,7 +12,17 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   if (!isWoz2) return false
   driveState.isWriteProtected = diskData[22] === 1
   driveState.isSynchronized = diskData[23] === 1
-  driveState.optimalTiming = (diskData[59] > 0) ? diskData[59] : 32
+  // WOZ2's INFO chunk is the first one (header 12 bytes + chunk header 8), and
+  // its byte 1 is the disk type: 1 = 5.25", 2/3 = 3.5". Offset 61, which an
+  // earlier version of this read, is the tail of the creator field and always
+  // 0 - so a real 3.5" capture never reached the slot-5 media clock.
+  // The declared optimal bit timing is in the same units for both families
+  // (3.5 media declares 16 for a 2 us cell), and getNextByte advances by
+  // optimalTiming/8 CPU cycles per bit, so it needs no family adjustment.
+  driveState.is35 = diskData[21] === 2 || diskData[21] === 3
+  driveState.blockMedia35 = false
+  driveState.optimalTiming = (diskData[59] > 0) ? diskData[59]
+    : (driveState.is35 ? FLOPPY35_OPTIMAL_TIMING : 32)
   const fluxBlockNumber = (diskData[67] << 8) + diskData[66]
   const fluxBlockSize = (diskData[69] << 8) + diskData[68]
   if (fluxBlockNumber > 0 && fluxBlockSize > 0) {
@@ -48,6 +60,8 @@ const decodeWoz1 = (driveState: DriveState, diskData: Uint8Array): boolean => {
     return false
   }
   driveState.isWriteProtected = diskData[22] === 1
+  driveState.is35 = false
+  driveState.blockMedia35 = false
   for (let qtrtrack=0; qtrtrack < 160; qtrtrack++) {
     const tmap_index = diskData[88 + qtrtrack]
     if (tmap_index < 255) {
@@ -88,11 +102,39 @@ export const decodeDiskData = (
   const fname = driveState.filename.toLowerCase()
   const isWoz = diskData.length >= 4 && diskData[0] === 0x57 && diskData[1] === 0x4F && diskData[2] === 0x5A
   if (diskData.length > 10000) {
-    if (!isWoz && isHardDriveImage(fname, diskData?.length)) {
+    // Apple IIgs 3.5" media: a raw 800K block image needs nibblizing. The
+    // original bytes stay here for writeback; doSetEmuDriveNewData generates
+    // the GCR stream the IWM reads. Only the slot-5 pair (indices 4/5) is that
+    // drive: the same image in slot 7 is a SmartPort block volume and in slot 6
+    // it is 5.25" media it cannot hold.
+    if (!isWoz && getCurrentMachineName() === "APPLE2GS" &&
+      driveState.index >= 4 && driveState.index <= 5 &&
+      isThreePointFiveInchImage(fname, diskData.length)) {
+      const { size } = getFloppy35PayloadInfo(diskData)
+      if (size !== FLOPPY35_BLOCK_BYTES) {
+        errorMsg = { message: `Unknown format or unable to decode: ${driveState.filename}`, code: ERROR_CODE.ERROR }
+        passErrorMsg(errorMsg)
+        return new Uint8Array()
+      }
+      driveState.is35 = true
+      driveState.blockMedia35 = true
+      driveState.optimalTiming = FLOPPY35_OPTIMAL_TIMING
+      driveState.maxQuarterTrack = 159
+      // The head starts at track 0 and the drive panel labels a loaded floppy
+      // by its track, so an empty status reads as "this bay is dead".
+      driveState.status = " Trk 0"
+      return diskData
+    }
+    // A block image mounted in a slot-7 bay is a SmartPort volume, including an
+    // 800 KB one that would be 3.5" media in slot 5.
+    if (!isWoz && (driveState.hardDrive || isHardDriveImage(fname, diskData?.length)) &&
+      (isHardDriveImage(fname, diskData?.length) || isThreePointFiveInchImage(fname, diskData.length))) {
       if (enforceDriveKind && !driveState.hardDrive) {
         return new Uint8Array()
       }
       driveState.hardDrive = true
+      driveState.is35 = false
+      driveState.blockMedia35 = false
       driveState.status = ""
       return diskData
     }

@@ -61,6 +61,31 @@ Apple2TS provides full emulation for 5.25" floppy drives, SmartPort 3.5" hard dr
 
 ---
 
+## Apple IIgs Emulation Status
+
+Apple2TS emulates the 65816 CPU and a substantial part of the IIgs hardware. GS/OS 6.0.1 cold-boots to the Finder desktop in Super Hi-Res (640x400), slots conform to real IIgs hardware, and the Ensoniq ES5503 sound chip is emulated and audible.
+
+**What works**
+
+- 65816 CPU in both emulation and native mode, with full WDC cycle accounting
+- ROM 01 boot, POST, cold and warm reset, Ctrl-Reset to the Applesoft prompt
+- Super Hi-Res at 640x400 (200 scanlines doubled), with the Mega II aux `$2000-$9FFF` linearization done correctly
+- Slot 7 SmartPort hard drives: ProDOS 8, A2DeskTop, and GS/OS 6.0.1
+- Slot 6 built-in 5.25" drives and slot 5 built-in 3.5" drives through the IWM, with a bootable 5.25" path
+- ADB: keyboard and mouse reports are byte-for-byte equivalent to gssquared
+- Ensoniq ES5503 "DOC": 32 oscillators, 64KB wave RAM, the `$C03C`-`$C03F` Sound GLU interface with its pipelined data read, oscillator interrupts, and per-frame PCM output
+- RTC and 256-byte battery RAM, ADB, VBL/quarter-second interrupts
+
+**Known gaps**
+
+- **Events do not reach applications.** The GS/OS Finder cursor does not move and clicks do not select; interactive programs that wait on an event flag (for example Music Construction Set) freeze after their first screen. The ADB data path and the interrupt line are both correct, so the fault is in how the synthesised Bank `$E1` interrupt vector table is populated. See `AGENTS.md` sections 31 and 32 for the measurements and the current theory.
+- Slot 5 (3.5") has no GCR encoder yet, so 3.5" media cannot be read back.
+- Floppy boot in a real browser worker can fail intermittently; the jest harness boots reliably.
+
+The authoritative reference for hardware behaviour is [gssquared](https://github.com/ct6502/gssquared).
+
+---
+
 ## AI Agent Integration
 
 **[AI Agent Integration Guide](src/ui/mcp/README.md)**
@@ -146,11 +171,56 @@ It correctly bundles React in production mode and optimizes the build for best p
 
 There should be no errors generated. If you see errors, be sure to check that your version of node and npm are up to date. If there are still errors, contact the author.
 
+### Deployment Targets
+
+The same source tree serves two sites. Set `BUILD_TARGET` to select the deployment identity; unset means `apple2ts` for ordinary development and Jest runs.
+
+```sh
+npm run build:apple2ts   # BUILD_TARGET=apple2ts, output: dist/apple2ts
+npm run build:apple2gts  # BUILD_TARGET=apple2gts, output: dist/apple2gts
+```
+
+The target selects the default machine (Apple IIe for `apple2ts`, Apple IIgs for `apple2gts`), the page title / description / favicon, the PWA manifest name and description, and the `CNAME` (`apple2ts.com` or `apple2gts.com`). Both builds still contain the full emulator; the target mainly decides how the site presents itself. A plain `npm run build` remains available and writes the generic `dist` used by the optional Cloudflare Pages workflow.
+
+For local development with the IIgs identity, set the variable before `npm start`:
+
+```sh
+BUILD_TARGET=apple2gts npm start
+```
+
+On PowerShell: `$env:BUILD_TARGET="apple2gts"; npm start`.
+
 **Note**: This project uses Github Pages to host the emulator. You should not need to build the package, except to confirm that the build will work correctly when changes are committed.
 
 ### Deployment
 
-When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. Both workflows lint, build, and test the code. For pushes to `main`, the workflow also deploys the build to Github Pages using the built-in `GITHUB_TOKEN` — no Personal Access Token or repository secret is required.
+When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. Both workflows lint, build, and test the code. For pushes to `main`, the workflow builds both deployment targets.
+
+The `apple2ts` target is uploaded to Github Pages as before. The `apple2gts` target is pushed to the separate `ct6502/apple2gts` repository's `gh-pages` branch (with its own `apple2gts.com` CNAME), and then the `apple2ts-deploy` repository-dispatch event tells that repository's workflow to deploy Pages.
+
+The `ct6502/apple2gts` deployment requires one repository secret:
+
+- **`APPLE2GTS_TOKEN`**: a GitHub token with write access to `ct6502/apple2gts`. It is used both for pushing the `gh-pages` branch and for sending the deployment dispatch. Set it under **Settings → Secrets and variables → Actions**.
+
+The optional Cloudflare Pages workflow remains apple2ts-only and is unchanged.
+
+### Deployment Readiness Checklist
+
+Dual deployment is implemented in the workflows. Production activation still needs the upstream merge and the token secret; the CI and domain prerequisites are now verified:
+
+1. **Pending:** Set `APPLE2GTS_TOKEN` in the upstream repository. The token must be able to push `gh-pages` and dispatch the `apple2ts-deploy` event in `ct6502/apple2gts`. It is not set locally or in the environment.
+2. **Verified:** The `ct6502/apple2gts` Pages workflow listens for `repository_dispatch` type `apple2ts-deploy`, checks out `gh-pages`, and deploys Pages.
+3. **Verified:** `apple2gts.com` resolves through GitHub Pages A records, its `www` hostname is a CNAME to the apex domain, and the `gh-pages` branch carries the `apple2gts.com` CNAME. HTTPS responds normally; `apple2ts.com` is untouched.
+4. **Verified:** The CI gates are clean. `npm run lint` passes on the branch; the CI test gate runs the full suite with six known, pre-existing failures quarantined in `jest.config.cjs` under `CI` (`gs_basic_sound`, `gs_timepilot_flicker`, `gs_rom03_reloc`, `gs_acs_musique` external-media failure, `gs_mycrate`, `gs_ctrl_reset`). Local runs still exercise them and the underlying bugs remain P4 work.
+5. **Pending:** Push the workflow change to `main` and run the workflow once manually. Verify `apple2ts.com` and `apple2gts.com`, including the `CNAME` files in each artifact.
+
+The workflow is ready; do not activate external deployment until the token secret is present.
+
+### Target-specific Follow-ups
+
+- The machine menu hides Apple IIgs in the `apple2ts` target, but other machine pickers (for example the link builder) still list the full machine set.
+- Deeper target isolation for the debugger and preferences panels is still shared.
+- A persisted `APPLE2GS` preference can outrank the `apple2ts` default machine; decide whether the `apple2ts` build should force a classic machine.
 
 ## Upgrade Packages
 
@@ -223,6 +293,14 @@ Apple2TS uses its built-in software synthesizer by default. Selecting **Enable E
     ```
 1. Confirm that the disk label briefly turns red with an asterisk. After a second or less, the label turns white again, with no asterisk.
 1. Refresh browser, click on hard drive 1, choose _Load Disk from Device (Read/Write)_, choose your `Test.po`. After disk boots, verify that your `TEST` file is at the bottom of the file list.
+
+### If you change save-state code
+
+1. On a booted IIgs (GS/OS or a program that reads its cursor), move the pointer, then click _File save_ and download the `.a2ts` file.
+1. Refresh/reopen the page, load the `.a2ts` file from _File open_, and verify the pointer still moves and clicks still reach the guest (a restored startup dialog can be clicked rather than frozen).
+1. Restore an older save made before the controller fields existed and verify the machine boots to power-on defaults instead of carrying stale interrupts.
+1. Run `npm test -- src/worker/save_restore_adb.test.ts src/worker/save_restore_vgc.test.ts`.
+
 1. Multi-disk and archive testing:
     - Drag or load a multi-disk `.zip`, `.7z`, or `.gz` archive into floppy drive 1.
     - Verify that all disk images in the archive are loaded into the swapper list, the drive displays the multi-disk badge icon, and the first disk boots.

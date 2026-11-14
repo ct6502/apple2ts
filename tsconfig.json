@@ -13,12 +13,14 @@
       "@types/google.picker",
       "@types/jest",
       "@types/w3c-web-serial",
-      "@types/wicg-file-system-access"
+      "@types/wicg-file-system-access",
+      "node"
     ],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
     "strict": true,
     "noUnusedLocals": true,
     "forceConsistentCasingInFileNames": true,

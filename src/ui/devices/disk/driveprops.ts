@@ -4,7 +4,9 @@ import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import {
   CLOUD_SYNC,
+  canDriveTakeImage,
   getDefaultDiskDriveIndex,
+  machineHasThreeInchBay,
   getPrimaryDiskUrl,
   MAX_DRIVES,
   RUN_MODE,
@@ -16,7 +18,7 @@ import {
   getDiskBlobForSync,
 } from "../../../common/utility"
 import { clearDialogMessageContext, hasDialogMessageContext, showGlobalProgressModal } from "../../ui_utilities"
-import { passSetDriveNewData, requestSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
+import { passSetDriveNewData, requestSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, handleGetMachineName, passSetRunMode } from "../../main2worker"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
 import {
   isDemoZooDiskUrl,
@@ -41,8 +43,11 @@ import {
 // since they just maintain the state that needs to be passed to/from the
 // emulator. But the helper functions were getting too large, so now it's here.
 
-const initDriveProps = (index: number, drive: number, hardDrive: boolean): DriveProps => {
-  return {
+// The IIgs wires the slot-5 3.5" drive pair (indices 4/5); other machines have
+// no 3.5" hardware, so their 3.5"-sized images mount as block volumes.
+const hasThreeInchBay = () => machineHasThreeInchBay(handleGetMachineName())
+
+const initDriveProps = (index: number, drive: number, hardDrive: boolean): DriveProps => {  return {
     index: index,
     hardDrive: hardDrive,
     drive: drive,
@@ -51,6 +56,7 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     diskHasChanges: false,
     isWriteProtected: false,
     motorRunning: false,
+    spindleOn: false,
     diskData: new Uint8Array(),
     lastAppleWriteTime: -1,
     cloudData: null,
@@ -59,8 +65,12 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
   }
 }
 
-const driveProps: DriveProps[] = [initDriveProps(0, 1, true), initDriveProps(1, 2, true),
-  initDriveProps(2, 1, false), initDriveProps(3, 2, false)]
+const driveProps: DriveProps[] = [
+  initDriveProps(0, 1, true), initDriveProps(1, 2, true),
+  initDriveProps(2, 1, false), initDriveProps(3, 2, false),
+  // Apple IIgs only: the built-in 3.5" drive pair in slot 5.
+  initDriveProps(4, 1, false), initDriveProps(5, 2, false),
+]
 
 
 export const normalizeDownloadUrl = (url: string): string => {
@@ -243,11 +253,14 @@ export type StandbyDisk = {
   comment?: string
 }
 
-const standbyDisks: StandbyDisk[][] = [[], [], [], []]
-const standbyActiveIndex: number[] = [0, 0, 0, 0]
+// One standby list per bay, so the IIgs slot-5 3.5" pair (indices 4/5) can be a
+// swapper group too - it had four slots' worth of state and silently dropped the
+// pair, leaving S5,D1 with no badge and nothing to swap to.
+const standbyDisks: StandbyDisk[][] = Array.from({ length: MAX_DRIVES }, () => [])
+const standbyActiveIndex: number[] = Array.from({ length: MAX_DRIVES }, () => 0)
 
 export const getStandbyDisks = (driveIndex: number): StandbyDisk[] => {
-  if (driveIndex < 0 || driveIndex >= 4) return []
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return []
   const drive = driveProps[driveIndex]
   if (!drive || !drive.filename) {
     return [...standbyDisks[driveIndex]]
@@ -274,7 +287,7 @@ export const getStandbyActiveIndex = (driveIndex: number): number => {
 }
 
 export const syncActiveDiskToStandby = (driveIndex: number) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   const activeIdx = standbyActiveIndex[driveIndex]
   const drive = driveProps[driveIndex]
   if (drive && standbyDisks[driveIndex][activeIdx]) {
@@ -296,13 +309,13 @@ export const syncActiveDiskToStandby = (driveIndex: number) => {
 }
 
 export const setStandbyDisks = (driveIndex: number, disks: StandbyDisk[], activeIndex = 0) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   standbyDisks[driveIndex] = [...disks]
   standbyActiveIndex[driveIndex] = Math.max(0, Math.min(activeIndex, disks.length - 1))
 }
 
 export const appendStandbyDisks = (driveIndex: number, newDisks: StandbyDisk[]) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   getStandbyDisks(driveIndex)
   standbyDisks[driveIndex].push(...newDisks)
 }
@@ -313,7 +326,7 @@ export const swapStandbyDisk = async (
   saveActiveDiskCallback?: () => Promise<void>,
   updateDisplay?: UpdateDisplay,
 ) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   const currentDisks = standbyDisks[driveIndex]
   if (!currentDisks || newDiskIndex < 0 || newDiskIndex >= currentDisks.length) return
 
@@ -347,7 +360,7 @@ export const removeStandbyDisk = (
   removeIndex: number,
   updateDisplay?: UpdateDisplay,
 ) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   const disks = standbyDisks[driveIndex]
   if (!disks || removeIndex < 0 || removeIndex >= disks.length) return
 
@@ -371,7 +384,7 @@ export const removeStandbyDisk = (
 }
 
 export const ejectAllDisks = (driveIndex: number, updateDisplay?: UpdateDisplay) => {
-  if (driveIndex < 0 || driveIndex >= 4) return
+  if (driveIndex < 0 || driveIndex >= MAX_DRIVES) return
   standbyDisks[driveIndex] = []
   standbyActiveIndex[driveIndex] = 0
   handleEjectDisk(driveIndex)
@@ -424,9 +437,27 @@ export const findMatchingDiskImage = (url: string) => {
     } as DiskCollectionItem
 }
 
-let binaryRunAddress = 0x300
+const getSavedBinaryRunAddress = (): number => {
+  const saved = localStorage.getItem("binaryRunAddress")
+  if (!saved) return 0x300
+  const parsed = parseInt(saved, 16)
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 0xFFFF) return 0x300
+  return parsed
+}
+
+// The dialog and URL override share one persisted address. Keeping a module
+// copy here made a saved custom address invisible to generic .bin loads and
+// survived Reset Settings, which only removes the storage key.
 export const setDefaultBinaryAddress = (address: number) => {
-  binaryRunAddress = address
+  if (!Number.isFinite(address) || address < 0 || address > 0xFFFF) {
+    localStorage.removeItem("binaryRunAddress")
+    return
+  }
+  if (address === 0x300) {
+    localStorage.removeItem("binaryRunAddress")
+  } else {
+    localStorage.setItem("binaryRunAddress", address.toString(16).toUpperCase().padStart(4, "0"))
+  }
 }
 
 const setDiskOrFileFromBuffer = (
@@ -496,7 +527,7 @@ const setDiskOrFileFromBuffer = (
   clearDialogMessageContext()
 
   if (fname.endsWith(".bin")) {
-    passSetBinaryBlock(binaryRunAddress, new Uint8Array(buffer), true)
+    passSetBinaryBlock(getSavedBinaryRunAddress(), new Uint8Array(buffer), true)
   } else if (fname.endsWith(".bas") || fname.endsWith(".a")) {
     const decoder = new TextDecoder("utf-8")
     const basic = decoder.decode(buffer)
@@ -507,18 +538,17 @@ const setDiskOrFileFromBuffer = (
       passPasteText(basic + cmd)
     }
   } else {
-    const defaultDriveIndex = getDefaultDiskDriveIndex(fname, buffer.byteLength)
+    const defaultDriveIndex = getDefaultDiskDriveIndex(fname, buffer.byteLength, hasThreeInchBay())
     const isIdle = handleGetRunMode() === RUN_MODE.IDLE
     const bootsExplicitDrive = !noReset && !noBoot && isIdle && preserveDriveIndex && index === defaultDriveIndex
     if (bootsExplicitDrive) {
       passSetRunMode(RUN_MODE.IDLE)
       resetAllDiskDrives()
     }
-    if (newIndex < 0) {
-      newIndex = defaultDriveIndex
-    } else if (defaultDriveIndex < 2) {
-      if (newIndex < 0 || newIndex > 1) newIndex = defaultDriveIndex
-    } else if (newIndex < 2 || newIndex > 3) {
+    // Keep the bay the user chose; only fall back to the default when that bay
+    // physically cannot hold this media (nibble media in SmartPort, a hard disk
+    // in a floppy bay, 3.5" media in the 5.25" drive).
+    if (!canDriveTakeImage(newIndex, fname, buffer.byteLength, hasThreeInchBay())) {
       newIndex = defaultDriveIndex
     }
     setDiskData(
@@ -1117,7 +1147,12 @@ const setDiskFromURL = async (url: string,
     if (url.startsWith("file://") || url.startsWith("/") || /^[A-Za-z]:/.test(url)) {
       try {
         // Fetch for browser (may fail for local files due to CORS)
-        const state = getDiskImageFromLocalStorage()
+        const urlParams = typeof window !== "undefined" && window.location ? new URLSearchParams(window.location.search) : null
+        const bypassCache = urlParams?.has("nocache") || urlParams?.has("fresh") || urlParams?.has("reset")
+        if (bypassCache) {
+          setDiskImageToLocalStorage(0, null)
+        }
+        const state = bypassCache ? null : getDiskImageFromLocalStorage()
         if (state) {
           if (!preserveDriveIndex && !noReset) resetAllDiskDrives()
           const installed = await installDisk(state.index, state.data.buffer, url, null, null, helpFile)
@@ -1534,12 +1569,15 @@ export const handleSetDiskFromFile = async (disk: string,
     callback(data)
     return true
   } else {
-    const defaultDriveIndex = getDefaultDiskDriveIndex(disk, data.byteLength)
-    if (driveIndex < 0) {
+    const threeInch = hasThreeInchBay()
+    const defaultDriveIndex = getDefaultDiskDriveIndex(disk, data.byteLength, threeInch)
+    if (!canDriveTakeImage(driveIndex, disk, data.byteLength, threeInch)) {
       driveIndex = defaultDriveIndex
     }
+    // Booting means re-scanning the devices, which only makes sense when the
+    // disk landed in one of the primary bays: S7D1, S6D1 or the IIgs S5D1.
     let needsBoot = !noBoot && (preserveDriveIndex
-      ? (driveIndex === 0 || driveIndex === 2)
+      ? (driveIndex === 0 || driveIndex === 2 || driveIndex === 4)
       : handleGetRunMode() === RUN_MODE.IDLE)
     
     if (!noReset && driveIndex < 0) {
@@ -1549,9 +1587,6 @@ export const handleSetDiskFromFile = async (disk: string,
     if (!noReset && needsBoot) {
       if (preserveDriveIndex) passSetRunMode(RUN_MODE.IDLE)
       resetAllDiskDrives()
-      if (!preserveDriveIndex) {
-        driveIndex = defaultDriveIndex
-      }
     }
 
     setDiskData(

@@ -3,9 +3,10 @@
  * Tools for controlling emulator configuration (speed, machine type, color, sound)
  */
 
+import { APP_MACHINE_NAMES } from "../../common/app_target"
 import { COLOR_MODE } from "../../common/utility"
-import { passSetMachineName, passSpeedMode } from "../main2worker"
-import { setPreferenceColorMode } from "../localstorage"
+import { handleGetMachineName, passSpeedMode } from "../main2worker"
+import { setPreferenceColorMode, setPreferenceMachineName } from "../localstorage"
 import {
   audioEnable,
   getAudioStatus,
@@ -28,7 +29,16 @@ export function toolSetSpeed(speed: number): MCPToolResult {
 
     passSpeedMode(speed)
     
-    const speedNames = [
+    const isGS = handleGetMachineName() === "APPLE2GS"
+    const speedNames = isGS ? [
+      "0.1 MHz (Snail)",
+      "0.5 MHz (Slow)",
+      "1.02 MHz (Normal)",
+      "2.8 MHz",
+      "7.1 MHz",
+      "14.3 MHz (Fast)",
+      "Ludicrous"
+    ] : [
       "0.1 MHz (Snail)",
       "0.5 MHz (Slow)",
       "1 MHz (Normal)",
@@ -55,25 +65,36 @@ export function toolSetSpeed(speed: number): MCPToolResult {
   }
 }
 
+// The MCP surface advertises exactly the machines this deployed site offers.
+export const MCP_MACHINE_TYPES: MACHINE_NAME[] = APP_MACHINE_NAMES
+
 /**
  * Set the machine type
- * @param machineType "APPLE2P" (Apple II+), "APPLE2EU" (Apple IIe unenhanced), "APPLE2EE" (Apple IIe enhanced)
+ * @param machineType "APPLE2P" (Apple II+), "APPLE2EU" (Apple IIe unenhanced), "APPLE2EE" (Apple IIe enhanced), "APPLE2GS" (Apple IIgs)
  */
 export function toolSetMachineType(machineType: string): MCPToolResult {
   try {
-    if (machineType !== "APPLE2P" && machineType !== "APPLE2EU" && machineType !== "APPLE2EE") {
+    if (!MCP_MACHINE_TYPES.includes(machineType as MACHINE_NAME)) {
+      const quoted = MCP_MACHINE_TYPES.map(name => `"${name}"`)
+      const choices = quoted.length > 1
+        ? `${quoted.slice(0, -1).join(", ")}, or ${quoted.at(-1)}`
+        : quoted[0]
       return {
         success: false,
-        error: "Machine type must be \"APPLE2P\", \"APPLE2EU\", or \"APPLE2EE\"",
+        error: `Machine type must be ${choices}`,
       }
     }
 
-    passSetMachineName(machineType as MACHINE_NAME)
+    // Use the same machine-switch path as Settings: persist the choice and
+    // reset slot defaults (the IIgs gets its own built-in slot list), then
+    // send the machine name to the worker.
+    setPreferenceMachineName(machineType as MACHINE_NAME)
     
     const machineNames: Record<MACHINE_NAME, string> = {
       "APPLE2P": "Apple II+",
       "APPLE2EU": "Apple IIe (Unenhanced)",
-      "APPLE2EE": "Apple IIe (Enhanced)"
+      "APPLE2EE": "Apple IIe (Enhanced)",
+      "APPLE2GS": "Apple IIgs"
     }
     const machineName = machineNames[machineType as MACHINE_NAME]
 
