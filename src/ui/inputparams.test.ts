@@ -130,6 +130,22 @@ describe("handleInputParams slot configuration", () => {
       passSetSlotConfig.mockRestore()
     }
   })
+
+  test("applies the URL speed only after its URL machine has been accepted", () => {
+    const passSetMachineName = jest.spyOn(main2worker, "passSetMachineName")
+    const passSpeedMode = jest.spyOn(main2worker, "passSpeedMode")
+    try {
+      handleInputParams("machine=apple2gs&speed=slow")
+
+      expect(passSetMachineName).toHaveBeenCalledWith("APPLE2GS")
+      expect(passSpeedMode).toHaveBeenCalledWith(-1)
+      expect(passSetMachineName.mock.invocationCallOrder[0])
+        .toBeLessThan(passSpeedMode.mock.invocationCallOrder[0])
+    } finally {
+      passSetMachineName.mockRestore()
+      passSpeedMode.mockRestore()
+    }
+  })
 })
 
 describe("handleFragment disk drive selection", () => {

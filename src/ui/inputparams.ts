@@ -161,9 +161,9 @@ export const handleInputParams = (paramString = "") => {
     warp: 4,
     ludicrous: 4,
   }
-  if (speed && speedMap[speed] !== undefined) {
-    passSpeedMode(speedMap[speed])
-  }
+  const urlSpeedMode = speed && speedMap[speed] !== undefined
+    ? speedMap[speed]
+    : undefined
 
   if (params.get("sound") === "off") {
     audioEnable(false)
@@ -208,6 +208,13 @@ export const handleInputParams = (paramString = "") => {
       urlMachine = resolvedMachine
       passSetMachineName(resolvedMachine)
     }
+  }
+
+  // Apply the URL speed only after the URL machine has been accepted. A
+  // rejected ?machine= value must not leave a GS speed index applied to the
+  // classic machine that loadPreferences() chose instead.
+  if (urlSpeedMode !== undefined && (!machineName || urlMachine)) {
+    passSpeedMode(urlSpeedMode)
   }
 
   const ramDisk = params.get("ramdisk")

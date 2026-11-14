@@ -1,4 +1,5 @@
 jest.mock("./main2worker", () => ({
+  handleGetMachineName: jest.fn(() => "APPLE2EE"),
   passSetVeraFmEnabled: jest.fn(),
   passSetIigsRomVersion: jest.fn(),
   passAutoSnapshot: jest.fn(),

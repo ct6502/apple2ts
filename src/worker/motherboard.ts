@@ -1,4 +1,4 @@
-﻿import { FrameClock } from "./frameclock"
+import { FrameClock } from "./frameclock"
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { setCpuPcGetter } from "./cpu_pc"
@@ -61,7 +61,7 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   setIigsRomVersion,
   isIigsRom03,
   iigsRegisters} from "./memory"
-import { setButtonState, handleGamepads } from "./devices/joystick"
+import { setButtonState, handleGamepads, setJoystickCyclesPerRefresh } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
 import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, resetCycleCountCallbacks, processCycleCountCallbacks, setStepOut, getHeatMapCPU, getHeatMapCPUMax, resetHeatMapCPU } from "./cpu6502"
 import { ICPU } from "./icpu"
@@ -910,6 +910,7 @@ export const doSetSpeedMode = (speedModeIn: number, operationId?: number) => {
   refreshTime = (speedMode === 4) ? 0 : 16.6881
   const cyclesTable = (machineName === "APPLE2GS") ? GS_CYCLES_PER_REFRESH : IIE_CYCLES_PER_REFRESH
   cpuCyclesPerRefresh = cyclesTable[speedMode + 2]
+  setJoystickCyclesPerRefresh(cpuCyclesPerRefresh)
   // The new CPU rate changes frame length, so restart the clock in the new
   // frame â€” but not the captured-row boundary: the guest is still painting
   // the frame the beam is halfway through, and -1 here would make the next run
@@ -1049,6 +1050,7 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState 
   if (!speedModeExplicit) speedMode = (machineName === "APPLE2GS") ? 1 : 0
   const cyclesTable = (machineName === "APPLE2GS") ? GS_CYCLES_PER_REFRESH : IIE_CYCLES_PER_REFRESH
   cpuCyclesPerRefresh = cyclesTable[speedMode + 2]
+  setJoystickCyclesPerRefresh(cpuCyclesPerRefresh)
   if (machineName === "APPLE2GS") {
     iigsInitInterrupts()
     applyIigsSlotConfig()
