@@ -4,7 +4,7 @@ import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult
 import { setCpuPcGetter } from "./cpu_pc"
 import { s6502, setState6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
 import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, MEMORY_DUMP_STATE, AUTO_SNAPSHOT } from "../common/utility"
-import { getMachineCapabilities, getMachineProfile, getProfileCyclesPerRefresh, getProfileDefaultSlotConfig, getProfileDefaultSpeedMode, getProfileSlotChoices } from "../common/machine_profile"
+import { getMachineCapabilities, getMachineProfile, getProfileCyclesPerRefresh, getProfileDefaultSlotConfig, getProfileDefaultSpeedMode, getProfileSlotChoices, isGSMachine } from "../common/machine_profile"
 import { sanitizeSlotConfig } from "../common/slot_options"
 import { iigsSlotRegisterFor } from "../common/iigs_slots"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
@@ -559,7 +559,7 @@ export const getSlotConfig = () => {
 // motherboard's slot firmware mapped, a card maps the card's ROM. Re-applied
 // after any cold-boot path that touches the MMU registers.
 export const applyIigsSlotConfig = () => {
-  if (machineName !== "APPLE2GS") return
+  if (!isGSMachine(machineName)) return
   const register = iigsSlotRegisterFor(currentSlotConfig)
   setIigsSlotRegister(register)
   iigsRegisters[0x2D] = register
@@ -580,7 +580,7 @@ export const configureMachine = () => {
   // Apple IIgs: slots are Control Panel assignments, not card scans. Slots 1-6
   // normally run the motherboard's own slot firmware; only a configured card
   // gets its $C02D (SLTROMSEL) bit set.
-  if (machineName === "APPLE2GS") {
+  if (isGSMachine(machineName)) {
     disableVideoTerm()
     disableVidHD()
     setAuxCardEnabled(true)
@@ -773,7 +773,7 @@ const resetMachine = () => {
 export const doBoot = () => {
   setCycleCount(0)
   memoryReset()
-  if (machineName === "APPLE2GS") iigsEnsoniq.reset()
+  if (isGSMachine(machineName)) iigsEnsoniq.reset()
   doSetRom(machineName)
   configureMachine()
   if (code.length > 0) {
@@ -782,7 +782,7 @@ export const doBoot = () => {
   }
 //  testTiming()
 
-  const isIigs = machineName === "APPLE2GS"
+  const isIigs = isGSMachine(machineName)
 
   if (isIigs ? hasHardDriveMounted() : (!softCard.enabled || hasHardDriveMounted())) {
     enableHardDrive()
@@ -820,7 +820,7 @@ export const doReset = () => {
   // Reset banked RAM
   memGet(0xC082, false)
   cpu.reset()
-  if (machineName === "APPLE2GS") {
+  if (isGSMachine(machineName)) {
     iigsClearInterrupts()
     // A hardware reset returns the CPU to fast mode; software reads the same
     // value back from $C036, so keep both views in step across Ctrl-Reset.
@@ -1003,7 +1003,7 @@ export const doLoadBinary = (
 export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState = true) => {
   machineName = name
   
-  if (machineName === "APPLE2GS") {
+  if (isGSMachine(machineName)) {
     cpu = new CPU65816(memGet24, memSet24)
     ;(cpu as CPU65816).setVectorReadCallback((address: number) => {
       // 65816 vector pull (VP) always reads from Bank $FF ROM on Apple IIgs
@@ -1037,7 +1037,7 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState 
   refreshTime = speedMode === 4 ? 0 : profile.speed.refreshTime
   cpuCyclesPerRefresh = getProfileCyclesPerRefresh(profile, speedMode)
   setJoystickCyclesPerRefresh(cpuCyclesPerRefresh)
-  if (machineName === "APPLE2GS") {
+  if (isGSMachine(machineName)) {
     iigsInitInterrupts()
     applyIigsSlotConfig()
   }
@@ -1050,7 +1050,7 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState 
 // doBoot() reloads the ROM, clears memory and runs the reset path.
 export const doSetIigsRomVersion = (version: IigsRomVersion, reset = true, publishState = true) => {
   if (!setIigsRomVersion(version)) return
-  if (machineName === "APPLE2GS") {
+  if (isGSMachine(machineName)) {
     if (reset) {
       doBoot()
     } else {
@@ -1549,7 +1549,7 @@ const doAdvance6502 = () => {
   // delivered between invocations of doAdvance6502). Everything below used to
   // be recomputed per instruction â€” hoisting them is 11% of CPU time in the
   // V8 profile.
-  const isIIgs = (machineName === "APPLE2GS")
+  const isIIgs = isGSMachine(machineName)
   const traceCb = tracing ? updateTrace : null
   // Frame length in video-clock units. On the IIgs this is the selected CPU
   // rate's refresh budget and does NOT follow $C036 slow mode: slow mode makes

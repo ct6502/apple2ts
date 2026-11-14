@@ -1,5 +1,6 @@
 import { Buffer } from "buffer"
 import { MAX_SNAPSHOTS, RamWorksMemoryStart, ROMmemoryStart, RUN_MODE, SAVE_STATE_VERSION } from "../common/utility"
+import { isGSMachine } from "../common/machine_profile"
 import { getDriveSaveState, getDriveSaveStateForLocalStorage, restoreDriveSaveState } from "./devices/drivestate"
 import { handleGameSetup } from "./games/game_mappings"
 import { s6502, getStackDump, setState6502, setStackDump } from "./instructions"
@@ -59,7 +60,7 @@ export const getApple2State = (): Apple2SaveState => {
   })
 
   const memC000 = memory.subarray(ROMmemoryStart, ROMmemoryStart + 256)
-  const isGS = getMachineName() === "APPLE2GS"
+  const isGS = isGSMachine(getMachineName())
 
   return {
     s6502: save6502,

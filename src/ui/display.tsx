@@ -19,6 +19,7 @@ import { RestoreSaveState } from "./save_restore_ui"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
 import { getMemorySizeLabel, RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { getMachineTraits } from "../common/machine_profile"
 import DiskCollectionPanel from "./diskdialog/diskcollectionpanel"
 import { handleSetTheme, hasDialogMessageContext } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
@@ -215,7 +216,7 @@ const DisplayApple2 = () => {
   }, [isTouchDevice, isLandscape])
   const machineName = handleGetMachineName()
   const slotConfig = handleGetSlotConfig()
-  const isApple2Plus = machineName === "APPLE2P"
+  const isApple2Plus = getMachineTraits(machineName).isApple2Plus
   const hasAuxCard = !isApple2Plus && (slotConfig[3] === "aux" || slotConfig[3] === "vidhd")
   const memSize = getMemorySizeLabel(machineName, handleGetMemSize(), hasAuxCard)
   const status = (isTouchDevice && isLandscape) ? <></> : <div className="default-font footer-item" translate="no">

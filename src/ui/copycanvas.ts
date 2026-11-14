@@ -1,4 +1,5 @@
 import { convertTextPageValueToASCII } from "../common/utility"
+import { getMachineTraits } from "../common/machine_profile"
 import { handleGetAltCharSet, handleGetMachineName, handleGetTextPage } from "./main2worker"
 
 export const copyCanvas = (handleBlob: (blob: Blob) => void, thumbnail = false) => {
@@ -32,12 +33,12 @@ export const handleCopyToClipboard = () => {
   if (textPage.length > 0) {
     const nlines = textPage.length < 960 ? 4 : 24
     const ncharsPerLine = textPage.length / nlines
-    const machineName = handleGetMachineName()
-    const isAltCharSet = machineName === "APPLE2P" ? false : handleGetAltCharSet()
-    const hasLowerCase = (ncharsPerLine === 80) || (machineName !== "APPLE2P")
-    const useApple2PlusMap = (ncharsPerLine !== 80) && (machineName === "APPLE2P")
+    const machineTraits = getMachineTraits(handleGetMachineName())
+    const isAltCharSet = machineTraits.hasAltCharSet && handleGetAltCharSet()
+    const hasLowerCase = (ncharsPerLine === 80) || machineTraits.hasLowerCase
+    const useApple2PlusMap = (ncharsPerLine !== 80) && machineTraits.usesApple2PlusMap
     let output = ""
-    const hasMouseText = machineName === "APPLE2EE" || machineName === "APPLE2GS"
+    const hasMouseText = machineTraits.hasMouseText
     const isUnicodePage = textPage instanceof Uint16Array
     for (let j = 0; j < nlines; j++) {
       let line = ""

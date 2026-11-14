@@ -2,7 +2,8 @@ import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig } from "../
 import { setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceVeraSlot } from "../localstorage"
 import { setUIStateBoolean, setTabView } from "../ui_settings"
 import { notifySettingsChanged } from "../settingschange"
-import { DEFAULT_SLOT_CONFIG, RUN_MODE } from "../../common/utility"
+import { RUN_MODE } from "../../common/utility"
+import { getMachineProfile, getProfileDefaultSlotConfig } from "../../common/machine_profile"
 import { handleSetCPUState } from "../controller"
 import { isCanvasFullscreen, setCanvasFullscreen } from "../controls/fullscreenbutton"
 import type { RetroControlMetadata, RetroMenuContext } from "../retro/retromenucontext"
@@ -115,11 +116,13 @@ const machineBindings: RetroControlBindings = {
           selectRetroSlotCard(context, slot, getSlotOptions(slot, handleGetMachineName())[optionIndex])
         },
       }),
-      defaultIndex: () => getSlotOptions(slot, handleGetMachineName()).findIndex(option =>
-        option.card === (slot === 3 && handleGetMachineName() === "APPLE2P"
-          ? "videoterm"
-          : DEFAULT_SLOT_CONFIG[slot])
-        && (option.card !== "aux" || option.ramSizeKb === 64)),
+      defaultIndex: () => {
+        const machine = handleGetMachineName()
+        const defaultCard = getProfileDefaultSlotConfig(getMachineProfile(machine), machine)[slot]
+        return getSlotOptions(slot, machine).findIndex(option =>
+          option.card === defaultCard
+          && (option.card !== "aux" || option.ramSizeKb === 64))
+      },
     } satisfies Partial<RetroControlMetadata>,
   ])),
 }

@@ -8,7 +8,7 @@ import { Droplist } from "../panels/droplist"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, handleGetSpeedMode } from "../main2worker"
 import { getPreferenceBoolean, getPreferenceIigsRomVersion, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot, setPreferenceIigsRomVersion } from "../localstorage"
 import { getSlotOptions, sanitizeSlotConfig, SLOT_NUMBERS } from "../../common/slot_options"
-import { getMachineCapabilities, getMachineProfile, getProfileSpeedOptions, getProfileSpeedLabel } from "../../common/machine_profile"
+import { ALL_MACHINE_NAMES, getMachineCapabilities, getMachineProfile, getProfileDefaultSlotConfig, getProfileSpeedOptions, getProfileSpeedLabel } from "../../common/machine_profile"
 import { getCardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, getRamdiskValues, themeLabels } from "../ui_utilities"
 import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import CheckBox from "../panels/checkbox"
@@ -66,7 +66,7 @@ export const SettingsDialog = (props: DisplayProps) => {
   // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs. The
   // deployment target then decides which rows are visible: apple2ts.com keeps
   // the classic family, and apple2gts.com only offers the IIgs.
-  const allMachineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
+  const allMachineNames: MACHINE_NAME[] = ALL_MACHINE_NAMES
   const allMachineStrings = [
     t("machine.models.apple2p"),
     t("machine.models.apple2eu"),
@@ -153,14 +153,17 @@ export const SettingsDialog = (props: DisplayProps) => {
         // so switching to or from it must keep setPreferenceMachineName's
         // GS defaults / sanitization instead of applying the classic slot-3
         // Videoterm/Aux switch.
-        if (getMachineProfile(nextMachine).family === "gs" || getMachineProfile(machineName).family === "gs") return
-        // Adjust slot 3 when crossing between II+ and IIe families by profile,
-        // not by a second hard-coded machine table.
-        const newIsIIp = getMachineProfile(nextMachine).family === "classic" && nextMachine === "APPLE2P"
-        const wasIIp = getMachineProfile(machineName).family === "classic" && machineName === "APPLE2P"
-        if (newIsIIp !== wasIIp) {
-          handleSelectSlotCard(3, newIsIIp ? "videoterm" : "aux")
-          if (!newIsIIp) setPreferenceRamWorks() // reset to 64KB default
+        const nextProfile = getMachineProfile(nextMachine)
+        const currentProfile = getMachineProfile(machineName)
+        if (nextProfile.family === "gs" || currentProfile.family === "gs") return
+        // The classic profile's per-machine slot 3 default is the only thing that
+        // changes between II+ and IIe. Read it from the profile, never from a
+        // second machine table, so the two models cannot drift apart.
+        const nextSlot3 = getProfileDefaultSlotConfig(nextProfile, nextMachine)[3]
+        const currentSlot3 = getProfileDefaultSlotConfig(currentProfile, machineName)[3]
+        if (nextSlot3 !== currentSlot3) {
+          handleSelectSlotCard(3, nextSlot3)
+          if (nextSlot3 !== "videoterm") setPreferenceRamWorks() // reset to 64KB default
         }
       }}
       />

@@ -66,13 +66,21 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   rules and UI capabilities. `CLASSIC_PROFILE` has `profileName:
   "classic_profile"` and covers `APPLE2P` / `APPLE2EU` / `APPLE2EE`;
   `GS_PROFILE` has `profileName: "gs_profile"` and covers `APPLE2GS`. Do not
-  reintroduce scattered `machine === "APPLE2GS"` checks where a profile helper or
-  capability exists.
+  reintroduce scattered family checks where a profile helper exists: worker
+  paths use `isGSMachine`, and UI capability checks use `getMachineCapabilities`.
 - Use `getMachineProfile`, `getMachineCapabilities`, `getMachineBootDisk`, and
   the slot/speed helpers `getProfileSlotChoices`, `getProfileDefaultSlotConfig`,
   `getProfileCyclesPerRefresh`, `getProfileSpeedLabel`. Classic slot 3 differs by
   exact model: `APPLE2P` exposes `videoterm`, while `APPLE2EU` / `APPLE2EE`
   expose the aux-card RAM variants.
+- Exact-model rendering/input differences live in `getMachineTraits`: `isApple2Plus`,
+  `hasAltCharSet`, `hasLowerCase`, `hasMouseText`, `usesApple2PlusMap` and
+  `hardwareKeyboardRepeats`. The text-copy/glyph renderer, canvas sizing/display
+  footer, lower-case mode and the startup page read those traits instead of
+  `machineName === "APPLE2P"` / `"APPLE2EE"` checks. An unenhanced IIe has the
+  alternate character set but no MouseText; the II+ has no alternate set, no
+  lowercase, no MouseText and its own character map. The GS uses the enhanced
+  set and MouseText.
 - Capabilities also drive parsing and UI visibility. The GS has no VERA,
   Passport, classic mouse card or auxiliary slot 3, and uses built-in slot
   functions; the classic family has VERA in slots 2/4 and Passport but no 3.5"
@@ -83,6 +91,15 @@ loop. Never "improve" a gssquared behaviour by inventing something; port it.
   choice. Worker slot configuration is sanitized against the selected profile,
   and `doSetVeraSlot` rejects VERA on GS and clears stale `veraSlot`. UI audio
   controls hide the FM/VERA section from capabilities, not from a machine id.
+  The Settings dialog and Link Builder call `getProfileDefaultSlotConfig` for the
+  new machine and compare the per-model slot-3 defaults instead of branching on
+  `APPLE2P`; after clearing a slot backup the machine helper also chooses slot 3
+  from `getProfileSlotChoices` (keep `none` / `vidhd`, replace an invalid card
+  with the exact model's profile default).
+- Persisted machine names go through `ALL_MACHINE_NAMES` (`CLASSIC_PROFILE.machines`
+  plus `GS_PROFILE.machines`) before the deployment menu filter. Do not hard-code
+  the four names again in preference loading, speed-context migration, or URL
+  parsing; use `ALL_MACHINE_NAMES` and keep the target fallback as it is.
 - Deployment targets still filter their menus, but local development is
   intentional: Vite's serve mode sets `A2TS_DEV_MACHINES` (`vite.config.ts`), so
   `app_target.ts` lists both families locally. A target build exposes only its
@@ -410,7 +427,8 @@ assume the emulator's install is what runs.
   `megaIIMain`/`megaIIAux` under `$C035`/`$C029` (§2) or a guest keeping its
   text page in fast RAM (ProSel-16) shows blank columns. Regression:
   `gs_prosel.test.ts`.
-- MouseText decoding must be enabled for `APPLE2GS` as well as `APPLE2EE`
+- MouseText decoding must come from `getMachineTraits(...).hasMouseText`, which is
+  true for `APPLE2EE` and `APPLE2GS` but false for `APPLE2P` / `APPLE2EU`
   (`graphics.ts`, `copycanvas.ts`), or the startup bar shows `@ A L` instead of
   the Apple glyphs and lines.
 - **VERA video renders every layer every frame.** `src/worker/devices/vera/video.ts`
@@ -1463,9 +1481,14 @@ intact. Regression: `save_restore_adb.test.ts`.
 - Speed options and labels for the dropdown, settings dialog, and MCP settings come
   from the selected profile's `speed` table (`getProfileSpeedOptions` /
   `getProfileSpeedLabel`); `SPEED_MODES` is only the ordered mode-index list in
-  `speeddropdown.tsx`. The Link Builder has its own display names, but it must map
-  them back to the selected machine's mode index instead of assuming one family's
-  labels.
+  `speeddropdown.tsx`. The Link Builder stores the numeric speed mode, not a label
+  string, and builds its rows from `getProfileSpeedOptions` /
+  `getProfileSpeedLabel`. A family switch resets the mode to
+  `getProfileDefaultSpeedMode`; the link omits the profile's own default and the
+  `speed=` parameter comes from the mode index, never from a stale label. This
+  keeps a classic-to-GS switch from dropping speed or injecting the other machine
+  default, and a GS-to-classic switch must drop GS slot cards, ramdisk, VERA tab
+  and speed together.
 - **The footer RAM readout follows the machine, not the slot-3 card.**
   `getMemorySizeLabel` (`src/common/utility.ts`) prints the IIgs as **8 MB**: the
   FPI's 23-bit RAM decode caps the installed 8 MB expansion card at banks

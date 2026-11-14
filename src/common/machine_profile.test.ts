@@ -1,9 +1,11 @@
 import {
+  ALL_MACHINE_NAMES,
   CLASSIC_PROFILE,
   GS_PROFILE,
   getMachineBootDisk,
   getMachineCapabilities,
   getMachineProfile,
+  getMachineTraits,
   getProfileCyclesPerRefresh,
   getProfileDefaultSlotConfig,
   getProfileSlotChoices,
@@ -17,8 +19,25 @@ describe("machine profiles", () => {
     expect(GS_PROFILE.profileName).toBe("gs_profile")
     expect(CLASSIC_PROFILE.machines).toEqual(["APPLE2P", "APPLE2EU", "APPLE2EE"])
     expect(GS_PROFILE.machines).toEqual(["APPLE2GS"])
+    expect(ALL_MACHINE_NAMES).toEqual(["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"])
     expect(getMachineProfile("APPLE2EE")).toBe(CLASSIC_PROFILE)
     expect(getMachineProfile("APPLE2GS")).toBe(GS_PROFILE)
+  })
+
+  test("exact-model UI traits stay central instead of machine-id checks", () => {
+    expect(getMachineTraits("APPLE2P")).toEqual({
+      isApple2Plus: true,
+      hasAltCharSet: false,
+      hasLowerCase: false,
+      hasMouseText: false,
+      usesApple2PlusMap: true,
+      hardwareKeyboardRepeats: false,
+    })
+    expect(getMachineTraits("APPLE2EU").hasMouseText).toBe(false)
+    expect(getMachineTraits("APPLE2EU").hardwareKeyboardRepeats).toBe(true)
+    expect(getMachineTraits("APPLE2EE").hasMouseText).toBe(true)
+    expect(getMachineTraits("APPLE2GS").hasMouseText).toBe(true)
+    expect(getMachineTraits("APPLE2GS").isApple2Plus).toBe(false)
   })
 
   test("GS has built-in slot functions and no VERA card", () => {

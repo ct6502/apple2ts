@@ -18,7 +18,7 @@ import {
   handleGetTextPage,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, UI_THEME } from "../common/utility"
-import { getMachineCapabilities } from "../common/machine_profile"
+import { getMachineCapabilities, getMachineTraits } from "../common/machine_profile"
 import { ProcessDisplay, getCanvasSize, handleGetOverrideHires, canvasCoordToNormScreenCoord, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey, handleDiagonalKey, ensureGamepadEventListeners } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
@@ -117,10 +117,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     return false
   }
 
-  const hardwareKeyboardRepeats = () => {
-    const machine = handleGetMachineName()
-    return machine === "APPLE2EU" || machine === "APPLE2EE"
-  }
+  const hardwareKeyboardRepeats = () =>
+    getMachineTraits(handleGetMachineName()).hardwareKeyboardRepeats
 
   const stopHardwareKeyboard = (code?: string) => {
     if (code && hardwareKeyboardKey.current?.code !== code) return
@@ -817,7 +815,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     `url(${window.assetRegistry.dotCursor}), none` : "default"
 
   const machine = handleGetMachineName()
-  const bgImg = machine === "APPLE2P" ?
+  const machineTraits = getMachineTraits(machine)
+  const bgImg = machineTraits.isApple2Plus ?
     window.assetRegistry.bgImgApple2Plus : window.assetRegistry.bgImage
   const backgroundImage = noBackgroundImage ? "" : `url("${new URL(bgImg, document.baseURI).href}")`
 
@@ -829,9 +828,9 @@ const Apple2Canvas = (props: DisplayProps) => {
         className="main-canvas"
         style={{
           cursor: cursor,
-          borderColor: (machine === "APPLE2P" || getTheme() === UI_THEME.DARK) ? "black" : "#583927",
+          borderColor: (machineTraits.isApple2Plus || getTheme() === UI_THEME.DARK) ? "black" : "#583927",
           borderRadius: noBackgroundImage ? "0" : "18px",
-          borderWidth: (noBackgroundImage || machine === "APPLE2P") ? "0" : "2px",
+          borderWidth: (noBackgroundImage || machineTraits.isApple2Plus) ? "0" : "2px",
         }}
         width={width} height={height}
         tabIndex={0}

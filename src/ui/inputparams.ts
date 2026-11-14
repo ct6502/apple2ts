@@ -12,7 +12,7 @@ import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { getPreferenceMachineName, getPreferenceSlotConfig, getPreferenceSlotConfigBackup, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
 import { APP_MACHINE_NAMES } from "../common/app_target"
 import { getSlotOptions, sanitizeSlotConfig, SLOT_NUMBERS } from "../common/slot_options"
-import { getMachineProfile } from "../common/machine_profile"
+import { ALL_MACHINE_NAMES, getMachineProfile } from "../common/machine_profile"
 import { Expectin } from "./api/expectin"
 import { notifySettingsChanged } from "./settingschange"
 
@@ -193,19 +193,15 @@ export const handleInputParams = (paramString = "") => {
     setUIStateBoolean("showScanlines", false)
   }
 
-  const machineName = params.get("machine")?.toUpperCase()
+  const machineParam = params.get("machine")?.toUpperCase()
   let urlMachine: MACHINE_NAME | undefined
-  if (machineName) {
-    // Keep unknown machine values on the existing fallback, but first make the
-    // resolved name part of this site's menu. A classic site must not boot a
-    // IIgs from ?machine=apple2gs, nor may an old link inject the IIe family
-    // into apple2gts.com.
-    const resolvedMachine: MACHINE_NAME =
-      machineName === "APPLE2P" ? "APPLE2P"
-        : machineName === "APPLE2EU" ? "APPLE2EU"
-          : machineName === "APPLE2GS" ? "APPLE2GS"
-            : "APPLE2EE"
-    if (APP_MACHINE_NAMES.includes(resolvedMachine)) {
+  if (machineParam) {
+    // Resolve the URL text against every profile machine name, then require it to
+    // be part of this site's menu. A classic site must not boot a IIgs from
+    // ?machine=apple2gs, nor may an old link inject the IIe family into
+    // apple2gts.com. Unknown values keep today's fallback behaviour.
+    const resolvedMachine = ALL_MACHINE_NAMES.find(name => name === machineParam)
+    if (resolvedMachine && APP_MACHINE_NAMES.includes(resolvedMachine)) {
       urlMachine = resolvedMachine
       passSetMachineName(resolvedMachine)
     }
@@ -214,7 +210,7 @@ export const handleInputParams = (paramString = "") => {
   // Apply the URL speed only after the URL machine has been accepted. A
   // rejected ?machine= value must not leave a GS speed index applied to the
   // classic machine that loadPreferences() chose instead.
-  if (urlSpeedMode !== undefined && (!machineName || urlMachine)) {
+  if (urlSpeedMode !== undefined && (!machineParam || urlMachine)) {
     passSpeedMode(urlSpeedMode)
   }
 

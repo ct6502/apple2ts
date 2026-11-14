@@ -13,7 +13,7 @@ import { doCRTStartup } from "./crtstartup"
 import { getPreferenceRetroIIGSColor, getPreferenceRetroSkin, RETRO_SKIN } from "./localstorage"
 import { RETRO_IIGS_COLORS } from "./retro/retroskincolors"
 import { UI_THEME } from "../common/utility"
-import { getMachineCapabilities } from "../common/machine_profile"
+import { getMachineCapabilities, getMachineTraits } from "../common/machine_profile"
 let frameCount = 0
 let displayOverride: HTMLCanvasElement | null = null
 let displayOverrideRevision = 0
@@ -186,13 +186,13 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   // full text page will be more than 80 char x 4 lines
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 15) % 2) === 0
-  const machineName = handleGetMachineName()
-  const isAltCharSet = machineName === "APPLE2P" ? false : handleGetAltCharSet()
+  const machineTraits = getMachineTraits(handleGetMachineName())
+  const isAltCharSet = machineTraits.hasAltCharSet && handleGetAltCharSet()
   const colorFill = skinForeground ??
     ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
-  const hasMouseText = machineName === "APPLE2EE" || machineName === "APPLE2GS"
-  const hasLowerCase = (nchars === 80) || (machineName !== "APPLE2P")
-  const useApple2PlusMap = (nchars !== 80) && (machineName === "APPLE2P")
+  const hasMouseText = machineTraits.hasMouseText
+  const hasLowerCase = (nchars === 80) || machineTraits.hasLowerCase
+  const useApple2PlusMap = (nchars !== 80) && machineTraits.usesApple2PlusMap
   const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
   // First draw all the background colors. That way our background rects
@@ -1194,7 +1194,9 @@ export const getCanvasSize = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isCanvasOnlyTheme()
-  const margin = (handleGetMachineName() === "APPLE2P" && !isCanvasFullScreen) ? 0.12 : 0.075
+  const margin = (getMachineTraits(handleGetMachineName()).isApple2Plus && !isCanvasFullScreen)
+    ? 0.12
+    : 0.075
   xmargin = (noBackgroundImage || isTouchDevice) ? 0.02 : margin
   ymargin = (noBackgroundImage || isTouchDevice) ? 0.02 : margin
   const screenRatio = isSuperHiResScreen() ? SHR_ASPECT : LEGACY_ASPECT

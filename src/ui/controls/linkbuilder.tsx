@@ -8,7 +8,8 @@ import { newReleases } from "../devices/disk/newreleases"
 import CheckBox from "../panels/checkbox"
 import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode, getUIStateBoolean } from "../ui_settings"
 import { APP_DEFAULT_MACHINE, APP_MACHINE_NAMES } from "../../common/app_target"
-import { DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, UI_THEMES } from "../../common/utility"
+import { UI_THEMES } from "../../common/utility"
+import { getMachineProfile, getProfileDefaultSlotConfig, getProfileDefaultSpeedMode, getProfileSlotChoices, getProfileSpeedLabel, getProfileSpeedOptions } from "../../common/machine_profile"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode, handleGetSlotConfig } from "../main2worker"
 import { useTranslation } from "../../i18n/useTranslation"
@@ -167,10 +168,12 @@ const LinkBuilder = () => {
   const [machine, setMachine] = useState("")
   const [ramdisk, setRamdisk] = useState("")
   const [scanlines, setScanlines] = useState(false)
-  const [speed, setSpeed] = useState("")
+  const [speedMode, setSpeedMode] = useState(getProfileDefaultSpeedMode(getMachineProfile(APP_DEFAULT_MACHINE)))
   const [theme, setTheme] = useState("")
   const [tabSection, setTabSection] = useState(TAB.DISK)
-  const [slotConfig, setSlotConfig] = useState<SlotConfig>({ ...DEFAULT_SLOT_CONFIG })
+  const [slotConfig, setSlotConfig] = useState<SlotConfig>(
+    getProfileDefaultSlotConfig(getMachineProfile(APP_DEFAULT_MACHINE), APP_DEFAULT_MACHINE),
+  )
 
   // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs, then
   // filter to what this deployment target supports. Both sites are otherwise
@@ -196,20 +199,32 @@ const LinkBuilder = () => {
   }
   const lbMachineName = machineNameFor(machine)
 
-  // The IIgs shares speed indices with the classic machines but names rows 2-5
-  // after the clock instead of the multiplier, so a label has to be read from the
-  // table of the machine it belongs to. Storing a classic label while the GS table
-  // is live makes speedNames.indexOf() answer -1 and drops the speed parameter.
-  const speedNamesFor = (name: MACHINE_NAME): string[] => {
-    const edges = [t("linkBuilder.speedNames.snail"), t("linkBuilder.speedNames.slow")]
-    const warp = t("linkBuilder.speedNames.warp")
-    const middle = name === "APPLE2GS"
-      ? ["1.02 MHz", "2.8 MHz", "7.1 MHz", "14.3 MHz"]
-      : [t("linkBuilder.speedNames.normal"), t("linkBuilder.speedNames.two"),
-        t("linkBuilder.speedNames.three"), t("linkBuilder.speedNames.four")]
-    return [...edges, ...middle, warp]
+  // The speed rows come from the selected profile, and the panel stores the
+  // numeric mode rather than the display label. Labels change when a classic link
+  // turns into a GS link, but the mode survives, so a link cannot silently lose its
+  // speed parameter just because the visible table was rebuilt.
+  const lbProfile = getMachineProfile(lbMachineName)
+  const speedOptions = getProfileSpeedOptions(lbProfile)
+  const speedNames = speedOptions.map(option => getProfileSpeedLabel(lbProfile, option.mode, t))
+  const speedModeForLabel = (label: string): number =>
+    speedOptions[speedNames.indexOf(label)]?.mode ?? getProfileDefaultSpeedMode(lbProfile)
+  const defaultSpeedMode = getProfileDefaultSpeedMode(lbProfile)
+  const speedDisplay = speedNames[speedOptions.findIndex(option => option.mode === speedMode)]
+    ?? speedNames[speedOptions.findIndex(option => option.mode === defaultSpeedMode)]
+    ?? ""
+  const canUseAuxSlot3 = getProfileSlotChoices(lbProfile, lbMachineName, 3)
+    .some(choice => choice.card === "aux")
+
+  // A shared link must name the machine unless it is the classic enhanced default,
+  // where leaving ?machine= out follows the visitor's own saved choice. The IIgs
+  // is always named because otherwise a GS volume can be scanned by an IIe.
+  const MACHINE_QUERY_PARAMS: Partial<Record<MACHINE_NAME, string>> = {
+    APPLE2EU: "machine=apple2eu",
+    APPLE2P: "machine=apple2p",
+    APPLE2GS: "machine=apple2gs",
   }
-  const speedNames = speedNamesFor(lbMachineName)
+  const machineQueryFor = (name: MACHINE_NAME): string | undefined =>
+    MACHINE_QUERY_PARAMS[name]
 
   // Which floppy bays the current slot config actually exposes. On a IIgs the
   // 5.25" pair is the Disk Port and the 3.5" pair the Smart Port in slot 5;
@@ -279,16 +294,9 @@ const LinkBuilder = () => {
       params.push(`address=${encodeURIComponent(hexAddress)}`)
     }
 
-    if (lbMachineName === "APPLE2EU") {
-      params.push("machine=apple2eu")
-    } else if (lbMachineName === "APPLE2P") {
-      params.push("machine=apple2p")
-    } else if (lbMachineName === "APPLE2GS") {
-      // The Apple IIgs has to be named: a link that leaves ?machine= out opens
-      // whatever machine the visitor last used, so a IIgs volume would be
-      // scanned by an IIe. The classic entries stay silent because leaving the
-      // parameter off is how a link follows the visitor's own saved choice.
-      params.push("machine=apple2gs")
+    const machineQuery = machineQueryFor(lbMachineName)
+    if (machineQuery) {
+      params.push(machineQuery)
     }
 
     const ramIndex = ramdiskValues.indexOf(ramdisk)
@@ -309,12 +317,11 @@ const LinkBuilder = () => {
       params.push("gamepatches=off")
     }
 
-    const speedIndex = speedNames.indexOf(speed)
-    // Classic machines boot at index 2 (1 MHz); the IIgs boots at 2.8 MHz, so
-    // that is the one choice a link need not spell out. Skipping the wrong row
-    // would silently hand back the other machine's default speed.
-    const defaultSpeedIndex = lbMachineName === "APPLE2GS" ? 3 : 2
-    if (speedIndex !== -1 && speedIndex !== defaultSpeedIndex) {
+    // The profile's own default speed is the one choice a link need not spell
+    // out. Compare modes, not row labels, so a machine switch cannot turn the
+    // default into a stray parameter.
+    const speedIndex = speedOptions.findIndex(option => option.mode === speedMode)
+    if (speedIndex !== -1 && speedMode !== defaultSpeedMode) {
       params.push(`speed=${speedParams[speedIndex]}`)
     }
 
@@ -325,9 +332,10 @@ const LinkBuilder = () => {
 
     // Slot configuration params: emit slotN=card for any non-default slot
     let hasVera = false
+    const profileSlotDefaults = getProfileDefaultSlotConfig(lbProfile, lbMachineName)
     SLOT_NUMBERS.forEach(slot => {
       const card = slotConfig[slot]
-      const defaultCard = lbMachineName === "APPLE2GS" ? DEFAULT_SLOT_CONFIG_GS[slot] : DEFAULT_SLOT_CONFIG[slot]
+      const defaultCard = profileSlotDefaults[slot]
       if (card !== defaultCard) {
         params.push(`slot${slot}=${card}`)
         if (card === "vera") hasVera = true
@@ -451,9 +459,10 @@ const LinkBuilder = () => {
     setS2d1Url("")
     setS4d1Disk("")
     setS4d1Url("")
-    setSpeed(speedNames[2])
+    const resetProfile = getMachineProfile(APP_DEFAULT_MACHINE)
+    setSpeedMode(getProfileDefaultSpeedMode(resetProfile))
     setTheme(themeValues[0])
-    setSlotConfig({ ...DEFAULT_SLOT_CONFIG })
+    setSlotConfig(getProfileDefaultSlotConfig(resetProfile, APP_DEFAULT_MACHINE))
   }
 
   const retrieveFromEmulatorSettings = () => {
@@ -479,12 +488,11 @@ const LinkBuilder = () => {
     setRamdisk(ramdiskValues[memIndex])
 
     const currentSpeed = handleGetSpeedMode()
+    const retrievedProfile = getMachineProfile(machineName)
     if (currentSpeed >= -2 && currentSpeed <= 4) {
-      // Indexed against the retrieved machine's own labels, not the ones the
-      // panel happened to show before this click.
-      setSpeed(speedNamesFor(machineName)[currentSpeed + 2])
+      setSpeedMode(currentSpeed)
     } else {
-      setSpeed("")
+      setSpeedMode(getProfileDefaultSpeedMode(retrievedProfile))
     }
 
     setSelectedDisk("")
@@ -536,28 +544,26 @@ const LinkBuilder = () => {
           setValue={(val: string) => {
             const next = machineNameFor(val)
             setMachine(val)
-            const wasGS = lbMachineName === "APPLE2GS"
-            const isGS = next === "APPLE2GS"
-            if (wasGS !== isGS) {
+            const nextProfile = getMachineProfile(next)
+            if (lbProfile.family !== nextProfile.family) {
               // The two families share no slot cards: a classic config carried
               // into a IIgs link would install a Mockingboard over the mouse
               // port, and a GS config carried into a classic link dies in the
-              // URL parser because "gsMouse" is not a classic card. Either way
-              // the switch starts from that family's own defaults.
-              setSlotConfig(isGS ? { ...DEFAULT_SLOT_CONFIG_GS }
-                : { ...DEFAULT_SLOT_CONFIG, 3: next === "APPLE2P" ? "videoterm" : "aux" })
+              // URL parser because "gsMouse" is not a classic card. A family
+              // switch starts from that family's own defaults, speed included.
+              setSlotConfig(getProfileDefaultSlotConfig(nextProfile, next))
               setRamdisk(ramdiskValues[0])
+              setSpeedMode(getProfileDefaultSpeedMode(nextProfile))
               return
             }
-            // Adjust slot 3 when crossing between II+ and IIe families
-            const newIsIIp = next === "APPLE2P"
-            const wasIIp = lbMachineName === "APPLE2P"
-            if (newIsIIp !== wasIIp) {
-              setSlotConfig(prev => ({
-                ...prev,
-                3: newIsIIp ? "videoterm" : "aux"
-              }))
-              if (!newIsIIp) setRamdisk(ramdiskValues[0]) // reset to 64KB default
+            // Within the classic family only the exact-model slot 3 default
+            // changes (II+ videoterm vs IIe aux RAM). Read that from the profile
+            // instead of matching machine ids.
+            const prevSlot3 = getProfileDefaultSlotConfig(lbProfile, lbMachineName)[3]
+            const nextSlot3 = getProfileDefaultSlotConfig(nextProfile, next)[3]
+            if (prevSlot3 !== nextSlot3) {
+              setSlotConfig(prev => ({ ...prev, 3: nextSlot3 }))
+              if (nextSlot3 !== "videoterm") setRamdisk(ramdiskValues[0])
             }
           }} />
         <Droplist name={t("linkBuilder.colorMode")}
@@ -570,14 +576,14 @@ const LinkBuilder = () => {
           setValue={(val: string) => {
             setRamdisk(val)
             const rIdx = ramdiskValues.indexOf(val)
-            if (rIdx > 0 && lbMachineName !== "APPLE2P" && slotConfig[3] !== "aux") {
+            if (rIdx > 0 && canUseAuxSlot3 && slotConfig[3] !== "aux") {
               setSlotConfig(prev => ({ ...prev, 3: "aux" }))
             }
           }} />
         <Droplist name={t("linkBuilder.emulatorSpeed")}
-          value={speed !== "" ? speed : speedNames[2]}
+          value={speedDisplay}
           values={speedNames}
-          setValue={setSpeed} />
+          setValue={(label: string) => setSpeedMode(speedModeForLabel(label))} />
 
         <Droplist name={t("linkBuilder.uiTheme")}
           value={theme !== "" ? theme : themeValues[0]}

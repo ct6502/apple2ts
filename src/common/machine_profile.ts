@@ -59,6 +59,19 @@ export interface MachineCapabilities {
   hasAdbMouse: boolean
 }
 
+// Exact-model rendering and input traits. Profiles cover a hardware family; these
+// traits cover the differences the family profile cannot express (II+ versus IIe
+// ROM character maps, unenhanced IIe MouseText, GS ADB input). Keep these checks
+// here instead of scattering machine-name comparisons through UI code.
+export interface MachineTraits {
+  isApple2Plus: boolean
+  hasAltCharSet: boolean
+  hasLowerCase: boolean
+  hasMouseText: boolean
+  usesApple2PlusMap: boolean
+  hardwareKeyboardRepeats: boolean
+}
+
 export interface ProfileBootDisk {
   // Drive indices in the same order as the emulator's drive state:
   // 0/1 = slot 7 block storage, 2/3 = slot 6 5.25", 4/5 = slot 5 3.5".
@@ -229,6 +242,52 @@ export const MACHINE_PROFILES: Record<MACHINE_NAME, MachineProfile> = {
   APPLE2EE: CLASSIC_PROFILE,
   APPLE2GS: GS_PROFILE,
 }
+
+// Every accepted machine name, independent of the deployment target. Callers
+// that validate persisted names, URL parameters, or saved speed contexts must not
+// hard-code this list again.
+export const ALL_MACHINE_NAMES: MACHINE_NAME[] = [
+  ...CLASSIC_PROFILE.machines,
+  ...GS_PROFILE.machines,
+]
+
+const MACHINE_TRAITS: Record<MACHINE_NAME, MachineTraits> = {
+  APPLE2P: {
+    isApple2Plus: true,
+    hasAltCharSet: false,
+    hasLowerCase: false,
+    hasMouseText: false,
+    usesApple2PlusMap: true,
+    hardwareKeyboardRepeats: false,
+  },
+  APPLE2EU: {
+    isApple2Plus: false,
+    hasAltCharSet: true,
+    hasLowerCase: true,
+    hasMouseText: false,
+    usesApple2PlusMap: false,
+    hardwareKeyboardRepeats: true,
+  },
+  APPLE2EE: {
+    isApple2Plus: false,
+    hasAltCharSet: true,
+    hasLowerCase: true,
+    hasMouseText: true,
+    usesApple2PlusMap: false,
+    hardwareKeyboardRepeats: true,
+  },
+  APPLE2GS: {
+    isApple2Plus: false,
+    hasAltCharSet: true,
+    hasLowerCase: true,
+    hasMouseText: true,
+    usesApple2PlusMap: false,
+    hardwareKeyboardRepeats: false,
+  },
+}
+
+export const getMachineTraits = (machine: MACHINE_NAME): MachineTraits =>
+  MACHINE_TRAITS[machine]
 
 export const getMachineProfile = (machine: MACHINE_NAME): MachineProfile =>
   machine === "APPLE2GS" ? GS_PROFILE : CLASSIC_PROFILE

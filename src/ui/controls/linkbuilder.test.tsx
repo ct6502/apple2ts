@@ -107,6 +107,18 @@ describe("LinkBuilder", () => {
     })
   })
 
+  test("reads speed labels from the running machine's profile", () => {
+    const root = ReactDOM.createRoot(container)
+    act(() => {
+      root.render(<LinkBuilder />)
+    })
+    openBuilder(container)
+    expect(selectValue(container, "Speed of emulator:")).toBe("Normal")
+    act(() => {
+      root.unmount()
+    })
+  })
+
   test("getBaseAppUrl preserves subdirectories on GitHub Pages or custom paths", () => {
     const originalHref = window.location.href
     try {
@@ -269,6 +281,25 @@ describe("LinkBuilder Apple IIgs link", () => {
     for (const dead of ["slot1=", "slot2=", "slot3=", "slot4=", "slot5=", "slot6=", "ramdisk=", "tab=vera"]) {
       expect(link).not.toContain(dead)
     }
+    // A family switch resets the speed mode too, so the GS default stays out of
+    // the link and the panel shows the GS profile instead of the classic row.
+    expect(link).not.toContain("speed=")
+    expect(selectValue(container, "Speed of emulator:")).toBe("2.8 MHz")
+  })
+
+  test("a GS-to-classic switch drops GS speed mode and slot cards", () => {
+    openBuilder(container)
+    expect(selectValue(container, "Speed of emulator:")).toBe("2.8 MHz")
+    pickOption(container, "Machine:", "Apple IIe (enhanced)")
+    const link = builtLink(container)
+    expect(link).not.toContain("machine=apple2gs")
+    expect(link).not.toContain("speed=")
+    for (const dead of ["gsModem", "gsMouse", "gsText80", "gsDiskPort", "gsSmartPort", "vram", "ramdisk="]) {
+      expect(link).not.toContain(dead)
+    }
+    // The classic profile owns the label lookup, and the reset mode is the
+    // classic default rather than a residual GS speed.
+    expect(selectValue(container, "Speed of emulator:")).toBe("Normal")
   })
 })
 

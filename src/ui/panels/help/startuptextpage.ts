@@ -1,4 +1,5 @@
 import { i18n } from "../../../i18n"
+import { getMachineTraits } from "../../../common/machine_profile"
 import { isGameMode } from "../../ui_settings"
 
 
@@ -45,7 +46,7 @@ ${i18n.t("startup.copyright", { year })}`
     emulatorStartText += `\n\n${i18n.t("startup.mouseCapture")}\n`
   }
 
-  if (machineName === "APPLE2P") {
+  if (getMachineTraits(machineName).isApple2Plus) {
     emulatorStartText = emulatorStartText.toUpperCase()
   }
 

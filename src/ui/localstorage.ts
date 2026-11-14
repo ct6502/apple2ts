@@ -1,7 +1,7 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { AUTO_SNAPSHOT, COLOR_MODE, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
-import { getMachineProfile, getProfileDefaultSlotConfig } from "../common/machine_profile"
+import { ALL_MACHINE_NAMES, CLASSIC_PROFILE, getMachineProfile, getProfileDefaultSlotConfig, getProfileDefaultSpeedMode, getProfileSlotChoices } from "../common/machine_profile"
 import { APP_DEFAULT_MACHINE, APP_MACHINE_NAMES } from "../common/app_target"
 import { sanitizeSlotConfig } from "../common/slot_options"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
@@ -228,7 +228,7 @@ export const getPreferenceMachineName = (): MACHINE_NAME => {
   if (saved) {
     try {
       const parsed = JSON.parse(saved)
-      if ((parsed === "APPLE2P" || parsed === "APPLE2EU" || parsed === "APPLE2EE" || parsed === "APPLE2GS")
+      if (ALL_MACHINE_NAMES.includes(parsed)
         && APP_MACHINE_NAMES.includes(parsed)) {
         return parsed
       }
@@ -260,7 +260,7 @@ export const setPreferenceMachineName = (
   name: MACHINE_NAME = APP_DEFAULT_MACHINE,
   origin: SettingsChangeOrigin = "external",
 ) => {
-  if (name === "APPLE2EE") {
+  if (name === CLASSIC_PROFILE.defaultMachine) {
     localStorage.removeItem("machineName")
   } else {
     localStorage.setItem("machineName", JSON.stringify(name))
@@ -285,10 +285,13 @@ export const setPreferenceMachineName = (
     const slotConfig = getPreferenceSlotConfig()
     newSlotConfig = { ...slotConfig }
     let newSlot3 = newSlotConfig[3]
-    if (name === "APPLE2P") {
-      if (newSlot3 !== "none" && newSlot3 !== "videoterm" && newSlot3 !== "vidhd") newSlot3 = "videoterm"
-    } else {
-      if (newSlot3 !== "none" && newSlot3 !== "aux" && newSlot3 !== "vidhd") newSlot3 = "aux"
+    // Keep an explicitly empty or VidHD slot 3; otherwise fall back to the exact
+    // machine's profile default (II+ Videoterm or IIe aux RAM). No machine ids.
+    const slot3Cards = getProfileSlotChoices(
+      getMachineProfile(name), name, 3,
+    ).map(choice => choice.card)
+    if (newSlot3 !== "none" && !slot3Cards.includes(newSlot3)) {
+      newSlot3 = getProfileDefaultSlotConfig(getMachineProfile(name), name)[3]
     }
     newSlotConfig[3] = newSlot3
   }
@@ -418,7 +421,9 @@ export const setPreferenceSlotConfig = (
 
 export const SPEED_MODE_MACHINE_KEY = "speedModeMachineName"
 const SPEED_FAMILIES = (machineName: string | null) =>
-  getMachineProfile((machineName || "APPLE2EE") as MACHINE_NAME).family === "gs" ? "GS" : "CLASSIC"
+  getMachineProfile((machineName || CLASSIC_PROFILE.defaultMachine) as MACHINE_NAME).family === "gs"
+    ? "GS"
+    : "CLASSIC"
 
 const savePreferenceSpeedMode = (mode: number) => {
   if (mode === 0) {
@@ -684,7 +689,7 @@ export const loadPreferences = () => {
   if (speedModeMachineRaw) {
     try {
       const savedSpeedMachine = JSON.parse(speedModeMachineRaw) as MACHINE_NAME
-      if (["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"].includes(savedSpeedMachine)) {
+      if (ALL_MACHINE_NAMES.includes(savedSpeedMachine)) {
         savedSpeedFamily = SPEED_FAMILIES(savedSpeedMachine)
       }
     } catch {
@@ -767,7 +772,8 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   // above therefore leaves both the UI preference and worker mode untouched.
   setPreferenceAutoSnapshot(AUTO_SNAPSHOT.AUTO_OFF)
   
-  setPreferenceSpeedMode(0, origin)
+  const resetProfile = getMachineProfile(APP_DEFAULT_MACHINE)
+  setPreferenceSpeedMode(getProfileDefaultSpeedMode(resetProfile), origin)
   // The ROM choice is an independent GS preference; reset it back to ROM 01
   // (and tell the worker) even though the machine itself returns to APPLE2EE.
   setPreferenceIigsRomVersion("01", origin)
