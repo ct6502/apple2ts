@@ -33,7 +33,6 @@ ${i18n.t("startup.copyright", { year })}`
   case "APPLE2P": mode = "][+"; break
   case "APPLE2EU": mode = "][e unenhanced"; break
   case "APPLE2EE": mode = "//e enhanced"; break
-  case "APPLE2GS": mode = "IIgs"; break
   default:
   }
 
@@ -41,8 +40,7 @@ ${i18n.t("startup.copyright", { year })}`
 
   if (!isGameMode()) {
     emulatorStartText += `\n\n${i18n.t("startup.diskCollections")}`
-    emulatorStartText += `\n\n${i18n.t("startup.retroControlPanel")}`
-    emulatorStartText += `\n\n${i18n.t("startup.mouseCapture")}\n`
+    emulatorStartText += `\n\n${i18n.t("startup.retroControlPanel")}\n`
   }
 
   if (machineName === "APPLE2P") {

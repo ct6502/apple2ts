@@ -7,8 +7,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import PopupMenu from "./popupmenu"
-import { handleGetMachineName, handleGetSpeedMode } from "../main2worker"
-
+import { handleGetSpeedMode } from "../main2worker"
 import { setPreferenceSpeedMode } from "../localstorage"
 import { snailIcon } from "../img/icon_snail"
 import { turtleIcon } from "../img/icon_turtle"
@@ -37,21 +36,7 @@ const SPEED_LABEL_KEYS = [
 const speedBindings: RetroControlBindings = {
   "options.speed": {
     ...choiceBinding({
-      options: context => {
-        const isGS = handleGetMachineName() === "APPLE2GS"
-        if (isGS) {
-          return [
-            { label: context.t("retroControl.snail") },
-            { label: context.t("retroControl.slow") },
-            { label: "1.02 MHz" },
-            { label: "2.8 MHz" },
-            { label: "7.1 MHz" },
-            { label: "14.3 MHz" },
-            { label: context.t("retroControl.warp") },
-          ]
-        }
-        return SPEED_LABEL_KEYS.map(key => ({ label: context.t(key) }))
-      },
+      options: context => SPEED_LABEL_KEYS.map(key => ({ label: context.t(key) })),
       currentIndex: () => SPEED_MODES.indexOf(handleGetSpeedMode() as typeof SPEED_MODES[number]),
       select: (context, index) => {
         setPreferenceSpeedMode(SPEED_MODES[index], context.settingsOrigin)

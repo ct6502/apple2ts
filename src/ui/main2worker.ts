@@ -1,10 +1,9 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
-  DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS, VeraSdStatus,
+  DEFAULT_SLOT_CONFIG, VeraSdStatus, 
   MEMORY_DUMP_STATE,
   AUTO_SNAPSHOT,
   ERROR_CODE} from "../common/utility"
-import { APP_DEFAULT_MACHINE } from "../common/app_target"
 import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -15,8 +14,6 @@ import { setEnhancedMidi } from "./devices/audio/enhancedmidi"
 import { receiveMidiData } from "./devices/audio/midiinterface"
 import { playMockingboard } from "./devices/audio/mockingboard_audio"
 import { playVeraFmReset, playVeraFmWrite, playVeraPcmWrite, playVeraPsgWrite, playVeraPsgBatch } from "./devices/audio/vera_psg_audio"
-import { playEnsoniqSamples } from "./devices/audio/iigs_ensoniq_audio"
-
 import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
@@ -210,16 +207,6 @@ export const passKeyboardState = (payload: KeyboardState) => {
   doPostMessage(MSG_MAIN.KEYBOARD_STATE, payload)
 }
 
-// One Apple IIgs modifier press or release. A modifier carries no Apple II
-// ASCII, so it goes over the same channel with key -1 and the worker delivers it
-// as an ADB event byte that drives $C025 - the only place a key chord exists.
-// Only the IIgs has an ADB keyboard; on a classic machine a key -1 event would
-// clear the held key's any-key-down strobe, so the chord path stays closed.
-export const passAdbModifierKey = (domCode: string, isDown: boolean) => {
-  if (handleGetMachineName() !== "APPLE2GS") return
-  passKeyboardState({ key: -1, isDown, domCode, repeat: false })
-}
-
 export const requestKeyboardState = (payload: KeyboardState, timeoutMs = 5000) => {
   return requestWorkerOperation(MSG_MAIN.KEYBOARD_STATE, payload, timeoutMs)
 }
@@ -235,13 +222,6 @@ export const requestKeySequence = (payload: KeySequenceRequest) => {
     payload,
     timeoutMs + 1000,
   )
-}
-
-// Open the Apple IIgs ROM Desk Accessories menu. The worker injects the whole
-// Control + Open Apple + Escape chord, because the ADB micro-controller
-// intercepts that sequence instead of passing the Escape on to the guest.
-export const passIigsDeskPanel = () => {
-  doPostMessage(MSG_MAIN.IIGS_DESK_PANEL, {})
 }
 
 export const requestConditionalKeySequence = (payload: ConditionalKeySequenceRequest) => {
@@ -282,26 +262,7 @@ export const passSingleKeyPress = (key: number) => {
 }
 
 export const passMouseEvent = (event: MouseEventSimple) => {
-  // Debug event log (?adbtrace=1): the UI-side half of the mouse event chain,
-  // so a headless run can tell "the UI never saw the event" apart from "the
-  // worker dropped it". Capped and cheap.
-  if (mouseEventLogActive) {
-    uiMouseLog.push({ t: Date.now(), x: event.x, y: event.y, buttons: event.buttons })
-    const w = window as unknown as { __uiEvents?: unknown[] }
-    if (uiMouseLog.length > 600) uiMouseLog.shift()
-    w.__uiEvents = uiMouseLog
-  }
   doPostMessage(MSG_MAIN.MOUSEEVENT, event)
-}
-
-const uiMouseLog: Array<{ t: number, x: number, y: number, buttons: number }> = []
-let mouseEventLogActive = false
-export const setMouseEventLog = (enabled: boolean) => {
-  mouseEventLogActive = enabled
-  uiMouseLog.length = 0
-  if (typeof window !== "undefined") {
-    (window as unknown as { __uiEvents?: unknown[] }).__uiEvents = uiMouseLog
-  }
 }
 
 export const passPasteText = (text: string) => {
@@ -413,11 +374,6 @@ export const passSetVeraFmEnabled = (enabled: boolean) => {
   doPostMessage(MSG_MAIN.VERA_FM_ENABLED, enabled)
 }
 
-export const passSetIigsRomVersion = (version: IigsRomVersion) => {
-  doPostMessage(MSG_MAIN.IIGS_ROM, version)
-
-}
-
 export const passSetVeraSlot = (slot: VERA_SLOT) => {
   doPostMessage(MSG_MAIN.VERA_SLOT, slot)
   // This will also come from the emulator, but set it here so the UI updates
@@ -429,147 +385,6 @@ export const passSetSlotConfig = (config: SlotConfig) => {
   doPostMessage(MSG_MAIN.SLOT_CONFIG, config)
   machineState.slotConfig = config
   window.dispatchEvent(new CustomEvent("apple2ts-slot-config-changed", { detail: config }))
-}
-
-// ?iwmgaps=1 only: poll the worker for Apple IIgs IWM read-cadence stats. The
-// worker answers on demand rather than pushing every frame, so a worker that
-// gets re-created (Vite HMR, machine switch) can never silently stop answering.
-let iwmStatsTimer = 0
-export const passSetIwmStatsEnabled = (enabled: boolean) => {
-  if (!enabled) {
-    if (iwmStatsTimer) { clearInterval(iwmStatsTimer); iwmStatsTimer = 0 }
-    return
-  }
-  if (iwmStatsTimer) return
-  const poll = () => doPostMessage(MSG_MAIN.IWM_STATS_REQUEST, true)
-  poll()
-  iwmStatsTimer = window.setInterval(poll, 500)
-}
-
-// ?adbtrace=1 only: poll the worker for the ADB UI/report/read event ring.
-// The enable flag travels with the request (worker-reload reason, same as the
-// IWM stats sampler), and clearing resets the ring for a fresh attempt.
-let adbTraceTimer = 0
-export const passSetAdbTraceEnabled = (enabled: boolean, clear = false) => {
-  if (!enabled) {
-    if (adbTraceTimer) { clearInterval(adbTraceTimer); adbTraceTimer = 0 }
-    doPostMessage(MSG_MAIN.ADB_TRACE_REQUEST, { enabled: false })
-    return
-  }
-  if (adbTraceTimer && !clear) return
-  // The clear flag applies only to the immediate request: it must not ride
-  // along on the interval poll, or every poll would wipe the ring a moment
-  // before reading it and the log would always come back empty.
-  const poll = (c?: boolean) => doPostMessage(MSG_MAIN.ADB_TRACE_REQUEST, { enabled: true, clear: c ?? false })
-  poll(clear)
-  if (adbTraceTimer) { clearInterval(adbTraceTimer) }
-  adbTraceTimer = window.setInterval(() => poll(), 500)
-}
-
-// One-shot ring reset (window.__adbLogClear), without touching the poll timer.
-export const clearAdbTrace = () => doPostMessage(MSG_MAIN.ADB_TRACE_REQUEST, { enabled: true, clear: true })
-
-// ?ensoniqdbg=1 only: poll the worker for the Ensoniq DOC access stats. The
-// state lives in the worker (docAccess counters plus the live oscillator
-// picture), so a browser run can see whether a silent game is "never touched
-// the chip", "programmed it but everything is halted", or "producing samples
-// that never reached the AudioContext" (that last one is window.__ensoniqDebug).
-let ensoniqDbgTimer = 0
-export const passSetEnsoniqDebugEnabled = (enabled: boolean) => {
-  if (!enabled) {
-    if (ensoniqDbgTimer) { clearInterval(ensoniqDbgTimer); ensoniqDbgTimer = 0 }
-    return
-  }
-  if (ensoniqDbgTimer) return
-  const poll = () => doPostMessage(MSG_MAIN.ENSONIQ_DOC_REQUEST, true)
-  poll()
-  ensoniqDbgTimer = window.setInterval(poll, 1000)
-}
-
-// ?romtrace=1 only: poll the worker for the debug 65816 PC trace. The trace
-// window has to be cleared at a known point, so the caller passes
-// window.__romTraceReset() to mark a fresh boot attempt.
-let romTraceTimer = 0
-export const passSetRomTraceEnabled = (enabled: boolean) => {
-  if (!enabled) {
-    if (romTraceTimer) { clearInterval(romTraceTimer); romTraceTimer = 0 }
-    doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST, { enable: false })
-    return
-  }
-  if (romTraceTimer) return
-  const poll = () => doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST,
-    romTracePeek.length
-      ? { enable: true, peek: romTracePeek, shrDbg: true }
-      : { enable: true, shrDbg: true })
-  poll()
-  romTraceTimer = window.setInterval(poll, 1000)
-}
-export const passResetRomTrace = () => {
-  doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST, { clear: true })
-}
-
-// One immediate trace sample, with the SHR write census and optionally a reset of
-// its counters. Used to bracket a measurement window: reset, let the guest run,
-// read window.__romTrace.shrDbg. Rides the same request/response channel as the
-// periodic poll for the reason recorded in AGENTS.md §26b.
-export const passShrDbgRequest = (reset: boolean = false) => {
-  doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST, { shrDbg: true, shrDbgReset: reset })
-}
-
-// Ask for the bytes at these bank:offset addresses to ride on the next census
-// sample (window.__romTrace.codeBlocks). Code addresses come out of the SHR write
-// census, so reading them back needs no new channel and no sticky worker state.
-export const passShrCodeRequest = (addrs: number[]) => {
-  doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST, { shrDbg: true, codeAt: addrs })
-}
-
-// And a whole routine at once: the census gives a 256-byte straddle around each
-// storing instruction, which is not enough to read a draw/erase pair that live in
-// different routines. Answers accumulate on window.__shrCodeResult (see the
-// ROM_TRACE handler) rather than window.__romTrace, which the 1 Hz poll replaces.
-export const passShrWindowRequest = (regions: Array<{ a: number, n: number }>) => {
-  if (typeof window !== "undefined") {
-    const w = window as unknown as { __shrCodeResult?: Array<{ addr: string, bytes: number[] }> }
-    if (!w.__shrCodeResult) w.__shrCodeResult = []
-  }
-  doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST, { shrDbg: true, codeWindows: regions })
-}
-
-// Turn the per-instruction SHR-window write tally on or off in the worker. It is
-// a map lookup per store, so it stays off unless asked for; once on, the existing
-// 1 Hz census poll carries the result on window.__romTrace.shrDbg.writers.
-export const passShrTraceRequest = (on: boolean) => {
-  doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST, { shrDbg: true, traceWriters: on })
-}
-
-// Ask for one raw dump of the SHR buffer the renderer displays, alongside the
-// census. The answer is parked on window.__shrDumpResult as {len, scb, b64}
-// rather than left on window.__romTrace, because the 1 Hz poll replaces that
-// object wholesale and would erase it within a second.
-export const passShrDumpRequest = (reset: boolean = false) => {
-  if (typeof window !== "undefined") {
-    (window as unknown as { __shrDumpResult?: unknown }).__shrDumpResult = null
-  }
-  doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST, { shrDbg: true, wantShr: true, shrDbgReset: reset })
-}
-
-// ?romtrace=1 only: ask the worker to include these 24-bit addresses in every
-// trace sample, so emulator memory can be inspected from the browser. The values
-// come back in window.__romTrace.peekValues.
-let romTracePeek: number[] = []
-export const passSetRomTracePeek = (addrs: number[]) => {
-  romTracePeek = addrs.slice(0, 64)
-  doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST, { enable: true, peek: romTracePeek })
-}
-
-// TEMP probe: keep the 200 program counters leading into the first hits on these
-// 24-bit addresses, so a jump into a specific address names its cause.
-export const passSetRomTraceWatch = (addrs: number[], ranges: number[] = []) => {
-  doPostMessage(MSG_MAIN.ROM_TRACE_REQUEST, {
-    enable: true,
-    watch: addrs.slice(0, 8),
-    watchRange: ranges.slice(0, 16),
-  })
 }
 
 export const passSetSoftSwitches = (addresses: Array<number> | null) => {
@@ -683,16 +498,14 @@ let machineState: MachineState = {
   isTracing: TEST_DEBUG,
   iTempState: 0,
   lores: new Uint8Array(),
-  machineName: APP_DEFAULT_MACHINE,
+  machineName: "APPLE2EE",
   memoryDump: new Uint8Array(),
   noDelayMode: false,
   ramWorksBank: 0,
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
   showDebugTab: false,
-  slotConfig: APP_DEFAULT_MACHINE === "APPLE2GS"
-    ? { ...DEFAULT_SLOT_CONFIG_GS }
-    : { ...DEFAULT_SLOT_CONFIG },
+  slotConfig: { ...DEFAULT_SLOT_CONFIG },
   speedMode: 0,
   softSwitches: {} as unknown as MachineState["softSwitches"],
   stackString: "",
@@ -704,13 +517,6 @@ let machineState: MachineState = {
 }
 
 let didThrowConsoleWarning = false
-export let lastIwmReadStats: unknown = null
-export const getLastIwmReadStats = () => lastIwmReadStats
-export let lastRomTrace: unknown = null
-export const getLastRomTrace = () => lastRomTrace
-export let lastEnsoniqDocStats: unknown = null
-export const getLastEnsoniqDocStats = () => lastEnsoniqDocStats
-
 
 export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
   switch (e.data.msg as MSG_WORKER) {
@@ -776,56 +582,6 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       doPlayDriveSound(sound)
       break
     }
-    case MSG_WORKER.ENSONIQ_DOC_STATS:
-      // ?ensoniqdbg=1: DOC access picture for the current boot attempt. A
-      // request/response poll (see passSetEnsoniqDebugEnabled), never a sticky
-      // worker flag, because worker modules reload under a live page.
-      lastEnsoniqDocStats = e.data.payload
-      ;(window as unknown as { __ensoniqDocStats?: unknown }).__ensoniqDocStats = lastEnsoniqDocStats
-      break
-    case MSG_WORKER.IWM_READ_STATS: {
-      // Apple IIgs IWM read-cadence instrumentation (?iwmgaps=1 only). Kept on
-      // a plain module variable plus a window handle so a headless-browser run
-      // can read it with a single Runtime.evaluate.
-      lastIwmReadStats = e.data.payload
-      if (typeof window !== "undefined") {
-        ;(window as unknown as { __iwmStats?: unknown }).__iwmStats = lastIwmReadStats
-      }
-      break
-    }
-    case MSG_WORKER.ROM_TRACE: {
-      lastRomTrace = e.data.payload
-      if (typeof window !== "undefined") {
-        // A raw SHR dump arrives on the same channel as the periodic sample, and
-        // the sample replaces window.__romTrace every second. Park the dump on its
-        // own key so a caller polling at any later time still finds it.
-        const dump = (lastRomTrace as { shrDump?: unknown })?.shrDump
-        if (dump) {
-          ;(window as unknown as { __shrDumpResult?: unknown }).__shrDumpResult = dump
-        }
-        // Code windows arrive on the same channel and get erased by the next
-        // sample for the same reason the dumps did, so accumulate them on their
-        // own key: a caller can then make several requests and read one object.
-        const windows = (lastRomTrace as { codeWindows?: Array<{ addr: string, bytes: number[] }> })?.codeWindows
-        if (windows) {
-          const w = window as unknown as { __shrCodeResult?: Array<{ addr: string, bytes: number[] }> }
-          if (!w.__shrCodeResult) w.__shrCodeResult = []
-          for (const win of windows) {
-            const seen = w.__shrCodeResult.find((e) => e.addr === win.addr)
-            if (seen) seen.bytes = win.bytes
-            else w.__shrCodeResult.push(win)
-          }
-        }
-        ;(window as unknown as { __romTrace?: unknown }).__romTrace = lastRomTrace
-      }
-      break
-    }
-    case MSG_WORKER.ADB_TRACE: {
-      if (typeof window !== "undefined") {
-        ;(window as unknown as { __adbLog?: unknown }).__adbLog = e.data.payload
-      }
-      break
-    }
     case MSG_WORKER.RUMBLE: {
       const params = e.data.payload as GamePadActuatorEffect
       doRumble(params)
@@ -866,12 +622,6 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     }
     case MSG_WORKER.VERA_FM_RESET: {
       playVeraFmReset()
-      break
-    }
-    case MSG_WORKER.ENSONIQ_SOUND: {
-      const p = e.data.payload as { samples: Int16Array, sampleRate: number }
-      playEnsoniqSamples(p.samples, p.sampleRate)
-
       break
     }
     case MSG_WORKER.VERA_SD_STATUS: {
@@ -1152,11 +902,7 @@ export const handleGetVeraSlot = () => {
 }
 
 export const handleGetSlotConfig = (): SlotConfig => {
-  return machineState.slotConfig || (
-    handleGetMachineName() === "APPLE2GS"
-      ? { ...DEFAULT_SLOT_CONFIG_GS }
-      : { ...DEFAULT_SLOT_CONFIG }
-  )
+  return machineState.slotConfig || { ...DEFAULT_SLOT_CONFIG }
 }
 
 export const handleGetSoftSwitchDescriptions = () => {

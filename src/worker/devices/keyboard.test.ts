@@ -15,7 +15,6 @@ jest.mock("../memory", () => ({
   memSetC000: (address: number, value: number) => {
     keyboardMemory[address - 0xC000] = value
   },
-  getCurrentMachineName: () => "APPLE2EE",
 }))
 
 jest.mock("../games/game_mappings", () => ({

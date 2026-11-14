@@ -3,16 +3,14 @@ import { MAX_SNAPSHOTS, RamWorksMemoryStart, ROMmemoryStart, RUN_MODE, SAVE_STAT
 import { getDriveSaveState, getDriveSaveStateForLocalStorage, restoreDriveSaveState } from "./devices/drivestate"
 import { handleGameSetup } from "./games/game_mappings"
 import { s6502, getStackDump, setState6502, setStackDump } from "./instructions"
-import { getAuxCardEnabled, iigsGetVgcSaveState, iigsRegisters, iigsRestoreVgcSaveState, megaIIAux, megaIIMain, memory, memoryReset, RamWorksMaxBank, setRamWorks, updateAddressTables } from "./memory"
-import { configureMachine, doReset, doSetMachineName, doSetRunMode, getCPU, getMachineName, getSlotConfig, getSoftSwitches, updateExternalMachineState } from "./motherboard"
+import { getAuxCardEnabled, memory, memoryReset, RamWorksMaxBank, setRamWorks, updateAddressTables } from "./memory"
+import { configureMachine, doReset, doSetMachineName, doSetRunMode, getMachineName, getSlotConfig, getSoftSwitches, updateExternalMachineState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { vidhd } from "./devices/vidhd"
-import type { CPU65816 } from "./cpu65816"
 import { passRequestThumbnail } from "./worker2main"
 import { getSlotCardSaveState, restoreSlotCardSaveState } from "./devices/slot_card_state"
 import { getJoystickSaveState, restoreJoystickSaveState } from "./devices/joystick"
 import { getMemoryView } from "./memory_view"
-import { iigsADB } from "./iigs_adb"
 
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
@@ -59,7 +57,6 @@ export const getApple2State = (): Apple2SaveState => {
   })
 
   const memC000 = memory.subarray(ROMmemoryStart, ROMmemoryStart + 256)
-  const isGS = getMachineName() === "APPLE2GS"
 
   return {
     s6502: save6502,
@@ -72,33 +69,6 @@ export const getApple2State = (): Apple2SaveState => {
     memvalid: memvalid.slice(0, maxGood + 1).join(""),
     memC000: Buffer.from(memC000).toString("base64"),
     memory: Buffer.from(memgood).toString("base64"),
-    // SHR and the 80-column text pages live in Mega II, which is not part of
-    // the fast-RAM `memory` array. A save state without these restores a booted
-    // machine to black SHR (the VGC reads Mega II aux and main directly).
-    megaIIMain: Buffer.from(megaIIMain).toString("base64"),
-    megaIIAux: Buffer.from(megaIIAux).toString("base64"),
-    // $C020-$C04F live outside softSwitches: C029 is the SHR linearization and
-    // Mega II bank latch, C035 shadowing, C036 speed. A GS save without these
-    // restores an SHR screen with linear=false and reads the palette as zero.
-    iigsRegisters: Buffer.from(iigsRegisters).toString("base64"),
-    // s6502 only carries the legacy PC. The native core keeps A/X/Y/S/D, PC,
-    // PB, DB, P and its mid-instruction state on the CPU65816 object.
-    cpu65816: isGS
-      ? (getCPU() as CPU65816).getSaveState()
-      : undefined,
-    // The controller latches its interrupt enables outside the memory bytes:
-    // on restore a $C027 read can say "mouse IRQ enabled" while the micro's
-    // own interruptEnables is zero, so no IRQ reaches the guest and the mouse
-    // appears frozen. Old saves omit this and fall back to power-on defaults.
-    iigsADB: isGS
-      ? iigsADB.getSaveState()
-      : undefined,
-    // The VGC's interrupt register lives outside `iigsRegisters`; without its
-    // scanline-enable bit a restored GS/OS desktop stops repainting the cursor
-    // (the pointer bytes are in RAM, the enable is not).
-    iigsVgc: isGS
-      ? iigsGetVgcSaveState()
-      : undefined,
   }
 }
 
@@ -176,29 +146,6 @@ export const restoreApple2State = (
     })
     memory.set(Buffer.from(newState.memC000, "base64"), ROMmemoryStart)
   }
-  // Version 1 save files predate the Mega II arrays. They restore the fast RAM
-  // only; version 2 files carry the VGC's main/aux pages (SHR bytes included).
-  if (newState.megaIIMain) {
-    megaIIMain.set(Buffer.from(newState.megaIIMain, "base64"))
-  }
-  if (newState.megaIIAux) {
-    megaIIAux.set(Buffer.from(newState.megaIIAux, "base64"))
-  }
-  if (newState.iigsRegisters) {
-    iigsRegisters.set(Buffer.from(newState.iigsRegisters, "base64"))
-  }
-  if (newState.cpu65816) {
-    (getCPU() as CPU65816).setSaveState(newState.cpu65816)
-  }
-  // The soft-switch bytes restored above record only what the CPU wrote to
-  // $C027. The micro-controller's latched interrupt enables must be restored
-  // separately or a mouse/data IRQ never fires even when $C027 reads enabled.
-  // Old saves have no block and reset to power-on defaults.
-  iigsADB.restoreSaveState(newState.iigsADB)
-  // Restore the VGC interrupt register after `iigsRegisters`, because its
-  // scanline-enable bit is not a RAM byte and the reset left it at zero. Old
-  // saves fall back to the C023 byte they already carried in `iigsRegisters`.
-  iigsRestoreVgcSaveState(newState.iigsVgc)
   // This was added to Apple2SaveState later
   if (newState.stackDump) {
     setStackDump(newState.stackDump)

@@ -1,4 +1,4 @@
-import { canDriveTakeImage, convertTextPageValueToASCII, getCleanDiskFilename, getDefaultDiskDriveIndex, parseDiskSwapperParam, separateUrlAndComment } from "./utility"
+import { convertTextPageValueToASCII, getCleanDiskFilename, getDefaultDiskDriveIndex, parseDiskSwapperParam, separateUrlAndComment } from "./utility"
 
 test("disk drive defaults use the emulator's hard-drive image classification", () => {
   expect(getDefaultDiskDriveIndex("disk.dsk", 143360)).toBe(2)
@@ -11,42 +11,6 @@ test("disk drive defaults use the emulator's hard-drive image classification", (
   expect(getDefaultDiskDriveIndex("disk.img.gz", 33553920)).toBe(0)
   expect(getDefaultDiskDriveIndex("disk.img.7z", 33553920)).toBe(0)
   expect(getDefaultDiskDriveIndex("WizardReplay.hdv_.zip", 33553920)).toBe(0)
-})
-
-// An 800 KB disk is slot-5 media on the IIgs, so it must default there instead
-// of the 5.25" drive, and a bay the user picked explicitly must only be changed
-// when that bay physically cannot hold the media.
-test("the IIgs slot-5 drive is a real media family for mounting", () => {
-  const payload = 64 + 800 * 1024
-  expect(getDefaultDiskDriveIndex("SystemDisk.2mg", payload, true)).toBe(4)
-  expect(getDefaultDiskDriveIndex("SystemDisk.2mg", payload, false)).toBe(0)
-  expect(canDriveTakeImage(0, "SystemDisk.2mg", payload, true)).toBe(true)
-  expect(canDriveTakeImage(4, "SystemDisk.2mg", payload, true)).toBe(true)
-  expect(canDriveTakeImage(2, "SystemDisk.2mg", payload, true)).toBe(false)
-  expect(canDriveTakeImage(4, "game.woz", 368584, true)).toBe(false)
-  expect(canDriveTakeImage(2, "game.woz", 368584, true)).toBe(true)
-  expect(canDriveTakeImage(4, "WizardReplay.hdv", 33553920, true)).toBe(false)
-  expect(canDriveTakeImage(0, "WizardReplay.hdv", 33553920, true)).toBe(true)
-  expect(canDriveTakeImage(4, "disk.dsk", 800 * 1024, true)).toBe(true)
-  expect(canDriveTakeImage(4, "disk.dsk", 143360, true)).toBe(false)
-})
-
-// A protected 3.5" capture (Cavern_Cobra_IIgs.woz, 1,296,147 bytes) is 3.5"
-// media: the IIgs's slot-5 drive is the only bay wired for it, so it must land
-// there instead of being re-routed to the 5.25" drive - and a captured
-// bitstream still cannot be served as block data by slot 7. On a machine
-// without a 3.5" bay the floppy drive is the only sane fallback.
-test("a 3.5\" WOZ capture is slot-5 media, not 5.25\" media", () => {
-  const capture = 1_296_147
-  expect(getDefaultDiskDriveIndex("Cavern_Cobra_IIgs.woz", capture, true)).toBe(4)
-  expect(getDefaultDiskDriveIndex("Cavern_Cobra_IIgs.woz", capture, false)).toBe(2)
-  expect(canDriveTakeImage(4, "Cavern_Cobra_IIgs.woz", capture, true)).toBe(true)
-  expect(canDriveTakeImage(5, "Cavern_Cobra_IIgs.woz", capture, true)).toBe(true)
-  expect(canDriveTakeImage(2, "Cavern_Cobra_IIgs.woz", capture, true)).toBe(false)
-  expect(canDriveTakeImage(0, "Cavern_Cobra_IIgs.woz", capture, true)).toBe(false)
-  // A 5.25" capture is still 5.25" media at slot-5 sizes and below.
-  expect(canDriveTakeImage(4, "DOS33.woz", 234_496, true)).toBe(false)
-  expect(canDriveTakeImage(2, "DOS33.woz", 234_496, true)).toBe(true)
 })
 
 test("II+ decode maps 0x60/0x6C/0x6E to space/comma/period", () => {

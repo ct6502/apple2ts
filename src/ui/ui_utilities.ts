@@ -118,14 +118,7 @@ export const getCardShortLabels = (t: (key: string) => string): Record<SLOT_CARD
     vera: "VERA",
     passport: "Passport",
     disk2: "Disk II",
-    disk35: "3.5\" Disk Drive",
     smartport: "SmartPort",
-    gsPrinter: "Printer Port",
-    gsModem: "Modem Port",
-    gsText80: "80-Column Text",
-    gsMouse: "Mouse Port",
-    gsSmartPort: "Smart Port",
-    gsDiskPort: "Disk Port",
   })
 
 export const getRamdiskValues = (t: (key: string) => string) => [

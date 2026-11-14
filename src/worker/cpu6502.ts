@@ -205,7 +205,7 @@ export const resetCycleCountCallbacks = () => {
   cycleCountCallbacks.length = 0
   cycleCountCBdata.length = 0
 }
-export const processCycleCountCallbacks = () => {
+const processCycleCountCallbacks = () => {
   for (let i = 0; i < cycleCountCallbacks.length; i++) {
     cycleCountCallbacks[i](cycleCountCBdata[i])    
   }
@@ -477,7 +477,7 @@ export const processInstruction = (updateTrace: ((str: string) => void) | null =
 
   // This is used for peripheral cards that need to do some extra work.
   // Do not trigger the special function if we are using internal ROM.
-  const fn = specialJumpTable[PC1]
+  const fn = specialJumpTable.get(PC1)
   if (fn && (!SWITCHES.INTCXROM.isSet || (PC1 & 0xF000) !== 0xC000)) {
     fn()
   }

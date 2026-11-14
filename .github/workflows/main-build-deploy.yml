@@ -43,54 +43,39 @@ jobs:
     - run: node tools/check-node-version.mjs
     - run: npm ci --ignore-scripts
     - run: npm run lint
+    - run: npm run build
     - name: Install GNU gettext
       run: |
         sudo apt-get update
         sudo apt-get install --yes gettext
     - run: npm test
-    # Build both deployable targets from the same checkout. The scripts set
-    # BUILD_TARGET and land in dist/apple2ts and dist/apple2gts respectively.
-    - name: Build apple2ts target
-      run: npm run build:apple2ts
-    - name: Build apple2gts target
-      run: npm run build:apple2gts
-    - name: Verify deployment domains
-      run: |
-        test "$(cat dist/apple2ts/CNAME)" = "apple2ts.com"
-        test "$(cat dist/apple2gts/CNAME)" = "apple2gts.com"
     - name: Upload GitHub Pages artifact
       if: github.event.repository.has_pages
       uses: actions/upload-pages-artifact@v4
       with:
-        path: dist/apple2ts
+        path: dist
     - name: Deploy GitHub Pages
       if: github.event.repository.has_pages
       id: deployment
       uses: actions/deploy-pages@v4
-    - name: Detect Apple2GTS token
-      id: gts-token
-      env:
-        APPLE2GTS_TOKEN: ${{ secrets.APPLE2GTS_TOKEN }}
-      run: |
-        if [ -n "$APPLE2GTS_TOKEN" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; else echo "enabled=false" >> "$GITHUB_OUTPUT"; fi
     # Second copy of the same build, published from the ct6502/apple2gts
     # repository. That repository's .github/workflows/deploy-pages.yml reads
     # the gh-pages branch and publishes it; it is started by the dispatch
     # event below, because a push trigger cannot fire from gh-pages (the
     # workflow file would have to exist in the pushed ref).
-    - name: Deploy Apple2GTS build
-      if: steps.gts-token.outputs.enabled == 'true'
+    - name: Point custom domain at apple2gts.com
+      run: echo "apple2gts.com" > dist/CNAME
+    - name: Deploy to ct6502/apple2gts
       uses: JamesIves/github-pages-deploy-action@v4.7.3
       with:
         token: ${{ secrets.APPLE2GTS_TOKEN }}
         repository-name: ct6502/apple2gts
         branch: gh-pages
-        folder: dist/apple2gts
+        folder: dist
         clean: true
         single-commit: true
-        commit-message: "Deploy Apple2GTS from ${{ github.repository }}"
-    - name: Dispatch Apple2GTS Pages deployment
-      if: steps.gts-token.outputs.enabled == 'true'
+        commit-message: Deploy apple2ts ${{ github.sha }}
+    - name: Trigger the apple2gts Pages deployment
       env:
         APPLE2GTS_TOKEN: ${{ secrets.APPLE2GTS_TOKEN }}
       run: |

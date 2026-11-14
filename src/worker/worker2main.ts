@@ -7,7 +7,6 @@ import { attachAudioClockPort, doSetRunMode, doSetSpeedMode,
   doSetMemoryWriteWatchpoint,
   doClearMemoryWriteWatchpoint,
   doSetMachineName,
-  doSetIigsRomVersion,
   doSetRamWorks,
   doSetVeraSlot,
   doSetSlotConfig,
@@ -24,10 +23,9 @@ import { attachAudioClockPort, doSetRunMode, doSetSpeedMode,
   compareExternalSessionMemory,
   restoreExternalSessionSnapshot,
   setMemoryDumpState,
-  doSetAutoSnapshot,
-  getIigsVblCount} from "./motherboard"
+  doSetAutoSnapshot} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
-import { apple2KeyRelease, openIigsRomDeskPanel, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
+import { apple2KeyRelease, sendKeySequence, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import {
   hasConditionalInputSequence,
   requestConditionalInputTermination,
@@ -38,17 +36,13 @@ import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/jo
 import { AUTO_SNAPSHOT, DRIVE, MEMORY_DUMP_STATE, MSG_MAIN, MSG_WORKER, RUN_MODE, VeraSdStatus } from "../common/utility"
 import { sdcard_attach_image, sdcard_detach_image, sdcard_get_status, set_sdcard_status_listener, sdcard_get_image, sdcard_set_write_protected, sdcard_clear_changes, sdcard_get_write_seq } from "./devices/vera/sdcard"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
-import { MouseCardEvent, getMouseUiEventCount } from "./devices/mouse"
+import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
 import { receiveCommData } from "./devices/superserial/serial"
 import { setTraceSettings } from "./tracelog"
 import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState, doGetSaveStateForLocalStorage } from "./save_restore_worker"
 import { setSiriusJoyport } from "./devices/sirius_joyport"
-import { getCurrentMemory, memGet24, getCurrentMachineName, getShrDbg, getShrDump, resetShrDbg, setShrDbgTrace } from "./memory"
-import { getIwmReadStats } from "./devices/diskdata"
-import { getAdbLog, setAdbLogEnabled, clearAdbLog } from "./iigs_adb"
-import { iigsEnsoniq, docAccess } from "./devices/iigs_ensoniq"
-import { getRomTrace, setRomTraceEnabled, setRomTraceWatch, clearRomTrace } from "./romtrace"
+import { getCurrentMemory } from "./memory"
 import { enableGamePatches } from "./games/game_mappings"
 
 // This file must have worker types, but not DOM types.
@@ -124,15 +118,8 @@ export const passMachineState = (state: MachineState) => {
 }
 
 export const passClickSpeaker = (cycleCount: number) => {
-  speakerClickCount++
   doPostMessage(MSG_WORKER.CLICK, cycleCount)
 }
-
-// Test-only hook: lets the suite assert that a machine type actually drives
-// the speaker. Not used by the emulator itself.
-let speakerClickCount = 0
-export const getSpeakerClickCount = () => speakerClickCount
-export const resetSpeakerClickCount = () => { speakerClickCount = 0 }
 
 export const passDriveProps = (props: DriveProps, replaceDiskData = false) => {
   doPostMessage(MSG_WORKER.DRIVE_PROPS, replaceDiskData ? {props, replaceDiskData} : props)
@@ -140,33 +127,6 @@ export const passDriveProps = (props: DriveProps, replaceDiskData = false) => {
 
 export const passDriveSound = (sound: DRIVE) => {
   doPostMessage(MSG_WORKER.DRIVE_SOUND, sound)
-}
-
-// Apple IIgs IWM read-cadence instrumentation. Only ever touched when the UI
-// asks for it via ?iwmgaps=1, so it costs nothing in normal use. The UI polls
-// rather than the worker pushing every frame: a worker module can be
-// re-evaluated (Vite dev HMR, machine switch), which silently drops sticky
-// flags, whereas a request/response always answers. See the IwmReadStats
-// comment in devices/diskdata.ts for what the counters mean.
-export const passIwmReadStats = (stats: MessagePayload) => {
-  doPostMessage(MSG_WORKER.IWM_READ_STATS, stats)
-}
-
-// Debug-only ADB event ring (?adbtrace=1). See the noteAdbLog comment in
-// iigs_adb.ts. Poll pattern for the same worker-reload reason as IwmReadStats.
-export const passAdbTrace = (entries: MessagePayload) => {
-  doPostMessage(MSG_WORKER.ADB_TRACE, entries)
-}
-
-// Debug-only Ensoniq DOC access stats (?ensoniqdbg=1). Same request/response
-// pattern as IwmReadStats, for the same worker-reload reason.
-export const passEnsoniqDocStats = (stats: MessagePayload) => {
-  doPostMessage(MSG_WORKER.ENSONIQ_DOC_STATS, stats)
-}
-
-// Debug-only 65816 PC trace (?romtrace=1). See src/worker/romtrace.ts.
-export const passRomTrace = (trace: MessagePayload) => {
-  doPostMessage(MSG_WORKER.ROM_TRACE, trace)
 }
 
 const passMemory = (mem: Uint8Array) => {
@@ -223,14 +183,6 @@ export const pass6502Instructions = (instructions: Array<PCodeInstr1>) => {
 
 export const passSerialConfig = (config: SerialConfig) => {
   doPostMessage(MSG_WORKER.SERIAL_CONFIG_CHANGE, config)
-}
-
-export const passEnsoniqSound = (samples: Int16Array, sampleRate: number) => {
-  try {
-    doPostMessage(MSG_WORKER.ENSONIQ_SOUND as any, { samples, sampleRate })
-  } catch (error) {
-    console.error(`worker2main: passEnsoniqSound error: ${error}`)
-  }
 }
 
 export const passWorkerOperationResult = (
@@ -342,11 +294,6 @@ if (typeof self !== "undefined") {
             error instanceof Error ? error.message : String(error),
           ),
         )
-        break
-      case MSG_MAIN.IIGS_DESK_PANEL:
-        if (getCpuRunMode() === RUN_MODE.RUNNING) {
-          openIigsRomDeskPanel()
-        }
         break
       case MSG_MAIN.CONDITIONAL_KEY_SEQUENCE:
         if (e.data.operationId === undefined) break
@@ -570,131 +517,12 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.VERA_FM_ENABLED:
         setVeraFmEnabled(e.data.payload as boolean)
         break
-      case MSG_MAIN.IIGS_ROM:
-        doSetIigsRomVersion(e.data.payload as IigsRomVersion)
-
-        break
       case MSG_MAIN.VERA_SLOT:
         doSetVeraSlot(e.data.payload as VERA_SLOT)
         break
       case MSG_MAIN.SLOT_CONFIG:
         doSetSlotConfig(e.data.payload as SlotConfig)
         break
-      case MSG_MAIN.IWM_STATS_REQUEST:
-        // Answer immediately with whatever the sampler has accumulated for the
-        // current boot attempt.
-        passIwmReadStats(getIwmReadStats() as MessagePayload)
-        break
-      case MSG_MAIN.ENSONIQ_DOC_REQUEST:
-        // ?ensoniqdbg=1: answer with how much the program has touched the
-        // DOC and whether any oscillator is running, so "the game is silent"
-        // can be split into "no chip access", "programmed but silent", and
-        // "producing samples but the transport dropped them".
-        passEnsoniqDocStats({
-          docAccess: { ...docAccess },
-          osce: iigsEnsoniq.osce,
-          rege1: iigsEnsoniq.rege1,
-          outRate: iigsEnsoniq.outputRate(),
-          monoMirrorCount: iigsEnsoniq.monoMirrorCount,
-          irqTicks: iigsEnsoniq.irqTicks,
-          vblCount: getIigsVblCount(),
-          speedMode: iigsEnsoniq.lastSpeedMode,
-          cyclesPerRefresh: iigsEnsoniq.lastCyclesPerRefresh,
-          blocks: iigsEnsoniq.blocks.slice(0, 6),
-          active: iigsEnsoniq.hasActiveOscillators(),
-          soundadrl: iigsEnsoniq.soundadrl,
-          soundadrh: iigsEnsoniq.soundadrh,
-          systemVolume: iigsEnsoniq.systemVolume,
-          osc: iigsEnsoniq.oscillators.slice(0, Math.min(12, Math.max(4, iigsEnsoniq.osce))).map(o => ({
-            ctrl: o.control, vol: o.vol, freq: o.freq,
-            wt: o.wavetblpointer, acc: o.accumulator, irq: o.irqpend,
-          })),
-          timerOsc: {
-            ctrl: iigsEnsoniq.oscillators[31].control,
-            vol: iigsEnsoniq.oscillators[31].vol,
-            freq: iigsEnsoniq.oscillators[31].freq,
-            wt: iigsEnsoniq.oscillators[31].wavetblpointer,
-            wtsize: iigsEnsoniq.oscillators[31].wavetblsize,
-            resolution: iigsEnsoniq.oscillators[31].resolution,
-            acc: iigsEnsoniq.oscillators[31].accumulator,
-            irq: iigsEnsoniq.oscillators[31].irqpend,
-          },
-        } as unknown as MessagePayload)
-        break
-      case MSG_MAIN.ADB_TRACE_REQUEST: {
-
-        // ?adbtrace=1: answer with the ADB UI/report/read ring so a browser
-        // run can see the whole event chain (see iigs_adb.ts noteAdbLog).
-        // The machine name and event count help a dead-calm log say which
-        // layer dropped the chain: routing (machine name), delivery (count),
-        // or gating (enabled).
-        const req = (e.data.payload ?? {}) as { enabled?: boolean, clear?: boolean }
-        setAdbLogEnabled(req.enabled === true)
-        if (req.clear) clearAdbLog()
-        passAdbTrace({
-          entries: getAdbLog(),
-          machine: getCurrentMachineName(),
-          eventCount: getMouseUiEventCount(),
-        } as unknown as MessagePayload)
-        break
-      }
-      case MSG_MAIN.ROM_TRACE_REQUEST: {
-        // Payload: {enable?: boolean, clear?: boolean, peek?: number[]}.
-        // Enabling and clearing travel with the request rather than living in a
-        // sticky worker flag, which a module re-evaluation would silently reset.
-        const req = (e.data.payload ?? {}) as { enable?: boolean, clear?: boolean, peek?: number[], watch?: number[], watchRange?: number[], shrDbg?: boolean, shrDbgReset?: boolean, wantShr?: boolean, traceWriters?: boolean, codeAt?: number[], codeWindows?: Array<{ a: number, n: number }> }
-        if (req.enable !== undefined) setRomTraceEnabled(req.enable)
-        if (req.watch) setRomTraceWatch(req.watch, req.watchRange)
-        if (req.clear) clearRomTrace()
-        const trace = getRomTrace() as unknown as Record<string, unknown>
-        // A PC histogram says where the machine is spinning but not what it is
-        // spinning on. Peeking at the code under the current PC and at the zero
-        // page flags around $A0-$B0 turns "stuck at 00:861D" into a diagnosis.
-        const cur = (trace.last as number[])[(trace.last as number[]).length - 1]
-        if (typeof cur === "number") {
-          const code: number[] = []
-          for (let k = 0; k < 24; k++) code.push(memGet24((cur & 0xffff0000) | ((cur + k) & 0xffff)))
-          const zp: number[] = []
-          for (let a = 0x00a0; a <= 0x00af; a++) zp.push(memGet24(a))
-          trace.peekPc = cur
-          trace.peekCode = code
-          trace.peekZp = zp
-        }
-        if (req.peek) {
-          trace.peekValues = req.peek.map((addr) => memGet24(addr >>> 0))
-        }
-        // The write census names the instruction storing into the displayed window;
-        // this fetches the code around it so the sprite draw and its erase can be
-        // read rather than guessed at. The key is (PB << 16) | PC, so bank and
-        // offset have to be split again for memGet24.
-        const fetchCode = (addr: number, len: number) => {
-          const bank = (addr >>> 16) & 0xff
-          const start = addr & 0xffff
-          const bytes: number[] = []
-          for (let k = 0; k < len; k++) bytes.push(memGet24((bank << 16) | ((start + k) & 0xffff)))
-          return { addr: bank.toString(16) + ":" + start.toString(16), bytes }
-        }
-        if (req.codeAt) {
-          trace.codeBlocks = req.codeAt.map((addr) => fetchCode(addr, 256))
-        }
-        // A whole routine, not a 256-byte straddle: the census names the storing
-        // instruction but the erase that surrounds it can sit two streets away, and
-        // re-running a boot to get another 256 bytes costs minutes.
-        if (req.codeWindows) {
-          trace.codeWindows = req.codeWindows.map((w) => fetchCode(w.a, Math.min(Math.max(w.n | 0, 16), 4096)))
-        }
-        // A game that leaves stale sprites is either being displayed from a buffer
-        // it is not redrawing or redrawing the one we show without erasing. Those
-        // look identical on the canvas and differ only in where the writes land,
-        // so the SHR write census rides along with the trace poll.
-        if (req.traceWriters !== undefined) setShrDbgTrace(req.traceWriters)
-        trace.vbls = getIigsVblCount()
-        trace.shrDbg = req.shrDbg ? getShrDbg() : undefined
-        if (req.wantShr) trace.shrDump = getShrDump()
-        if (req.shrDbgReset) resetShrDbg()
-        passRomTrace(trace)
-        break
-      }
       case MSG_MAIN.VERA_SD_IMAGE: {
         const payload = e.data.payload as { data: Uint8Array | null, name: string } | null
         if (!payload || !payload.data) {

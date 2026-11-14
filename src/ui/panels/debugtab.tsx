@@ -6,7 +6,7 @@ import MemoryMap from "./memory/memorymap"
 import StackDump from "./stackdump"
 import { isMinimalTheme } from "../ui_settings"
 import { useRef, useState, useEffect } from "react"
-import { getPreferenceDebugTabLeftWidth, PREFERENCES_RESET_EVENT, setPreferenceDebugTabLeftWidth } from "../localstorage"
+import { getPreferenceDebugTabLeftWidth, setPreferenceDebugTabLeftWidth } from "../localstorage"
 import MemoryDump from "./memory/memorydump"
 import HeatMapPanel from "./memory/heatmap_panel"
 import TabBase from "../tabbase"
@@ -24,14 +24,6 @@ const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
   const [isDragging, setIsDragging] = useState(false)
   const leftColumnRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handlePreferencesReset = () => {
-      setLeftWidth(getPreferenceDebugTabLeftWidth())
-    }
-    window.addEventListener(PREFERENCES_RESET_EVENT, handlePreferencesReset)
-    return () => window.removeEventListener(PREFERENCES_RESET_EVENT, handlePreferencesReset)
-  }, [])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
