@@ -102,7 +102,7 @@ export const newReleases: DiskCollectionItem[] = [
     lastUpdated: new Date("8/28/2026"),
     imageUrl: "disks/veratest.png",
     diskUrl: "https://github.com/anomixer/veratest/releases/latest/download/veratest.po",
-    detailsUrl: "https://github.com/anomixer/veratest",
+    detailsUrl: "https://anomixer.github.io/veratest/",
     params: "slot2=vera&tab=vera",
     fileSize: 143360
   },
@@ -112,7 +112,7 @@ export const newReleases: DiskCollectionItem[] = [
     lastUpdated: new Date("8/30/2026"),
     imageUrl: "disks/slideshow.png",
     diskUrl: "https://github.com/anomixer/veratest/releases/latest/download/slideshow.hdv.zip",
-    detailsUrl: "https://github.com/anomixer/veratest",
+    detailsUrl: "https://anomixer.github.io/veratest/",
     params: "slot2=vera&tab=vera",
     fileSize: 33553920
   },
@@ -122,9 +122,19 @@ export const newReleases: DiskCollectionItem[] = [
     lastUpdated: new Date("9/6/2026"),
     imageUrl: "disks/timepilot.png",
     diskUrl: "https://github.com/anomixer/Time-Pilot/releases/latest/download/TimePilot-IIvera.hdv",
-    detailsUrl: "https://github.com/anomixer/Time-Pilot",
+    detailsUrl: "https://anomixer.github.io/Time-Pilot/",
     params: "slot2=vera&tab=vera",
     fileSize: 819200
+  },
+  {
+    type: "new",
+    title: "Freegemas VERA",
+    lastUpdated: new Date("9/27/2026"),
+    imageUrl: "disks/freegemas.png",
+    diskUrl: "https://github.com/anomixer/freegemas/releases/latest/download/freegemas.hdv",
+    detailsUrl: "https://anomixer.github.io/freegemas/",
+    params: "slot2=vera&tab=vera&slot5=mouse",
+    fileSize: 2097152
   },
   {
     type: "new",
@@ -133,6 +143,16 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: "disks/minerescue.png",
     diskUrl: "https://github.com/anomixer/x16-hero-vera/releases/latest/download/x16-hero-vera.hdv",
     detailsUrl: "https://github.com/anomixer/x16-hero-vera",
+    params: "slot2=vera&tab=vera&theme=dark",
+    fileSize: 819200
+  },
+  {
+    type: "new",
+    title: "Alter Ego VERA",
+    lastUpdated: new Date("10/15/2026"),
+    imageUrl: "disks/alterego.png",
+    diskUrl: "https://github.com/anomixer/alter-ego/releases/latest/download/alter-ego-vera.hdv",
+    detailsUrl: "https://anomixer.github.io/alter-ego/",
     params: "slot2=vera&tab=vera&theme=dark",
     fileSize: 819200
   }
