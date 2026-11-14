@@ -217,18 +217,22 @@ const LinkBuilder = () => {
   const canUseAuxSlot3 = getProfileSlotChoices(lbProfile, lbMachineName, 3)
     .some(choice => choice.card === "aux")
 
-  // A shared link must name the machine unless it is the classic enhanced default,
-  // where leaving ?machine= out follows the visitor's own saved choice. Both
-  // cross-target rows are named too, so a GS title built on the classic site
-  // carries machine=apple2gs and a classic title built on the GS site carries
-  // machine=apple2ee / apple2p.
+  // A shared link names the machine except for the classic enhanced default on
+  // apple2ts.com, where leaving ?machine= out follows the visitor's own saved
+  // choice. On apple2gts.com APPLE2EE is not the target default, so a classic
+  // title link must name it or a GS preference would boot the GS desktop. A GS
+  // link built on the classic site therefore carries machine=apple2gs, and a
+  // classic link built on the GS site carries machine=apple2ee / apple2p.
   const MACHINE_QUERY_PARAMS: Partial<Record<MACHINE_NAME, string>> = {
     APPLE2EU: "machine=apple2eu",
     APPLE2P: "machine=apple2p",
+    APPLE2EE: "machine=apple2ee",
     APPLE2GS: "machine=apple2gs",
   }
   const machineQueryFor = (name: MACHINE_NAME): string | undefined =>
-    MACHINE_QUERY_PARAMS[name]
+    name === "APPLE2EE" && APP_DEFAULT_MACHINE === "APPLE2EE"
+      ? undefined
+      : MACHINE_QUERY_PARAMS[name]
 
   // Which floppy bays the current slot config actually exposes. On a IIgs the
   // 5.25" pair is the Disk Port and the 3.5" pair the Smart Port in slot 5;

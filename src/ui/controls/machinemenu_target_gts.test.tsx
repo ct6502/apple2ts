@@ -96,3 +96,31 @@ test("IIgs deployment keeps Settings GS-only but lets Link Builder cross to the 
     i18n.setLanguage(language)
   }
 })
+
+test("IIgs deployment names the classic enhanced machine in a title link", () => {
+  const language = i18n.getLanguage()
+  const container = document.createElement("div")
+  document.body.appendChild(container)
+  const root = createRoot(container)
+  try {
+    i18n.setLanguage("en")
+    act(() => root.render(<LinkBuilder />))
+    act(() => container.querySelector("button")!.dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    ))
+    const machine = Array.from(container.querySelectorAll("select"))
+      .find(candidate => candidate.name === t("linkBuilder.machine")) as HTMLSelectElement
+    act(() => {
+      machine.value = t("machine.models.apple2ee")
+      machine.dispatchEvent(new Event("change", { bubbles: true }))
+    })
+    // APPLE2EE is not the target default here, so leaving machine= out would
+    // let the GS site's saved preference boot a classic title on the GS desktop.
+    const link = container.querySelector("textarea[readonly]") as HTMLTextAreaElement
+    expect(link.value).toContain("machine=apple2ee")
+  } finally {
+    act(() => root.unmount())
+    container.remove()
+    i18n.setLanguage(language)
+  }
+})
