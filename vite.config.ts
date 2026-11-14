@@ -100,54 +100,68 @@ const cloudflarePagesAssetCleanup: Plugin = {
   }
 }
 
-export default defineConfig({
-  base: "./",  // This makes all paths relative
-  plugins: [react(), appTargetMetadataPlugin, demoZooDirectPlugin, cloudflarePagesAssetCleanup,
-    // Uncomment all these lines to enable HTTPS for localhost
-    // basicSsl({
-    //   /** name of certification */
-    //   name: "test",
-    //   /** custom trust domains */
-    //   domains: ["*.custom.com"],
-    //   /** custom certification directory */
-    //   certDir: "/Users/.../.devServer/cert",
-    // })
-  ],
-  server: {
-    host: true,
-    port: 6502,
-    proxy: {
-      "/api/ollama/tags": {
-        target: "http://127.0.0.1:11434",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/ollama\/tags/, "/api/tags"),
-      },
-      "/api/ollama": {
-        target: "http://127.0.0.1:11434",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/ollama/, "/v1/chat/completions"),
-      },
-      "/api/demozoo": {
-        target: "https://demozoo.org",
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/api\/demozoo/, "/api"),
-      },
-    }
-  },
-  build: {
-    emptyOutDir: false,
-    outDir: buildOutputDir,
-    chunkSizeWarningLimit: 3000,
-    sourcemap: true
-  },
-  define: {
-    // npm 11+ rejects unknown CLI flags (EUNKNOWNCONFIG), so `--urlparam=...`
-    // no longer produces npm_config_urlparam. Use an environment variable
-    // instead: A2TS_URLPARAM="speed=fast#Replay" npm start
-    "process.env.A2TS_URLPARAM": JSON.stringify(
-      process.env.A2TS_URLPARAM ?? process.env.npm_config_urlparam ?? ""
-    ),
-    "process.env.BUILD_TARGET": JSON.stringify(APP_TARGET),
+export default defineConfig(({ command }) => {
+  // A local dev server serves one checkout, not one deployed site. Leave every
+  // machine profile visible when BUILD_TARGET is unset; a targeted production
+  // build (`npm run build:apple2ts` / `build:apple2gts`) keeps filtering.
+  const isLocalDevServer = command === "serve" && !isTargetBuild
+
+  return {
+    base: "./",  // This makes all paths relative
+    plugins: [
+      react(),
+      appTargetMetadataPlugin,
+      demoZooDirectPlugin,
+      cloudflarePagesAssetCleanup,
+      // Uncomment all these lines to enable HTTPS for localhost
+      // basicSsl({
+      //   /** name of certification */
+      //   name: "test",
+      //   /** custom trust domains */
+      //   domains: ["*.custom.com"],
+      //   /** custom certification directory */
+      //   certDir: "/Users/.../.devServer/cert",
+      // })
+    ],
+    server: {
+      host: true,
+      port: 6502,
+      proxy: {
+        "/api/ollama/tags": {
+          target: "http://127.0.0.1:11434",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/ollama\/tags/, "/api/tags"),
+        },
+        "/api/ollama": {
+          target: "http://127.0.0.1:11434",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/ollama/, "/v1/chat/completions"),
+        },
+        "/api/demozoo": {
+          target: "https://demozoo.org",
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/api\/demozoo/, "/api"),
+        },
+      }
+    },
+    build: {
+      emptyOutDir: false,
+      outDir: buildOutputDir,
+      chunkSizeWarningLimit: 3000,
+      sourcemap: true
+    },
+    define: {
+      // npm 11+ rejects unknown CLI flags (EUNKNOWNCONFIG), so `--urlparam=...`
+      // no longer produces npm_config_urlparam. Use an environment variable
+      // instead: A2TS_URLPARAM="speed=fast#Replay" npm start
+      "process.env.A2TS_URLPARAM": JSON.stringify(
+        process.env.A2TS_URLPARAM ?? process.env.npm_config_urlparam ?? ""
+      ),
+      "process.env.BUILD_TARGET": JSON.stringify(APP_TARGET),
+      // The UI reads this string instead of Vite's dev-only import.meta flag, so
+      // Jest and worker bundles use the same production filtering path.
+      "process.env.A2TS_DEV_MACHINES": JSON.stringify(isLocalDevServer ? "true" : "false"),
+    },
   }
 })

@@ -58,11 +58,28 @@ export const getAppManifestDescription = (target: AppTarget): string =>
 export const getAppMachineNames = (target: AppTarget): MACHINE_NAME[] =>
   target === GTS_TARGET ? ["APPLE2GS"] : ["APPLE2P", "APPLE2EU", "APPLE2EE"]
 
+// Local development is one checkout serving both families, so `npm start`
+// exposes every machine profile. A target build still gets the production
+// filtering above; this only affects the Vite dev server with BUILD_TARGET unset.
+export const getAppMachineNamesForBuild = (
+  target: AppTarget,
+  localDevelopment: boolean,
+): MACHINE_NAME[] =>
+  localDevelopment
+    ? ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
+    : getAppMachineNames(target)
+
 export const APP_TARGET = parseAppTarget(process.env.BUILD_TARGET)
 
 export const IS_APPLE2GTS = APP_TARGET === GTS_TARGET
 
-export const APP_MACHINE_NAMES = getAppMachineNames(APP_TARGET)
+// Vite sets this only for the un-targeted local dev server (npm start).
+export const IS_LOCAL_DEV_MACHINES = process.env.A2TS_DEV_MACHINES === "true"
+
+export const APP_MACHINE_NAMES = getAppMachineNamesForBuild(
+  APP_TARGET,
+  IS_LOCAL_DEV_MACHINES,
+)
 
 export const APP_NAME = getAppName(APP_TARGET)
 export const APP_TITLE = getAppTitle(APP_TARGET)
@@ -79,7 +96,8 @@ export const APP_MANIFEST_DESCRIPTION = getAppManifestDescription(APP_TARGET)
 export const getAppMachineNameOrDefault = (
   name: MACHINE_NAME | undefined,
   target: AppTarget = APP_TARGET,
+  localDevelopment: boolean = IS_LOCAL_DEV_MACHINES,
 ): MACHINE_NAME => {
-  const allowed = getAppMachineNames(target)
+  const allowed = getAppMachineNamesForBuild(target, localDevelopment)
   return name && allowed.includes(name) ? name : getAppDefaultMachine(target)
 }

@@ -5,6 +5,7 @@ import {
   getAppFavicon,
   getAppMachineNameOrDefault,
   getAppMachineNames,
+  getAppMachineNamesForBuild,
   getAppName,
   getAppTitle,
   parseAppTarget,
@@ -59,6 +60,23 @@ describe("target machine menus", () => {
 
   test("apple2gts offers only the IIgs", () => {
     expect(getAppMachineNames("apple2gts")).toEqual(["APPLE2GS"])
+  })
+
+  test("a target build keeps the production filtering", () => {
+    expect(getAppMachineNamesForBuild("apple2ts", false)).toEqual(["APPLE2P", "APPLE2EU", "APPLE2EE"])
+    expect(getAppMachineNamesForBuild("apple2gts", false)).toEqual(["APPLE2GS"])
+  })
+
+  test("the untargeted local dev server exposes all four machine profiles", () => {
+    const allMachines = ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"]
+    expect(getAppMachineNamesForBuild("apple2ts", true)).toEqual(allMachines)
+    expect(getAppMachineNamesForBuild("apple2gts", true)).toEqual(allMachines)
+  })
+
+  test("local dev accepts a IIgs URL machine instead of falling back to a classic IIe", () => {
+    expect(getAppMachineNameOrDefault("APPLE2GS", "apple2ts", true)).toBe("APPLE2GS")
+    expect(getAppMachineNameOrDefault("APPLE2GS", "apple2ts", false)).toBe("APPLE2EE")
+    expect(getAppMachineNameOrDefault("APPLE2EU", "apple2gts", true)).toBe("APPLE2EU")
   })
 
   test("an unsupported machine falls back to the target default", () => {
