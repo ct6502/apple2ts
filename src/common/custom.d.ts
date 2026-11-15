@@ -439,6 +439,28 @@ type DriveState = {
   writableFileHandle: WritableFileHandle | null,
   lastLocalFileWriteTime: number
   optimalTiming: number,
+  // Flux tracks (WOZ 2.1 FLUX tracks and A2R3 captures) are read only. The
+  // per-quarter-track arrays stay empty on a disk with no flux, so that the
+  // save states of other disks hardly grow.
+  fluxKind: FLUX_KIND,
+  fluxPsPerTick: number,
+  // The loop of each flux track is the bytes from fluxLapStart up to
+  // fluxLapEnd in the drive data. A track with a fluxLapEnd of 0 is not a flux
+  // track. One revolution and the whole loop are in CPU cycles.
+  fluxLapStart: Array<number>,
+  fluxLapEnd: Array<number>,
+  fluxRevCycles: Array<number>,
+  fluxLoopCycles: Array<number>,
+  // The flux cursor. Its times are in CPU cycles from the start of the
+  // current pass of the loop.
+  fluxByte: number,
+  fluxTicks: number,
+  fluxCycle: number,
+  fluxIntervalStart: number,
+  fluxIntervalLength: number,
+  fluxIntervalEnd: number,
+  fluxBitsInInterval: number,
+  fluxBitIndex: number,
 }
 
 type DriveProps = {
@@ -454,7 +476,10 @@ type DriveProps = {
   lastAppleWriteTime: number,
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null,
-  lastLocalFileWriteTime: number
+  lastLocalFileWriteTime: number,
+  // Set by the worker when the disk plays flux tracks, which are read only.
+  // Optional because only the worker's own props carry it.
+  isFlux?: boolean
 }
 
 type DriveSaveState = {

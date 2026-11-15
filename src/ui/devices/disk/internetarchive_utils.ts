@@ -120,7 +120,7 @@ export interface IaResolvedDiskFiles {
   allUrls?: URL[]
 }
 
-const DISK_EXTENSIONS = [".woz", ".dsk", ".po", ".hdv", ".2mg", ".do"]
+const DISK_EXTENSIONS = [".woz", ".a2r", ".dsk", ".po", ".hdv", ".2mg", ".do"]
 
 export const resolveIaDiskFilesFromDetails = (
   identifier: string,

@@ -10,6 +10,7 @@ export type DecompressedFile = UnzippedFile
 
 export const DEFAULT_DISK_EXTENSIONS = [
   ".woz",
+  ".a2r",
   ".po",
   ".dsk",
   ".do",

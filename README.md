@@ -35,7 +35,7 @@ Single-instance cards automatically handle slot exclusivity, and UI peripheral b
 Apple2TS provides full emulation for 5.25" floppy drives, SmartPort 3.5" hard drives, and VERA SD storage, featuring advanced container support and multi-disk swapping:
 
 ### Supported Disk Formats & Compressed Containers
-- **Disk Images**: `.woz` (WOZ 1.0 and 2.0 bitstream images with accurate bit timing, write-back, and automatic CRC32 recalculation), `.2mg`, `.dsk`, `.do`, `.po`, `.hdv`, `.bin`, and `.bas`.
+- **Disk Images**: `.woz` (WOZ 1.0 and 2.0 bitstream images with accurate bit timing, write-back, and automatic CRC32 recalculation; WOZ 2.1 FLUX tracks, read only), `.a2r` (A2R3 5.25" flux captures, read only), `.2mg`, `.dsk`, `.do`, `.po`, `.hdv`, `.bin`, and `.bas`.
 - **Archive Containers**: `.zip`, `.7z` (powered by WebAssembly SevenZip), and `.gz` (gzip).
 - **Auto-Mounting Multi-Disk Archives**: Dropping or loading a `.zip`, `.7z`, or `.gz` containing multiple disk images automatically extracts and mounts all discovered disks into the drive's swapper playlist, immediately booting the first disk.
 
