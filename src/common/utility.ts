@@ -8,7 +8,7 @@ export const TEST_DEBUG = false
 export const TEST_GRAPHICS = false
 export const MAX_SNAPSHOTS = 30
 const FILE_OPEN_SUFFIXES = ".a2ts,.bin,.a,.bas"
-const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.do,.nib"
+const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.a2r,.do,.nib"
 const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po,.2meg,.img"
 export const FILE_SUFFIXES_DISK = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
 export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK},.zip,.gz,.7z,.tar`
@@ -243,6 +243,13 @@ export enum DRIVE {
   MOTOR_ON,
   TRACK_END,
   TRACK_SEEK,
+}
+
+// What a floppy plays its flux tracks from, if it has any.
+export enum FLUX_KIND {
+  NONE,
+  WOZ,
+  A2R3,
 }
 
 export enum CLOUD_SYNC {

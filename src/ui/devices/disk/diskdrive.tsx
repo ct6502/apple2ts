@@ -80,7 +80,7 @@ export const loadDiskFromCloudDrive = async (cloudDrive: CloudProvider, driveInd
     const decompressedList = await decompressAllDiskFiles(
       buffer,
       cloudData.fileName,
-      [".woz", ".po", ".dsk", ".do", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"]
+      [".woz", ".a2r", ".po", ".dsk", ".do", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"]
     )
     if (decompressedList && decompressedList.length > 0) {
       const archiveCloudData: CloudData = {
@@ -558,7 +558,8 @@ const DiskDrive = (props: DiskDriveProps) => {
           {
             label: t("disk.writeProtectDisk"),
             icon: faLock,
-            isDisabled: !dprops.filename || dprops.filename.length === 0,
+            // Flux disks are read only.
+            isDisabled: !dprops.filename || dprops.filename.length === 0 || dprops.isFlux,
             isSelected: () => { return dprops.isWriteProtected },
             onClick: () => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }
           },
@@ -602,7 +603,8 @@ const DiskDrive = (props: DiskDriveProps) => {
           {
             label: t("disk.downloadWoz"),
             icon: faDownload,
-            isDisabled: dprops.filename.length === 0 || dprops.hardDrive || dprops.filename.toLowerCase().endsWith(".woz"),
+            isDisabled: dprops.filename.length === 0 || dprops.hardDrive || dprops.filename.toLowerCase().endsWith(".woz") ||
+              dprops.filename.toLowerCase().endsWith(".a2r"),
             onClick: () => {
               if (dprops.diskData.length > 0) {
                 downloadDisk(dprops.diskData, filename, dprops.hardDrive, true)
