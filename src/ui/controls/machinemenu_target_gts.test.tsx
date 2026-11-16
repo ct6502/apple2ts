@@ -58,7 +58,7 @@ const machineOptions = (container: HTMLElement) => {
   return Array.from(select.querySelectorAll("option")).map(option => option.value)
 }
 
-test("IIgs deployment exposes only the IIgs machine", () => {
+test("IIgs deployment filters Settings but Link Builder crosses the boundary", () => {
   const language = i18n.getLanguage()
   const settingsContainer = document.createElement("div")
   const linkContainer = document.createElement("div")
@@ -68,6 +68,7 @@ test("IIgs deployment exposes only the IIgs machine", () => {
   try {
     i18n.setLanguage("en")
     const gsOptions = ["Apple IIgs"]
+    const allLinkOptions = ["Apple II+", "Apple IIe (unenhanced)", "Apple IIe (enhanced)", "Apple IIgs"]
 
     act(() => settingsRoot.render(
       <SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />,
@@ -79,7 +80,7 @@ test("IIgs deployment exposes only the IIgs machine", () => {
     act(() => linkContainer.querySelector("button")!.dispatchEvent(
       new MouseEvent("click", { bubbles: true }),
     ))
-    expect(machineOptions(linkContainer)).toEqual(gsOptions)
+    expect(machineOptions(linkContainer)).toEqual(allLinkOptions)
   } finally {
     act(() => settingsRoot.unmount())
     act(() => linkRoot.unmount())

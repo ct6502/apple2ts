@@ -1,11 +1,12 @@
 import { passDriveSound } from "../worker2main"
 import { s6502 } from "../instructions"
-import { toHex, DRIVE } from "../../common/utility"
+import { toHex, DRIVE, FLUX_KIND } from "../../common/utility"
 import { getCurrentDriveData, getCurrentDriveState, getDriveBitstreamByIndex, getDriveDataByIndex, getDriveStateByIndex, passDriveData, setCurrentDrive } from "./drivestate"
 import { setSlotDriver, setSlotIOCallback } from "../memory"
 import { disk2driver } from "../roms/slot_disk2_cx00"
 import { registerSlotCardState } from "./slot_card_state"
 import { spliceFloppy35Track } from "./floppy35"
+import { fluxAdvance, fluxAngle, fluxLand, isFluxTrack } from "./fluxtrack"
 
 let motorOffTimeout: NodeJS.Timeout | number = 0
 // CPU-cycle deadline for the motor-off delay, and the drive it applies to.
@@ -93,7 +94,7 @@ const POSITION_TO_DIRECTION = [
   [  1,  2,  3,  0, -3, -2, -1,  0 ], // 7 NW
 ]
 
-export const doResetDiskDrive = (driveState: DriveState) => {
+export const doResetDiskDrive = (driveState: DriveState, driveData?: Uint8Array) => {
   MOTOR_RUNNING = false
   doMotorTimeout(driveState)
   // Reset the shared read-phase state. These are module-level globals that
@@ -126,6 +127,10 @@ export const doResetDiskDrive = (driveState: DriveState) => {
   driveState.diskSwitched = false
   driveState.stepEnd = 0
   driveState.readyEnd = 0
+  // After a reset, a flux track plays from the start of its first lap.
+  if (driveData && isFluxTrack(driveState, driveState.quarterTrack)) {
+    fluxLand(driveState, driveData, driveState.quarterTrack, 0)
+  }
 }
 
 export const doPauseDiskDrive = (resume = false) => {
@@ -141,7 +146,7 @@ export const doPauseDiskDrive = (resume = false) => {
 
 let fullRevolutionCount = 0
 
-const moveHead = (ds: DriveState, offset: number, cycles: number) => {
+const moveHead = (ds: DriveState, dd: Uint8Array, offset: number, cycles: number) => {
   fullRevolutionCount = 0
   ds.prevQuarterTrack = ds.quarterTrack
   ds.quarterTrack += offset
@@ -153,6 +158,36 @@ const moveHead = (ds: DriveState, offset: number, cycles: number) => {
   }
   ds.status = ` Trk ${ds.quarterTrack / 4}`
   passDriveData()
+  // A flux track keeps its own time, so when the head leaves or reaches one we
+  // take the head's angle on the old track (prevQuarterTrack, because
+  // quarterTrack has already moved) and put the head at that angle on the new
+  // track.
+  const oldQuarterTrack = ds.prevQuarterTrack
+  const newQuarterTrack = ds.quarterTrack
+  const oldFlux = isFluxTrack(ds, oldQuarterTrack)
+  const newFlux = isFluxTrack(ds, newQuarterTrack)
+  if (oldFlux || newFlux) {
+    let angle: number
+    if (oldFlux) {
+      fluxAdvance(ds, dd, oldQuarterTrack, cycles, null)
+      angle = fluxAngle(ds, oldQuarterTrack)
+    } else {
+      cycleRemainder += cycles
+      ds.trackLocation += Math.floor(cycleRemainder / 4)
+      angle = (ds.trackLocation % ds.trackNbits[oldQuarterTrack]) / ds.trackNbits[oldQuarterTrack]
+    }
+    // When the head moves between a bit track and a flux track, the leftover
+    // fraction of a bit cell is dropped.
+    cycleRemainder = 0
+    if (newQuarterTrack !== oldQuarterTrack) {
+      if (newFlux) {
+        fluxLand(ds, dd, newQuarterTrack, angle)
+      } else {
+        ds.trackLocation = Math.floor(angle * ds.trackNbits[newQuarterTrack])
+      }
+    }
+    return
+  }
   // First adjust the current track location using the cycle count difference.
   // We need to do this before using the Applesauce formula below.
   cycleRemainder += cycles
@@ -292,6 +327,24 @@ const sampleIwmRead = (ds: DriveState, gapCycles: number) => {
   }
 }
 
+// When the data register high bit is set, the data register should
+// hold for at least 4 cycles. Needed for Algernon.woz and others.
+// https://github.com/ct6502/apple2ts/issues/230
+const shiftLatch = (bit: number) => {
+  if (dataRegHold) {
+    dataRegHold = !bit
+  } else {
+    if (dataRegister & 0x80) {
+      dataRegister = 0x2 | bit
+    } else {
+      dataRegister = (dataRegister << 1) | bit
+      if (dataRegister & 0x80) {
+        dataRegHold = true
+      }
+    }
+  }
+}
+
 // When no disk is loaded, return 0x80 so DOS 3.3 and ProDOS RWTS read loops
 // (which wait for bit 7 = 1 via BPL) can decrement their Y retry counter and
 // time out immediately in ~1ms with an I/O ERROR.
@@ -310,6 +363,14 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number, catchUpCap 
   if (dd.length === 0) return 0x80
   let result = 0
   bitsAdvancedLastCall = 0
+
+  // A flux track plays its own timed bits into the same latch. The weak bits
+  // and timing adjustments below are for bit tracks, so they do not apply.
+  if (isFluxTrack(ds, ds.quarterTrack)) {
+    fluxAdvance(ds, dd, ds.quarterTrack, cycles, shiftLatch)
+    dataRegister &= 0xFF
+    return dataRegister
+  }
 
   // Read individual bits and combine them.
   cycleRemainder += cycles
@@ -333,22 +394,7 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number, catchUpCap 
   while (cycleRemainder >= bitTiming) {
     const bit = getNextBit(ds, dd)
     bitsAdvancedLastCall++
-
-    // When the data register high bit is set, the data register should
-    // hold for at least 4 cycles. Needed for Algernon.woz and others.
-    // https://github.com/ct6502/apple2ts/issues/230
-    if (dataRegHold) {
-      dataRegHold = !bit
-    } else {
-      if (dataRegister & 0x80) {
-        dataRegister = 0x2 | bit
-      } else {
-        dataRegister = (dataRegister << 1) | bit
-        if (dataRegister & 0x80) {
-          dataRegHold = true
-        }
-      }
-    }
+    shiftLatch(bit)
 
     // optimalTiming / 8 might be a float if it's not equal to 32.
     // For example, for Paul Whitehead Teaches Chess.woz, optimalTiming = 31.
@@ -400,6 +446,19 @@ const doWriteBit = (ds: DriveState, dd: Uint8Array, bit: 0 | 1) => {
 }
 
 const doWriteByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
+  // We cannot write to a disk with flux tracks (a WOZ with FLUX tracks, or an
+  // A2R3), so we drop the write and let the platter keep turning.
+  if (ds.fluxKind !== FLUX_KIND.NONE && dd.length > 0) {
+    if (isFluxTrack(ds, ds.quarterTrack)) {
+      fluxAdvance(ds, dd, ds.quarterTrack, cycles, null)
+    } else {
+      cycleRemainder += cycles
+      ds.trackLocation += Math.floor(cycleRemainder / 4)
+      cycleRemainder = cycleRemainder % 4
+    }
+    dataRegister = 0
+    return
+  }
   // Sanity check to make sure we aren't on an empty track. Is this correct?
   if (dd.length === 0 || ds.trackStart[ds.quarterTrack] === 0) {
     return
@@ -600,9 +659,13 @@ export const handleDriveSoftSwitches: AddressCallback =
           // This will reset the sequencer and clear the data latch.
           // This is used by Wings of Fury on track 0.
           dataRegister = 0
-          cycleRemainder += cycles
-          ds.trackLocation += Math.floor(cycleRemainder / 4)
-          cycleRemainder = cycleRemainder % 4
+          if (isFluxTrack(ds, ds.quarterTrack)) {
+            fluxAdvance(ds, dd, ds.quarterTrack, cycles, null)
+          } else {
+            cycleRemainder += cycles
+            ds.trackLocation += Math.floor(cycleRemainder / 4)
+            cycleRemainder = cycleRemainder % 4
+          }
           // Reset the Disk II Logic State Sequencer clock
           prevCycleCount = s6502.cycleCount
           // if (value >= 0) {
@@ -627,6 +690,10 @@ export const handleDriveSoftSwitches: AddressCallback =
       dumpData(ds)
       break
     case SWITCH.WRITE_ON:  // $C08F,X: WRITE, Q7HIGH
+      // On a flux track the platter keeps turning while we enter write mode.
+      if (ds.motorRunning && isFluxTrack(ds, ds.quarterTrack)) {
+        fluxAdvance(ds, dd, ds.quarterTrack, cycles, null)
+      }
       ds.writeMode = true
       // Reset the Disk II Logic State Sequencer clock
       prevCycleCount = s6502.cycleCount
@@ -647,7 +714,7 @@ export const handleDriveSoftSwitches: AddressCallback =
       if (ds.motorRunning && position >= 0) {
         const last_position = ds.quarterTrack & 7
         const direction = POSITION_TO_DIRECTION[last_position][position]
-        moveHead(ds, direction, cycles)
+        moveHead(ds, dd, direction, cycles)
         prevCycleCount = s6502.cycleCount
       }
 
@@ -763,8 +830,8 @@ type PendingWriteByte = {
   value: number
   bitStart: number
 }
-let iwm525PendingBits: PendingWriteBit[] = []
-let iwm525PendingBytes: PendingWriteByte[] = []
+const iwm525PendingBits: PendingWriteBit[] = []
+const iwm525PendingBytes: PendingWriteByte[] = []
 let iwm525PendingDrive = -1
 let iwm525PendingQuarter = -1
 let iwm525WriteArmed = false
@@ -1083,7 +1150,12 @@ const triggerControl35 = (ds: DriveState, hdsel: number) => {
       headPending35 = 0
       ds.readyEnd = 0
       break
-    case 0xE: // eject - flag only, the media stays mounted
+    case 0xE: // eject - flag only, the media stays mounted for a later swap-in
+      // The guest must see an empty drive (disk-in-place = 1); the block image
+      // stays in driveData so the UI can put it back without reloading. This is
+      // what lets a copy program ask for the source disk instead of reading the
+      // boot disk that is still queued behind it.
+      ds.diskInPlace = false
       ds.diskSwitched = true
       break
     default:
@@ -1098,7 +1170,7 @@ const refreshSense35 = (ds: DriveState, hdsel: number) => {
   update35Timers(ds)
   switch (select35(hdsel)) {
     case 0x0: sense35 = ds.stepDirection ? 1 : 0; break
-    case 0x1: sense35 = ds.filename !== "" ? 0 : 1; break
+    case 0x1: sense35 = ds.diskInPlace ? 0 : 1; break
     case 0x2: sense35 = ds.stepEnd ? 0 : 1; break
     case 0x3: sense35 = ds.isWriteProtected ? 0 : 1; break
     case 0x4: sense35 = ds.spindleOn ? 0 : 1; break
@@ -1477,7 +1549,7 @@ export const iwmStepHead = (
   const position = MAGNET_TO_POSITION[ds.currentPhase]
   if (enabled && position >= 0) {
     const direction = POSITION_TO_DIRECTION[ds.quarterTrack & 7][position]
-    moveHead(ds, direction, 0)
+    moveHead(ds, getDriveDataByIndex(driveIndex), direction, 0)
   }
 }
 

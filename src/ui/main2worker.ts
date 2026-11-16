@@ -13,12 +13,12 @@ import { copyCanvas } from "./copycanvas"
 import { set6502Instructions } from "./panels/disassembly/disassembly_utilities"
 import { doSetUIDriveProps } from "./devices/disk/driveprops"
 import { setEnhancedMidi } from "./devices/audio/enhancedmidi"
-import { receiveMidiData } from "./devices/audio/midiinterface"
-import { playMockingboard } from "./devices/audio/mockingboard_audio"
-import { playVeraFmReset, playVeraFmWrite, playVeraPcmWrite, playVeraPsgWrite, playVeraPsgBatch } from "./devices/audio/vera_psg_audio"
-import { playEnsoniqSamples } from "./devices/audio/iigs_ensoniq_audio"
+import { receiveMidiData, stopMidiAudio } from "./devices/audio/midiinterface"
+import { playMockingboard, stopMockingboardAudio } from "./devices/audio/mockingboard_audio"
+import { playVeraFmReset, playVeraFmWrite, playVeraPcmWrite, playVeraPsgWrite, playVeraPsgBatch, stopVeraPsgAudio } from "./devices/audio/vera_psg_audio"
+import { playEnsoniqSamples, resetEnsoniqAudio } from "./devices/audio/iigs_ensoniq_audio"
 
-import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
+import { emulatorSoundEnable, clickSpeaker, stopSpeakerAudio } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
 import { Buffer } from "buffer"
@@ -873,6 +873,17 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
 
       break
     }
+    case MSG_WORKER.AUDIO_RESET:
+      // Boot/Ctrl-Reset must silence transports that hold already-scheduled
+      // audio: Mockingboard oscillators/envelopes, MIDI hardware or soft-synth
+      // notes, the speaker click queue, the VERA PSG/FM/PCM worklet queue, and
+      // GS Ensoniq DOC buffers.
+      stopMidiAudio()
+      stopMockingboardAudio()
+      stopSpeakerAudio()
+      stopVeraPsgAudio()
+      resetEnsoniqAudio()
+      break
     case MSG_WORKER.VERA_SD_STATUS: {
       veraSdStatus = e.data.payload as VeraSdStatus
       veraSdStatusListeners.forEach(fn => fn(veraSdStatus))

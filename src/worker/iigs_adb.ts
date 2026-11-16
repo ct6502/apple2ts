@@ -173,6 +173,26 @@ export const ADB_MODE_MOUSE_OFF = 0x02
 
 const ADB_VERSION = 0x06               // GS/OS 6 reports version 6
 
+// ADB micro-controller keyboard auto-repeat tables, ported from gssquared
+// ADB_Micro.hpp:185-210. The configuration byte's high nibble selects the
+// delay-to-repeat in 60 Hz frames; its low nibble selects the repeat rate, also
+// in 60 Hz frames. ROM 01 indexes fastest-to-slowest; ROM 03 is the reverse plus
+// two extra-slow slots. delay_to_repeat[4] is 0: "no repeat".
+const REPEAT_DELAY_FRAMES = [15, 30, 45, 60, 0]
+const REPEAT_RATE_ROM01 = [1, 2, 2, 3, 4, 5, 8, 15]
+const REPEAT_RATE_ROM03 = [30, 20, 15, 8, 5, 4, 3, 2, 2, 1]
+
+// The IIgs ADB micro-controller's repeated key has to feed the Mega II legacy
+// $C000/$C010 latch in parallel with the ADB register, but this module must not
+// import the keyboard module back (it already imports this one). keyboard.ts
+// registers its setKeyStrobe() sink here at module load; a test may replace it
+// with a spy.
+export type LegacyKeyboardStrobe = (key: number) => void
+let legacyKeyboardStrobe: LegacyKeyboardStrobe | null = null
+export const registerLegacyKeyboardStrobe = (strobe: LegacyKeyboardStrobe | null) => {
+  legacyKeyboardStrobe = strobe
+}
+
 // Debug event ring for ?adbtrace=1 (browser: window.__adbLog, jest: getAdbLog()).
 // Records the UI events that reach the ADB, every report latch, and every byte
 // the guest reads, so "the cursor froze / the click was lost" can be answered
@@ -294,6 +314,21 @@ export class IIGSADB {
 
   private modifiers = 0
   private interruptEnables = 0
+
+  // ADB micro-controller keyboard auto-repeat, ported from gssquared
+  // ADB_Micro.hpp:35-36, 185-210, 947-952, 1058-1075. dncntr counts down in
+  // 60 Hz frames to the next repeat; repeatKeycode/repeatAscii hold the key the
+  // micro itself repeats. The ASCII is mapped at the original key-down event,
+  // like uC `last_key_down = map_key(...)`, so a modifier change after the
+  // press cannot re-map the repeated key. Host e.repeat events never reach here.
+  private dncntr = 0
+  private repeatKeycode = -1
+  private repeatAscii = 0
+
+  // ADB micro-controller ROM revision selects the repeat-rate table. gssquared
+  // KeyGloo receives this at construction (uc_rom03). A reset in the motherboard
+  // should call setRom03(isIigsRom03()); the default keeps ROM 01 behavior.
+  private ucRom03 = false
 
   // Command register framing
   private cmd: number[] = []
@@ -824,6 +859,15 @@ export class IIGSADB {
     this.keyboardRegs[0] = eventByte & 0xff
     this.keyboardRegs[1] = this.modifiers
     this.latchServiceRequest()
+    // ADB micro key auto-repeat: gssquared starts the delay counter on a real
+    // key-down and stops it on a key-up (ADB_Micro.hpp:1039-1041). Modifier
+    // events never touch this state, and a swallowed desk-manager Escape never
+    // starts it (the micro did not buffer that key). Host repeat events never
+    // reach here, so this micro repeat is the single source.
+    if (bit === undefined) {
+      if ((eventByte & 0x80) !== 0) this.stopRepeat()
+      else this.startRepeat(keycode)
+    }
     return false
   }
 
@@ -838,6 +882,74 @@ export class IIGSADB {
   // stay byte-identical across hosts.
   asciiForKeycode(keycode: number): number {
     return adbKeycodeToAscii(keycode, this.modifiers)
+  }
+
+  // True for a ROM 03 micro-controller; selects the repeat-rate table. The
+  // rest of the controller is identical on both revisions.
+  setRom03(rom03: boolean) {
+    this.ucRom03 = rom03
+  }
+
+  // gssquared ADB_Micro.hpp:191-197. The configuration byte's high nibble is the
+  // delay-to-repeat, clamped to index 4 ("no repeat", 0 frames).
+  delayFrames(): number {
+    let dlyval = (this.configuration[2] >> 4) & 0x0f
+    if (dlyval > 4) dlyval = 4
+    return REPEAT_DELAY_FRAMES[dlyval]
+  }
+
+  // gssquared ADB_Micro.hpp:199-211. ROM 01: nibble 0 is fastest (indices 0-7).
+  // ROM 03: nibble 0 is slowest and 9 is fastest (indices 0-9, reverse order).
+  repeatFrames(): number {
+    let idx = this.configuration[2] & 0x0f
+    if (this.ucRom03) {
+      if (idx >= 10) idx = 9
+      return REPEAT_RATE_ROM03[idx]
+    }
+    if (idx >= 8) idx = 7
+    return REPEAT_RATE_ROM01[idx]
+  }
+
+  // gssquared ADB_Micro::start_repeat(): arm the delay counter. The ASCII is
+  // mapped now, exactly like `last_key_down = map_key(...)` at the key-down
+  // event, so a Shift/Caps change after the press cannot re-map the repeat.
+  private startRepeat(keycode: number) {
+    this.repeatKeycode = keycode & 0x7f
+    this.repeatAscii = adbKeycodeToAscii(this.repeatKeycode, this.modifiers)
+    this.dncntr = this.delayFrames()
+  }
+
+  // gssquared ADB_Micro::stop_repeat(): a key-up cancels the pending repeat.
+  private stopRepeat() {
+    this.dncntr = 0
+  }
+
+  /**
+   * One 60 Hz micro-controller frame (gssquared ADB_Micro::frame_handler,
+   * ADB_Micro.hpp:1058-1075). The motherboard calls this once per emulated
+   * refresh. On the frame where dncntr reaches zero the micro latches its own
+   * repeated keyboard report and drives the legacy $C000/$C010 latch, then
+   * schedules the next repeat at repeatFrames(). The returned ASCII is for
+   * diagnostics/tests; the registered legacy strobe already fired, so a caller
+   * must not strobe the return value again.
+   */
+  repeatTick(): number | null {
+    if (this.dncntr === 0) return null
+    this.dncntr -= 1
+    if (this.dncntr !== 0) return null
+
+    // A repeat is a fresh key-down event in the ADB keyboard register: the raw
+    // keycode with bit 7 clear beside the live modifier byte ($C025). This is
+    // the micro's own repeat; host e.repeat events never enter this path.
+    this.keyboardRegs[0] = this.repeatKeycode & 0xff
+    this.keyboardRegs[1] = this.modifiers
+    this.latchServiceRequest()
+    // Legacy $C000/$C010: GS/OS Finder reads this register and never polls ADB
+    // device 2, so the repeating key must appear there exactly as a new press.
+    legacyKeyboardStrobe?.(this.repeatAscii)
+    this.dncntr = this.repeatFrames()
+    noteAdbLog("repeat", this.repeatKeycode, this.repeatAscii, this.dncntr)
+    return this.repeatAscii
   }
 
   readModifiers(): number {
@@ -894,7 +1006,7 @@ export class IIGSADB {
   // A save without the ADB block predates this field; reset() has already put
   // the controller at power-on defaults, so leaving it there is a clean boot.
   restoreSaveState(state: IIGSADBSaveState | undefined) {
-    this.reset()
+    this.reset(true)
     if (!state) return
     this.response = state.response.slice()
     this.reportByte = state.reportByte
@@ -921,12 +1033,21 @@ export class IIGSADB {
     this.romTaskPollCycle = state.romTaskPollCycle
   }
 
-  reset() {
+  // A system reset resets the micro-controller's registers but not its 96-byte
+  // internal RAM: gssquared's ADB_Micro::reset() leaves `ram` untouched and its
+  // keygloo reset handler only zeroes ram[$51] on a COLD start (keygloo.cpp
+  // zero_0x51). That byte is the ROM's warm-boot marker: the boot sequence asks
+  // the controller for uC RAM $51 and stores it in Mega II RAM $E1:0168, and a
+  // reset that reads anything but $A5 takes the cold path, clears $03F2-$03F4
+  // and restarts the startup-device scan instead of dropping to the Applesoft
+  // prompt (gs_ctrl_reset.test.ts). Default true so standalone callers (tests,
+  // save restore) still get power-on defaults; the warm reset path passes false.
+  reset(coldStart = true) {
     this.response = []
     this.reportByte = null
     this.modes = 0
     this.configuration = new Uint8Array(3)
-    this.ucMemory = new Uint8Array(256)
+    if (coldStart) this.ucMemory = new Uint8Array(256)
     this.errorByte = 0
     this.mouseAddr = ADDR_MOUSE
     this.mouseCtlAddr = ADDR_MOUSE
@@ -943,6 +1064,11 @@ export class IIGSADB {
     this.cmd = []
     this.argumentsExpected = 0
     this.romTaskPollCycle = -1e15
+    // A reset loses the in-flight repeat; ucRom03 is a controller model
+    // property, not power-on RAM, so it survives the reset if the host set it.
+    this.dncntr = 0
+    this.repeatKeycode = -1
+    this.repeatAscii = 0
   }
 }
 

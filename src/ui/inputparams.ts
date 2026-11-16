@@ -10,7 +10,6 @@ import { setAppMode, setColorMode, setMonitorMode, setTabView, setTheme, setUISt
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { getPreferenceMachineName, getPreferenceSlotConfig, getPreferenceSlotConfigBackup, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceVeraSlot } from "./localstorage"
-import { APP_MACHINE_NAMES } from "../common/app_target"
 import { getSlotOptions, sanitizeSlotConfig, SLOT_NUMBERS } from "../common/slot_options"
 import { ALL_MACHINE_NAMES, getMachineProfile } from "../common/machine_profile"
 import { Expectin } from "./api/expectin"
@@ -195,13 +194,16 @@ export const handleInputParams = (paramString = "") => {
 
   const machineParam = params.get("machine")?.toUpperCase()
   let urlMachine: MACHINE_NAME | undefined
+  // Explicit title-link surfaces deliberately cross the deployment boundary:
+  // ?machine= resolves against every profile machine, not this site's Settings
+  // menu. That lets apple2ts.com boot a IIgs title from a link or
+  // ?machine=apple2gs while its Settings droplist stays classic-only, and lets
+  // apple2gts.com boot a classic title the same way. Unknown values keep today's
+  // fallback behaviour; getAppMachineNameOrDefault remains the Settings/remote
+  // API contract.
   if (machineParam) {
-    // Resolve the URL text against every profile machine name, then require it to
-    // be part of this site's menu. A classic site must not boot a IIgs from
-    // ?machine=apple2gs, nor may an old link inject the IIe family into
-    // apple2gts.com. Unknown values keep today's fallback behaviour.
     const resolvedMachine = ALL_MACHINE_NAMES.find(name => name === machineParam)
-    if (resolvedMachine && APP_MACHINE_NAMES.includes(resolvedMachine)) {
+    if (resolvedMachine) {
       urlMachine = resolvedMachine
       passSetMachineName(resolvedMachine)
     }

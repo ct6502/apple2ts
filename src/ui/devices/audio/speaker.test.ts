@@ -42,7 +42,7 @@ describe("speaker audio state", () => {
     })
     Object.defineProperty(globalThis, "AudioWorkletNode", {
       configurable: true,
-      value: jest.fn(() => ({connect, port: {postMessage}})),
+      value: jest.fn(() => ({connect, disconnect: jest.fn(), port: {postMessage, close: jest.fn()}})),
     })
     return {connect, postMessage}
   }
@@ -147,5 +147,89 @@ describe("speaker audio state", () => {
     expect(globalThis.AudioContext).toHaveBeenCalledTimes(1)
     expect(recovered.connect).toHaveBeenCalledWith(recoveredContext.destination)
     expect(recoveredContext.suspend).not.toHaveBeenCalled()
+  })
+
+  // Bug 1: the speaker worklet queues clicks and renders them against the audio
+  // clock, so Ctrl-Reset must close its context to silence the already-scheduled
+  // sound. Clearing worker state alone leaves the old queue playing.
+  it("stops the speaker worklet and closes its context on audio reset", async () => {
+    const context = makeTestAudioContext()
+    const disconnect = jest.fn()
+    const portClose = jest.fn()
+    const postMessage = jest.fn()
+    Object.defineProperty(globalThis, "AudioContext", {
+      configurable: true,
+      value: jest.fn(() => context),
+    })
+    Object.defineProperty(globalThis, "AudioWorkletNode", {
+      configurable: true,
+      value: jest.fn(() => ({
+        connect: jest.fn(),
+        disconnect,
+        port: {postMessage, close: portClose},
+      })),
+    })
+    const speaker = await import("./speaker")
+
+    speaker.clickSpeaker(1536)
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(speaker.getAudioDebug().speakerWorklet).toBe(true)
+
+    // The click that builds the graph is not queued; the next one is.
+    speaker.clickSpeaker(2048)
+    expect(postMessage).toHaveBeenCalledWith(2048)
+
+    speaker.stopSpeakerAudio()
+
+    expect(disconnect).toHaveBeenCalledTimes(1)
+    expect(portClose).toHaveBeenCalledTimes(1)
+    expect(context.close).toHaveBeenCalledTimes(1)
+    expect(speaker.getAudioDebug().speakerWorklet).toBe(false)
+
+    // The next click lazily builds a fresh graph instead of reusing the stopped
+    // one, so no old queue survives into the reset boot.
+    const recoveredContext = makeTestAudioContext()
+    installBrowserAudioMocks(recoveredContext)
+    speaker.clickSpeaker(2048)
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(globalThis.AudioContext).toHaveBeenCalledTimes(1)
+    expect(speaker.getAudioDebug().speakerWorklet).toBe(true)
+  })
+
+  it("cancels an in-flight worklet load stopped by Ctrl-Reset", async () => {
+    let resolveModule: (() => void) | undefined
+    const context = makeTestAudioContext()
+    context.audioWorklet.addModule.mockImplementation(
+      () => new Promise<void>(resolve => { resolveModule = resolve }),
+    )
+    const lateDisconnect = jest.fn()
+    const latePortClose = jest.fn()
+    Object.defineProperty(globalThis, "AudioContext", {
+      configurable: true,
+      value: jest.fn(() => context),
+    })
+    Object.defineProperty(globalThis, "AudioWorkletNode", {
+      configurable: true,
+      value: jest.fn(() => ({
+        connect: jest.fn(),
+        disconnect: lateDisconnect,
+        port: {postMessage: jest.fn(), close: latePortClose},
+      })),
+    })
+    const speaker = await import("./speaker")
+
+    speaker.clickSpeaker(100)
+    expect(speaker.getAudioDebug().speakerWorklet).toBe(false)
+    speaker.stopSpeakerAudio()
+    resolveModule!()
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(lateDisconnect).toHaveBeenCalledTimes(1)
+    expect(latePortClose).toHaveBeenCalledTimes(1)
+    expect(speaker.getAudioDebug().speakerWorklet).toBe(false)
   })
 })

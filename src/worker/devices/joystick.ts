@@ -18,9 +18,82 @@ const MAX_TIMEOUT_CYCLES = Math.trunc(0.00278 * 1.020484e6)
 // different number of cycles, so normalise the measured diff back to the
 // 1.020484 MHz rate that MAX_TIMEOUT_CYCLES was calibrated against.
 const NOMINAL_CYCLES_PER_REFRESH = 17030
-let joystickCycleScale = 1
+
+// The paddle timeout constants above are calibrated in cycles of the IIgs
+// 1.020484 MHz slow clock. A raw cycle count has to be normalised by the
+// *effective* execution rate the guest is using, not by the Settings speed
+// alone. A classic title running in IIgs mode can drop $C036 bit 7 to 0 for
+// copy-protected disk I/O and similar timing loops; that slow-mode pin makes
+// the guest execute at 1.020484 MHz even when the Settings speed preference is
+// 2.8 MHz. Using the Settings budget there would double the apparent paddle
+// timeout, so a centred stick reads as full deflection (a game's cursor drifts
+// right + down instead of staying centred). The disk bit-cell clock in
+// memory.ts normalises the same way: `isIigsSlowMode()` selects the nominal
+// 17030 cycles/frame rather than the configured fast budget.
+//
+// This module is loaded by motherboard.ts (which owns the $C036 shadow latch
+// and the current Settings budget), so importing motherboard.ts back into this
+// file would introduce another module cycle. Instead the live rate is injected
+// via a source callback: the worker registers a provider that returns the
+// current configured cycles-per-refresh plus whether $C036 slow mode is active.
+// The provider is queried on each paddle read, so it tracks both Settings
+// speed changes and a guest writing $C036 bit 7 in the middle of execution
+// without the run loop having to call a setter per frame.
+export interface JoystickClock {
+  // Settings speed: CPU cycles in one 1/60 s refresh (e.g. 17030 normal or
+  // 46727 at the IIgs 2.8 MHz default). Ignored when slowMode is true.
+  cyclesPerRefresh: number
+  // True when $C036 bit 7 is clear on the IIgs, i.e. the guest is executing at
+  // the 1.020484 MHz slow clock and expects raw cycles at that rate.
+  slowMode?: boolean
+}
+export type JoystickClockSource = () => JoystickClock
+let joystickCyclesPerRefresh = NOMINAL_CYCLES_PER_REFRESH
+let joystickSlowMode = false
+let joystickClockSource: JoystickClockSource | null = null
+
+// Fall-back setter used until a live clock source is registered (and by the
+// classic / test-only callers that pass a fixed cycles-per-refresh budget).
 export const setJoystickCyclesPerRefresh = (cyclesPerRefresh: number) => {
-  joystickCycleScale = cyclesPerRefresh > 0 ? NOMINAL_CYCLES_PER_REFRESH / cyclesPerRefresh : 1
+  joystickCyclesPerRefresh = cyclesPerRefresh > 0 ? cyclesPerRefresh : NOMINAL_CYCLES_PER_REFRESH
+}
+
+// Direct slow-mode injection for the cases where the run loop calls the
+// joystick device without registering a live source (e.g. a classic machine
+// that never writes $C036). It is not a substitute for the source: the source
+// wins when it is registered.
+export const setJoystickSlowMode = (slowMode: boolean) => {
+  joystickSlowMode = slowMode
+}
+
+// Register / clear the live clock provider. The worker integration belongs in
+// motherboard.ts doSetMachineName, after cpuCyclesPerRefresh is set:
+//   setJoystickClockSource(() => ({
+//     cyclesPerRefresh: cpuCyclesPerRefresh,
+//     slowMode: isGSMachine(machineName) && isIigsSlowMode(),
+//   }))
+// Passing null restores the fixed-budget fall-back (used by unit tests).
+export const setJoystickClockSource = (source: JoystickClockSource | null) => {
+  joystickClockSource = source
+}
+
+// Actual rate the guest executes at. $C036 bit 7 = 0 forces the 1.020484 MHz
+// slow clock regardless of the Settings preference (the same physical clock
+// model as the IWM disk bit cell); bit 7 = 1 uses the configured budget.
+const effectiveCyclesPerRefresh = (): number => {
+  let cyclesPerRefresh = joystickCyclesPerRefresh
+  let slowMode = joystickSlowMode
+  if (joystickClockSource) {
+    const clock = joystickClockSource()
+    if (clock.cyclesPerRefresh > 0) cyclesPerRefresh = clock.cyclesPerRefresh
+    slowMode = clock.slowMode === true
+  }
+  return slowMode ? NOMINAL_CYCLES_PER_REFRESH : cyclesPerRefresh
+}
+
+const paddleCycleScale = (): number => {
+  const effective = effectiveCyclesPerRefresh()
+  return effective > 0 ? NOMINAL_CYCLES_PER_REFRESH / effective : 1
 }
 let paddle0timeout = MAX_TIMEOUT_CYCLES / 2
 let paddle1timeout = MAX_TIMEOUT_CYCLES / 2
@@ -121,7 +194,7 @@ export const checkJoystickValues = (cycleCount: number, value: number) => {
 //     prevPaddle1timeout = paddle1timeout
 //     doSaveTimeSlice()
 //   }
-  const diff = (cycleCount - countStart) * joystickCycleScale
+  const diff = (cycleCount - countStart) * paddleCycleScale()
   memSetC000(0xC064, (diff < paddle0timeout) ? (value | 0x80) : (value & 0x7F))
   memSetC000(0xC065, (diff < paddle1timeout) ? (value | 0x80) : (value & 0x7F))
   memSetC000(0xC066, (diff < paddle2timeout) ? (value | 0x80) : (value & 0x7F))

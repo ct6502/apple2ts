@@ -233,6 +233,16 @@ export const passEnsoniqSound = (samples: Int16Array, sampleRate: number) => {
   }
 }
 
+// Tells the UI to stop every audio transport after a Boot or Ctrl-Reset. The
+// worker resets its own sound-chip state in motherboard.ts (Mockingboard slot
+// ROM, VERA PSG/PCM/FM registers, and the GS Ensoniq DOC); this companion
+// notification clears whatever the UI has already scheduled on the audio
+// thread: Mockingboard oscillators/envelopes, MIDI/soft-synth notes, VERA
+// AudioWorklet messages, and the GS Ensoniq block queue.
+export const passAudioReset = () => {
+  doPostMessage(MSG_WORKER.AUDIO_RESET, true)
+}
+
 export const passWorkerOperationResult = (
   operationId: number,
   error?: string,

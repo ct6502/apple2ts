@@ -5,14 +5,16 @@ import {TwelveStringGuitar1} from "./wavetables/TwelveStringGuitar1"
 import {Wurlitzer2} from "./wavetables/Wurlitzer2"
 
 const hasAudioContext = typeof AudioContext !== "undefined"
-let mboardContext: AudioContext
-let stereoMerge: ChannelMergerNode
-let chipMerge: GainNode
+let mboardContext: AudioContext | null = null
+let stereoMerge: ChannelMergerNode | null = null
+let chipMerge: GainNode | null = null
+let unregisterAudioContext: (() => void) | undefined
 
 type ChipNodes = {
   tones: OscillatorNode[]
   gains: GainNode[]
   noise: BiquadFilterNode[]
+  noiseSources: AudioBufferSourceNode[]
   envelope: (AudioBufferSourceNode | null)
 }
 
@@ -47,10 +49,11 @@ const createNoise = (context: AudioContext, chip: number) => {
 }
 
 const enableContext = (enable: boolean) => {
+  if (!mboardContext) return
   if (enable) {
-    mboardContext.resume()
+    void mboardContext.resume()
   } else {
-    mboardContext.suspend()
+    void mboardContext.suspend()
   }
 }
 
@@ -58,12 +61,13 @@ const constructAudio = (slot: number) => {
   if (!hasAudioContext) return
   if (!mboardContext) {
     mboardContext = new AudioContext()
-    registerAudioContext(enableContext)
+    unregisterAudioContext = registerAudioContext(enableContext)
     stereoMerge = mboardContext.createChannelMerger(2)
     chipMerge = new GainNode(mboardContext, {gain: 0.15})
     chipMerge.connect(mboardContext.destination)
     stereoMerge.connect(chipMerge)
   }
+  const context = mboardContext
   nodes[slot] = []
 
   for (let chip = 0; chip <= 1; chip++) {
@@ -71,18 +75,20 @@ const constructAudio = (slot: number) => {
       gains: [],
       tones: [],
       noise: [],
+      noiseSources: [],
       envelope: null
     }
     for (let i = 0; i <= 2; i++) {
-      nodes[slot][chip].gains[i] = new GainNode(mboardContext, {gain: 0})
-      nodes[slot][chip].gains[i].connect(stereoMerge, 0, chip)
-      nodes[slot][chip].tones[i] = new OscillatorNode(mboardContext)
+      nodes[slot][chip].gains[i] = new GainNode(context, {gain: 0})
+      nodes[slot][chip].gains[i].connect(stereoMerge!, 0, chip)
+      nodes[slot][chip].tones[i] = new OscillatorNode(context)
       nodes[slot][chip].tones[i].connect(nodes[slot][chip].gains[i])
       nodes[slot][chip].tones[i].start()
-      nodes[slot][chip].gains[i + 3] = new GainNode(mboardContext, {gain: 0})
-      nodes[slot][chip].gains[i + 3].connect(chipMerge)
-      nodes[slot][chip].noise[i] = new BiquadFilterNode(mboardContext, {type: "bandpass"})
-      const noise = createNoise(mboardContext, chip)
+      nodes[slot][chip].gains[i + 3] = new GainNode(context, {gain: 0})
+      nodes[slot][chip].gains[i + 3].connect(chipMerge!)
+      nodes[slot][chip].noise[i] = new BiquadFilterNode(context, {type: "bandpass"})
+      const noise = createNoise(context, chip)
+      nodes[slot][chip].noiseSources[i] = noise
       noise.connect(nodes[slot][chip].noise[i])
       nodes[slot][chip].noise[i].connect(nodes[slot][chip].gains[i + 3])
       noise.start()
@@ -211,7 +217,7 @@ export const changeMockingboardMode = (mode = 0) => {
           const table = mboardContext?.createPeriodicWave(t.real, t.imag)
           if (table) nodes1[chip].tones[c].setPeriodicWave(table)
         }
-        chipMerge.gain.value = v
+        if (chipMerge) chipMerge.gain.value = v
       }
     }      
   })
@@ -273,6 +279,61 @@ export const playMockingboard = (sound: MockingboardSound) => {
   }
 
   if (mboardContext.state === "suspended") {
-    mboardContext.resume()
+    void mboardContext.resume()
+  }
+}
+
+const stopNodeSafely = (node: { stop?: () => void } | null | undefined) => {
+  try {
+    node?.stop?.()
+  } catch {
+    // Already stopped.
+  }
+}
+
+const disconnectNodeSafely = (node: { disconnect?: () => void } | null | undefined) => {
+  try {
+    node?.disconnect?.()
+  } catch {
+    // Already disconnected.
+  }
+}
+
+// Boot/Ctrl-Reset stop for the Mockingboard transport. The oscillators,
+// envelope buffer sources and noise generators are all scheduled on the audio
+// thread's clock, so clearing gain values alone leaves notes ringing. Every
+// source is stopped before the context is closed; closing the context then
+// drains any remaining queued audio. The next playMockingboard call rebuilds
+// the slot graph lazily, so a reset cannot leave detached nodes behind.
+export const stopMockingboardAudio = () => {
+  if (!hasAudioContext) return
+  for (const chips of nodes) {
+    if (!chips) continue
+    for (const chip of chips) {
+      if (!chip) continue
+      stopNodeSafely(chip.envelope)
+      disconnectNodeSafely(chip.envelope)
+      chip.envelope = null
+      chip.tones.forEach(stopNodeSafely)
+      chip.tones.forEach(disconnectNodeSafely)
+      chip.noiseSources.forEach(stopNodeSafely)
+      chip.noiseSources.forEach(disconnectNodeSafely)
+      chip.noise.forEach(disconnectNodeSafely)
+      chip.gains.forEach(disconnectNodeSafely)
+    }
+  }
+  nodes.length = 0
+  disconnectNodeSafely(stereoMerge)
+  disconnectNodeSafely(chipMerge)
+  stereoMerge = null
+  chipMerge = null
+  unregisterAudioContext?.()
+  unregisterAudioContext = undefined
+  const context = mboardContext
+  mboardContext = null
+  if (context) {
+    void context.close().catch(() => {
+      // The context may already be closed if audio became unavailable.
+    })
   }
 }

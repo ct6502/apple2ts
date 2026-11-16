@@ -25,17 +25,8 @@ jest.mock("./devices/vera/verasdicon", () => ({
   handleSetVeraSdFromURL: jest.fn().mockResolvedValue(true),
 }))
 
-// Existing URL-machine cases cover both families in the default classic test
-// target. Keep the full table here; target rejection has app_target coverage.
-jest.mock("../common/app_target", () => {
-  const actual = jest.requireActual("../common/app_target") as Record<string, unknown>
-  return {
-    ...actual,
-    APP_MACHINE_NAMES: ["APPLE2P", "APPLE2EU", "APPLE2EE", "APPLE2GS"],
-  }
-})
-
 import { handleFragment, handleInputParams } from "./inputparams"
+import { APP_MACHINE_NAMES } from "../common/app_target"
 import { getPreferenceSlotConfig, getPreferenceVeraSlot, PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, PREFERENCE_SLOT_CONFIG_GS_KEY } from "./localstorage"
 import { getTabView, getUIStateBoolean } from "./ui_settings"
 import { handleSetDiskFromURL, handleSetDiskSwapperFromURLs, resetAllDiskDrives } from "./devices/disk/driveprops"
@@ -144,6 +135,19 @@ describe("handleInputParams slot configuration", () => {
     } finally {
       passSetMachineName.mockRestore()
       passSpeedMode.mockRestore()
+    }
+  })
+
+  test("resolves ?machine= against every profile, not the Settings menu", () => {
+    // Jest runs the classic target, so APP_MACHINE_NAMES excludes the IIgs while
+    // the explicit title-link path still has to accept it.
+    expect(APP_MACHINE_NAMES).toEqual(["APPLE2P", "APPLE2EU", "APPLE2EE"])
+    const passSetMachineName = jest.spyOn(main2worker, "passSetMachineName")
+    try {
+      handleInputParams("machine=apple2gs")
+      expect(passSetMachineName).toHaveBeenCalledWith("APPLE2GS")
+    } finally {
+      passSetMachineName.mockRestore()
     }
   })
 })

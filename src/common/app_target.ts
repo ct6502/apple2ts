@@ -92,9 +92,10 @@ export const APP_DEFAULT_MACHINE = getAppDefaultMachine(APP_TARGET)
 export const APP_MANIFEST_NAME = getAppManifestName(APP_TARGET)
 export const APP_MANIFEST_DESCRIPTION = getAppManifestDescription(APP_TARGET)
 
-// Any requested machine outside this target's menu falls back to the target's
-// own default (IIe enhanced on apple2ts, IIgs on apple2gts) instead of booting
-// the wrong family through a URL parameter or an old saved preference.
+// Settings, remote-API requests, and saved preferences outside this target's
+// menu fall back to the target's own default (IIe enhanced on apple2ts, IIgs
+// on apple2gts). Explicit title links and ?machine= are not subject to this
+// filter; inputparams.ts resolves those against every profile machine.
 export const getAppMachineNameOrDefault = (
   name: MACHINE_NAME | undefined,
   target: AppTarget = APP_TARGET,

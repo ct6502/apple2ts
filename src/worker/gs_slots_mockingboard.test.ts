@@ -1,10 +1,13 @@
 import { DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS } from "../common/utility"
 import { getSlotOptions, sanitizeSlotConfig } from "../common/slot_options"
 import { iigsSlotRegisterFor } from "../common/iigs_slots"
-import { doSetRom, memGet24, memSet24, memoryReset, iigsSlotRegister } from "./memory"
+import { doSetRom, memGet24, memSet24, memoryReset, iigsSlotRegister, memGetSlotROM } from "./memory"
 import { CPU65816 } from "./cpu65816"
-import { doSetMachineName, doSetSlotConfig, doSetVeraSlot, getSlotConfig } from "./motherboard"
+import { doBoot, doSetMachineName, doSetRunMode, doSetSlotConfig, doSetVeraSlot, getSlotConfig, resetCpuSpeedForTesting } from "./motherboard"
 import { s6502 } from "./instructions"
+import * as worker2main from "./worker2main"
+import { setIsTesting } from "./worker2main"
+import { RUN_MODE } from "../common/utility"
 
 describe("Apple IIgs Slot Management & Hardware Compatibility", () => {
   test("Apple IIgs slot options follow the Control Panel built-in functions", () => {
@@ -174,5 +177,66 @@ describe("Apple IIgs Slot Management & Hardware Compatibility", () => {
     expect(cycles).toBe(7)
     expect(cpu.PC).toBe(expectedVector)
     expect(cpu.P & 0x04).toBe(0x04) // I flag set by interrupt
+  })
+
+  test("CPU-visible $C400-$C4FF read back Mockingboard registers on the IIgs", () => {
+    doSetMachineName("APPLE2GS", false, false)
+    memoryReset()
+    doSetRom("APPLE2GS")
+    doSetSlotConfig({ ...DEFAULT_SLOT_CONFIG_GS, 4: "mockingboard" })
+    const passSpy = jest.spyOn(worker2main, "passMockingboard")
+
+    memSet24(0x00C403, 0xFF) // DDRA write through the CPU bus
+    expect(memGetSlotROM(4, 0x03)).toBe(0xFF)
+    expect(memGet24(0x00C403)).toBe(0xFF) // this is what a game reads back
+
+    memSet24(0x00C403, 0x0F)
+    expect(memGet24(0x00C403)).toBe(0x0F)
+
+    // A register write must post sound params to the UI (slot 4, chip 0).
+    memSet24(0x00C420, 0x10)
+    memSet24(0x00C400, 0x06)
+    expect(passSpy).toHaveBeenCalled()
+    expect(passSpy.mock.calls.some(call => call[0].slot === 4 && call[0].chip === 0)).toBe(true)
+    passSpy.mockRestore()
+  })
+
+  test("Slot 4 Mockingboard survives the ROM's SLTROMSEL boot writes and still answers CPU reads/writes", () => {
+    jest.useFakeTimers()
+    setIsTesting()
+    try {
+      doSetMachineName("APPLE2GS", false, false)
+      doSetSlotConfig({ ...DEFAULT_SLOT_CONFIG_GS, 4: "mockingboard" })
+      doBoot()
+      doSetRunMode(RUN_MODE.RUNNING, false)
+      for (let f = 0; f < 600; f++) jest.advanceTimersByTime(17)
+
+      // The no-card ROM boot writes SLTROMSEL ($C02D) from its own slot scan
+      // ($80, slot 4 bit clear) and leaves INTCXROM set, but the Control Panel
+      // layout still assigns the card to slot 4: the card ROM must stay selected
+      // and answer CPU reads/writes instead of the ROM's built-in slot firmware.
+      const register = memGet24(0x00C02D)
+      expect(register & (1 << 4)).toBe(1 << 4)
+      expect(register).toBe(0x90)
+
+      // And the CPU still reads/writes the card at $C400-$C4FF, not the ROM's
+      // built-in slot firmware.
+      memSet24(0x00C403, 0xFE)
+      expect(memGetSlotROM(4, 0x03)).toBe(0xFE)
+      expect(memGet24(0x00C403)).toBe(0xFE)
+
+      // CPU-bus write through the latched WRITE command posts sound params.
+      const passSpy = jest.spyOn(worker2main, "passMockingboard")
+      memSet24(0x00C420, 0x0F) // ORA stash: register number 15
+      memSet24(0x00C400, 0x07) // LATCH command
+      memSet24(0x00C401, 0xB0) // ORA stash: byte to write
+      memSet24(0x00C400, 0x06) // WRITE command
+      expect(passSpy.mock.calls.some(call => call[0].slot === 4 && call[0].chip === 0) === true).toBe(true)
+      passSpy.mockRestore()
+    } finally {
+      doSetRunMode(RUN_MODE.PAUSED, false)
+      resetCpuSpeedForTesting()
+      jest.useRealTimers()
+    }
   })
 })

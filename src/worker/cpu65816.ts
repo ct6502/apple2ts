@@ -268,13 +268,37 @@ export class CPU65816 implements ICPU {
         }
         this.setFlag(Status816.I, true)
         this.setFlag(Status816.D, false)
-        this.PB = 0
         const vec = this.emulationMode ? emulationVector : nativeVector
         if (this.readVector) {
             const lo = this.readVector(vec)
             const hi = this.readVector(vec + 1)
-            this.PC = lo | (hi << 8)
+            // The IIgs ROM vectors live in bank $FF. The one exception is the
+            // emulation-mode IRQ/BRK vector at $FFFE: it is writable bank-0 RAM,
+            // and an installed handler (e.g. the Mockingboard's MBSI install)
+            // must win there. Native-mode vectors ($FFE4-$FFEE) stay on the ROM
+            // copy: during GS/OS boot bank-0 RAM there holds the BSR shadow-ROM
+            // image, whose bytes are not handler addresses; honouring them drops
+            // the first COP/BRK/IRQ into garbage and the Misc Tool Set kills the
+            // boot with "Fatal System Error $0308".
+            let useRamVector = false
+            if (vec === VEC_E_IRQ) {
+                const ramLo = this.readMemory(vec & 0xFFFF)
+                const ramHi = this.readMemory((vec + 1) & 0xFFFF)
+                const ramUninitialized = ramLo === 0xFF && ramHi === 0xFF
+                const ramPlausible = ramHi < 0xC0
+                useRamVector = !ramUninitialized && ramPlausible &&
+                    (ramLo !== 0 || ramHi !== 0) && (ramLo !== lo || ramHi !== hi)
+                if (useRamVector) {
+                    this.PB = 0
+                    this.PC = ramLo | (ramHi << 8)
+                }
+            }
+            if (!useRamVector) {
+                this.PB = 0
+                this.PC = lo | (hi << 8)
+            }
         } else {
+            this.PB = 0
             this.PC = this.read8or16(vec, false)
         }
         this.waiting = false

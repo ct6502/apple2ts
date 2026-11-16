@@ -1,7 +1,11 @@
 import { handleKeyMapping } from "../games/game_mappings"
 import { getCurrentMachineName, memGetC000, memSetC000 } from "../memory"
 import { requestSnapshot } from "../motherboard"
-import { iigsADB, isAdbModifierKeycode } from "../iigs_adb"
+import {
+  iigsADB,
+  isAdbModifierKeycode,
+  registerLegacyKeyboardStrobe,
+} from "../iigs_adb"
 import { getMachineCapabilities } from "../../common/machine_profile"
 
 const setKeyStrobe = (key: number) => {
@@ -14,6 +18,20 @@ const setKeyStrobe = (key: number) => {
   memSetC000(0xC000, key | 0b10000000, 16)
   memSetC000(0xC010, (key & 0b11111111) | 128, 16)
 }
+
+// The IIgs ADB micro-controller's 60 Hz repeat handler latches its repeated key
+// in its own register and drives the same legacy $C000/$C010 latch as a host
+// press. Register that sink here so iigs_adb.ts can repeat without importing
+// this module back (which would be a circular import); handleKeyMapping is
+// applied exactly as the legacy host path applies it below.
+const iigsLegacyKeyboardStrobe = (key: number) => {
+  const mapped = handleKeyMapping(String.fromCharCode(key)).charCodeAt(0)
+  setKeyStrobe(Number.isFinite(mapped) ? mapped : key)
+}
+// Do not register at module load: memory.ts -> softswitches.ts -> this module can
+// be reached before iigs_adb.ts has initialised its exports (a circular import).
+// The GS branch of setKeyboardState() registers the sink lazily instead, after a
+// real GS key event and before iigs_adb.queueKeyboard() can arm a repeat.
 
 let keyboardRepeatKey = 0
 let keyboardIsDown = false
@@ -156,6 +174,7 @@ const DOM_TO_ADB: Record<string, number> = {
 export const setKeyboardState = (state: KeyboardState) => {
   interruptKeySequence()
   let legacyKey = state.key
+  let ignoreAdbHostRepeat = false
   if (getMachineCapabilities(getCurrentMachineName()).hasAdbKeyboard && state.domCode) {
     // The IIgs's physical keyboard is ADB device address 2, and every event
     // byte goes there: the keycode for a key down, keycode | 0x80 for a key up
@@ -170,7 +189,14 @@ export const setKeyboardState = (state: KeyboardState) => {
     // we see it; feeding that text to $C000 made the old UI preference (or the
     // physical caps state) decide the case, and ADB_DELETE arrived as 0x08
     // (cursor-left) because the host Backspace special case ran first.
+    registerLegacyKeyboardStrobe(iigsLegacyKeyboardStrobe)
     const code = DOM_TO_ADB[state.domCode]
+    // The GS ADB micro-controller owns auto-repeat: repeatTick() reschedules
+    // the micro's own report at repeatFrames() from controller state. A
+    // state.repeat from the browser must not arm the IIe legacy timer as well;
+    // two generators would double the strobe rate and the micro would stop
+    // being the single source.
+    ignoreAdbHostRepeat = state.isDown && state.repeat
     let swallowedByMicro = false
     let modifierKeycode = false
     if (code !== undefined) {
@@ -200,7 +226,7 @@ export const setKeyboardState = (state: KeyboardState) => {
     // here. A key the micro swallowed to make its own report ends here too:
     // on real hardware $C000 is fed from the ADB keyboard buffer, so a key the
     // micro did not buffer never reaches the legacy latch.
-    if (modifierKeycode || swallowedByMicro || legacyKey < 0) {
+    if (modifierKeycode || swallowedByMicro || legacyKey < 0 || ignoreAdbHostRepeat) {
       return
     }
     // DELIBERATELY no early return for a real key: on IIgs hardware the

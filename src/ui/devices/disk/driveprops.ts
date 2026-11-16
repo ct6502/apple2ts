@@ -473,7 +473,7 @@ const setDiskOrFileFromBuffer = (
   noBoot = false) => {
 
   // Auto-unzip if archive or zipped disk image
-  const unzipped = unzipSingleFile(buffer, filename, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+  const unzipped = unzipSingleFile(buffer, filename, [".dsk", ".woz", ".a2r", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
   if (unzipped) {
     const origFilename = filename
     filename = unzipped.filename
@@ -966,7 +966,7 @@ export const fetchDiskBufferAndNameFromURL = async (
   url = normalizeDownloadUrl(url)
 
   let alternateDownloadUrls: string[] = []
-  if (url.includes("demozoo.org/productions/") && !/\.(zip|dsk|po|woz|nib|2mg|img)$/i.test(url)) {
+  if (url.includes("demozoo.org/productions/") && !/\.(zip|dsk|po|woz|a2r|nib|2mg|img)$/i.test(url)) {
     const match = url.match(/productions\/(\d+)/)
     if (match) {
       alternateDownloadUrls = await resolveDemoZooProductionDisks(match[1])
@@ -1058,7 +1058,7 @@ export const fetchDiskBufferAndNameFromURL = async (
       // Keep raw url
     }
 
-    const decompressedList = await decompressAllDiskFiles(fileBuffer, name || downloadPath, [".woz", ".po", ".dsk", ".do", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+    const decompressedList = await decompressAllDiskFiles(fileBuffer, name || downloadPath, [".woz", ".a2r", ".po", ".dsk", ".do", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
     let allDisks: StandbyDisk[] | undefined
     if (decompressedList && decompressedList.length > 0) {
       name = decompressedList[0].filename
@@ -1196,7 +1196,7 @@ const setDiskFromURL = async (url: string,
   }
 
   // Resolve DemoZoo production URL, if necessary
-  if (url.includes("demozoo.org/productions/") && !/\.(zip|dsk|po|woz|2mg|img)$/i.test(url)) {
+  if (url.includes("demozoo.org/productions/") && !/\.(zip|dsk|po|woz|a2r|2mg|img)$/i.test(url)) {
     const match = url.match(/productions\/(\d+)/)
     if (match) {
       const prodDisks = await resolveDemoZooProductionDisks(match[1])
@@ -1551,7 +1551,7 @@ export const handleSetDiskFromFile = async (disk: string,
       return false
     }
     data = await res.arrayBuffer()
-    const unzipped = await decompressSingleFile(data, disk, [".dsk", ".woz", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
+    const unzipped = await decompressSingleFile(data, disk, [".dsk", ".woz", ".a2r", ".do", ".po", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"])
     if (unzipped) {
       disk = unzipped.filename
       data = unzipped.buffer

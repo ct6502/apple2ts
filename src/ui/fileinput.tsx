@@ -26,7 +26,7 @@ const FileInput = (props: DisplayProps & { onLoadSuccess?: () => void }) => {
     const decompressedList = await decompressAllDiskFiles(
       buffer,
       filename,
-      [".woz", ".po", ".dsk", ".do", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"]
+      [".woz", ".a2r", ".po", ".dsk", ".do", ".2mg", ".hdv", ".2meg", ".img", ".nib", ".bin", ".bas", ".a"]
     )
     if (decompressedList && decompressedList.length > 0) {
       const archiveCloudData: CloudData = {

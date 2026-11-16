@@ -726,7 +726,7 @@ const favoriteItem = (
 
 const baseWriteProtectItem = (driveIndex: number, drive: DriveProps): RetroControlMetadata => ({
   ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.writeProtected", {}, { driveIndex }),
-  selectable: () => Boolean(drive.filename),
+  selectable: () => Boolean(drive.filename) && !drive.isFlux,
   ...toggleBinding({
     enabled: () => drive.isWriteProtected,
     setEnabled: (context, enabled) => {
@@ -778,7 +778,8 @@ export const insertedDiskItems = (
     },
     {
       ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.downloadWoz", {}, { driveIndex }),
-      selectable: () => hasDisk && !drive.hardDrive && !drive.filename.toLowerCase().endsWith(".woz"),
+      selectable: () => hasDisk && !drive.hardDrive && !drive.filename.toLowerCase().endsWith(".woz") &&
+        !drive.filename.toLowerCase().endsWith(".a2r"),
       action: () => downloadDiskToDevice(driveIndex, true),
     },
     {

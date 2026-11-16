@@ -11,8 +11,13 @@ import * as fs from "fs"
 // clock and starving the floppy's cycle-based bit timing. This image boots from
 // the built-in S6 bay only after that accounting is fixed: with the doubled clock
 // the 5.25" read never completes enough of a sector for ProDOS to catalog.
+//
+// The 5.25" catch-up bound in 6a914810 made the disk timing cycle-accurate, so
+// the boot now takes its real ~15 s instead of draining a stalled sector at
+// once. The ProDOS prompt appears around frame 900 at this clock; the previous
+// 600-frame budget predated that fix and expired just before the prompt.
 const DISK_PATH = "public/disks/CT_SPEEDTEST.DSK"
-const FRAMES = 600
+const FRAMES = 1200
 
 const screenText = () => {
   const lines: string[] = []

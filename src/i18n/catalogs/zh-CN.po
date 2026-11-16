@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Apple2TS\n"
-"PO-Revision-Date: 2026-09-06 02:51+0000\n"
-"Last-Translator: reducedradius <137701630+flytothehighest@users.noreply."
-"github.com>\n"
+"PO-Revision-Date: 2026-11-15 07:51+0000\n"
+"Last-Translator: reducedradius "
+"<137701630+flytothehighest@users.noreply.github.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/apple2ts/browser-emulator/zh_Hans/>\n"
 "Language: zh-CN\n"
@@ -11,9 +11,8 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 2026.9.1.dev0\n"
+"X-Generator: Weblate 2026.12.dev0\n"
 
-#, fuzzy
 msgctxt "controls.boot"
 msgid "Boot"
 msgstr "启动"
@@ -52,7 +51,6 @@ msgctxt "controls.retrySound"
 msgid "Sound unavailable. Retry sound."
 msgstr "声音不可用。请重试声音。"
 
-#, fuzzy
 msgctxt "controls.settings"
 msgid "Settings"
 msgstr "设置"
@@ -69,7 +67,6 @@ msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "报告问题"
 
-#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
 msgstr "隐私政策"
@@ -88,7 +85,7 @@ msgstr "主题"
 
 msgctxt "config.graphics"
 msgid "Graphics"
-msgstr ""
+msgstr "图形"
 
 msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
@@ -129,7 +126,6 @@ msgctxt "config.useArrowKeys"
 msgid "Use Arrow Keys as Joystick"
 msgstr "使用方向键作为摇杆"
 
-#, fuzzy
 msgctxt "config.scanlines"
 msgid "CRT Scanlines"
 msgstr "CRT 扫描线"

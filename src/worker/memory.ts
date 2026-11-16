@@ -326,6 +326,7 @@ let iwmDiskRegister = 0
 // we cannot import from here without a new module-level cycle.
 const IWM_FLOPPY_BASE = { 5: 4, 6: 2 }
 export const iigsGetIwmDriveSelect = () => iwmDriveSelect
+export const iigsGetIwmMotorOn = () => iwmMotorOn
 // True when the given drive-state index holds decodable floppy media.
 export const iigsFloppyHasMedia = (index: number) => {
   const ds = getDriveStateByIndex(index)
@@ -474,6 +475,13 @@ export const memGet24 = (address: number): number => {
             return gsSystemROM[((bank - iigsRomFirstBank) << 16) | offset]
         }
         if (bank === 0x00 || bank === 0xE0 || bank === 0xE1) {
+            // Bank-0 fast RAM owns the 65816 interrupt vector slots. The ROM
+            // image at the same offsets is only the backing copy: writable
+            // vectors installed by a driver (MBSI at $FFFE) must read back as
+            // RAM so its install verification succeeds.
+            if (bank === 0x00 && offset >= 0xFFEE && offset <= 0xFFFF) {
+                return memGet(offset, false)
+            }
             if (offset >= 0xD000 && !SWITCHES.BSRREADRAM.isSet) {
                 return gsSystemROM[iigsRomBankFFOffset + offset]
             }

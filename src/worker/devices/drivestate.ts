@@ -2,8 +2,9 @@ import { Buffer } from "buffer"
 import { passDriveProps, passDriveSound } from "../worker2main"
 import { decodeDiskData } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive, iwmDiskChange35 } from "./diskdata"
+import { fluxBuildCheckpoints, fluxLand, isFluxTrack } from "./fluxtrack"
 import { enableHardDrive } from "./harddrivedata"
-import { DRIVE, canDriveTakeImage, isHardDriveImage, isThreePointFiveInchImage, updateWozCrc } from "../../common/utility"
+import { DRIVE, canDriveTakeImage, FLUX_KIND, isHardDriveImage, isThreePointFiveInchImage, updateWozCrc } from "../../common/utility"
 import { getMachineCapabilities } from "../../common/machine_profile"
 import { getCurrentMachineName, setIigsCloudLayerFilename } from "../memory"
 import { buildFloppy35Bitstream, FLOPPY35_OPTIMAL_TIMING } from "./floppy35"
@@ -37,8 +38,25 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     spindleOn: false,
     stepDirection: 0,
     diskSwitched: false,
+    diskInPlace: false,
     stepEnd: 0,
     readyEnd: 0,
+    fluxKind: FLUX_KIND.NONE,
+    fluxPsPerTick: 0,
+    // These stay empty until a flux disk is decoded, so that the save states
+    // of other disks stay small.
+    fluxLapStart: Array<number>(),
+    fluxLapEnd: Array<number>(),
+    fluxRevCycles: Array<number>(),
+    fluxLoopCycles: Array<number>(),
+    fluxByte: 0,
+    fluxTicks: 0,
+    fluxIntervalEnd: 0,
+    fluxCycle: 0,
+    fluxIntervalStart: 0,
+    fluxIntervalLength: 0,
+    fluxBitsInInterval: 0,
+    fluxBitIndex: 0,
   }
 }
 
@@ -143,11 +161,21 @@ const getDriveProps = (index: number, forcePassData: boolean): DriveProps => {
     lastAppleWriteTime: driveState[index].lastAppleWriteTime,
     lastLocalFileWriteTime: driveState[index].lastLocalFileWriteTime,
     cloudData: driveState[index].cloudData,
-    writableFileHandle: driveState[index].writableFileHandle
+    writableFileHandle: driveState[index].writableFileHandle,
+    isFlux: driveState[index].fluxKind !== FLUX_KIND.NONE
   }
 }
 
-export const passDriveData = (replaceDiskDataIndex = -1, forcePassData = false) => {
+const isA2R3Drive = (index: number) => driveState[index].fluxKind === FLUX_KIND.A2R3
+
+// keepUIData marks the drives whose data the UI already has, which a forced
+// pass then leaves out. We play an A2R3 from the very file the UI holds, and
+// it never changes, since writes to it are dropped.
+export const passDriveData = (
+  replaceDiskDataIndex = -1,
+  forcePassData = false,
+  keepUIData: boolean[] = [],
+) => {
   for (let i = 0; i < driveState.length; i++) {
     if (driveState[i].diskHasChanges && driveData[i]?.length > 0) {
       updateWozCrc(driveData[i])
@@ -163,8 +191,9 @@ export const passDriveData = (replaceDiskDataIndex = -1, forcePassData = false) 
       i !== replaceDiskDataIndex) {
       continue
     }
-    const dprops = getDriveProps(i, forcePassData)
-    passDriveProps(dprops, i === replaceDiskDataIndex || forcePassData)
+    const force = forcePassData && !keepUIData[i]
+    const dprops = getDriveProps(i, force)
+    passDriveProps(dprops, i === replaceDiskDataIndex || force)
     previousProps[i] = {diskHasChanges: dprops.diskHasChanges,
       motorRunning: dprops.motorRunning,
       spindleOn: dprops.spindleOn,
@@ -177,7 +206,9 @@ export const getDriveSaveState = (full: boolean): DriveSaveState => {
   for (let i=0; i < driveState.length; i++) {
     // Time-travel snapshots include media below the threshold;
     // portable save states include all media.
-    if (full || driveData[i].length < largeDiskSnapshotThreshold) {
+    // We leave A2R3 data, which runs to several MB, out of time-travel
+    // snapshots. The snapshot still keeps the drive state and its flux cursor.
+    if (full || (driveData[i].length < largeDiskSnapshotThreshold && !isA2R3Drive(i))) {
       data[i] = Buffer.from(driveData[i]).toString("base64")
     }
   }
@@ -195,7 +226,7 @@ export const getDriveSaveState = (full: boolean): DriveSaveState => {
 
 export const getDriveSaveStateForLocalStorage = (): DriveSaveState | null => {
   for (let i=0; i < driveState.length; i++) {
-    if (driveData[i].length >= largeDiskSnapshotThreshold) {
+    if (driveData[i].length >= largeDiskSnapshotThreshold || isA2R3Drive(i)) {
       return null
     }
   }
@@ -212,13 +243,46 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
     currentDrive++
   }
   initializeDriveState()
+  const keepUIData: boolean[] = []
   let dindex = 0
   for (let i=0; i < newState.driveState.length; i++) {
     // Make sure our drive had data.
     if (Object.keys(newState.driveState[i]).length > 0) {
+      const saved = newState.driveState[i] as DriveState
+      // Save states from before flux support have no flux fields, so we take
+      // those from the defaults.
+      const fluxDefaults = Object.fromEntries(Object.entries(initDriveState(dindex, saved.drive, saved.hardDrive))
+        .filter(([key]) => key.startsWith("flux")))
+      const restored = { ...fluxDefaults, ...saved } as DriveState
+      if ((restored as Partial<DriveState>).diskInPlace === undefined) {
+        // Save states from before the disk-in-place flag existed: a mounted
+        // image was in the drive unless the eject latch said otherwise.
+        restored.diskInPlace = restored.filename !== ""
+      }
       if (newState.driveData[i] !== "") {
-        driveState[dindex] = { ...newState.driveState[i] } as DriveState
+        driveState[dindex] = restored
         driveData[dindex] = new Uint8Array(Buffer.from(newState.driveData[i], "base64"))
+      } else if (previousDriveState[dindex]?.fluxKind === FLUX_KIND.A2R3 &&
+        restored.fluxKind === FLUX_KIND.A2R3 &&
+        previousDriveState[dindex].filename === restored.filename) {
+        // This is a time-travel snapshot of the A2R3 that is still mounted, so
+        // its table and cursor go with the data we already have.
+        driveState[dindex] = restored
+        driveData[dindex] = previousDriveData[dindex]
+        keepUIData[dindex] = true
+      } else if (previousDriveState[dindex]?.fluxKind === FLUX_KIND.A2R3) {
+        // The snapshot is of a different disk than the A2R3 now mounted. We
+        // keep the current disk, as we do for a large disk below.
+        driveState[dindex] = previousDriveState[dindex]
+        driveData[dindex] = previousDriveData[dindex]
+        keepUIData[dindex] = true
+      } else if (restored.fluxKind === FLUX_KIND.A2R3 && previousDriveState[dindex]?.filename !== "" &&
+        previousDriveData[dindex]?.length > 0) {
+        // The snapshot is of an A2R3, without its data, and another disk is
+        // now mounted. We have nothing to play the A2R3 from, so we keep that
+        // disk.
+        driveState[dindex] = previousDriveState[dindex]
+        driveData[dindex] = previousDriveData[dindex]
       } else if (previousDriveData[dindex].length >= largeDiskSnapshotThreshold) {
         // Time-travel snapshots intentionally exclude large-disk data. Retain
         // both the current data and its metadata; the historical metadata
@@ -236,18 +300,23 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
   for (let i = 0; i < driveState.length; i++) {
     rebuildDriveBitstream(i)
   }
+  // The flux seek checkpoints are not saved, so we build them for the
+  // restored disks.
+  for (let i = 0; i < driveState.length; i++) {
+    fluxBuildCheckpoints(driveState[i], driveData[i])
+  }
   // Force-pass restored disk data to the UI the same way doSetEmuDriveNewData()
   // does on a normal mount: a freshly-restored, unwritten disk has
   // diskHasChanges === false, so without forcing it, getDriveProps()'s
   // "(diskHasChanges && !motorRunning) || forcePassData" gate would report an
   // empty buffer even though driveData[] above was correctly restored.
-  passDriveData(-1, true)
+  passDriveData(-1, true, keepUIData)
 }
 
 export const resetFloppyDrives = () => {
   for (let i = 0; i < driveState.length; i++) {
     if (!driveState[i].hardDrive) {
-        doResetDiskDrive(driveState[i])
+        doResetDiskDrive(driveState[i], driveData[i])
     }
   }
   passDriveData()
@@ -325,13 +394,21 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   driveData[index] = decodeDiskData(driveState[index], props.diskData, forceIndex)
   if (driveData[index].length === 0) {
     driveState[index].filename = ""
+    driveState[index].diskInPlace = false
     driveBitstream[index] = new Uint8Array()
     passDriveData(index)
     return !hasRequestedMedia
   }
+  driveState[index].diskInPlace = true
   rebuildDriveBitstream(index)
   if (isHardDrive) {
     enableHardDrive(true)
+  }
+  fluxBuildCheckpoints(driveState[index], driveData[index])
+  // The head stays where it was, so on a flux track we put it at the start of
+  // the track's first lap.
+  if (isFluxTrack(driveState[index], driveState[index].quarterTrack)) {
+    fluxLand(driveState[index], driveData[index], driveState[index].quarterTrack, 0)
   }
   driveState[index].motorRunning = props.motorRunning
   driveState[index].diskHasChanges = props.diskHasChanges
@@ -340,8 +417,11 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   driveState[index].writableFileHandle = props.writableFileHandle
   driveState[index].lastLocalFileWriteTime = props.lastLocalFileWriteTime
   // Be sure to pass the data back the first time we load a disk. That way
-  // if we've converted to a woz, we get back the woz bits.
-  passDriveData(-1, true)
+  // if we've converted to a woz, we get back the woz bits. We play an A2R3
+  // from the very data the UI sent, so we do not send it back.
+  const keepUIData: boolean[] = []
+  keepUIData[index] = isA2R3Drive(index) && driveData[index] === props.diskData
+  passDriveData(-1, true, keepUIData)
   return true
 }
 
@@ -352,7 +432,9 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].filename = props.filename
   if (props.filename) setIigsCloudLayerFilename(props.filename)
   driveState[index].motorRunning = props.motorRunning
-  driveState[index].isWriteProtected = props.isWriteProtected
+  // A disk with flux tracks is read only, so the UI cannot clear its write
+  // protection.
+  driveState[index].isWriteProtected = props.isWriteProtected || driveState[index].fluxKind !== FLUX_KIND.NONE
   driveState[index].diskHasChanges = props.diskHasChanges
   driveState[index].lastAppleWriteTime = props.lastAppleWriteTime
   driveState[index].lastLocalFileWriteTime = props.lastLocalFileWriteTime

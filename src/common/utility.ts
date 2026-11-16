@@ -9,7 +9,7 @@ export const TEST_DEBUG = false
 export const TEST_GRAPHICS = false
 export const MAX_SNAPSHOTS = 30
 const FILE_OPEN_SUFFIXES = ".a2ts,.bin,.a,.bas"
-const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.do,.nib"
+const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.a2r,.do,.nib"
 const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po,.2meg,.img"
 export const FILE_SUFFIXES_DISK = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
 export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK},.zip,.gz,.7z,.tar`
@@ -84,6 +84,7 @@ export enum MSG_WORKER {
   ENSONIQ_SOUND,
   ENSONIQ_DOC_STATS,
   ADB_TRACE,
+  AUDIO_RESET,
 }
 
 export interface VeraSdStatus {
@@ -276,6 +277,13 @@ export enum DRIVE {
   MOTOR_ON,
   TRACK_END,
   TRACK_SEEK,
+}
+
+// What a floppy plays its flux tracks from, if it has any.
+export enum FLUX_KIND {
+  NONE,
+  WOZ,
+  A2R3,
 }
 
 export enum CLOUD_SYNC {
@@ -694,9 +702,11 @@ export const isHardDriveImage = (filename: string, fileSize: number) => {
 // The drive bays come in three media families: indices 0/1 are the slot-7
 // SmartPort block device, 2/3 the slot-6 5.25" floppy, and 4/5 the IIgs's
 // built-in slot-5 3.5" drive. A bay can hold the media it is wired for, and a
-// block image additionally fits any block-capable bay.
+// A capture is played as a bit stream off the media: a WOZ, a .dsk/.do nibble
+// dump, or an A2R3 flux capture. None of them is a block volume, so a SmartPort
+// bay cannot take one.
 const isNibbleImage = (filename: string) =>
-  /\.(?:woz|dsk|do)(?:$|[^a-z0-9])/.test(filename.toLowerCase())
+  /\.(?:woz|a2r|dsk|do)(?:$|[^a-z0-9])/.test(filename.toLowerCase())
 
 // A .dsk/.do of exactly 1600 blocks is a block dump of 3.5" media, not a
 // capture - so it can also be served as block data. A .woz is always a capture,

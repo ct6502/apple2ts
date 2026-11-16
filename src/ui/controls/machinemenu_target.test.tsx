@@ -70,6 +70,7 @@ test("classic deployment exposes only the non-IIgs machines", () => {
       t("machine.models.apple2eu"),
       t("machine.models.apple2ee"),
     ]
+    const allLinkOptions = ["Apple II+", "Apple IIe (unenhanced)", "Apple IIe (enhanced)", "Apple IIgs"]
 
     act(() => settingsRoot.render(
       <SettingsDialog {...({ updateDisplay: jest.fn() } as unknown as DisplayProps)} />,
@@ -81,7 +82,7 @@ test("classic deployment exposes only the non-IIgs machines", () => {
     act(() => linkContainer.querySelector("button")!.dispatchEvent(
       new MouseEvent("click", { bubbles: true }),
     ))
-    expect(machineOptions(linkContainer)).toEqual(classicOptions)
+    expect(machineOptions(linkContainer)).toEqual(allLinkOptions)
   } finally {
     act(() => settingsRoot.unmount())
     act(() => linkRoot.unmount())

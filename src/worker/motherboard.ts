@@ -1,6 +1,6 @@
 import { FrameClock } from "./frameclock"
 // Chris Torrence, 2022
-import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
+import { passAudioReset, passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { setCpuPcGetter } from "./cpu_pc"
 import { s6502, setState6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
 import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, MEMORY_DUMP_STATE, AUTO_SNAPSHOT } from "../common/utility"
@@ -59,11 +59,14 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   iigsClearInterrupts,
 
   iigsFloppyHasMedia,
+  iigsGetIwmDriveSelect,
+  iigsGetIwmEnable35,
+  iigsGetIwmMotorOn,
   setIigsSlotRegister,
   setIigsRomVersion,
   isIigsRom03,
   iigsRegisters} from "./memory"
-import { setButtonState, handleGamepads, setJoystickCyclesPerRefresh } from "./devices/joystick"
+import { setButtonState, handleGamepads, setJoystickClockSource, setJoystickCyclesPerRefresh } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
 import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, doSetMemoryWriteWatchpoint as setCpuMemoryWriteWatchpoint, resetCycleCountCallbacks, processCycleCountCallbacks, setStepOut, getHeatMapCPU, getHeatMapCPUMax, resetHeatMapCPU } from "./cpu6502"
 import { ICPU } from "./icpu"
@@ -99,6 +102,7 @@ import { setSlotIOCallback } from "./memory"
 import { hasHardDriveMounted } from "./devices/drivestate"
 import { findMemory, getMemoryView, resolveMemoryRangeRequest } from "./memory_view"
 import { iigsADB } from "./iigs_adb"
+import { iigsClock } from "./iigs_clock"
 
 let speedMode = 0
 // True once the UI or a test has chosen a speed. The IIgs defaults to 2.8 MHz
@@ -218,6 +222,98 @@ let showDebugTab = false
 let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 export const getCpuCyclesPerRefresh = () => cpuCyclesPerRefresh
+
+// ---- GS-only Aztec 5.25" loader delay acceleration ----
+// The decoded Aztec WOZ sectors contain a disk-resident copy-protection timer
+// ($BD9E..$BDAA, called from the $BD00 loader). The IIgs executes the delay
+// loop; the classic path never enters it, so the same title load takes roughly
+// five times as long on the IIgs at 1.024 MHz or 2.8 MHz. The loop only burns
+// CPU cycles: it touches no I/O and leaves $46/$47 at zero for the caller's
+// $BDAB continuation. Fast-forward exactly those cycles, with the machine
+// clock and video/DOC timeline advanced, so the disk keeps its elapsed-time
+// position and the guest resumes at $BDAB with the counters already wrapped.
+// The 13-byte signature is checked against live RAM; the motor + mounted 5.25"
+// media check limits this to a real GS load. Classic optimalTiming, bitTiming
+// and getNextByte are untouched. Test suites run disabled by default; the
+// permanent regression enables this explicitly.
+const nodeProcess = (globalThis as {
+  process?: { env?: Record<string, string | undefined> }
+}).process
+const isJestWorker = !!nodeProcess?.env?.JEST_WORKER_ID
+let gsDiskLoadAccelerationEnabled = !isJestWorker
+const GS_AZTEC_DELAY_SIGNATURE = [
+  0xA0, 0x12, 0x88, 0xD0, 0xFD, 0xE6, 0x46, 0xD0, 0xF7, 0xE6, 0x47, 0xD0, 0xF3,
+]
+const GS_AZTEC_DELAY_PC = 0xBD9E
+const GS_AZTEC_DELAY_RESUME_PC = 0xBDAB
+
+// Total delay-loop cycles for starting counters x ($46) and y ($47), derived
+// from the measured instruction timings:
+//  - normal outer iteration (INC $46 only) 99 cycles
+//  - outer iteration where INC $46 wraps and INC $47 is still non-zero 106
+//  - the final iteration (both counters wrap and the routine falls to $BDAB) 105
+// The outer-loop visit count is block46 + (block47 - 1) * 256 (the wrap
+// iterations are block47); 99DF => x=0x99,y=0xDF => 103+32*256=8295 visits and
+// 8262*99 + 32*106 + 105 = 821435 cycles, the exact span measured on the real
+// Aztec loader in motherboard.ts.
+export const gsAztecDelayCycleCountForTesting = (x46: number, y47: number) => {
+  const block46 = x46 === 0 ? 256 : 256 - x46
+  const block47 = y47 === 0 ? 256 : 256 - y47
+  const outer = block46 + (block47 - 1) * 256
+  return (outer - block47) * 99 + (block47 - 1) * 106 + 105
+}
+
+const gsAztecDelaySignatureMatches = () => {
+  const gsCpu = cpu as CPU65816
+  if (gsCpu.PC !== GS_AZTEC_DELAY_PC || gsCpu.PB !== 0x00) return false
+  for (let i = 0; i < GS_AZTEC_DELAY_SIGNATURE.length; i++) {
+    if (memGet24(GS_AZTEC_DELAY_PC + i) !== GS_AZTEC_DELAY_SIGNATURE[i]) return false
+  }
+  return true
+}
+
+const gsAztecDelayCyclesAtCurrentCounters = () => {
+  const dp = (cpu as CPU65816).D
+  const x = memGet24((dp + 0x46) & 0xFFFF)
+  const y = memGet24((dp + 0x47) & 0xFFFF)
+  return gsAztecDelayCycleCountForTesting(x, y)
+}
+
+const gsAztecDelaySkip = () => {
+  if (!isGSMachine(machineName) || !gsDiskLoadAccelerationEnabled) return 0
+  if (!gsAztecDelaySignatureMatches()) return 0
+  // The GS built-in slot 6 (and not the $C08x language-card window) must be
+  // running real media: motor on, EN35 clear, and a disk mounted in the
+  // selected drive.
+  if (iigsGetIwmEnable35() || !iigsGetIwmMotorOn()) return 0
+  if (!iigsFloppyHasMedia(2 + iigsGetIwmDriveSelect())) return 0
+  return gsAztecDelayCyclesAtCurrentCounters()
+}
+
+// The delayed routine is pure CPU state, so the skip only moves the CPU clock
+// (and the video/DOC timeline) forward; the caller's $BDAB continuation then
+// runs normally. The two direct-page counters must be zero exactly as the loop
+// leaves them; the routine's own final LDY #$0C (at $BDAB) sets Y.
+let gsAztecDelaySkipCount = 0
+export const resetGsAztecDelaySkipCountForTesting = () => {
+  gsAztecDelaySkipCount = 0
+}
+export const gsAztecDelaySkipCountForTesting = () => gsAztecDelaySkipCount
+
+const advanceGsAztecDelay = () => {
+  const delayCycles = gsAztecDelaySkip()
+  if (delayCycles <= 0) return 0
+  gsAztecDelaySkipCount++
+  const dp = (cpu as CPU65816).D
+  memSet24((dp + 0x46) & 0xFFFF, 0)
+  memSet24((dp + 0x47) & 0xFFFF, 0)
+  ;(cpu as CPU65816).PC = GS_AZTEC_DELAY_RESUME_PC
+  return delayCycles
+}
+
+export const setGsDiskLoadAccelerationForTesting = (enabled: boolean) => {
+  gsDiskLoadAccelerationEnabled = enabled
+}
 // ---- Ensoniq DOC catch-up (shared by the run loop and every DOC access) ----
 // gssquared calls ensoniq_catch_up() before applying any $C03C-$C03F access,
 // on its periodic cycle handler and at frame end. A DOC write therefore has
@@ -738,6 +834,16 @@ const iigsHasFloppyMedia = () => {
 }
 
 const iigsHasAnyDiskMedia = () => iigsHasFloppyMedia() || iigsHasHardDriveMedia()
+// The ROM device scan publishes the provisional warm-start signature
+// $00/$E0/$45 while it is still probing slots. A Ctrl-Reset during that window
+// must treat the machine as mid-boot and continue the current scan, not zero
+// the signature and restart the expensive cold scan. The preserved signature
+// continues the in-flight boot (measured 239,937 IWM reads on the 5.25" probe,
+// 3.5" 1,689); the forced-cold alternative measured 235,648 and 2,761 after reset.
+const iigsBootScanSignatureProvisional = () =>
+  memGet24(0x000000 + 0x03f2) === 0x00 &&
+  memGet24(0x000000 + 0x03f3) === 0xE0 &&
+  memGet24(0x000000 + 0x03f4) === 0x45
 
 const resetMachine = () => {
   softCard.reset()
@@ -748,20 +854,40 @@ const resetMachine = () => {
   resetFloppyDrives()
   setButtonState()
   resetMouse()
-  // The ADB micro has its own modes, interrupt enables and device state that
-  // are not in RAM. A reset or a save-state restore must put them back to
-  // power-on defaults before a saved ADB block is reinstated.
-  iigsADB.reset()
+  // The ADB micro's internal RAM survives a system reset, and the ROM keeps its
+  // warm-boot marker in uC RAM $51 ($A5 = warm, see iigsADB.reset()). Keeping it
+  // lets a Ctrl-Reset at the "Check startup device" screen take the ROM's warm
+  // path and land on the Applesoft prompt (gs_ctrl_reset.test.ts). When bootable
+  // floppy media is attached the reset must still re-run the cold device scan so
+  // the disk boots again; this emulator has no Mega II IIe-mode floppy boot to
+  // fall back on, so it clears the marker (cold reset) in that case, which is
+  // what the IIgs warm/cold policy in doReset() already does for the $03F2-$03F4
+  // signature (gs_reset_signature.test.ts).
+  iigsADB.reset(iigsHasAnyDiskMedia())
   resetPassport()
   if (veraSlot !== 0) {
     resetVera()
   }
   resetSerial()
+  // A Ctrl-Reset or reboot can arrive mid-RTC transaction; without clearing the
+  // CB serial framing/serial state the ROM's battery-RAM signature read fails
+  // into the fatal-error path (ROM 03 in particular). Cold boot reseeds BRAM
+  // through memoryReset()/iigsClock.reset(true); a reset only clears transaction.
+  if (isGSMachine(machineName)) {
+    iigsClock.reset(false)
+  }
+  // A reset or reboot must silence every sound device still holding state, not
+  // just the slot cards. The Mockingboard oscillators keep their timer state in
+  // slot ROM, and the IIgs DOC keeps its oscillator/wavetable state in the chip,
+  // so both would keep sounding (or ringing) after Ctrl-Reset without this.
   if (currentSlotConfig[4] === "mockingboard") {
     resetMockingboard(4)
   }
   if (currentSlotConfig[5] === "mockingboard") {
     resetMockingboard(5)
+  }
+  if (isGSMachine(machineName)) {
+    iigsEnsoniq.reset()
   }
 }
 
@@ -769,7 +895,18 @@ export const doBoot = () => {
   setCycleCount(0)
   memoryReset()
   if (isGSMachine(machineName)) iigsEnsoniq.reset()
+  // Power-on is a cold start: the ADB micro-controller's internal RAM (and with
+  // it the ROM's warm-boot marker at uC RAM $51) is undefined until the ROM
+  // writes it, unlike a Ctrl-Reset which leaves it in place.
+  iigsADB.reset(true)
   doSetRom(machineName)
+  // memoryReset() wipes the peripheral-card windows, so a boot has to rebuild
+  // the slot layout even when configureMachine() already ran for a mounted
+  // image. Leaving didConfiguration set made the second boot leave every slot
+  // ROM at the power-up fill: VERA, serial, and the other cards vanished until
+  // the next doSetSlotConfig() call, and the rebooted game could not initialize
+  // the card whose reset handler had just asked the ROM to boot it.
+  didConfiguration = false
   configureMachine()
   if (code.length > 0) {
     const pcode = parseAssembly(0x300, code.split("\n"))
@@ -817,6 +954,13 @@ export const doReset = () => {
   cpu.reset()
   if (isGSMachine(machineName)) {
     iigsClearInterrupts()
+    // A reset must clear the interrupt enable too, not just the pending flags.
+    // iigsClearInterrupts() leaves $C041 INTEN untouched; GS/OS keeps its VBL
+    // enable (bit 3) there, and the first post-reset VBL re-raises $C046 bit 7
+    // from the stale enable. The ROM then takes the diagnostic self-test path
+    // (System Bad: FFFF0000) instead of booting. Cold boot already zeroes $C041
+    // in memory.ts; Ctrl-Reset needs the same.
+    iigsRegisters[0x41] = 0
     // A hardware reset returns the CPU to fast mode; software reads the same
     // value back from $C036, so keep both views in step across Ctrl-Reset.
     // ROM 03 additionally latches bit 6 (power-on status) on reset.
@@ -835,11 +979,13 @@ export const doReset = () => {
     // Ctrl-Reset, against 399,707 during the cold boot that does find the
     // disk), so inserting a floppy and pressing Ctrl-Reset could never boot it.
     //
-    // Clear the signature whenever floppy media is present in the IIgs's
-    // built-in 5.25" (slot 6) or 3.5" (slot 5) bays, so the ROM re-runs the full
-    // device scan. With no floppy the warm path is kept, which is what makes
-    // Ctrl-Reset land on the Applesoft prompt (gs_ctrl_reset.test.ts).
-    if (iigsHasAnyDiskMedia()) {
+    // Clear the signature when media is present and the boot has completed.
+    // While the ROM is still publishing the provisional $00/$E0/$45 warm
+    // signature, Ctrl-Reset must not force a cold rescan: the device scan is
+    // still in progress and the IWM is already driving the boot. With no
+    // media the warm path is kept, which is what makes Ctrl-Reset land on the
+    // Applesoft prompt (gs_ctrl_reset.test.ts).
+    if (iigsHasAnyDiskMedia() && !iigsBootScanSignatureProvisional()) {
       memSet24(0x000000 + 0x03f2, 0x00)
       memSet24(0x000000 + 0x03f3, 0x00)
       memSet24(0x000000 + 0x03f4, 0x00)
@@ -847,8 +993,16 @@ export const doReset = () => {
     // A hardware reset clears SLTROMSEL; the machine then re-applies the
     // Control Panel assignment.
     applyIigsSlotConfig()
+    // The ADB micro-controller repeat-rate table follows the installed ROM:
+    // ROM 03's table is the reverse order plus two extra-slow slots.
+    iigsADB.setRom03(isIigsRom03())
   }
   resetMachine()
+  // Boot and Ctrl-Reset must silence transports that hold already-scheduled
+  // audio (Mockingboard oscillators/envelopes, MIDI notes, the VERA PSG/FM/PCM
+  // queue, and DOC buffers). resetMachine() clears the worker-side sound-chip
+  // state; this companion signal clears the UI-side scheduling graphs.
+  passAudioReset()
   // Otherwise Heat Map data survives a reset/reboot indefinitely (it was
   // previously cleared only by doSetCycleCount, a time-travel-only path),
   // so PC/memory activity from before this reboot stays mixed in with the
@@ -997,7 +1151,20 @@ export const doLoadBinary = (
 
 export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState = true) => {
   machineName = name
-  
+  // The paddle hardware times out in wall-clock time, but the guest measures it
+  // in raw CPU cycles and a classic title on the IIgs can calibrate its own loop
+  // against the 1.020484 MHz slow clock ($C036 bit 7 clear). Normalise the
+  // measured cycles against that execution-rate request, not the Settings budget,
+  // or a centred stick reads as full deflection when the user selected 2.8 MHz
+  // for a title that runs its paddle code at 1.02 MHz. Registration must happen
+  // here, not at module load: motherboard.ts is imported back through the
+  // joystick's game_mappings -> keyboard -> memory cycle, so the joystick export
+  // is only fully bound once the worker modules have all loaded.
+  setJoystickClockSource(() => ({
+    cyclesPerRefresh: cpuCyclesPerRefresh,
+    slowMode: isGSMachine(machineName) && isIigsSlowMode(),
+  }))
+
   if (isGSMachine(machineName)) {
     cpu = new CPU65816(memGet24, memSet24)
     ;(cpu as CPU65816).setVectorReadCallback((address: number) => {
@@ -1567,12 +1734,27 @@ const doAdvance6502 = () => {
 
   for (;;) {
     let cycles = 0
-    if (softCard.activeCpu === "Z80") {
+    let delaySkipped = false
+    // Aztec's GS-only loader timer: fast-forward the pure CPU delay at $BD9E
+    // instead of executing its nested counter loops. The same elapsed cycles
+    // then reach the IWM's $C0EC read path (iwmPrevCycleCount), so the disk
+    // position is exactly where it would have been after the delay; the guest
+    // resumes at $BDAB with $46/$47 already wrapped to zero.
+    if (isIIgs && (cpu as CPU65816).PC === GS_AZTEC_DELAY_PC) {
+      cycles = advanceGsAztecDelay()
+      if (cycles > 0) {
+        delaySkipped = true
+        s6502.cycleCount += cycles
+        cycleTotal += cycles
+        processCycleCountCallbacks()
+      }
+    }
+    if (!delaySkipped && softCard.activeCpu === "Z80") {
       const stepT = softCard.stepZ80() || 4
       cycles = Math.max(1, Math.round(stepT / 2))
       s6502.cycleCount += cycles
       cycleTotal += cycles
-    } else {
+    } else if (!delaySkipped) {
       // Batch 8 instructions between the per-batch housekeeping below (VBL
       // lines, floppy motor, conditional input, IRQ polarity, VIA timers).
       // Those checks only need sub-scanline resolution, so running them every
@@ -1690,6 +1872,10 @@ const doAdvance6502 = () => {
     if (isIIgs && nowFrame !== lastMouseSyncFrame) {
       lastMouseSyncFrame = nowFrame
       iigsMouseStep()
+      // The ADB micro-controller's keyboard auto-repeat runs from its own
+      // 60 Hz frame handler (gssquared ADB_Micro::frame_handler); tick it once
+      // per emulated refresh so a held key repeats without host e.repeat events.
+      iigsADB.repeatTick()
     }
     if (cyclesToRun > 0 && (s6502.cycleCount - cycleToRunStart) >= cyclesToRun) {
       cyclesToRun = 0
