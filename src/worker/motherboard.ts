@@ -834,16 +834,6 @@ const iigsHasFloppyMedia = () => {
 }
 
 const iigsHasAnyDiskMedia = () => iigsHasFloppyMedia() || iigsHasHardDriveMedia()
-// The ROM device scan publishes the provisional warm-start signature
-// $00/$E0/$45 while it is still probing slots. A Ctrl-Reset during that window
-// must treat the machine as mid-boot and continue the current scan, not zero
-// the signature and restart the expensive cold scan. The preserved signature
-// continues the in-flight boot (measured 239,937 IWM reads on the 5.25" probe,
-// 3.5" 1,689); the forced-cold alternative measured 235,648 and 2,761 after reset.
-const iigsBootScanSignatureProvisional = () =>
-  memGet24(0x000000 + 0x03f2) === 0x00 &&
-  memGet24(0x000000 + 0x03f3) === 0xE0 &&
-  memGet24(0x000000 + 0x03f4) === 0x45
 
 const resetMachine = () => {
   softCard.reset()
@@ -855,15 +845,12 @@ const resetMachine = () => {
   setButtonState()
   resetMouse()
   // The ADB micro's internal RAM survives a system reset, and the ROM keeps its
-  // warm-boot marker in uC RAM $51 ($A5 = warm, see iigsADB.reset()). Keeping it
-  // lets a Ctrl-Reset at the "Check startup device" screen take the ROM's warm
-  // path and land on the Applesoft prompt (gs_ctrl_reset.test.ts). When bootable
-  // floppy media is attached the reset must still re-run the cold device scan so
-  // the disk boots again; this emulator has no Mega II IIe-mode floppy boot to
-  // fall back on, so it clears the marker (cold reset) in that case, which is
-  // what the IIgs warm/cold policy in doReset() already does for the $03F2-$03F4
-  // signature (gs_reset_signature.test.ts).
-  iigsADB.reset(iigsHasAnyDiskMedia())
+  // warm-boot marker in uC RAM $51 ($A5 = warm, see iigsADB.reset()). Ctrl-Reset
+  // must leave that RAM in place, including when it is pressed during the boot's
+  // device scan: a real Ctrl-Reset is warm, and clearing this marker made every
+  // press restart the full power-on ADB/device scan, which is what the user felt
+  // as a complete reset. doBoot() still clears it for a real power-on cold start.
+  iigsADB.reset(false)
   resetPassport()
   if (veraSlot !== 0) {
     resetVera()
@@ -895,10 +882,6 @@ export const doBoot = () => {
   setCycleCount(0)
   memoryReset()
   if (isGSMachine(machineName)) iigsEnsoniq.reset()
-  // Power-on is a cold start: the ADB micro-controller's internal RAM (and with
-  // it the ROM's warm-boot marker at uC RAM $51) is undefined until the ROM
-  // writes it, unlike a Ctrl-Reset which leaves it in place.
-  iigsADB.reset(true)
   doSetRom(machineName)
   // memoryReset() wipes the peripheral-card windows, so a boot has to rebuild
   // the slot layout even when configureMachine() already ran for a mounted
@@ -925,6 +908,12 @@ export const doBoot = () => {
     applyIigsSlotConfig()
   }
   doReset()
+  // Power-on is a cold start: the ADB micro-controller's internal RAM (and with
+  // it the ROM's warm-boot marker at uC RAM $51) is undefined until the ROM
+  // writes it, unlike a Ctrl-Reset which leaves it in place. doReset() above
+  // deliberately keeps that RAM warm for every reset, so the boot must clear it
+  // after, not before (the reset would otherwise undo the power-on cold start).
+  iigsADB.reset(true)
   // This is a hack. If we don't currently have a hard drive image on boot,
   // temporarily disable the hard drive and then re-enable it later.
   // This allows the floppy disk to boot instead.
@@ -979,13 +968,17 @@ export const doReset = () => {
     // Ctrl-Reset, against 399,707 during the cold boot that does find the
     // disk), so inserting a floppy and pressing Ctrl-Reset could never boot it.
     //
-    // Clear the signature when media is present and the boot has completed.
-    // While the ROM is still publishing the provisional $00/$E0/$45 warm
-    // signature, Ctrl-Reset must not force a cold rescan: the device scan is
-    // still in progress and the IWM is already driving the boot. With no
-    // media the warm path is kept, which is what makes Ctrl-Reset land on the
-    // Applesoft prompt (gs_ctrl_reset.test.ts).
-    if (iigsHasAnyDiskMedia() && !iigsBootScanSignatureProvisional()) {
+    // Clear the signature whenever media is present, including while the ROM is
+    // still publishing the provisional $00/$E0/$45 value. The ROM's warm path
+    // jumps through that provisional value to the device-scan code, but a reset
+    // has already torn down the scan's state: measured, preserving it + the warm
+    // ADB marker leaves the ROM idling on the copyright screen with zero IWM
+    // reads. Zeroing it makes the ROM re-run the scan, which with the warm ADB
+    // marker reaches ProDOS again in ~175 frames (5.25") without clearing the
+    // ADB RAM, so repeated Ctrl-Reset presses behave like a warm reset rather
+    // than a power-on cold start. With no media the warm path is kept, which is
+    // what makes Ctrl-Reset land on the Applesoft prompt (gs_ctrl_reset.test.ts).
+    if (iigsHasAnyDiskMedia()) {
       memSet24(0x000000 + 0x03f2, 0x00)
       memSet24(0x000000 + 0x03f3, 0x00)
       memSet24(0x000000 + 0x03f4, 0x00)

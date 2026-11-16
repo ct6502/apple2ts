@@ -33,7 +33,12 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     writableFileHandle: null,
     lastAppleWriteTime: -1,
     optimalTiming: 32,  // bits per 125 ns, so 32 = 4 µs
-    is35: false,
+    // Indices 4/5 are the IIgs slot-5 bays: Sony 3.5" mechanisms even while
+    // empty. The identity cannot wait for media, or an empty bay answers the
+    // 5.25" status path and software polling disk-in-place (ZZ Copy launched
+    // from a slot-7 hard drive) starts "Reading..." instead of asking for the
+    // source disk. Mounting a 5.25" image here overrides it during decode.
+    is35: index >= 4,
     blockMedia35: false,
     spindleOn: false,
     stepDirection: 0,
