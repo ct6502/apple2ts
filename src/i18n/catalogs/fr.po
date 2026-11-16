@@ -182,6 +182,10 @@ msgctxt "machine.slotConfigurator"
 msgid "Expansion Slots"
 msgstr "Slots d'extension"
 
+msgctxt "machine.iigsDeskPanel"
+msgid "Desk Accessories (Ctrl + Open Apple + Esc)"
+msgstr ""
+
 #, fuzzy
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -2752,6 +2756,13 @@ msgid ""
 "the control panel."
 msgstr ""
 
+msgctxt "startup.mouseCapture"
+msgid ""
+"Press F1 to capture
+"
+"or release mouse."
+msgstr ""
+
 msgctxt "retroControl.ariaLabel"
 msgid "Apple2TS control panel"
 msgstr ""
@@ -3651,6 +3662,14 @@ msgstr "Emplacement 6 Lecteur 1 (Disquette 1)"
 msgctxt "linkBuilder.slot6Drive2"
 msgid "Slot 6 Drive 2 (Floppy 2)"
 msgstr "Emplacement 6 Lecteur 2 (Disquette 2)"
+
+msgctxt "linkBuilder.slot5Drive1"
+msgid "Slot 5 Drive 1 (3.5-inch Floppy 1)"
+msgstr "Emplacement 5 Lecteur 1 (Disquette 3,5 pouces 1)"
+
+msgctxt "linkBuilder.slot5Drive2"
+msgid "Slot 5 Drive 2 (3.5-inch Floppy 2)"
+msgstr "Emplacement 5 Lecteur 2 (Disquette 3,5 pouces 2)"
 
 msgctxt "linkBuilder.slot7Drive1"
 msgid "Slot 7 Drive 1 (Hard Drive 1)"

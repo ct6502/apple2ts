@@ -1,6 +1,6 @@
 import { doSetEmuDriveNewData, getHardDriveData } from "./drivestate"
 import { processInstruction } from "../cpu6502"
-import { isCarry, setPC } from "../instructions"
+import { isCarry, setPC, s6502 } from "../instructions"
 import { memGet, memorySetForTests, memSet } from "../memory"
 import { setIsTesting } from "../worker2main"
 
@@ -52,6 +52,72 @@ beforeAll(() => {
 
 afterEach(() => {
   memGet(0xC082)  // ROM, bank-switched RAM write protected
+})
+
+// Drive a SmartPort call through the generated $C7C3 slot firmware and return
+// the final PC. The stack frame mimics a caller's JSR: it stores the address
+// the caller will resume at minus one. The slot firmware must consume the
+// inline parameter bytes below that saved address before RTS.
+const callSmartPortDriver = (extended: boolean) => {
+  memorySetForTests()
+  mountTestDrive()
+  const inlineStart = 0x0F55
+  const savedAddr = inlineStart - 1
+  s6502.StackPtr = 0xEE  // stack frame at $1EE: scratch; $1EF/$1F0 saved address
+  memSet(0x1EF, savedAddr & 0xFF)
+  memSet(0x1F0, savedAddr >>> 8)
+  // Inline command byte + parameter pointer. Standard is command + 2 bytes,
+  // extended is command + 4 bytes.
+  memSet(inlineStart, extended ? 0x41 : 0x01)
+  memSet(inlineStart + 1, 0x70)
+  memSet(inlineStart + 2, 0x0F)
+  if (extended) {
+    memSet(inlineStart + 3, 0)
+    memSet(inlineStart + 4, 0)
+  }
+  // Parameter list: count, unit, buffer, block (extended uses 32-bit fields).
+  memSet(0x0F70, 3)
+  memSet(0x0F71, 1)
+  memSet(0x0F72, 0x00)
+  memSet(0x0F73, 0x1D)
+  if (extended) {
+    memSet(0x0F74, 0)
+    memSet(0x0F75, 0)
+    memSet(0x0F76, 3)
+    memSet(0x0F77, 0)
+    memSet(0x0F78, 0)
+    memSet(0x0F79, 0)
+  } else {
+    memSet(0x0F74, 3)
+    memSet(0x0F75, 0)
+    memSet(0x0F76, 0)
+  }
+  const expectedPC = inlineStart + (extended ? 5 : 3)
+  setPC(0xC7C3)
+  for (let i = 0; i < 80 && s6502.PC !== expectedPC; i++) {
+    processInstruction()
+  }
+  return {
+    pc: s6502.PC,
+    scratch: memGet(0x1EE),
+    buffer: readAsCPU(0x1D00),
+  }
+}
+
+test("standard SmartPort inline call returns after 3 bytes", () => {
+  const { pc, scratch, buffer } = callSmartPortDriver(false)
+  expect(pc).toBe(0x0F58)  // $0F55 + 3
+  expect(scratch).toBe(3)   // stack scratch tells the firmware to skip 3 bytes
+  expect(isCarry()).toBe(false)
+  expect(buffer).toEqual(blockPattern(3))
+})
+
+test("extended SmartPort inline call returns after 5 bytes", () => {
+  const { pc, scratch, buffer } = callSmartPortDriver(true)
+  expect(pc).toBe(0x0F5A)  // $0F55 + 5
+  expect(scratch).toBe(5)   // stack scratch tells the firmware to skip 5 bytes
+  expect(isCarry()).toBe(false)
+  expect(buffer).toEqual(blockPattern(3))
 })
 
 test("hard drive block read into $DF00 in bank 1 continues at $E000", () => {

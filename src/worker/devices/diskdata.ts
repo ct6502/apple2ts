@@ -295,7 +295,16 @@ const sampleIwmRead = (ds: DriveState, gapCycles: number) => {
 // When no disk is loaded, return 0x80 so DOS 3.3 and ProDOS RWTS read loops
 // (which wait for bit 7 = 1 via BPL) can decrement their Y retry counter and
 // time out immediately in ~1ms with an I/O ERROR.
-const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
+// Bound the LSS catch-up work, exactly like gssquared's Floppy_woz::fast_forward
+// MAX_BITS_TO_SIM. While the motor spins but the CPU is not touching the IWM,
+// the head keeps moving while the read position stays frozen. When the next
+// access finally arrives the lag can be thousands of bits (ROM self-test,
+// breakpoints, a long seek); replaying all of them only burns cycles because the
+// IWM's shift register has no memory of the old bits. Snap the read position
+// forward to leave a warm-up window before the head and discard the rest.
+const MAX_BITS_TO_SIM = 32
+
+const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number, catchUpCap = false) => {
   // const tracklocSave = ds.trackLocation
   // If no disk then return 0x80 so DOS 3.3 and ProDOS RWTS time out immediately in ~1ms
   if (dd.length === 0) return 0x80
@@ -305,7 +314,23 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   // Read individual bits and combine them.
   cycleRemainder += cycles
 
-  while (cycleRemainder >= ds.optimalTiming / 8) {
+  // gssquared Floppy_woz::fast_forward caps bits_to_sim at 32 and snaps its
+  // read_position forward. Without the cap the ROM03 power-on scan replays every
+  // bit cell since reset and lands several revolutions past the sector. Snap the
+  // read position by the skipped cells first, just like takePending35() does for
+  // a 3.5" drive: the head still moved over all of them, but the shift register
+  // only needs the last 32.
+  const bitTiming = ds.optimalTiming / 8
+  const totalBits = Math.floor(cycleRemainder / bitTiming)
+  if (catchUpCap && totalBits > MAX_BITS_TO_SIM) {
+    const nbits = ds.trackNbits[ds.quarterTrack] || 0
+    if (nbits > 0) {
+      ds.trackLocation = (ds.trackLocation + (totalBits - MAX_BITS_TO_SIM)) % nbits
+    }
+    cycleRemainder -= (totalBits - MAX_BITS_TO_SIM) * bitTiming
+  }
+
+  while (cycleRemainder >= bitTiming) {
     const bit = getNextBit(ds, dd)
     bitsAdvancedLastCall++
 
@@ -328,7 +353,7 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
     // optimalTiming / 8 might be a float if it's not equal to 32.
     // For example, for Paul Whitehead Teaches Chess.woz, optimalTiming = 31.
     // This is actually okay and seems to work fine.
-    cycleRemainder -= (ds.optimalTiming / 8)
+    cycleRemainder -= bitTiming
 
     // See https://github.com/ct6502/apple2ts/issues/473
     // Electronic Arts copy protection (used for Wasteland and Chuck Yeager)
@@ -426,6 +451,14 @@ const startMotor = (ds: DriveState) => {
     if (doDebugDrive) motorOnTime = Date.now()
     cycleRemainder = 0
   }
+  // A motor-on command starts the LSS clock from this cycle. The counters keep
+  // advancing only on IWM accesses, so without this rebase the first access
+  // after motor-on would also charge every cycle since the machine reset (or
+  // since the previous motor-off) to the bitstream. gssquared's
+  // Floppy_woz::fast_forward() advances last_cycle before its spinning check,
+  // so a stopped spindle contributes no elapsed bits when it starts again.
+  prevCycleCount = s6502.cycleCount
+  iwmPrevCycleCount = s6502.cycleCount
   motorOffDeadline = 0
   motorOffDrive = ds
   ds.motorRunning = true
@@ -713,6 +746,46 @@ export const enableDiskDrive35 = () => {
 // so we do the same: advance on every access, then service the register.
 
 let iwmPrevCycleCount = 0
+// 5.25" sync-write latch. Only bytes explicitly loaded by the CPU are flushed;
+// stray Q7=1 windows (the ROM's write-handshake probe) must not shift unrelated
+// bits onto a mounted disk.
+let iwm525WriteLatched = false
+let iwm525BitsWritten = 0
+let iwm525WriteStats = { calls: 0, bytes: 0, bits: 0, values: [] as number[], regs: [] as number[], drives: [] as number[] }
+// Sync-write bytes are buffered until a D5 AA 96 address marker proves the CPU
+// is writing a sector, not the ROM's write-handshake probe that runs during the
+// power-on disk self-test. Until a marker is seen the head advances but the
+// surface is untouched; a data-register read between bytes abandons the burst.
+type PendingWriteBit = { pos: number, bit: number }
+type PendingWriteByte = {
+  driveIndex: number
+  quarterTrack: number
+  value: number
+  bitStart: number
+}
+let iwm525PendingBits: PendingWriteBit[] = []
+let iwm525PendingBytes: PendingWriteByte[] = []
+let iwm525PendingDrive = -1
+let iwm525PendingQuarter = -1
+let iwm525WriteArmed = false
+// The ROM probe loads fewer than a sector's worth of bytes; a real sector
+// always carries more before its next address marker. Keep enough room for the
+// boot probe plus one sector marker, but drop a stale, marker-less burst so it
+// cannot grow without bound.
+const WRITE_ARM_MAX_PENDING_BYTES = 64
+const SYNC_PATTERN = [0xD5, 0xAA, 0x96]
+const resetPending525Writes = () => {
+  iwm525PendingBits.length = 0
+  iwm525PendingBytes.length = 0
+  iwm525PendingDrive = -1
+  iwm525PendingQuarter = -1
+  iwm525WriteArmed = false
+}
+export const iwmReset525PendingWrites = () => resetPending525Writes()
+export const getIwmWrite525Stats = () => iwm525WriteStats
+export const resetIwmWrite525Stats = () => {
+  iwm525WriteStats = { calls: 0, bytes: 0, bits: 0, values: [], regs: [], drives: [] }
+}
 
 // Reset the IWM sequencer timing. Call after a reset so a long pause (menu,
 // breakpoint) does not dump thousands of bits into the shift register.
@@ -723,9 +796,202 @@ export const iwmResetTiming = () => {
   headPending35 = 0
   dataRegister = 0
   dataRegHold = false
+  iwm525WriteLatched = false
+  iwm525BitsWritten = 0
+  resetPending525Writes()
   // Start a fresh read-cadence profile for the new boot attempt so each phase
   // can be compared on its own.
   resetIwmReadStats()
+}
+
+// Reset the 5.25" LSS clock at a spindle transition. IWM motor-on/off must
+// rebase the raw-cycle counter for the same reason startMotor() does: cycles
+// spent with the motor stopped are not disk bits. Without this, the first
+// data read after the IIgs ROM has spun up the drive consumes all boot cycles
+// since reset and skips several revolutions before the firmware can sync.
+export const iwmRebase525Timing = () => {
+  iwmPrevCycleCount = s6502.cycleCount
+  cycleRemainder = 0
+  resetPending525Writes()
+}
+
+// One 5.25" sync-write bit cell: shift QA out of data_register bit 7 onto the
+// media, then shift the register left (gssquared IWM2.hpp fast_forward_impl,
+// non-dr_enable35 branch). When the byte empties, later cells write zero bits
+// until the CPU loads another byte.
+const writeBits525 = (
+  ds: DriveState, dd: Uint8Array, bits: number, writeProtected = false,
+) => {
+  const nbits = ds.trackNbits[ds.quarterTrack] || 0
+  if (nbits <= 0 || dd.length === 0 || bits <= 0) return
+  for (let i = 0; i < bits; i++) {
+    ds.trackLocation %= nbits
+    if (!writeProtected && ds.trackStart[ds.quarterTrack] > 0) {
+      const fileOffset = ds.trackStart[ds.quarterTrack] + (ds.trackLocation >> 3)
+      if (fileOffset < dd.length) {
+        const b = ds.trackLocation & 7
+        const bit = (dataRegister >> 7) & 1
+        dd[fileOffset] = bit ?
+          (dd[fileOffset] | pickbit[b]) : (dd[fileOffset] & clearbit[b])
+      }
+    }
+    dataRegister = (dataRegister << 1) & 0xFF
+    ds.trackLocation++
+  }
+  if (!writeProtected && bits > 0) {
+    ds.diskHasChanges = true
+    ds.lastAppleWriteTime = Date.now()
+    passDriveData()
+  }
+  return bits
+}
+
+// Dry-run companion: record every outgoing bit's circular position while the
+// head also advances. The ROM's power-on write probe produces random bytes and
+// no sector marker, so its bits are never flushed; a real sector write starts
+// with the D5 AA 96 address marker and the buffer is replayed then.
+const collectWriteBits525 = (ds: DriveState, bits: number) => {
+  const nbits = ds.trackNbits[ds.quarterTrack] || 0
+  if (nbits <= 0 || bits <= 0) return
+  for (let i = 0; i < bits; i++) {
+    ds.trackLocation %= nbits
+    iwm525PendingBits.push({
+      pos: ds.trackLocation,
+      bit: (dataRegister >> 7) & 1,
+    })
+    dataRegister = (dataRegister << 1) & 0xFF
+    ds.trackLocation++
+  }
+}
+
+const flushPendingWriteBits525 = (ds: DriveState, dd: Uint8Array, fromBitIndex = 0) => {
+  if (iwm525PendingBits.length === 0 || dd.length === 0) return
+  const start = ds.trackStart[ds.quarterTrack]
+  // Bits before the D5 AA 96 marker belong to the ROM's probe sequence, not to
+  // the sector being written. Discarding them keeps the marker flush from
+  // corrupting the bytes just ahead of a real sector.
+  if (!ds.isWriteProtected && start > 0) {
+    for (let i = fromBitIndex; i < iwm525PendingBits.length; i++) {
+      const entry = iwm525PendingBits[i]
+      const fileOffset = start + (entry.pos >> 3)
+      if (fileOffset >= dd.length) continue
+      const bit = entry.pos & 7
+      dd[fileOffset] = entry.bit ?
+        (dd[fileOffset] | pickbit[bit]) : (dd[fileOffset] & clearbit[bit])
+    }
+  }
+  if (!ds.isWriteProtected) {
+    ds.diskHasChanges = true
+    ds.lastAppleWriteTime = Date.now()
+    passDriveData()
+  }
+  iwm525PendingBits.length = 0
+  iwm525PendingBytes.length = 0
+}
+
+// Write-only companion to the central advance: a 5.25" write access has to
+// flush the bits still sitting in the sync shift register before the CPU loads
+// a new byte, but it must not run the READSHIFT/READLOAD machinery that the
+// data-register read path owns. Keeping the read side out of this path is what
+// preserves the boot's cycle budget.
+export const iwmAdvance525Write = (
+  driveIndex: number, spinning: boolean, writeMode: boolean,
+) => {
+  const ds = getDriveStateByIndex(driveIndex)
+  const dd = getDriveBitstreamByIndex(driveIndex)
+  if (!ds || ds.is35 || ds.hardDrive || dd.length === 0) return
+  if (!writeMode || !spinning) return
+  iwm525WriteStats.calls++
+  // Do not rebase the LSS clock until a real byte is in the shift register:
+  // the ROM's boot write-handshake probe raises Q7 without loading a byte, and
+  // flushing the stale data register there corrupts the boot's track timing.
+  if (!iwm525WriteLatched) return
+  const now = s6502.cycleCount
+  const cycles = now - iwmPrevCycleCount
+  iwmPrevCycleCount = now
+  cycleRemainder += cycles
+  const bitTiming = ds.optimalTiming / 8
+  if (bitTiming <= 0) {
+    cycleRemainder = 0
+    return
+  }
+  let totalBits = Math.floor(cycleRemainder / bitTiming)
+  if (totalBits > MAX_BITS_TO_SIM) {
+    const nbits = ds.trackNbits[ds.quarterTrack] || 0
+    if (nbits > 0) {
+      ds.trackLocation = (ds.trackLocation + (totalBits - MAX_BITS_TO_SIM)) % nbits
+    }
+    cycleRemainder -= (totalBits - MAX_BITS_TO_SIM) * bitTiming
+    totalBits = Math.min(Math.floor(cycleRemainder / bitTiming), MAX_BITS_TO_SIM)
+  }
+  if (!iwm525WriteArmed) {
+    if (iwm525PendingDrive !== driveIndex || iwm525PendingQuarter !== ds.quarterTrack) {
+      resetPending525Writes()
+    }
+    iwm525PendingDrive = driveIndex
+    iwm525PendingQuarter = ds.quarterTrack
+    if (iwm525PendingBytes.length >= WRITE_ARM_MAX_PENDING_BYTES) {
+      resetPending525Writes()
+      iwm525PendingDrive = driveIndex
+      iwm525PendingQuarter = ds.quarterTrack
+    }
+    collectWriteBits525(ds, totalBits)
+    const tail = iwm525PendingBytes.slice(-3).map(b => b.value)
+    if (tail.length === 3 && tail[0] === SYNC_PATTERN[0] &&
+        tail[1] === SYNC_PATTERN[1] && tail[2] === SYNC_PATTERN[2]) {
+      const markerStart = iwm525PendingBytes[iwm525PendingBytes.length - 3].bitStart
+      flushPendingWriteBits525(ds, dd, markerStart)
+      iwm525WriteArmed = true
+    }
+  } else {
+    writeBits525(ds, dd, totalBits, ds.isWriteProtected)
+  }
+  cycleRemainder -= totalBits * bitTiming
+  if (cycleRemainder < 0) cycleRemainder = 0
+  iwm525BitsWritten += totalBits
+  iwm525WriteStats.bits += totalBits
+  if (iwm525BitsWritten >= 8) iwm525WriteLatched = false
+}
+
+// Latch a byte for the 5.25" sync write path. Data-register writes require the
+// motor running, Q6+Q7 on and an odd address (gssquared IWM2::write, sync path);
+// the bits leave on the next LSS advance. A write-protected disk latches the
+// byte in hardware but its WP circuit keeps the surface untouched.
+export const iwmWriteDataRegister525 = (driveIndex: number, value: number, reg = -1) => {
+  const ds = getDriveStateByIndex(driveIndex)
+  if (!ds || ds.is35 || ds.hardDrive) return
+  // The write-protect gate is in the drive's WP circuit, not in the IWM
+  // register: the hardware still latches and shifts the byte, it just cannot
+  // change the surface. Buffering the bits keeps the emulator's probe/timing
+  // behaviour identical on a protected disk without committing them.
+  dataRegister = value & 0xFF
+  dataRegHold = false
+  iwm525WriteLatched = true
+  iwm525BitsWritten = 0
+  if (!iwm525WriteArmed) {
+    if (iwm525PendingDrive !== -1 &&
+        (iwm525PendingDrive !== driveIndex || iwm525PendingQuarter !== ds.quarterTrack)) {
+      resetPending525Writes()
+    }
+    iwm525PendingDrive = driveIndex
+    iwm525PendingQuarter = ds.quarterTrack
+    iwm525PendingBytes.push({
+      driveIndex,
+      quarterTrack: ds.quarterTrack,
+      value: value & 0xFF,
+      bitStart: iwm525PendingBits.length,
+    })
+  }
+  const stats = iwm525WriteStats
+  stats.bytes++
+  stats.values.push(value & 0xFF)
+  stats.regs.push(reg)
+  stats.drives.push(driveIndex)
+  if (stats.values.length > 64) {
+    stats.values.splice(0, stats.values.length - 64)
+    stats.regs.splice(0, stats.regs.length - 64)
+    stats.drives.splice(0, stats.drives.length - 64)
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1005,7 +1271,7 @@ const getNextByte35Shift = (ds: DriveState, dd: Uint8Array) => {
 // gssquared's Floppy525_woz does in every speed mode: the Disk II firmware's
 // read loop is cycle-timed too, so the two keep their relationship at 2.8 MHz.
 export const iwmReadDataRegister = (
-  driveIndex: number, enabled: boolean, latchMode = false,
+  driveIndex: number, enabled: boolean, latchMode = false, catchUpCap = false,
 ) => {
   const cycles = s6502.cycleCount - iwmPrevCycleCount
   const ds = getDriveStateByIndex(driveIndex)
@@ -1026,6 +1292,8 @@ export const iwmReadDataRegister = (
     if (latchMode) dataRegister35 = 0
     return value
   }
+  // The 5.25" LSS clock is advanced only on accesses that read the data
+  // register: the head must not be moved twice for the same elapsed cycles.
   iwmPrevCycleCount = s6502.cycleCount
   if (!enabled) {
     // Keep the register reading back as "no data" so RWTS loops time out
@@ -1033,7 +1301,7 @@ export const iwmReadDataRegister = (
     return 0x80
   }
   if (ds.hardDrive || dd.length === 0) return 0x80
-  const byte = getNextByte(ds, dd, cycles)
+  const byte = getNextByte(ds, dd, cycles, catchUpCap)
   sampleIwmRead(ds, cycles)
   return byte
 }

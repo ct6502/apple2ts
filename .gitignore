@@ -22,6 +22,7 @@ src/worker/roms/6502_65c02_65816_decimal_test.bin
 .env.development.local
 .env.test.local
 .env.production.local
+/test_scratch
 copilot-instructions.md
 
 npm-debug.log*
