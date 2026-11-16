@@ -175,6 +175,14 @@ export const playVeraFmReset = () => {
   veraPsgNode?.port.postMessage({ type: "fm-reset" })
 }
 
+// Reset the live PSG/PCM/FM state without tearing down the graph. AUDIO_RESET
+// still closes the context, but closing is asynchronous and can be skipped when
+// the graph is suspended; zeroing the channels here guarantees that a reset
+// silences a note instead of leaving it running behind the reset screen.
+export const playVeraAudioReset = () => {
+  veraPsgNode?.port.postMessage({ type: "audio-reset" })
+}
+
 // Boot/Ctrl-Reset stop for VERA PSG, PCM and FM. Closing the AudioContext
 // discards every message already queued for the AudioWorklet (PSG register
 // writes, PCM FIFO writes, and FM batches) and stops the audio thread. The

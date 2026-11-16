@@ -85,6 +85,7 @@ export enum MSG_WORKER {
   ENSONIQ_DOC_STATS,
   ADB_TRACE,
   AUDIO_RESET,
+  VERA_AUDIO_RESET,
 }
 
 export interface VeraSdStatus {
