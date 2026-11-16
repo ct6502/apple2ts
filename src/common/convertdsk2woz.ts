@@ -169,6 +169,34 @@ const serialise_track = (src: Uint8Array, track_number: number, is_prodos: boole
   return dest
 }
 
+/**
+  Detect whether a raw 140 KB .dsk image uses ProDOS block order instead of the
+  DOS 3.3 sector order that the .dsk extension normally implies.
+  @param dskData The raw image.
+  @returns true when the image looks like a ProDOS-order volume.
+*/
+export const isProdosOrderDsk = (dskData: Uint8Array): boolean => {
+  // ProDOS volumes store the root directory in block 2, i.e. file offset 1024
+  // for a block-order image. The first 512-byte block starts with the previous
+  // block pointer (0 for the root) and the next pointer, followed by a volume
+  // directory header entry whose first byte is 0xF0 | name-length.
+  const block = 2 * 512
+  if (dskData.length < block + 512) return false
+  const prev = dskData[block] | (dskData[block + 1] << 8)
+  if (prev !== 0) return false
+  const first = dskData[block + 4]
+  if ((first & 0xf0) !== 0xf0) return false
+  const nameLength = first & 0x0f
+  if (nameLength < 1 || nameLength > 15) return false
+  for (let i = 0; i < nameLength; i++) {
+    const c = dskData[block + 5 + i]
+    const upper = c >= 0x41 && c <= 0x5a
+    const digit = c >= 0x30 && c <= 0x39
+    if (!upper && !digit && c !== 0x2e && c !== 0x5f && c !== 0x2f) return false
+  }
+  return true
+}
+
 export const convertdsk2woz = (dskData: Uint8Array, isPO: boolean) => {
   const ntracks = dskData.length / (16 * 256)
   // Normal dsk files have 35 tracks, but the woz format will support up to 40.
