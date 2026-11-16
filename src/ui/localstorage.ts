@@ -1,8 +1,12 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
-import { AUTO_SNAPSHOT, COLOR_MODE, DEFAULT_SLOT_CONFIG, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
+import { AUTO_SNAPSHOT, COLOR_MODE, MONITOR_MODE, UI_THEME, UI_THEMES } from "../common/utility"
+import { ALL_MACHINE_NAMES, CLASSIC_PROFILE, getMachineProfile, getProfileDefaultSlotConfig, getProfileDefaultSpeedMode, getProfileSlotChoices } from "../common/machine_profile"
+import { APP_DEFAULT_MACHINE, APP_MACHINE_NAMES } from "../common/app_target"
+import { sanitizeSlotConfig } from "../common/slot_options"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passSetVeraFmEnabled, passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
+import { handleGetMachineName, passSetVeraFmEnabled, passSetIigsRomVersion, passAutoSnapshot, passBreakpoints, passEnableGamePatches, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, requestSpeedMode, } from "./main2worker"
+
 import { getTheme, getUIState, initialBooleanUIKeys, setColorMode, setTheme, setUIStateBoolean, BooleanKeyOf, setMonitorMode, isDefaultTrueBooleanKey, setAutoSnapshot } from "./ui_settings"
 import { notifySettingsChanged, type SettingsChangeOrigin } from "./settingschange"
 import { toggleScanlines } from "./ui_utilities"
@@ -219,29 +223,113 @@ export const setPreferenceBreakpoints = (breakpoints: BreakpointMap) => {
   passBreakpoints(breakpoints)
 }
 
+export const getPreferenceMachineName = (): MACHINE_NAME => {
+  const saved = localStorage.getItem("machineName")
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved)
+      if (ALL_MACHINE_NAMES.includes(parsed)
+        && APP_MACHINE_NAMES.includes(parsed)) {
+        return parsed
+      }
+      localStorage.removeItem("machineName")
+    } catch {
+      localStorage.removeItem("machineName")
+    }
+  }
+  return APP_DEFAULT_MACHINE
+}
+
+export const PREFERENCE_SLOT_CONFIG_GS_KEY = "slotConfigGS"
+export const PREFERENCE_SLOT_CONFIG_CLASSIC_KEY = "slotConfigClassic"
+
+const readSlotConfigStorage = (raw: string | null): SlotConfig | null => {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === "object" && parsed[1] && parsed[7]) {
+      return parsed as SlotConfig
+    }
+  } catch {
+    // Invalid stored configuration
+  }
+  return null
+}
+
 export const setPreferenceMachineName = (
-  name: MACHINE_NAME = "APPLE2EE",
+  name: MACHINE_NAME = APP_DEFAULT_MACHINE,
   origin: SettingsChangeOrigin = "external",
 ) => {
-  if (name === "APPLE2EE") {
+  const previousMachine = getPreferenceMachineName()
+  if (name === CLASSIC_PROFILE.defaultMachine) {
     localStorage.removeItem("machineName")
   } else {
     localStorage.setItem("machineName", JSON.stringify(name))
   }
   passSetMachineName(name)
+  // Speed indices mean different clocks in the classic and GS tables. A custom
+  // or explicit speed must not survive a family switch: classic 0 is Normal
+  // (~1 MHz) but GS 0 is 1.02 MHz, and GS index 1 is 2.8 MHz. Start each family
+  // from its own default instead of carrying the other profile's index.
+  if (getMachineProfile(previousMachine).family !== getMachineProfile(name).family) {
+    setPreferenceSpeedMode(getProfileDefaultSpeedMode(getMachineProfile(name)), origin)
+  }
 
-  const slotConfig = getPreferenceSlotConfig()
-  let newSlot3 = slotConfig[3]
-  if (name === "APPLE2P") {
-    if (newSlot3 !== "none" && newSlot3 !== "videoterm" && newSlot3 !== "vidhd") newSlot3 = "videoterm"
+  let newSlotConfig: SlotConfig
+  if (getMachineProfile(name).family === "gs") {
+    // The GS Control Panel slot layout is independent of the classic machines.
+    // Keep the user's custom GS slots across a GS -> classic -> GS round trip;
+    // fall back to the built-in defaults for a first visit to the IIgs.
+    const savedGsSlotConfig = readSlotConfigStorage(
+      localStorage.getItem(PREFERENCE_SLOT_CONFIG_GS_KEY),
+    )
+    newSlotConfig = savedGsSlotConfig
+      ? sanitizeSlotConfig(savedGsSlotConfig, name)
+      : getProfileDefaultSlotConfig(getMachineProfile(name), name)
   } else {
-    if (newSlot3 !== "none" && newSlot3 !== "aux" && newSlot3 !== "vidhd") newSlot3 = "aux"
+    // Like the IIgs backup, keep a custom classic layout across a
+    // classic -> GS -> classic round trip instead of replacing it with the
+    // IIgs sanitised config when coming back from the GS Control Panel.
+    const slotConfig = getPreferenceSlotConfig()
+    newSlotConfig = { ...slotConfig }
+    let newSlot3 = newSlotConfig[3]
+    // Keep an explicitly empty or VidHD slot 3; otherwise fall back to the exact
+    // machine's profile default (II+ Videoterm or IIe aux RAM). No machine ids.
+    const slot3Cards = getProfileSlotChoices(
+      getMachineProfile(name), name, 3,
+    ).map(choice => choice.card)
+    if (newSlot3 !== "none" && !slot3Cards.includes(newSlot3)) {
+      newSlot3 = getProfileDefaultSlotConfig(getMachineProfile(name), name)[3]
+    }
+    newSlotConfig[3] = newSlot3
   }
-  if (slotConfig[3] !== newSlot3) {
-    slotConfig[3] = newSlot3
-    setPreferenceSlotConfig(slotConfig, origin)
+  setPreferenceSlotConfig(newSlotConfig, origin)
+  // Keep the VERA preference aligned when the restored layout contains the
+  // card. A GS layout has no VERA slot, so leave the existing preference alone
+  // there: the classic backup may still carry slot 4 for the switch back.
+  const veraSlot = newSlotConfig[2] === "vera"
+    ? 2
+    : newSlotConfig[4] === "vera"
+      ? 4
+      : getPreferenceVeraSlot()
+  setPreferenceVeraSlot(veraSlot)
+  notifySettingsChanged([1, 2, 3, 4, 5, 6, 7].map(slot => `slots.${slot}`), origin)
+}
+
+export const getPreferenceIigsRomVersion = (): IigsRomVersion =>
+  localStorage.getItem("iigsRom") === "03" ? "03" : "01"
+
+export const setPreferenceIigsRomVersion = (
+  version: IigsRomVersion,
+  origin: SettingsChangeOrigin = "external",
+) => {
+  if (version === "03") {
+    localStorage.setItem("iigsRom", version)
+  } else {
+    localStorage.removeItem("iigsRom")
   }
-  notifySettingsChanged(["slots.3"], origin)
+  passSetIigsRomVersion(version)
+  notifySettingsChanged(["machine.iigsRom"], origin)
 }
 
 export const setPreferenceMockingboardMode = (
@@ -297,36 +385,62 @@ export const setPreferenceVeraSlot = (slot: VERA_SLOT = 0) => {
   passSetVeraSlot(slot)
 }
 
-export const getPreferenceSlotConfig = (): SlotConfig => {
-  const saved = localStorage.getItem("slotConfig")
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved)
-      if (parsed && typeof parsed === "object" && parsed[1] && parsed[7]) {
-        return parsed as SlotConfig
-      }
-    } catch {
-      // Clear invalid slotConfig
-    }
-    localStorage.removeItem("slotConfig")
+export const getPreferenceSlotConfigBackup = (
+  machine: MACHINE_NAME,
+): SlotConfig | null => {
+  const key = getMachineProfile(machine).family === "gs"
+    ? PREFERENCE_SLOT_CONFIG_GS_KEY
+    : PREFERENCE_SLOT_CONFIG_CLASSIC_KEY
+  const backupRaw = localStorage.getItem(key)
+  const backup = readSlotConfigStorage(backupRaw)
+  if (!backup) {
+    if (backupRaw) localStorage.removeItem(key)
+    return null
   }
-  return { ...DEFAULT_SLOT_CONFIG }
+  return sanitizeSlotConfig(backup, machine)
+}
+
+export const getPreferenceSlotConfig = (): SlotConfig => {
+  const machine = getPreferenceMachineName()
+  const backup = getPreferenceSlotConfigBackup(machine)
+  if (backup) return backup
+  const saved = localStorage.getItem("slotConfig")
+  const parsed = readSlotConfigStorage(saved)
+  if (parsed) return sanitizeSlotConfig(parsed, machine)
+  if (saved) localStorage.removeItem("slotConfig")
+  return getProfileDefaultSlotConfig(getMachineProfile(machine), machine)
 }
 
 export const setPreferenceSlotConfig = (
   config: SlotConfig,
   origin: SettingsChangeOrigin = "external",
+  machine: MACHINE_NAME = getPreferenceMachineName(),
 ) => {
   localStorage.setItem("slotConfig", JSON.stringify(config))
+  localStorage.setItem(
+    getMachineProfile(machine).family === "gs"
+      ? PREFERENCE_SLOT_CONFIG_GS_KEY
+      : PREFERENCE_SLOT_CONFIG_CLASSIC_KEY,
+    JSON.stringify(config),
+  )
   passSetSlotConfig(config)
   notifySettingsChanged([1, 2, 3, 4, 5, 6, 7].map(slot => `slots.${slot}`), origin)
 }
 
+export const SPEED_MODE_MACHINE_KEY = "speedModeMachineName"
+const SPEED_FAMILIES = (machineName: string | null) =>
+  getMachineProfile((machineName || CLASSIC_PROFILE.defaultMachine) as MACHINE_NAME).family === "gs"
+    ? "GS"
+    : "CLASSIC"
+
 const savePreferenceSpeedMode = (mode: number) => {
   if (mode === 0) {
     localStorage.removeItem("speedMode")
+    localStorage.removeItem(SPEED_MODE_MACHINE_KEY)
   } else {
     localStorage.setItem("speedMode", JSON.stringify(mode))
+    const machineName = handleGetMachineName()
+    localStorage.setItem(SPEED_MODE_MACHINE_KEY, JSON.stringify(machineName))
   }
 }
 
@@ -517,12 +631,33 @@ export const loadPreferences = () => {
     }
   }
 
+  // Auto Snapshot is a numeric enum stored outside the boolean UI keys, so it
+  // needs an explicit restore here. Without this the preference survives reload
+  // in localStorage but the UI and worker silently revert to AUTO_OFF.
+  const autoSnapshot = localStorage.getItem("autoSnapshot")
+  if (autoSnapshot) {
+    try {
+      const parsed: unknown = JSON.parse(autoSnapshot)
+      if (parsed === AUTO_SNAPSHOT.AUTO_100K || parsed === AUTO_SNAPSHOT.AUTO_1M) {
+        setAutoSnapshot(parsed as AUTO_SNAPSHOT)
+        passAutoSnapshot(parsed as AUTO_SNAPSHOT)
+      } else {
+        localStorage.removeItem("autoSnapshot")
+      }
+    } catch {
+      localStorage.removeItem("autoSnapshot")
+    }
+  }
+
   // Keep for backwards-compatibility
   const darkMode = localStorage.getItem("darkMode")
   if (darkMode) {
     try {
       if (JSON.parse(darkMode)) {
-        setTheme(UI_THEME.DARK)
+        // Migrate the legacy key into the persisted theme preference. Calling
+        // setTheme alone leaves theme absent, so the next reload silently falls
+        // back to CLASSIC after this migration key has been removed.
+        setPreferenceTheme(UI_THEME.DARK)
       }
     } catch {
       localStorage.removeItem("darkMode")
@@ -545,23 +680,43 @@ export const loadPreferences = () => {
     }
   }
 
+  // A saved speed is a machine-specific choice. The stored speed mode is an
+  // index into a different clock table on the IIgs than on the IIe, so an index
+  // saved while running the GS must not survive after the machine falls back to
+  // a classic machine. Choose the machine first, then apply the speed only when
+  // it was saved against the same machine family (`speedModeMachineName`).
+  // The first load after this change finds legacy speed entries without that
+  // context; drop them once rather than letting an old 2.8 MHz index become
+  // 2 MHz on a classic machine. A new speed selection writes the context.
+  const machineName = getPreferenceMachineName()
+  passSetMachineName(machineName)
+
   const speedMode = localStorage.getItem("speedMode")
-  if (speedMode) {
+  const speedModeMachineRaw = localStorage.getItem(SPEED_MODE_MACHINE_KEY)
+  let savedSpeedFamily: string | null = null
+  if (speedModeMachineRaw) {
+    try {
+      const savedSpeedMachine = JSON.parse(speedModeMachineRaw) as MACHINE_NAME
+      if (ALL_MACHINE_NAMES.includes(savedSpeedMachine)) {
+        savedSpeedFamily = SPEED_FAMILIES(savedSpeedMachine)
+      }
+    } catch {
+      savedSpeedFamily = null
+    }
+  }
+  if (speedMode && savedSpeedFamily === SPEED_FAMILIES(machineName)) {
     try {
       passSpeedMode(JSON.parse(speedMode))
     } catch {
       localStorage.removeItem("speedMode")
+      localStorage.removeItem(SPEED_MODE_MACHINE_KEY)
     }
+  } else if (speedMode) {
+    localStorage.removeItem("speedMode")
+    localStorage.removeItem(SPEED_MODE_MACHINE_KEY)
   }
 
-  const machineName = localStorage.getItem("machineName")
-  if (machineName) {
-    try {
-      passSetMachineName(JSON.parse(machineName))
-    } catch {
-      localStorage.removeItem("machineName")
-    }
-  }
+  passSetIigsRomVersion(getPreferenceIigsRomVersion())
 
   const mockingboardMode = localStorage.getItem("mockingboardMode")
   if (mockingboardMode) {
@@ -583,7 +738,14 @@ export const loadPreferences = () => {
 
   const slotConfig = getPreferenceSlotConfig()
   passSetSlotConfig(slotConfig)
-  const veraSlot = slotConfig[2] === "vera" ? 2 : slotConfig[4] === "vera" ? 4 : 0
+  // The slot backup for the other machine family may still carry a VERA card,
+  // so do not erase a saved preference just because this machine's layout has
+  // no VERA slot. The machine helper re-aligns it when the card returns.
+  const veraSlot = slotConfig[2] === "vera"
+    ? 2
+    : slotConfig[4] === "vera"
+      ? 4
+      : getPreferenceVeraSlot()
   setPreferenceVeraSlot(veraSlot)
 
   const traceSettings = getPreferenceTraceSettings()
@@ -597,9 +759,11 @@ export const loadPreferences = () => {
       RestoreSaveState(saveState)
       handleSaveStateToLocalStorage()
     }
-  } else {
-    localStorage.removeItem("apple2ts_save_state")
   }
+  // Reset Settings explicitly promises to preserve save states, but it also
+  // clears saveStateToLocalStorage. Do not delete the local snapshot here just
+  // because the preference is off: it was preserved by the reset dialog and
+  // remains available until auto-save is enabled again.
 }
 
 export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
@@ -612,8 +776,15 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   passReverseYAxis(false)
   passSiriusJoyport(false)
   passSetShowDebugTab(false)
+  // Auto Snapshot is a numeric enum, not one of the boolean UI keys; the loop
+  // above therefore leaves both the UI preference and worker mode untouched.
+  setPreferenceAutoSnapshot(AUTO_SNAPSHOT.AUTO_OFF)
   
-  setPreferenceSpeedMode(0, origin)
+  const resetProfile = getMachineProfile(APP_DEFAULT_MACHINE)
+  setPreferenceSpeedMode(getProfileDefaultSpeedMode(resetProfile), origin)
+  // The ROM choice is an independent GS preference; reset it back to ROM 01
+  // (and tell the worker) even though the machine itself returns to APPLE2EE.
+  setPreferenceIigsRomVersion("01", origin)
   setPreferenceColorMode(COLOR_MODE.COLOR, origin)
   setPreferenceMonitorMode(MONITOR_MODE.NTSC)
   setPreferenceTheme()
@@ -622,16 +793,40 @@ export const resetPreferences = (origin: SettingsChangeOrigin = "external") => {
   setPreferenceRetroIIGSColor("background")
   setPreferenceRetroIIGSColor("border")
   setPreferenceMockingboardMode(0, origin)
-  setPreferenceMachineName("APPLE2EE", origin)
+  // VERA card placement and FM audio are separate preferences; reset them too
+  // or the worker keeps steering the card's SD interface at an old slot.
+  setPreferenceVeraSlot(0)
+  setPreferenceVeraFmAudioEnabled(true, origin)
+  // Clear both machine slot backups first so setPreferenceMachineName loads
+  // the built-in default layout instead of restoring a custom one.
+  localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+  localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
+  localStorage.removeItem("slotConfig")
+  setPreferenceMachineName(APP_DEFAULT_MACHINE, origin)
+  // The machine helper writes the fallback and its backup; reset must remove
+  // those persisted values too, or getPreferenceSlotConfig would restore the
+  // custom slots on the next Settings/URL load even though reset ran.
+  localStorage.removeItem(PREFERENCE_SLOT_CONFIG_GS_KEY)
+  localStorage.removeItem(PREFERENCE_SLOT_CONFIG_CLASSIC_KEY)
+  localStorage.removeItem("slotConfig")
   setPreferenceRamWorks(64, origin)
   setPreferenceNewReleasesChecked()
   toggleScanlines(false)
-  window.dispatchEvent(new CustomEvent(PREFERENCES_RESET_EVENT))
   localStorage.removeItem("binaryRunAddress")
   setPreferenceTraceSettings()
   setPreferenceDebugTabLeftWidth(-1)
   setPreferencePrinterDialogPosition({ x: -1, y: -1 })
   setPreferencePageLength(-1)
+  // Disk collection sorting is persisted per tab under keys that the boolean
+  // UI preference loop never visits. Clear them too so Reset Settings restores
+  // the default collection order instead of keeping a custom sort mode.
+  Object.keys(localStorage)
+    .filter(key => key.startsWith("diskCollectionSort."))
+    .forEach(key => localStorage.removeItem(key))
+  // The heat-map palette is a string preference, so the boolean UI key loop
+  // never visits it. Reset it with the other debug presentation preferences.
+  localStorage.removeItem("heatMapColorTable")
+  window.dispatchEvent(new CustomEvent(PREFERENCES_RESET_EVENT))
 }
 
 export const getPreferencePageLength = (): number => {

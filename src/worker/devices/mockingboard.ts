@@ -1,7 +1,8 @@
 import { interruptRequest, registerCycleCountCallback } from "../cpu6502"
 import { s6502 } from "../instructions"
-import { debugSlot, memGetSlotROM, memSetSlotROM, setSlotIOCallback } from "../memory"
+import { debugSlot, getCurrentMachineName, iigsRegisters, iigsSlotRegister, memGetSlotROM, memSetSlotROM, setIigsSlotRegister, setSlotIOCallback, updateAddressTables } from "../memory"
 import { passMockingboard } from "../worker2main"
+import { SWITCHES } from "../softswitches"
 import { registerSlotCardState } from "./slot_card_state"
 
 type MockingboardSaveState = {
@@ -12,6 +13,7 @@ type MockingboardSaveState = {
 export const enableMockingboard = (enable = true, slot = 4) => {
   if (!enable)
     return
+  ensureCardSlotSelected(slot)
   setSlotIOCallback(slot, handleMockingboard)
   registerCycleCountCallback(cycleCountCallback, slot)
   registerSlotCardState(
@@ -139,6 +141,9 @@ const handleTimerT2 = (slot: number, chip: number, cycleDelta: number) => {
 
 const prevCycleCount = new Array<number>(8).fill(0)
 
+const slotInterruptActive = (slot: number) => [0, 1].some(chip =>
+  (memGetSlotROM(slot, IFR[chip]) & 0x80) !== 0)
+
 const restoreMockingboardState = (slot: number, state: MockingboardSaveState) => {
   prevCycleCount[slot] = state.prevCycleCount
   state.data.forEach((value, addr) => memSetSlotROM(slot, addr, value))
@@ -146,12 +151,32 @@ const restoreMockingboardState = (slot: number, state: MockingboardSaveState) =>
     handleInterruptFlag(slot, chip, -1)
     doPassRegisters(slot, chip)
   }
-  const slotActive = [0, 1].some(chip =>
-    (memGetSlotROM(slot, IFR[chip]) & memGetSlotROM(slot, IER[chip]) & 0x7F) !== 0)
-  interruptRequest(slot, slotActive)
+  interruptRequest(slot, slotInterruptActive(slot))
+}
+
+// The IIgs ROM re-writes SLTROMSEL ($C02D) from its own slot scan during boot
+// (a bare no-card boot leaves $80, clearing slot 4's bit). The Control Panel
+// layout is authoritative for an installed Mockingboard, so the card has to put
+// its bit back after those writes or the ROM's built-in slot firmware answers at
+// $C400-$C4FF instead of the card and games no longer see it. Called per frame,
+// from the card's own cycle callback.
+const ensureCardSlotSelected = (slot: number) => {
+  if (getCurrentMachineName() !== "APPLE2GS") return
+  // The GS ROM also leaves INTCXROM (CLRROM) set from its boot, which hides
+  // every slot card: use the Control Panel assignment ($C02D) instead. Built-in
+  // functions keep their $C02D bits clear, so the internal slot firmware still
+  // answers for them.
+  if (SWITCHES.INTCXROM.isSet) SWITCHES.INTCXROM.isSet = false
+  const bit = 1 << slot
+  if ((iigsSlotRegister & bit) === 0) {
+    setIigsSlotRegister(iigsSlotRegister | bit)
+    iigsRegisters[0x2D] = iigsSlotRegister
+    updateAddressTables()
+  }
 }
 
 const cycleCountCallback = (slot: number) => {
+  ensureCardSlotSelected(slot)
   const cycleDelta = s6502.cycleCount - prevCycleCount[slot]
   for (let chip = 0; chip <= 1; chip++) {
     handleTimerT1(slot, chip, cycleDelta)

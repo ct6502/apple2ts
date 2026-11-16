@@ -7,11 +7,13 @@ import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import CheckBox from "../panels/checkbox"
 import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode, getUIStateBoolean } from "../ui_settings"
-import { DEFAULT_SLOT_CONFIG, UI_THEMES } from "../../common/utility"
+import { APP_DEFAULT_MACHINE } from "../../common/app_target"
+import { UI_THEMES } from "../../common/utility"
+import { getMachineProfile, getProfileDefaultSlotConfig, getProfileDefaultSpeedMode, getProfileSlotChoices, getProfileSpeedLabel, getProfileSpeedOptions } from "../../common/machine_profile"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode, handleGetSlotConfig } from "../main2worker"
 import { useTranslation } from "../../i18n/useTranslation"
-import { SLOT_NUMBERS, getSlotOptions } from "../devices/machineconfig"
+import { SLOT_NUMBERS, getSlotOptions } from "../../common/slot_options"
 import TabBase from "../tabbase"
 import Tab from "../tab"
 import { getCardShortLabels, ramdiskParams, getRamdiskValues } from "../ui_utilities"
@@ -86,16 +88,6 @@ const LinkBuilder = () => {
     t("linkBuilder.colorNames.inverse")
   ]
   const colorModes = ["color", "nofringe", "green", "amber", "white", "inverse"]
-
-  const speedNames = [
-    t("linkBuilder.speedNames.snail"),
-    t("linkBuilder.speedNames.slow"),
-    t("linkBuilder.speedNames.normal"),
-    t("linkBuilder.speedNames.two"),
-    t("linkBuilder.speedNames.three"),
-    t("linkBuilder.speedNames.four"),
-    t("linkBuilder.speedNames.warp")
-  ]
   const speedParams = ["snail", "slow", "normal", "two", "three", "fast", "warp"]
 
   const gameModes = [
@@ -121,6 +113,10 @@ const LinkBuilder = () => {
   const [s6d1Url, setS6d1Url] = useState("")
   const [s6d2Disk, setS6d2Disk] = useState("")
   const [s6d2Url, setS6d2Url] = useState("")
+  const [s5d1Disk, setS5d1Disk] = useState("")
+  const [s5d1Url, setS5d1Url] = useState("")
+  const [s5d2Disk, setS5d2Disk] = useState("")
+  const [s5d2Url, setS5d2Url] = useState("")
   const [s7d1Disk, setS7d1Disk] = useState("")
   const [s7d1Url, setS7d1Url] = useState("")
   const [s7d2Disk, setS7d2Disk] = useState("")
@@ -132,6 +128,8 @@ const LinkBuilder = () => {
   const [extraDriveUrls, setExtraDriveUrls] = useState<Record<string, string[]>>({
     s6d1: [],
     s6d2: [],
+    s5d1: [],
+    s5d2: [],
     s7d1: [],
     s7d2: [],
     s2d1: [],
@@ -170,16 +168,72 @@ const LinkBuilder = () => {
   const [machine, setMachine] = useState("")
   const [ramdisk, setRamdisk] = useState("")
   const [scanlines, setScanlines] = useState(false)
-  const [speed, setSpeed] = useState("")
+  const [speedMode, setSpeedMode] = useState(getProfileDefaultSpeedMode(getMachineProfile(APP_DEFAULT_MACHINE)))
   const [theme, setTheme] = useState("")
   const [tabSection, setTabSection] = useState(TAB.DISK)
-  const [slotConfig, setSlotConfig] = useState<SlotConfig>({ ...DEFAULT_SLOT_CONFIG })
+  const [slotConfig, setSlotConfig] = useState<SlotConfig>(
+    getProfileDefaultSlotConfig(getMachineProfile(APP_DEFAULT_MACHINE), APP_DEFAULT_MACHINE),
+  )
 
-  const machineValues = [t("machine.models.apple2ee"), t("machine.models.apple2eu"), t("machine.models.apple2p")]
+  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs. A shared
+  // link deliberately crosses the deployment boundary and the Settings menu does
+  // not: explicit title-link surfaces always offer all four rows, so apple2ts.com
+  // can link a IIgs title and apple2gts.com can link a classic one while their
+  // Settings droplists stay target-filtered.
+  const allMachines = [
+    { name: "APPLE2P" as MACHINE_NAME, label: t("machine.models.apple2p") },
+    { name: "APPLE2EU" as MACHINE_NAME, label: t("machine.models.apple2eu") },
+    { name: "APPLE2EE" as MACHINE_NAME, label: t("machine.models.apple2ee") },
+    { name: "APPLE2GS" as MACHINE_NAME, label: "Apple IIgs" },
+  ]
+  const visibleMachines = allMachines
+  const machineValues = visibleMachines.map(({ label }) => label)
+  // Each droplist row and the MACHINE_NAME it stands for. Retrieving the running
+  // machine and reading a user choice both go through this table so the two
+  // cannot drift apart - the reason a running IIgs used to come back as an IIe.
+  const MACHINE_NAMES: MACHINE_NAME[] = visibleMachines.map(({ name }) => name)
+  const machineNameFor = (row: string): MACHINE_NAME =>
+    MACHINE_NAMES[machineValues.indexOf(row)] ?? APP_DEFAULT_MACHINE
+  const machineRowFor = (name: MACHINE_NAME): string => {
+    const exactRow = machineValues[MACHINE_NAMES.indexOf(name)]
+    if (exactRow !== undefined) return exactRow
+    return machineValues[Math.max(MACHINE_NAMES.indexOf(APP_DEFAULT_MACHINE), 0)]
+  }
+  const lbMachineName = machineNameFor(machine)
 
-  // Derive MACHINE_NAME from local machine state so slot options stay in sync
-  const lbMachineName: MACHINE_NAME = machine === machineValues[2] ? "APPLE2P"
-    : machine === machineValues[1] ? "APPLE2EU" : "APPLE2EE"
+  // The speed rows come from the selected profile, and the panel stores the
+  // numeric mode rather than the display label. Labels change when a classic link
+  // turns into a GS link, but the mode survives, so a link cannot silently lose its
+  // speed parameter just because the visible table was rebuilt.
+  const lbProfile = getMachineProfile(lbMachineName)
+  const speedOptions = getProfileSpeedOptions(lbProfile)
+  const speedNames = speedOptions.map(option => getProfileSpeedLabel(lbProfile, option.mode, t))
+  const speedModeForLabel = (label: string): number =>
+    speedOptions[speedNames.indexOf(label)]?.mode ?? getProfileDefaultSpeedMode(lbProfile)
+  const defaultSpeedMode = getProfileDefaultSpeedMode(lbProfile)
+  const speedDisplay = speedNames[speedOptions.findIndex(option => option.mode === speedMode)]
+    ?? speedNames[speedOptions.findIndex(option => option.mode === defaultSpeedMode)]
+    ?? ""
+  const canUseAuxSlot3 = getProfileSlotChoices(lbProfile, lbMachineName, 3)
+    .some(choice => choice.card === "aux")
+
+  // A shared link must name the machine unless it is the classic enhanced default,
+  // where leaving ?machine= out follows the visitor's own saved choice. The IIgs
+  // is always named because otherwise a GS volume can be scanned by an IIe.
+  const MACHINE_QUERY_PARAMS: Partial<Record<MACHINE_NAME, string>> = {
+    APPLE2EU: "machine=apple2eu",
+    APPLE2P: "machine=apple2p",
+    APPLE2GS: "machine=apple2gs",
+  }
+  const machineQueryFor = (name: MACHINE_NAME): string | undefined =>
+    MACHINE_QUERY_PARAMS[name]
+
+  // Which floppy bays the current slot config actually exposes. On a IIgs the
+  // 5.25" pair is the Disk Port and the 3.5" pair the Smart Port in slot 5;
+  // "disk35" is the id an older saved configuration may still carry for the latter.
+  const isDiskPortSlot = slotConfig[6] === "disk2" || slotConfig[6] === "gsDiskPort"
+  const isThreeInchSlot = slotConfig[5] === "gsSmartPort" || slotConfig[5] === "disk35"
+
 
   const themeValues = [
     t("linkBuilder.themes.classic"),
@@ -242,11 +296,9 @@ const LinkBuilder = () => {
       params.push(`address=${encodeURIComponent(hexAddress)}`)
     }
 
-    const machineIndex = machineValues.indexOf(machine)
-    if (machineIndex === 1) { // unenhanced
-      params.push("machine=apple2eu")
-    } else if (machineIndex === 2) { // II+
-      params.push("machine=apple2p")
+    const machineQuery = machineQueryFor(lbMachineName)
+    if (machineQuery) {
+      params.push(machineQuery)
     }
 
     const ramIndex = ramdiskValues.indexOf(ramdisk)
@@ -267,8 +319,11 @@ const LinkBuilder = () => {
       params.push("gamepatches=off")
     }
 
-    const speedIndex = speedNames.indexOf(speed)
-    if (speedIndex !== -1 && speedIndex !== 2) { // 2 is "1 MHz (default)"
+    // The profile's own default speed is the one choice a link need not spell
+    // out. Compare modes, not row labels, so a machine switch cannot turn the
+    // default into a stray parameter.
+    const speedIndex = speedOptions.findIndex(option => option.mode === speedMode)
+    if (speedIndex !== -1 && speedMode !== defaultSpeedMode) {
       params.push(`speed=${speedParams[speedIndex]}`)
     }
 
@@ -279,9 +334,11 @@ const LinkBuilder = () => {
 
     // Slot configuration params: emit slotN=card for any non-default slot
     let hasVera = false
+    const profileSlotDefaults = getProfileDefaultSlotConfig(lbProfile, lbMachineName)
     SLOT_NUMBERS.forEach(slot => {
       const card = slotConfig[slot]
-      if (card !== DEFAULT_SLOT_CONFIG[slot]) {
+      const defaultCard = profileSlotDefaults[slot]
+      if (card !== defaultCard) {
         params.push(`slot${slot}=${card}`)
         if (card === "vera") hasVera = true
       }
@@ -293,8 +350,10 @@ const LinkBuilder = () => {
 
     if (tabSection === TAB.DISK) {
       const drives = [
-        { key: "s6d1", disk: s6d1Disk, url: s6d1Url, enabled: slotConfig[6] === "disk2" },
-        { key: "s6d2", disk: s6d2Disk, url: s6d2Url, enabled: slotConfig[6] === "disk2" },
+        { key: "s5d1", disk: s5d1Disk, url: s5d1Url, enabled: isThreeInchSlot },
+        { key: "s5d2", disk: s5d2Disk, url: s5d2Url, enabled: isThreeInchSlot },
+        { key: "s6d1", disk: s6d1Disk, url: s6d1Url, enabled: isDiskPortSlot },
+        { key: "s6d2", disk: s6d2Disk, url: s6d2Url, enabled: isDiskPortSlot },
         { key: "s7d1", disk: s7d1Disk, url: s7d1Url, enabled: slotConfig[7] === "smartport" },
         { key: "s7d2", disk: s7d2Disk, url: s7d2Url, enabled: slotConfig[7] === "smartport" },
         { key: "s2d1", disk: s2d1Disk, url: s2d1Url, enabled: slotConfig[2] === "vera" },
@@ -331,7 +390,8 @@ const LinkBuilder = () => {
     }
 
     if (tabSection === TAB.DISK) {
-      const hasExplicitBootDrive = params.some(p => p.startsWith("s6d1=") || p.startsWith("s7d1="))
+      const hasExplicitBootDrive = params.some(p =>
+        p.startsWith("s5d1=") || p.startsWith("s6d1=") || p.startsWith("s7d1="))
       if (!hasExplicitBootDrive) {
         if (isCustomURL) {
           if (fragmentURL) {
@@ -377,7 +437,10 @@ const LinkBuilder = () => {
     setTextBlock("")
     setLoadBlock("")
     setHexBlock("")
-    setMachine(machineValues[0])
+    // Reset to the target's default machine (IIe enhanced on apple2ts, IIgs on
+    // apple2gts), not the first row: the rows are user-facing order, while the
+    // default machine still keeps the machine= parameter out of a fresh link.
+    setMachine(machineRowFor(APP_DEFAULT_MACHINE))
     setRamdisk(ramdiskValues[0])
     setScanlines(false)
     setSelectedDisk("")
@@ -386,6 +449,10 @@ const LinkBuilder = () => {
     setS6d1Url("")
     setS6d2Disk("")
     setS6d2Url("")
+    setS5d1Disk("")
+    setS5d1Url("")
+    setS5d2Disk("")
+    setS5d2Url("")
     setS7d1Disk("")
     setS7d1Url("")
     setS7d2Disk("")
@@ -394,9 +461,10 @@ const LinkBuilder = () => {
     setS2d1Url("")
     setS4d1Disk("")
     setS4d1Url("")
-    setSpeed(speedNames[2])
+    const resetProfile = getMachineProfile(APP_DEFAULT_MACHINE)
+    setSpeedMode(getProfileDefaultSpeedMode(resetProfile))
     setTheme(themeValues[0])
-    setSlotConfig({ ...DEFAULT_SLOT_CONFIG })
+    setSlotConfig(getProfileDefaultSlotConfig(resetProfile, APP_DEFAULT_MACHINE))
   }
 
   const retrieveFromEmulatorSettings = () => {
@@ -415,18 +483,18 @@ const LinkBuilder = () => {
     setHexAddress("")
 
     const machineName = handleGetMachineName()
-    setMachine(machineName === "APPLE2P" ? machineValues[2] :
-      machineName === "APPLE2EU" ? machineValues[1] : machineValues[0])
+    setMachine(machineRowFor(machineName))
 
     const mem = handleGetMemSize()
     const memIndex = mem > 8000 ? 4 : mem > 4000 ? 3 : mem > 1000 ? 2 : mem > 500 ? 1 : 0
     setRamdisk(ramdiskValues[memIndex])
 
     const currentSpeed = handleGetSpeedMode()
+    const retrievedProfile = getMachineProfile(machineName)
     if (currentSpeed >= -2 && currentSpeed <= 4) {
-      setSpeed(speedNames[currentSpeed + 2])
+      setSpeedMode(currentSpeed)
     } else {
-      setSpeed("")
+      setSpeedMode(getProfileDefaultSpeedMode(retrievedProfile))
     }
 
     setSelectedDisk("")
@@ -435,6 +503,10 @@ const LinkBuilder = () => {
     setS6d1Url("")
     setS6d2Disk("")
     setS6d2Url("")
+    setS5d1Disk("")
+    setS5d1Url("")
+    setS5d2Disk("")
+    setS5d2Url("")
     setS7d1Disk("")
     setS7d1Url("")
     setS7d2Disk("")
@@ -472,16 +544,28 @@ const LinkBuilder = () => {
           value={machine}
           values={machineValues}
           setValue={(val: string) => {
+            const next = machineNameFor(val)
             setMachine(val)
-            // Adjust slot 3 when crossing between II+ and IIe families
-            const newIsIIp = val === machineValues[2]
-            const wasIIp = lbMachineName === "APPLE2P"
-            if (newIsIIp !== wasIIp) {
-              setSlotConfig(prev => ({
-                ...prev,
-                3: newIsIIp ? "videoterm" : "aux"
-              }))
-              if (!newIsIIp) setRamdisk(ramdiskValues[0]) // reset to 64KB default
+            const nextProfile = getMachineProfile(next)
+            if (lbProfile.family !== nextProfile.family) {
+              // The two families share no slot cards: a classic config carried
+              // into a IIgs link would install a Mockingboard over the mouse
+              // port, and a GS config carried into a classic link dies in the
+              // URL parser because "gsMouse" is not a classic card. A family
+              // switch starts from that family's own defaults, speed included.
+              setSlotConfig(getProfileDefaultSlotConfig(nextProfile, next))
+              setRamdisk(ramdiskValues[0])
+              setSpeedMode(getProfileDefaultSpeedMode(nextProfile))
+              return
+            }
+            // Within the classic family only the exact-model slot 3 default
+            // changes (II+ videoterm vs IIe aux RAM). Read that from the profile
+            // instead of matching machine ids.
+            const prevSlot3 = getProfileDefaultSlotConfig(lbProfile, lbMachineName)[3]
+            const nextSlot3 = getProfileDefaultSlotConfig(nextProfile, next)[3]
+            if (prevSlot3 !== nextSlot3) {
+              setSlotConfig(prev => ({ ...prev, 3: nextSlot3 }))
+              if (nextSlot3 !== "videoterm") setRamdisk(ramdiskValues[0])
             }
           }} />
         <Droplist name={t("linkBuilder.colorMode")}
@@ -494,14 +578,14 @@ const LinkBuilder = () => {
           setValue={(val: string) => {
             setRamdisk(val)
             const rIdx = ramdiskValues.indexOf(val)
-            if (rIdx > 0 && lbMachineName !== "APPLE2P" && slotConfig[3] !== "aux") {
+            if (rIdx > 0 && canUseAuxSlot3 && slotConfig[3] !== "aux") {
               setSlotConfig(prev => ({ ...prev, 3: "aux" }))
             }
           }} />
         <Droplist name={t("linkBuilder.emulatorSpeed")}
-          value={speed !== "" ? speed : speedNames[2]}
+          value={speedDisplay}
           values={speedNames}
-          setValue={setSpeed} />
+          setValue={(label: string) => setSpeedMode(speedModeForLabel(label))} />
 
         <Droplist name={t("linkBuilder.uiTheme")}
           value={theme !== "" ? theme : themeValues[0]}
@@ -698,7 +782,23 @@ const LinkBuilder = () => {
       <div className="dialog-title" style={{ marginTop: "12px", marginBottom: "4px" }}>
         {t("linkBuilder.additionalDiskDrives")}
       </div>
-      {slotConfig[6] === "disk2" && (
+      {isThreeInchSlot && (
+        <>
+          <Droplist
+            name={t("linkBuilder.slot5Drive1")}
+            value={s5d1Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS5d1Disk} />
+          {s5d1Disk === customUrlOption && renderDriveCustomUrlInputs("s5d1", s5d1Url, setS5d1Url, "http://example.com/floppy35.dsk")}
+          <Droplist
+            name={t("linkBuilder.slot5Drive2")}
+            value={s5d2Disk || noneOption}
+            values={diskOptionsWithNone}
+            setValue={setS5d2Disk} />
+          {s5d2Disk === customUrlOption && renderDriveCustomUrlInputs("s5d2", s5d2Url, setS5d2Url, "http://example.com/floppy35b.dsk")}
+        </>
+      )}
+      {isDiskPortSlot && (
         <>
           <Droplist
             name={t("linkBuilder.slot6Drive1")}

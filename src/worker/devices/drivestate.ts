@@ -1,10 +1,13 @@
 import { Buffer } from "buffer"
 import { passDriveProps, passDriveSound } from "../worker2main"
 import { decodeDiskData } from "./decodedisk"
-import { doPauseDiskDrive, doResetDiskDrive } from "./diskdata"
+import { doPauseDiskDrive, doResetDiskDrive, iwmDiskChange35 } from "./diskdata"
 import { fluxBuildCheckpoints, fluxLand, isFluxTrack } from "./fluxtrack"
 import { enableHardDrive } from "./harddrivedata"
-import { DRIVE, FLUX_KIND, isHardDriveImage, updateWozCrc } from "../../common/utility"
+import { DRIVE, canDriveTakeImage, FLUX_KIND, isHardDriveImage, isThreePointFiveInchImage, updateWozCrc } from "../../common/utility"
+import { getMachineCapabilities } from "../../common/machine_profile"
+import { getCurrentMachineName, setIigsCloudLayerFilename } from "../memory"
+import { buildFloppy35Bitstream, FLOPPY35_OPTIMAL_TIMING } from "./floppy35"
 
 const initDriveState = (index: number, drive: number, hardDrive: boolean): DriveState => {
   return {
@@ -30,6 +33,14 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     writableFileHandle: null,
     lastAppleWriteTime: -1,
     optimalTiming: 32,  // bits per 125 ns, so 32 = 4 µs
+    is35: false,
+    blockMedia35: false,
+    spindleOn: false,
+    stepDirection: 0,
+    diskSwitched: false,
+    diskInPlace: false,
+    stepEnd: 0,
+    readyEnd: 0,
     fluxKind: FLUX_KIND.NONE,
     fluxPsPerTick: 0,
     // These stay empty until a flux disk is decoded, so that the save states
@@ -54,13 +65,38 @@ const initializeDriveState = () => {
   driveState[1] = initDriveState(1, 2, true)
   driveState[2] = initDriveState(2, 1, false)
   driveState[3] = initDriveState(3, 2, false)
+  // Apple IIgs only: slot 5 is the built-in 3.5" drive pair, slot 6 the 5.25"
+  // pair. Other machines never populate these, so the drive panel hides them.
+  driveState[4] = initDriveState(4, 1, false)
+  driveState[5] = initDriveState(5, 2, false)
   for (let i = 0; i < driveState.length; i++) {
     driveData[i] = new Uint8Array()
+    driveBitstream[i] = new Uint8Array()
+  }
+}
+
+// Keep driveBitstream in step with driveData. Native WOZ media is already a
+// bit stream; a 3.5" 800K block image has to be nibblized first.
+const rebuildDriveBitstream = (index: number) => {
+  driveBitstream[index] = driveData[index]
+  const ds = driveState[index]
+  if (ds.blockMedia35 && driveData[index].length > 0) {
+    const stream = buildFloppy35Bitstream(driveData[index], ds)
+    if (stream.length > 0) {
+      driveBitstream[index] = stream
+    } else {
+      ds.optimalTiming = FLOPPY35_OPTIMAL_TIMING
+    }
   }
 }
 
 const driveState: DriveState[] = []
 const driveData: Array<Uint8Array> = []
+// 3.5" block images keep the original bytes in driveData (so writeback and
+// downloads stay valid) while the IWM reads a GCR nibblization of the same
+// sectors from this parallel buffer. WOZ images decode in place, so their
+// entry mirrors driveData.
+const driveBitstream: Array<Uint8Array> = []
 const largeDiskSnapshotThreshold = 32_000_000
 
 initializeDriveState()
@@ -83,6 +119,18 @@ export const getHardDriveData = (drive: number): [Uint8Array, number, number] =>
   return [data, offset, data.length - offset]
 }
 
+// Absolute drive-state accessors. The Apple IIgs IWM routes $C0E0-$C0EF to a
+// specific physical drive, which the Disk II path (which only ever talks to the
+// "current" drive) has no notion of, so the IIgs addresses drives by index.
+// Index layout mirrors initializeDriveState(): 0/1 = Slot 7 hard drives,
+// 2/3 = Slot 6 5.25" drives, 4/5 = Slot 5 3.5" drives.
+export const getDriveStateByIndex = (index: number) => driveState[index]
+export const getDriveDataByIndex = (index: number) => driveData[index]
+export const getDriveBitstreamByIndex = (index: number) => driveBitstream[index] ?? driveData[index]
+
+// Index of the first floppy drive for a given IIgs drive family slot.
+export const FLOPPY_BASE_INDEX = { 5: 4, 6: 2 } as const
+
 export const getFilename = () => {
   for (let i = 0; i < driveState.length; i++) {
     if (driveState[i].filename !== "") return driveState[i].filename
@@ -92,7 +140,7 @@ export const getFilename = () => {
 
 // Create an array of drive props, indexed by drive number
 const previousProps: Array<{diskHasChanges: boolean,
-  motorRunning: boolean, status: string}> = []
+  motorRunning: boolean, spindleOn?: boolean, status: string}> = []
 
 const getDriveProps = (index: number, forcePassData: boolean): DriveProps => {
   if (driveState[index].diskHasChanges && driveData[index]?.length > 0) {
@@ -105,6 +153,7 @@ const getDriveProps = (index: number, forcePassData: boolean): DriveProps => {
     filename: driveState[index].filename,
     status: driveState[index].status,
     motorRunning: driveState[index].motorRunning,
+    spindleOn: driveState[index].spindleOn,
     diskHasChanges: driveState[index].diskHasChanges,
     isWriteProtected: driveState[index].isWriteProtected,
     diskData: ((driveState[index].diskHasChanges && !driveState[index].motorRunning) || forcePassData) ?
@@ -137,6 +186,7 @@ export const passDriveData = (
       previousProps[i] &&
       previousProps[i].diskHasChanges === driveState[i].diskHasChanges &&
       previousProps[i].motorRunning === driveState[i].motorRunning &&
+      previousProps[i].spindleOn === driveState[i].spindleOn &&
       previousProps[i].status === driveState[i].status &&
       i !== replaceDiskDataIndex) {
       continue
@@ -146,6 +196,7 @@ export const passDriveData = (
     passDriveProps(dprops, i === replaceDiskDataIndex || force)
     previousProps[i] = {diskHasChanges: dprops.diskHasChanges,
       motorRunning: dprops.motorRunning,
+      spindleOn: dprops.spindleOn,
       status: dprops.status}
   }
 }
@@ -203,6 +254,11 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
       const fluxDefaults = Object.fromEntries(Object.entries(initDriveState(dindex, saved.drive, saved.hardDrive))
         .filter(([key]) => key.startsWith("flux")))
       const restored = { ...fluxDefaults, ...saved } as DriveState
+      if ((restored as Partial<DriveState>).diskInPlace === undefined) {
+        // Save states from before the disk-in-place flag existed: a mounted
+        // image was in the drive unless the eject latch said otherwise.
+        restored.diskInPlace = restored.filename !== ""
+      }
       if (newState.driveData[i] !== "") {
         driveState[dindex] = restored
         driveData[dindex] = new Uint8Array(Buffer.from(newState.driveData[i], "base64"))
@@ -239,6 +295,11 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
     if (newState.driveState.length === 3 && i === 0) dindex = 1
     dindex++
   }
+  // The generated 3.5" bit stream is not saved: rebuild it from the restored
+  // block image and drive flags.
+  for (let i = 0; i < driveState.length; i++) {
+    rebuildDriveBitstream(i)
+  }
   // The flux seek checkpoints are not saved, so we build them for the
   // restored disks.
   for (let i = 0; i < driveState.length; i++) {
@@ -271,20 +332,30 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   const hasRequestedMedia = props.filename !== "" || props.diskData.length !== 0
   let index = props.index
   let drive = props.drive
-  
-  // See if the "wrong" disk image was put into a drive. If so, swap the drive.
+
+  // Move the image only when the bay it was put in physically cannot hold it:
+  // slot 6 is 5.25" nibble media, slot 7 serves any block image (an 800 KB one
+  // included), and slot 5 is the IIgs 3.5" drive. Otherwise the disk stays
+  // exactly where the caller - that is, the user - chose to insert it.
   let isHardDrive = props.hardDrive
-  if (!forceIndex) {
-    if (props.filename !== "") {
-      if (isHardDriveImage(props.filename, props.diskData?.length)) {
-        isHardDrive = true
-        index = (props.drive <= 1) ? 0 : 1
-        drive = index + 1
-      } else {
-        isHardDrive = false
-        index = (props.drive <= 1) ? 2 : 3
-        drive = index - 1
-      }
+  const size = props.diskData?.length ?? 0
+  const hasThreeInchBay = getMachineCapabilities(getCurrentMachineName()).hasThreeInchBay
+  if (!forceIndex && props.filename !== "") {
+    if (canDriveTakeImage(index, props.filename, size, hasThreeInchBay)) {
+      isHardDrive = index <= 1
+    } else if (isThreePointFiveInchImage(props.filename, size) && hasThreeInchBay) {
+      isHardDrive = false
+      const slotDrive = props.drive === 2 ? 1 : 0
+      index = FLOPPY_BASE_INDEX[5] + slotDrive
+      drive = slotDrive + 1
+    } else if (isHardDriveImage(props.filename, size)) {
+      isHardDrive = true
+      index = (props.drive <= 1) ? 0 : 1
+      drive = index + 1
+    } else {
+      isHardDrive = false
+      index = (props.drive <= 1) ? 2 : 3
+      drive = index - 1
     }
   }
   // A newly loaded floppy is the disk the user expects to boot next. Keep
@@ -299,19 +370,37 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   const savedPrevQuarterTrack = preserveHead ? prevDrive.prevQuarterTrack : 0
   const savedCurrentPhase = preserveHead ? prevDrive.currentPhase : 0
 
+  // Changing 3.5" media under a running drive is a disk change as far as the
+  // IWM is concerned: hand it the outgoing image one last time.
+  if (prevDrive?.is35) {
+    iwmDiskChange35(index)
+  }
+
   driveState[index] = initDriveState(index, drive, isHardDrive)
+  // An insert must not clear the latch the preceding eject raised (KEGS config.c).
+  driveState[index].diskSwitched =
+    Boolean(prevDrive?.diskSwitched) || hasRequestedMedia || (prevDrive?.filename ?? "") !== ""
   if (preserveHead) {
     driveState[index].quarterTrack = savedQuarterTrack
     driveState[index].prevQuarterTrack = savedPrevQuarterTrack
     driveState[index].currentPhase = savedCurrentPhase
   }
   driveState[index].filename = props.filename
+  if (props.filename) setIigsCloudLayerFilename(props.filename)
+  // Mounting new media keeps the user's write-protect choice for that drive;
+  // the UI sends it in the new-data message, and dropping it here silently
+  // unprotects a protected disk every time an image is inserted.
+  driveState[index].isWriteProtected = props.isWriteProtected
   driveData[index] = decodeDiskData(driveState[index], props.diskData, forceIndex)
   if (driveData[index].length === 0) {
     driveState[index].filename = ""
+    driveState[index].diskInPlace = false
+    driveBitstream[index] = new Uint8Array()
     passDriveData(index)
     return !hasRequestedMedia
   }
+  driveState[index].diskInPlace = true
+  rebuildDriveBitstream(index)
   if (isHardDrive) {
     enableHardDrive(true)
   }
@@ -322,6 +411,8 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
     fluxLand(driveState[index], driveData[index], driveState[index].quarterTrack, 0)
   }
   driveState[index].motorRunning = props.motorRunning
+  driveState[index].diskHasChanges = props.diskHasChanges
+  driveState[index].lastAppleWriteTime = props.lastAppleWriteTime
   driveState[index].cloudData = props.cloudData
   driveState[index].writableFileHandle = props.writableFileHandle
   driveState[index].lastLocalFileWriteTime = props.lastLocalFileWriteTime
@@ -339,6 +430,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
 export const doSetEmuDriveProps = (props: DriveProps) => {
   const index = props.index
   driveState[index].filename = props.filename
+  if (props.filename) setIigsCloudLayerFilename(props.filename)
   driveState[index].motorRunning = props.motorRunning
   // A disk with flux tracks is read only, so the UI cannot clear its write
   // protection.

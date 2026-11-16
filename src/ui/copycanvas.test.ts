@@ -62,3 +62,28 @@ test("copy text preserves leading spaces", () => {
   const output = writeText.mock.calls[0][0] as string
   expect(output.split("\n")[0]).toEqual("     WILLIAM SHAKESPEARE")
 })
+
+test("copy text in APPLE2GS mode decodes MouseText characters when alt charset is set", () => {
+  const textPage = new Uint8Array(960).fill(0xA0)
+  // 0x40 (Open Apple), 0x41 (Solid Apple), 0x4C (Line)
+  const line = [0x40, 0x41, 0x4C]
+  for (let i = 0; i < line.length; i++) {
+    textPage[i] = line[i]
+  }
+
+  mockGetTextPage.mockReturnValue(textPage)
+  mockGetMachineName.mockReturnValue("APPLE2GS")
+  mockGetAltCharSet.mockReturnValue(true)
+
+  const writeText = jest.fn()
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText },
+    configurable: true,
+  })
+
+  handleCopyToClipboard()
+
+  expect(writeText).toHaveBeenCalledTimes(1)
+  const output = writeText.mock.calls[0][0] as string
+  expect(output.split("\n")[0]).toEqual("\uE080\uE081\uE08C")
+})

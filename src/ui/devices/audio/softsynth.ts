@@ -268,11 +268,33 @@ export const stopAllNotes = () => {
   allNotesOff()
 }
 
+// Boot/Ctrl-Reset stop. stopAllNotes only cancels smplr's per-note stop
+// functions; closing the context also clears any SoundFont buffer sources that
+// are already scheduled on the audio thread. The next noteOn lazily rebuilds
+// the context and instruments.
+export const resetSoftSynth = () => {
+  stopAllNotes()
+  for (let ch = 0; ch < 16; ch++) {
+    channelInstruments[ch] = null
+    channelVolumes[ch] = 100
+    channelPrograms[ch] = 6
+  }
+  const context = audioContext
+  audioContext = null
+  masterGain = null
+  isInitialized = false
+  if (context) {
+    void context.close().catch(() => {
+      // The context may already be closed.
+    })
+  }
+}
+
 export const setChannelVolume = (channel: number, volume: number) => {
   channelVolumes[channel] = Math.max(0, Math.min(127, volume))
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export const setChannelPan = (_channel: number, _pan: number) => {
   // SoundFont-player doesn't support per-channel panning easily
   // Would need to create separate gain/pan nodes per channel
@@ -301,7 +323,7 @@ export const programChange = async (channel: number, program: number) => {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export const pitchBend = (_channel: number, _value: number) => {
   // SoundFont-player doesn't have built-in pitch bend support
   // Would require detune parameter on individual notes

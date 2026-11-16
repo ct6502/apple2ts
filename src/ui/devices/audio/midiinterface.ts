@@ -415,3 +415,37 @@ export const isSoftSynthAvailable = () => {
 export const setSoftSynthMasterVolume = (volume: number) => {
   SoftSynth.setMasterVolume(volume)
 }
+
+// Boot/Ctrl-Reset stop. A MIDI note-on without its note-off survives an
+// emulator reset because the parser state and every external output are in the
+// UI, not the worker. Send All Notes Off (CC 123) on all 16 channels to the
+// selected Web MIDI output, reset the soft synth (which closes its AudioContext
+// and cancels scheduled SoundFont buffers), and drop any partially parsed
+// message so a reset cannot resume a stale command.
+export const stopMidiAudio = () => {
+  if (itimer) {
+    clearInterval(itimer)
+    itimer = 0
+  }
+  if (useSoftSynth) {
+    SoftSynth.resetSoftSynth()
+  }
+  if (midiOutIndex >= 0) {
+    const output = midiOutDevices[midiOutIndex]
+    if (output) {
+      for (let channel = 0; channel < 16; channel++) {
+        try {
+          output.send([0xB0 | channel, 123, 0])
+          output.send([0xB0 | channel, 120, 0])
+        } catch {
+          // The device may have disconnected between the selection and reset.
+        }
+      }
+    }
+  }
+  msg.length = 0
+  rtMsg.length = 0
+  state = State.COMMAND
+  prevStatus = noStsSeenYet
+  once = false
+}

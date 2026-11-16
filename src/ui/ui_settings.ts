@@ -1,4 +1,5 @@
 import { AUTO_SNAPSHOT, COLOR_MODE, MONITOR_MODE, UI_THEME } from "../common/utility"
+import { getMachineTraits } from "../common/machine_profile"
 import { handleGetMachineName } from "./main2worker"
 
 export const INFO_PANEL_COLLAPSED_EVENT = "apple2ts-info-panel-collapsed"
@@ -136,7 +137,7 @@ export const handleGetCapitalizeBasic = () => {
 }
 
 export const getLowercaseMode = () => {
-  return uiState.lowercaseMode && (handleGetMachineName() !== "APPLE2P")
+  return uiState.lowercaseMode && getMachineTraits(handleGetMachineName()).hasLowerCase
 }
 
 export const getColorMode = () => {

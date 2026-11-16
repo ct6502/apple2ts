@@ -2,14 +2,66 @@ import { defineConfig, type Plugin } from "vite"
 import react from "@vitejs/plugin-react"
 import { execFile } from "node:child_process"
 import { promisify } from "node:util"
-import { rm } from "node:fs/promises"
-import { resolve } from "node:path"
+import { readFile, rm, writeFile } from "node:fs/promises"
+import { join, resolve } from "node:path"
+import {
+  APP_DESCRIPTION,
+  APP_DOMAIN,
+  APP_FAVICON,
+  APP_MANIFEST_DESCRIPTION,
+  APP_MANIFEST_NAME,
+  APP_TARGET,
+  APP_TITLE,
+} from "./src/common/app_target.ts"
 // Uncomment to enable HTTPS for localhost
 // import basicSsl from "@vitejs/plugin-basic-ssl"
 
 // https://vitejs.dev/config/
 // The define 'process.env' is a hack so that process.env.<env var> works properly.
 const execFileAsync = promisify(execFile)
+
+// A targeted deployment build lands in dist/<target>; a plain npm run build
+// keeps the generic dist used by the optional Cloudflare Pages workflow.
+const isTargetBuild = (process.env.BUILD_TARGET ?? "").trim() !== ""
+const buildOutputDir = isTargetBuild ? `dist/${APP_TARGET}` : "dist"
+
+let projectRoot = process.cwd()
+let targetOutputDir = resolve("dist")
+
+// Emit site-specific HTML metadata and the PWA manifest/CNAME into the bundle.
+// The source index.html and public/manifest.json still describe Apple2TS; this
+// plugin substitutes the values for whichever target BUILD_TARGET requests.
+const appTargetMetadataPlugin: Plugin = {
+  name: "app-target-metadata",
+  configResolved(config) {
+    projectRoot = config.root
+    targetOutputDir = resolve(config.root, config.build.outDir)
+  },
+  transformIndexHtml(html) {
+    return html
+      .replace(/<title>[^<]*<\/title>/g, `<title>${APP_TITLE}</title>`)
+      .replace(/<meta name="description" content="[^"]*" \/>/g,
+        `<meta name="description" content="${APP_DESCRIPTION}" />`)
+      .replace(/<link rel="icon" href="[^"]*" \/>/g,
+        `<link rel="icon" href="${APP_FAVICON}" />`)
+  },
+  async closeBundle() {
+    const sourceManifest = JSON.parse(
+      await readFile(join(projectRoot, "public/manifest.json"), "utf8"),
+    ) as Record<string, unknown>
+    const targetManifest = {
+      ...sourceManifest,
+      short_name: APP_MANIFEST_NAME,
+      name: APP_MANIFEST_NAME,
+      description: APP_MANIFEST_DESCRIPTION,
+    }
+    await writeFile(
+      join(targetOutputDir, "manifest.json"),
+      `${JSON.stringify(targetManifest, null, 2)}\n`,
+    )
+    await writeFile(join(targetOutputDir, "CNAME"), `${APP_DOMAIN}\n`)
+  },
+}
 
 const demoZooDirectPlugin: Plugin = {
   name: "demozoo-direct-local-fetch",
@@ -50,9 +102,13 @@ const cloudflarePagesAssetCleanup: Plugin = {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => {
+  // A local dev server serves one checkout, not one deployed site, so expose
+  // both machine families. A production build still filters in app_target.ts.
+  const isLocalDevServer = command === "serve"
+  return {
   base: "./",  // This makes all paths relative
-  plugins: [react(), demoZooDirectPlugin, cloudflarePagesAssetCleanup,
+  plugins: [react(), appTargetMetadataPlugin, demoZooDirectPlugin, cloudflarePagesAssetCleanup,
     // Uncomment all these lines to enable HTTPS for localhost
     // basicSsl({
     //   /** name of certification */
@@ -87,6 +143,7 @@ export default defineConfig({
   },
   build: {
     emptyOutDir: false,
+    outDir: buildOutputDir,
     chunkSizeWarningLimit: 3000,
     sourcemap: true
   },
@@ -97,5 +154,10 @@ export default defineConfig({
     "process.env.A2TS_URLPARAM": JSON.stringify(
       process.env.A2TS_URLPARAM ?? process.env.npm_config_urlparam ?? ""
     ),
+    // The UI reads this string instead of Vite's dev-only import.meta flag, so
+    // Jest and worker bundles use the same production filtering path.
+    "process.env.A2TS_DEV_MACHINES": JSON.stringify(isLocalDevServer ? "true" : "false"),
+    "process.env.BUILD_TARGET": JSON.stringify(APP_TARGET),
+  }
   }
 })

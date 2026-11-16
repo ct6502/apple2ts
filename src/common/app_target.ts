@@ -1,0 +1,106 @@
+// Which deployable site this bundle is being built for. The same source tree
+// backs apple2ts.com (classic Apple II / IIe) and apple2gts.com (Apple IIgs),
+// so target-specific defaults and metadata are selected at build time.
+//
+// Set BUILD_TARGET to "apple2ts" or "apple2gts". Unset or unrecognised values
+// fall back to apple2ts so ordinary `npm start`, Jest, and local builds keep
+// working unchanged.
+
+import { CLASSIC_PROFILE, GS_PROFILE } from "./machine_profile"
+
+export type AppTarget = "apple2ts" | "apple2gts"
+
+const GTS_TARGET = "apple2gts"
+const TS_TARGET = "apple2ts"
+
+export const parseAppTarget = (raw: string | undefined): AppTarget => {
+  const normalized = (raw ?? "").trim().toLowerCase()
+  if (normalized === GTS_TARGET || normalized === "gts" || normalized === "2gts") {
+    return GTS_TARGET
+  }
+  if (normalized === TS_TARGET || normalized === "ts" || normalized === "2ts") {
+    return TS_TARGET
+  }
+  return TS_TARGET
+}
+
+export const getAppName = (target: AppTarget): string =>
+  target === GTS_TARGET ? "Apple2GTS" : "Apple2TS"
+
+export const getAppTitle = (target: AppTarget): string =>
+  target === GTS_TARGET
+    ? "Apple2GTS - Apple IIgs Emulator in TypeScript"
+    : "Apple2TS - Apple II Emulator in TypeScript"
+
+export const getAppDescription = (target: AppTarget): string =>
+  target === GTS_TARGET
+    ? "A pure-TypeScript Apple IIgs emulator: 65816 at 2.8 MHz, Ensoniq DOC, ADB, and Super Hi-Res graphics."
+    : "Apple II Emulator in TypeScript"
+
+export const getAppDomain = (target: AppTarget): string =>
+  target === GTS_TARGET ? "apple2gts.com" : "apple2ts.com"
+
+export const getAppFavicon = (target: AppTarget): string =>
+  target === GTS_TARGET ? "favicon-gts.svg" : "favicon.png"
+
+export const getAppDefaultMachine = (target: AppTarget): MACHINE_NAME =>
+  target === GTS_TARGET ? GS_PROFILE.defaultMachine : CLASSIC_PROFILE.defaultMachine
+
+export const getAppManifestName = (target: AppTarget): string =>
+  target === GTS_TARGET ? "Apple2GTS" : "Apple2TS"
+
+export const getAppManifestDescription = (target: AppTarget): string =>
+  target === GTS_TARGET
+    ? "Pure-TypeScript Apple IIgs emulator with a 2.8 MHz 65816, Ensoniq DOC, ADB input, and Super Hi-Res graphics. Written in TypeScript and hosted on GitHub Pages. Chris Torrence, CT6502"
+    : "Apple II Emulator in TypeScript. Emulates an enhanced Apple IIe with 128k of memory, a hard drive, two floppy disk drives, and gamepad support. Written in TypeScript, using the React JS library, and hosted on Github Pages. Chris Torrence, CT6502"
+
+// The two sites share one source tree but not one machine menu: apple2ts.com
+// keeps the classic II+/IIe family, while apple2gts.com is IIgs-only. Keep the
+// visible order stable (II+, IIe unenhanced, IIe enhanced, IIgs).
+export const getAppMachineNames = (target: AppTarget): MACHINE_NAME[] =>
+  target === GTS_TARGET ? [...GS_PROFILE.machines] : [...CLASSIC_PROFILE.machines]
+
+// Local development is one checkout serving both families, so `npm start`
+// exposes every machine profile. A target build still gets the production
+// filtering above; this only affects the Vite dev server with BUILD_TARGET unset.
+export const getAppMachineNamesForBuild = (
+  target: AppTarget,
+  localDevelopment: boolean,
+): MACHINE_NAME[] =>
+  localDevelopment
+    ? [...CLASSIC_PROFILE.machines, ...GS_PROFILE.machines]
+    : getAppMachineNames(target)
+
+export const APP_TARGET = parseAppTarget(process.env.BUILD_TARGET)
+
+export const IS_APPLE2GTS = APP_TARGET === GTS_TARGET
+
+// Vite sets this only for the un-targeted local dev server (npm start).
+export const IS_LOCAL_DEV_MACHINES = process.env.A2TS_DEV_MACHINES === "true"
+
+export const APP_MACHINE_NAMES = getAppMachineNamesForBuild(
+  APP_TARGET,
+  IS_LOCAL_DEV_MACHINES,
+)
+
+export const APP_NAME = getAppName(APP_TARGET)
+export const APP_TITLE = getAppTitle(APP_TARGET)
+export const APP_DESCRIPTION = getAppDescription(APP_TARGET)
+export const APP_DOMAIN = getAppDomain(APP_TARGET)
+export const APP_FAVICON = getAppFavicon(APP_TARGET)
+export const APP_DEFAULT_MACHINE = getAppDefaultMachine(APP_TARGET)
+export const APP_MANIFEST_NAME = getAppManifestName(APP_TARGET)
+export const APP_MANIFEST_DESCRIPTION = getAppManifestDescription(APP_TARGET)
+
+// Settings, remote-API requests, and saved preferences outside this target's
+// menu fall back to the target's own default (IIe enhanced on apple2ts, IIgs
+// on apple2gts). Explicit title links and ?machine= are not subject to this
+// filter; inputparams.ts resolves those against every profile machine.
+export const getAppMachineNameOrDefault = (
+  name: MACHINE_NAME | undefined,
+  target: AppTarget = APP_TARGET,
+  localDevelopment: boolean = IS_LOCAL_DEV_MACHINES,
+): MACHINE_NAME => {
+  const allowed = getAppMachineNamesForBuild(target, localDevelopment)
+  return name && allowed.includes(name) ? name : getAppDefaultMachine(target)
+}
