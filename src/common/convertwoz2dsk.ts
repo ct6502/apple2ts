@@ -135,9 +135,6 @@ const getWozTracks = (wozData: Uint8Array): Array<WozTrackBits | undefined> | un
     if (dataOffset + size > wozData.length) break
     if (id === "TMAP") tmapOffset = dataOffset
     if (id === "TRKS") trksOffset = dataOffset
-    // A WOZ 2.1 file with FLUX tracks does not hold the whole disk in its
-    // TMAP, so we cannot convert it.
-    if (id === "FLUX") return undefined
     ptr = dataOffset + size
   }
 

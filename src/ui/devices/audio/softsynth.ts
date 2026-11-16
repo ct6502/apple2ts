@@ -272,7 +272,7 @@ export const setChannelVolume = (channel: number, volume: number) => {
   channelVolumes[channel] = Math.max(0, Math.min(127, volume))
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export const setChannelPan = (_channel: number, _pan: number) => {
   // SoundFont-player doesn't support per-channel panning easily
   // Would need to create separate gain/pan nodes per channel
@@ -301,7 +301,7 @@ export const programChange = async (channel: number, program: number) => {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export const pitchBend = (_channel: number, _value: number) => {
   // SoundFont-player doesn't have built-in pitch bend support
   // Would require detune parameter on individual notes

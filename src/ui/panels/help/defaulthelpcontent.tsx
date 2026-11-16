@@ -136,7 +136,7 @@ export const DefaultHelpContent = ({
           {"\n\n"}{t("help.onScreenKeyboard")}
         </span>}{"\n"}
     </>}
-    {"\n"}<b>{t("help.diskImages")}</b>{" "}woz, a2r, 2mg, dsk, po, do, hdv, bin, bas
+    {"\n"}<b>{t("help.diskImages")}</b>{" "}woz, 2mg, dsk, po, do, hdv, bin, bas
     {"\n"}<b>{t("help.diskContainers")}</b>{" "}zip, 7z, gz
     {"\n"}{t("help.multiDiskNotice")}
     {"\n\n"}<b>{t("help.urlParameters")}</b>{"\n"}

@@ -3,6 +3,8 @@ import { FrameClock } from "./frameclock"
 import { passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
 import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, MEMORY_DUMP_STATE, AUTO_SNAPSHOT } from "../common/utility"
+import { getMachineCapabilities, getMachineProfile, getProfileDefaultSlotConfig, getProfileSlotChoices } from "../common/machine_profile"
+import { sanitizeSlotConfig } from "../common/slot_options"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
@@ -250,7 +252,11 @@ export const softCard = new SoftCard(2)
 let currentSlotConfig: SlotConfig = { ...DEFAULT_SLOT_CONFIG }
 
 export const doSetSlotConfig = (config: SlotConfig) => {
-  currentSlotConfig = { ...config }
+  // The UI may post the saved classic layout first, before it applies a new
+  // machine name. Never let a card that the selected machine has no hardware for
+  // linger in the worker's slot config: a stale VERA at $C0xx otherwise keeps
+  // its audio control visible after switching to the IIgs.
+  currentSlotConfig = sanitizeSlotConfig(config, machineName)
   didConfiguration = false
   configureMachine()
   updateExternalMachineState()
@@ -574,13 +580,17 @@ export const doLoadBinary = (
 
 export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState = true) => {
   machineName = name
+  const profile = getMachineProfile(name)
   if (name === "APPLE2P") {
     if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "videoterm" && currentSlotConfig[3] !== "vidhd") {
       currentSlotConfig[3] = "videoterm"
     }
   } else {
-    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "aux" && currentSlotConfig[3] !== "vidhd") {
-      currentSlotConfig[3] = "aux"
+    // Switching between classic models keeps the user's card layout; only slot
+    // 3 has to change family (Videoterm on the II+, RAMWorks on the IIe).
+    const slot3Cards = getProfileSlotChoices(profile, name, 3).map(choice => choice.card)
+    if (!slot3Cards.includes(currentSlotConfig[3])) {
+      currentSlotConfig[3] = getProfileDefaultSlotConfig(profile, name)[3]
     }
   }
   didConfiguration = false
@@ -592,6 +602,18 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState 
 
 export const doSetVeraSlot = (slot: VERA_SLOT) => {
   if (slot !== 0 && slot !== 2 && slot !== 4) return
+  if (!getMachineCapabilities(machineName).hasVeraCard) {
+    // Preferences keep a classic VERA slot across machine switches, but the
+    // IIgs has no slot card bus position for it. Clearing it here must not
+    // mutate the GS Control Panel's built-in slot assignments.
+    if (veraSlot !== 0) {
+      veraSlot = 0
+      didConfiguration = false
+      configureMachine()
+      updateExternalMachineState()
+    }
+    return
+  }
   if (veraSlot === slot) return
   veraSlot = slot
   if (slot === 2) {

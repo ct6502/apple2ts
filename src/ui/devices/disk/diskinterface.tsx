@@ -1,6 +1,7 @@
 import { DiskCollectionSortMode, setPreferenceDiskCollectionSort } from "../../localstorage"
-import { handleGetSlotConfig, handleGetVeraSdStatus, handleSetVeraSdWriteProtected, passSetDriveProps } from "../../main2worker"
-import { CLOUD_SYNC, getCleanDiskFilename, getDefaultDiskDriveIndex, getPrimaryDiskUrl } from "../../../common/utility"
+import { handleGetMachineName, handleGetSlotConfig, handleGetVeraSdStatus, handleSetVeraSdWriteProtected, passSetDriveProps } from "../../main2worker"
+import { CLOUD_SYNC, getCleanDiskFilename, getDefaultDiskDriveIndex, getPrimaryDiskUrl, machineHasThreeInchBay } from "../../../common/utility"
+import { getMachineCapabilities } from "../../../common/machine_profile"
 import {
   DISK_COLLECTION_ITEM_TYPE,
   TAB_INDEX,
@@ -118,7 +119,7 @@ const getCollectionDriveIndex = (disk: DiskCollectionItem) => {
   if (selectedCollectionDriveIndex !== undefined) return selectedCollectionDriveIndex
   const filename = disk.cloudData?.fileName || getPrimaryDiskUrl(disk)
   const fileSize = disk.cloudData?.fileSize ?? disk.fileSize
-  return getDefaultDiskDriveIndex(filename, fileSize)
+  return getDefaultDiskDriveIndex(filename, fileSize, machineHasThreeInchBay(handleGetMachineName()))
 }
 
 const diskTemplateBindings: RetroControlBindings = {
@@ -725,7 +726,7 @@ const favoriteItem = (
 
 const baseWriteProtectItem = (driveIndex: number, drive: DriveProps): RetroControlMetadata => ({
   ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.writeProtected", {}, { driveIndex }),
-  selectable: () => Boolean(drive.filename) && !drive.isFlux,
+  selectable: () => Boolean(drive.filename),
   ...toggleBinding({
     enabled: () => drive.isWriteProtected,
     setEnabled: (context, enabled) => {
@@ -777,8 +778,7 @@ export const insertedDiskItems = (
     },
     {
       ...controlFromJson("diskTemplates", "diskDrives.{{driveIndex}}.downloadWoz", {}, { driveIndex }),
-      selectable: () => hasDisk && !drive.hardDrive && !drive.filename.toLowerCase().endsWith(".woz") &&
-        !drive.filename.toLowerCase().endsWith(".a2r"),
+      selectable: () => hasDisk && !drive.hardDrive && !drive.filename.toLowerCase().endsWith(".woz"),
       action: () => downloadDiskToDevice(driveIndex, true),
     },
     {
@@ -900,6 +900,9 @@ const diskDrives = [
   { index: 1, slot: 7 },
   { index: 2, slot: 6 },
   { index: 3, slot: 6 },
+  // Apple IIgs only: the built-in 3.5" drive pair in slot 5.
+  { index: 4, slot: 5 },
+  { index: 5, slot: 5 },
 ] as const
 
 const diskBindings: RetroControlBindings = {
@@ -1025,6 +1028,9 @@ const DiskInterface = (props: DisplayProps) => {
   }, [])
 
   const isVeraInstalled = slotConfig[2] === "vera" || slotConfig[4] === "vera"
+  // The Apple IIgs has a second built-in floppy slot (slot 5, 3.5") alongside
+  // slot 6 (5.25"). Drives 4 and 5 only exist on that machine.
+  const isIIgs = getMachineCapabilities(handleGetMachineName()).isGS
   const allSlotsDisabled = slotConfig[1] === "none" && slotConfig[6] === "none" && slotConfig[7] === "none" && !isVeraInstalled
 
   return (
@@ -1051,6 +1057,10 @@ const DiskInterface = (props: DisplayProps) => {
               setShowFileOpenDialog={props.setShowFileOpenDialog} updateDisplay={props.updateDisplay} />
             <DiskDrive key={3} index={3} renderCount={props.renderCount}
               setShowFileOpenDialog={props.setShowFileOpenDialog} updateDisplay={props.updateDisplay} />
+            {isIIgs && <DiskDrive key={4} index={4} renderCount={props.renderCount}
+              setShowFileOpenDialog={props.setShowFileOpenDialog} updateDisplay={props.updateDisplay} />}
+            {isIIgs && <DiskDrive key={5} index={5} renderCount={props.renderCount}
+              setShowFileOpenDialog={props.setShowFileOpenDialog} updateDisplay={props.updateDisplay} />}
             {(!isMinimalTheme() || !isScreenNarrow) && <VeraSdIcon renderCount={props.renderCount} />}
             {(!isMinimalTheme() || !isScreenNarrow) && <ImageWriter />}
           </span>

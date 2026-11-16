@@ -13,6 +13,15 @@ let gamePads: EmuGamepad[]
 // This is actually a tiny bit less than 2.8ms, to guarantee that our
 // midpoint is at 128.
 const MAX_TIMEOUT_CYCLES = Math.trunc(0.00278 * 1.020484e6)
+// The PDL timeout is a hardware duration, but the guest counts CPU cycles. At
+// a non-normal speed (2 MHz, Slow, Warp) the same duration contains a
+// different number of cycles, so normalise the measured diff back to the
+// 1.020484 MHz rate that MAX_TIMEOUT_CYCLES was calibrated against.
+const NOMINAL_CYCLES_PER_REFRESH = 17030
+let joystickCycleScale = 1
+export const setJoystickCyclesPerRefresh = (cyclesPerRefresh: number) => {
+  joystickCycleScale = cyclesPerRefresh > 0 ? NOMINAL_CYCLES_PER_REFRESH / cyclesPerRefresh : 1
+}
 let paddle0timeout = MAX_TIMEOUT_CYCLES / 2
 let paddle1timeout = MAX_TIMEOUT_CYCLES / 2
 let paddle2timeout = MAX_TIMEOUT_CYCLES / 2
@@ -112,7 +121,7 @@ export const checkJoystickValues = (cycleCount: number, value: number) => {
 //     prevPaddle1timeout = paddle1timeout
 //     doSaveTimeSlice()
 //   }
-  const diff = cycleCount - countStart
+  const diff = (cycleCount - countStart) * joystickCycleScale
   memSetC000(0xC064, (diff < paddle0timeout) ? (value | 0x80) : (value & 0x7F))
   memSetC000(0xC065, (diff < paddle1timeout) ? (value | 0x80) : (value & 0x7F))
   memSetC000(0xC066, (diff < paddle2timeout) ? (value | 0x80) : (value & 0x7F))

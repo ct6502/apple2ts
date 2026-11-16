@@ -26,7 +26,7 @@ export const getWaybackRawUrl = (url: string): string => {
 }
 
 export const demoZooDiskExtensions = [
-  ".hdv", ".2mg", ".dsk", ".woz", ".a2r", ".po", ".do", ".bin", ".bas", ".2img", ".d13", ".dc", ".img",
+  ".hdv", ".2mg", ".dsk", ".woz", ".po", ".do", ".bin", ".bas", ".2img", ".d13", ".dc", ".img",
   ".zip", ".7z", ".gz", ".tar"
 ]
 

@@ -10,7 +10,6 @@ export type DecompressedFile = UnzippedFile
 
 export const DEFAULT_DISK_EXTENSIONS = [
   ".woz",
-  ".a2r",
   ".po",
   ".dsk",
   ".do",
@@ -178,7 +177,7 @@ export const decompressSingleFile = async (
   try {
     if (typeof globalThis.TextDecoder === "undefined") {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+         
         const util = require("util")
         globalThis.TextDecoder = util.TextDecoder
         globalThis.TextEncoder = util.TextEncoder
@@ -376,7 +375,7 @@ export const decompressAllDiskFiles = async (
   try {
     if (typeof globalThis.TextDecoder === "undefined") {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+         
         const util = require("util")
         globalThis.TextDecoder = util.TextDecoder
         globalThis.TextEncoder = util.TextEncoder

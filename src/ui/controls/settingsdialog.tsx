@@ -6,12 +6,14 @@ import { createControlContext } from "../retro/retromenucontext"
 import { settingsResetBinding } from "./resetcontrols"
 import { Droplist } from "../panels/droplist"
 import { handleGetMachineName, handleGetMemSize, handleGetSlotConfig, handleGetSpeedMode } from "../main2worker"
-import { getPreferenceBoolean, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot } from "../localstorage"
-import { getSlotOptions, SLOT_NUMBERS } from "../devices/machineconfig"
+import { getPreferenceBoolean, getPreferenceIigsRomVersion, notifySettingsChanged, setPreferenceAutoSnapshot, setPreferenceBoolean, setPreferenceColorMode, setPreferenceMachineName, setPreferenceMonitorMode, setPreferenceRamWorks, setPreferenceSlotConfig, setPreferenceSpeedMode, setPreferenceTheme, setPreferenceVeraSlot, setPreferenceIigsRomVersion } from "../localstorage"
+import { getSlotOptions, sanitizeSlotConfig, SLOT_NUMBERS } from "../../common/slot_options"
+import { ALL_MACHINE_NAMES, getMachineCapabilities, getMachineProfile, getProfileDefaultSlotConfig, getProfileSpeedOptions, getProfileSpeedLabel } from "../../common/machine_profile"
 import { getCardShortLabels, COLOR_MODES, colorLabels, MONITOR_MODES, monitorModeLabels, ramdiskParams, getRamdiskValues, themeLabels } from "../ui_utilities"
 import { BooleanKeyOf, getAutoSnapshot, getColorMode, getMonitorMode, getTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import CheckBox from "../panels/checkbox"
 import { getModKeyName } from "../retro/retrocontrolmetadata"
+import { APP_MACHINE_NAMES } from "../../common/app_target"
 import { UI_THEMES } from "../../common/utility"
 import { SlotAudioConfig } from "../devices/audio/audioconfig"
 import TabBase from "../tabbase"
@@ -61,18 +63,33 @@ export const SettingsDialog = (props: DisplayProps) => {
   }
 
   const machineName = handleGetMachineName()
-  const machineNames: MACHINE_NAME[] = ["APPLE2EE", "APPLE2EU", "APPLE2P"]
-  const machineStrings = [t("machine.models.apple2ee"), t("machine.models.apple2eu"), t("machine.models.apple2p")]
+  // Keep this order fixed: II+, IIe (unenhanced), IIe (enhanced), IIgs. The
+  // deployment target then decides which rows are visible: apple2ts.com keeps
+  // the classic family, and apple2gts.com only offers the IIgs.
+  const allMachineNames: MACHINE_NAME[] = ALL_MACHINE_NAMES
+  const allMachineStrings = [
+    t("machine.models.apple2p"),
+    t("machine.models.apple2eu"),
+    t("machine.models.apple2ee"),
+    "Apple IIgs",
+  ]
+  const visibleMachines = allMachineNames
+    .map((name, index) => ({ name, label: allMachineStrings[index] }))
+    .filter(({ name }) => APP_MACHINE_NAMES.includes(name))
+  const machineNames: MACHINE_NAME[] = visibleMachines.map(({ name }) => name)
+  const machineStrings = visibleMachines.map(({ label }) => label)
   const machineIndex = machineNames.indexOf(machineName)
 
-  const slotConfig = handleGetSlotConfig()
+  const machineProfile = getMachineProfile(machineName)
+  const machineCapabilities = getMachineCapabilities(machineName)
+  const slotConfig = sanitizeSlotConfig(handleGetSlotConfig(), machineName)
 
   const mem = handleGetMemSize()
   const memIndex = mem > 8000 ? 4 : mem > 4000 ? 3 : mem > 1000 ? 2 : mem > 500 ? 1 : 0
   const ramdisk = ramdiskValues[memIndex]
 
   const handleSelectSlotCard = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7, cardId: SLOT_CARD_ID, ramSizeKb = 64) => {
-    const currentConfig = handleGetSlotConfig()
+    const currentConfig = sanitizeSlotConfig(handleGetSlotConfig(), machineName)
     const newConfig = { ...currentConfig }
 
     // Single-instance cards (all except 'none' and 'mockingboard'): remove from other slots
@@ -100,7 +117,7 @@ export const SettingsDialog = (props: DisplayProps) => {
     }
 
     newConfig[slot] = cardId
-    setPreferenceSlotConfig(newConfig)
+    setPreferenceSlotConfig(newConfig, "external", machineName)
     props.updateDisplay()
   }
 
@@ -128,41 +145,58 @@ export const SettingsDialog = (props: DisplayProps) => {
       values={machineStrings}
       setValue={(val: string) => {
         const i = machineStrings.indexOf(val)
-        setPreferenceMachineName(machineNames[i])
+        if (i < 0) return
+        const nextMachine = machineNames[i]
+        setPreferenceMachineName(nextMachine)
         props.updateDisplay()
-        // // Adjust slot 3 when crossing between II+ and IIe families
-        const newIsIIp = val === machineStrings[2]
-        const wasIIp = machineName === "APPLE2P"
-        if (newIsIIp !== wasIIp) {
-          handleSelectSlotCard(3, newIsIIp ? "videoterm" : "aux")
-          if (!newIsIIp) setPreferenceRamWorks() // reset to 64KB default
+        // The IIgs has its own built-in slot layout (and no RAMWorks slot 3),
+        // so switching to or from it must keep setPreferenceMachineName's
+        // GS defaults / sanitization instead of applying the classic slot-3
+        // Videoterm/Aux switch.
+        const nextProfile = getMachineProfile(nextMachine)
+        const currentProfile = getMachineProfile(machineName)
+        if (nextProfile.family === "gs" || currentProfile.family === "gs") return
+        // The classic profile's per-machine slot 3 default is the only thing that
+        // changes between II+ and IIe. Read it from the profile, never from a
+        // second machine table, so the two models cannot drift apart.
+        const nextSlot3 = getProfileDefaultSlotConfig(nextProfile, nextMachine)[3]
+        const currentSlot3 = getProfileDefaultSlotConfig(currentProfile, machineName)[3]
+        if (nextSlot3 !== currentSlot3) {
+          handleSelectSlotCard(3, nextSlot3)
+          if (nextSlot3 !== "videoterm") setPreferenceRamWorks() // reset to 64KB default
         }
       }}
       />
     )
   }
 
+  const romConfig = () => {
+    return (
+      <Droplist name="ROM Version"
+        value={getPreferenceIigsRomVersion() === "03" ? "ROM 03" : "ROM 01"}
+        values={["ROM 01", "ROM 03"]}
+        setValue={(val: string) => {
+          setPreferenceIigsRomVersion(val === "ROM 03" ? "03" : "01")
+          props.updateDisplay()
+        }}
+      />
+    )
+  }
+
   const speedConfig = () => {
     const speedMode = handleGetSpeedMode()
-    const speedIndex = speedMode + 2
-    // const iconSize = 22
-    const SPEED_MODES = [-2, -1, 0, 1, 2, 3, 4] as const
-    const SPEED_LABEL_KEYS = [
-      t("retroControl.snail"),
-      t("retroControl.slow"),
-      t("retroControl.normal"),
-      t("retroControl.twoMhz"),
-      t("retroControl.threeMhz"),
-      t("retroControl.fast"),
-      t("retroControl.warp"),
-    ]
+    const speedOptions = getProfileSpeedOptions(machineProfile)
+    const speedModes = speedOptions.map(option => option.mode)
+    const speedLabels = speedOptions.map(option =>
+      getProfileSpeedLabel(machineProfile, option.mode, t))
+    const speedIndex = speedModes.indexOf(speedMode)
     return (
       <Droplist name={t("config.speed")}
-        value={SPEED_LABEL_KEYS[speedIndex]}
-        values={SPEED_LABEL_KEYS}
+        value={speedLabels[speedIndex]}
+        values={speedLabels}
         setValue={(val: string) => {
-          const index = SPEED_LABEL_KEYS.indexOf(val)
-          setPreferenceSpeedMode(SPEED_MODES[index])
+          const index = speedLabels.indexOf(val)
+          setPreferenceSpeedMode(speedModes[index] as -2 | -1 | 0 | 1 | 2 | 3 | 4)
           props.updateDisplay()
         }}
       />
@@ -314,7 +348,9 @@ export const SettingsDialog = (props: DisplayProps) => {
                 }
               }}
             />
-            {(currentCard === "mockingboard" || currentCard === "passport" || currentCard === "vera") &&
+            {(currentCard === "mockingboard" ||
+              (machineCapabilities.hasPassport && currentCard === "passport") ||
+              (machineCapabilities.hasVeraCard && currentCard === "vera")) &&
               <SlotAudioConfig {...props} card={currentCard} slot={slot} />}
             </div>
           )
@@ -399,6 +435,7 @@ export const SettingsDialog = (props: DisplayProps) => {
                 <div className="flex-column" style={{gap: "3px"}}>
                   {themeConfig()}
                   {machineConfig()}
+                  {machineCapabilities.hasIigsRom && romConfig()}
                   {speedConfig()}
                   {slotConfiguration()}
                 </div>

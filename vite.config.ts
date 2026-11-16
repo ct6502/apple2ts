@@ -50,7 +50,11 @@ const cloudflarePagesAssetCleanup: Plugin = {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => {
+  // A local dev server serves one checkout, not one deployed site, so expose
+  // both machine families. A production build still filters in app_target.ts.
+  const isLocalDevServer = command === "serve"
+  return {
   base: "./",  // This makes all paths relative
   plugins: [react(), demoZooDirectPlugin, cloudflarePagesAssetCleanup,
     // Uncomment all these lines to enable HTTPS for localhost
@@ -97,5 +101,9 @@ export default defineConfig({
     "process.env.A2TS_URLPARAM": JSON.stringify(
       process.env.A2TS_URLPARAM ?? process.env.npm_config_urlparam ?? ""
     ),
+    // The UI reads this string instead of Vite's dev-only import.meta flag, so
+    // Jest and worker bundles use the same production filtering path.
+    "process.env.A2TS_DEV_MACHINES": JSON.stringify(isLocalDevServer ? "true" : "false"),
+  }
   }
 })

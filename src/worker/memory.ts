@@ -939,3 +939,13 @@ export const getShr = (): Uint8Array => {
   }
   return vidhd.extractShrBuffer(memory, RamWorksMemoryStart)
 }
+
+// Layer 1 has the storage implementation but not the GS CPU/MMU runtime yet.
+// These are classic-safe fallbacks so the storage modules stay compilable; Layer
+// 2 replaces this file with the real 24-bit address space implementation.
+export const memGet24 = (address: number): number => memGet(address & 0xFFFF)
+export const memSet24 = (address: number, data: number) => memSet(address & 0xFFFF, data)
+export let shrCloudLayerFilename = ""
+export const setIigsCloudLayerFilename = (filename: string): void => {
+  shrCloudLayerFilename = filename
+}

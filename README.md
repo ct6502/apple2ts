@@ -14,7 +14,7 @@ Note: The integrated server and CLI were moved out of this repository into `appl
 
 ## Dynamic Expansion Slot Configuration
 
-Apple2TS features a flexible **Expansion Slot Configuration** system allowing real-time configuration of expansion cards across Slots 1 through 7 via the Machine Settings menu:
+Apple2TS features a flexible **Expansion Slot Configuration** system allowing real-time configuration of expansion cards across Slots 1 through 7 via the Machine Settings menu. The table below describes the classic (II+/IIe) family profile:
 
 - **Slot 1**: *Super Serial Card (Printer / Serial Communications)
 - **Slot 2**: *Microsoft Z-80 SoftCard (CP/M), VERA Graphics Card, Passport MIDI Card
@@ -26,7 +26,7 @@ Apple2TS features a flexible **Expansion Slot Configuration** system allowing re
 
 * = Default Card
 
-Single-instance cards automatically handle slot exclusivity, and UI peripheral buttons (printer, floppy drives, hard drives) dynamically disable and grey out when their respective slot is set to `None`.
+The explicit `CLASSIC_PROFILE` / `GS_PROFILE` models in `src/common/machine_profile.ts` are the source of truth for slot defaults, speed tables, boot/disk bay rules, and UI capabilities. Classic defaults vary by exact model (`APPLE2P`: slot 3 `videoterm`; `APPLE2EU`/`APPLE2EE`: aux-card RAM variants), while the IIgs profile exposes built-in slot functions and has no VERA or Passport entry. The Settings dialog and Link Builder read slot defaults and slot-3 choices from the selected profile, and Link Builder speed rows come from `getProfileSpeedOptions` / `getProfileSpeedLabel`; both store numeric speed modes, so switching machine families restarts speed at the new profile's default instead of carrying the other family's index (classic index 0 is Normal ≈1 MHz; the IIgs default index 1 is 2.8 MHz), and Link Builder also resets slots, ramdisk, and VERA state. Persisted machine names and URL machine parameters validate against `ALL_MACHINE_NAMES` before the deployment menu filter. Exact-model rendering and input differences (II+ character map, IIe unenhanced MouseText, GS ADB) come from `getMachineTraits`, so text copy, glyph rendering, display sizing and the startup page do not branch on model ids. Single-instance cards automatically handle slot exclusivity, and UI peripheral buttons (printer, floppy drives, hard drives) dynamically disable and grey out when their respective slot is set to `None`.
 
 ---
 
@@ -35,7 +35,7 @@ Single-instance cards automatically handle slot exclusivity, and UI peripheral b
 Apple2TS provides full emulation for 5.25" floppy drives, SmartPort 3.5" hard drives, and VERA SD storage, featuring advanced container support and multi-disk swapping:
 
 ### Supported Disk Formats & Compressed Containers
-- **Disk Images**: `.woz` (WOZ 1.0 and 2.0 bitstream images with accurate bit timing, write-back, and automatic CRC32 recalculation; WOZ 2.1 FLUX tracks, read only), `.a2r` (A2R3 5.25" flux captures, read only), `.2mg`, `.dsk`, `.do`, `.po`, `.hdv`, `.bin`, and `.bas`.
+- **Disk Images**: `.woz` (WOZ 1.0 and 2.0 bitstream images with accurate bit timing, write-back, and automatic CRC32 recalculation), `.2mg`, `.dsk`, `.do`, `.po`, `.hdv`, `.bin`, and `.bas`.
 - **Archive Containers**: `.zip`, `.7z` (powered by WebAssembly SevenZip), and `.gz` (gzip).
 - **Auto-Mounting Multi-Disk Archives**: Dropping or loading a `.zip`, `.7z`, or `.gz` containing multiple disk images automatically extracts and mounts all discovered disks into the drive's swapper playlist, immediately booting the first disk.
 
