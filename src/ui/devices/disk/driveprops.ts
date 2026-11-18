@@ -1475,12 +1475,21 @@ export const handleSetDiskSwapperFromURLs = async (
 
 export const prepWritableFile = async (index: number, writableFileHandle: WritableFileHandle) => {
   logToConsole(`🔄 prepWritableFile: Starting auto-save timer for drive ${index}`)
+  // Hot reload compares the file's timestamp with what it was when we loaded (or last saved) it,
+  // not with Date.now(). A file dated in the future -- made in another time zone, on a machine with
+  // a fast clock, or on a device that stamps its files in UTC -- otherwise always looks newer, and
+  // the disk was reloaded and the machine rebooted every 3 seconds.
+  let fileTime = 0
+  if ("getFile" in writableFileHandle && typeof writableFileHandle.getFile === "function") {
+    fileTime = (await writableFileHandle.getFile()).lastModified
+  }
   const timer = setInterval(async (index: number) => {
     const dprops = handleGetDriveProps(index)
     // Only FileSystemFileHandle supports getFile() for hot reload
     if ("getFile" in writableFileHandle && typeof writableFileHandle.getFile === "function") {
       const file = await writableFileHandle.getFile()
-      if (dprops.lastLocalFileWriteTime > 0 && file.lastModified > dprops.lastLocalFileWriteTime) {
+      if (dprops.lastLocalFileWriteTime > 0 && file.lastModified !== fileTime) {
+        fileTime = file.lastModified
         logToConsole(`🔄 Hot reload detected for drive ${index}`)
         handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
         passSetRunMode(RUN_MODE.NEED_BOOT)
@@ -1493,6 +1502,10 @@ export const prepWritableFile = async (index: number, writableFileHandle: Writab
         logToConsole(`✅ Save successful for drive ${index}`)
         dprops.diskHasChanges = false
         dprops.lastLocalFileWriteTime = Date.now()
+        // Our own save changed the file's timestamp: not a reason to hot reload
+        if ("getFile" in writableFileHandle && typeof writableFileHandle.getFile === "function") {
+          fileTime = (await writableFileHandle.getFile()).lastModified
+        }
         
         // Only send FileSystemFileHandle to worker (not custom handlers with functions)
         const isFileSystemHandle = dprops.writableFileHandle && "getFile" in dprops.writableFileHandle
