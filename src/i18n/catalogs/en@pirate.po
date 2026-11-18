@@ -2566,9 +2566,7 @@ msgstr ""
 
 msgctxt "startup.mouseCapture"
 msgid ""
-"Press F1 to capture
-"
-"or release mouse."
+"Press F1 to capture or release mouse."
 msgstr ""
 
 msgctxt "retroControl.ariaLabel"
