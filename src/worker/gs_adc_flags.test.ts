@@ -113,7 +113,7 @@ const run = (program: (a: number, m: number, c: boolean) => void,
       `  V=${gotV ? 1 : 0} (want ${wantV ? 1 : 0}) C=${C() ? 1 : 0}   ${label}`)
     if (gotV !== wantV) bad.push(label)
   }
-  console.log(`[ADC${width * 8}] V/C truth table:\n` + rows.join("\n"))
+  // console.log(`[ADC${width * 8}] V/C truth table:\n` + rows.join("\n"))
   return bad
 }
 

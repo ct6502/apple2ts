@@ -1,7 +1,8 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doReset, resetCpuSpeedForTesting } from "./motherboard"
 import {
   getShr, setIigsRomVersion, isIigsRom03, isIigsShrActive, getTextPageAsString,
-  memGet24, iigsRegisters,
+  iigsRegisters,
 } from "./memory"
 import { iigsClock } from "./iigs_clock"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -98,8 +99,8 @@ const bootRom = (rom: "01" | "03", label: string) => {
   doSetRunMode(RUN_MODE.RUNNING, false)
   for (let f = 0; f < BOOT_FRAMES; f++) jest.advanceTimersByTime(17)
   expect(desktopReached()).toBe(true)
-  console.log(`[${label}] cold boot: frame=${BOOT_FRAMES} colours=${desktopColours().size} ` +
-    `$C036=$${iigsRegisters[0x36].toString(16)} $C041=$${iigsRegisters[0x41].toString(16)}`)
+  // console.log(`[${label}] cold boot: frame=${BOOT_FRAMES} colours=${desktopColours().size} ` +
+    // `$C036=$${iigsRegisters[0x36].toString(16)} $C041=$${iigsRegisters[0x41].toString(16)}`)
 }
 
 const resetProbe = (rom: "01" | "03", label: string) => {
@@ -150,14 +151,14 @@ const resetProbe = (rom: "01" | "03", label: string) => {
       if (badFrame < 0 && getTextPageAsString().includes("System Bad")) badFrame = f
     }
 
-    console.log(`[${label}] after reset: repaintFrame=${repaintFrame} desktopFrame=${desktopFrame} ` +
-      `badFrame=${badFrame} maxDiff=${maxDiff} finalDiff=${finalDiff} ` +
-      `colours=${desktopColours().size} clock state=${afterReset.state} ` +
-      `steps=${afterReset.transactionStepCount} $C036=$${iigsRegisters[0x36].toString(16)} ` +
-      `$C041=$${iigsRegisters[0x41].toString(16)}`)
-    console.log(`[${label}] $03F2-$03F4 = ` +
-      [0, 1, 2].map((i) => `$${memGet24(0x03f2 + i).toString(16)}`).join(" "))
-    console.log(`[${label}] text page tail:\n${getTextPageAsString().slice(-160)}`)
+    // console.log(`[${label}] after reset: repaintFrame=${repaintFrame} desktopFrame=${desktopFrame} ` +
+      // `badFrame=${badFrame} maxDiff=${maxDiff} finalDiff=${finalDiff} ` +
+      // `colours=${desktopColours().size} clock state=${afterReset.state} ` +
+      // `steps=${afterReset.transactionStepCount} $C036=$${iigsRegisters[0x36].toString(16)} ` +
+      // `$C041=$${iigsRegisters[0x41].toString(16)}`)
+    // console.log(`[${label}] $03F2-$03F4 = ` +
+      // [0, 1, 2].map((i) => `$${memGet24(0x03f2 + i).toString(16)}`).join(" "))
+    // console.log(`[${label}] text page tail:\n${getTextPageAsString().slice(-160)}`)
 
     // A real reset repaints, then returns to a desktop whose image differs from
     // the stale pre-reset SHR frame only by startup updates (well under 3000 B).
@@ -177,10 +178,10 @@ const resetProbe = (rom: "01" | "03", label: string) => {
   }
 }
 
-test("ROM 03 Ctrl-Reset reaches the GS/OS desktop again", () => {
+testWithFixtures(PO_PATH)("ROM 03 Ctrl-Reset reaches the GS/OS desktop again", () => {
   resetProbe("03", "ROM03")
 }, 900000)
 
-test("ROM 01 Ctrl-Reset reaches the GS/OS desktop again", () => {
+testWithFixtures(PO_PATH)("ROM 01 Ctrl-Reset reaches the GS/OS desktop again", () => {
   resetProbe("01", "ROM01")
 }, 900000)

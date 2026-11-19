@@ -22,7 +22,7 @@ const hasDisk = fs.existsSync(DISK_PATH)
 
 test("ProSel-16's bank-$01 text reaches the Mega II scanner", () => {
   if (!hasDisk) {
-    console.warn(`ProSel image missing: ${DISK_PATH}`)
+    // console.warn(`ProSel image missing: ${DISK_PATH}`)
     return
   }
 

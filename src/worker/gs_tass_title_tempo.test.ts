@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doSetSpeedMode } from "./motherboard"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { setKeyboardState } from "./devices/keyboard"
@@ -19,7 +20,7 @@ import * as fs from "fs"
 const TASS_PATH = process.env.GS_TASS_PATH || "C:\\dev\\emu\\ap2\\Tass Times in Tonetown.2mg"
 const PCM_OUT = process.env.GS_TEMPO_PCM_OUT || "C:\\Users\\USER\\AppData\\Local\\Temp\\opencode\\tass_fixed_pcm.json"
 
-test("Tass Times title tick rate at 2.8 MHz + PCM dump", () => {
+testWithFixtures(TASS_PATH)("Tass Times title tick rate at 2.8 MHz + PCM dump", () => {
   jest.useFakeTimers()
   setIsTesting()
   doSetMachineName("APPLE2GS")
@@ -59,14 +60,10 @@ test("Tass Times title tick rate at 2.8 MHz + PCM dump", () => {
   expect(mounted).toBe(true)
 
   const run = (frames: number, label: string) => {
-    const t0 = iigsEnsoniq.irqTicks
-    const h0 = iigsEnsoniq.haltCount
     for (let f = 0; f < frames; f++) jest.advanceTimersByTime(17)
-    const dt = iigsEnsoniq.irqTicks - t0
-    const dh = iigsEnsoniq.haltCount - h0
-    console.log(`[TEMPO] ${label}: frames=${frames} ticks+${dt} (${(dt * 60 / frames).toFixed(1)}/s) ` +
-      `halts+${dh} (${(dh * 60 / frames).toFixed(1)}/s) osce=${iigsEnsoniq.osce} ` +
-      `outRate=${iigsEnsoniq.outputRate()} segs=[${iigsEnsoniq.haltSegments.slice(-8).join(",")}]`)
+    // console.log(`[TEMPO] ${label}: frames=${frames} ticks+${dt} (${(dt * 60 / frames).toFixed(1)}/s) ` +
+      // `halts+${dh} (${(dh * 60 / frames).toFixed(1)}/s) osce=${iigsEnsoniq.osce} ` +
+      // `outRate=${iigsEnsoniq.outputRate()} segs=[${iigsEnsoniq.haltSegments.slice(-8).join(",")}]`)
   }
 
   doSetRunMode(RUN_MODE.NEED_BOOT)
@@ -83,7 +80,7 @@ test("Tass Times title tick rate at 2.8 MHz + PCM dump", () => {
   void startLen
 
   fs.writeFileSync(PCM_OUT, JSON.stringify({ sr: iigsEnsoniq.outputRate(), step: 2, data: captured, capture: "apple2ts-fixed 2.8MHz title" }))
-  console.log(`[TEMPO] dumped ${captured.length} mono frames (~${(captured.length / iigsEnsoniq.outputRate() / 2).toFixed(1)}s) to ${PCM_OUT}`)
+  // console.log(`[TEMPO] dumped ${captured.length} mono frames (~${(captured.length / iigsEnsoniq.outputRate() / 2).toFixed(1)}s) to ${PCM_OUT}`)
 
   // Walk the title with a keypress as in gs_tass.test.ts and measure the
   // next-stage tick rate too.

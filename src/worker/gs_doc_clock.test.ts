@@ -52,8 +52,8 @@ test("IIgs: DOC sample clock advances one outRate/60 block per refresh", () => {
     const refreshes = getIigsVblCount() - v0
     const samples = iigsEnsoniq.samplesGenerated - s0
     const perRefreshActual = samples / refreshes
-    console.log(`[DOCLOCK] ${refreshes} refreshes, ${samples} samples, ` +
-      `${perRefreshActual.toFixed(2)}/refresh (want ${perRefresh})`)
+    // console.log(`[DOCLOCK] ${refreshes} refreshes, ${samples} samples, ` +
+      // `${perRefreshActual.toFixed(2)}/refresh (want ${perRefresh})`)
 
     expect(refreshes).toBeGreaterThan(FRAMES - 4)
     expect(perRefreshActual).toBeGreaterThan(perRefresh * 0.95)

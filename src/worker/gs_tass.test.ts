@@ -1,11 +1,11 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, getCPU } from "./motherboard"
 import { megaIIAux, memGet24 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { MouseCardEvent, resetMouse } from "./devices/mouse"
 import { setKeyboardState } from "./devices/keyboard"
 import { iigsADB } from "./iigs_adb"
-import { iigsEnsoniq, docAccess, resetDocAccess, ensoniqDocRam } from "./devices/iigs_ensoniq"
-import { getDriveStateByIndex } from "./devices/drivestate"
+import { iigsEnsoniq, resetDocAccess } from "./devices/iigs_ensoniq"
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
 import * as fs from "fs"
@@ -31,30 +31,17 @@ import * as fs from "fs"
 //     driver waiting on" question has instrumented evidence.
 const TASS_PATH = process.env.GS_TASS_PATH || "C:\\dev\\emu\\ap2\\Tass Times in Tonetown.2mg"
 
-const spinTop = (hist: Map<number, number>, n = 10) =>
-  Array.from(hist.entries()).sort((a, b) => b[1] - a[1]).slice(0, n)
-    .map(([pc, c]) => {
-      const bank = (pc >>> 16) & 0xff, off = pc & 0xffff
-      const bytes = Array.from({ length: 14 }, (_, k) =>
-        (require("./memory").memGet24(((bank << 16) | ((off + k) & 0xffff))) & 0xff).toString(16).padStart(2, "0"))
-      return bank.toString(16).padStart(2, "0") + ":" + off.toString(16).padStart(4, "0").toUpperCase() + " x" + c + "  [" + bytes.join(" ") + "]"
-    })
 
-const oscSnapshot = () => "osc0..5: " + iigsEnsoniq.oscillators.slice(0, 6).map((o, i) =>
-  `${i}:c${o.control}/v${o.vol}/f${o.freq}/wt$${o.wavetblpointer.toString(16)}/a${o.accumulator}/i${o.irqpend}`).join(" ")
 
 const docPicture = (label: string) => {
-  const a = docAccess
-  console.log(`[TASS] ${label}: docAccess c${a.control} d${a.data} al${a.addrLow} ah${a.addrHigh} r${a.reads} ` +
-    `osce=${iigsEnsoniq.osce} active=${iigsEnsoniq.hasActiveOscillators()} ` +
-    `soundsel=$${(iigsEnsoniq.soundadrh << 8 | iigsEnsoniq.soundadrl).toString(16)} vol=${iigsEnsoniq.systemVolume.toFixed(2)}`)
-  console.log(`[TASS] ${label} ${oscSnapshot()}`)
+  // console.log(`[TASS] ${label}: docAccess c${a.control} d${a.data} al${a.addrLow} ah${a.addrHigh} r${a.reads} ` +
+    // `osce=${iigsEnsoniq.osce} active=${iigsEnsoniq.hasActiveOscillators()} ` +
+    // `soundsel=$${(iigsEnsoniq.soundadrh << 8 | iigsEnsoniq.soundadrl).toString(16)} vol=${iigsEnsoniq.systemVolume.toFixed(2)}`)
+  // console.log(`[TASS] ${label} ${oscSnapshot()}`)
   // The wavetable pointer the driver left in every oscillator was $FF00; a wave
   // upload goes to DOC RAM pages, so also show what DOC RAM holds around there
   // and around the sound pointer ($00E2) - locals for a manual check later.
-  const hex = (from: number, n: number) =>
-    Array.from(ensoniqDocRam.subarray(from, from + n)).map(b => b.toString(16).padStart(2, "0")).join(" ")
-  console.log(`[TASS] ${label} docram $00E0: ${hex(0xe0, 16)}   $FF00: ${hex(0xff00, 16)}`)
+  // console.log(`[TASS] ${label} docram $00E0: ${hex(0xe0, 16)}   $FF00: ${hex(0xff00, 16)}`)
 }
 
 const irqLine = () => {
@@ -72,7 +59,7 @@ const codeDump = (label: string, bank: number, lo: number, hi: number) => {
     rows.push(bank.toString(16).padStart(2, "0") + ":" + a.toString(16).padStart(4, "0").toUpperCase() + "  " +
       Array.from({ length: 8 }, (_, k) => g(a + k).toString(16).padStart(2, "0")).join(" "))
   }
-  console.log(`[TASS] ${label}\n` + rows.join("\n"))
+  // console.log(`[TASS] ${label}\n` + rows.join("\n"))
 }
 
 const zpDump = (label: string) => {
@@ -82,10 +69,10 @@ const zpDump = (label: string) => {
     rows.push("$" + a.toString(16).padStart(2, "0") + ": " +
       Array.from({ length: 16 }, (_, k) => g(a + k).toString(16).padStart(2, "0")).join(" "))
   }
-  console.log(`[TASS] ${label} zero page:\n` + rows.join("\n"))
+  // console.log(`[TASS] ${label} zero page:\n` + rows.join("\n"))
 }
 
-test("Tass Times: does the sound driver ever start an oscillator?", () => {
+testWithFixtures(TASS_PATH)("Tass Times: does the sound driver ever start an oscillator?", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -94,7 +81,7 @@ test("Tass Times: does the sound driver ever start an oscillator?", () => {
     iigsADB.reset()
 
     const data = fs.readFileSync(TASS_PATH)
-    console.log(`[TASS] loaded ${TASS_PATH}, size=${data.length}`)
+    // console.log(`[TASS] loaded ${TASS_PATH}, size=${data.length}`)
     const mounted = doSetEmuDriveNewData({
       index: 0,
       hardDrive: true,
@@ -112,7 +99,7 @@ test("Tass Times: does the sound driver ever start an oscillator?", () => {
     } as unknown as DriveProps)
     expect(mounted).toBe(true)
     resetDocAccess()
-    console.log(`[TASS] mounted: idx0 drive1 name=${getDriveStateByIndex(0).filename}`)
+    // console.log(`[TASS] mounted: idx0 drive1 name=${getDriveStateByIndex(0).filename}`)
 
     const cpu = getCPU() as unknown as { PB: number, PC: number, processInstruction: (cb?: unknown) => number }
     const origPI = cpu.processInstruction.bind(cpu)
@@ -130,9 +117,7 @@ test("Tass Times: does the sound driver ever start an oscillator?", () => {
       { name: "E1:002C game vector slot", lo: 0x002c, hi: 0x002f, bank: 0xe1, n: 0 },
     ]
     let irqSeen = false
-    let irqFirstAt = 0
     let activeSeen = false
-    let activeFirstAt = 0
     let instr = 0
     // Oscillator-IRQ timeline: instruction windows where any irqpend is held,
     // and every $C03D read with its instruction number for the first 300k
@@ -165,8 +150,8 @@ test("Tass Times: does the sound driver ever start an oscillator?", () => {
       if (pend && !pendPrev) { pendWinStart = instr; pendWinDepth++ }
       if (!pend && pendPrev && pendWinStart >= 0) { pendWins.push(pendWinStart, instr); pendWinStart = -1 }
       pendPrev = pend
-      if (!irqSeen && irqLine()) { irqSeen = true; irqFirstAt = instr }
-      if (!activeSeen && iigsEnsoniq.hasActiveOscillators()) { activeSeen = true; activeFirstAt = instr }
+      if (!irqSeen && irqLine()) { irqSeen = true }
+      if (!activeSeen && iigsEnsoniq.hasActiveOscillators()) { activeSeen = true }
       return origPI(cb)
     }
 
@@ -227,25 +212,22 @@ test("Tass Times: does the sound driver ever start an oscillator?", () => {
       adbCallers.mouse.clear()
       adbCallers.status.clear()
       for (let f = 0; f < frames; f++) jest.advanceTimersByTime(17)
-      console.log(`[TASS] ${label}: instr=${instr} PB=${cpu.PB.toString(16)} PC=${cpu.PC.toString(16)} ` +
-        `irqSeen=${irqSeen}@${irqFirstAt} activeSeen=${activeSeen}@${activeFirstAt}`)
+      // console.log(`[TASS] ${label}: instr=${instr} PB=${cpu.PB.toString(16)} PC=${cpu.PC.toString(16)} ` +
+        // `irqSeen=${irqSeen}@${irqFirstAt} activeSeen=${activeSeen}@${activeFirstAt}`)
       docPicture(label)
-      console.log(`[TASS] ${label} top PCs:\n  ` + spinTop(hist).join("\n  "))
-      const top = (m: Map<number, number>, n = 4) =>
-        Array.from(m.entries()).sort((x, y) => y[1] - x[1]).slice(0, n)
-          .map(([pc, c]) => ((pc >>> 16) & 0xff).toString(16) + ":" + (pc & 0xffff).toString(16).toUpperCase() + " x" + c).join("  ") || "(none)"
-      console.log(`[TASS] ${label} ADB $C024 callers: ${top(adbCallers.mouse)}   $C027 callers: ${top(adbCallers.status)}`)
-      console.log(`[TASS] ${label} ranges: ` + RANGES.map(r => `${r.name}=${r.n}`).join("  "))
+      // console.log(`[TASS] ${label} top PCs:\n  ` + spinTop(hist).join("\n  "))
+      // console.log(`[TASS] ${label} ADB $C024 callers: ${top(adbCallers.mouse)}   $C027 callers: ${top(adbCallers.status)}`)
+      // console.log(`[TASS] ${label} ranges: ` + RANGES.map(r => `${r.name}=${r.n}`).join("  "))
       if (docLog.size) {
-        console.log(`[TASS] ${label} manager $C03D reads (top 8): ` +
-          Array.from(docLog.entries()).sort((x, y) => y[1] - x[1]).slice(0, 8).map(([k, c]) => `${k}x${c}`).join("  "))
+        // console.log(`[TASS] ${label} manager $C03D reads (top 8): ` +
+          // Array.from(docLog.entries()).sort((x, y) => y[1] - x[1]).slice(0, 8).map(([k, c]) => `${k}x${c}`).join("  "))
       }
-      console.log(`[TASS] ${label} osc-IRQ windows: total=${Math.floor(pendWins.length / 2)}` +
-        (pendWins.length >= 2 ? ` (last ${pendWins[pendWins.length - 2]}..${pendWins[pendWins.length - 1]})` : ""))
+      // console.log(`[TASS] ${label} osc-IRQ windows: total=${Math.floor(pendWins.length / 2)}` +
+        // (pendWins.length >= 2 ? ` (last ${pendWins[pendWins.length - 2]}..${pendWins[pendWins.length - 1]})` : ""))
       if (label === "boot" && docTimeline.length) {
-        console.log(`[TASS] ${label} doc read timeline (first 40):\n  ` + docTimeline.slice(0, 40).join("\n  "))
+        // console.log(`[TASS] ${label} doc read timeline (first 40):\n  ` + docTimeline.slice(0, 40).join("\n  "))
       }
-      console.log(`[TASS] ${label} INTEN $C041=${(require("./memory") as typeof import("./memory")).iigsRegisters[0x41].toString(2).padStart(8, "0")} irqEntries=${irqEntries} clockReg64=${(require("./memory") as typeof import("./memory")).iigsRegisters[0x64].toString(16)}`)
+      // console.log(`[TASS] ${label} INTEN $C041=${(require("./memory") as typeof import("./memory")).iigsRegisters[0x41].toString(2).padStart(8, "0")} irqEntries=${irqEntries} clockReg64=${(require("./memory") as typeof import("./memory")).iigsRegisters[0x64].toString(16)}`)
       // Raw bytes around the hottest PC (for dis5.cjs) + a zero page picture.
       const hot = Array.from(hist.entries()).sort((x, y) => y[1] - x[1])[0]
       hotPcLastPhase = hot ? hot[0] : 0
@@ -268,7 +250,7 @@ test("Tass Times: does the sound driver ever start an oscillator?", () => {
           Array.from(megaIIAux.subarray(a - 1, a + 3)).map(b => b.toString(16).padStart(2, "0")).join(" ") +
           "   (JML $" + Array.from(megaIIAux.subarray(a, a + 3)).map(b => b.toString(16).padStart(2, "0")).join("") + ")")
       }
-      console.log(`[TASS] ${label} E1 vectors:\n` + rows.join("\n"))
+      // console.log(`[TASS] ${label} E1 vectors:\n` + rows.join("\n"))
     }
     dumpE1("boot", 0x14, 0x44)
     // All 32 oscillators: is there a timer oscillator (not halted, IRQ en) or
@@ -284,10 +266,10 @@ test("Tass Times: does the sound driver ever start an oscillator?", () => {
             "/f$" + o.freq.toString(16) + "/irq" + o.irqpend)
         }
       }
-      console.log(`[TASS] ${label} oscs not-halted or irq-enabled: ` + (rows.join(" ") || "(NONE)"))
+      // console.log(`[TASS] ${label} oscs not-halted or irq-enabled: ` + (rows.join(" ") || "(NONE)"))
       const e1 = []
       for (let a = 0xc0; a <= 0xd0; a++) e1.push(a.toString(16) + ":" + megaIIAux[a].toString(16).padStart(2, "0"))
-      console.log(`[TASS] ${label} E1 00C0-00D0: ` + e1.join(" "))
+      // console.log(`[TASS] ${label} E1 00C0-00D0: ` + e1.join(" "))
     }
     oscDump("boot")
 

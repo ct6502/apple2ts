@@ -68,11 +68,6 @@ msgid "Debug Panel"
 msgstr "デバッグパネル"
 
 #, fuzzy
-msgctxt "controls.infoPanel"
-msgid "Info Panel"
-msgstr "情報パネル"
-
-#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "問題を報告"
@@ -86,11 +81,6 @@ msgstr "プライバシーポリシー"
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "速度"
-
-#, fuzzy
-msgctxt "config.display"
-msgid "Display Settings"
-msgstr "表示設定"
 
 #, fuzzy
 msgctxt "config.theme"
@@ -175,14 +165,6 @@ msgctxt "machine.configuration"
 msgid "Machine"
 msgstr ""
 
-msgctxt "machine.slotConfigurator"
-msgid "Expansion Slots"
-msgstr "拡張スロット"
-
-msgctxt "machine.iigsDeskPanel"
-msgid "Desk Accessories (Ctrl + Open Apple + Esc)"
-msgstr ""
-
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
 msgstr ""
@@ -195,35 +177,10 @@ msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
 msgstr ""
 
-msgctxt "machine.ram.64kb_aux"
-msgid "64 KB (AUX)"
-msgstr ""
-
-msgctxt "machine.ram.512kb"
-msgid "512 KB"
-msgstr ""
-
-msgctxt "machine.ram.1024kb"
-msgid "1024 KB"
-msgstr ""
-
-msgctxt "machine.ram.4mb"
-msgid "4 MB"
-msgstr ""
-
-msgctxt "machine.ram.8mb"
-msgid "8 MB"
-msgstr ""
-
 #, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
 msgstr "カタツムリ速度 (0.1 MHz)"
-
-#, fuzzy
-msgctxt "speed.slow"
-msgid "Slow Speed (0.5 MHz)"
-msgstr "低速 (0.5 MHz)"
 
 #, fuzzy
 msgctxt "speed.normal"
@@ -247,40 +204,6 @@ msgstr "高速 (4 MHz)"
 msgctxt "speed.warp"
 msgid "Ludicrous Speed"
 msgstr "ばかげた速度"
-
-#, fuzzy
-msgctxt "colors.color"
-msgid "Color"
-msgstr "カラー"
-
-#, fuzzy
-msgctxt "colors.nofringe"
-msgid "Color (no fringe)"
-msgstr "カラー (フリンジなし)"
-
-#, fuzzy
-msgctxt "colors.green"
-msgid "Green"
-msgstr "緑"
-
-#, fuzzy
-msgctxt "colors.amber"
-msgid "Amber"
-msgstr "アンバー"
-
-#, fuzzy
-msgctxt "colors.white"
-msgid "Black and White"
-msgstr "白黒"
-
-#, fuzzy
-msgctxt "colors.inverse"
-msgid "Black and White (inverse)"
-msgstr "白黒 (反転)"
-
-msgctxt "timetravel.configuration"
-msgid "Time Travel Configuration"
-msgstr ""
 
 msgctxt "timetravel.snapshotOnKeyPress"
 msgid "Take Snapshot On Keypress"
@@ -318,21 +241,6 @@ msgid "Minimal"
 msgstr "ミニマル"
 
 #, fuzzy
-msgctxt "debug.helpPanel"
-msgid "Show help panel"
-msgstr "ヘルプパネルを表示"
-
-#, fuzzy
-msgctxt "debug.debugPanel"
-msgid "Show debugging panel"
-msgstr "デバッグパネルを表示"
-
-#, fuzzy
-msgctxt "debug.expectinPanel"
-msgid "Show Apple exPectin panel"
-msgstr "Apple exPectinパネルを表示"
-
-#, fuzzy
 msgctxt "debug.helpTab"
 msgid "Help"
 msgstr "ヘルプ"
@@ -364,21 +272,6 @@ msgstr "メモリ"
 msgctxt "debug.stack"
 msgid "Stack"
 msgstr "スタック"
-
-#, fuzzy
-msgctxt "debug.state"
-msgid "CPU State"
-msgstr "CPU状態"
-
-#, fuzzy
-msgctxt "debug.registers"
-msgid "Registers"
-msgstr "レジスタ"
-
-#, fuzzy
-msgctxt "debug.flags"
-msgid "Flags"
-msgstr "フラグ"
 
 #, fuzzy
 msgctxt "debug.step"
@@ -848,19 +741,10 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr "ここをクリックしてエミュレータを起動します。"
 
-msgctxt "tour.retroBootButton"
-msgid "Select this option to start the emulator."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
 msgstr "ここをクリックしてApple IIをリセットし、再起動またはBASICに入ります。"
-
-msgctxt "tour.retroResetButton"
-msgid ""
-"Select this option to reset the Apple II and either reboot or enter BASIC."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.diskImages"
@@ -874,10 +758,6 @@ msgstr ""
 "またはフロッピーディスクアイコンの1つをクリックしてディスクイメージをロードし"
 "ます。"
 
-msgctxt "tour.retroFloppyDisks"
-msgid "Or select a disk drive to load a disk image."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.saveRestore"
 msgid ""
@@ -885,21 +765,6 @@ msgid ""
 "buttons."
 msgstr ""
 "これらのボタンを使用してエミュレータの完全な状態を保存および復元できます。"
-
-msgctxt "tour.retroSaveRestore"
-msgid ""
-"You can save and restore the complete state of the emulator using these "
-"options."
-msgstr ""
-
-#, fuzzy
-msgctxt "tour.themeButton"
-msgid "Click here to change the emulator UI theme."
-msgstr "ここをクリックしてエミュレータUIテーマを変更します。"
-
-msgctxt "tour.retroThemeButton"
-msgid "Use the arrow keys to change the emulator UI theme."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.endTour"
@@ -916,12 +781,6 @@ msgid ""
 msgstr ""
 "地球儀ツアーボタンをクリックして他のツアーを試すか、終了を押してエミュレータ"
 "の使用を開始してください。"
-
-msgctxt "tour.retroTourSelectorHint"
-msgid ""
-"Select a menu item to try one of the other tours, or press Finish to start "
-"using the emulator."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.settingsWelcome"
@@ -978,12 +837,6 @@ msgstr ""
 "下の行のボタンはApple IIの状態を制御し、エミュレータ速度、画面の色、音声の"
 "ミュートから始まります。"
 
-msgctxt "tour.retroConfigButtons"
-msgid ""
-"The Options menu controls the state of the Apple II, starting with the "
-"emulator speed, the screen color, and muting the sound."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.keyboardButtons"
 msgid ""
@@ -1011,12 +864,6 @@ msgid ""
 msgstr ""
 "Apple2TSは現在のエミュレータ設定をブラウザクッキーとして自動的に保存します。"
 "このボタンを押してこれらの設定をリセットし、クッキーを削除します。"
-
-msgctxt "tour.retroClearCookies"
-msgid ""
-"Apple2TS automatically saves the current emulator settings as browser "
-"cookies. Select this option to reset these settings and delete the cookies."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.debugWelcome"
@@ -1126,21 +973,6 @@ msgid "Guided Tours: Debug"
 msgstr "ガイド付きツアー：デバッグ"
 
 #, fuzzy
-msgctxt "disk.drive1"
-msgid "Drive 1"
-msgstr "ドライブ1"
-
-#, fuzzy
-msgctxt "disk.drive2"
-msgid "Drive 2"
-msgstr "ドライブ2"
-
-#, fuzzy
-msgctxt "disk.hardDisk"
-msgid "Hard Disk"
-msgstr "ハードディスク"
-
-#, fuzzy
 msgctxt "disk.eject"
 msgid "Eject Disk"
 msgstr "ディスクを取り出す"
@@ -1149,49 +981,6 @@ msgstr "ディスクを取り出す"
 msgctxt "disk.insert"
 msgid "Insert Disk"
 msgstr "ディスクを挿入"
-
-#, fuzzy
-msgctxt "disk.writeProtected"
-msgid "Write Protected"
-msgstr "書き込み保護"
-
-#, fuzzy
-msgctxt "disk.readWrite"
-msgid "Read/Write"
-msgstr "読み書き"
-
-#, fuzzy
-msgctxt "disk.empty"
-msgid "Empty"
-msgstr "空"
-
-#, fuzzy
-msgctxt "disk.loading"
-msgid "Loading..."
-msgstr "ロード中..."
-
-#, fuzzy
-msgctxt "disk.selectDisk"
-msgid "Select Disk Image"
-msgstr "ディスクイメージを選択"
-
-#, fuzzy
-msgctxt "disk.browse"
-msgid "Browse"
-msgstr "参照"
-
-msgctxt "disk.internetArchive"
-msgid "Internet Archive"
-msgstr ""
-
-msgctxt "disk.totalReplay"
-msgid "Total Replay"
-msgstr ""
-
-#, fuzzy
-msgctxt "disk.newReleases"
-msgid "New Releases"
-msgstr "新リリース"
 
 #, fuzzy
 msgctxt "disk.writeProtectDisk"
@@ -1238,16 +1027,6 @@ msgid "Eject All Disks"
 msgstr "すべてのディスクを排出"
 
 #, fuzzy
-msgctxt "disk.saveDiskToOneDrive"
-msgid "Save Disk to OneDrive"
-msgstr "OneDriveにディスクを保存"
-
-#, fuzzy
-msgctxt "disk.saveDiskToGoogleDrive"
-msgid "Save Disk to Google Drive"
-msgstr "Google Driveにディスクを保存"
-
-#, fuzzy
 #| msgid "Load Disk"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
@@ -1264,21 +1043,6 @@ msgstr "ディスクの読み込み元"
 msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
 msgstr "ディスクの読み込み元 >"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDevice"
-msgid "Load Disk"
-msgstr "ディスクを読み込み"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDeviceReadOnly"
-msgid "Load Disk from Device (Read-Only)"
-msgstr "デバイスからディスクを読み込み (読み取り専用)"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDeviceReadWrite"
-msgid "Load Disk from Device (Read/Write)"
-msgstr "デバイスからディスクを読み込み (読み書き)"
 
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
@@ -1596,16 +1360,6 @@ msgid "Fetching cloud data"
 msgstr ""
 
 #, fuzzy
-msgctxt "messages.error"
-msgid "Error"
-msgstr "エラー"
-
-#, fuzzy
-msgctxt "messages.success"
-msgid "Success"
-msgstr "成功"
-
-#, fuzzy
 msgctxt "messages.confirm"
 msgid "Confirm"
 msgstr "確認"
@@ -1629,97 +1383,17 @@ msgctxt "messages.off"
 msgid "off"
 msgstr "オフ"
 
-#, fuzzy
-msgctxt "messages.confirmTheme"
-msgid "Reload the emulator and apply this theme now?"
-msgstr "エミュレータを再読み込みして、このテーマを今すぐ適用しますか？"
-
-#, fuzzy
-msgctxt "messages.confirmReset"
-msgid "Reset all settings to default values?"
-msgstr "すべての設定をデフォルト値にリセットしますか？"
-
-#, fuzzy
-msgctxt "messages.fileNotFound"
-msgid "File not found"
-msgstr "ファイルが見つかりません"
-
-#, fuzzy
-msgctxt "messages.invalidFile"
-msgid "Invalid file format"
-msgstr "無効なファイル形式"
-
-#, fuzzy
-msgctxt "messages.diskInserted"
-msgid "Disk inserted"
-msgstr "ディスクが挿入されました"
-
-#, fuzzy
-msgctxt "messages.diskEjected"
-msgid "Disk ejected"
-msgstr "ディスクが取り出されました"
-
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
-msgstr ""
-
-msgctxt "keyboard.shift"
-msgid "Shift"
-msgstr ""
-
-msgctxt "keyboard.ctrl"
-msgid "Ctrl"
-msgstr ""
-
-msgctxt "keyboard.alt"
-msgid "Alt"
 msgstr ""
 
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
 msgstr ""
 
-msgctxt "keyboard.closedApple"
-msgid "Closed Apple"
-msgstr ""
-
-msgctxt "keyboard.escape"
-msgid "Escape"
-msgstr ""
-
-msgctxt "keyboard.tab"
-msgid "Tab"
-msgstr ""
-
-msgctxt "keyboard.enter"
-msgid "Enter"
-msgstr ""
-
-#, fuzzy
-msgctxt "keyboard.space"
-msgid "Space"
-msgstr "スペース"
-
-msgctxt "keyboard.backspace"
-msgid "Backspace"
-msgstr ""
-
-msgctxt "keyboard.delete"
-msgid "Delete"
-msgstr ""
-
-msgctxt "keyboard.return"
-msgid "Return"
-msgstr ""
-
 msgctxt "keyboard.enableGamePatches"
 msgid "Enable Game Patches"
 msgstr ""
-
-#, fuzzy
-msgctxt "audio.speaker"
-msgid "Speaker"
-msgstr "スピーカー"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
@@ -1733,21 +1407,6 @@ msgstr "MIDI"
 msgctxt "audio.configuration"
 msgid "Audio Configuration"
 msgstr "オーディオ設定"
-
-#, fuzzy
-msgctxt "audio.volume"
-msgid "Volume"
-msgstr "音量"
-
-#, fuzzy
-msgctxt "audio.mute"
-msgid "Mute"
-msgstr "ミュート"
-
-#, fuzzy
-msgctxt "audio.waveform"
-msgid "Waveform"
-msgstr "波形"
 
 #, fuzzy
 msgctxt "print.printer"
@@ -1766,16 +1425,6 @@ msgstr ""
 msgctxt "print.print"
 msgid "Print"
 msgstr "印刷"
-
-#, fuzzy
-msgctxt "print.clear"
-msgid "Clear"
-msgstr "クリア"
-
-#, fuzzy
-msgctxt "print.save"
-msgid "Save Output"
-msgstr "出力を保存"
 
 #, fuzzy
 msgctxt "print.dumpScreen"
@@ -1826,26 +1475,6 @@ msgstr "11.7インチ（A4）"
 msgctxt "print.pageLengthTwelve"
 msgid "12 inch"
 msgstr "12インチ"
-
-#, fuzzy
-msgctxt "device.machineConfiguration"
-msgid "Machine Configuration"
-msgstr "マシン構成"
-
-#, fuzzy
-msgctxt "device.midiDeviceSelect"
-msgid "MIDI Device Select"
-msgstr "MIDIデバイス選択"
-
-#, fuzzy
-msgctxt "device.serialPortSelect"
-msgid "Serial Port Select"
-msgstr "シリアルポート選択"
-
-#, fuzzy
-msgctxt "device.mockingboardWaveform"
-msgid "Mockingboard wave form"
-msgstr "Mockingboard波形"
 
 #, fuzzy
 msgctxt "collection.showApple2TSCollection"
@@ -1909,11 +1538,6 @@ msgstr "クリックしてディスクコレクションから削除"
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
 msgstr ""
-
-#, fuzzy
-msgctxt "collection.clickToAddToCollection"
-msgid "Click to add to disk collection"
-msgstr "クリックしてディスクコレクションに追加"
 
 #, fuzzy
 msgctxt "collection.diskIsSyncedVia"
@@ -2061,11 +1685,6 @@ msgid "Trace"
 msgstr "トレース"
 
 #, fuzzy
-msgctxt "debugControls.tracing"
-msgid "Tracing"
-msgstr "トレース中"
-
-#, fuzzy
 msgctxt "debugControls.downloadTraceLog"
 msgid "Download Trace Log"
 msgstr "トレースログをダウンロード"
@@ -2087,10 +1706,6 @@ msgstr "検索"
 
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
-msgstr ""
-
-msgctxt "demoZoo.go"
-msgid "GO"
 msgstr ""
 
 msgctxt "demoZoo.all"
@@ -2131,10 +1746,6 @@ msgstr ""
 
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
-msgstr ""
-
-msgctxt "demoZoo.pageOf"
-msgid "Page {{page}} of {{pages}}"
 msgstr ""
 
 msgctxt "demoZoo.noProductions"
@@ -2491,36 +2102,6 @@ msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
 msgstr ""
 
-msgctxt "linkBuilder.speedNames.snail"
-msgid "Snail"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.slow"
-msgid "Slow"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.normal"
-msgid "1 MHz (default)"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.two"
-msgid "2 MHz"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.three"
-msgid "3 MHz"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.four"
-msgid "4 MHz"
-msgstr ""
-
-#, fuzzy
-#| msgid "Warp"
-msgctxt "linkBuilder.speedNames.warp"
-msgid "Ludicrous"
-msgstr "ばかげた速度"
-
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
 msgstr ""
@@ -2564,10 +2145,6 @@ msgstr "スロット {{slot}}:"
 msgctxt "linkBuilder.slots.cardNone"
 msgid "None (empty)"
 msgstr "なし (空)"
-
-msgctxt "agent.tabTitle"
-msgid "Agent"
-msgstr ""
 
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
@@ -2858,10 +2435,6 @@ msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr "キーボード"
 
-msgctxt "retroControl.input"
-msgid "Input"
-msgstr ""
-
 msgctxt "retroControl.joystick"
 msgid "Joystick"
 msgstr "ジョイスティック"
@@ -2870,17 +2443,9 @@ msgctxt "retroControl.slots"
 msgid "Slots"
 msgstr "スロット"
 
-msgctxt "retroControl.devices"
-msgid "Devices"
-msgstr "デバイス"
-
 msgctxt "retroControl.printerPort"
 msgid "Printer Port"
 msgstr "プリンターポート"
-
-msgctxt "retroControl.modemPort"
-msgid "Modem Port"
-msgstr "モデムポート"
 
 msgctxt "retroControl.quit"
 msgid "Quit"
@@ -2917,10 +2482,6 @@ msgstr "開く"
 msgctxt "retroControl.load"
 msgid "Load"
 msgstr "読み込む"
-
-msgctxt "retroControl.go"
-msgid "Go"
-msgstr "実行"
 
 msgctxt "retroControl.save"
 msgid "Save"
@@ -2998,17 +2559,9 @@ msgctxt "retroControl.timeMachine"
 msgid "Snapshots"
 msgstr "スナップショット"
 
-msgctxt "retroControl.ports"
-msgid "Ports"
-msgstr "ポート"
-
 msgctxt "retroControl.language"
 msgid "Language"
 msgstr "言語"
-
-msgctxt "retroControl.port"
-msgid "Port"
-msgstr ""
 
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
@@ -3021,10 +2574,6 @@ msgstr ""
 msgctxt "retroControl.externalPort"
 msgid "External Port"
 msgstr ""
-
-msgctxt "retroControl.retroTheme"
-msgid "Retro"
-msgstr "レトロ"
 
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
@@ -3052,10 +2601,6 @@ msgstr ""
 
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
-msgstr ""
-
-msgctxt "retroControl.saveDisk"
-msgid "Save Disk"
 msgstr ""
 
 msgctxt "retroControl.card.empty"

@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 // The IIgs pointer overlay (src/ui/graphics.ts drawIigsCursor) must appear for
 // GS/OS, which leaves the guest cursor to its Event Manager, and must NOT
 // appear for a program that drives the mouse itself and draws its own arrow
@@ -38,7 +39,7 @@ const mount = (filename: string, path: string, writeProtected = false) => {
   } as unknown as any as DriveProps)).toBe(true)
 }
 
-test("GS/OS 6.0.1: the ROM ADB task never polls, so the pointer overlay stays on", () => {
+testWithFixtures(GSOS_PATH)("GS/OS 6.0.1: the ROM ADB task never polls, so the pointer overlay stays on", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -82,7 +83,7 @@ test("GS/OS 6.0.1: the ROM ADB task never polls, so the pointer overlay stays on
   }
 }, 900000)
 
-test("Tass Times: the ROM ADB task polls continuously, so the overlay stays off", () => {
+testWithFixtures(TASS_PATH)("Tass Times: the ROM ADB task polls continuously, so the overlay stays off", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {

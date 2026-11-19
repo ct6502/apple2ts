@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, resetCpuSpeedForTesting } from "./motherboard"
 import { getIigsMousePos, isIigsShrActive } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -11,7 +12,7 @@ import * as fs from "fs"
 const PO_PATH = process.env.GSBOOT_PO || "C:\\dev\\emu\\ap2\\GSOS601.po"
 const FRAMES = Number(process.env.GSBOOT_FRAMES || 4200)
 
-test("IIgs: closed-loop ADB sync converges the guest cursor to the pointer", () => {
+testWithFixtures(PO_PATH)("IIgs: closed-loop ADB sync converges the guest cursor to the pointer", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -44,7 +45,7 @@ test("IIgs: closed-loop ADB sync converges the guest cursor to the pointer", () 
     // Expected: round(0.60*639)=383, round(0.50*399)>>1=99
     const wantX = Math.round(0.60 * 639)
     const wantY = Math.round(0.50 * 399) >> 1
-    console.log(`[SYNC] guest=${x},${y} want=${wantX},${wantY}`)
+    // console.log(`[SYNC] guest=${x},${y} want=${wantX},${wantY}`)
     expect(Math.abs(x - wantX)).toBeLessThanOrEqual(2)
     expect(Math.abs(y - wantY)).toBeLessThanOrEqual(2)
 
@@ -57,7 +58,7 @@ test("IIgs: closed-loop ADB sync converges the guest cursor to the pointer", () 
     const p2 = getIigsMousePos()
     const want2X = Math.round(0.25 * 639)
     const want2Y = Math.round(0.75 * 399) >> 1
-    console.log(`[SYNC2] guest=${p2.x},${p2.y} want=${want2X},${want2Y}`)
+    // console.log(`[SYNC2] guest=${p2.x},${p2.y} want=${want2X},${want2Y}`)
     expect(Math.abs(p2.x - want2X)).toBeLessThanOrEqual(2)
     expect(Math.abs(p2.y - want2Y)).toBeLessThanOrEqual(2)
   } finally {
@@ -67,7 +68,7 @@ test("IIgs: closed-loop ADB sync converges the guest cursor to the pointer", () 
   }
 })
 
-test("IIgs: a single click leaves one clean button report, not two", () => {
+testWithFixtures(PO_PATH)("IIgs: a single click leaves one clean button report, not two", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -111,7 +112,7 @@ test("IIgs: a single click leaves one clean button report, not two", () => {
   }
 })
 
-test("IIgs: a click is held until the cursor reaches the pointer", () => {
+testWithFixtures(PO_PATH)("IIgs: a click is held until the cursor reaches the pointer", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -144,7 +145,7 @@ test("IIgs: a click is held until the cursor reaches the pointer", () => {
     // Once the cursor arrives the queued press goes through.
     for (let f = 0; f < 40; f++) jest.advanceTimersByTime(17)
     const regs = iigsADB.getMouseRegisters()
-    console.log(`[CLICK] deferred press: guest=${JSON.stringify(getIigsMousePos())}`)
+    // console.log(`[CLICK] deferred press: guest=${JSON.stringify(getIigsMousePos())}`)
     expect(regs.y & 0x80).toBe(0x00)
     expect(Math.abs(getIigsMousePos().x - Math.round(0.9 * 639))).toBeLessThanOrEqual(2)
 

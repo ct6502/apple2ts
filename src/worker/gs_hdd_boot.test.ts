@@ -1,5 +1,4 @@
 import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting, getCPU } from "./motherboard"
-import { getTextPageAsString, memGet24, iigsSlotRegister } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
@@ -32,8 +31,8 @@ test("Apple IIgs Slot 7 Hard Drive boot", () => {
     }
     doSetEmuDriveNewData(props)
 
-    console.log("iigsSlotRegister before boot:", iigsSlotRegister.toString(2))
-    console.log("Reading $C701 before boot:", memGet24(0x00C701).toString(16))
+    // console.log("iigsSlotRegister before boot:", iigsSlotRegister.toString(2))
+    // console.log("Reading $C701 before boot:", memGet24(0x00C701).toString(16))
 
     // Track if PC reaches $C700 (slot 7 ROM entry) and $0801 (ProDOS boot block)
     const cpu = getCPU() as any
@@ -55,11 +54,10 @@ test("Apple IIgs Slot 7 Hard Drive boot", () => {
       jest.advanceTimersByTime(17)
     }
 
-    const screen = getTextPageAsString()
-    console.log("C700 seen:", c700Seen)
-    console.log("Boot block 0x0801 seen:", bootBlockSeen)
-    console.log("End CPU state:", `PB=${cpu.PB.toString(16)} PC=${cpu.PC.toString(16)} S=${cpu.S.toString(16)} P=${cpu.P.toString(16)}`)
-    console.log("Screen:\n", screen.slice(0, 300))
+    // console.log("C700 seen:", c700Seen)
+    // console.log("Boot block 0x0801 seen:", bootBlockSeen)
+    // console.log("End CPU state:", `PB=${cpu.PB.toString(16)} PC=${cpu.PC.toString(16)} S=${cpu.S.toString(16)} P=${cpu.P.toString(16)}`)
+    // console.log("Screen:\n", screen.slice(0, 300))
 
     expect(c700Seen).toBe(true)
     expect(bootBlockSeen).toBe(true)

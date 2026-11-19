@@ -68,11 +68,6 @@ msgid "Debug Panel"
 msgstr "Panneau de Débogage"
 
 #, fuzzy
-msgctxt "controls.infoPanel"
-msgid "Info Panel"
-msgstr "Panneau d'informations"
-
-#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Signaler un problème"
@@ -86,11 +81,6 @@ msgstr "Politique de confidentialité"
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "Vitesse"
-
-#, fuzzy
-msgctxt "config.display"
-msgid "Display Settings"
-msgstr "Paramètres d'Affichage"
 
 #, fuzzy
 msgctxt "config.theme"
@@ -178,14 +168,6 @@ msgctxt "machine.configuration"
 msgid "Machine"
 msgstr "Configuration de la Machine"
 
-msgctxt "machine.slotConfigurator"
-msgid "Expansion Slots"
-msgstr "Slots d'extension"
-
-msgctxt "machine.iigsDeskPanel"
-msgid "Desk Accessories (Ctrl + Open Apple + Esc)"
-msgstr ""
-
 #, fuzzy
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
@@ -200,38 +182,9 @@ msgid "Apple IIe (enhanced)"
 msgstr "Apple IIe (amélioré)"
 
 #, fuzzy
-msgctxt "machine.ram.64kb_aux"
-msgid "64 KB (AUX)"
-msgstr "64 KB (AUX)"
-
-#, fuzzy
-msgctxt "machine.ram.512kb"
-msgid "512 KB"
-msgstr "512 KB"
-
-#, fuzzy
-msgctxt "machine.ram.1024kb"
-msgid "1024 KB"
-msgstr "1024 KB"
-
-#, fuzzy
-msgctxt "machine.ram.4mb"
-msgid "4 MB"
-msgstr "4 MB"
-
-msgctxt "machine.ram.8mb"
-msgid "8 MB"
-msgstr "8 MB"
-
-#, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
 msgstr "Vitesse d'Escargot (0.1 MHz)"
-
-#, fuzzy
-msgctxt "speed.slow"
-msgid "Slow Speed (0.5 MHz)"
-msgstr "Lente (0.5 MHz)"
 
 #, fuzzy
 msgctxt "speed.normal"
@@ -255,40 +208,6 @@ msgstr "Rapide (4 MHz)"
 msgctxt "speed.warp"
 msgid "Ludicrous Speed"
 msgstr "Vitesse ridicule"
-
-#, fuzzy
-msgctxt "colors.color"
-msgid "Color"
-msgstr "Couleur"
-
-#, fuzzy
-msgctxt "colors.nofringe"
-msgid "Color (no fringe)"
-msgstr "Couleur (sans frange)"
-
-#, fuzzy
-msgctxt "colors.green"
-msgid "Green"
-msgstr "Vert"
-
-#, fuzzy
-msgctxt "colors.amber"
-msgid "Amber"
-msgstr "Ambre"
-
-#, fuzzy
-msgctxt "colors.white"
-msgid "Black and White"
-msgstr "Noir et Blanc"
-
-#, fuzzy
-msgctxt "colors.inverse"
-msgid "Black and White (inverse)"
-msgstr "Noir et Blanc (inverse)"
-
-msgctxt "timetravel.configuration"
-msgid "Time Travel Configuration"
-msgstr ""
 
 msgctxt "timetravel.snapshotOnKeyPress"
 msgid "Take Snapshot On Keypress"
@@ -325,21 +244,6 @@ msgid "Minimal"
 msgstr "Minimalisé"
 
 #, fuzzy
-msgctxt "debug.helpPanel"
-msgid "Show help panel"
-msgstr "Afficher le panneau d'aide"
-
-#, fuzzy
-msgctxt "debug.debugPanel"
-msgid "Show debugging panel"
-msgstr "Afficher le panneau de débogage"
-
-#, fuzzy
-msgctxt "debug.expectinPanel"
-msgid "Show Apple exPectin panel"
-msgstr "Afficher le panneau Apple exPectin"
-
-#, fuzzy
 msgctxt "debug.helpTab"
 msgid "Help"
 msgstr "Aide"
@@ -371,21 +275,6 @@ msgstr "Mémoire"
 msgctxt "debug.stack"
 msgid "Stack"
 msgstr "Pile"
-
-#, fuzzy
-msgctxt "debug.state"
-msgid "CPU State"
-msgstr "État du CPU"
-
-#, fuzzy
-msgctxt "debug.registers"
-msgid "Registers"
-msgstr "Registres"
-
-#, fuzzy
-msgctxt "debug.flags"
-msgid "Flags"
-msgstr "Drapeaux"
 
 #, fuzzy
 msgctxt "debug.step"
@@ -854,20 +743,11 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr "Cliquez ici pour démarrer l'émulateur."
 
-msgctxt "tour.retroBootButton"
-msgid "Select this option to start the emulator."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
 msgstr ""
 "Cliquez ici pour réinitialiser l'Apple II et redémarrer ou entrer dans BASIC."
-
-msgctxt "tour.retroResetButton"
-msgid ""
-"Select this option to reset the Apple II and either reboot or enter BASIC."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.diskImages"
@@ -880,10 +760,6 @@ msgid "Or click one of the floppy disk icons to load a disk image."
 msgstr ""
 "Ou cliquez sur une des icônes de disquette pour charger une image disque."
 
-msgctxt "tour.retroFloppyDisks"
-msgid "Or select a disk drive to load a disk image."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.saveRestore"
 msgid ""
@@ -892,21 +768,6 @@ msgid ""
 msgstr ""
 "Vous pouvez sauvegarder et restaurer l'état complet de l'émulateur avec ces "
 "boutons."
-
-msgctxt "tour.retroSaveRestore"
-msgid ""
-"You can save and restore the complete state of the emulator using these "
-"options."
-msgstr ""
-
-#, fuzzy
-msgctxt "tour.themeButton"
-msgid "Click here to change the emulator UI theme."
-msgstr "Cliquez ici pour changer le thème de l'interface de l'émulateur."
-
-msgctxt "tour.retroThemeButton"
-msgid "Use the arrow keys to change the emulator UI theme."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.endTour"
@@ -924,12 +785,6 @@ msgid ""
 msgstr ""
 "Cliquez sur le bouton de visite du globe pour essayer l'une des autres "
 "visites, ou appuyez sur Terminer pour commencer à utiliser l'émulateur."
-
-msgctxt "tour.retroTourSelectorHint"
-msgid ""
-"Select a menu item to try one of the other tours, or press Finish to start "
-"using the emulator."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.settingsWelcome"
@@ -990,12 +845,6 @@ msgstr ""
 "la vitesse de l'émulateur, la couleur de l'écran, et la mise en sourdine du "
 "son."
 
-msgctxt "tour.retroConfigButtons"
-msgid ""
-"The Options menu controls the state of the Apple II, starting with the "
-"emulator speed, the screen color, and muting the sound."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.keyboardButtons"
 msgid ""
@@ -1025,12 +874,6 @@ msgstr ""
 "Apple2TS sauvegarde automatiquement les paramètres actuels de l'émulateur "
 "comme cookies de navigateur. Appuyez sur ce bouton pour réinitialiser ces "
 "paramètres et supprimer les cookies."
-
-msgctxt "tour.retroClearCookies"
-msgid ""
-"Apple2TS automatically saves the current emulator settings as browser "
-"cookies. Select this option to reset these settings and delete the cookies."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.debugWelcome"
@@ -1149,21 +992,6 @@ msgid "Guided Tours: Debug"
 msgstr "Visite Guidée : Débogage"
 
 #, fuzzy
-msgctxt "disk.drive1"
-msgid "Drive 1"
-msgstr "Lecteur 1"
-
-#, fuzzy
-msgctxt "disk.drive2"
-msgid "Drive 2"
-msgstr "Lecteur 2"
-
-#, fuzzy
-msgctxt "disk.hardDisk"
-msgid "Hard Disk"
-msgstr "Disque Dur"
-
-#, fuzzy
 msgctxt "disk.eject"
 msgid "Eject Disk"
 msgstr "Éjecter le Disque"
@@ -1172,49 +1000,6 @@ msgstr "Éjecter le Disque"
 msgctxt "disk.insert"
 msgid "Insert Disk"
 msgstr "Insérer le Disque"
-
-#, fuzzy
-msgctxt "disk.writeProtected"
-msgid "Write Protected"
-msgstr "Protégé en Écriture"
-
-#, fuzzy
-msgctxt "disk.readWrite"
-msgid "Read/Write"
-msgstr "Lecture/Écriture"
-
-#, fuzzy
-msgctxt "disk.empty"
-msgid "Empty"
-msgstr "Vide"
-
-#, fuzzy
-msgctxt "disk.loading"
-msgid "Loading..."
-msgstr "Chargement..."
-
-#, fuzzy
-msgctxt "disk.selectDisk"
-msgid "Select Disk Image"
-msgstr "Sélectionner une Image Disque"
-
-#, fuzzy
-msgctxt "disk.browse"
-msgid "Browse"
-msgstr "Parcourir"
-
-msgctxt "disk.internetArchive"
-msgid "Internet Archive"
-msgstr ""
-
-msgctxt "disk.totalReplay"
-msgid "Total Replay"
-msgstr ""
-
-#, fuzzy
-msgctxt "disk.newReleases"
-msgid "New Releases"
-msgstr "Nouvelles Sorties"
 
 #, fuzzy
 msgctxt "disk.writeProtectDisk"
@@ -1261,16 +1046,6 @@ msgid "Eject All Disks"
 msgstr "Éjecter tous les disques"
 
 #, fuzzy
-msgctxt "disk.saveDiskToOneDrive"
-msgid "Save Disk to OneDrive"
-msgstr "Sauvegarder le Disque sur OneDrive"
-
-#, fuzzy
-msgctxt "disk.saveDiskToGoogleDrive"
-msgid "Save Disk to Google Drive"
-msgstr "Sauvegarder le Disque sur Google Drive"
-
-#, fuzzy
 #| msgid "Load Disk"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
@@ -1287,21 +1062,6 @@ msgstr "Charger le Disque depuis"
 msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
 msgstr "Charger le Disque depuis >"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDevice"
-msgid "Load Disk"
-msgstr "Charger le Disque"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDeviceReadOnly"
-msgid "Load Disk from Device (Read-Only)"
-msgstr "Charger le Disque depuis l'Appareil (Lecture Seule)"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDeviceReadWrite"
-msgid "Load Disk from Device (Read/Write)"
-msgstr "Charger le Disque depuis l'Appareil (Lecture/Écriture)"
 
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
@@ -1624,16 +1384,6 @@ msgid "Fetching cloud data"
 msgstr ""
 
 #, fuzzy
-msgctxt "messages.error"
-msgid "Error"
-msgstr "Erreur"
-
-#, fuzzy
-msgctxt "messages.success"
-msgid "Success"
-msgstr "Succès"
-
-#, fuzzy
 msgctxt "messages.confirm"
 msgid "Confirm"
 msgstr "Confirmer"
@@ -1658,103 +1408,17 @@ msgid "off"
 msgstr "désactivé"
 
 #, fuzzy
-msgctxt "messages.confirmTheme"
-msgid "Reload the emulator and apply this theme now?"
-msgstr "Recharger l'émulateur et appliquer ce thème maintenant ?"
-
-#, fuzzy
-msgctxt "messages.confirmReset"
-msgid "Reset all settings to default values?"
-msgstr "Réinitialiser tous les paramètres aux valeurs par défaut ?"
-
-#, fuzzy
-msgctxt "messages.fileNotFound"
-msgid "File not found"
-msgstr "Fichier non trouvé"
-
-#, fuzzy
-msgctxt "messages.invalidFile"
-msgid "Invalid file format"
-msgstr "Format de fichier invalide"
-
-#, fuzzy
-msgctxt "messages.diskInserted"
-msgid "Disk inserted"
-msgstr "Disque inséré"
-
-#, fuzzy
-msgctxt "messages.diskEjected"
-msgid "Disk ejected"
-msgstr "Disque éjecté"
-
-#, fuzzy
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
 msgstr "Verrouillage Majuscule"
-
-#, fuzzy
-msgctxt "keyboard.shift"
-msgid "Shift"
-msgstr "Maj"
-
-msgctxt "keyboard.ctrl"
-msgid "Ctrl"
-msgstr ""
-
-msgctxt "keyboard.alt"
-msgid "Alt"
-msgstr ""
 
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
 msgstr ""
 
-msgctxt "keyboard.closedApple"
-msgid "Closed Apple"
-msgstr ""
-
-#, fuzzy
-msgctxt "keyboard.escape"
-msgid "Escape"
-msgstr "Échap"
-
-msgctxt "keyboard.tab"
-msgid "Tab"
-msgstr ""
-
-#, fuzzy
-msgctxt "keyboard.enter"
-msgid "Enter"
-msgstr "Entrée"
-
-#, fuzzy
-msgctxt "keyboard.space"
-msgid "Space"
-msgstr "Espace"
-
-#, fuzzy
-msgctxt "keyboard.backspace"
-msgid "Backspace"
-msgstr "Effacement"
-
-#, fuzzy
-msgctxt "keyboard.delete"
-msgid "Delete"
-msgstr "Supprimer"
-
-#, fuzzy
-msgctxt "keyboard.return"
-msgid "Return"
-msgstr "Retour"
-
 msgctxt "keyboard.enableGamePatches"
 msgid "Enable Game Patches"
 msgstr ""
-
-#, fuzzy
-msgctxt "audio.speaker"
-msgid "Speaker"
-msgstr "Haut-parleur"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
@@ -1768,20 +1432,6 @@ msgstr "MIDI"
 msgctxt "audio.configuration"
 msgid "Audio Configuration"
 msgstr "Configuration audio"
-
-msgctxt "audio.volume"
-msgid "Volume"
-msgstr ""
-
-#, fuzzy
-msgctxt "audio.mute"
-msgid "Mute"
-msgstr "Muet"
-
-#, fuzzy
-msgctxt "audio.waveform"
-msgid "Waveform"
-msgstr "Forme d'Onde"
 
 #, fuzzy
 msgctxt "print.printer"
@@ -1800,16 +1450,6 @@ msgstr ""
 msgctxt "print.print"
 msgid "Print"
 msgstr "Imprimer"
-
-#, fuzzy
-msgctxt "print.clear"
-msgid "Clear"
-msgstr "Effacer"
-
-#, fuzzy
-msgctxt "print.save"
-msgid "Save Output"
-msgstr "Sauvegarder la Sortie"
 
 #, fuzzy
 msgctxt "print.dumpScreen"
@@ -1860,26 +1500,6 @@ msgstr "11,7 pouces (A4)"
 msgctxt "print.pageLengthTwelve"
 msgid "12 inch"
 msgstr "12 pouces"
-
-#, fuzzy
-msgctxt "device.machineConfiguration"
-msgid "Machine Configuration"
-msgstr "Configuration de la Machine"
-
-#, fuzzy
-msgctxt "device.midiDeviceSelect"
-msgid "MIDI Device Select"
-msgstr "Sélection de Périphérique MIDI"
-
-#, fuzzy
-msgctxt "device.serialPortSelect"
-msgid "Serial Port Select"
-msgstr "Sélection de Port Série"
-
-#, fuzzy
-msgctxt "device.mockingboardWaveform"
-msgid "Mockingboard wave form"
-msgstr "Forme d'Onde Mockingboard"
 
 #, fuzzy
 msgctxt "collection.showApple2TSCollection"
@@ -1943,11 +1563,6 @@ msgstr "Cliquer pour retirer de la collection de disques"
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
 msgstr "Clicker pour garder dans la collection de disques"
-
-#, fuzzy
-msgctxt "collection.clickToAddToCollection"
-msgid "Click to add to disk collection"
-msgstr "Cliquez pour ajouter à la collection de disques"
 
 #, fuzzy
 msgctxt "collection.diskIsSyncedVia"
@@ -2094,11 +1709,6 @@ msgid "Trace"
 msgstr ""
 
 #, fuzzy
-msgctxt "debugControls.tracing"
-msgid "Tracing"
-msgstr "Tracer"
-
-#, fuzzy
 msgctxt "debugControls.downloadTraceLog"
 msgid "Download Trace Log"
 msgstr "Télécharger le journal de trace"
@@ -2120,10 +1730,6 @@ msgstr ""
 
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
-msgstr ""
-
-msgctxt "demoZoo.go"
-msgid "GO"
 msgstr ""
 
 msgctxt "demoZoo.all"
@@ -2164,10 +1770,6 @@ msgstr ""
 
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
-msgstr ""
-
-msgctxt "demoZoo.pageOf"
-msgid "Page {{page}} of {{pages}}"
 msgstr ""
 
 msgctxt "demoZoo.noProductions"
@@ -2524,36 +2126,6 @@ msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
 msgstr ""
 
-msgctxt "linkBuilder.speedNames.snail"
-msgid "Snail"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.slow"
-msgid "Slow"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.normal"
-msgid "1 MHz (default)"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.two"
-msgid "2 MHz"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.three"
-msgid "3 MHz"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.four"
-msgid "4 MHz"
-msgstr ""
-
-#, fuzzy
-#| msgid "Warp"
-msgctxt "linkBuilder.speedNames.warp"
-msgid "Ludicrous"
-msgstr "Ridicule"
-
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
 msgstr ""
@@ -2597,10 +2169,6 @@ msgstr "Slot {{slot}}:"
 msgctxt "linkBuilder.slots.cardNone"
 msgid "None (empty)"
 msgstr "Aucune (vide)"
-
-msgctxt "agent.tabTitle"
-msgid "Agent"
-msgstr ""
 
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
@@ -2893,10 +2461,6 @@ msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr "Clavier"
 
-msgctxt "retroControl.input"
-msgid "Input"
-msgstr ""
-
 msgctxt "retroControl.joystick"
 msgid "Joystick"
 msgstr "Manette"
@@ -2905,17 +2469,9 @@ msgctxt "retroControl.slots"
 msgid "Slots"
 msgstr "Emplacements"
 
-msgctxt "retroControl.devices"
-msgid "Devices"
-msgstr "Périphériques"
-
 msgctxt "retroControl.printerPort"
 msgid "Printer Port"
 msgstr "Port imprimante"
-
-msgctxt "retroControl.modemPort"
-msgid "Modem Port"
-msgstr "Port modem"
 
 msgctxt "retroControl.quit"
 msgid "Quit"
@@ -2952,10 +2508,6 @@ msgstr "Ouvrir"
 msgctxt "retroControl.load"
 msgid "Load"
 msgstr "Charger"
-
-msgctxt "retroControl.go"
-msgid "Go"
-msgstr "Aller"
 
 msgctxt "retroControl.save"
 msgid "Save"
@@ -3033,17 +2585,9 @@ msgctxt "retroControl.timeMachine"
 msgid "Snapshots"
 msgstr "Instantanés"
 
-msgctxt "retroControl.ports"
-msgid "Ports"
-msgstr "Ports"
-
 msgctxt "retroControl.language"
 msgid "Language"
 msgstr "Langue"
-
-msgctxt "retroControl.port"
-msgid "Port"
-msgstr ""
 
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
@@ -3056,10 +2600,6 @@ msgstr ""
 msgctxt "retroControl.externalPort"
 msgid "External Port"
 msgstr ""
-
-msgctxt "retroControl.retroTheme"
-msgid "Retro"
-msgstr "Rétro"
 
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
@@ -3087,10 +2627,6 @@ msgstr ""
 
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
-msgstr ""
-
-msgctxt "retroControl.saveDisk"
-msgid "Save Disk"
 msgstr ""
 
 msgctxt "retroControl.card.empty"

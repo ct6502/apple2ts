@@ -124,6 +124,11 @@ Runs all of the jest unit tests:
 
 `npm test`
 
+Some IIgs integration tests require local disk images. If a required image is
+missing, those tests print its path and are reported as skipped. Where available,
+set the environment variable in the test source to use your local image.
+GitHub Actions also excludes the quarantined suites in `jest.config.cjs`.
+
 Run a single test:
 
 `npm test memory.test.ts`

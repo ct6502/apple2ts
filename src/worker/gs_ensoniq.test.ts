@@ -10,6 +10,7 @@
 import { doSetMachineName, ensoniqCatchUp, setIigsVideoClockForTesting } from "./motherboard"
 import { memSet24, memGet24 } from "./memory"
 import { iigsEnsoniq, ensoniqDocRam } from "./devices/iigs_ensoniq"
+import { setIsTesting } from "./worker2main"
 
 const set = (addr: number, value: number) => memSet24(0x000000 + addr, value & 0xff)
 const get = (addr: number) => memGet24(0x000000 + addr)
@@ -38,6 +39,7 @@ const readReg = (reg: number) => {
 }
 
 beforeEach(() => {
+  setIsTesting()
   doSetMachineName("APPLE2GS")
   iigsEnsoniq.reset()
 })

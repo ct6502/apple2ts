@@ -83,12 +83,15 @@ const run = (rom: "01" | "03") => {
 const straddles = (p: string) => (parseInt(p.slice(2), 16) & 0xffff) + 10 > 0xffff
 
 test("gs: MYCRATE's $08:$0000 relocation list stays inside one bank on both ROMs", () => {
-  if (!fs.existsSync(DISK_PATH)) { console.warn("missing " + DISK_PATH); return }
+  if (!fs.existsSync(DISK_PATH)) {
+    // console.warn("missing " + DISK_PATH)
+    return
+  }
   const a = run("01")
   const b = run("03")
-  console.log(`[01] list ${a.recs.map(r => "$" + r.p).join(" ")} fixups ${a.fixups.length} stub ${a.stub}`)
-  console.log(`[03] list ${b.recs.map(r => "$" + r.p).join(" ")} fixups ${b.fixups.length} stub ${b.stub}`)
-  for (const r of [...a.recs, ...b.recs]) console.log(`  $${r.p} ${r.raw}${straddles(r.p) ? "   <-- STRADDLES" : ""}`)
+  // console.log(`[01] list ${a.recs.map(r => "$" + r.p).join(" ")} fixups ${a.fixups.length} stub ${a.stub}`)
+  // console.log(`[03] list ${b.recs.map(r => "$" + r.p).join(" ")} fixups ${b.fixups.length} stub ${b.stub}`)
+  // for (const r of [...a.recs, ...b.recs]) console.log(`  $${r.p} ${r.raw}${straddles(r.p) ? "   <-- STRADDLES" : ""}`)
 
   // The same two records, byte for byte: the disk read and the RAM content match,
   // only the placement differs between ROMs.

@@ -1,6 +1,7 @@
 import { beginShrFrame, captureShrBeamLine, getShrDisplayed, iigsAuxLinearToPhys, iigsRegisters, megaIIAux, memSet24, resetShrBeamFrame, setIigsCloudLayerFilename } from "./memory"
 import { doSetSpeedMode, getLastShrFrameForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
+import { setIsTesting } from "./worker2main"
 
 const resetShr = () => {
   megaIIAux.fill(0)
@@ -205,6 +206,7 @@ test("a late palette table store replaces the displayed palette byte", () => {
 })
 
 test("a speed-mode switch keeps the captured rows in the current boundary", () => {
+  setIsTesting()
   resetShr()
 
   megaIIAux[0x2000] = 0x01

@@ -33,7 +33,7 @@ describe("Apple IIgs text page source", () => {
 
   test("ProDOS 16 screen written to $E0/$E1:$0400 is what the scanner shows", () => {
     if (!hasFile) {
-      console.warn("Skipping: " + poPath + " not found")
+      // console.warn("Skipping: " + poPath + " not found")
       return
     }
 

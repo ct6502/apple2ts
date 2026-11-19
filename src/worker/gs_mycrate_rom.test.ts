@@ -69,7 +69,7 @@ const runMycrate = (rom: "01" | "03") => {
 
 test("MYCRATE keeps running on the ROM 03 Finder without dropping to the monitor", () => {
   if (!fs.existsSync(DISK_PATH)) {
-    console.warn("Skipping test: " + DISK_PATH + " not found")
+    // console.warn("Skipping test: " + DISK_PATH + " not found")
     return
   }
   const { monitorFrame, lit } = runMycrate("03")
@@ -80,7 +80,7 @@ test("MYCRATE keeps running on the ROM 03 Finder without dropping to the monitor
 
 test("MYCRATE keeps running on the ROM 01 Finder too", () => {
   if (!fs.existsSync(DISK_PATH)) {
-    console.warn("Skipping test: " + DISK_PATH + " not found")
+    // console.warn("Skipping test: " + DISK_PATH + " not found")
     return
   }
   const { monitorFrame, lit } = runMycrate("01")

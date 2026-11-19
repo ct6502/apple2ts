@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doSetSpeedMode } from "./motherboard"
 import { getTextPage, setIigsRomVersion, memGet24 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -61,7 +62,7 @@ describe("ACS Musique Disk boots from S5D1", () => {
   setIsTesting()
 
   for (const rom of ["03", "01"] as const) {
-    test(`ROM ${rom}: Diversi-Cache does not clobber TXTTAB`, () => {
+    testWithFixtures(DISK_PATH)(`ROM ${rom}: Diversi-Cache does not clobber TXTTAB`, () => {
       const { menuFrame, errorFrame, txttab, text } = runBoot(rom, 560)
       expect(errorFrame).toBe(-1)
       expect(txttab).toBe(0x0801)

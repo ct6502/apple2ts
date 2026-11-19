@@ -57,7 +57,7 @@ describe("Stars & Planets on the IIgs", () => {
 
   test("boots to its title screen and animates after Return", () => {
     if (!hasDisk) {
-      console.warn(`stars & planets image missing: ${DISK_PATH}`)
+      // console.warn(`stars & planets image missing: ${DISK_PATH}`)
       return
     }
     doSetMachineName("APPLE2GS")

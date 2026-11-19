@@ -103,7 +103,7 @@ describe("3.5\" (slot 5) BASIC.SYSTEM save", () => {
 
   test("SAVE then LOAD round-trips a program, and the image keeps it across a remount", () => {
     if (!hasDisk) {
-      console.warn("Skipping test: " + DISK_PATH + " not found")
+      // console.warn("Skipping test: " + DISK_PATH + " not found")
       return
     }
     doSetMachineName("APPLE2GS")

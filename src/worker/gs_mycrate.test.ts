@@ -26,7 +26,7 @@ const pageText = () => {
 
 test("MYCRATE boots past the desk accessories to the Finder", () => {
   if (!fs.existsSync(DISK_PATH)) {
-    console.warn("Skipping test: " + DISK_PATH + " not found")
+    // console.warn("Skipping test: " + DISK_PATH + " not found")
     return
   }
   jest.useFakeTimers()

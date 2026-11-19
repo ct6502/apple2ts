@@ -53,6 +53,7 @@ const pump = (frames: number) => {
 
 describe("the ADB micro-controller's desk-manager sequence", () => {
   beforeEach(() => {
+    setIsTesting()
     doSetMachineName("APPLE2GS")
     iigsADB.reset()
   })
@@ -177,7 +178,7 @@ describe("the ROM draws the Desk Accessories menu", () => {
       frames++
     }
     const after = screenWords()
-    console.log(`[desk] menu after ${frames} frames: ${after.replace(/z+/g, " | ").slice(0, 400)}`)
+    // console.log(`[desk] menu after ${frames} frames: ${after.replace(/z+/g, " | ").slice(0, 400)}`)
     expect(hasMenu(after)).toBe(true)
     // The guest took the report, so the micro has nothing left to hand out.
     expect(memGet24(0x00c027) & STATUS_DATA_AVAILABLE).toBe(0)

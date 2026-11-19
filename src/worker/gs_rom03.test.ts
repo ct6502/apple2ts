@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, resetCpuSpeedForTesting } from "./motherboard"
 import {
   doSetRom, getShr, getIigsMousePos, gsSystemROM, isIigsRom03, isIigsShrActive,
@@ -78,7 +79,7 @@ test("the $E10000 tool-set table moves from $FE:012F on ROM 01 to $FE:0139 on RO
   }
 })
 
-test(`ROM 03 boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
+testWithFixtures(PO_PATH)(`ROM 03 boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -109,7 +110,7 @@ test(`ROM 03 boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
         colours.add(`${(w >> 8) & 0xf},${(w >> 4) & 0xf},${w & 0xf}`)
       }
     }
-    console.log(`[ROM03] decoded distinct colours: ${colours.size}`)
+    // console.log(`[ROM03] decoded distinct colours: ${colours.size}`)
     expect(colours.size).toBeGreaterThan(8)
   } finally {
     setIigsRomVersion("01")
@@ -119,7 +120,7 @@ test(`ROM 03 boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
   }
 })
 
-test("ROM 03: closed-loop ADB sync converges the guest cursor", () => {
+testWithFixtures(PO_PATH)("ROM 03: closed-loop ADB sync converges the guest cursor", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -142,7 +143,7 @@ test("ROM 03: closed-loop ADB sync converges the guest cursor", () => {
     const { x, y } = getIigsMousePos()
     const wantX = Math.round(0.60 * 639)
     const wantY = Math.round(0.50 * 399) >> 1
-    console.log(`[ROM03] guest=${x},${y} want=${wantX},${wantY}`)
+    // console.log(`[ROM03] guest=${x},${y} want=${wantX},${wantY}`)
     expect(Math.abs(x - wantX)).toBeLessThanOrEqual(2)
     expect(Math.abs(y - wantY)).toBeLessThanOrEqual(2)
   } finally {

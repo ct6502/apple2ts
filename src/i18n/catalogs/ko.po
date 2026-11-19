@@ -68,11 +68,6 @@ msgid "Debug Panel"
 msgstr "디버그 패널"
 
 #, fuzzy
-msgctxt "controls.infoPanel"
-msgid "Info Panel"
-msgstr "정보 패널"
-
-#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "문제 보고"
@@ -86,11 +81,6 @@ msgstr "개인정보 처리방침"
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "속도"
-
-#, fuzzy
-msgctxt "config.display"
-msgid "Display Settings"
-msgstr "디스플레이 설정"
 
 #, fuzzy
 msgctxt "config.theme"
@@ -175,14 +165,6 @@ msgctxt "machine.configuration"
 msgid "Machine"
 msgstr ""
 
-msgctxt "machine.slotConfigurator"
-msgid "Expansion Slots"
-msgstr "확장 슬롯"
-
-msgctxt "machine.iigsDeskPanel"
-msgid "Desk Accessories (Ctrl + Open Apple + Esc)"
-msgstr ""
-
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
 msgstr ""
@@ -195,35 +177,10 @@ msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
 msgstr ""
 
-msgctxt "machine.ram.64kb_aux"
-msgid "64 KB (AUX)"
-msgstr ""
-
-msgctxt "machine.ram.512kb"
-msgid "512 KB"
-msgstr ""
-
-msgctxt "machine.ram.1024kb"
-msgid "1024 KB"
-msgstr ""
-
-msgctxt "machine.ram.4mb"
-msgid "4 MB"
-msgstr ""
-
-msgctxt "machine.ram.8mb"
-msgid "8 MB"
-msgstr ""
-
 #, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
 msgstr "달팽이 속도 (0.1 MHz)"
-
-#, fuzzy
-msgctxt "speed.slow"
-msgid "Slow Speed (0.5 MHz)"
-msgstr "느린 속도 (0.5 MHz)"
 
 #, fuzzy
 msgctxt "speed.normal"
@@ -247,40 +204,6 @@ msgstr "빠른 속도 (4 MHz)"
 msgctxt "speed.warp"
 msgid "Ludicrous Speed"
 msgstr "터무니없는 속도"
-
-#, fuzzy
-msgctxt "colors.color"
-msgid "Color"
-msgstr "컬러"
-
-#, fuzzy
-msgctxt "colors.nofringe"
-msgid "Color (no fringe)"
-msgstr "컬러 (프린지 없음)"
-
-#, fuzzy
-msgctxt "colors.green"
-msgid "Green"
-msgstr "녹색"
-
-#, fuzzy
-msgctxt "colors.amber"
-msgid "Amber"
-msgstr "호박색"
-
-#, fuzzy
-msgctxt "colors.white"
-msgid "Black and White"
-msgstr "흑백"
-
-#, fuzzy
-msgctxt "colors.inverse"
-msgid "Black and White (inverse)"
-msgstr "흑백 (역순)"
-
-msgctxt "timetravel.configuration"
-msgid "Time Travel Configuration"
-msgstr ""
 
 msgctxt "timetravel.snapshotOnKeyPress"
 msgid "Take Snapshot On Keypress"
@@ -318,21 +241,6 @@ msgid "Minimal"
 msgstr "미니멀"
 
 #, fuzzy
-msgctxt "debug.helpPanel"
-msgid "Show help panel"
-msgstr "도움말 패널 표시"
-
-#, fuzzy
-msgctxt "debug.debugPanel"
-msgid "Show debugging panel"
-msgstr "디버그 패널 표시"
-
-#, fuzzy
-msgctxt "debug.expectinPanel"
-msgid "Show Apple exPectin panel"
-msgstr "Apple exPectin 패널 표시"
-
-#, fuzzy
 msgctxt "debug.helpTab"
 msgid "Help"
 msgstr "도움말"
@@ -364,21 +272,6 @@ msgstr "메모리"
 msgctxt "debug.stack"
 msgid "Stack"
 msgstr "스택"
-
-#, fuzzy
-msgctxt "debug.state"
-msgid "CPU State"
-msgstr "CPU 상태"
-
-#, fuzzy
-msgctxt "debug.registers"
-msgid "Registers"
-msgstr "레지스터"
-
-#, fuzzy
-msgctxt "debug.flags"
-msgid "Flags"
-msgstr "플래그"
 
 #, fuzzy
 msgctxt "debug.step"
@@ -848,19 +741,10 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr "여기를 클릭하여 에뮬레이터를 시작하세요."
 
-msgctxt "tour.retroBootButton"
-msgid "Select this option to start the emulator."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
 msgstr "여기를 클릭하여 Apple II를 재설정하고 재부팅하거나 BASIC에 진입하세요."
-
-msgctxt "tour.retroResetButton"
-msgid ""
-"Select this option to reset the Apple II and either reboot or enter BASIC."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.diskImages"
@@ -873,10 +757,6 @@ msgid "Or click one of the floppy disk icons to load a disk image."
 msgstr ""
 "또는 플로피 디스크 아이콘 중 하나를 클릭하여 디스크 이미지를 로드하세요."
 
-msgctxt "tour.retroFloppyDisks"
-msgid "Or select a disk drive to load a disk image."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.saveRestore"
 msgid ""
@@ -884,21 +764,6 @@ msgid ""
 "buttons."
 msgstr ""
 "이 버튼들을 사용하여 에뮬레이터의 완전한 상태를 저장하고 복원할 수 있습니다."
-
-msgctxt "tour.retroSaveRestore"
-msgid ""
-"You can save and restore the complete state of the emulator using these "
-"options."
-msgstr ""
-
-#, fuzzy
-msgctxt "tour.themeButton"
-msgid "Click here to change the emulator UI theme."
-msgstr "여기를 클릭하여 에뮬레이터 UI 테마를 변경하세요."
-
-msgctxt "tour.retroThemeButton"
-msgid "Use the arrow keys to change the emulator UI theme."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.endTour"
@@ -915,12 +780,6 @@ msgid ""
 msgstr ""
 "지구본 투어 버튼을 클릭하여 다른 투어를 시도하거나 종료를 눌러 에뮬레이터 사"
 "용을 시작하십시오。"
-
-msgctxt "tour.retroTourSelectorHint"
-msgid ""
-"Select a menu item to try one of the other tours, or press Finish to start "
-"using the emulator."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.settingsWelcome"
@@ -977,12 +836,6 @@ msgstr ""
 "아래쪽 버튼 행은 에뮬레이터 속도, 화면 색상, 소리 음소거부터 시작하여 Apple "
 "II의 상태를 제어합니다."
 
-msgctxt "tour.retroConfigButtons"
-msgid ""
-"The Options menu controls the state of the Apple II, starting with the "
-"emulator speed, the screen color, and muting the sound."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.keyboardButtons"
 msgid ""
@@ -1008,12 +861,6 @@ msgid ""
 msgstr ""
 "Apple2TS는 현재 에뮬레이터 설정을 브라우저 쿠키로 자동 저장합니다. 이 버튼을 "
 "눌러 이러한 설정을 재설정하고 쿠키를 삭제하세요."
-
-msgctxt "tour.retroClearCookies"
-msgid ""
-"Apple2TS automatically saves the current emulator settings as browser "
-"cookies. Select this option to reset these settings and delete the cookies."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.debugWelcome"
@@ -1122,21 +969,6 @@ msgid "Guided Tours: Debug"
 msgstr "가이드 투어: 디버그"
 
 #, fuzzy
-msgctxt "disk.drive1"
-msgid "Drive 1"
-msgstr "드라이브 1"
-
-#, fuzzy
-msgctxt "disk.drive2"
-msgid "Drive 2"
-msgstr "드라이브 2"
-
-#, fuzzy
-msgctxt "disk.hardDisk"
-msgid "Hard Disk"
-msgstr "하드디스크"
-
-#, fuzzy
 msgctxt "disk.eject"
 msgid "Eject Disk"
 msgstr "디스크 꺼내기"
@@ -1145,49 +977,6 @@ msgstr "디스크 꺼내기"
 msgctxt "disk.insert"
 msgid "Insert Disk"
 msgstr "디스크 삽입"
-
-#, fuzzy
-msgctxt "disk.writeProtected"
-msgid "Write Protected"
-msgstr "쓰기 보호"
-
-#, fuzzy
-msgctxt "disk.readWrite"
-msgid "Read/Write"
-msgstr "읽기/쓰기"
-
-#, fuzzy
-msgctxt "disk.empty"
-msgid "Empty"
-msgstr "비어있음"
-
-#, fuzzy
-msgctxt "disk.loading"
-msgid "Loading..."
-msgstr "로딩 중..."
-
-#, fuzzy
-msgctxt "disk.selectDisk"
-msgid "Select Disk Image"
-msgstr "디스크 이미지 선택"
-
-#, fuzzy
-msgctxt "disk.browse"
-msgid "Browse"
-msgstr "찾아보기"
-
-msgctxt "disk.internetArchive"
-msgid "Internet Archive"
-msgstr ""
-
-msgctxt "disk.totalReplay"
-msgid "Total Replay"
-msgstr ""
-
-#, fuzzy
-msgctxt "disk.newReleases"
-msgid "New Releases"
-msgstr "새 릴리스"
 
 #, fuzzy
 msgctxt "disk.writeProtectDisk"
@@ -1234,16 +1023,6 @@ msgid "Eject All Disks"
 msgstr "모든 디스크 꺼내기"
 
 #, fuzzy
-msgctxt "disk.saveDiskToOneDrive"
-msgid "Save Disk to OneDrive"
-msgstr "OneDrive에 디스크 저장"
-
-#, fuzzy
-msgctxt "disk.saveDiskToGoogleDrive"
-msgid "Save Disk to Google Drive"
-msgstr "Google Drive에 디스크 저장"
-
-#, fuzzy
 #| msgid "Load Disk"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
@@ -1260,21 +1039,6 @@ msgstr "디스크 로드 위치"
 msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
 msgstr "디스크 로드 위치 >"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDevice"
-msgid "Load Disk"
-msgstr "디스크 로드"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDeviceReadOnly"
-msgid "Load Disk from Device (Read-Only)"
-msgstr "디바이스에서 디스크 로드 (읽기 전용)"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDeviceReadWrite"
-msgid "Load Disk from Device (Read/Write)"
-msgstr "디바이스에서 디스크 로드 (읽기/쓰기)"
 
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
@@ -1591,16 +1355,6 @@ msgid "Fetching cloud data"
 msgstr ""
 
 #, fuzzy
-msgctxt "messages.error"
-msgid "Error"
-msgstr "오류"
-
-#, fuzzy
-msgctxt "messages.success"
-msgid "Success"
-msgstr "성공"
-
-#, fuzzy
 msgctxt "messages.confirm"
 msgid "Confirm"
 msgstr "확인"
@@ -1625,98 +1379,17 @@ msgctxt "messages.off"
 msgid "off"
 msgstr "꺼짐"
 
-#, fuzzy
-msgctxt "messages.confirmTheme"
-msgid "Reload the emulator and apply this theme now?"
-msgstr "에뮬레이터를 다시 로드하고 이 테마를 지금 적용하시겠습니까?"
-
-#, fuzzy
-msgctxt "messages.confirmReset"
-msgid "Reset all settings to default values?"
-msgstr "모든 설정을 기본값으로 재설정하시겠습니까?"
-
-#, fuzzy
-msgctxt "messages.fileNotFound"
-msgid "File not found"
-msgstr "파일을 찾을 수 없습니다"
-
-#, fuzzy
-msgctxt "messages.invalidFile"
-msgid "Invalid file format"
-msgstr "잘못된 파일 형식"
-
-#, fuzzy
-msgctxt "messages.diskInserted"
-msgid "Disk inserted"
-msgstr "디스크가 삽입되었습니다"
-
-#, fuzzy
-msgctxt "messages.diskEjected"
-msgid "Disk ejected"
-msgstr "디스크가 꺼내졌습니다"
-
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
-msgstr ""
-
-msgctxt "keyboard.shift"
-msgid "Shift"
-msgstr ""
-
-msgctxt "keyboard.ctrl"
-msgid "Ctrl"
-msgstr ""
-
-msgctxt "keyboard.alt"
-msgid "Alt"
 msgstr ""
 
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
 msgstr ""
 
-msgctxt "keyboard.closedApple"
-msgid "Closed Apple"
-msgstr ""
-
-msgctxt "keyboard.escape"
-msgid "Escape"
-msgstr ""
-
-msgctxt "keyboard.tab"
-msgid "Tab"
-msgstr ""
-
-msgctxt "keyboard.enter"
-msgid "Enter"
-msgstr ""
-
-#, fuzzy
-msgctxt "keyboard.space"
-msgid "Space"
-msgstr "스페이스"
-
-#, fuzzy
-msgctxt "keyboard.backspace"
-msgid "Backspace"
-msgstr "백스페이스"
-
-msgctxt "keyboard.delete"
-msgid "Delete"
-msgstr ""
-
-msgctxt "keyboard.return"
-msgid "Return"
-msgstr ""
-
 msgctxt "keyboard.enableGamePatches"
 msgid "Enable Game Patches"
 msgstr ""
-
-#, fuzzy
-msgctxt "audio.speaker"
-msgid "Speaker"
-msgstr "스피커"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
@@ -1730,21 +1403,6 @@ msgstr "MIDI"
 msgctxt "audio.configuration"
 msgid "Audio Configuration"
 msgstr "오디오 설정"
-
-#, fuzzy
-msgctxt "audio.volume"
-msgid "Volume"
-msgstr "볼륨"
-
-#, fuzzy
-msgctxt "audio.mute"
-msgid "Mute"
-msgstr "음소거"
-
-#, fuzzy
-msgctxt "audio.waveform"
-msgid "Waveform"
-msgstr "파형"
 
 #, fuzzy
 msgctxt "print.printer"
@@ -1763,16 +1421,6 @@ msgstr ""
 msgctxt "print.print"
 msgid "Print"
 msgstr "인쇄"
-
-#, fuzzy
-msgctxt "print.clear"
-msgid "Clear"
-msgstr "지우기"
-
-#, fuzzy
-msgctxt "print.save"
-msgid "Save Output"
-msgstr "출력 저장"
 
 #, fuzzy
 msgctxt "print.dumpScreen"
@@ -1823,26 +1471,6 @@ msgstr "11.7인치 (A4)"
 msgctxt "print.pageLengthTwelve"
 msgid "12 inch"
 msgstr "12인치"
-
-#, fuzzy
-msgctxt "device.machineConfiguration"
-msgid "Machine Configuration"
-msgstr "머신 구성"
-
-#, fuzzy
-msgctxt "device.midiDeviceSelect"
-msgid "MIDI Device Select"
-msgstr "MIDI 장치 선택"
-
-#, fuzzy
-msgctxt "device.serialPortSelect"
-msgid "Serial Port Select"
-msgstr "직렬 포트 선택"
-
-#, fuzzy
-msgctxt "device.mockingboardWaveform"
-msgid "Mockingboard wave form"
-msgstr "Mockingboard 파형"
 
 #, fuzzy
 msgctxt "collection.showApple2TSCollection"
@@ -1906,11 +1534,6 @@ msgstr "클릭하여 디스크 컬렉션에서 제거"
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
 msgstr ""
-
-#, fuzzy
-msgctxt "collection.clickToAddToCollection"
-msgid "Click to add to disk collection"
-msgstr "클릭하여 디스크 컬렉션에 추가"
 
 #, fuzzy
 msgctxt "collection.diskIsSyncedVia"
@@ -2058,11 +1681,6 @@ msgid "Trace"
 msgstr "추적"
 
 #, fuzzy
-msgctxt "debugControls.tracing"
-msgid "Tracing"
-msgstr "추적 중"
-
-#, fuzzy
 msgctxt "debugControls.downloadTraceLog"
 msgid "Download Trace Log"
 msgstr "추적 로그 다운로드"
@@ -2084,10 +1702,6 @@ msgstr "검색"
 
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
-msgstr ""
-
-msgctxt "demoZoo.go"
-msgid "GO"
 msgstr ""
 
 msgctxt "demoZoo.all"
@@ -2128,10 +1742,6 @@ msgstr ""
 
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
-msgstr ""
-
-msgctxt "demoZoo.pageOf"
-msgid "Page {{page}} of {{pages}}"
 msgstr ""
 
 msgctxt "demoZoo.noProductions"
@@ -2488,36 +2098,6 @@ msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
 msgstr ""
 
-msgctxt "linkBuilder.speedNames.snail"
-msgid "Snail"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.slow"
-msgid "Slow"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.normal"
-msgid "1 MHz (default)"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.two"
-msgid "2 MHz"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.three"
-msgid "3 MHz"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.four"
-msgid "4 MHz"
-msgstr ""
-
-#, fuzzy
-#| msgid "Warp"
-msgctxt "linkBuilder.speedNames.warp"
-msgid "Ludicrous"
-msgstr "터무니없는 속도"
-
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
 msgstr ""
@@ -2561,10 +2141,6 @@ msgstr "슬롯 {{slot}}:"
 msgctxt "linkBuilder.slots.cardNone"
 msgid "None (empty)"
 msgstr "없음 (비어 있음)"
-
-msgctxt "agent.tabTitle"
-msgid "Agent"
-msgstr ""
 
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
@@ -2855,10 +2431,6 @@ msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr "키보드"
 
-msgctxt "retroControl.input"
-msgid "Input"
-msgstr ""
-
 msgctxt "retroControl.joystick"
 msgid "Joystick"
 msgstr "조이스틱"
@@ -2867,17 +2439,9 @@ msgctxt "retroControl.slots"
 msgid "Slots"
 msgstr "슬롯"
 
-msgctxt "retroControl.devices"
-msgid "Devices"
-msgstr "장치"
-
 msgctxt "retroControl.printerPort"
 msgid "Printer Port"
 msgstr "프린터 포트"
-
-msgctxt "retroControl.modemPort"
-msgid "Modem Port"
-msgstr "모뎀 포트"
 
 msgctxt "retroControl.quit"
 msgid "Quit"
@@ -2914,10 +2478,6 @@ msgstr "열기"
 msgctxt "retroControl.load"
 msgid "Load"
 msgstr "불러오기"
-
-msgctxt "retroControl.go"
-msgid "Go"
-msgstr "실행"
 
 msgctxt "retroControl.save"
 msgid "Save"
@@ -2995,17 +2555,9 @@ msgctxt "retroControl.timeMachine"
 msgid "Snapshots"
 msgstr "스냅샷"
 
-msgctxt "retroControl.ports"
-msgid "Ports"
-msgstr "포트"
-
 msgctxt "retroControl.language"
 msgid "Language"
 msgstr "언어"
-
-msgctxt "retroControl.port"
-msgid "Port"
-msgstr ""
 
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
@@ -3018,10 +2570,6 @@ msgstr ""
 msgctxt "retroControl.externalPort"
 msgid "External Port"
 msgstr ""
-
-msgctxt "retroControl.retroTheme"
-msgid "Retro"
-msgstr "레트로"
 
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
@@ -3049,10 +2597,6 @@ msgstr ""
 
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
-msgstr ""
-
-msgctxt "retroControl.saveDisk"
-msgid "Save Disk"
 msgstr ""
 
 msgctxt "retroControl.card.empty"

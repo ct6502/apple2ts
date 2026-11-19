@@ -14,6 +14,7 @@ import { doSetMachineName } from "./motherboard"
 import { setKeyboardState } from "./devices/keyboard"
 import { iigsADB, ADB_MODE_KBD_AUTOPOLL_OFF } from "./iigs_adb"
 import { memGetC000 } from "./memory"
+import { setIsTesting } from "./worker2main"
 
 // $C025 bit assignments (gssquared adb_mod_key_t ADB_Keyboard.hpp:6).
 // bit6 is closed, bit7 is open - ADB_COMMAND ($37) drives open and ADB_OPTION
@@ -39,6 +40,7 @@ const enableAdbSrqMode = () => {
 }
 
 beforeEach(() => {
+  setIsTesting()
   doSetMachineName("APPLE2GS")
   iigsADB.reset()
 })

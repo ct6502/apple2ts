@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting,
   getIigsVblCount, resetIigsVblCount, iigsSpeedRegister, getIigsVideoClock,
   getIigsFrameUnits } from "./motherboard"
@@ -22,7 +23,7 @@ import * as fs from "fs"
 const FRAMES = Number(process.env.GSVBL_FRAMES || 4000)
 const PO_PATH = process.env.GSVBL_PO || "C:\\dev\\emu\\ap2\\GSOS601.po"
 
-test("IIgs: VBL fires once per refresh even while GS/OS toggles $C036", () => {
+testWithFixtures(PO_PATH)("IIgs: VBL fires once per refresh even while GS/OS toggles $C036", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -53,9 +54,9 @@ test("IIgs: VBL fires once per refresh even while GS/OS toggles $C036", () => {
     const clockEnd = getIigsVideoClock()
     const frameUnits = getIigsFrameUnits()
     const refreshes = Math.floor(clockEnd / frameUnits) - Math.floor(clockStart / frameUnits)
-    console.log(`[VBLCADENCE] frames=${FRAMES} vbls=${vbls} refreshes=${refreshes} ` +
-      `videoUnits=${clockEnd - clockStart} $C036 bit7 seen: ` +
-      [...speedValues].map((v) => v ? "fast" : "slow").join("+"))
+    // console.log(`[VBLCADENCE] frames=${FRAMES} vbls=${vbls} refreshes=${refreshes} ` +
+      // `videoUnits=${clockEnd - clockStart} $C036 bit7 seen: ` +
+      // [...speedValues].map((v) => v ? "fast" : "slow").join("+"))
 
     // The regression only exists if the OS actually toggles the speed register.
     expect(speedValues.size).toBe(2)

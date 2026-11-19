@@ -68,11 +68,6 @@ msgid "Debug Panel"
 msgstr "除錯面板"
 
 #, fuzzy
-msgctxt "controls.infoPanel"
-msgid "Info Panel"
-msgstr "資訊面板"
-
-#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "回報問題"
@@ -86,11 +81,6 @@ msgstr "隱私權政策"
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "模擬器速度"
-
-#, fuzzy
-msgctxt "config.display"
-msgid "Display Settings"
-msgstr "顯示設定"
 
 #, fuzzy
 msgctxt "config.theme"
@@ -178,14 +168,6 @@ msgctxt "machine.configuration"
 msgid "Machine"
 msgstr "機器配置"
 
-msgctxt "machine.slotConfigurator"
-msgid "Expansion Slots"
-msgstr "擴充插槽"
-
-msgctxt "machine.iigsDeskPanel"
-msgid "Desk Accessories (Ctrl + Open Apple + Esc)"
-msgstr "桌面配件（Ctrl + Open Apple + Esc）"
-
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
 msgstr ""
@@ -198,35 +180,10 @@ msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
 msgstr ""
 
-msgctxt "machine.ram.64kb_aux"
-msgid "64 KB (AUX)"
-msgstr ""
-
-msgctxt "machine.ram.512kb"
-msgid "512 KB"
-msgstr ""
-
-msgctxt "machine.ram.1024kb"
-msgid "1024 KB"
-msgstr ""
-
-msgctxt "machine.ram.4mb"
-msgid "4 MB"
-msgstr ""
-
-msgctxt "machine.ram.8mb"
-msgid "8 MB"
-msgstr ""
-
 #, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
 msgstr "蝸牛速度 (0.1 MHz)"
-
-#, fuzzy
-msgctxt "speed.slow"
-msgid "Slow Speed (0.5 MHz)"
-msgstr "慢速 (0.5 MHz)"
 
 #, fuzzy
 msgctxt "speed.normal"
@@ -250,40 +207,6 @@ msgstr "快速 (4 MHz)"
 msgctxt "speed.warp"
 msgid "Ludicrous Speed"
 msgstr "極速"
-
-#, fuzzy
-msgctxt "colors.color"
-msgid "Color"
-msgstr "彩色"
-
-#, fuzzy
-msgctxt "colors.nofringe"
-msgid "Color (no fringe)"
-msgstr "彩色 (無邊緣)"
-
-#, fuzzy
-msgctxt "colors.green"
-msgid "Green"
-msgstr "綠色"
-
-#, fuzzy
-msgctxt "colors.amber"
-msgid "Amber"
-msgstr "琥珀色"
-
-#, fuzzy
-msgctxt "colors.white"
-msgid "Black and White"
-msgstr "黑白"
-
-#, fuzzy
-msgctxt "colors.inverse"
-msgid "Black and White (inverse)"
-msgstr "黑白 (反色)"
-
-msgctxt "timetravel.configuration"
-msgid "Time Travel Configuration"
-msgstr ""
 
 msgctxt "timetravel.snapshotOnKeyPress"
 msgid "Take Snapshot On Keypress"
@@ -321,21 +244,6 @@ msgid "Minimal"
 msgstr "簡約"
 
 #, fuzzy
-msgctxt "debug.helpPanel"
-msgid "Show help panel"
-msgstr "顯示說明面板"
-
-#, fuzzy
-msgctxt "debug.debugPanel"
-msgid "Show debugging panel"
-msgstr "顯示除錯面板"
-
-#, fuzzy
-msgctxt "debug.expectinPanel"
-msgid "Show Apple exPectin panel"
-msgstr "顯示 Apple exPectin 面板"
-
-#, fuzzy
 msgctxt "debug.helpTab"
 msgid "Help"
 msgstr "說明"
@@ -367,21 +275,6 @@ msgstr "記憶體"
 msgctxt "debug.stack"
 msgid "Stack"
 msgstr "堆疊"
-
-#, fuzzy
-msgctxt "debug.state"
-msgid "CPU State"
-msgstr "CPU 狀態"
-
-#, fuzzy
-msgctxt "debug.registers"
-msgid "Registers"
-msgstr "暫存器"
-
-#, fuzzy
-msgctxt "debug.flags"
-msgid "Flags"
-msgstr "旗標"
 
 #, fuzzy
 msgctxt "debug.step"
@@ -852,19 +745,10 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr "按這裡啟動模擬器。"
 
-msgctxt "tour.retroBootButton"
-msgid "Select this option to start the emulator."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
 msgstr "按這裡重置 Apple II，並重新開機或進入 BASIC。"
-
-msgctxt "tour.retroResetButton"
-msgid ""
-"Select this option to reset the Apple II and either reboot or enter BASIC."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.diskImages"
@@ -876,31 +760,12 @@ msgctxt "tour.floppyDisks"
 msgid "Or click one of the floppy disk icons to load a disk image."
 msgstr "或按一下軟碟圖示來載入磁碟映像檔。"
 
-msgctxt "tour.retroFloppyDisks"
-msgid "Or select a disk drive to load a disk image."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.saveRestore"
 msgid ""
 "You can save and restore the complete state of the emulator using these "
 "buttons."
 msgstr "您可以使用這些按鈕儲存和還原模擬器的完整狀態。"
-
-msgctxt "tour.retroSaveRestore"
-msgid ""
-"You can save and restore the complete state of the emulator using these "
-"options."
-msgstr ""
-
-#, fuzzy
-msgctxt "tour.themeButton"
-msgid "Click here to change the emulator UI theme."
-msgstr "按這裡變更模擬器 UI 佈景主題。"
-
-msgctxt "tour.retroThemeButton"
-msgid "Use the arrow keys to change the emulator UI theme."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.endTour"
@@ -915,12 +780,6 @@ msgid ""
 "Click on the globe tour button to try one of the other tours, or press "
 "Finish to start using the emulator."
 msgstr "按一下地球儀導覽按鈕來試試其他導覽，或按完成開始使用模擬器。"
-
-msgctxt "tour.retroTourSelectorHint"
-msgid ""
-"Select a menu item to try one of the other tours, or press Finish to start "
-"using the emulator."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.settingsWelcome"
@@ -974,12 +833,6 @@ msgid ""
 "the emulator speed, the screen color, and muting the sound."
 msgstr "底部一排按鈕控制 Apple II 的狀態，從模擬器速度、螢幕顏色和靜音開始。"
 
-msgctxt "tour.retroConfigButtons"
-msgid ""
-"The Options menu controls the state of the Apple II, starting with the "
-"emulator speed, the screen color, and muting the sound."
-msgstr ""
-
 #, fuzzy
 msgctxt "tour.keyboardButtons"
 msgid ""
@@ -1004,12 +857,6 @@ msgid ""
 msgstr ""
 "Apple2TS 會自動將目前的模擬器設定儲存為瀏覽器 cookie。按下此按鈕可重置這些設"
 "定並刪除 cookie。"
-
-msgctxt "tour.retroClearCookies"
-msgid ""
-"Apple2TS automatically saves the current emulator settings as browser "
-"cookies. Select this option to reset these settings and delete the cookies."
-msgstr ""
 
 #, fuzzy
 msgctxt "tour.debugWelcome"
@@ -1115,21 +962,6 @@ msgid "Guided Tours: Debug"
 msgstr "引導式導覽：除錯"
 
 #, fuzzy
-msgctxt "disk.drive1"
-msgid "Drive 1"
-msgstr "磁碟機 1"
-
-#, fuzzy
-msgctxt "disk.drive2"
-msgid "Drive 2"
-msgstr "磁碟機 2"
-
-#, fuzzy
-msgctxt "disk.hardDisk"
-msgid "Hard Disk"
-msgstr "硬碟"
-
-#, fuzzy
 msgctxt "disk.eject"
 msgid "Eject Disk"
 msgstr "退出磁碟"
@@ -1138,49 +970,6 @@ msgstr "退出磁碟"
 msgctxt "disk.insert"
 msgid "Insert Disk"
 msgstr "插入磁碟"
-
-#, fuzzy
-msgctxt "disk.writeProtected"
-msgid "Write Protected"
-msgstr "防寫保護"
-
-#, fuzzy
-msgctxt "disk.readWrite"
-msgid "Read/Write"
-msgstr "讀寫"
-
-#, fuzzy
-msgctxt "disk.empty"
-msgid "Empty"
-msgstr "空的"
-
-#, fuzzy
-msgctxt "disk.loading"
-msgid "Loading..."
-msgstr "載入中..."
-
-#, fuzzy
-msgctxt "disk.selectDisk"
-msgid "Select Disk Image"
-msgstr "選擇磁碟映像檔"
-
-#, fuzzy
-msgctxt "disk.browse"
-msgid "Browse"
-msgstr "瀏覽"
-
-msgctxt "disk.internetArchive"
-msgid "Internet Archive"
-msgstr ""
-
-msgctxt "disk.totalReplay"
-msgid "Total Replay"
-msgstr ""
-
-#, fuzzy
-msgctxt "disk.newReleases"
-msgid "New Releases"
-msgstr "新發行版"
 
 #, fuzzy
 msgctxt "disk.writeProtectDisk"
@@ -1227,16 +1016,6 @@ msgid "Eject All Disks"
 msgstr "退出全部磁碟"
 
 #, fuzzy
-msgctxt "disk.saveDiskToOneDrive"
-msgid "Save Disk to OneDrive"
-msgstr "儲存磁碟到 OneDrive"
-
-#, fuzzy
-msgctxt "disk.saveDiskToGoogleDrive"
-msgid "Save Disk to Google Drive"
-msgstr "儲存磁碟到 Google Drive"
-
-#, fuzzy
 #| msgid "Load Disk"
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
@@ -1253,21 +1032,6 @@ msgstr "從以下位置載入磁碟"
 msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
 msgstr "從以下位置載入磁碟 >"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDevice"
-msgid "Load Disk"
-msgstr "載入磁碟"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDeviceReadOnly"
-msgid "Load Disk from Device (Read-Only)"
-msgstr "從裝置載入磁碟 (唯讀)"
-
-#, fuzzy
-msgctxt "disk.loadDiskFromDeviceReadWrite"
-msgid "Load Disk from Device (Read/Write)"
-msgstr "從裝置載入磁碟 (讀寫)"
 
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
@@ -1580,16 +1344,6 @@ msgid "Fetching cloud data"
 msgstr ""
 
 #, fuzzy
-msgctxt "messages.error"
-msgid "Error"
-msgstr "錯誤"
-
-#, fuzzy
-msgctxt "messages.success"
-msgid "Success"
-msgstr "成功"
-
-#, fuzzy
 msgctxt "messages.confirm"
 msgid "Confirm"
 msgstr "確認"
@@ -1615,99 +1369,17 @@ msgid "off"
 msgstr "關閉"
 
 #, fuzzy
-msgctxt "messages.confirmTheme"
-msgid "Reload the emulator and apply this theme now?"
-msgstr "重新載入模擬器並立即套用此佈景主題嗎？"
-
-#, fuzzy
-msgctxt "messages.confirmReset"
-msgid "Reset all settings to default values?"
-msgstr "將所有設定重置為預設值嗎？"
-
-#, fuzzy
-msgctxt "messages.fileNotFound"
-msgid "File not found"
-msgstr "找不到檔案"
-
-#, fuzzy
-msgctxt "messages.invalidFile"
-msgid "Invalid file format"
-msgstr "無效的檔案格式"
-
-#, fuzzy
-msgctxt "messages.diskInserted"
-msgid "Disk inserted"
-msgstr "已插入磁碟"
-
-#, fuzzy
-msgctxt "messages.diskEjected"
-msgid "Disk ejected"
-msgstr "已退出磁碟"
-
-#, fuzzy
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
 msgstr "大寫鎖定"
-
-msgctxt "keyboard.shift"
-msgid "Shift"
-msgstr ""
-
-msgctxt "keyboard.ctrl"
-msgid "Ctrl"
-msgstr ""
-
-msgctxt "keyboard.alt"
-msgid "Alt"
-msgstr ""
 
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
 msgstr ""
 
-msgctxt "keyboard.closedApple"
-msgid "Closed Apple"
-msgstr ""
-
-msgctxt "keyboard.escape"
-msgid "Escape"
-msgstr ""
-
-msgctxt "keyboard.tab"
-msgid "Tab"
-msgstr ""
-
-msgctxt "keyboard.enter"
-msgid "Enter"
-msgstr ""
-
-#, fuzzy
-msgctxt "keyboard.space"
-msgid "Space"
-msgstr "空白鍵"
-
-#, fuzzy
-msgctxt "keyboard.backspace"
-msgid "Backspace"
-msgstr "退格"
-
-#, fuzzy
-msgctxt "keyboard.delete"
-msgid "Delete"
-msgstr "刪除"
-
-msgctxt "keyboard.return"
-msgid "Return"
-msgstr ""
-
 msgctxt "keyboard.enableGamePatches"
 msgid "Enable Game Patches"
 msgstr ""
-
-#, fuzzy
-msgctxt "audio.speaker"
-msgid "Speaker"
-msgstr "喇叭"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
@@ -1721,21 +1393,6 @@ msgstr "MIDI"
 msgctxt "audio.configuration"
 msgid "Audio Configuration"
 msgstr "音訊設定"
-
-#, fuzzy
-msgctxt "audio.volume"
-msgid "Volume"
-msgstr "音量"
-
-#, fuzzy
-msgctxt "audio.mute"
-msgid "Mute"
-msgstr "靜音"
-
-#, fuzzy
-msgctxt "audio.waveform"
-msgid "Waveform"
-msgstr "波形"
 
 #, fuzzy
 msgctxt "print.printer"
@@ -1754,16 +1411,6 @@ msgstr ""
 msgctxt "print.print"
 msgid "Print"
 msgstr "列印"
-
-#, fuzzy
-msgctxt "print.clear"
-msgid "Clear"
-msgstr "清除"
-
-#, fuzzy
-msgctxt "print.save"
-msgid "Save Output"
-msgstr "儲存輸出"
 
 #, fuzzy
 msgctxt "print.dumpScreen"
@@ -1814,26 +1461,6 @@ msgstr "11.7英吋（A4）"
 msgctxt "print.pageLengthTwelve"
 msgid "12 inch"
 msgstr "12英吋"
-
-#, fuzzy
-msgctxt "device.machineConfiguration"
-msgid "Machine Configuration"
-msgstr "機器配置"
-
-#, fuzzy
-msgctxt "device.midiDeviceSelect"
-msgid "MIDI Device Select"
-msgstr "MIDI 設備選擇"
-
-#, fuzzy
-msgctxt "device.serialPortSelect"
-msgid "Serial Port Select"
-msgstr "序列埠選擇"
-
-#, fuzzy
-msgctxt "device.mockingboardWaveform"
-msgid "Mockingboard wave form"
-msgstr "Mockingboard 波形"
 
 #, fuzzy
 msgctxt "collection.showApple2TSCollection"
@@ -1898,11 +1525,6 @@ msgstr "點擊從磁碟收藏中移除"
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
 msgstr "點擊以保留在磁碟收藏中"
-
-#, fuzzy
-msgctxt "collection.clickToAddToCollection"
-msgid "Click to add to disk collection"
-msgstr "點擊加入磁碟收藏"
 
 #, fuzzy
 msgctxt "collection.diskIsSyncedVia"
@@ -2052,11 +1674,6 @@ msgid "Trace"
 msgstr "追蹤"
 
 #, fuzzy
-msgctxt "debugControls.tracing"
-msgid "Tracing"
-msgstr "正在追蹤"
-
-#, fuzzy
 msgctxt "debugControls.downloadTraceLog"
 msgid "Download Trace Log"
 msgstr "下載追蹤紀錄"
@@ -2080,11 +1697,6 @@ msgstr "搜尋"
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
 msgstr "搜尋 DemoZoo 作品或作者..."
-
-#, fuzzy
-msgctxt "demoZoo.go"
-msgid "GO"
-msgstr "搜尋"
 
 msgctxt "demoZoo.all"
 msgid "All"
@@ -2124,10 +1736,6 @@ msgstr ""
 
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
-msgstr ""
-
-msgctxt "demoZoo.pageOf"
-msgid "Page {{page}} of {{pages}}"
 msgstr ""
 
 msgctxt "demoZoo.noProductions"
@@ -2528,39 +2136,6 @@ msgid "Inverse White"
 msgstr "反白螢幕"
 
 #, fuzzy
-msgctxt "linkBuilder.speedNames.snail"
-msgid "Snail"
-msgstr "極慢"
-
-#, fuzzy
-msgctxt "linkBuilder.speedNames.slow"
-msgid "Slow"
-msgstr "慢速"
-
-#, fuzzy
-msgctxt "linkBuilder.speedNames.normal"
-msgid "1 MHz (default)"
-msgstr "1 MHz (預設)"
-
-msgctxt "linkBuilder.speedNames.two"
-msgid "2 MHz"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.three"
-msgid "3 MHz"
-msgstr ""
-
-msgctxt "linkBuilder.speedNames.four"
-msgid "4 MHz"
-msgstr ""
-
-#, fuzzy
-#| msgid "Warp"
-msgctxt "linkBuilder.speedNames.warp"
-msgid "Ludicrous"
-msgstr "極速"
-
-#, fuzzy
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
 msgstr "經典"
@@ -2607,10 +2182,6 @@ msgstr "插槽 {{slot}}:"
 msgctxt "linkBuilder.slots.cardNone"
 msgid "None (empty)"
 msgstr "無 (空)"
-
-msgctxt "agent.tabTitle"
-msgid "Agent"
-msgstr "AI 代理"
 
 #, fuzzy
 msgctxt "agent.setupTitle"
@@ -2933,10 +2504,6 @@ msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr "鍵盤"
 
-msgctxt "retroControl.input"
-msgid "Input"
-msgstr ""
-
 msgctxt "retroControl.joystick"
 msgid "Joystick"
 msgstr "搖桿"
@@ -2945,17 +2512,9 @@ msgctxt "retroControl.slots"
 msgid "Slots"
 msgstr "插槽"
 
-msgctxt "retroControl.devices"
-msgid "Devices"
-msgstr "裝置"
-
 msgctxt "retroControl.printerPort"
 msgid "Printer Port"
 msgstr "印表機連接埠"
-
-msgctxt "retroControl.modemPort"
-msgid "Modem Port"
-msgstr "數據機連接埠"
 
 msgctxt "retroControl.quit"
 msgid "Quit"
@@ -2992,10 +2551,6 @@ msgstr "開啟"
 msgctxt "retroControl.load"
 msgid "Load"
 msgstr "載入"
-
-msgctxt "retroControl.go"
-msgid "Go"
-msgstr "前往"
 
 msgctxt "retroControl.save"
 msgid "Save"
@@ -3073,17 +2628,9 @@ msgctxt "retroControl.timeMachine"
 msgid "Snapshots"
 msgstr "快照"
 
-msgctxt "retroControl.ports"
-msgid "Ports"
-msgstr "連接埠"
-
 msgctxt "retroControl.language"
 msgid "Language"
 msgstr "語言"
-
-msgctxt "retroControl.port"
-msgid "Port"
-msgstr ""
 
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
@@ -3096,10 +2643,6 @@ msgstr ""
 msgctxt "retroControl.externalPort"
 msgid "External Port"
 msgstr ""
-
-msgctxt "retroControl.retroTheme"
-msgid "Retro"
-msgstr "復古"
 
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
@@ -3127,10 +2670,6 @@ msgstr ""
 
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
-msgstr ""
-
-msgctxt "retroControl.saveDisk"
-msgid "Save Disk"
 msgstr ""
 
 msgctxt "retroControl.card.empty"

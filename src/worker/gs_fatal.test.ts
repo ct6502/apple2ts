@@ -2,6 +2,7 @@ import { doSetRom, memGet24, memSet24, iigsSignalVbl, iigsRegisters, iigsInitInt
 import { CPU65816 } from "./cpu65816"
 import * as fs from "fs"
 import * as path from "path"
+import { setIsTesting } from "./worker2main"
 
 // Reproduce the REAL motherboard boot path headlessly: memoryReset() (fills
 // bank $00 with 0xFF) + iigsInitInterrupts() + VBL/IRQ at frame rate.
@@ -9,6 +10,7 @@ import * as path from "path"
 const OUT = path.join(__dirname, "..", "..", "gs_fatal_out.txt")
 
 test("IIgs boot via motherboard path, catch fatal 0202", () => {
+  setIsTesting()
   doSetRom("APPLE2GS")
   memoryReset()
   // Wrap memSet24 to trace every write into $0300-$0320 (the OS entry

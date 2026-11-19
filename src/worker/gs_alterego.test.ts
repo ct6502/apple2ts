@@ -67,7 +67,7 @@ test("gs: AlterEgo boots from S7D1 without the $0201 desk accessory error", () =
     const shr = getShr()
     let lit = 0
     for (let i = 0; i < shr.length; i++) if (shr[i] !== 0) lit++
-    console.log(`sorry "${sorry.replace(/[\x00-\x1f]/g, " ")}" shrLit ${lit}`)
+    // console.log(`sorry "${sorry.replace(/[\x00-\x1f]/g, " ")}" shrLit ${lit}`)
 
     expect(sorry).toBe("")
     // The game must be drawing its SHR title screen, not sitting on a blank field.

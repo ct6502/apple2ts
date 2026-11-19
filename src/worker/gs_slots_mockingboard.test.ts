@@ -10,6 +10,10 @@ import { setIsTesting } from "./worker2main"
 import { RUN_MODE } from "../common/utility"
 
 describe("Apple IIgs Slot Management & Hardware Compatibility", () => {
+  beforeEach(() => {
+    setIsTesting()
+  })
+
   test("Apple IIgs slot options follow the Control Panel built-in functions", () => {
     // Slot 1: built-in Printer Port, or a Super Serial Card
     expect(getSlotOptions(1, "APPLE2GS")).toEqual([{ card: "gsPrinter" }, { card: "ssc" }])

@@ -18,8 +18,8 @@ test("STA abs $c026 at ff:8512 reaches the setter", () => {
   self.P = 0x24
   self.DB = 0
   self.A = 7
-  console.log("opcode at 8512:", memGet24(0xff8512).toString(16), "operand:", memGet24(0xff8513).toString(16), memGet24(0xff8514).toString(16))
+  // console.log("opcode at 8512:", memGet24(0xff8512).toString(16), "operand:", memGet24(0xff8513).toString(16), memGet24(0xff8514).toString(16))
   cpu.processInstruction()
-  console.log("writes:", JSON.stringify(writes), "PC now", cpu.PC.toString(16), "P", cpu.P.toString(16))
+  // console.log("writes:", JSON.stringify(writes), "PC now", cpu.PC.toString(16), "P", cpu.P.toString(16))
   expect(writes.length).toBe(1)
 })

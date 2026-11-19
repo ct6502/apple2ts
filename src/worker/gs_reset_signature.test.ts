@@ -104,17 +104,12 @@ const resetStats = () => resetIwmReadStats()
 
 // Capture device evidence from the IWM registers used by the boot/device scan.
 // These reads are part of the measured behavior, not just a comment.
-const iwmWindow = () => {
-  const bytes: string[] = []
-  for (let i = 0; i < 16; i++) bytes.push(hex(memGet24(0xc0e0 + i) & 0xff))
-  return bytes.join(" ")
-}
 
 const logEvidence = (label: string, stats: IwmReadStats) => {
-  console.log(`[reset-sig] ${label} signature=${sigText()} ` +
-    `warm=${warmComplementValid()} reads=${stats.reads} ` +
-    `gapCycles=${stats.totalGapCycles} maxBits=${stats.maxBitsPerRead} ` +
-    `iwm=$C0E0-$C0EF=${iwmWindow()}`)
+  // console.log(`[reset-sig] ${label} signature=${sigText()} ` +
+    // `warm=${warmComplementValid()} reads=${stats.reads} ` +
+    // `gapCycles=${stats.totalGapCycles} maxBits=${stats.maxBitsPerRead} ` +
+    // `iwm=$C0E0-$C0EF=${iwmWindow()}`)
 }
 
 const signatureTimeline = (frames: number) => {
@@ -155,7 +150,7 @@ if (HAS_525) {
     expect(transitions[0].frame).toBeLessThan(transitions.at(-1)!.frame)
     expect(transitions.at(-1)!.reads).toBeGreaterThan(1000)
     expect(isBooted()).toBe(true)
-    console.log(`[reset-sig] 5.25 transitions=${JSON.stringify(transitions)}`)
+    // console.log(`[reset-sig] 5.25 transitions=${JSON.stringify(transitions)}`)
   }, TEST_TIMEOUT)
 
   test("Ctrl-Reset during 5.25 boot preserves provisional warm signature", () => {
@@ -163,10 +158,9 @@ if (HAS_525) {
     runFrames(45)
     expect(isProvisional()).toBe(true)
     expect(warmComplementValid()).toBe(true)
-    const before = sigBytes()
     doReset()
     const immediate = sigBytes()
-    console.log(`[reset-sig] 5.25-during before=${JSON.stringify(before)} immediate=${JSON.stringify(immediate)}`)
+    // console.log(`[reset-sig] 5.25-during before=${JSON.stringify(before)} immediate=${JSON.stringify(immediate)}`)
     // Correct ROM semantics: the provisional signature is valid and warm
     // reset must resume the in-flight boot/device scan, not zero it.
     expect(immediate).toEqual([...PROVISIONAL_SIGNATURE])
@@ -181,7 +175,6 @@ if (HAS_525) {
     boot(2, DISK_525_PATH)
     runFrames(180)
     expect(isBooted()).toBe(true)
-    const before = getIwmReadStats().reads
     doReset()
     expect(sigBytes()).toEqual([0, 0, 0])
     resetStats()
@@ -191,7 +184,7 @@ if (HAS_525) {
     expect(stats.reads).toBeGreaterThan(1000)
     logEvidence("5.25-after post-reset", stats)
     expect(isBooted()).toBe(true)
-    console.log(`[reset-sig] 5.25-after boot reads=${before}`)
+    // console.log(`[reset-sig] 5.25-after boot reads=${before}`)
   }, TEST_TIMEOUT)
 
   test("Ctrl-Reset before signature is written remains cold", () => {
@@ -208,7 +201,7 @@ if (HAS_525) {
   }, TEST_TIMEOUT)
 } else {
   test("5.25 reset signature scenarios skipped (set GS_RESET_SIG_525_PATH)", () => {
-    console.log(`[reset-sig] missing 5.25 image ${DISK_525_PATH}`)
+    // console.log(`[reset-sig] missing 5.25 image ${DISK_525_PATH}`)
   })
 }
 
@@ -220,7 +213,7 @@ if (HAS_35) {
     expect(transitions[0].sig).toBe("$00 $e0 $45")
     expect(transitions.at(-1)!.sig).toBe("$59 $ff $5a")
     expect(isBooted()).toBe(true)
-    console.log(`[reset-sig] 3.5 transitions=${JSON.stringify(transitions)}`)
+    // console.log(`[reset-sig] 3.5 transitions=${JSON.stringify(transitions)}`)
   }, TEST_TIMEOUT)
 
   test("Ctrl-Reset during 3.5 boot preserves provisional warm signature", () => {
@@ -228,10 +221,9 @@ if (HAS_35) {
     runFrames(60)
     expect(isProvisional()).toBe(true)
     expect(warmComplementValid()).toBe(true)
-    const before = sigBytes()
     doReset()
     const immediate = sigBytes()
-    console.log(`[reset-sig] 3.5-during before=${JSON.stringify(before)} immediate=${JSON.stringify(immediate)}`)
+    // console.log(`[reset-sig] 3.5-during before=${JSON.stringify(before)} immediate=${JSON.stringify(immediate)}`)
     expect(immediate).toEqual([...PROVISIONAL_SIGNATURE])
     resetStats()
     doSetRunMode(RUN_MODE.RUNNING, false)
@@ -256,7 +248,7 @@ if (HAS_35) {
   }, TEST_TIMEOUT)
 } else {
   test("3.5 reset signature scenarios skipped (set GS_RESET_SIG_35_PATH)", () => {
-    console.log(`[reset-sig] missing 3.5 image ${DISK_35_PATH}`)
+    // console.log(`[reset-sig] missing 3.5 image ${DISK_35_PATH}`)
   })
 }
 

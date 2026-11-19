@@ -1,6 +1,6 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, resetCpuSpeedForTesting } from "./motherboard"
-import { getShr, isIigsAuxLinear } from "./memory"
-import { SWITCHES } from "./softswitches"
+import { getShr } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
@@ -75,10 +75,10 @@ const saveShrToBmp = (shrData: Uint8Array, filepath: string) => {
     }
   }
   fs.writeFileSync(filepath, bmp)
-  console.log(`Saved ${filepath}`)
+  // console.log(`Saved ${filepath}`)
 }
 
-test(`Apple IIgs boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
+testWithFixtures(PO_PATH)(`Apple IIgs boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -110,14 +110,14 @@ test(`Apple IIgs boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
       jest.advanceTimersByTime(17)
     }
 
-    console.log(`TEXT=${SWITCHES.TEXT.isSet} HIRES=${SWITCHES.HIRES.isSet} 80COL=${SWITCHES.COLUMN80.isSet}`)
+    // console.log(`TEXT=${SWITCHES.TEXT.isSet} HIRES=${SWITCHES.HIRES.isSet} 80COL=${SWITCHES.COLUMN80.isSet}`)
 
     // Read the SHR page exactly the way the renderer does. Reading megaIIAux
     // directly is wrong as soon as SHR linearizes the aux window, and that is
     // what made this test report a uniform grey screen while the emulator was
     // drawing a real desktop - and, before the linearization fix, vice versa.
     const shr = getShr()
-    console.log(`getShr() length=${shr.length} isIigsAuxLinear=${isIigsAuxLinear()}`)
+    // console.log(`getShr() length=${shr.length} isIigsAuxLinear=${isIigsAuxLinear()}`)
     // processSuperHiRes() bails out entirely on a short buffer, which is how a
     // black Super Hi-Res screen happens. Assert the length first.
     expect(shr.length).toBe(32768)
@@ -156,7 +156,7 @@ test(`Apple IIgs boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
     // emulator showed nothing but a flat field. Assert on the decoded picture.
     const colours = new Set<string>()
     for (let i = 0; i < px.length; i += 3) colours.add(`${px[i]},${px[i + 1]},${px[i + 2]}`)
-    console.log(`decoded distinct colours: ${colours.size}`)
+    // console.log(`decoded distinct colours: ${colours.size}`)
     const scanlineColours = (y: number) => {
       const s = new Set<string>()
       for (let x = 0; x < 640; x++) {
@@ -167,7 +167,7 @@ test(`Apple IIgs boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
     }
     const scbSet = new Set<number>()
     for (let y = 0; y < 200; y++) scbSet.add(shr[SHR_SCB_OFFSET + y])
-    console.log(`distinct SCB values: ${scbSet.size}; menu-bar row 0 colours: ${scanlineColours(0).size}; bottom row 199 colours: ${scanlineColours(199).size}`)
+    // console.log(`distinct SCB values: ${scbSet.size}; menu-bar row 0 colours: ${scanlineColours(0).size}; bottom row 199 colours: ${scanlineColours(199).size}`)
 
     // The Finder desktop: many colours, several palettes in use, and a menu bar
     // along the top and a trash can along the bottom that are not flat fills.
@@ -178,7 +178,7 @@ test(`Apple IIgs boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
     // File/Edit/... titles, i.e. both the bar colour and ink.
     const topBandColours = new Set<string>()
     for (let y = 0; y < 16; y++) for (const c of scanlineColours(y)) topBandColours.add(c)
-    console.log(`menu-bar band colours: ${topBandColours.size}`)
+    // console.log(`menu-bar band colours: ${topBandColours.size}`)
     expect(topBandColours.size).toBeGreaterThan(2)
     expect(scanlineColours(199).size).toBeGreaterThan(1)
     // Real ink on the screen: the menu bar titles and the disk icons are black.
@@ -187,11 +187,11 @@ test(`Apple IIgs boots GS/OS 6.0.1 from ${PO_PATH}`, () => {
     for (let i = 0; i < px.length; i += 3) {
       if (px[i] + px[i + 1] + px[i + 2] < 192) darkPixels++
     }
-    console.log(`dark pixels: ${darkPixels}`)
+    // console.log(`dark pixels: ${darkPixels}`)
     expect(darkPixels).toBeGreaterThan(500)
 
     // And log the band so a regression names the colours it lost.
-    console.log(`top band colours: ${Array.from(topBandColours).join(" / ")}`)
+    // console.log(`top band colours: ${Array.from(topBandColours).join(" / ")}`)
   } finally {
     doSetRunMode(RUN_MODE.PAUSED, false)
     resetCpuSpeedForTesting()

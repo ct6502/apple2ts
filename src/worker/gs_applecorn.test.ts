@@ -107,7 +107,7 @@ describe("applecorn on the IIgs slot-5 3.5\" drive", () => {
     "%s reaches the MOS banner and answers a keystroke",
     (_label, rom) => {
       if (!hasDisk) {
-        console.warn(`applecorn image missing: ${DISK_PATH}`)
+        // console.warn(`applecorn image missing: ${DISK_PATH}`)
         return
       }
       boot("APPLE2GS", 4, rom)
@@ -130,7 +130,7 @@ describe("applecorn on the IIgs slot-5 3.5\" drive", () => {
 
   test("ROM 01 keeps page 2 in Mega II, where the scanner reads it", () => {
     if (!hasDisk) {
-      console.warn(`applecorn image missing: ${DISK_PATH}`)
+      // console.warn(`applecorn image missing: ${DISK_PATH}`)
       return
     }
     boot("APPLE2GS", 4, "01")
@@ -147,7 +147,7 @@ describe("applecorn on the IIgs slot-5 3.5\" drive", () => {
 
   test("the //e reads its own fast-RAM page 2", () => {
     if (!hasDisk) {
-      console.warn(`applecorn image missing: ${DISK_PATH}`)
+      // console.warn(`applecorn image missing: ${DISK_PATH}`)
       return
     }
     // No slot-5 bay on a //e, so the same volume mounts as a SmartPort volume.
