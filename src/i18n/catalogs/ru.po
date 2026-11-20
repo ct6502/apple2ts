@@ -114,9 +114,10 @@ msgctxt "config.resetSavedState"
 msgid "Reset Saved State"
 msgstr "Сбросить сохранённое состояние"
 
+#, fuzzy
 msgctxt "config.capsLock"
 msgid "Caps Lock"
-msgstr ""
+msgstr "Caps Lock"
 
 #, fuzzy
 #| msgid "Use as Open Apple key"
@@ -156,29 +157,35 @@ msgctxt "config.joystick"
 msgid "Keyboard and Joystick"
 msgstr "Конфигурация джойстика"
 
+#, fuzzy
 msgctxt "config.saveState"
 msgid "Saved States"
-msgstr ""
+msgstr "Сохраненные состояния"
 
+#, fuzzy
 msgctxt "config.autoSaveState"
 msgid "Automatically Save and Restore State"
-msgstr ""
+msgstr "Автоматическое сохранение и восстановление состояния"
 
+#, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine"
-msgstr ""
+msgstr "Машина"
 
+#, fuzzy
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
-msgstr ""
+msgstr "Apple II+"
 
+#, fuzzy
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
-msgstr ""
+msgstr "Apple IIe (базовая)"
 
+#, fuzzy
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
-msgstr ""
+msgstr "Apple IIe (улучшенная)"
 
 #, fuzzy
 msgctxt "speed.snail"
@@ -210,25 +217,30 @@ msgctxt "speed.warp"
 msgid "Ludicrous Speed"
 msgstr "Безумная скорость"
 
+#, fuzzy
 msgctxt "timetravel.snapshotOnKeyPress"
 msgid "Take Snapshot On Keypress"
-msgstr ""
+msgstr "Снимок при нажатии клавиши"
 
+#, fuzzy
 msgctxt "timetravel.autoSnapshot"
 msgid "Auto Snapshot"
-msgstr ""
+msgstr "Автоснимки"
 
+#, fuzzy
 msgctxt "timetravel.auto_Off"
 msgid "Off"
-msgstr ""
+msgstr "Выкл."
 
+#, fuzzy
 msgctxt "timetravel.auto_100k"
 msgid "Every 0.1s (100000 cycles)"
-msgstr ""
+msgstr "Каждые 0.1с (100000 циклов)"
 
+#, fuzzy
 msgctxt "timetravel.auto_1M"
 msgid "Every 1s (1M cycles)"
-msgstr ""
+msgstr "Каждые 1с (1M циклов)"
 
 #, fuzzy
 msgctxt "themes.classic"
@@ -255,13 +267,15 @@ msgctxt "debug.debugTab"
 msgid "Debugging"
 msgstr "Отладка"
 
+#, fuzzy
 msgctxt "debug.basicTab"
 msgid "Applesoft BASIC"
-msgstr ""
+msgstr "Applesoft BASIC"
 
+#, fuzzy
 msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
-msgstr ""
+msgstr "Apple exPectin"
 
 #, fuzzy
 msgctxt "debug.breakpoints"
@@ -313,423 +327,525 @@ msgctxt "debug.loadSymbolTable"
 msgid "Load Symbol Table"
 msgstr "Загрузить таблицу символов"
 
+#, fuzzy
 msgctxt "debug.agentTab"
 msgid "Agent"
-msgstr ""
+msgstr "Агент"
 
 #, fuzzy
 msgctxt "debug.disassembly"
 msgid "Disassembly"
 msgstr "Дизассемблирование"
 
+#, fuzzy
 msgctxt "debug.breakOnce"
 msgid "Break once then remove"
-msgstr ""
+msgstr "Прервать один раз и удалить"
 
+#, fuzzy
 msgctxt "debug.basicLineNumber"
 msgid "BASIC Line Number:"
-msgstr ""
+msgstr "Номер строки BASIC:"
 
+#, fuzzy
 msgctxt "debug.any"
 msgid "Any"
-msgstr ""
+msgstr "Любой"
 
+#, fuzzy
 msgctxt "disassembly.memory.effectiveAddress"
 msgid "Effective address: {{notation}}"
-msgstr ""
+msgstr "Эффективный адрес: {{notation}}"
 
+#, fuzzy
 msgctxt "disassembly.memory.value"
 msgid "Value: {{notation}}"
-msgstr ""
+msgstr "Значение: {{notation}}"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.character"
 msgid "Keyboard: \"{{character}}\""
-msgstr ""
+msgstr "Клавиатура: \"{{character}}\""
 
+#, fuzzy
 msgctxt "disassembly.keyboard.strobeClear"
 msgid "Keyboard strobe: CLEAR (MSB = 0)"
-msgstr ""
+msgstr "Строб клавиатуры: СБРОС (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.strobeSet"
 msgid "Keyboard strobe: SET (MSB = 1)"
-msgstr ""
+msgstr "Строб клавиатуры: УСТАНОВЛЕН (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownClear"
 msgid "Any-key-down flag: CLEAR (MSB = 0)"
-msgstr ""
+msgstr "Флаг нажатия любой клавиши: СБРОС (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownSet"
 msgid "Any-key-down flag: SET (MSB = 1)"
-msgstr ""
+msgstr "Флаг нажатия любой клавиши: УСТАНОВЛЕН (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.clearStrobe"
 msgid "Clear keyboard strobe"
-msgstr ""
+msgstr "Сбросить строб клавиатуры"
 
+#, fuzzy
 msgctxt "disassembly.cassette.toggleOutput"
 msgid "Toggle cassette output"
-msgstr ""
+msgstr "Переключить вывод на кассету"
 
+#, fuzzy
 msgctxt "disassembly.cassette.sampleInput"
 msgid "Sample cassette input"
-msgstr ""
+msgstr "Пример входного сигнала кассеты"
 
+#, fuzzy
 msgctxt "disassembly.cassette.sampleInputMirror"
 msgid "Sample cassette-input mirror"
-msgstr ""
+msgstr "Зеркальный пример входного сигнала кассеты"
 
+#, fuzzy
 msgctxt "disassembly.speaker.toggleOutput"
 msgid "Toggle speaker output"
-msgstr ""
+msgstr "Переключить вывод динамика"
 
+#, fuzzy
 msgctxt "disassembly.notice.emulatorIdentifier"
 msgid "INFO: Apple2TS emulator identifier: $CD"
-msgstr ""
+msgstr "ИНФО: Идентификатор эмулятора Apple2TS: $CD"
 
+#, fuzzy
 msgctxt "disassembly.notice.noWriteEffect"
 msgid "INFO: This write has no effect on {{machine}}"
-msgstr ""
+msgstr "ИНФО: Эта запись не влияет на {{machine}}"
 
+#, fuzzy
 msgctxt "disassembly.notice.multipleTriggers"
 msgid "WARNING: This instruction triggers the soft switch multiple times"
-msgstr ""
+msgstr "ВНИМАНИЕ: Эта инструкция многократно активирует soft switch"
 
+#, fuzzy
 msgctxt "disassembly.notice.unknownWrite"
 msgid "WARNING: This instruction writes an unknown value"
-msgstr ""
+msgstr "ВНИМАНИЕ: Эта инструкция записывает неизвестное значение"
 
+#, fuzzy
 msgctxt "disassembly.rom.intCxOff"
 msgid "Internal $Cx ROM: OFF (MSB = 0)"
-msgstr ""
+msgstr "Внутренняя ROM $Cx: ВЫКЛ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.rom.intCxOn"
 msgid "Internal $Cx ROM: ON (MSB = 1)"
-msgstr ""
+msgstr "Внутренняя ROM $Cx: ВКЛ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.rom.slot3Off"
 msgid "Slot 3 ROM: OFF (MSB = 0)"
-msgstr ""
+msgstr "ROM слота 3: ВЫКЛ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.rom.slot3On"
 msgid "Slot 3 ROM: ON (MSB = 1)"
-msgstr ""
+msgstr "ROM слота 3: ВКЛ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.rom.internal"
 msgid "Select internal ROM for {{range}}"
-msgstr ""
+msgstr "Выбрать внутреннюю ROM для {{range}}"
 
+#, fuzzy
 msgctxt "disassembly.rom.slot"
 msgid "Select slot ROM for {{range}}"
-msgstr ""
+msgstr "Выбрать ROM слота для {{range}}"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.bank1"
 msgid "Language Card bank: 1 (MSB = 0)"
-msgstr ""
+msgstr "Банк Language Card: 1 (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.bank2"
 msgid "Language Card bank: 2 (MSB = 1)"
-msgstr ""
+msgstr "Банк Language Card: 2 (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.readSourceRom"
 msgid "Language Card read source: ROM (MSB = 0)"
-msgstr ""
+msgstr "Источник чтения Language Card: ROM (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.readSourceRam"
 msgid "Language Card read source: RAM (MSB = 1)"
-msgstr ""
+msgstr "Источник чтения Language Card: RAM (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.selectBank"
 msgid "Language Card: Select bank {{bank}}"
-msgstr ""
+msgstr "Language Card: Выбрать банк {{bank}}"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.useRamForReads"
 msgid "Language Card: Use RAM for reads"
-msgstr ""
+msgstr "Language Card: Использовать RAM для чтения"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.useRomForReads"
 msgid "Language Card: Use ROM for reads"
-msgstr ""
+msgstr "Language Card: Использовать ROM для чтения"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.disableWrites"
 msgid "Language Card: Disable writes"
-msgstr ""
+msgstr "Language Card: Запретить запись"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.resetPrewriteLatch"
 msgid "Language Card: Reset prewrite latch"
-msgstr ""
+msgstr "Language Card: Сбросить предзаписывающий защелку"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.armOrEnableWrites"
 msgid "Language Card: Arm or enable writes"
-msgstr ""
+msgstr "Language Card: Подготовить или разрешить запись"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.readStatusOff"
 msgid "Auxiliary-memory reads: OFF (MSB = 0)"
-msgstr ""
+msgstr "Чтение из вспомогательной памяти: ВЫКЛ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.readStatusOn"
 msgid "Auxiliary-memory reads: ON (MSB = 1)"
-msgstr ""
+msgstr "Чтение из вспомогательной памяти: ВКЛ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.readMain"
 msgid "Select main memory for reads"
-msgstr ""
+msgstr "Выбрать основную память для чтения"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.readAuxiliary"
 msgid "Select auxiliary memory for reads"
-msgstr ""
+msgstr "Выбрать вспомогательную память для чтения"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.writeStatusOff"
 msgid "Auxiliary-memory writes: OFF (MSB = 0)"
-msgstr ""
+msgstr "Запись во вспомогательную память: ВЫКЛ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.writeStatusOn"
 msgid "Auxiliary-memory writes: ON (MSB = 1)"
-msgstr ""
+msgstr "Запись во вспомогательную память: ВКЛ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.writeMain"
 msgid "Select main memory for writes"
-msgstr ""
+msgstr "Выбрать основную память для записи"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.writeAuxiliary"
 msgid "Select auxiliary memory for writes"
-msgstr ""
+msgstr "Выбрать вспомогательную память для записи"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.selectExpansionBank"
 msgid ""
 "Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
-msgstr ""
+msgstr "Выбрать вспомогательный bank расширения {{bank}}, используя адресацию {{addressing}}"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.altzpMain"
 msgid "Select main zero page, stack, and bank-switched RAM"
-msgstr ""
+msgstr "Выбрать основную zero page, стек и bank-switched RAM"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.altzpAuxiliary"
 msgid "Select auxiliary zero page, stack, and bank-switched RAM"
-msgstr ""
+msgstr "Выбрать вспомогательную zero page, стек и bank-switched RAM"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.altzpStatusMain"
 msgid "Zero page, stack, and bank-switched RAM: MAIN (MSB = 0)"
-msgstr ""
+msgstr "Zero page, стек и bank-switched RAM: MAIN (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.altzpStatusAuxiliary"
 msgid "Zero page, stack, and bank-switched RAM: AUXILIARY (MSB = 1)"
-msgstr ""
+msgstr "Zero page, стек и bank-switched RAM: AUXILIARY (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.80storeStatusOff"
 msgid "PAGE2 selects display page 1 or 2 (MSB = 0)"
-msgstr ""
+msgstr "PAGE2 выбирает страницу дисплея 1 или 2 (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.80storeStatusOn"
 msgid "PAGE2 selects main or auxiliary display memory (MSB = 1)"
-msgstr ""
+msgstr "PAGE2 выбирает основную или дополнительную память дисплея (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.80storeOff"
 msgid "Make PAGE2 select display page 1 or 2"
-msgstr ""
+msgstr "PAGE2 выбирает страницу дисплея 1 или 2"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.80storeOn"
 msgid "Make PAGE2 select main or auxiliary display memory"
-msgstr ""
+msgstr "PAGE2 выбирает основную или дополнительную память дисплея"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.page2StatusClear"
 msgid "Display-memory selection: PAGE 1 OR MAIN (MSB = 0)"
-msgstr ""
+msgstr "Выбор памяти дисплея: СТР. 1 ИЛИ ОСНОВНАЯ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.page2StatusSet"
 msgid "Display-memory selection: PAGE 2 OR AUXILIARY (MSB = 1)"
-msgstr ""
+msgstr "Выбор памяти дисплея: СТР. 2 ИЛИ ДОПОЛНИТЕЛЬНАЯ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.selectPage1"
 msgid "Select display page 1"
-msgstr ""
+msgstr "Выбрать страницу дисплея 1"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.selectPage2"
 msgid "Select display page 2"
-msgstr ""
+msgstr "Выбрать страницу дисплея 2"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.page2Clear"
 msgid "Select display page 1, or main display memory with 80STORE"
-msgstr ""
+msgstr "Выбрать страницу дисплея 1 или основную память дисплея с 80STORE"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.page2Set"
 msgid "Select display page 2, or auxiliary display memory with 80STORE"
-msgstr ""
+msgstr "Выбрать страницу дисплея 2 или дополнительную память дисплея с 80STORE"
 
+#, fuzzy
 msgctxt "disassembly.display.altCharsetStatusOff"
 msgid "Alternate character set: OFF (MSB = 0)"
-msgstr ""
+msgstr "Альтернативный набор символов: ВЫКЛ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.altCharsetStatusOn"
 msgid "Alternate character set: ON (MSB = 1)"
-msgstr ""
+msgstr "Альтернативный набор символов: ВКЛ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.selectPrimaryCharset"
 msgid "Select primary character set"
-msgstr ""
+msgstr "Выбрать основной набор символов"
 
+#, fuzzy
 msgctxt "disassembly.display.selectAlternateCharset"
 msgid "Select alternate character set"
-msgstr ""
+msgstr "Выбрать альтернативный набор символов"
 
+#, fuzzy
 msgctxt "disassembly.display.textModeStatusOff"
 msgid "Text mode: OFF (MSB = 0)"
-msgstr ""
+msgstr "Текстовый режим: ВЫКЛ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.textModeStatusOn"
 msgid "Text mode: ON (MSB = 1)"
-msgstr ""
+msgstr "Текстовый режим: ВКЛ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.selectGraphicsMode"
 msgid "Select graphics mode"
-msgstr ""
+msgstr "Выбрать режим графики"
 
+#, fuzzy
 msgctxt "disassembly.display.selectTextMode"
 msgid "Select text mode"
-msgstr ""
+msgstr "Выбрать текстовый режим"
 
+#, fuzzy
 msgctxt "disassembly.display.mixedDisplayStatusOff"
 msgid "Mixed display: OFF (MSB = 0)"
-msgstr ""
+msgstr "Смешанный дисплей: ВЫКЛ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.mixedDisplayStatusOn"
 msgid "Mixed display: ON (MSB = 1)"
-msgstr ""
+msgstr "Смешанный дисплей: ВКЛ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.selectFullScreenDisplay"
 msgid "Select full-screen display"
-msgstr ""
+msgstr "Выбрать полноэкранный режим"
 
+#, fuzzy
 msgctxt "disassembly.display.selectMixedDisplay"
 msgid "Select mixed graphics/text"
-msgstr ""
+msgstr "Выбрать смешанный режим (графика/текст)"
 
+#, fuzzy
 msgctxt "disassembly.display.hiresModeStatusOff"
 msgid "Hi-res mode: OFF (MSB = 0)"
-msgstr ""
+msgstr "Hi-res режим: ВЫКЛ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.hiresModeStatusOn"
 msgid "Hi-res mode: ON (MSB = 1)"
-msgstr ""
+msgstr "Hi-res режим: ВКЛ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.selectLoresGraphics"
 msgid "Select lo-res graphics"
-msgstr ""
+msgstr "Выбрать Lo-Res графику"
 
+#, fuzzy
 msgctxt "disassembly.display.selectHiresGraphics"
 msgid "Select hi-res graphics"
-msgstr ""
+msgstr "Выбрать Hi-Res графику"
 
+#, fuzzy
 msgctxt "disassembly.display.disableDhires"
 msgid "Disable DHIRES"
-msgstr ""
+msgstr "Отключить DHIRES"
 
+#, fuzzy
 msgctxt "disassembly.display.enableDhires"
 msgid "Enable DHIRES"
-msgstr ""
+msgstr "Включить DHIRES"
 
+#, fuzzy
 msgctxt "disassembly.display.verticalBlankActive"
 msgid "Vertical blank: ACTIVE (MSB = 0)"
-msgstr ""
+msgstr "Вертикальное гашение: АКТИВНО (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.verticalBlankInactive"
 msgid "Vertical blank: INACTIVE (MSB = 1)"
-msgstr ""
+msgstr "Вертикальное гашение: НЕАКТИВНО (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.column80StatusOff"
 msgid "80-column display: OFF (MSB = 0)"
-msgstr ""
+msgstr "80-колоночный дисплей: ВЫКЛ (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.column80StatusOn"
 msgid "80-column display: ON (MSB = 1)"
-msgstr ""
+msgstr "80-колоночный дисплей: ВКЛ (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.setWidth"
 msgid "Set display width to {{columns}} columns"
-msgstr ""
+msgstr "Установить ширину дисплея: {{columns}} столбцов"
 
+#, fuzzy
 msgctxt "disassembly.annunciator.disable"
 msgid "Disable annunciator {{number}}"
-msgstr ""
+msgstr "Отключить аннунциатор {{number}}"
 
+#, fuzzy
 msgctxt "disassembly.annunciator.enable"
 msgid "Enable annunciator {{number}}"
-msgstr ""
+msgstr "Включить аннунциатор {{number}}"
 
+#, fuzzy
 msgctxt "disassembly.transWarp.configuredMaximum"
 msgid "TransWarp: Select configured maximum speed"
-msgstr ""
+msgstr "TransWarp: Выбрать настроенную макс. скорость"
 
+#, fuzzy
 msgctxt "disassembly.transWarp.oneMhz"
 msgid "TransWarp: Select 1 MHz"
-msgstr ""
+msgstr "TransWarp: Выбрать 1 МГц"
 
+#, fuzzy
 msgctxt "disassembly.transWarp.disableUntilColdBoot"
 msgid "TransWarp: Disable acceleration until cold boot"
-msgstr ""
+msgstr "TransWarp: Отключить ускорение до холодной загрузки"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.oneMhz"
 msgid "Laser 128EX: Select 1 MHz maximum CPU speed"
-msgstr ""
+msgstr "Laser 128EX: Выбрать макс. скорость CPU 1 МГц"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.twoPointThreeMhz"
 msgid "Laser 128EX: Select 2.3 MHz maximum CPU speed"
-msgstr ""
+msgstr "Laser 128EX: Выбрать макс. скорость CPU 2.3 МГц"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.threePointSixMhz"
 msgid "Laser 128EX: Select 3.6 MHz maximum CPU speed"
-msgstr ""
+msgstr "Laser 128EX: Выбрать макс. скорость CPU 3.6 МГц"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.disableDiskSlowdown"
 msgid ""
 "Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access (write-"
 "once bit 5)"
-msgstr ""
+msgstr "Laser 128EX: Отключить автоматическое замедление до 1 МГц при доступе к диску через порт 7 (бит 5, однократная запись)"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.enableDiskSlowdown"
 msgid ""
 "Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access (write-"
 "once bit 5)"
-msgstr ""
+msgstr "Laser 128EX: Включить автоматическое замедление до 1 МГц при доступе к диску через порт 7 (бит 5, однократная запись)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.pulseStrobe"
 msgid "Pulse game-port strobe"
-msgstr ""
+msgstr "Импульс строба игрового порта"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.startPaddleTimers"
 msgid "Start paddle timers"
-msgstr ""
+msgstr "Запустить таймеры paddle"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.buttonReleased"
 msgid "Pushbutton {{number}}: RELEASED (MSB = 0)"
-msgstr ""
+msgstr "Кнопка {{number}}: ОТПУЩЕНА (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.buttonPressed"
 msgid "Pushbutton {{number}}: PRESSED (MSB = 1)"
-msgstr ""
+msgstr "Кнопка {{number}}: НАЖАТА (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.paddleExpired"
 msgid "Paddle {{number}} timer: EXPIRED (MSB = 0)"
-msgstr ""
+msgstr "Таймер paddle {{number}}: ИСТЕК (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.paddleActive"
 msgid "Paddle {{number}} timer: ACTIVE (MSB = 1)"
-msgstr ""
+msgstr "Таймер paddle {{number}}: АКТИВЕН (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.buttonMirrorReleased"
 msgid "Pushbutton {{number}} mirror: RELEASED (MSB = 0)"
-msgstr ""
+msgstr "Зеркальное нажатие кнопки {{number}}: ОТПУЩЕНА (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.buttonMirrorPressed"
 msgid "Pushbutton {{number}} mirror: PRESSED (MSB = 1)"
-msgstr ""
+msgstr "Зеркальное нажатие кнопки {{number}}: НАЖАТА (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.paddleMirrorExpired"
 msgid "Paddle {{number}} timer mirror: EXPIRED (MSB = 0)"
-msgstr ""
+msgstr "Зеркальный таймер paddle {{number}}: ИСТЕК (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.paddleMirrorActive"
 msgid "Paddle {{number}} timer mirror: ACTIVE (MSB = 1)"
-msgstr ""
+msgstr "Зеркальный таймер paddle {{number}}: АКТИВЕН (MSB = 1)"
 
 #, fuzzy
 msgctxt "tour.welcome"
@@ -1058,30 +1174,35 @@ msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
 msgstr "Загрузить диск из >"
 
+#, fuzzy
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
-msgstr ""
+msgstr "Internet Archive"
 
+#, fuzzy
 msgctxt "disk.DemoZoo"
 msgid "DemoZoo"
-msgstr ""
+msgstr "DemoZoo"
 
+#, fuzzy
 msgctxt "disk.OneDrive"
 msgid "OneDrive"
-msgstr ""
+msgstr "OneDrive"
 
+#, fuzzy
 msgctxt "disk.GoogleDrive"
 msgid "Google Drive"
-msgstr ""
+msgstr "Google Drive"
 
 #, fuzzy
 msgctxt "disk.loadDiskFromInternetArchive"
 msgid "Load Disk from Internet Archive"
 msgstr "Загрузить диск из Internet Archive"
 
+#, fuzzy
 msgctxt "disk.loadDiskFromDemoZoo"
 msgid "Load Disk from DemoZoo"
-msgstr ""
+msgstr "Загрузить диск из DemoZoo"
 
 #, fuzzy
 msgctxt "disk.loadDiskFromOneDrive"
@@ -1142,22 +1263,25 @@ msgctxt "disk.syncedAt"
 msgid "Synced {{date}}"
 msgstr "Синхронизировано {{date}}"
 
+#, fuzzy
 msgctxt "disk.clickToHide"
 msgid "Click to hide"
-msgstr ""
+msgstr "Нажмите, чтобы скрыть"
 
+#, fuzzy
 msgctxt "disk.clickToShow"
 msgid "Click to show"
-msgstr ""
+msgstr "Нажмите, чтобы показать"
 
 #, fuzzy
 msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image(s)"
 msgstr "Нажмите, чтобы загрузить образ(ы) диска"
 
+#, fuzzy
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"
-msgstr ""
+msgstr "Загрузка диска"
 
 #, fuzzy
 msgctxt "disk.clickToRemoveFromDiskCollection"
@@ -1282,9 +1406,10 @@ msgctxt "help.appleKeys"
 msgid "The open apple and closed apple keys behave the same as the ctrl key."
 msgstr "Клавиши open apple и closed apple ведут себя так же, как клавиша ctrl."
 
+#, fuzzy
 msgctxt "help.controlPanelShortcut"
 msgid "<Shift>+<Esc>: display the Apple2TS control panel"
-msgstr ""
+msgstr "<Shift>+<Esc>: показать панель управления Apple2TS"
 
 #, fuzzy
 msgctxt "help.openAppleKey"
@@ -1371,9 +1496,10 @@ msgctxt "messages.loading"
 msgid "Loading..."
 msgstr "Загрузка..."
 
+#, fuzzy
 msgctxt "messages.fetchingCloudData"
 msgid "Fetching cloud data"
-msgstr ""
+msgstr "Загрузка облачных данных"
 
 #, fuzzy
 msgctxt "messages.confirm"
@@ -1400,21 +1526,25 @@ msgctxt "messages.off"
 msgid "off"
 msgstr "выключен"
 
+#, fuzzy
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
-msgstr ""
+msgstr "Caps Lock"
 
+#, fuzzy
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
-msgstr ""
+msgstr "Open Apple"
 
+#, fuzzy
 msgctxt "keyboard.enableGamePatches"
 msgid "Enable Game Patches"
-msgstr ""
+msgstr "Включить патчи для игр"
 
+#, fuzzy
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -1430,13 +1560,15 @@ msgctxt "print.printer"
 msgid "Printer"
 msgstr "Принтер"
 
+#, fuzzy
 msgctxt "print.imageWriter"
 msgid "ImageWriter"
-msgstr ""
+msgstr "ImageWriter"
 
+#, fuzzy
 msgctxt "print.imageWriterII"
 msgid "ImageWriter II (Slot 1)"
-msgstr ""
+msgstr "ImageWriter II (Слот 1)"
 
 #, fuzzy
 msgctxt "print.print"
@@ -1543,18 +1675,20 @@ msgctxt "collection.diskIsInternetArchive"
 msgid "Disk is part of the Internet Archive"
 msgstr "Диск является частью Internet Archive"
 
+#, fuzzy
 msgctxt "collection.diskIsDemoZoo"
 msgid "Disk is part of DemoZoo"
-msgstr ""
+msgstr "Диск является частью DemoZoo"
 
 #, fuzzy
 msgctxt "collection.clickToRemoveFromCollection"
 msgid "Click to remove from disk collection"
 msgstr "Нажмите, чтобы удалить из коллекции дисков"
 
+#, fuzzy
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
-msgstr ""
+msgstr "Нажмите, чтобы оставить в коллекции дисков"
 
 #, fuzzy
 msgctxt "collection.diskIsSyncedVia"
@@ -1566,13 +1700,15 @@ msgctxt "collection.loadDiskIntoDrive"
 msgid "Load Disk into Drive"
 msgstr "Загрузить диск в привод"
 
+#, fuzzy
 msgctxt "collection.cloudAuthRequired"
 msgid "auth required"
-msgstr ""
+msgstr "требуется авторизация"
 
+#, fuzzy
 msgctxt "collection.signIn"
 msgid "Sign in"
-msgstr ""
+msgstr "Войти"
 
 #, fuzzy
 msgctxt "collection.exportDisksToHdv"
@@ -1599,72 +1735,88 @@ msgctxt "collection.reportExportIssue"
 msgid "Report an export issue"
 msgstr "Сообщить о проблеме экспорта"
 
+#, fuzzy
 msgctxt "collection.hdvExportTitleUnavailable"
 msgid "Apple2TS could not include \"{{title}}\" in the HDV."
-msgstr ""
+msgstr "Apple2TS не удалось включить \"{{title}}\" в HDV."
 
+#, fuzzy
 msgctxt "collection.continueHdvExportWithoutUnavailableTitles"
 msgid "Continue creating the HDV and skip unavailable titles?"
-msgstr ""
+msgstr "Продолжить создание HDV и пропустить недоступные заголовки?"
 
+#, fuzzy
 msgctxt "collection.exportUnavailable"
 msgid "This disk cannot be exported"
-msgstr ""
+msgstr "Этот диск нельзя экспортировать"
 
+#, fuzzy
 msgctxt "collection.exportTooLarge"
 msgid "This disk is too large to export"
-msgstr ""
+msgstr "Этот диск слишком велик для экспорта"
 
+#, fuzzy
 msgctxt "collection.exportCopyProtected"
 msgid "Copy protection prevents exporting this disk"
-msgstr ""
+msgstr "Защита от копирования препятствует экспорту этого диска"
 
+#, fuzzy
 msgctxt "collection.exportDosMasterIncompatible"
 msgid "This disk is incompatible with DOS.MASTER"
-msgstr ""
+msgstr "Этот диск несовместим с DOS.MASTER"
 
+#, fuzzy
 msgctxt "collection.exportStatusPending"
 msgid "Checking whether this disk can be exported"
-msgstr ""
+msgstr "Проверка возможности экспорта этого диска"
 
+#, fuzzy
 msgctxt "collection.exportAvailable"
 msgid "This disk can be exported"
-msgstr ""
+msgstr "Этот диск можно экспортировать"
 
+#, fuzzy
 msgctxt "collection.creatingHdv"
 msgid "Creating the HDV image"
-msgstr ""
+msgstr "Создание образа HDV"
 
+#, fuzzy
 msgctxt "collection.hdvCreatedWithOmissions"
 msgid ""
 "Apple2TS created the HDV with some titles omitted:\n"
 "\n"
 "{{details}}"
-msgstr ""
+msgstr "Apple2TS создал HDV с пропусками некоторых заголовков:\n\n{{details}}"
 
+#, fuzzy
 msgctxt "collection.hdvCreationFailed"
 msgid "Apple2TS could not create the HDV: {{message}}"
-msgstr ""
+msgstr "Apple2TS не удалось создать HDV: {{message}}"
 
+#, fuzzy
 msgctxt "collection.hdvDownloadFailed"
 msgid "Apple2TS could not download the disk, so HDV creation was canceled."
-msgstr ""
+msgstr "Apple2TS не удалось скачать диск, создание HDV отменено."
 
+#, fuzzy
 msgctxt "collection.fetchingDisk"
 msgid "Fetching disk {{current}} of {{total}}"
-msgstr ""
+msgstr "Чтение диска {{current}} из {{total}}"
 
+#, fuzzy
 msgctxt "collection.checkingDiskForExport"
 msgid "Checking disk {{current}} of {{total}} for export"
-msgstr ""
+msgstr "Проверка диска {{current}} из {{total}} для экспорта"
 
+#, fuzzy
 msgctxt "collection.selectAllDisks"
 msgid "Select all disks"
-msgstr ""
+msgstr "Выбрать все диски"
 
+#, fuzzy
 msgctxt "collection.clearDiskSelection"
 msgid "Clear disk selection"
-msgstr ""
+msgstr "Сбросить выбор дисков"
 
 #, fuzzy
 msgctxt "debugControls.goBackInTime"
@@ -1721,76 +1873,92 @@ msgctxt "internetArchive.go"
 msgid "GO"
 msgstr "ПОИСК"
 
+#, fuzzy
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
-msgstr ""
+msgstr "Поиск в DemoZoo (название, автор)..."
 
+#, fuzzy
 msgctxt "demoZoo.all"
 msgid "All"
-msgstr ""
+msgstr "Все"
 
+#, fuzzy
 msgctxt "demoZoo.demo"
 msgid "Demo"
-msgstr ""
+msgstr "Демо"
 
+#, fuzzy
 msgctxt "demoZoo.intro"
 msgid "Intro"
-msgstr ""
+msgstr "Интро"
 
+#, fuzzy
 msgctxt "demoZoo.cracktro"
 msgid "Cracktro"
-msgstr ""
+msgstr "Крэктро"
 
+#, fuzzy
 msgctxt "demoZoo.music"
 msgid "Music"
-msgstr ""
+msgstr "Музыка"
 
+#, fuzzy
 msgctxt "demoZoo.previous"
 msgid "Previous"
-msgstr ""
+msgstr "Предыдущая"
 
+#, fuzzy
 msgctxt "demoZoo.next"
 msgid "Next"
-msgstr ""
+msgstr "Следующая"
 
+#, fuzzy
 msgctxt "demoZoo.firstPage"
 msgid "First page"
-msgstr ""
+msgstr "Первая страница"
 
+#, fuzzy
 msgctxt "demoZoo.lastPage"
 msgid "Last page"
-msgstr ""
+msgstr "Последняя страница"
 
+#, fuzzy
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
-msgstr ""
+msgstr "Номер страницы"
 
+#, fuzzy
 msgctxt "demoZoo.noProductions"
 msgid "No DemoZoo productions found."
-msgstr ""
+msgstr "Работы DemoZoo не найдены."
 
+#, fuzzy
 msgctxt "demoZoo.youtubeOnly"
 msgid "This production only has a YouTube video link available:"
-msgstr ""
+msgstr "Для этой работы доступна только ссылка на YouTube:"
 
+#, fuzzy
 msgctxt "demoZoo.externalOnly"
 msgid "This production only has an external DemoZoo link available:"
-msgstr ""
+msgstr "Для этой работы доступна только внешняя ссылка DemoZoo:"
 
+#, fuzzy
 msgctxt "demoZoo.openInNewTab"
 msgid "Open in New Tab"
-msgstr ""
+msgstr "Открыть в новой вкладке"
 
 #, fuzzy
 msgctxt "basic.newProgram"
 msgid "New Program"
 msgstr "Новая программа"
 
+#, fuzzy
 msgctxt "basic.newProgramWarning"
 msgid ""
 "This will clear the current program. You will lose any unsaved changes. Are "
 "you sure?"
-msgstr ""
+msgstr "Это удалит текущую программу. Все несохраненные изменения будут потеряны. Вы уверены?"
 
 #, fuzzy
 msgctxt "basic.runFromBeginning"
@@ -1916,220 +2084,269 @@ msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Режим Sirius Joyport"
 
+#, fuzzy
 msgctxt "gamepad.reverseYAxis"
 msgid "Reverse Y-Axis for Joystick"
-msgstr ""
+msgstr "Инвертировать ось Y для джойстика"
 
+#, fuzzy
 msgctxt "gamepad.touchJoystick"
 msgid "Touch Screen Joystick"
-msgstr ""
+msgstr "Сенсорный джойстик"
 
+#, fuzzy
 msgctxt "gamepad.tiltSensorJoystick"
 msgid "Use Tilt Sensor as Joystick"
-msgstr ""
+msgstr "Использовать датчик наклона как джойстик"
 
 #, fuzzy
 msgctxt "traceSettings.title"
 msgid "Trace Settings"
 msgstr "Настройки трассировки"
 
+#, fuzzy
 msgctxt "traceSettings.numLines"
 msgid "Number of lines to keep:"
-msgstr ""
+msgstr "Количество сохраняемых строк:"
 
+#, fuzzy
 msgctxt "traceSettings.rangeWarning"
 msgid "Must be between 100 and 100000"
-msgstr ""
+msgstr "Должно быть в диапазоне от 100 до 100000"
 
+#, fuzzy
 msgctxt "traceSettings.collapseLoops"
 msgid "Find repeating lines and collapse loops"
-msgstr ""
+msgstr "Находить повторяющиеся строки и сворачивать циклы"
 
+#, fuzzy
 msgctxt "traceSettings.ignoreRegisters"
 msgid "Ignore register values when finding repeating lines"
-msgstr ""
+msgstr "Игнорировать значения регистров при поиске повторяющихся строк"
 
 #, fuzzy
 msgctxt "traceSettings.settings"
 msgid "Settings"
 msgstr "Настройки"
 
+#, fuzzy
 msgctxt "keyboardControl.hideKeyboard"
 msgid "Hide Keyboard"
-msgstr ""
+msgstr "Скрыть клавиатуру"
 
+#, fuzzy
 msgctxt "keyboardControl.showKeyboard"
 msgid "Show Keyboard"
-msgstr ""
+msgstr "Показать клавиатуру"
 
+#, fuzzy
 msgctxt "linkBuilder.title"
 msgid "Link Builder"
-msgstr ""
+msgstr "Генератор ссылок"
 
+#, fuzzy
 msgctxt "linkBuilder.buttonTitle"
 msgid "Link Builder"
-msgstr ""
+msgstr "Генератор ссылок"
 
+#, fuzzy
 msgctxt "linkBuilder.userInterface"
 msgid "User interface:"
-msgstr ""
+msgstr "Интерфейс:"
 
+#, fuzzy
 msgctxt "linkBuilder.machine"
 msgid "Machine:"
-msgstr ""
+msgstr "Машина:"
 
+#, fuzzy
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
-msgstr ""
+msgstr "Цветовой режим:"
 
+#, fuzzy
 msgctxt "linkBuilder.monitorMode"
 msgid "Monitor mode:"
-msgstr ""
+msgstr "Режим монитора:"
 
+#, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb):"
-msgstr ""
+msgstr "Размер RAM-диска (кб):"
 
+#, fuzzy
 msgctxt "linkBuilder.emulatorSpeed"
 msgid "Speed of emulator:"
-msgstr ""
+msgstr "Скорость эмулятора:"
 
+#, fuzzy
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
-msgstr ""
+msgstr "Тема интерфейса:"
 
+#, fuzzy
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
-msgstr ""
+msgstr "Показать вкладку отладки"
 
+#, fuzzy
 msgctxt "linkBuilder.sound"
 msgid "Sound"
-msgstr ""
+msgstr "Звук"
 
 msgctxt "linkBuilder.startupOptionsTab"
 msgid "Startup Options"
 msgstr "Параметры запуска"
 
+#, fuzzy
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
-msgstr ""
+msgstr "При запуске:"
 
+#, fuzzy
 msgctxt "linkBuilder.loadDiskImage"
 msgid "Load Disk Image"
-msgstr ""
+msgstr "Загрузить образ диска"
 
+#, fuzzy
 msgctxt "linkBuilder.loadBasicProgram"
 msgid "Load BASIC Program"
-msgstr ""
+msgstr "Загрузить программу BASIC"
 
+#, fuzzy
 msgctxt "linkBuilder.loadHexCode"
 msgid "Load Hex Code"
-msgstr ""
+msgstr "Загрузить Hex-код"
 
+#, fuzzy
 msgctxt "linkBuilder.diskImageToLoad"
 msgid "Disk image to load on startup:"
-msgstr ""
+msgstr "Образ диска для загрузки при запуске:"
 
+#, fuzzy
 msgctxt "linkBuilder.customDiskUrl"
 msgid "Custom disk image URL:"
-msgstr ""
+msgstr "URL образа пользовательского диска:"
 
+#, fuzzy
 msgctxt "linkBuilder.textToType"
 msgid "Text to type after loading disk:"
-msgstr ""
+msgstr "Текст для ввода после загрузки диска:"
 
+#, fuzzy
 msgctxt "linkBuilder.enterTextPlaceholder"
 msgid "Enter Text or BASIC code here"
-msgstr ""
+msgstr "Введите текст или код BASIC"
 
+#, fuzzy
 msgctxt "linkBuilder.runBasicAfterLoading"
 msgid "Run BASIC program after loading"
-msgstr ""
+msgstr "Запустить программу BASIC после загрузки"
 
+#, fuzzy
 msgctxt "linkBuilder.enterHexPlaceholder"
 msgid "Enter hexadecimal code here, e.g. A9 01 8D 00 03"
-msgstr ""
+msgstr "Введите шестнадцатеричный код, например: A9 01 8D 00 03"
 
+#, fuzzy
 msgctxt "linkBuilder.hexLoadAddress"
 msgid "Hex load address: $"
-msgstr ""
+msgstr "Адрес загрузки Hex: $"
 
+#, fuzzy
 msgctxt "linkBuilder.runHexAfterLoading"
 msgid "Run Hex program after loading"
-msgstr ""
+msgstr "Запустить Hex-программу после загрузки"
 
+#, fuzzy
 msgctxt "linkBuilder.finalUrl"
 msgid "Final URL:"
-msgstr ""
+msgstr "Итоговый URL:"
 
+#, fuzzy
 msgctxt "linkBuilder.copyToClipboard"
 msgid "Copy to Clipboard"
-msgstr ""
+msgstr "Копировать в буфер обмена"
 
+#, fuzzy
 msgctxt "linkBuilder.tryIt"
 msgid "Try It"
-msgstr ""
+msgstr "Попробовать"
 
+#, fuzzy
 msgctxt "dialog.reset"
 msgid "Reset"
-msgstr ""
+msgstr "Сброс"
 
 #, fuzzy
 msgctxt "dialog.close"
 msgid "Close"
 msgstr "Закрыть"
 
+#, fuzzy
 msgctxt "linkBuilder.customDiskUrlOption"
 msgid "Custom URL"
-msgstr ""
+msgstr "Пользовательский URL"
 
+#, fuzzy
 msgctxt "linkBuilder.gameModes.normal"
 msgid "Normal"
-msgstr ""
+msgstr "Обычный"
 
+#, fuzzy
 msgctxt "linkBuilder.gameModes.game"
 msgid "Game (no drives or tabs)"
-msgstr ""
+msgstr "Игра (без дисководов и вкладок)"
 
+#, fuzzy
 msgctxt "linkBuilder.gameModes.embed"
 msgid "Embed (hide all controls)"
-msgstr ""
+msgstr "Встроить (скрыть все элементы управления)"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.color"
 msgid "Color"
-msgstr ""
+msgstr "Цветной"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.nofringe"
 msgid "Color (no fringing)"
-msgstr ""
+msgstr "Цветной (без ореолов)"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.green"
 msgid "Green Screen"
-msgstr ""
+msgstr "Зеленый экран"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.amber"
 msgid "Amber Screen"
-msgstr ""
+msgstr "Янтарный экран"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.white"
 msgid "White Screen"
-msgstr ""
+msgstr "Белый экран"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
-msgstr ""
+msgstr "Инверсия белого"
 
+#, fuzzy
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
-msgstr ""
+msgstr "Классический"
 
+#, fuzzy
 msgctxt "linkBuilder.themes.dark"
 msgid "Dark"
-msgstr ""
+msgstr "Темный"
 
+#, fuzzy
 msgctxt "linkBuilder.themes.minimal"
 msgid "Minimal"
-msgstr ""
+msgstr "Минималистичный"
 
 msgctxt "linkBuilder.ramDiskSizes.512"
 msgid "512"
@@ -2147,9 +2364,10 @@ msgctxt "linkBuilder.ramDiskSizes.8192"
 msgid "8192"
 msgstr "8192"
 
+#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
-msgstr ""
+msgstr "64 (по умолчанию)"
 
 msgctxt "linkBuilder.slots.configure"
 msgid "Configure slot cards"
@@ -2163,127 +2381,156 @@ msgctxt "linkBuilder.slots.cardNone"
 msgid "None (empty)"
 msgstr "Нет (пусто)"
 
+#, fuzzy
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
-msgstr ""
+msgstr "🤖 Настройка ИИ-агента"
 
+#, fuzzy
 msgctxt "agent.setupInstruction"
 msgid "Click the gear icon below to configure your AI assistant."
-msgstr ""
+msgstr "Нажмите на иконку шестеренки ниже, чтобы настроить вашего ИИ-ассистента."
 
+#, fuzzy
 msgctxt "agent.welcomeTitle"
 msgid "Welcome to the Apple II assistant! I can help you with:"
-msgstr ""
+msgstr "Добро пожаловать в помощник Apple II! Я могу помочь вам с:"
 
+#, fuzzy
 msgctxt "agent.welcomeItem1"
 msgid "Inspecting CPU registers and memory"
-msgstr ""
+msgstr "Просмотр регистров CPU и памяти"
 
+#, fuzzy
 msgctxt "agent.welcomeItem2"
 msgid "Controlling execution (boot, reset, step, breakpoints)"
-msgstr ""
+msgstr "Управление выполнением (boot, reset, step, breakpoints)"
 
+#, fuzzy
 msgctxt "agent.welcomeItem3"
 msgid "Loading programs and managing disks"
-msgstr ""
+msgstr "Загрузка программ и управление дисками"
 
+#, fuzzy
 msgctxt "agent.welcomeItem4"
 msgid "Debugging 6502 assembly code"
-msgstr ""
+msgstr "Отладка ассемблерного кода 6502"
 
+#, fuzzy
 msgctxt "agent.welcomeItem5"
 msgid "Reading screen content and system state"
-msgstr ""
+msgstr "Чтение содержимого экрана и состояния системы"
 
+#, fuzzy
 msgctxt "agent.welcomePrompt"
 msgid "Just ask me anything!"
-msgstr ""
+msgstr "Просто спроси меня о чем угодно!"
 
+#, fuzzy
 msgctxt "agent.userRole"
 msgid "You"
-msgstr ""
+msgstr "Вы"
 
+#, fuzzy
 msgctxt "agent.assistantRole"
 msgid "🤖 Assistant"
-msgstr ""
+msgstr "🤖 Ассистент"
 
+#, fuzzy
 msgctxt "agent.inputPlaceholder"
 msgid ""
 "Ask me anything about the Apple II emulator... (Press Enter to send, Shift"
 "+Enter for new line)"
-msgstr ""
+msgstr "Спросите меня о чем угодно про эмулятор Apple II... (Enter для отправки, Shift+Enter для новой строки)"
 
+#, fuzzy
 msgctxt "agent.stop"
 msgid "Stop"
-msgstr ""
+msgstr "Остановить"
 
+#, fuzzy
 msgctxt "agent.send"
 msgid "Send"
-msgstr ""
+msgstr "Отправить"
 
+#, fuzzy
 msgctxt "agent.changeConfiguration"
 msgid "Change configuration"
-msgstr ""
+msgstr "Изменить конфигурацию"
 
+#, fuzzy
 msgctxt "agent.processing"
 msgid "Processing..."
-msgstr ""
+msgstr "Обработка..."
 
+#, fuzzy
 msgctxt "agent.tokens"
 msgid "• {{input}} in / {{output}} out"
-msgstr ""
+msgstr "• {{input}} в / {{output}} из"
 
+#, fuzzy
 msgctxt "agent.configTitle"
 msgid "Configure AI Agent"
-msgstr ""
+msgstr "Настройка ИИ-агента"
 
+#, fuzzy
 msgctxt "agent.provider"
 msgid "Provider:"
-msgstr ""
+msgstr "Провайдер:"
 
+#, fuzzy
 msgctxt "agent.model"
 msgid "Model:"
-msgstr ""
+msgstr "Модель:"
 
+#, fuzzy
 msgctxt "agent.apiKey"
 msgid "API Key:"
-msgstr ""
+msgstr "API-ключ:"
 
+#, fuzzy
 msgctxt "agent.ollamaUrl"
 msgid "Ollama URL:"
-msgstr ""
+msgstr "URL Ollama:"
 
+#, fuzzy
 msgctxt "agent.save"
 msgid "Save"
-msgstr ""
+msgstr "Сохранить"
 
+#, fuzzy
 msgctxt "agent.clear"
 msgid "Clear"
-msgstr ""
+msgstr "Очистить"
 
+#, fuzzy
 msgctxt "agent.storageWarning"
 msgid ""
 "Your API key is stored locally in your browser and never sent to apple2ts."
 "com. Get your {{provider}} API key at"
-msgstr ""
+msgstr "Ваш API-ключ хранится локально в браузере и никогда не отправляется на apple2ts.com. Получите ваш API-ключ {{provider}} здесь:"
 
+#, fuzzy
 msgctxt "agent.ollamaWarning"
 msgid ""
 "Ollama runs locally on your machine. Make sure you have Ollama installed and "
 "running. Download from"
-msgstr ""
+msgstr "Ollama работает локально на вашем компьютере. Убедитесь, что Ollama установлена и запущена. Скачать можно здесь:"
 
+#, fuzzy
 msgctxt "agent.providerNotConfigured"
 msgid "Provider not configured - click the gear icon to set up your AI agent"
-msgstr ""
+msgstr "Провайдер не настроен — нажмите на иконку шестеренки, чтобы настроить ИИ-агента"
 
+#, fuzzy
 msgctxt "agent.providerConfigured"
 msgid "Provider: {{provider}} ({{model}})"
-msgstr ""
+msgstr "Провайдер: {{provider}} ({{model}})"
 
+#, fuzzy
 msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
-msgstr ""
+msgstr "Неверный формат API-ключа для {{provider}}"
 
 #, fuzzy
 msgctxt "startup.welcome"
@@ -2309,20 +2556,23 @@ msgstr ""
 "Нажмите значок Коллекций дисков\n"
 "для загрузки диска или игры."
 
+#, fuzzy
 msgctxt "startup.retroControlPanel"
 msgid ""
 "Press SHIFT+ESC to display\n"
 "the control panel."
-msgstr ""
+msgstr "Нажмите SHIFT+ESC, чтобы открыть\nпанель управления."
 
+#, fuzzy
 msgctxt "startup.mouseCapture"
 msgid ""
 "Press F1 to capture or release mouse."
-msgstr ""
+msgstr "Нажмите F1, чтобы захватить или освободить мышь."
 
+#, fuzzy
 msgctxt "retroControl.ariaLabel"
 msgid "Apple2TS control panel"
-msgstr ""
+msgstr "Панель управления Apple2TS"
 
 msgctxt "retroControl.machine"
 msgid "Machine"
@@ -2516,53 +2766,65 @@ msgctxt "retroControl.color"
 msgid "Color"
 msgstr "Цвет"
 
+#, fuzzy
 msgctxt "retroControl.colorNoFringe"
 msgid "Color (no fringe)"
-msgstr ""
+msgstr "Цвет (без ореолов)"
 
+#, fuzzy
 msgctxt "retroControl.green"
 msgid "Green"
-msgstr ""
+msgstr "Зеленый"
 
+#, fuzzy
 msgctxt "retroControl.amber"
 msgid "Amber"
-msgstr ""
+msgstr "Янтарный"
 
+#, fuzzy
 msgctxt "retroControl.white"
 msgid "White"
-msgstr ""
+msgstr "Белый"
 
+#, fuzzy
 msgctxt "retroControl.inverse"
 msgid "Inverse"
-msgstr ""
+msgstr "Инверсия"
 
+#, fuzzy
 msgctxt "retroControl.snail"
 msgid "Snail"
-msgstr ""
+msgstr "Улитка"
 
+#, fuzzy
 msgctxt "retroControl.slow"
 msgid "Slow"
-msgstr ""
+msgstr "Медленно"
 
+#, fuzzy
 msgctxt "retroControl.normal"
 msgid "Normal"
-msgstr ""
+msgstr "Нормальный"
 
+#, fuzzy
 msgctxt "retroControl.twoMhz"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 МГц"
 
+#, fuzzy
 msgctxt "retroControl.threeMhz"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 МГц"
 
+#, fuzzy
 msgctxt "retroControl.fast"
 msgid "Fast"
-msgstr ""
+msgstr "Быстро"
 
+#, fuzzy
 msgctxt "retroControl.warp"
 msgid "Warp"
-msgstr ""
+msgstr "В гиперпрыжке"
 
 msgctxt "retroControl.systemSpeed"
 msgid "System Speed"
@@ -2580,25 +2842,29 @@ msgctxt "retroControl.language"
 msgid "Language"
 msgstr "Язык"
 
+#, fuzzy
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
-msgstr ""
+msgstr "Встроенный ImageWriter"
 
+#, fuzzy
 msgctxt "retroControl.selectExternalPort"
 msgid "Select External Port"
-msgstr ""
+msgstr "Выбрать внешний порт"
 
+#, fuzzy
 msgctxt "retroControl.externalPort"
 msgid "External Port"
-msgstr ""
+msgstr "Внешний порт"
 
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
 msgstr "Ввод строчными буквами"
 
+#, fuzzy
 msgctxt "retroControl.lowercase"
 msgid "Lowercase"
-msgstr ""
+msgstr "Строчные"
 
 msgctxt "retroControl.openAppleKey"
 msgid "Open Apple key"
@@ -2608,569 +2874,708 @@ msgctxt "retroControl.sortOrder"
 msgid "Sort"
 msgstr "Сортировка"
 
+#, fuzzy
 msgctxt "retroControl.slot"
 msgid "Slot {{slot}}"
-msgstr ""
+msgstr "Слот {{slot}}"
 
+#, fuzzy
 msgctxt "retroControl.drive"
 msgid "{{drive}}: {{disk}}"
-msgstr ""
+msgstr "{{drive}}: {{disk}}"
 
+#, fuzzy
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
-msgstr ""
+msgstr "{{count}} настроено"
 
 msgctxt "retroControl.card.empty"
 msgid "Empty"
 msgstr "Пусто"
 
+#, fuzzy
 msgctxt "retroControl.card.ssc"
 msgid "Super Serial Card"
-msgstr ""
+msgstr "Super Serial Card"
 
+#, fuzzy
 msgctxt "retroControl.card.softcard"
 msgid "Z-80 SoftCard"
-msgstr ""
+msgstr "Z-80 SoftCard"
 
+#, fuzzy
 msgctxt "retroControl.card.aux"
 msgid "Auxiliary memory"
-msgstr ""
+msgstr "Дополнительная память"
 
+#, fuzzy
 msgctxt "retroControl.card.videoterm"
 msgid "Videx VideoTerm"
-msgstr ""
+msgstr "Videx VideoTerm"
 
 msgctxt "retroControl.card.mockingboard"
 msgid "Mockingboard"
 msgstr "Mockingboard"
 
+#, fuzzy
 msgctxt "retroControl.card.mouse"
 msgid "Mouse card"
-msgstr ""
+msgstr "Мышиная карта"
 
+#, fuzzy
 msgctxt "retroControl.card.vera"
 msgid "VERA graphics"
-msgstr ""
+msgstr "Графика VERA"
 
+#, fuzzy
 msgctxt "retroControl.card.passport"
 msgid "Passport MIDI"
-msgstr ""
+msgstr "Passport MIDI"
 
+#, fuzzy
 msgctxt "retroControl.card.disk2"
 msgid "Disk II controller"
-msgstr ""
+msgstr "Контроллер Disk II"
 
+#, fuzzy
 msgctxt "retroControl.card.smartport"
 msgid "SmartPort drive"
-msgstr ""
+msgstr "Дисковод SmartPort"
 
+#, fuzzy
 msgctxt "retroControl.fetchingDisk"
 msgid "Fetching disk {{current}}/{{total}}"
-msgstr ""
+msgstr "Чтение диска {{current}}/{{total}}"
 
+#, fuzzy
 msgctxt "retroControl.downloadFailed"
 msgid "Unable to download {{title}}"
-msgstr ""
+msgstr "Не удалось загрузить {{title}}"
 
+#, fuzzy
 msgctxt "retroControl.exportFailed"
 msgid "Export to HDV failed: {{message}}"
-msgstr ""
+msgstr "Ошибка экспорта в HDV: {{message}}"
 
+#, fuzzy
 msgctxt "binaryFile.title"
 msgid "Load Binary File"
-msgstr ""
+msgstr "Загрузить бинарный файл"
 
+#, fuzzy
 msgctxt "binaryFile.loadAtAddress"
 msgid "Load into memory at address $"
-msgstr ""
+msgstr "Загрузить в память по адресу $"
 
+#, fuzzy
 msgctxt "binaryFile.runAfterLoading"
 msgid "Run code after loading"
-msgstr ""
+msgstr "Запустить код после загрузки"
 
+#, fuzzy
 msgctxt "disk.importImageIntoEmulator"
 msgid "Import Disk Image into Emulator"
-msgstr ""
+msgstr "Импортировать образ диска в эмулятор"
 
+#, fuzzy
 msgctxt "disk.downloadDiskImage"
 msgid "Download Disk Image"
-msgstr ""
+msgstr "Скачать образ диска"
 
+#, fuzzy
 msgctxt "demoZoo.snapshotBadge"
 msgid "Snapshot at {{date}}"
-msgstr ""
+msgstr "Снимок от {{date}}"
 
+#, fuzzy
 msgctxt "demoZoo.snapshotCreated"
 msgid "DemoZoo snapshot created: {{date}}"
-msgstr ""
+msgstr "Снимок DemoZoo создан: {{date}}"
 
+#, fuzzy
 msgctxt "agent.customModel"
 msgid "Custom Model..."
-msgstr ""
+msgstr "Пользовательская модель..."
 
+#, fuzzy
 msgctxt "agent.customModelName"
 msgid "Custom Model Name:"
-msgstr ""
+msgstr "Имя пользовательской модели:"
 
+#, fuzzy
 msgctxt "debug.stackDump"
 msgid "Stack Dump"
-msgstr ""
+msgstr "Дамп стека"
 
+#, fuzzy
 msgctxt "debug.timeTravelSnapshots"
 msgid "Time Travel Snapshots"
-msgstr ""
+msgstr "Снимки состояния (Time Travel)"
 
+#, fuzzy
 msgctxt "debug.heatMapTitle"
 msgid "Heat Map"
-msgstr ""
+msgstr "Тепловая карта"
 
+#, fuzzy
 msgctxt "debug.memoryDumpTitle"
 msgid "Memory Dump"
-msgstr ""
+msgstr "Дамп памяти"
 
+#, fuzzy
 msgctxt "debug.veraMonitor"
 msgid "VERA Monitor"
-msgstr ""
+msgstr "Монитор VERA"
 
+#, fuzzy
 msgctxt "debug.pauseForDisassembly"
 msgid "Pause to view disassembly"
-msgstr ""
+msgstr "Пауза для просмотра дизассемблера"
 
+#, fuzzy
 msgctxt "debug.cycles"
 msgid "Cycles:"
-msgstr ""
+msgstr "Циклы:"
 
+#, fuzzy
 msgctxt "debug.resetCycleCountAndHeatMaps"
 msgid "Reset cycle count and heat maps"
-msgstr ""
+msgstr "Сбросить счетчик циклов и тепловые карты"
 
+#, fuzzy
 msgctxt "debug.breakpointTitle"
 msgid "Edit Breakpoint"
-msgstr ""
+msgstr "Редактировать точку останова"
 
+#, fuzzy
 msgctxt "debug.breakpoint.breakAt"
 msgid "Break at:"
-msgstr ""
+msgstr "Остановка на:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.breakpoint"
 msgid "Breakpoint"
-msgstr ""
+msgstr "Точка остановки"
 
+#, fuzzy
 msgctxt "debug.breakpoint.watchpoint"
 msgid "Watchpoint"
-msgstr ""
+msgstr "Точка наблюдения"
 
+#, fuzzy
 msgctxt "debug.breakpoint.instruction"
 msgid "Instruction"
-msgstr ""
+msgstr "Инструкция"
 
+#, fuzzy
 msgctxt "debug.breakpoint.address"
 msgid "Address:"
-msgstr ""
+msgstr "Адрес:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.hitCount"
 msgid "Hit Count:"
-msgstr ""
+msgstr "Количество срабатываний:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.expression"
 msgid "Expression:"
-msgstr ""
+msgstr "Выражение:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.memoryBank"
 msgid "Memory Bank:"
-msgstr ""
+msgstr "Банк памяти:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.opcode"
 msgid "Opcode:"
-msgstr ""
+msgstr "Опкод:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.addressingMode"
 msgid "Mode:"
-msgstr ""
+msgstr "Режим:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.value"
 msgid "Value:"
-msgstr ""
+msgstr "Значение:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.anyIllegal65C02"
 msgid "Any illegal 65C02 opcode"
-msgstr ""
+msgstr "Любая недопустимая команда 65C02"
 
+#, fuzzy
 msgctxt "debug.breakpoint.anyIllegal6502"
 msgid "Any illegal 6502 opcode"
-msgstr ""
+msgstr "Любая недопустимая команда 6502"
 
+#, fuzzy
 msgctxt "debug.breakpoint.read"
 msgid "Read"
-msgstr ""
+msgstr "Чтение"
 
+#, fuzzy
 msgctxt "debug.breakpoint.write"
 msgid "Write"
-msgstr ""
+msgstr "Запись"
 
+#, fuzzy
 msgctxt "debug.breakpoint.withHexValue"
 msgid "With hex value:"
-msgstr ""
+msgstr "С шестнадцатеричным значением:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.actions"
 msgid "Actions:"
-msgstr ""
+msgstr "Действия:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.haltAfterActions"
 msgid "Halt execution after actions"
-msgstr ""
+msgstr "Остановить выполнение после действий"
 
+#, fuzzy
 msgctxt "debug.breakpoint.actionAddress"
 msgid "address"
-msgstr ""
+msgstr "адрес"
 
+#, fuzzy
 msgctxt "debug.breakpoint.actionToAddress"
 msgid "to address"
-msgstr ""
+msgstr "адрес назначения"
 
+#, fuzzy
 msgctxt "debug.breakpoint.actionToValue"
 msgid "to value"
-msgstr ""
+msgstr "значение назначения"
 
+#, fuzzy
 msgctxt "debug.breakpoint.add"
 msgid "Add new breakpoint"
-msgstr ""
+msgstr "Добавить точку остановки"
 
+#, fuzzy
 msgctxt "debug.breakpoint.removeAll"
 msgid "Remove all breakpoints"
-msgstr ""
+msgstr "Удалить все точки останова"
 
+#, fuzzy
 msgctxt "debug.breakpoint.edit"
 msgid "Edit breakpoint"
-msgstr ""
+msgstr "Редактировать точку остановки"
 
+#, fuzzy
 msgctxt "debug.breakpoint.delete"
 msgid "Delete breakpoint"
-msgstr ""
+msgstr "Удалить точку остановки"
 
+#, fuzzy
 msgctxt "debug.heatMap.cpuProgramCounter"
 msgid "6502 Program Counter"
-msgstr ""
+msgstr "Счетчик команд 6502"
 
+#, fuzzy
 msgctxt "debug.heatMap.count"
 msgid "Count"
-msgstr ""
+msgstr "Количество"
 
+#, fuzzy
 msgctxt "debug.heatMap.getMemoryCalls"
 msgid "Get Memory Calls"
-msgstr ""
+msgstr "Получить обращения к памяти"
 
+#, fuzzy
 msgctxt "debug.heatMap.setMemoryCalls"
 msgid "Set Memory Calls"
-msgstr ""
+msgstr "Установить обращения к памяти"
 
+#, fuzzy
 msgctxt "debug.heatMap.colorTable"
 msgid "Color Table"
-msgstr ""
+msgstr "Таблица цветов"
 
+#, fuzzy
 msgctxt "debug.heatMap.showMagnifier"
 msgid "Show Magnifier"
-msgstr ""
+msgstr "Показать лупу"
 
+#, fuzzy
 msgctxt "debug.heatMap.jumpToProgramCounter"
 msgid "Jump to current program counter"
-msgstr ""
+msgstr "Перейти к текущему счетчику команд"
 
+#, fuzzy
 msgctxt "debug.heatMap.jumpToMaximumValue"
 msgid "Jump to maximum heatmap value"
-msgstr ""
+msgstr "Перейти к макс. значению тепловой карты"
 
+#, fuzzy
 msgctxt "debug.memoryDump.pickWatchpoint"
 msgid "Pick Watchpoint"
-msgstr ""
+msgstr "Выбрать точку остановки"
 
+#, fuzzy
 msgctxt "debug.memoryDump.saveMemory"
 msgid "Save Memory"
-msgstr ""
+msgstr "Сохранить память"
 
+#, fuzzy
 msgctxt "debug.memoryDump.highBitAscii"
 msgid "High Bit ASCII"
-msgstr ""
+msgstr "ASCII с высоким битом"
 
+#, fuzzy
 msgctxt "debug.memoryDump.searchHex"
 msgid "Search Hex"
-msgstr ""
+msgstr "Поиск Hex"
 
+#, fuzzy
 msgctxt "debug.memoryDump.searchAscii"
 msgid "Search ASCII"
-msgstr ""
+msgstr "Поиск ASCII"
 
+#, fuzzy
 msgctxt "debug.memoryDump.noMatch"
 msgid "no match"
-msgstr ""
+msgstr "совпадений нет"
 
+#, fuzzy
 msgctxt "debug.memoryDump.matchCount"
 msgid "{{match}} of {{total}}"
-msgstr ""
+msgstr "{{match}} из {{total}}"
 
+#, fuzzy
 msgctxt "debug.memoryDump.previousMatch"
 msgid "Previous Match"
-msgstr ""
+msgstr "Предыдущее совпадение"
 
+#, fuzzy
 msgctxt "debug.memoryDump.nextMatch"
 msgid "Next Match"
-msgstr ""
+msgstr "Следующее совпадение"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.current"
 msgid "Current memory"
-msgstr ""
+msgstr "Текущая память"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.mainRam"
 msgid "Main RAM"
-msgstr ""
+msgstr "Основная RAM"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.auxiliaryRam"
 msgid "Auxiliary RAM"
-msgstr ""
+msgstr "Дополнительная ОЗУ"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.hgr1"
 msgid "HGR page 1"
-msgstr ""
+msgstr "HGR страница 1"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.hgr2"
 msgid "HGR page 2"
-msgstr ""
+msgstr "HGR страница 2"
 
+#, fuzzy
 msgctxt "debug.disassemblyPreviousLocation"
 msgid "Previous Location"
-msgstr ""
+msgstr "Предыдущая позиция"
 
+#, fuzzy
 msgctxt "debug.disassemblyNextLocation"
 msgid "Next Location"
-msgstr ""
+msgstr "Следующая позиция"
 
+#, fuzzy
 msgctxt "debug.memoryMap.title"
 msgid "Memory Map"
-msgstr ""
+msgstr "Карта памяти"
 
+#, fuzzy
 msgctxt "debug.memoryMap.read"
 msgid "Read"
-msgstr ""
+msgstr "Чтение"
 
+#, fuzzy
 msgctxt "debug.memoryMap.write"
 msgid "Write"
-msgstr ""
+msgstr "Запись"
 
+#, fuzzy
 msgctxt "debug.memoryMap.zeroPage"
 msgid "Zero Page"
-msgstr ""
+msgstr "Нулевая страница"
 
+#, fuzzy
 msgctxt "debug.memoryMap.stack"
 msgid "Stack"
-msgstr ""
+msgstr "Стек"
 
+#, fuzzy
 msgctxt "debug.memoryMap.text"
 msgid "Text"
-msgstr ""
+msgstr "Текст"
 
+#, fuzzy
 msgctxt "debug.memoryMap.hiresMode"
 msgid "Hires"
-msgstr ""
+msgstr "Hi-Res"
 
+#, fuzzy
 msgctxt "debug.memoryMap.hires"
 msgid "HGR"
-msgstr ""
+msgstr "HGR"
 
+#, fuzzy
 msgctxt "debug.memoryMap.internalRom"
 msgid "Internal ROM"
-msgstr ""
+msgstr "Внутренняя ROM"
 
+#, fuzzy
 msgctxt "debug.memoryMap.slotRom"
 msgid "Slot ROM"
-msgstr ""
+msgstr "ПЗУ слота"
 
+#, fuzzy
 msgctxt "debug.memoryMap.auxBank"
 msgid "Aux Bank"
-msgstr ""
+msgstr "Дополнительный банк памяти"
 
+#, fuzzy
 msgctxt "debug.memoryMap.auxRead"
 msgid "Aux Read"
-msgstr ""
+msgstr "Вспомогательное чтение"
 
+#, fuzzy
 msgctxt "debug.memoryMap.auxWrite"
 msgid "Aux Write"
-msgstr ""
+msgstr "Вспомогательная запись"
 
+#, fuzzy
 msgctxt "debug.memoryMap.store80"
 msgid "80 Store"
-msgstr ""
+msgstr "80 Store"
 
+#, fuzzy
 msgctxt "debug.memoryMap.mixed"
 msgid "Mixed"
-msgstr ""
+msgstr "Смешанный"
 
+#, fuzzy
 msgctxt "debug.memoryMap.page2"
 msgid "Page 2"
-msgstr ""
+msgstr "Страница 2"
 
+#, fuzzy
 msgctxt "debug.memoryMap.columns80"
 msgid "80 Column"
-msgstr ""
+msgstr "80 столбцов"
 
+#, fuzzy
 msgctxt "debug.memoryMap.doubleHires"
 msgid "Dbl Hires"
-msgstr ""
+msgstr "Двойной Hi-Res"
 
+#, fuzzy
 msgctxt "debug.memoryMap.video7Mono"
 msgid "V7 Mono"
-msgstr ""
+msgstr "V7 Моно"
 
+#, fuzzy
 msgctxt "debug.memoryMap.video7160"
 msgid "V7 160x"
-msgstr ""
+msgstr "V7 160x"
 
+#, fuzzy
 msgctxt "debug.memoryMap.video7Mixed"
 msgid "V7 Mixed"
-msgstr ""
+msgstr "V7 Смешанный"
 
+#, fuzzy
 msgctxt "debug.memoryMap.internalCxxxRom"
 msgid "Cxxx ROM"
-msgstr ""
+msgstr "ПЗУ Cxxx"
 
+#, fuzzy
 msgctxt "debug.memoryMap.internalC300Rom"
 msgid "C300 ROM"
-msgstr ""
+msgstr "ПЗУ C300"
 
+#, fuzzy
 msgctxt "debug.memoryMap.readRam"
 msgid "Read RAM"
-msgstr ""
+msgstr "Чтение RAM"
 
+#, fuzzy
 msgctxt "debug.memoryMap.writeRam"
 msgid "Write RAM"
-msgstr ""
+msgstr "Запись RAM"
 
+#, fuzzy
 msgctxt "debug.memoryMap.bank2Switch"
 msgid "Bank 2"
-msgstr ""
+msgstr "Банк 2"
 
+#, fuzzy
 msgctxt "collection.deleteAllBookmarks"
 msgid "Delete all bookmarks"
-msgstr ""
+msgstr "Удалить все закладки"
 
+#, fuzzy
 msgctxt "collection.restoreAllBookmarks"
 msgid "Restore all bookmarks"
-msgstr ""
+msgstr "Восстановить все закладки"
 
+#, fuzzy
 msgctxt "collection.sort.nameAscending"
 msgid "A-Z"
-msgstr ""
+msgstr "A-Z"
 
+#, fuzzy
 msgctxt "collection.sort.nameDescending"
 msgid "Z-A"
-msgstr ""
+msgstr "Z-A"
 
+#, fuzzy
 msgctxt "collection.sort.newest"
 msgid "New"
-msgstr ""
+msgstr "Новые"
 
+#, fuzzy
 msgctxt "collection.sort.oldest"
 msgid "Old"
-msgstr ""
+msgstr "Старые"
 
+#, fuzzy
 msgctxt "traceSettings.unlimited"
 msgid "Unlimited"
-msgstr ""
+msgstr "Без ограничений"
 
+#, fuzzy
 msgctxt "traceSettings.cyclesUnit"
 msgid "cycles"
-msgstr ""
+msgstr "циклов"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.none"
 msgid "(no action)"
-msgstr ""
+msgstr "(нет действия)"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.set"
 msgid "Set"
-msgstr ""
+msgstr "Установить"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.jump"
 msgid "Jump to"
-msgstr ""
+msgstr "Перейти к"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.print"
 msgid "Print to console"
-msgstr ""
+msgstr "Вывод в консоль"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.snapshot"
 msgid "Snapshot"
-msgstr ""
+msgstr "Снимок"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.address"
 msgid "Address"
-msgstr ""
+msgstr "Адрес"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.accumulator"
 msgid "Accumulator"
-msgstr ""
+msgstr "Аккумулятор"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.x"
 msgid "X Register"
-msgstr ""
+msgstr "Регистр X"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.y"
 msgid "Y Register"
-msgstr ""
+msgstr "Регистр Y"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.stack"
 msgid "Stack Pointer"
-msgstr ""
+msgstr "Указатель стека"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.status"
 msgid "Processor Status"
-msgstr ""
+msgstr "Статус процессора"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.programCounter"
 msgid "Program Counter"
-msgstr ""
+msgstr "Счетчик команд"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.implied"
 msgid "Implied"
-msgstr ""
+msgstr "Неявный"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.immediate"
 msgid "Immediate"
-msgstr ""
+msgstr "Непосредственный"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageRelative"
 msgid "Zero page/Relative"
-msgstr ""
+msgstr "Zero page/Относительная"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageX"
 msgid "Zero page,X"
-msgstr ""
+msgstr "Zero page, X"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageY"
 msgid "Zero page,Y"
-msgstr ""
+msgstr "Zero page, Y"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.absolute"
 msgid "Absolute"
-msgstr ""
+msgstr "Абсолютный"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.absoluteX"
 msgid "Abs,X"
-msgstr ""
+msgstr "Abs,X"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.absoluteY"
 msgid "Abs,Y"
-msgstr ""
+msgstr "Abs,Y"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.indirectX"
 msgid "Indirect,X"
-msgstr ""
+msgstr "Косвенный,X"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.indirectY"
 msgid "Indirect,Y"
-msgstr ""
+msgstr "Косвенная, Y"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
-msgstr ""
+msgstr "Косвенный"
 
 msgctxt "disk.standbyDisks"
 msgid "Standby Disks (Click to change disk)"

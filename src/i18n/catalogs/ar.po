@@ -10,787 +10,975 @@ msgstr ""
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
 
+#, fuzzy
 msgctxt "controls.boot"
 msgid "Boot"
-msgstr ""
+msgstr "إقلاع"
 
+#, fuzzy
 msgctxt "controls.reset"
 msgid "Reset"
-msgstr ""
+msgstr "إعادة ضبط"
 
+#, fuzzy
 msgctxt "controls.copyScreen"
 msgid "Copy Screen"
-msgstr ""
+msgstr "نسخ الشاشة"
 
+#, fuzzy
 msgctxt "controls.copyText"
 msgid "Copy Text"
-msgstr ""
+msgstr "نسخ النص"
 
+#, fuzzy
 msgctxt "controls.pasteText"
 msgid "Paste Text"
-msgstr ""
+msgstr "لصق النص"
 
+#, fuzzy
 msgctxt "controls.saveState"
 msgid "Save State"
-msgstr ""
+msgstr "حفظ الحالة"
 
+#, fuzzy
 msgctxt "controls.restoreState"
 msgid "Restore State"
-msgstr ""
+msgstr "استعادة الحالة"
 
+#, fuzzy
 msgctxt "controls.toggleSound"
 msgid "Toggle Sound"
-msgstr ""
+msgstr "تبديل الصوت"
 
+#, fuzzy
 msgctxt "controls.retrySound"
 msgid "Sound unavailable. Retry sound."
-msgstr ""
+msgstr "الصوت غير متاح. إعادة محاولة الصوت."
 
+#, fuzzy
 msgctxt "controls.settings"
 msgid "Settings"
-msgstr ""
+msgstr "الإعدادات"
 
+#, fuzzy
 msgctxt "controls.debugPanel"
 msgid "Debug Panel"
-msgstr ""
+msgstr "لوحة التصحيح"
 
+#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
-msgstr ""
+msgstr "الإبلاغ عن مشكلة"
 
+#, fuzzy
 msgctxt "controls.privacyPolicy"
 msgid "Privacy Policy"
-msgstr ""
+msgstr "سياسة الخصوصية"
 
+#, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"
-msgstr ""
+msgstr "سرعة المحاكي"
 
+#, fuzzy
 msgctxt "config.theme"
 msgid "Theme"
-msgstr ""
+msgstr "المظهر"
 
+#, fuzzy
 msgctxt "config.graphics"
 msgid "Graphics"
-msgstr ""
+msgstr "الرسوميات"
 
+#, fuzzy
 msgctxt "config.openRetroControlPanel"
 msgid "Control Panel"
-msgstr ""
+msgstr "لوحة التحكم"
 
+#, fuzzy
 msgctxt "config.resetSettings"
 msgid "Reset Settings"
-msgstr ""
+msgstr "إعادة ضبط الإعدادات"
 
+#, fuzzy
 msgctxt "config.resetSettingsText"
 msgid ""
 "Are you sure you want to reset emulator settings? This will not erase your "
 "breakpoints, save states, or BASIC program."
-msgstr ""
+msgstr "هل أنت متأكد أنك تريد إعادة ضبط إعدادات المحاكي؟ لن يؤدي هذا إلى مسح نقاط التوقف، أو الحالات المحفوظة، أو برنامج BASIC الخاص بك."
 
+#, fuzzy
 msgctxt "config.resetSavedState"
 msgid "Reset Saved State"
-msgstr ""
+msgstr "إعادة ضبط الحالة المحفوظة"
 
+#, fuzzy
 msgctxt "config.capsLock"
 msgid "Caps Lock"
-msgstr ""
+msgstr "قفل الحروف الكبيرة"
 
+#, fuzzy
 msgctxt "config.useOpenApple"
 msgid "Use {{modKey}} key for Open Apple"
-msgstr ""
+msgstr "استخدام مفتاح {{modKey}} لـ Open Apple"
 
+#, fuzzy
 msgctxt "config.useShortcuts"
 msgid "Use {{modKey}} key for Keyboard Shortcuts"
-msgstr ""
+msgstr "استخدام مفتاح {{modKey}} لاختصارات لوحة المفاتيح"
 
+#, fuzzy
 msgctxt "config.useArrowKeys"
 msgid "Use Arrow Keys as Joystick"
-msgstr ""
+msgstr "استخدام مفاتيح الأسهم كـ paddle"
 
+#, fuzzy
 msgctxt "config.scanlines"
 msgid "CRT Scanlines"
-msgstr ""
+msgstr "خطوط مسح CRT"
 
+#, fuzzy
 msgctxt "config.ghosting"
 msgid "Phosphor Ghosting"
-msgstr ""
+msgstr "تخيل الفسفور"
 
+#, fuzzy
 msgctxt "config.crtDistortion"
 msgid "CRT Distortion"
-msgstr ""
+msgstr "تشوه CRT"
 
+#, fuzzy
 msgctxt "config.joystick"
 msgid "Keyboard and Joystick"
-msgstr ""
+msgstr "لوحة المفاتيح وpaddle"
 
+#, fuzzy
 msgctxt "config.saveState"
 msgid "Saved States"
-msgstr ""
+msgstr "الحالات المحفوظة"
 
+#, fuzzy
 msgctxt "config.autoSaveState"
 msgid "Automatically Save and Restore State"
-msgstr ""
+msgstr "حفظ واستعادة الحالة تلقائيًا"
 
+#, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine"
-msgstr ""
+msgstr "الجهاز"
 
+#, fuzzy
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
-msgstr ""
+msgstr "Apple II+"
 
+#, fuzzy
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
-msgstr ""
+msgstr "Apple IIe (غير محسّن)"
 
+#, fuzzy
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
-msgstr ""
+msgstr "Apple IIe (محسّن)"
 
+#, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
-msgstr ""
+msgstr "سرعة السلحفاة (0.1 MHz)"
 
+#, fuzzy
 msgctxt "speed.normal"
 msgid "Normal Speed (1 MHz)"
-msgstr ""
+msgstr "سرعة عادية (1 MHz)"
 
+#, fuzzy
 msgctxt "speed.two"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 MHz"
 
+#, fuzzy
 msgctxt "speed.three"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 MHz"
 
+#, fuzzy
 msgctxt "speed.fast"
 msgid "Fast Speed (4 MHz)"
-msgstr ""
+msgstr "سرعة عالية (4 MHz)"
 
+#, fuzzy
 msgctxt "speed.warp"
 msgid "Ludicrous Speed"
-msgstr ""
+msgstr "سرعة جنونية"
 
+#, fuzzy
 msgctxt "timetravel.snapshotOnKeyPress"
 msgid "Take Snapshot On Keypress"
-msgstr ""
+msgstr "أخذ لقطة عند الضغط على مفتاح"
 
+#, fuzzy
 msgctxt "timetravel.autoSnapshot"
 msgid "Auto Snapshot"
-msgstr ""
+msgstr "لقطة تلقائية"
 
+#, fuzzy
 msgctxt "timetravel.auto_Off"
 msgid "Off"
-msgstr ""
+msgstr "إيقاف"
 
+#, fuzzy
 msgctxt "timetravel.auto_100k"
 msgid "Every 0.1s (100000 cycles)"
-msgstr ""
+msgstr "كل 0.1 ثانية (100000 دورة)"
 
+#, fuzzy
 msgctxt "timetravel.auto_1M"
 msgid "Every 1s (1M cycles)"
-msgstr ""
+msgstr "كل 1 ثانية (1M دورة)"
 
+#, fuzzy
 msgctxt "themes.classic"
 msgid "Classic"
-msgstr ""
+msgstr "كلاسيكي"
 
+#, fuzzy
 msgctxt "themes.dark"
 msgid "Dark"
-msgstr ""
+msgstr "داكن"
 
+#, fuzzy
 msgctxt "themes.minimal"
 msgid "Minimal"
-msgstr ""
+msgstr "بسيط"
 
+#, fuzzy
 msgctxt "debug.helpTab"
 msgid "Help"
-msgstr ""
+msgstr "المساعدة"
 
+#, fuzzy
 msgctxt "debug.debugTab"
 msgid "Debugging"
-msgstr ""
+msgstr "تصحيح الأخطاء"
 
+#, fuzzy
 msgctxt "debug.basicTab"
 msgid "Applesoft BASIC"
-msgstr ""
+msgstr "Applesoft BASIC"
 
+#, fuzzy
 msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
-msgstr ""
+msgstr "Apple exPectin"
 
+#, fuzzy
 msgctxt "debug.breakpoints"
 msgid "Breakpoints"
-msgstr ""
+msgstr "نقاط التوقف"
 
+#, fuzzy
 msgctxt "debug.memory"
 msgid "Memory"
-msgstr ""
+msgstr "الذاكرة"
 
+#, fuzzy
 msgctxt "debug.stack"
 msgid "Stack"
-msgstr ""
+msgstr "المكدس"
 
+#, fuzzy
 msgctxt "debug.step"
 msgid "Step"
-msgstr ""
+msgstr "خطوة"
 
+#, fuzzy
 msgctxt "debug.stepOver"
 msgid "Step Over"
-msgstr ""
+msgstr "تخطي الخطوة"
 
+#, fuzzy
 msgctxt "debug.stepInto"
 msgid "Step Into"
-msgstr ""
+msgstr "دخول إلى الخطوة"
 
+#, fuzzy
 msgctxt "debug.stepOut"
 msgid "Step Out"
-msgstr ""
+msgstr "خروج من الخطوة"
 
+#, fuzzy
 msgctxt "debug.resume"
 msgid "Resume"
-msgstr ""
+msgstr "استئناف"
 
+#, fuzzy
 msgctxt "debug.pause"
 msgid "Pause"
-msgstr ""
+msgstr "إيقاف مؤقت"
 
+#, fuzzy
 msgctxt "debug.loadSymbolTable"
 msgid "Load Symbol Table"
-msgstr ""
+msgstr "تحميل جدول الرموز"
 
+#, fuzzy
 msgctxt "debug.agentTab"
 msgid "Agent"
-msgstr ""
+msgstr "الوكيل"
 
+#, fuzzy
 msgctxt "debug.disassembly"
 msgid "Disassembly"
-msgstr ""
+msgstr "تفكيك التعليمات"
 
+#, fuzzy
 msgctxt "debug.breakOnce"
 msgid "Break once then remove"
-msgstr ""
+msgstr "إيقاف لمرة واحدة ثم الإزالة"
 
+#, fuzzy
 msgctxt "debug.basicLineNumber"
 msgid "BASIC Line Number:"
-msgstr ""
+msgstr "رقم سطر BASIC:"
 
+#, fuzzy
 msgctxt "debug.any"
 msgid "Any"
-msgstr ""
+msgstr "أي"
 
+#, fuzzy
 msgctxt "disassembly.memory.effectiveAddress"
 msgid "Effective address: {{notation}}"
-msgstr ""
+msgstr "العنوان الفعلي: {{notation}}"
 
+#, fuzzy
 msgctxt "disassembly.memory.value"
 msgid "Value: {{notation}}"
-msgstr ""
+msgstr "القيمة: {{notation}}"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.character"
 msgid "Keyboard: \"{{character}}\""
-msgstr ""
+msgstr "لوحة المفاتيح: \"{{character}}\""
 
+#, fuzzy
 msgctxt "disassembly.keyboard.strobeClear"
 msgid "Keyboard strobe: CLEAR (MSB = 0)"
-msgstr ""
+msgstr "strobe لوحة المفاتيح: مُلغى (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.strobeSet"
 msgid "Keyboard strobe: SET (MSB = 1)"
-msgstr ""
+msgstr "strobe لوحة المفاتيح: مُفعّل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownClear"
 msgid "Any-key-down flag: CLEAR (MSB = 0)"
-msgstr ""
+msgstr "علم أي مفتاح مضغوط: مُلغى (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownSet"
 msgid "Any-key-down flag: SET (MSB = 1)"
-msgstr ""
+msgstr "علم أي مفتاح مضغوط: مُفعّل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.keyboard.clearStrobe"
 msgid "Clear keyboard strobe"
-msgstr ""
+msgstr "إلغاء strobe لوحة المفاتيح"
 
+#, fuzzy
 msgctxt "disassembly.cassette.toggleOutput"
 msgid "Toggle cassette output"
-msgstr ""
+msgstr "تبديل مخرج الكاسيت"
 
+#, fuzzy
 msgctxt "disassembly.cassette.sampleInput"
 msgid "Sample cassette input"
-msgstr ""
+msgstr "عينة إدخال الكاسيت"
 
+#, fuzzy
 msgctxt "disassembly.cassette.sampleInputMirror"
 msgid "Sample cassette-input mirror"
-msgstr ""
+msgstr "عينة مرآة إدخال الكاسيت"
 
+#, fuzzy
 msgctxt "disassembly.speaker.toggleOutput"
 msgid "Toggle speaker output"
-msgstr ""
+msgstr "تبديل مخرج المكبر"
 
+#, fuzzy
 msgctxt "disassembly.notice.emulatorIdentifier"
 msgid "INFO: Apple2TS emulator identifier: $CD"
-msgstr ""
+msgstr "معلومات: معرف محاكي Apple2TS هو: $CD"
 
+#, fuzzy
 msgctxt "disassembly.notice.noWriteEffect"
 msgid "INFO: This write has no effect on {{machine}}"
-msgstr ""
+msgstr "معلومات: ليس لهذه الكتابة أي تأثير على {{machine}}"
 
+#, fuzzy
 msgctxt "disassembly.notice.multipleTriggers"
 msgid "WARNING: This instruction triggers the soft switch multiple times"
-msgstr ""
+msgstr "تحذير: هذه التعليمات تُفعل مفتاح soft switch عدة مرات"
 
+#, fuzzy
 msgctxt "disassembly.notice.unknownWrite"
 msgid "WARNING: This instruction writes an unknown value"
-msgstr ""
+msgstr "تحذير: هذه التعليمات تكتب قيمة غير معروفة"
 
+#, fuzzy
 msgctxt "disassembly.rom.intCxOff"
 msgid "Internal $Cx ROM: OFF (MSB = 0)"
-msgstr ""
+msgstr "ROM $Cx الداخلي: إيقاف (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.rom.intCxOn"
 msgid "Internal $Cx ROM: ON (MSB = 1)"
-msgstr ""
+msgstr "ROM $Cx الداخلي: تشغيل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.rom.slot3Off"
 msgid "Slot 3 ROM: OFF (MSB = 0)"
-msgstr ""
+msgstr "ROM الفتحة 3: إيقاف (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.rom.slot3On"
 msgid "Slot 3 ROM: ON (MSB = 1)"
-msgstr ""
+msgstr "ROM الفتحة 3: يعمل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.rom.internal"
 msgid "Select internal ROM for {{range}}"
-msgstr ""
+msgstr "اختيار ROM الداخلي لـ {{range}}"
 
+#, fuzzy
 msgctxt "disassembly.rom.slot"
 msgid "Select slot ROM for {{range}}"
-msgstr ""
+msgstr "اختيار ROM الفتحة لـ {{range}}"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.bank1"
 msgid "Language Card bank: 1 (MSB = 0)"
-msgstr ""
+msgstr "بنك بطاقة اللغة: 1 (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.bank2"
 msgid "Language Card bank: 2 (MSB = 1)"
-msgstr ""
+msgstr "بنك بطاقة اللغة: 2 (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.readSourceRom"
 msgid "Language Card read source: ROM (MSB = 0)"
-msgstr ""
+msgstr "مصدر القراءة لبطاقة اللغة: ROM (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.readSourceRam"
 msgid "Language Card read source: RAM (MSB = 1)"
-msgstr ""
+msgstr "مصدر القراءة لبطاقة اللغة: RAM (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.selectBank"
 msgid "Language Card: Select bank {{bank}}"
-msgstr ""
+msgstr "بطاقة اللغة: اختيار البنك {{bank}}"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.useRamForReads"
 msgid "Language Card: Use RAM for reads"
-msgstr ""
+msgstr "بطاقة اللغة: استخدام RAM للقراءة"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.useRomForReads"
 msgid "Language Card: Use ROM for reads"
-msgstr ""
+msgstr "بطاقة اللغة: استخدام ROM للقراءة"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.disableWrites"
 msgid "Language Card: Disable writes"
-msgstr ""
+msgstr "بطاقة اللغة: تعطيل الكتابة"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.resetPrewriteLatch"
 msgid "Language Card: Reset prewrite latch"
-msgstr ""
+msgstr "بطاقة اللغة: إعادة ضبط latch ما قبل الكتابة"
 
+#, fuzzy
 msgctxt "disassembly.languageCard.armOrEnableWrites"
 msgid "Language Card: Arm or enable writes"
-msgstr ""
+msgstr "Language Card: تجهيز أو تمكين عمليات الكتابة"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.readStatusOff"
 msgid "Auxiliary-memory reads: OFF (MSB = 0)"
-msgstr ""
+msgstr "قراءة الذاكرة الإضافية: إيقاف (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.readStatusOn"
 msgid "Auxiliary-memory reads: ON (MSB = 1)"
-msgstr ""
+msgstr "قراءة الذاكرة الإضافية: تشغيل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.readMain"
 msgid "Select main memory for reads"
-msgstr ""
+msgstr "تحديد الذاكرة الرئيسية لعمليات القراءة"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.readAuxiliary"
 msgid "Select auxiliary memory for reads"
-msgstr ""
+msgstr "تحديد الذاكرة الإضافية لعمليات القراءة"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.writeStatusOff"
 msgid "Auxiliary-memory writes: OFF (MSB = 0)"
-msgstr ""
+msgstr "كتابة الذاكرة الإضافية: إيقاف (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.writeStatusOn"
 msgid "Auxiliary-memory writes: ON (MSB = 1)"
-msgstr ""
+msgstr "كتابة الذاكرة الإضافية: تشغيل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.writeMain"
 msgid "Select main memory for writes"
-msgstr ""
+msgstr "تحديد الذاكرة الرئيسية لعمليات الكتابة"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.writeAuxiliary"
 msgid "Select auxiliary memory for writes"
-msgstr ""
+msgstr "تحديد الذاكرة الإضافية لعمليات الكتابة"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.selectExpansionBank"
 msgid ""
 "Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
-msgstr ""
+msgstr "تحديد بنك التوسعة الإضافي {{bank}} باستخدام عنونة {{addressing}}"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.altzpMain"
 msgid "Select main zero page, stack, and bank-switched RAM"
-msgstr ""
+msgstr "تحديد صفحة الصفر، والمكدس، وذاكرة RAM المبدلة بالبنوك الرئيسية"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.altzpAuxiliary"
 msgid "Select auxiliary zero page, stack, and bank-switched RAM"
-msgstr ""
+msgstr "تحديد صفحة الصفر، والمكدس، وذاكرة RAM المبدلة بالبنوك الإضافية"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.altzpStatusMain"
 msgid "Zero page, stack, and bank-switched RAM: MAIN (MSB = 0)"
-msgstr ""
+msgstr "صفحة الصفر، والمكدس، وذاكرة RAM المبدلة بالبنوك: رئيسية (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.auxMemory.altzpStatusAuxiliary"
 msgid "Zero page, stack, and bank-switched RAM: AUXILIARY (MSB = 1)"
-msgstr ""
+msgstr "صفحة الصفر، والمكدس، وذاكرة RAM المبدلة بالبنوك: إضافية (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.80storeStatusOff"
 msgid "PAGE2 selects display page 1 or 2 (MSB = 0)"
-msgstr ""
+msgstr "PAGE2 يختار صفحة العرض 1 أو 2 (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.80storeStatusOn"
 msgid "PAGE2 selects main or auxiliary display memory (MSB = 1)"
-msgstr ""
+msgstr "PAGE2 يختار ذاكرة العرض الرئيسية أو المساعدة (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.80storeOff"
 msgid "Make PAGE2 select display page 1 or 2"
-msgstr ""
+msgstr "جعل PAGE2 يختار صفحة العرض 1 أو 2"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.80storeOn"
 msgid "Make PAGE2 select main or auxiliary display memory"
-msgstr ""
+msgstr "جعل PAGE2 يختار ذاكرة العرض الرئيسية أو المساعدة"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.page2StatusClear"
 msgid "Display-memory selection: PAGE 1 OR MAIN (MSB = 0)"
-msgstr ""
+msgstr "اختيار ذاكرة العرض: PAGE 1 أو MAIN (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.page2StatusSet"
 msgid "Display-memory selection: PAGE 2 OR AUXILIARY (MSB = 1)"
-msgstr ""
+msgstr "اختيار ذاكرة العرض: PAGE 2 أو AUXILIARY (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.selectPage1"
 msgid "Select display page 1"
-msgstr ""
+msgstr "اختر صفحة العرض 1"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.selectPage2"
 msgid "Select display page 2"
-msgstr ""
+msgstr "اختر صفحة العرض 2"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.page2Clear"
 msgid "Select display page 1, or main display memory with 80STORE"
-msgstr ""
+msgstr "اختر صفحة العرض 1، أو ذاكرة العرض الرئيسية مع 80STORE"
 
+#, fuzzy
 msgctxt "disassembly.displayMemory.page2Set"
 msgid "Select display page 2, or auxiliary display memory with 80STORE"
-msgstr ""
+msgstr "اختر صفحة العرض 2، أو ذاكرة العرض المساعدة مع 80STORE"
 
+#, fuzzy
 msgctxt "disassembly.display.altCharsetStatusOff"
 msgid "Alternate character set: OFF (MSB = 0)"
-msgstr ""
+msgstr "مجموعة الأحرف البديلة: إيقاف (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.altCharsetStatusOn"
 msgid "Alternate character set: ON (MSB = 1)"
-msgstr ""
+msgstr "مجموعة الأحرف البديلة: تشغيل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.selectPrimaryCharset"
 msgid "Select primary character set"
-msgstr ""
+msgstr "تحديد مجموعة الأحرف الأساسية"
 
+#, fuzzy
 msgctxt "disassembly.display.selectAlternateCharset"
 msgid "Select alternate character set"
-msgstr ""
+msgstr "تحديد مجموعة الأحرف البديلة"
 
+#, fuzzy
 msgctxt "disassembly.display.textModeStatusOff"
 msgid "Text mode: OFF (MSB = 0)"
-msgstr ""
+msgstr "وضع النص: إيقاف (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.textModeStatusOn"
 msgid "Text mode: ON (MSB = 1)"
-msgstr ""
+msgstr "وضع النص: تشغيل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.selectGraphicsMode"
 msgid "Select graphics mode"
-msgstr ""
+msgstr "تحديد وضع الرسوميات"
 
+#, fuzzy
 msgctxt "disassembly.display.selectTextMode"
 msgid "Select text mode"
-msgstr ""
+msgstr "تحديد وضع النص"
 
+#, fuzzy
 msgctxt "disassembly.display.mixedDisplayStatusOff"
 msgid "Mixed display: OFF (MSB = 0)"
-msgstr ""
+msgstr "العرض المختلط: إيقاف (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.mixedDisplayStatusOn"
 msgid "Mixed display: ON (MSB = 1)"
-msgstr ""
+msgstr "العرض المختلط: تشغيل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.selectFullScreenDisplay"
 msgid "Select full-screen display"
-msgstr ""
+msgstr "تحديد العرض بملء الشاشة"
 
+#, fuzzy
 msgctxt "disassembly.display.selectMixedDisplay"
 msgid "Select mixed graphics/text"
-msgstr ""
+msgstr "تحديد الرسوميات/النصوص المختلطة"
 
+#, fuzzy
 msgctxt "disassembly.display.hiresModeStatusOff"
 msgid "Hi-res mode: OFF (MSB = 0)"
-msgstr ""
+msgstr "وضع Hi-res: إيقاف (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.hiresModeStatusOn"
 msgid "Hi-res mode: ON (MSB = 1)"
-msgstr ""
+msgstr "وضع Hi-res: تشغيل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.selectLoresGraphics"
 msgid "Select lo-res graphics"
-msgstr ""
+msgstr "تحديد رسوميات lo-res"
 
+#, fuzzy
 msgctxt "disassembly.display.selectHiresGraphics"
 msgid "Select hi-res graphics"
-msgstr ""
+msgstr "تحديد رسوميات hi-res"
 
+#, fuzzy
 msgctxt "disassembly.display.disableDhires"
 msgid "Disable DHIRES"
-msgstr ""
+msgstr "تعطيل DHIRES"
 
+#, fuzzy
 msgctxt "disassembly.display.enableDhires"
 msgid "Enable DHIRES"
-msgstr ""
+msgstr "تفعيل DHIRES"
 
+#, fuzzy
 msgctxt "disassembly.display.verticalBlankActive"
 msgid "Vertical blank: ACTIVE (MSB = 0)"
-msgstr ""
+msgstr "الفراغ العمودي: نشط (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.verticalBlankInactive"
 msgid "Vertical blank: INACTIVE (MSB = 1)"
-msgstr ""
+msgstr "الفراغ العمودي: غير نشط (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.column80StatusOff"
 msgid "80-column display: OFF (MSB = 0)"
-msgstr ""
+msgstr "عرض 80 عموداً: إيقاف (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.display.column80StatusOn"
 msgid "80-column display: ON (MSB = 1)"
-msgstr ""
+msgstr "عرض 80 عموداً: تشغيل (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.display.setWidth"
 msgid "Set display width to {{columns}} columns"
-msgstr ""
+msgstr "ضبط عرض العرض على {{columns}} أعمدة"
 
+#, fuzzy
 msgctxt "disassembly.annunciator.disable"
 msgid "Disable annunciator {{number}}"
-msgstr ""
+msgstr "تعطيل المنبه {{number}}"
 
+#, fuzzy
 msgctxt "disassembly.annunciator.enable"
 msgid "Enable annunciator {{number}}"
-msgstr ""
+msgstr "تفعيل المنبه {{number}}"
 
+#, fuzzy
 msgctxt "disassembly.transWarp.configuredMaximum"
 msgid "TransWarp: Select configured maximum speed"
-msgstr ""
+msgstr "TransWarp: اختيار السرعة القصوى المكونة"
 
+#, fuzzy
 msgctxt "disassembly.transWarp.oneMhz"
 msgid "TransWarp: Select 1 MHz"
-msgstr ""
+msgstr "TransWarp: اختيار 1 MHz"
 
+#, fuzzy
 msgctxt "disassembly.transWarp.disableUntilColdBoot"
 msgid "TransWarp: Disable acceleration until cold boot"
-msgstr ""
+msgstr "TransWarp: تعطيل التسريع حتى إعادة التشغيل البارد"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.oneMhz"
 msgid "Laser 128EX: Select 1 MHz maximum CPU speed"
-msgstr ""
+msgstr "Laser 128EX: اختيار سرعة المعالج القصوى 1 MHz"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.twoPointThreeMhz"
 msgid "Laser 128EX: Select 2.3 MHz maximum CPU speed"
-msgstr ""
+msgstr "Laser 128EX: اختيار سرعة المعالج القصوى 2.3 MHz"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.threePointSixMhz"
 msgid "Laser 128EX: Select 3.6 MHz maximum CPU speed"
-msgstr ""
+msgstr "Laser 128EX: اختيار سرعة المعالج القصوى 3.6 MHz"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.disableDiskSlowdown"
 msgid ""
 "Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access (write-"
 "once bit 5)"
-msgstr ""
+msgstr "Laser 128EX: تعطيل التباطؤ التلقائي إلى 1 MHz للوصول إلى القرص عبر المنفذ 7 (بت 5 للكتابة لمرة واحدة)"
 
+#, fuzzy
 msgctxt "disassembly.laser128ex.enableDiskSlowdown"
 msgid ""
 "Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access (write-"
 "once bit 5)"
-msgstr ""
+msgstr "Laser 128EX: تمكين التباطؤ التلقائي إلى 1 MHz للوصول إلى القرص عبر المنفذ 7 (بت 5 للكتابة لمرة واحدة)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.pulseStrobe"
 msgid "Pulse game-port strobe"
-msgstr ""
+msgstr "نبض strobe منفذ الألعاب"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.startPaddleTimers"
 msgid "Start paddle timers"
-msgstr ""
+msgstr "بدء مؤقتات paddle"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.buttonReleased"
 msgid "Pushbutton {{number}}: RELEASED (MSB = 0)"
-msgstr ""
+msgstr "زر الضغط {{number}}: مُحرر (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.buttonPressed"
 msgid "Pushbutton {{number}}: PRESSED (MSB = 1)"
-msgstr ""
+msgstr "زر الضغط {{number}}: مضغوط (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.paddleExpired"
 msgid "Paddle {{number}} timer: EXPIRED (MSB = 0)"
-msgstr ""
+msgstr "مؤقت paddle {{number}}: منتهي (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.paddleActive"
 msgid "Paddle {{number}} timer: ACTIVE (MSB = 1)"
-msgstr ""
+msgstr "مؤقت paddle {{number}}: نشط (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.buttonMirrorReleased"
 msgid "Pushbutton {{number}} mirror: RELEASED (MSB = 0)"
-msgstr ""
+msgstr "مرآة زر الضغط {{number}}: مُحرر (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.buttonMirrorPressed"
 msgid "Pushbutton {{number}} mirror: PRESSED (MSB = 1)"
-msgstr ""
+msgstr "مرآة زر الضغط {{number}}: مضغوط (MSB = 1)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.paddleMirrorExpired"
 msgid "Paddle {{number}} timer mirror: EXPIRED (MSB = 0)"
-msgstr ""
+msgstr "مرآة مؤقت paddle {{number}}: منتهي (MSB = 0)"
 
+#, fuzzy
 msgctxt "disassembly.gameIO.paddleMirrorActive"
 msgid "Paddle {{number}} timer mirror: ACTIVE (MSB = 1)"
-msgstr ""
+msgstr "مرآة مؤقت paddle {{number}}: نشط (MSB = 1)"
 
+#, fuzzy
 msgctxt "tour.welcome"
 msgid "Welcome to the Apple2TS emulator!"
-msgstr ""
+msgstr "مرحباً بك في محاكي Apple2TS!"
 
+#, fuzzy
 msgctxt "tour.clickNext"
 msgid "To learn more, press the Next button."
-msgstr ""
+msgstr "لمعرفة المزيد، اضغط على زر التالي."
 
+#, fuzzy
 msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
-msgstr ""
+msgstr "انقر هنا لتشغيل المحاكي."
 
+#, fuzzy
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
-msgstr ""
+msgstr "انقر هنا لإعادة ضبط Apple II وإما إعادة التشغيل أو الدخول إلى BASIC."
 
+#, fuzzy
 msgctxt "tour.diskImages"
 msgid "Choose one of the installed disk images."
-msgstr ""
+msgstr "اختر إحدى صور الأقراص المثبتة."
 
+#, fuzzy
 msgctxt "tour.floppyDisks"
 msgid "Or click one of the floppy disk icons to load a disk image."
-msgstr ""
+msgstr "أو انقر فوق أحد أيقونات الأقراص المرنة لتحميل صورة قرص."
 
+#, fuzzy
 msgctxt "tour.saveRestore"
 msgid ""
 "You can save and restore the complete state of the emulator using these "
 "buttons."
-msgstr ""
+msgstr "يمكنك حفظ واستعادة الحالة الكاملة للمحاكي باستخدام هذه الأزرار."
 
+#, fuzzy
 msgctxt "tour.endTour"
 msgid "You have reached the end of the tour."
-msgstr ""
+msgstr "لقد وصلت إلى نهاية الجولة."
 
+#, fuzzy
 msgctxt "tour.tourSelectorHint"
 msgid ""
 "Click on the globe tour button to try one of the other tours, or press "
 "Finish to start using the emulator."
-msgstr ""
+msgstr "انقر على زر جولة الكرة الأرضية لتجربة إحدى الجولات الأخرى، أو اضغط Finish لبدء استخدام المحاكي."
 
+#, fuzzy
 msgctxt "tour.settingsWelcome"
 msgid ""
 "Apple2TS has a full set of controls for both the emulator and the Apple II."
-msgstr ""
+msgstr "يحتوي Apple2TS على مجموعة كاملة من عناصر التحكم لكل من المحاكي وApple II."
 
+#, fuzzy
 msgctxt "tour.mainControls"
 msgid ""
 "Here, you can boot and reset the Apple II, restore and save the state, copy "
 "the screen, or paste text into the emulator."
-msgstr ""
+msgstr "هنا، يمكنك تشغيل وإعادة ضبط Apple II، واستعادة وحفظ الحالة، أو نسخ الشاشة، أو لصق نص في المحاكي."
 
+#, fuzzy
 msgctxt "tour.snapshot"
 msgid ""
 "At any point, you can take a snapshot of the current emulator state, then go "
 "back in time to an earlier state, or fast forward again. You can also save "
 "the emulator state with all of the current snapshots."
-msgstr ""
+msgstr "يمكنك في أي لحظة أخذ لقطة لحالة المحاكي الحالية، ثم العودة بالزمن إلى حالة سابقة، أو التسريع مجدداً. يمكنك أيضاً حفظ حالة المحاكي مع جميع اللقطات الحالية."
 
+#, fuzzy
 msgctxt "tour.pauseButton"
 msgid ""
 "You can pause the emulator at any time, freezing the 6502 processor. This is "
 "useful for pausing the action in a game, or entering the debugger."
-msgstr ""
+msgstr "يمكنك إيقاف المحاكي مؤقتًا في أي وقت، مما يؤدي إلى تجميد معالج 6502. هذا مفيد لإيقاف الحركة في لعبة ما، أو الدخول إلى المصحح."
 
+#, fuzzy
 msgctxt "tour.debugButton"
 msgid ""
 "Click on the bug to enter debug mode, where you can see the internal state "
 "of the 6502 processor. Click again to go back to normal mode."
-msgstr ""
+msgstr "انقر على أيقونة الخطأ للدخول إلى وضع التصحيح، حيث يمكنك رؤية الحالة الداخلية لمعالج 6502. انقر مرة أخرى للعودة إلى الوضع الطبيعي."
 
+#, fuzzy
 msgctxt "tour.configButtons"
 msgid ""
 "The bottom row of buttons controls the state of the Apple II, starting with "
 "the emulator speed, the screen color, and muting the sound."
-msgstr ""
+msgstr "يتحكم الصف السفلي من الأزرار في حالة Apple II، بدءًا من سرعة المحاكي، ثم لون الشاشة، ثم كتم الصوت."
 
+#, fuzzy
 msgctxt "tour.keyboardButtons"
 msgid ""
 "If the caps lock key is turned on, then all typed characters are UPPERCASE."
-msgstr ""
+msgstr "إذا تم تفعيل مفتاح caps lock، فستكون جميع الأحرف المكتوبة UPPERCASE."
 
+#, fuzzy
 msgctxt "tour.altArrowKeys"
 msgid ""
 "The next key determines whether the {{modKey}} key is used for keyboard "
 "shortcuts or the Apple II Open Apple key. The final key determines whether "
 "the arrow keys can be used as the Apple II joystick."
-msgstr ""
+msgstr "يحدد المفتاح التالي ما إذا كان سيتم استخدام مفتاح {{modKey}} لاختصارات لوحة المفاتيح أم مفتاح Apple II Open Apple. ويحدد المفتاح الأخير ما إذا كان يمكن استخدام مفاتيح الأسهم كـ joystick لجهاز Apple II."
 
+#, fuzzy
 msgctxt "tour.clearCookies"
 msgid ""
 "Apple2TS automatically saves the current emulator settings as browser "
 "cookies. Press this button to reset these settings and delete the cookies."
-msgstr ""
+msgstr "يقوم Apple2TS بحفظ إعدادات المحاكي الحالية تلقائيًا كملفات تعريف ارتباط للمتصفح. اضغط على هذا الزر لإعادة ضبط هذه الإعدادات وحذف ملفات تعريف الارتباط."
 
+#, fuzzy
 msgctxt "tour.debugWelcome"
 msgid ""
 "Apple2TS has a rich set of tools to analyze and debug 6502 assembly code."
-msgstr ""
+msgstr "يحتوي Apple2TS على مجموعة غنية من الأدوات لتحليل وتصحيح كود 6502 assembly."
 
+#, fuzzy
 msgctxt "tour.debugIcon"
 msgid "Click on the Bug icon on the Info tabs to view the Debug panel."
-msgstr ""
+msgstr "انقر على أيقونة Bug في علامات تبويب Info لعرض لوحة Debug."
 
+#, fuzzy
 msgctxt "tour.debugPause"
 msgid "Press the Pause button to pause or resume execution of the emulator."
-msgstr ""
+msgstr "اضغط على زر Pause لإيقاف أو استئناف تنفيذ المحاكي."
 
+#, fuzzy
 msgctxt "tour.debugControls"
 msgid ""
 "Now that we have paused, we can step through the disassembled code using the "
 "Step Over, Into, and Out buttons. We can also quickly jump to the current "
 "address of the Program Counter (PC)."
-msgstr ""
+msgstr "الآن بعد أن قمنا بالإيقاف المؤقت، يمكننا تتبع الكود المفكك باستخدام أزرار Step Over وInto وOut. يمكننا أيضًا القفز سريعًا إلى العنوان الحالي لعداد البرنامج (PC)."
 
+#, fuzzy
 msgctxt "tour.debugDisassembly"
 msgid ""
 "Here we see the disassembled code, with the hex addresses, the three-letter "
@@ -798,14 +986,16 @@ msgid ""
 "green value, a tooltip will appear with the current value. Clicking on a "
 "blue address will scroll to that location. You can also click in the left "
 "gutter to add or remove breakpoints."
-msgstr ""
+msgstr "هنا نرى الكود المفكك، مع العناوين الست عشرية، والتعليمات المكونة من ثلاثة أحرف، وأي قيم أو عناوين. إذا حركت الماوس فوق قيمة خضراء، ستظهر تلميحة بالقيمة الحالية. النقر على عنوان أزرق سيؤدي إلى التمرير إلى ذلك الموقع. يمكنك أيضًا النقر في الهامش الأيسر لإضافة أو إزالة نقاط التوقف."
 
+#, fuzzy
 msgctxt "tour.debugInfo"
 msgid ""
 "In the middle we have the Stack Dump and a Memory Map. The Memory Map "
 "updates in real time and shows you which memory banks are currently active."
-msgstr ""
+msgstr "في المنتصف لدينا Stack Dump وMemory Map. يتم تحديث Memory Map في الوقت الفعلي وتوضح لك أي بنوك الذاكرة نشطة حاليًا."
 
+#, fuzzy
 msgctxt "tour.debugMemory"
 msgid ""
 "The last section displays the Apple II memory. You can use the droplist to "
@@ -813,2123 +1003,2644 @@ msgid ""
 "you will get a magnified view of the hires screen, tied to the memory "
 "locations. You can also search for hex values or ASCII strings, and save the "
 "memory to a file."
-msgstr ""
+msgstr "يعرض القسم الأخير ذاكرة Apple II. يمكنك استخدام القائمة المنسدلة لفحص أجزاء مختلفة من الذاكرة. إذا انتقلت إلى إحدى صفحات HGR، فستحصل على عرض مكبر لشاشة hires، مرتبط بمواقع الذاكرة. يمكنك أيضًا البحث عن قيم ست عشرية أو سلاسل ASCII، وحفظ الذاكرة في ملف."
 
+#, fuzzy
 msgctxt "tour.back"
 msgid "Back"
-msgstr ""
+msgstr "رجوع"
 
+#, fuzzy
 msgctxt "tour.last"
 msgid "Finish"
-msgstr ""
+msgstr "إنهاء"
 
+#, fuzzy
 msgctxt "tour.next"
 msgid "Next"
-msgstr ""
+msgstr "التالي"
 
+#, fuzzy
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
-msgstr ""
+msgstr "التالي (الخطوة {step} من {steps})"
 
+#, fuzzy
 msgctxt "tour.guidedTour"
 msgid "Tours"
-msgstr ""
+msgstr "الجولات"
 
+#, fuzzy
 msgctxt "tour.mainLabel"
 msgid "Guided Tours: Main"
-msgstr ""
+msgstr "الجولات الإرشادية: Main"
 
+#, fuzzy
 msgctxt "tour.settingsLabel"
 msgid "Guided Tours: Settings"
-msgstr ""
+msgstr "الجولات الإرشادية: Settings"
 
+#, fuzzy
 msgctxt "tour.debugLabel"
 msgid "Guided Tours: Debug"
-msgstr ""
+msgstr "الجولات الإرشادية: Debug"
 
+#, fuzzy
 msgctxt "disk.eject"
 msgid "Eject Disk"
-msgstr ""
+msgstr "إخراج القرص"
 
+#, fuzzy
 msgctxt "disk.insert"
 msgid "Insert Disk"
-msgstr ""
+msgstr "إدخال القرص"
 
+#, fuzzy
 msgctxt "disk.writeProtectDisk"
 msgid "Write Protect Disk"
-msgstr ""
+msgstr "حماية القرص من الكتابة"
 
+#, fuzzy
 msgctxt "disk.saveDiskToDevice"
 msgid "Save Disk"
-msgstr ""
+msgstr "حفظ القرص"
 
+#, fuzzy
 msgctxt "disk.saveDiskTo"
 msgid "Save Disk to"
-msgstr ""
+msgstr "حفظ القرص في"
 
+#, fuzzy
 msgctxt "disk.saveDiskToMenu"
 msgid "Save Disk to >"
-msgstr ""
+msgstr "حفظ القرص في >"
 
+#, fuzzy
 msgctxt "disk.addToFavorites"
 msgid "Add to Favorites"
-msgstr ""
+msgstr "إضافة إلى المفضلة"
 
+#, fuzzy
 msgctxt "disk.downloadDisk"
 msgid "Download Disk"
-msgstr ""
+msgstr "تحميل القرص"
 
+#, fuzzy
 msgctxt "disk.downloadWoz"
 msgid "Download WOZ Disk Image"
-msgstr ""
+msgstr "تحميل صورة قرص WOZ"
 
+#, fuzzy
 msgctxt "disk.downloadAndEjectDisk"
 msgid "Download and Eject Disk"
-msgstr ""
+msgstr "تحميل وإخراج القرص"
 
+#, fuzzy
 msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
-msgstr ""
+msgstr "إخراج القرص"
 
+#, fuzzy
 msgctxt "disk.ejectAllDisks"
 msgid "Eject All Disks"
-msgstr ""
+msgstr "إخراج جميع الأقراص"
 
+#, fuzzy
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
-msgstr ""
+msgstr "...تحميل القرص"
 
+#, fuzzy
 msgctxt "disk.loadAdditionalDisks"
 msgid "Load Additional Disk(s)..."
-msgstr ""
+msgstr "...تحميل قرص (أقراص) إضافية"
 
+#, fuzzy
 msgctxt "disk.loadDiskFrom"
 msgid "Load Disk from"
-msgstr ""
+msgstr "تحميل القرص من"
 
+#, fuzzy
 msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
-msgstr ""
+msgstr "تحميل القرص من >"
 
+#, fuzzy
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
-msgstr ""
+msgstr "Internet Archive"
 
+#, fuzzy
 msgctxt "disk.DemoZoo"
 msgid "DemoZoo"
-msgstr ""
+msgstr "DemoZoo"
 
+#, fuzzy
 msgctxt "disk.OneDrive"
 msgid "OneDrive"
-msgstr ""
+msgstr "OneDrive"
 
+#, fuzzy
 msgctxt "disk.GoogleDrive"
 msgid "Google Drive"
-msgstr ""
+msgstr "Google Drive"
 
+#, fuzzy
 msgctxt "disk.loadDiskFromInternetArchive"
 msgid "Load Disk from Internet Archive"
-msgstr ""
+msgstr "تحميل القرص من Internet Archive"
 
+#, fuzzy
 msgctxt "disk.loadDiskFromDemoZoo"
 msgid "Load Disk from DemoZoo"
-msgstr ""
+msgstr "تحميل القرص من DemoZoo"
 
+#, fuzzy
 msgctxt "disk.loadDiskFromOneDrive"
 msgid "Load Disk from OneDrive"
-msgstr ""
+msgstr "تحميل القرص من OneDrive"
 
+#, fuzzy
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
-msgstr ""
+msgstr "تحميل القرص من Google Drive"
 
+#, fuzzy
 msgctxt "disk.insertBlankDisk"
 msgid "Insert Blank Disk"
-msgstr ""
+msgstr "إدخال قرص فارغ"
 
+#, fuzzy
 msgctxt "disk.syncEveryMinute"
 msgid "Sync Every Minute"
-msgstr ""
+msgstr "المزامنة كل دقيقة"
 
+#, fuzzy
 msgctxt "disk.syncEvery5Minutes"
 msgid "Sync Every 5 Minutes"
-msgstr ""
+msgstr "المزامنة كل 5 دقائق"
 
+#, fuzzy
 msgctxt "disk.pauseSyncing"
 msgid "Pause Syncing"
-msgstr ""
+msgstr "إيقاف المزامنة مؤقتًا"
 
+#, fuzzy
 msgctxt "disk.syncNow"
 msgid "Sync Now"
-msgstr ""
+msgstr "المزامنة الآن"
 
+#, fuzzy
 msgctxt "disk.modified"
 msgid "modified"
-msgstr ""
+msgstr "مُعدّل"
 
+#, fuzzy
 msgctxt "disk.synced"
 msgid "Synced"
-msgstr ""
+msgstr "تمت المزامنة"
 
+#, fuzzy
 msgctxt "disk.diskImage"
 msgid "Disk Image"
-msgstr ""
+msgstr "صورة القرص"
 
+#, fuzzy
 msgctxt "disk.diskDrivesAndDevices"
 msgid "disk drives and devices"
-msgstr ""
+msgstr "محركات وأجهزة الأقراص"
 
+#, fuzzy
 msgctxt "disk.syncedAt"
 msgid "Synced {{date}}"
-msgstr ""
+msgstr "تمت المزامنة في {{date}}"
 
+#, fuzzy
 msgctxt "disk.clickToHide"
 msgid "Click to hide"
-msgstr ""
+msgstr "انقر للإخفاء"
 
+#, fuzzy
 msgctxt "disk.clickToShow"
 msgid "Click to show"
-msgstr ""
+msgstr "انقر للإظهار"
 
+#, fuzzy
 msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image(s)"
-msgstr ""
+msgstr "انقر لتحميل صورة القرص (الأقراص)"
 
+#, fuzzy
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"
-msgstr ""
+msgstr "جاري تحميل القرص"
 
+#, fuzzy
 msgctxt "disk.clickToRemoveFromDiskCollection"
 msgid "Click to remove from disk collection"
-msgstr ""
+msgstr "انقر للإزالة من مجموعة الأقراص"
 
+#, fuzzy
 msgctxt "disk.clickToAddToDiskCollection"
 msgid "Click to add to disk collection"
-msgstr ""
+msgstr "انقر للإضافة إلى مجموعة الأقراص"
 
+#, fuzzy
 msgctxt "disk.byCreator"
 msgid "by {{creator}}"
-msgstr ""
+msgstr "بواسطة {{creator}}"
 
+#, fuzzy
 msgctxt "disk.clickToViewDetails"
 msgid "Click to view details"
-msgstr ""
+msgstr "انقر لعرض التفاصيل"
 
+#, fuzzy
 msgctxt "help.title"
 msgid "Apple2TS"
-msgstr ""
+msgstr "Apple2TS"
 
+#, fuzzy
 msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
-msgstr ""
+msgstr "محاكي TypeScript Apple IIe"
 
+#, fuzzy
 msgctxt "help.credit"
 msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
-msgstr ""
+msgstr "(c) {{year}} Chris Torrence والمساهمون في Apple2TS"
 
+#, fuzzy
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
-msgstr ""
+msgstr "اختصارات لوحة المفاتيح"
 
+#, fuzzy
 msgctxt "help.shortcutsUnavailable"
 msgid ""
 "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to "
 "Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
-msgstr ""
+msgstr "اختصارات محاكي {{keyMod}} غير متاحة بينما هذا المفتاح مخصص لـ Open Apple. لا تزال الاختصارات من Ctrl+0 إلى Ctrl+5 تختار سرعة المحاكي."
 
+#, fuzzy
 msgctxt "help.diskImages"
 msgid "Disk images:"
-msgstr ""
+msgstr "صور الأقراص:"
 
+#, fuzzy
 msgctxt "help.diskContainers"
 msgid "Compressed archives:"
-msgstr ""
+msgstr "الأرشيفات المضغوطة:"
 
+#, fuzzy
 msgctxt "help.multiDiskNotice"
 msgid ""
 "Multi-disk swapping: Click a drive's multi-disk badge to open the quick-swap "
 "menu. Loading multi-disk archives (.zip, .7z, .gz) automatically mounts all "
 "disks into the swapper list."
-msgstr ""
+msgstr "تبديل الأقراص المتعددة: انقر على شارة الأقراص المتعددة الخاصة بالمحرك لفتح قائمة التبديل السريع. عند تحميل أرشيفات الأقراص المتعددة (.zip, .7z, .gz)، يتم تلقائيًا تحميل جميع الأقراص في قائمة التبديل."
 
+#, fuzzy
 msgctxt "help.urlParameters"
 msgid "Optional URL Parameters"
-msgstr ""
+msgstr "معلمات URL الاختيارية"
 
+#, fuzzy
 msgctxt "help.examples"
 msgid "Examples"
-msgstr ""
+msgstr "أمثلة"
 
+#, fuzzy
 msgctxt "help.mobileInstructions"
 msgid "Mobile platforms:"
-msgstr ""
+msgstr "المنصات المحمولة:"
 
+#, fuzzy
 msgctxt "help.tapScreen"
 msgid "Tap the screen to show the keyboard."
-msgstr ""
+msgstr "اضغط على الشاشة لإظهار لوحة المفاتيح."
 
+#, fuzzy
 msgctxt "help.arrowKeys"
 msgid ""
 "Press the arrow keys, esc, or tab buttons to send those keys to the emulator."
-msgstr ""
+msgstr "اضغط على مفاتيح الأسهم، أو esc، أو tab لإرسال تلك المفاتيح إلى المحاكي."
 
+#, fuzzy
 msgctxt "help.ctrlKey"
 msgid ""
 "To send a control character, press the ctrl button once. Then tap the screen "
 "to show the keyboard and press the desired key. The ctrl button will "
 "automatically be released."
-msgstr ""
+msgstr "لإرسال حرف تحكم، اضغط على زر ctrl مرة واحدة. ثم اضغط على الشاشة لإظهار لوحة المفاتيح واضغط المفتاح المطلوب. سيتم تحرير زر ctrl تلقائياً."
 
+#, fuzzy
 msgctxt "help.ctrlLock"
 msgid ""
 "To send multiple control characters, press the ctrl button twice to lock it "
 "on (indicated by a green dot). Then tap the screen to show the keyboard and "
 "press the desired keys. Press the ctrl button again to release it."
-msgstr ""
+msgstr "لإرسال عدة أحرف تحكم، اضغط على زر ctrl مرتين لتفعيله (يُشار إلى ذلك بنقطة خضراء). ثم اضغط على الشاشة لإظهار لوحة المفاتيح واضغط المفاتيح المطلوبة. اضغط على زر ctrl مرة أخرى لتحريره."
 
+#, fuzzy
 msgctxt "help.appleKeys"
 msgid "The open apple and closed apple keys behave the same as the ctrl key."
-msgstr ""
+msgstr "تعمل مفاتيح التفاحة المفتوحة والتفاحة المغلقة تماماً مثل مفتاح ctrl."
 
+#, fuzzy
 msgctxt "help.controlPanelShortcut"
 msgid "<Shift>+<Esc>: display the Apple2TS control panel"
-msgstr ""
+msgstr "<Shift>+<Esc>: عرض لوحة تحكم Apple2TS"
 
+#, fuzzy
 msgctxt "help.openAppleKey"
 msgid "Open Apple: press Left Alt/Option"
-msgstr ""
+msgstr "Open Apple: اضغط Left Alt/Option"
 
+#, fuzzy
 msgctxt "help.closedAppleKey"
 msgid "Closed Apple: press Right Alt/Option"
-msgstr ""
+msgstr "التفاحة المغلقة: اضغط Right Alt/Option"
 
+#, fuzzy
 msgctxt "help.joystickKeys"
 msgid "Joystick Keys: Numpad 8/2/4/6 (7/9/1/3), 0/5, ./Enter"
-msgstr ""
+msgstr "مفاتيح Joystick: Numpad 8/2/4/6 (7/9/1/3)، 0/5، ./Enter"
 
+#, fuzzy
 msgctxt "help.onScreenKeyboard"
 msgid ""
 "For the on-screen keyboard, to use CTRL or ESC keys,\n"
 "touch key once to enable it then touch the desired letter key."
-msgstr ""
+msgstr "بالنسبة للوحة المفاتيح على الشاشة، لاستخدام مفاتيح CTRL أو ESC،\nالمس المفتاح مرة واحدة لتفعيله ثم المس مفتاح الحرف المطلوب."
 
+#, fuzzy
 msgctxt "help.urlParametersBody"
 msgid ""
 "For optional URL parameters, append them to the URL after a question mark "
 "(?) and separate multiple parameters with an ampersand (&). Use # to specify "
 "the disk image. See the Link Builder dialog for examples."
-msgstr ""
+msgstr "بالنسبة لمعلمات URL الاختيارية، ألحقها بـ URL بعد علامة استفهام (?) وافصل بين المعلمات المتعددة بعلامة &. استخدم # لتحديد صورة القرص. راجع مربع حوار Link Builder للحصول على أمثلة."
 
+#, fuzzy
 msgctxt "help.exampleLinks.totalReplayDebugging"
 msgid "Total Replay with debugging"
-msgstr ""
+msgstr "Total Replay مع تصحيح الأخطاء"
 
+#, fuzzy
 msgctxt "help.exampleLinks.totalReplayChoplifter"
 msgid "Total Replay, load Choplifter, embedded mode"
-msgstr ""
+msgstr "Total Replay، تحميل Choplifter، الوضع المدمج"
 
+#, fuzzy
 msgctxt "help.exampleLinks.a2Desktop"
 msgid "A2Desktop 2MG with fast speed and color"
-msgstr ""
+msgstr "A2Desktop 2MG بسرعة عالية وألوان"
 
+#, fuzzy
 msgctxt "help.exampleLinks.embeddedBasic"
 msgid "Embedded Applesoft BASIC Program"
-msgstr ""
+msgstr "برنامج Applesoft BASIC مدمج"
 
+#, fuzzy
 msgctxt "help.exampleLinks.binaryHexAddress"
 msgid "Binary File with Hex Address"
-msgstr ""
+msgstr "ملف ثنائي مع عنوان Hex"
 
+#, fuzzy
 msgctxt "help.links"
 msgid "Links"
-msgstr ""
+msgstr "روابط"
 
+#, fuzzy
 msgctxt "help.resourceLinks.desktopApp"
 msgid "Apple2TS Desktop App"
-msgstr ""
+msgstr "تطبيق Apple2TS المكتبي"
 
+#, fuzzy
 msgctxt "help.resourceLinks.corsProxy"
 msgid "CORS Proxy by Corsfix"
-msgstr ""
+msgstr "CORS Proxy بواسطة Corsfix"
 
+#, fuzzy
 msgctxt "help.resourceLinks.silverCjkFont"
 msgid "Silver CJK Pixel Font"
-msgstr ""
+msgstr "Silver CJK Pixel Font"
 
+#, fuzzy
 msgctxt "messages.loading"
 msgid "Loading..."
-msgstr ""
+msgstr "جاري التحميل..."
 
+#, fuzzy
 msgctxt "messages.fetchingCloudData"
 msgid "Fetching cloud data"
-msgstr ""
+msgstr "جاري جلب بيانات السحابة"
 
+#, fuzzy
 msgctxt "messages.confirm"
 msgid "Confirm"
-msgstr ""
+msgstr "تأكيد"
 
+#, fuzzy
 msgctxt "messages.cancel"
 msgid "Cancel"
-msgstr ""
+msgstr "إلغاء"
 
+#, fuzzy
 msgctxt "messages.ok"
 msgid "OK"
-msgstr ""
+msgstr "موافق"
 
+#, fuzzy
 msgctxt "messages.on"
 msgid "on"
-msgstr ""
+msgstr "تشغيل"
 
+#, fuzzy
 msgctxt "messages.off"
 msgid "off"
-msgstr ""
+msgstr "إيقاف"
 
+#, fuzzy
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
-msgstr ""
+msgstr "قفل الأحرف الكبيرة"
 
+#, fuzzy
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
-msgstr ""
+msgstr "Open Apple"
 
+#, fuzzy
 msgctxt "keyboard.enableGamePatches"
 msgid "Enable Game Patches"
-msgstr ""
+msgstr "تفعيل رقع الألعاب"
 
+#, fuzzy
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
+#, fuzzy
 msgctxt "audio.midi"
 msgid "MIDI"
-msgstr ""
+msgstr "MIDI"
 
+#, fuzzy
 msgctxt "audio.configuration"
 msgid "Audio Configuration"
-msgstr ""
+msgstr "تكوين الصوت"
 
+#, fuzzy
 msgctxt "print.printer"
 msgid "Printer"
-msgstr ""
+msgstr "الطابعة"
 
+#, fuzzy
 msgctxt "print.imageWriter"
 msgid "ImageWriter"
-msgstr ""
+msgstr "ImageWriter"
 
+#, fuzzy
 msgctxt "print.imageWriterII"
 msgid "ImageWriter II (Slot 1)"
-msgstr ""
+msgstr "ImageWriter II (الفتحة 1)"
 
+#, fuzzy
 msgctxt "print.print"
 msgid "Print"
-msgstr ""
+msgstr "طباعة"
 
+#, fuzzy
 msgctxt "print.dumpScreen"
 msgid "Dump Current Screen to Printer"
-msgstr ""
+msgstr "تفريغ الشاشة الحالية إلى الطابعة"
 
+#, fuzzy
 msgctxt "print.dumpScreenInverse"
 msgid "Dump Current Screen (Inverse)"
-msgstr ""
+msgstr "تفريغ الشاشة الحالية (معكوس)"
 
+#, fuzzy
 msgctxt "print.sendToPrinter"
 msgid "Send to Printer"
-msgstr ""
+msgstr "إرسال إلى الطابعة"
 
+#, fuzzy
 msgctxt "print.tearOff"
 msgid "Tear off Page and Reset"
-msgstr ""
+msgstr "تمزيق الصفحة وإعادة الضبط"
 
+#, fuzzy
 msgctxt "print.printedPage"
 msgid "Printed page"
-msgstr ""
+msgstr "الصفحة المطبوعة"
 
+#, fuzzy
 msgctxt "print.printerConfig"
 msgid "Printer Configuration"
-msgstr ""
+msgstr "تكوين الطابعة"
 
+#, fuzzy
 msgctxt "print.pageLength"
 msgid "Page Length"
-msgstr ""
+msgstr "طول الصفحة"
 
+#, fuzzy
 msgctxt "print.pageLengthLetter"
 msgid "11 inch (Letter)"
-msgstr ""
+msgstr "11 بوصة (Letter)"
 
+#, fuzzy
 msgctxt "print.pageLengthA4"
 msgid "11.7 inch (A4)"
-msgstr ""
+msgstr "11.7 بوصة (A4)"
 
+#, fuzzy
 msgctxt "print.pageLengthTwelve"
 msgid "12 inch"
-msgstr ""
+msgstr "12 بوصة"
 
+#, fuzzy
 msgctxt "collection.showApple2TSCollection"
 msgid "Show Apple2TS Collection"
-msgstr ""
+msgstr "عرض مجموعة Apple2TS"
 
+#, fuzzy
 msgctxt "collection.showNewReleases"
 msgid "Show new releases"
-msgstr ""
+msgstr "عرض الإصدارات الجديدة"
 
+#, fuzzy
 msgctxt "collection.showFavorites"
 msgid "Show favorites"
-msgstr ""
+msgstr "عرض المفضلة"
 
+#, fuzzy
 msgctxt "collection.chooseDiskImage"
 msgid "Choose disk image"
-msgstr ""
+msgstr "اختر صورة القرص"
 
+#, fuzzy
 msgctxt "collection.diskCollection"
 msgid "Disk collection"
-msgstr ""
+msgstr "مجموعة الأقراص"
 
+#, fuzzy
 msgctxt "collection.clickToShowDetails"
 msgid "Click to show details for"
-msgstr ""
+msgstr "انقر لعرض التفاصيل لـ"
 
+#, fuzzy
 msgctxt "collection.clickToLoadDisk"
 msgid "Click to load disk"
-msgstr ""
+msgstr "انقر لتحميل القرص"
 
+#, fuzzy
 msgctxt "collection.diskIsNewRelease"
 msgid "Disk is a new release"
-msgstr ""
+msgstr "القرص إصدار جديد"
 
+#, fuzzy
 msgctxt "collection.diskIsApple2TSCollection"
 msgid "Disk is part of the Apple2TS collection"
-msgstr ""
+msgstr "القرص جزء من مجموعة Apple2TS"
 
+#, fuzzy
 msgctxt "collection.diskIsInternetArchive"
 msgid "Disk is part of the Internet Archive"
-msgstr ""
+msgstr "القرص جزء من Internet Archive"
 
+#, fuzzy
 msgctxt "collection.diskIsDemoZoo"
 msgid "Disk is part of DemoZoo"
-msgstr ""
+msgstr "القرص جزء من DemoZoo"
 
+#, fuzzy
 msgctxt "collection.clickToRemoveFromCollection"
 msgid "Click to remove from disk collection"
-msgstr ""
+msgstr "انقر للإزالة من مجموعة الأقراص"
 
+#, fuzzy
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
-msgstr ""
+msgstr "انقر للإبقاء في مجموعة الأقراص"
 
+#, fuzzy
 msgctxt "collection.diskIsSyncedVia"
 msgid "Disk is synced via"
-msgstr ""
+msgstr "القرص متزامن عبر"
 
+#, fuzzy
 msgctxt "collection.loadDiskIntoDrive"
 msgid "Load Disk into Drive"
-msgstr ""
+msgstr "تحميل القرص في المحرك"
 
+#, fuzzy
 msgctxt "collection.cloudAuthRequired"
 msgid "auth required"
-msgstr ""
+msgstr "المصادقة مطلوبة"
 
+#, fuzzy
 msgctxt "collection.signIn"
 msgid "Sign in"
-msgstr ""
+msgstr "تسجيل الدخول"
 
+#, fuzzy
 msgctxt "collection.exportDisksToHdv"
 msgid "Export disks to HDV"
-msgstr ""
+msgstr "تصدير الأقراص إلى HDV"
 
+#, fuzzy
 msgctxt "collection.export"
 msgid "Export"
-msgstr ""
+msgstr "تصدير"
 
+#, fuzzy
 msgctxt "collection.clickToRemoveFromSelected"
 msgid "Click to remove from selected disks"
-msgstr ""
+msgstr "انقر للإزالة من الأقراص المختارة"
 
+#, fuzzy
 msgctxt "collection.clickToAddToSelected"
 msgid "Click to add to selected disks"
-msgstr ""
+msgstr "انقر للإضافة إلى الأقراص المختارة"
 
+#, fuzzy
 msgctxt "collection.reportExportIssue"
 msgid "Report an export issue"
-msgstr ""
+msgstr "الإبلاغ عن مشكلة في التصدير"
 
+#, fuzzy
 msgctxt "collection.hdvExportTitleUnavailable"
 msgid "Apple2TS could not include \"{{title}}\" in the HDV."
-msgstr ""
+msgstr "تعذر على Apple2TS تضمين \"{{title}}\" في HDV."
 
+#, fuzzy
 msgctxt "collection.continueHdvExportWithoutUnavailableTitles"
 msgid "Continue creating the HDV and skip unavailable titles?"
-msgstr ""
+msgstr "هل تود الاستمرار في إنشاء HDV وتخطي العناوين غير المتوفرة؟"
 
+#, fuzzy
 msgctxt "collection.exportUnavailable"
 msgid "This disk cannot be exported"
-msgstr ""
+msgstr "لا يمكن تصدير هذا القرص"
 
+#, fuzzy
 msgctxt "collection.exportTooLarge"
 msgid "This disk is too large to export"
-msgstr ""
+msgstr "هذا القرص كبير جدًا بحيث لا يمكن تصديره"
 
+#, fuzzy
 msgctxt "collection.exportCopyProtected"
 msgid "Copy protection prevents exporting this disk"
-msgstr ""
+msgstr "حماية النسخ تمنع تصدير هذا القرص"
 
+#, fuzzy
 msgctxt "collection.exportDosMasterIncompatible"
 msgid "This disk is incompatible with DOS.MASTER"
-msgstr ""
+msgstr "هذا القرص غير متوافق مع DOS.MASTER"
 
+#, fuzzy
 msgctxt "collection.exportStatusPending"
 msgid "Checking whether this disk can be exported"
-msgstr ""
+msgstr "جاري التحقق مما إذا كان يمكن تصدير هذا القرص"
 
+#, fuzzy
 msgctxt "collection.exportAvailable"
 msgid "This disk can be exported"
-msgstr ""
+msgstr "يمكن تصدير هذا القرص"
 
+#, fuzzy
 msgctxt "collection.creatingHdv"
 msgid "Creating the HDV image"
-msgstr ""
+msgstr "جاري إنشاء صورة HDV"
 
+#, fuzzy
 msgctxt "collection.hdvCreatedWithOmissions"
 msgid ""
 "Apple2TS created the HDV with some titles omitted:\n"
 "\n"
 "{{details}}"
-msgstr ""
+msgstr "قام Apple2TS بإنشاء HDV مع حذف بعض العناوين:\n\n{{details}}"
 
+#, fuzzy
 msgctxt "collection.hdvCreationFailed"
 msgid "Apple2TS could not create the HDV: {{message}}"
-msgstr ""
+msgstr "تعذر على Apple2TS إنشاء HDV: {{message}}"
 
+#, fuzzy
 msgctxt "collection.hdvDownloadFailed"
 msgid "Apple2TS could not download the disk, so HDV creation was canceled."
-msgstr ""
+msgstr "تعذر على Apple2TS تنزيل القرص، لذا تم إلغاء إنشاء HDV."
 
+#, fuzzy
 msgctxt "collection.fetchingDisk"
 msgid "Fetching disk {{current}} of {{total}}"
-msgstr ""
+msgstr "جاري جلب القرص {{current}} من {{total}}"
 
+#, fuzzy
 msgctxt "collection.checkingDiskForExport"
 msgid "Checking disk {{current}} of {{total}} for export"
-msgstr ""
+msgstr "جاري فحص القرص {{current}} من {{total}} للتصدير"
 
+#, fuzzy
 msgctxt "collection.selectAllDisks"
 msgid "Select all disks"
-msgstr ""
+msgstr "تحديد جميع الأقراص"
 
+#, fuzzy
 msgctxt "collection.clearDiskSelection"
 msgid "Clear disk selection"
-msgstr ""
+msgstr "مسح تحديد الأقراص"
 
+#, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
-msgstr ""
+msgstr "العودة بالزمن"
 
+#, fuzzy
 msgctxt "debugControls.takeSnapshot"
 msgid "Take a Snapshot"
-msgstr ""
+msgstr "أخذ لقطة"
 
+#, fuzzy
 msgctxt "debugControls.goForwardInTime"
 msgid "Go Forward in Time"
-msgstr ""
+msgstr "التقدم في الزمن"
 
+#, fuzzy
 msgctxt "debugControls.saveStateWithSnapshots"
 msgid "Save State with Snapshots"
-msgstr ""
+msgstr "حفظ الحالة مع اللقطات"
 
+#, fuzzy
 msgctxt "debugControls.resume"
 msgid "Resume"
-msgstr ""
+msgstr "استئناف"
 
+#, fuzzy
 msgctxt "debugControls.pause"
 msgid "Pause"
-msgstr ""
+msgstr "إيقاف مؤقت"
 
+#, fuzzy
 msgctxt "debugControls.trace"
 msgid "Trace"
-msgstr ""
+msgstr "تتبع"
 
+#, fuzzy
 msgctxt "debugControls.downloadTraceLog"
 msgid "Download Trace Log"
-msgstr ""
+msgstr "تنزيل سجل التتبع"
 
+#, fuzzy
 msgctxt "fullscreen.fullScreen"
 msgid "Full Screen"
-msgstr ""
+msgstr "ملء الشاشة"
 
+#, fuzzy
 msgctxt "internetArchive.searchPlaceholder"
 msgid "Type the name of a software title or click one of the categories above"
-msgstr ""
+msgstr "اكتب اسم البرنامج أو انقر على إحدى الفئات أعلاه"
 
+#, fuzzy
 msgctxt "internetArchive.go"
 msgid "GO"
-msgstr ""
+msgstr "انطلق"
 
+#, fuzzy
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
-msgstr ""
+msgstr "البحث في DemoZoo (العنوان، المؤلف)..."
 
+#, fuzzy
 msgctxt "demoZoo.all"
 msgid "All"
-msgstr ""
+msgstr "الكل"
 
+#, fuzzy
 msgctxt "demoZoo.demo"
 msgid "Demo"
-msgstr ""
+msgstr "عرض تجريبي"
 
+#, fuzzy
 msgctxt "demoZoo.intro"
 msgid "Intro"
-msgstr ""
+msgstr "مقدمة"
 
+#, fuzzy
 msgctxt "demoZoo.cracktro"
 msgid "Cracktro"
-msgstr ""
+msgstr "كرآكتـرو"
 
+#, fuzzy
 msgctxt "demoZoo.music"
 msgid "Music"
-msgstr ""
+msgstr "موسيقى"
 
+#, fuzzy
 msgctxt "demoZoo.previous"
 msgid "Previous"
-msgstr ""
+msgstr "السابق"
 
+#, fuzzy
 msgctxt "demoZoo.next"
 msgid "Next"
-msgstr ""
+msgstr "التالي"
 
+#, fuzzy
 msgctxt "demoZoo.firstPage"
 msgid "First page"
-msgstr ""
+msgstr "الصفحة الأولى"
 
+#, fuzzy
 msgctxt "demoZoo.lastPage"
 msgid "Last page"
-msgstr ""
+msgstr "الصفحة الأخيرة"
 
+#, fuzzy
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
-msgstr ""
+msgstr "رقم الصفحة"
 
+#, fuzzy
 msgctxt "demoZoo.noProductions"
 msgid "No DemoZoo productions found."
-msgstr ""
+msgstr "لم يتم العثور على إنتاجات DemoZoo."
 
+#, fuzzy
 msgctxt "demoZoo.youtubeOnly"
 msgid "This production only has a YouTube video link available:"
-msgstr ""
+msgstr "هذا الإنتاج يتوفر له رابط فيديو YouTube فقط:"
 
+#, fuzzy
 msgctxt "demoZoo.externalOnly"
 msgid "This production only has an external DemoZoo link available:"
-msgstr ""
+msgstr "هذا الإنتاج يحتوي فقط على رابط DemoZoo خارجي متاح:"
 
+#, fuzzy
 msgctxt "demoZoo.openInNewTab"
 msgid "Open in New Tab"
-msgstr ""
+msgstr "فتح في علامة تبويب جديدة"
 
+#, fuzzy
 msgctxt "basic.newProgram"
 msgid "New Program"
-msgstr ""
+msgstr "برنامج جديد"
 
+#, fuzzy
 msgctxt "basic.newProgramWarning"
 msgid ""
 "This will clear the current program. You will lose any unsaved changes. Are "
 "you sure?"
-msgstr ""
+msgstr "سيؤدي هذا إلى مسح البرنامج الحالي. ستفقد أي تغييرات غير محفوظة. هل أنت متأكد؟"
 
+#, fuzzy
 msgctxt "basic.runFromBeginning"
 msgid "Run from Beginning"
-msgstr ""
+msgstr "التشغيل من البداية"
 
+#, fuzzy
 msgctxt "basic.break"
 msgid "Break"
-msgstr ""
+msgstr "إيقاف مؤقت"
 
+#, fuzzy
 msgctxt "basic.continueRunning"
 msgid "Continue Running"
-msgstr ""
+msgstr "مواصلة التشغيل"
 
+#, fuzzy
 msgctxt "basic.stepProgram"
 msgid "Step Program"
-msgstr ""
+msgstr "تنفيذ البرنامج خطوة بخطوة"
 
+#, fuzzy
 msgctxt "basic.resumeOutput"
 msgid "Resume Output"
-msgstr ""
+msgstr "استئناف المخرجات"
 
+#, fuzzy
 msgctxt "basic.freezeOutput"
 msgid "Freeze Output"
-msgstr ""
+msgstr "تجميد المخرجات"
 
+#, fuzzy
 msgctxt "basic.importProgram"
 msgid "Import Program..."
-msgstr ""
+msgstr "استيراد البرنامج..."
 
+#, fuzzy
 msgctxt "basic.exportProgram"
 msgid "Export Program..."
-msgstr ""
+msgstr "تصدير البرنامج..."
 
+#, fuzzy
 msgctxt "basic.renumberProgram"
 msgid "Renumber Program"
-msgstr ""
+msgstr "إعادة ترقيم البرنامج"
 
+#, fuzzy
 msgctxt "basic.rebuildProgram"
 msgid "Rebuild Program from Memory"
-msgstr ""
+msgstr "إعادة بناء البرنامج من الذاكرة"
 
+#, fuzzy
 msgctxt "basic.displaySettings"
 msgid "Display Settings"
-msgstr ""
+msgstr "إعدادات العرض"
 
+#, fuzzy
 msgctxt "basic.autoLineNumbering"
 msgid "Auto Line Numbering"
-msgstr ""
+msgstr "ترقيم الأسطر تلقائياً"
 
+#, fuzzy
 msgctxt "basic.capitalizeKeywords"
 msgid "Capitalize Keywords"
-msgstr ""
+msgstr "تكبير الكلمات المفتاحية"
 
+#, fuzzy
 msgctxt "basic.rebuildWarning"
 msgid ""
 "This will replace the current program with a version rebuilt from the Apple "
 "II memory. You will lose any unsaved changes. Are you sure?"
-msgstr ""
+msgstr "سيؤدي هذا إلى استبدال البرنامج الحالي بنسخة تمت إعادة بنائها من ذاكرة Apple II. ستفقد أي تغييرات غير محفوظة. هل أنت متأكد؟"
 
+#, fuzzy
 msgctxt "basic.variable"
 msgid "Variable"
-msgstr ""
+msgstr "متغير"
 
+#, fuzzy
 msgctxt "basic.value"
 msgid "Value"
-msgstr ""
+msgstr "قيمة"
 
+#, fuzzy
 msgctxt "expectin.runScript"
 msgid "Run Script"
-msgstr ""
+msgstr "تشغيل السكربت"
 
+#, fuzzy
 msgctxt "expectin.stopScript"
 msgid "Stop Script"
-msgstr ""
+msgstr "إيقاف السكربت"
 
+#, fuzzy
 msgctxt "saveDisassembly.title"
 msgid "Save Disassembly"
-msgstr ""
+msgstr "حفظ التفكيك"
 
+#, fuzzy
 msgctxt "saveDisassembly.startAddress"
 msgid "Start address $"
-msgstr ""
+msgstr "عنوان البداية $"
 
+#, fuzzy
 msgctxt "saveDisassembly.endAddress"
 msgid "End address $"
-msgstr ""
+msgstr "عنوان النهاية $"
 
+#, fuzzy
 msgctxt "saveDisassembly.includeLabels"
 msgid "Include symbol labels"
-msgstr ""
+msgstr "تضمين تسميات الرموز"
 
+#, fuzzy
 msgctxt "saveDisassembly.separatorLines"
 msgid "Separator lines after JMP, RTS"
-msgstr ""
+msgstr "خطوط فاصلة بعد JMP, RTS"
 
+#, fuzzy
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
-msgstr ""
+msgstr "وضع Sirius Joyport"
 
+#, fuzzy
 msgctxt "gamepad.reverseYAxis"
 msgid "Reverse Y-Axis for Joystick"
-msgstr ""
+msgstr "عكس محور Y لـ Joystick"
 
+#, fuzzy
 msgctxt "gamepad.touchJoystick"
 msgid "Touch Screen Joystick"
-msgstr ""
+msgstr "Joystick شاشة اللمس"
 
+#, fuzzy
 msgctxt "gamepad.tiltSensorJoystick"
 msgid "Use Tilt Sensor as Joystick"
-msgstr ""
+msgstr "استخدام مستشعر الإمالة كـ Joystick"
 
+#, fuzzy
 msgctxt "traceSettings.title"
 msgid "Trace Settings"
-msgstr ""
+msgstr "إعدادات التتبع"
 
+#, fuzzy
 msgctxt "traceSettings.numLines"
 msgid "Number of lines to keep:"
-msgstr ""
+msgstr "عدد الأسطر المراد الاحتفاظ بها:"
 
+#, fuzzy
 msgctxt "traceSettings.rangeWarning"
 msgid "Must be between 100 and 100000"
-msgstr ""
+msgstr "يجب أن يكون بين 100 و 100000"
 
+#, fuzzy
 msgctxt "traceSettings.collapseLoops"
 msgid "Find repeating lines and collapse loops"
-msgstr ""
+msgstr "البحث عن الأسطر المتكررة وطي الحلقات"
 
+#, fuzzy
 msgctxt "traceSettings.ignoreRegisters"
 msgid "Ignore register values when finding repeating lines"
-msgstr ""
+msgstr "تجاهل قيم السجلات عند البحث عن الأسطر المتكررة"
 
+#, fuzzy
 msgctxt "traceSettings.settings"
 msgid "Settings"
-msgstr ""
+msgstr "الإعدادات"
 
+#, fuzzy
 msgctxt "keyboardControl.hideKeyboard"
 msgid "Hide Keyboard"
-msgstr ""
+msgstr "إخفاء لوحة المفاتيح"
 
+#, fuzzy
 msgctxt "keyboardControl.showKeyboard"
 msgid "Show Keyboard"
-msgstr ""
+msgstr "إظهار لوحة المفاتيح"
 
+#, fuzzy
 msgctxt "linkBuilder.title"
 msgid "Link Builder"
-msgstr ""
+msgstr "باني الروابط"
 
+#, fuzzy
 msgctxt "linkBuilder.buttonTitle"
 msgid "Link Builder"
-msgstr ""
+msgstr "باني الروابط"
 
+#, fuzzy
 msgctxt "linkBuilder.userInterface"
 msgid "User interface:"
-msgstr ""
+msgstr "واجهة المستخدم:"
 
+#, fuzzy
 msgctxt "linkBuilder.machine"
 msgid "Machine:"
-msgstr ""
+msgstr "الجهاز:"
 
+#, fuzzy
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
-msgstr ""
+msgstr "وضع الألوان:"
 
+#, fuzzy
 msgctxt "linkBuilder.monitorMode"
 msgid "Monitor mode:"
-msgstr ""
+msgstr "وضع المراقبة:"
 
+#, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb):"
-msgstr ""
+msgstr "حجم قرص RAM (كيلوبايت):"
 
+#, fuzzy
 msgctxt "linkBuilder.emulatorSpeed"
 msgid "Speed of emulator:"
-msgstr ""
+msgstr "سرعة المحاكي:"
 
+#, fuzzy
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
-msgstr ""
+msgstr "سمة واجهة المستخدم:"
 
+#, fuzzy
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
-msgstr ""
+msgstr "إظهار علامة تبويب التصحيح"
 
+#, fuzzy
 msgctxt "linkBuilder.sound"
 msgid "Sound"
-msgstr ""
+msgstr "الصوت"
 
+#, fuzzy
 msgctxt "linkBuilder.startupOptionsTab"
 msgid "Startup Options"
-msgstr ""
+msgstr "خيارات بدء التشغيل"
 
+#, fuzzy
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
-msgstr ""
+msgstr "عند بدء التشغيل:"
 
+#, fuzzy
 msgctxt "linkBuilder.loadDiskImage"
 msgid "Load Disk Image"
-msgstr ""
+msgstr "تحميل صورة القرص"
 
+#, fuzzy
 msgctxt "linkBuilder.loadBasicProgram"
 msgid "Load BASIC Program"
-msgstr ""
+msgstr "تحميل برنامج BASIC"
 
+#, fuzzy
 msgctxt "linkBuilder.loadHexCode"
 msgid "Load Hex Code"
-msgstr ""
+msgstr "تحميل كود الستة عشر"
 
+#, fuzzy
 msgctxt "linkBuilder.diskImageToLoad"
 msgid "Disk image to load on startup:"
-msgstr ""
+msgstr "صورة القرص التي سيتم تحميلها عند بدء التشغيل:"
 
+#, fuzzy
 msgctxt "linkBuilder.customDiskUrl"
 msgid "Custom disk image URL:"
-msgstr ""
+msgstr "رابط صورة القرص المخصص:"
 
+#, fuzzy
 msgctxt "linkBuilder.textToType"
 msgid "Text to type after loading disk:"
-msgstr ""
+msgstr "النص المراد كتابته بعد تحميل القرص:"
 
+#, fuzzy
 msgctxt "linkBuilder.enterTextPlaceholder"
 msgid "Enter Text or BASIC code here"
-msgstr ""
+msgstr "أدخل نصاً أو كود BASIC هنا"
 
+#, fuzzy
 msgctxt "linkBuilder.runBasicAfterLoading"
 msgid "Run BASIC program after loading"
-msgstr ""
+msgstr "تشغيل برنامج BASIC بعد التحميل"
 
+#, fuzzy
 msgctxt "linkBuilder.enterHexPlaceholder"
 msgid "Enter hexadecimal code here, e.g. A9 01 8D 00 03"
-msgstr ""
+msgstr "أدخل كود الستة عشر هنا، مثال: A9 01 8D 00 03"
 
+#, fuzzy
 msgctxt "linkBuilder.hexLoadAddress"
 msgid "Hex load address: $"
-msgstr ""
+msgstr "عنوان التحميل بالنظام الست عشري: $"
 
+#, fuzzy
 msgctxt "linkBuilder.runHexAfterLoading"
 msgid "Run Hex program after loading"
-msgstr ""
+msgstr "تشغيل برنامج Hex بعد التحميل"
 
+#, fuzzy
 msgctxt "linkBuilder.finalUrl"
 msgid "Final URL:"
-msgstr ""
+msgstr "الرابط النهائي:"
 
+#, fuzzy
 msgctxt "linkBuilder.copyToClipboard"
 msgid "Copy to Clipboard"
-msgstr ""
+msgstr "نسخ إلى الحافظة"
 
+#, fuzzy
 msgctxt "linkBuilder.tryIt"
 msgid "Try It"
-msgstr ""
+msgstr "جربه الآن"
 
+#, fuzzy
 msgctxt "dialog.reset"
 msgid "Reset"
-msgstr ""
+msgstr "إعادة ضبط"
 
+#, fuzzy
 msgctxt "dialog.close"
 msgid "Close"
-msgstr ""
+msgstr "إغلاق"
 
+#, fuzzy
 msgctxt "linkBuilder.customDiskUrlOption"
 msgid "Custom URL"
-msgstr ""
+msgstr "رابط مخصص"
 
+#, fuzzy
 msgctxt "linkBuilder.gameModes.normal"
 msgid "Normal"
-msgstr ""
+msgstr "عادي"
 
+#, fuzzy
 msgctxt "linkBuilder.gameModes.game"
 msgid "Game (no drives or tabs)"
-msgstr ""
+msgstr "لعبة (بدون محركات أقراص أو علامات تبويب)"
 
+#, fuzzy
 msgctxt "linkBuilder.gameModes.embed"
 msgid "Embed (hide all controls)"
-msgstr ""
+msgstr "تضمين (إخفاء كافة عناصر التحكم)"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.color"
 msgid "Color"
-msgstr ""
+msgstr "اللون"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.nofringe"
 msgid "Color (no fringing)"
-msgstr ""
+msgstr "ملون (بدون تداخل ألوان)"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.green"
 msgid "Green Screen"
-msgstr ""
+msgstr "شاشة خضراء"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.amber"
 msgid "Amber Screen"
-msgstr ""
+msgstr "شاشة كهرمانية"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.white"
 msgid "White Screen"
-msgstr ""
+msgstr "شاشة بيضاء"
 
+#, fuzzy
 msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
-msgstr ""
+msgstr "أبيض معكوس"
 
+#, fuzzy
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
-msgstr ""
+msgstr "كلاسيكي"
 
+#, fuzzy
 msgctxt "linkBuilder.themes.dark"
 msgid "Dark"
-msgstr ""
+msgstr "داكن"
 
+#, fuzzy
 msgctxt "linkBuilder.themes.minimal"
 msgid "Minimal"
-msgstr ""
+msgstr "بسيط"
 
+#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.512"
 msgid "512"
-msgstr ""
+msgstr "512"
 
+#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.1024"
 msgid "1024"
-msgstr ""
+msgstr "1024"
 
+#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.4096"
 msgid "4096"
-msgstr ""
+msgstr "4096"
 
+#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.8192"
 msgid "8192"
-msgstr ""
+msgstr "8192"
 
+#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
-msgstr ""
+msgstr "64 (افتراضي)"
 
+#, fuzzy
 msgctxt "linkBuilder.slots.configure"
 msgid "Configure slot cards"
-msgstr ""
+msgstr "تكوين بطاقات الفتحات"
 
+#, fuzzy
 msgctxt "linkBuilder.slots.slot"
 msgid "Slot {{slot}}:"
-msgstr ""
+msgstr "الفتحة {{slot}}:"
 
+#, fuzzy
 msgctxt "linkBuilder.slots.cardNone"
 msgid "None (empty)"
-msgstr ""
+msgstr "لا شيء (فارغ)"
 
+#, fuzzy
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
-msgstr ""
+msgstr "🤖 إعداد وكيل الذكاء الاصطناعي"
 
+#, fuzzy
 msgctxt "agent.setupInstruction"
 msgid "Click the gear icon below to configure your AI assistant."
-msgstr ""
+msgstr "انقر على أيقونة الترس أدناه لتهيئة مساعد الذكاء الاصطناعي الخاص بك."
 
+#, fuzzy
 msgctxt "agent.welcomeTitle"
 msgid "Welcome to the Apple II assistant! I can help you with:"
-msgstr ""
+msgstr "مرحباً بك في مساعد Apple II! يمكنني مساعدتك في:"
 
+#, fuzzy
 msgctxt "agent.welcomeItem1"
 msgid "Inspecting CPU registers and memory"
-msgstr ""
+msgstr "فحص سجلات وحدة المعالجة المركزية والذاكرة"
 
+#, fuzzy
 msgctxt "agent.welcomeItem2"
 msgid "Controlling execution (boot, reset, step, breakpoints)"
-msgstr ""
+msgstr "التحكم في التنفيذ (الإقلاع، إعادة الضبط، الخطوة، نقاط التوقف)"
 
+#, fuzzy
 msgctxt "agent.welcomeItem3"
 msgid "Loading programs and managing disks"
-msgstr ""
+msgstr "تحميل البرامج وإدارة الأقراص"
 
+#, fuzzy
 msgctxt "agent.welcomeItem4"
 msgid "Debugging 6502 assembly code"
-msgstr ""
+msgstr "تصحيح أخطاء لغة التجميع 6502"
 
+#, fuzzy
 msgctxt "agent.welcomeItem5"
 msgid "Reading screen content and system state"
-msgstr ""
+msgstr "قراءة محتوى الشاشة وحالة النظام"
 
+#, fuzzy
 msgctxt "agent.welcomePrompt"
 msgid "Just ask me anything!"
-msgstr ""
+msgstr "فقط اسألني عن أي شيء!"
 
+#, fuzzy
 msgctxt "agent.userRole"
 msgid "You"
-msgstr ""
+msgstr "أنت"
 
+#, fuzzy
 msgctxt "agent.assistantRole"
 msgid "🤖 Assistant"
-msgstr ""
+msgstr "🤖 المساعد"
 
+#, fuzzy
 msgctxt "agent.inputPlaceholder"
 msgid ""
 "Ask me anything about the Apple II emulator... (Press Enter to send, Shift"
 "+Enter for new line)"
-msgstr ""
+msgstr "...اسألني أي شيء عن محاكي Apple II (اضغط Enter للإرسال، و Shift+Enter لسطر جديد)"
 
+#, fuzzy
 msgctxt "agent.stop"
 msgid "Stop"
-msgstr ""
+msgstr "إيقاف"
 
+#, fuzzy
 msgctxt "agent.send"
 msgid "Send"
-msgstr ""
+msgstr "إرسال"
 
+#, fuzzy
 msgctxt "agent.changeConfiguration"
 msgid "Change configuration"
-msgstr ""
+msgstr "تغيير الإعدادات"
 
+#, fuzzy
 msgctxt "agent.processing"
 msgid "Processing..."
-msgstr ""
+msgstr "جاري المعالجة..."
 
+#, fuzzy
 msgctxt "agent.tokens"
 msgid "• {{input}} in / {{output}} out"
-msgstr ""
+msgstr "• {{input}} وارد / {{output}} صادر"
 
+#, fuzzy
 msgctxt "agent.configTitle"
 msgid "Configure AI Agent"
-msgstr ""
+msgstr "تكوين وكيل الذكاء الاصطناعي"
 
+#, fuzzy
 msgctxt "agent.provider"
 msgid "Provider:"
-msgstr ""
+msgstr "المزود:"
 
+#, fuzzy
 msgctxt "agent.model"
 msgid "Model:"
-msgstr ""
+msgstr "النموذج:"
 
+#, fuzzy
 msgctxt "agent.apiKey"
 msgid "API Key:"
-msgstr ""
+msgstr "مفتاح API:"
 
+#, fuzzy
 msgctxt "agent.ollamaUrl"
 msgid "Ollama URL:"
-msgstr ""
+msgstr "رابط Ollama:"
 
+#, fuzzy
 msgctxt "agent.save"
 msgid "Save"
-msgstr ""
+msgstr "حفظ"
 
+#, fuzzy
 msgctxt "agent.clear"
 msgid "Clear"
-msgstr ""
+msgstr "مسح"
 
+#, fuzzy
 msgctxt "agent.storageWarning"
 msgid ""
 "Your API key is stored locally in your browser and never sent to apple2ts."
 "com. Get your {{provider}} API key at"
-msgstr ""
+msgstr "يتم تخزين مفتاح API الخاص بك محليًا في متصفحك ولا يتم إرساله أبدًا إلى apple2ts.com. احصل على مفتاح API الخاص بـ {{provider}} من"
 
+#, fuzzy
 msgctxt "agent.ollamaWarning"
 msgid ""
 "Ollama runs locally on your machine. Make sure you have Ollama installed and "
 "running. Download from"
-msgstr ""
+msgstr "يعمل Ollama محلياً على جهازك. تأكد من تثبيت Ollama وتشغيله. قم بالتحميل من"
 
+#, fuzzy
 msgctxt "agent.providerNotConfigured"
 msgid "Provider not configured - click the gear icon to set up your AI agent"
-msgstr ""
+msgstr "لم يتم إعداد المزود - انقر على أيقونة الترس لإعداد وكيل الذكاء الاصطناعي الخاص بك"
 
+#, fuzzy
 msgctxt "agent.providerConfigured"
 msgid "Provider: {{provider}} ({{model}})"
-msgstr ""
+msgstr "المزود: {{provider}} ({{model}})"
 
+#, fuzzy
 msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
-msgstr ""
+msgstr "تنسيق مفتاح API غير صالح لـ {{provider}}"
 
+#, fuzzy
 msgctxt "startup.welcome"
 msgid "Welcome to Apple2TS"
-msgstr ""
+msgstr "مرحباً بك في Apple2TS"
 
+#, fuzzy
 msgctxt "startup.subtitle"
 msgid "TypeScript Apple II Emulator"
-msgstr ""
+msgstr "محاكي Apple II بلغة TypeScript"
 
+#, fuzzy
 msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
-msgstr ""
+msgstr "(c) {{year}} C.Torrence + المتعاونون"
 
+#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
-msgstr ""
+msgstr "انقر على أيقونة مجموعات الأقراص\nلتحميل قرص أو لعبة مدمجة."
 
+#, fuzzy
 msgctxt "startup.retroControlPanel"
 msgid ""
 "Press SHIFT+ESC to display\n"
 "the control panel."
-msgstr ""
+msgstr "اضغط SHIFT+ESC لإظهار\nلوحة التحكم."
 
+#, fuzzy
 msgctxt "startup.mouseCapture"
 msgid ""
 "Press F1 to capture or release mouse."
-msgstr ""
+msgstr "اضغط F1 لالتقاط الماوس أو تحريره."
 
+#, fuzzy
 msgctxt "retroControl.ariaLabel"
 msgid "Apple2TS control panel"
-msgstr ""
+msgstr "لوحة تحكم Apple2TS"
 
+#, fuzzy
 msgctxt "retroControl.machine"
 msgid "Machine"
-msgstr ""
+msgstr "الجهاز"
 
+#, fuzzy
 msgctxt "retroControl.fullscreen"
 msgid "Fullscreen"
-msgstr ""
+msgstr "ملء الشاشة"
 
+#, fuzzy
 msgctxt "retroControl.diskCollection"
 msgid "Disks"
-msgstr ""
+msgstr "الأقراص"
 
+#, fuzzy
 msgctxt "retroControl.diskDrives"
 msgid "Drives"
-msgstr ""
+msgstr "المحركات"
 
+#, fuzzy
 msgctxt "retroControl.display"
 msgid "Display"
-msgstr ""
+msgstr "العرض"
 
+#, fuzzy
 msgctxt "retroControl.monitorMode"
 msgid "Monitor Mode"
-msgstr ""
+msgstr "وضع المراقبة"
 
+#, fuzzy
 msgctxt "retroControl.monitorModeChoice.ntsc"
 msgid "NTSC"
-msgstr ""
+msgstr "NTSC"
 
+#, fuzzy
 msgctxt "retroControl.monitorModeChoice.rgb"
 msgid "RGB"
-msgstr ""
+msgstr "RGB"
 
+#, fuzzy
 msgctxt "retroControl.sound"
 msgid "Sound"
-msgstr ""
+msgstr "الصوت"
 
+#, fuzzy
 msgctxt "retroControl.options"
 msgid "Options"
-msgstr ""
+msgstr "خيارات"
 
+#, fuzzy
 msgctxt "retroControl.skin"
 msgid "Skin"
-msgstr ""
+msgstr "المظهر"
 
+#, fuzzy
 msgctxt "retroControl.personalization"
 msgid "Personalization"
-msgstr ""
+msgstr "التخصيص"
 
+#, fuzzy
 msgctxt "retroControl.text"
 msgid "Text"
-msgstr ""
+msgstr "نص"
 
+#, fuzzy
 msgctxt "retroControl.background"
 msgid "Background"
-msgstr ""
+msgstr "الخلفية"
 
+#, fuzzy
 msgctxt "retroControl.border"
 msgid "Border"
-msgstr ""
+msgstr "الإطار"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.black"
 msgid "Black"
-msgstr ""
+msgstr "أسود"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.red"
 msgid "Red"
-msgstr ""
+msgstr "أحمر"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.darkBlue"
 msgid "Dark Blue"
-msgstr ""
+msgstr "أزرق داكن"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.purple"
 msgid "Purple"
-msgstr ""
+msgstr "أرجواني"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.darkGreen"
 msgid "Dark Green"
-msgstr ""
+msgstr "أخضر داكن"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.darkGray"
 msgid "Dark Gray"
-msgstr ""
+msgstr "رمادي داكن"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.mediumBlue"
 msgid "Medium Blue"
-msgstr ""
+msgstr "أزرق متوسط"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.lightBlue"
 msgid "Light Blue"
-msgstr ""
+msgstr "أزرق فاتح"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.brown"
 msgid "Brown"
-msgstr ""
+msgstr "بني"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.orange"
 msgid "Orange"
-msgstr ""
+msgstr "برتقالي"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.lightGray"
 msgid "Light Gray"
-msgstr ""
+msgstr "رمادي فاتح"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.pink"
 msgid "Pink"
-msgstr ""
+msgstr "وردي"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.lightGreen"
 msgid "Light Green"
-msgstr ""
+msgstr "أخضر فاتح"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.yellow"
 msgid "Yellow"
-msgstr ""
+msgstr "أصفر"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.aquamarine"
 msgid "Aquamarine"
-msgstr ""
+msgstr "أكوامارين"
 
+#, fuzzy
 msgctxt "retroControl.iigsColor.white"
 msgid "White"
-msgstr ""
+msgstr "أبيض"
 
+#, fuzzy
 msgctxt "retroControl.keyboard"
 msgid "Keyboard"
-msgstr ""
+msgstr "لوحة المفاتيح"
 
+#, fuzzy
 msgctxt "retroControl.joystick"
 msgid "Joystick"
-msgstr ""
+msgstr "عصا التحكم"
 
+#, fuzzy
 msgctxt "retroControl.slots"
 msgid "Slots"
-msgstr ""
+msgstr "الفتحات"
 
+#, fuzzy
 msgctxt "retroControl.printerPort"
 msgid "Printer Port"
-msgstr ""
+msgstr "منفذ الطابعة"
 
+#, fuzzy
 msgctxt "retroControl.quit"
 msgid "Quit"
-msgstr ""
+msgstr "خروج"
 
+#, fuzzy
 msgctxt "retroControl.apple2tsCollection"
 msgid "Apple2TS Collection"
-msgstr ""
+msgstr "مجموعة Apple2TS"
 
+#, fuzzy
 msgctxt "retroControl.newReleases"
 msgid "New Releases"
-msgstr ""
+msgstr "الإصدارات الجديدة"
 
+#, fuzzy
 msgctxt "retroControl.favorites"
 msgid "Favorites"
-msgstr ""
+msgstr "المفضلة"
 
+#, fuzzy
 msgctxt "retroControl.exportDisksToHdv"
 msgid "Export Disks to HDV"
-msgstr ""
+msgstr "تصدير الأقراص إلى HDV"
 
+#, fuzzy
 msgctxt "retroControl.noDiskDrivesAvailable"
 msgid "No disk drives available"
-msgstr ""
+msgstr "لا توجد محركات أقراص متاحة"
 
+#, fuzzy
 msgctxt "retroControl.select"
 msgid "Select"
-msgstr ""
+msgstr "تحديد"
 
+#, fuzzy
 msgctxt "retroControl.open"
 msgid "Open"
-msgstr ""
+msgstr "فتح"
 
+#, fuzzy
 msgctxt "retroControl.load"
 msgid "Load"
-msgstr ""
+msgstr "تحميل"
 
+#, fuzzy
 msgctxt "retroControl.save"
 msgid "Save"
-msgstr ""
+msgstr "حفظ"
 
+#, fuzzy
 msgctxt "retroControl.clipboard"
 msgid "Clipboard"
-msgstr ""
+msgstr "الحافظة"
 
+#, fuzzy
 msgctxt "retroControl.cancelEsc"
 msgid "Cancel:Esc"
-msgstr ""
+msgstr "إلغاء:Esc"
 
+#, fuzzy
 msgctxt "retroControl.color"
 msgid "Color"
-msgstr ""
+msgstr "اللون"
 
+#, fuzzy
 msgctxt "retroControl.colorNoFringe"
 msgid "Color (no fringe)"
-msgstr ""
+msgstr "اللون (بدون حواف)"
 
+#, fuzzy
 msgctxt "retroControl.green"
 msgid "Green"
-msgstr ""
+msgstr "أخضر"
 
+#, fuzzy
 msgctxt "retroControl.amber"
 msgid "Amber"
-msgstr ""
+msgstr "كهرماني"
 
+#, fuzzy
 msgctxt "retroControl.white"
 msgid "White"
-msgstr ""
+msgstr "أبيض"
 
+#, fuzzy
 msgctxt "retroControl.inverse"
 msgid "Inverse"
-msgstr ""
+msgstr "عكسي"
 
+#, fuzzy
 msgctxt "retroControl.snail"
 msgid "Snail"
-msgstr ""
+msgstr "حلزون"
 
+#, fuzzy
 msgctxt "retroControl.slow"
 msgid "Slow"
-msgstr ""
+msgstr "بطيء"
 
+#, fuzzy
 msgctxt "retroControl.normal"
 msgid "Normal"
-msgstr ""
+msgstr "عادي"
 
+#, fuzzy
 msgctxt "retroControl.twoMhz"
 msgid "2 MHz"
-msgstr ""
+msgstr "2 MHz"
 
+#, fuzzy
 msgctxt "retroControl.threeMhz"
 msgid "3 MHz"
-msgstr ""
+msgstr "3 MHz"
 
+#, fuzzy
 msgctxt "retroControl.fast"
 msgid "Fast"
-msgstr ""
+msgstr "سريع"
 
+#, fuzzy
 msgctxt "retroControl.warp"
 msgid "Warp"
-msgstr ""
+msgstr "قفزة زمنية"
 
+#, fuzzy
 msgctxt "retroControl.systemSpeed"
 msgid "System Speed"
-msgstr ""
+msgstr "سرعة النظام"
 
+#, fuzzy
 msgctxt "retroControl.other"
 msgid "Other"
-msgstr ""
+msgstr "أخرى"
 
+#, fuzzy
 msgctxt "retroControl.timeMachine"
 msgid "Snapshots"
-msgstr ""
+msgstr "لقطات الحالة"
 
+#, fuzzy
 msgctxt "retroControl.language"
 msgid "Language"
-msgstr ""
+msgstr "اللغة"
 
+#, fuzzy
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
-msgstr ""
+msgstr "ImageWriter المدمج"
 
+#, fuzzy
 msgctxt "retroControl.selectExternalPort"
 msgid "Select External Port"
-msgstr ""
+msgstr "تحديد منفذ خارجي"
 
+#, fuzzy
 msgctxt "retroControl.externalPort"
 msgid "External Port"
-msgstr ""
+msgstr "المنفذ الخارجي"
 
+#, fuzzy
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
-msgstr ""
+msgstr "إدخال بأحرف صغيرة"
 
+#, fuzzy
 msgctxt "retroControl.lowercase"
 msgid "Lowercase"
-msgstr ""
+msgstr "أحرف صغيرة"
 
+#, fuzzy
 msgctxt "retroControl.openAppleKey"
 msgid "Open Apple key"
-msgstr ""
+msgstr "مفتاح Open Apple"
 
+#, fuzzy
 msgctxt "retroControl.sortOrder"
 msgid "Sort"
-msgstr ""
+msgstr "الترتيب"
 
+#, fuzzy
 msgctxt "retroControl.slot"
 msgid "Slot {{slot}}"
-msgstr ""
+msgstr "الفتحة {{slot}}"
 
+#, fuzzy
 msgctxt "retroControl.drive"
 msgid "{{drive}}: {{disk}}"
-msgstr ""
+msgstr "{{drive}}: {{disk}}"
 
+#, fuzzy
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
-msgstr ""
+msgstr "{{count}} تم تهيئتها"
 
+#, fuzzy
 msgctxt "retroControl.card.empty"
 msgid "Empty"
-msgstr ""
+msgstr "فارغ"
 
+#, fuzzy
 msgctxt "retroControl.card.ssc"
 msgid "Super Serial Card"
-msgstr ""
+msgstr "Super Serial Card"
 
+#, fuzzy
 msgctxt "retroControl.card.softcard"
 msgid "Z-80 SoftCard"
-msgstr ""
+msgstr "Z-80 SoftCard"
 
+#, fuzzy
 msgctxt "retroControl.card.aux"
 msgid "Auxiliary memory"
-msgstr ""
+msgstr "ذاكرة إضافية"
 
+#, fuzzy
 msgctxt "retroControl.card.videoterm"
 msgid "Videx VideoTerm"
-msgstr ""
+msgstr "Videx VideoTerm"
 
+#, fuzzy
 msgctxt "retroControl.card.mockingboard"
 msgid "Mockingboard"
-msgstr ""
+msgstr "Mockingboard"
 
+#, fuzzy
 msgctxt "retroControl.card.mouse"
 msgid "Mouse card"
-msgstr ""
+msgstr "بطاقة الفأرة"
 
+#, fuzzy
 msgctxt "retroControl.card.vera"
 msgid "VERA graphics"
-msgstr ""
+msgstr "رسوميات VERA"
 
+#, fuzzy
 msgctxt "retroControl.card.passport"
 msgid "Passport MIDI"
-msgstr ""
+msgstr "Passport MIDI"
 
+#, fuzzy
 msgctxt "retroControl.card.disk2"
 msgid "Disk II controller"
-msgstr ""
+msgstr "متحكم Disk II"
 
+#, fuzzy
 msgctxt "retroControl.card.smartport"
 msgid "SmartPort drive"
-msgstr ""
+msgstr "محرك SmartPort"
 
+#, fuzzy
 msgctxt "retroControl.fetchingDisk"
 msgid "Fetching disk {{current}}/{{total}}"
-msgstr ""
+msgstr "جاري جلب القرص {{current}}/{{total}}"
 
+#, fuzzy
 msgctxt "retroControl.downloadFailed"
 msgid "Unable to download {{title}}"
-msgstr ""
+msgstr "تعذر تنزيل {{title}}"
 
+#, fuzzy
 msgctxt "retroControl.exportFailed"
 msgid "Export to HDV failed: {{message}}"
-msgstr ""
+msgstr "فشل التصدير إلى HDV: {{message}}"
 
+#, fuzzy
 msgctxt "binaryFile.title"
 msgid "Load Binary File"
-msgstr ""
+msgstr "تحميل ملف ثنائي"
 
+#, fuzzy
 msgctxt "binaryFile.loadAtAddress"
 msgid "Load into memory at address $"
-msgstr ""
+msgstr "تحميل في الذاكرة عند العنوان $"
 
+#, fuzzy
 msgctxt "binaryFile.runAfterLoading"
 msgid "Run code after loading"
-msgstr ""
+msgstr "تشغيل الكود بعد التحميل"
 
+#, fuzzy
 msgctxt "disk.importImageIntoEmulator"
 msgid "Import Disk Image into Emulator"
-msgstr ""
+msgstr "استيراد صورة القرص إلى المحاكي"
 
+#, fuzzy
 msgctxt "disk.downloadDiskImage"
 msgid "Download Disk Image"
-msgstr ""
+msgstr "تحميل صورة القرص"
 
+#, fuzzy
 msgctxt "demoZoo.snapshotBadge"
 msgid "Snapshot at {{date}}"
-msgstr ""
+msgstr "لقطة في {{date}}"
 
+#, fuzzy
 msgctxt "demoZoo.snapshotCreated"
 msgid "DemoZoo snapshot created: {{date}}"
-msgstr ""
+msgstr "تم إنشاء لقطة DemoZoo: {{date}}"
 
+#, fuzzy
 msgctxt "agent.customModel"
 msgid "Custom Model..."
-msgstr ""
+msgstr "...نموذج مخصص"
 
+#, fuzzy
 msgctxt "agent.customModelName"
 msgid "Custom Model Name:"
-msgstr ""
+msgstr "اسم النموذج المخصص:"
 
+#, fuzzy
 msgctxt "debug.stackDump"
 msgid "Stack Dump"
-msgstr ""
+msgstr "تفريغ المكدس"
 
+#, fuzzy
 msgctxt "debug.timeTravelSnapshots"
 msgid "Time Travel Snapshots"
-msgstr ""
+msgstr "لقطات السفر عبر الزمن"
 
+#, fuzzy
 msgctxt "debug.heatMapTitle"
 msgid "Heat Map"
-msgstr ""
+msgstr "الخريطة الحرارية"
 
+#, fuzzy
 msgctxt "debug.memoryDumpTitle"
 msgid "Memory Dump"
-msgstr ""
+msgstr "تفريغ الذاكرة"
 
+#, fuzzy
 msgctxt "debug.veraMonitor"
 msgid "VERA Monitor"
-msgstr ""
+msgstr "مراقب VERA"
 
+#, fuzzy
 msgctxt "debug.pauseForDisassembly"
 msgid "Pause to view disassembly"
-msgstr ""
+msgstr "إيقاف مؤقت لعرض التجميع"
 
+#, fuzzy
 msgctxt "debug.cycles"
 msgid "Cycles:"
-msgstr ""
+msgstr "الدورات:"
 
+#, fuzzy
 msgctxt "debug.resetCycleCountAndHeatMaps"
 msgid "Reset cycle count and heat maps"
-msgstr ""
+msgstr "إعادة ضبط عداد الدورات والخرائط الحرارية"
 
+#, fuzzy
 msgctxt "debug.breakpointTitle"
 msgid "Edit Breakpoint"
-msgstr ""
+msgstr "تعديل نقطة التوقف"
 
+#, fuzzy
 msgctxt "debug.breakpoint.breakAt"
 msgid "Break at:"
-msgstr ""
+msgstr "التوقف عند:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.breakpoint"
 msgid "Breakpoint"
-msgstr ""
+msgstr "نقطة التوقف"
 
+#, fuzzy
 msgctxt "debug.breakpoint.watchpoint"
 msgid "Watchpoint"
-msgstr ""
+msgstr "نقطة مراقبة"
 
+#, fuzzy
 msgctxt "debug.breakpoint.instruction"
 msgid "Instruction"
-msgstr ""
+msgstr "التعليمات"
 
+#, fuzzy
 msgctxt "debug.breakpoint.address"
 msgid "Address:"
-msgstr ""
+msgstr "العنوان:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.hitCount"
 msgid "Hit Count:"
-msgstr ""
+msgstr "عدد مرات الضرب:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.expression"
 msgid "Expression:"
-msgstr ""
+msgstr "التعبير:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.memoryBank"
 msgid "Memory Bank:"
-msgstr ""
+msgstr "بنك الذاكرة:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.opcode"
 msgid "Opcode:"
-msgstr ""
+msgstr "رمز العملية:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.addressingMode"
 msgid "Mode:"
-msgstr ""
+msgstr "الوضع:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.value"
 msgid "Value:"
-msgstr ""
+msgstr "القيمة:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.anyIllegal65C02"
 msgid "Any illegal 65C02 opcode"
-msgstr ""
+msgstr "أي رمز تشغيل 65C02 غير صالح"
 
+#, fuzzy
 msgctxt "debug.breakpoint.anyIllegal6502"
 msgid "Any illegal 6502 opcode"
-msgstr ""
+msgstr "أي رمز تشغيل 6502 غير صالح"
 
+#, fuzzy
 msgctxt "debug.breakpoint.read"
 msgid "Read"
-msgstr ""
+msgstr "قراءة"
 
+#, fuzzy
 msgctxt "debug.breakpoint.write"
 msgid "Write"
-msgstr ""
+msgstr "كتابة"
 
+#, fuzzy
 msgctxt "debug.breakpoint.withHexValue"
 msgid "With hex value:"
-msgstr ""
+msgstr "بالقيمة الست عشرية:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.actions"
 msgid "Actions:"
-msgstr ""
+msgstr "الإجراءات:"
 
+#, fuzzy
 msgctxt "debug.breakpoint.haltAfterActions"
 msgid "Halt execution after actions"
-msgstr ""
+msgstr "إيقاف التنفيذ بعد الإجراءات"
 
+#, fuzzy
 msgctxt "debug.breakpoint.actionAddress"
 msgid "address"
-msgstr ""
+msgstr "العنوان"
 
+#, fuzzy
 msgctxt "debug.breakpoint.actionToAddress"
 msgid "to address"
-msgstr ""
+msgstr "إلى العنوان"
 
+#, fuzzy
 msgctxt "debug.breakpoint.actionToValue"
 msgid "to value"
-msgstr ""
+msgstr "إلى القيمة"
 
+#, fuzzy
 msgctxt "debug.breakpoint.add"
 msgid "Add new breakpoint"
-msgstr ""
+msgstr "إضافة نقطة توقف جديدة"
 
+#, fuzzy
 msgctxt "debug.breakpoint.removeAll"
 msgid "Remove all breakpoints"
-msgstr ""
+msgstr "إزالة جميع نقاط التوقف"
 
+#, fuzzy
 msgctxt "debug.breakpoint.edit"
 msgid "Edit breakpoint"
-msgstr ""
+msgstr "تعديل نقطة التوقف"
 
+#, fuzzy
 msgctxt "debug.breakpoint.delete"
 msgid "Delete breakpoint"
-msgstr ""
+msgstr "حذف نقطة التوقف"
 
+#, fuzzy
 msgctxt "debug.heatMap.cpuProgramCounter"
 msgid "6502 Program Counter"
-msgstr ""
+msgstr "عداد برنامج 6502"
 
+#, fuzzy
 msgctxt "debug.heatMap.count"
 msgid "Count"
-msgstr ""
+msgstr "العدد"
 
+#, fuzzy
 msgctxt "debug.heatMap.getMemoryCalls"
 msgid "Get Memory Calls"
-msgstr ""
+msgstr "جلب استدعاءات الذاكرة"
 
+#, fuzzy
 msgctxt "debug.heatMap.setMemoryCalls"
 msgid "Set Memory Calls"
-msgstr ""
+msgstr "تعيين استدعاءات الذاكرة"
 
+#, fuzzy
 msgctxt "debug.heatMap.colorTable"
 msgid "Color Table"
-msgstr ""
+msgstr "جدول الألوان"
 
+#, fuzzy
 msgctxt "debug.heatMap.showMagnifier"
 msgid "Show Magnifier"
-msgstr ""
+msgstr "إظهار المكبر"
 
+#, fuzzy
 msgctxt "debug.heatMap.jumpToProgramCounter"
 msgid "Jump to current program counter"
-msgstr ""
+msgstr "الانتقال إلى عداد البرنامج الحالي"
 
+#, fuzzy
 msgctxt "debug.heatMap.jumpToMaximumValue"
 msgid "Jump to maximum heatmap value"
-msgstr ""
+msgstr "الانتقال إلى أقصى قيمة في الخريطة الحرارية"
 
+#, fuzzy
 msgctxt "debug.memoryDump.pickWatchpoint"
 msgid "Pick Watchpoint"
-msgstr ""
+msgstr "اختيار نقطة مراقبة"
 
+#, fuzzy
 msgctxt "debug.memoryDump.saveMemory"
 msgid "Save Memory"
-msgstr ""
+msgstr "حفظ الذاكرة"
 
+#, fuzzy
 msgctxt "debug.memoryDump.highBitAscii"
 msgid "High Bit ASCII"
-msgstr ""
+msgstr "ASCII بت عالٍ"
 
+#, fuzzy
 msgctxt "debug.memoryDump.searchHex"
 msgid "Search Hex"
-msgstr ""
+msgstr "بحث Hex"
 
+#, fuzzy
 msgctxt "debug.memoryDump.searchAscii"
 msgid "Search ASCII"
-msgstr ""
+msgstr "بحث ASCII"
 
+#, fuzzy
 msgctxt "debug.memoryDump.noMatch"
 msgid "no match"
-msgstr ""
+msgstr "لا توجد مطابقة"
 
+#, fuzzy
 msgctxt "debug.memoryDump.matchCount"
 msgid "{{match}} of {{total}}"
-msgstr ""
+msgstr "{{match}} من {{total}}"
 
+#, fuzzy
 msgctxt "debug.memoryDump.previousMatch"
 msgid "Previous Match"
-msgstr ""
+msgstr "المطابقة السابقة"
 
+#, fuzzy
 msgctxt "debug.memoryDump.nextMatch"
 msgid "Next Match"
-msgstr ""
+msgstr "المطابقة التالية"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.current"
 msgid "Current memory"
-msgstr ""
+msgstr "الذاكرة الحالية"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.mainRam"
 msgid "Main RAM"
-msgstr ""
+msgstr "ذاكرة RAM الرئيسية"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.auxiliaryRam"
 msgid "Auxiliary RAM"
-msgstr ""
+msgstr "ذاكرة RAM المساعدة"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.hgr1"
 msgid "HGR page 1"
-msgstr ""
+msgstr "صفحة HGR 1"
 
+#, fuzzy
 msgctxt "debug.memoryDump.range.hgr2"
 msgid "HGR page 2"
-msgstr ""
+msgstr "صفحة HGR 2"
 
+#, fuzzy
 msgctxt "debug.disassemblyPreviousLocation"
 msgid "Previous Location"
-msgstr ""
+msgstr "الموقع السابق"
 
+#, fuzzy
 msgctxt "debug.disassemblyNextLocation"
 msgid "Next Location"
-msgstr ""
+msgstr "الموقع التالي"
 
+#, fuzzy
 msgctxt "debug.memoryMap.title"
 msgid "Memory Map"
-msgstr ""
+msgstr "خريطة الذاكرة"
 
+#, fuzzy
 msgctxt "debug.memoryMap.read"
 msgid "Read"
-msgstr ""
+msgstr "قراءة"
 
+#, fuzzy
 msgctxt "debug.memoryMap.write"
 msgid "Write"
-msgstr ""
+msgstr "كتابة"
 
+#, fuzzy
 msgctxt "debug.memoryMap.zeroPage"
 msgid "Zero Page"
-msgstr ""
+msgstr "الصفحة الصفرية"
 
+#, fuzzy
 msgctxt "debug.memoryMap.stack"
 msgid "Stack"
-msgstr ""
+msgstr "المكدس"
 
+#, fuzzy
 msgctxt "debug.memoryMap.text"
 msgid "Text"
-msgstr ""
+msgstr "نص"
 
+#, fuzzy
 msgctxt "debug.memoryMap.hiresMode"
 msgid "Hires"
-msgstr ""
+msgstr "دقة عالية"
 
+#, fuzzy
 msgctxt "debug.memoryMap.hires"
 msgid "HGR"
-msgstr ""
+msgstr "HGR"
 
+#, fuzzy
 msgctxt "debug.memoryMap.internalRom"
 msgid "Internal ROM"
-msgstr ""
+msgstr "ROM داخلي"
 
+#, fuzzy
 msgctxt "debug.memoryMap.slotRom"
 msgid "Slot ROM"
-msgstr ""
+msgstr "ROM الفتحة"
 
+#, fuzzy
 msgctxt "debug.memoryMap.auxBank"
 msgid "Aux Bank"
-msgstr ""
+msgstr "بنك مساعد"
 
+#, fuzzy
 msgctxt "debug.memoryMap.auxRead"
 msgid "Aux Read"
-msgstr ""
+msgstr "قراءة مساعدة"
 
+#, fuzzy
 msgctxt "debug.memoryMap.auxWrite"
 msgid "Aux Write"
-msgstr ""
+msgstr "كتابة مساعدة"
 
+#, fuzzy
 msgctxt "debug.memoryMap.store80"
 msgid "80 Store"
-msgstr ""
+msgstr "تخزين 80"
 
+#, fuzzy
 msgctxt "debug.memoryMap.mixed"
 msgid "Mixed"
-msgstr ""
+msgstr "مختلط"
 
+#, fuzzy
 msgctxt "debug.memoryMap.page2"
 msgid "Page 2"
-msgstr ""
+msgstr "الصفحة 2"
 
+#, fuzzy
 msgctxt "debug.memoryMap.columns80"
 msgid "80 Column"
-msgstr ""
+msgstr "80 عمود"
 
+#, fuzzy
 msgctxt "debug.memoryMap.doubleHires"
 msgid "Dbl Hires"
-msgstr ""
+msgstr "دقة مزدوجة"
 
+#, fuzzy
 msgctxt "debug.memoryMap.video7Mono"
 msgid "V7 Mono"
-msgstr ""
+msgstr "V7 أحادي"
 
+#, fuzzy
 msgctxt "debug.memoryMap.video7160"
 msgid "V7 160x"
-msgstr ""
+msgstr "V7 160x"
 
+#, fuzzy
 msgctxt "debug.memoryMap.video7Mixed"
 msgid "V7 Mixed"
-msgstr ""
+msgstr "V7 مختلط"
 
+#, fuzzy
 msgctxt "debug.memoryMap.internalCxxxRom"
 msgid "Cxxx ROM"
-msgstr ""
+msgstr "ROM Cxxx"
 
+#, fuzzy
 msgctxt "debug.memoryMap.internalC300Rom"
 msgid "C300 ROM"
-msgstr ""
+msgstr "ROM C300"
 
+#, fuzzy
 msgctxt "debug.memoryMap.readRam"
 msgid "Read RAM"
-msgstr ""
+msgstr "قراءة RAM"
 
+#, fuzzy
 msgctxt "debug.memoryMap.writeRam"
 msgid "Write RAM"
-msgstr ""
+msgstr "كتابة RAM"
 
+#, fuzzy
 msgctxt "debug.memoryMap.bank2Switch"
 msgid "Bank 2"
-msgstr ""
+msgstr "تبديل البنك 2"
 
+#, fuzzy
 msgctxt "collection.deleteAllBookmarks"
 msgid "Delete all bookmarks"
-msgstr ""
+msgstr "حذف جميع العلامات المرجعية"
 
+#, fuzzy
 msgctxt "collection.restoreAllBookmarks"
 msgid "Restore all bookmarks"
-msgstr ""
+msgstr "استعادة جميع العلامات المرجعية"
 
+#, fuzzy
 msgctxt "collection.sort.nameAscending"
 msgid "A-Z"
-msgstr ""
+msgstr "A-Z"
 
+#, fuzzy
 msgctxt "collection.sort.nameDescending"
 msgid "Z-A"
-msgstr ""
+msgstr "Z-A"
 
+#, fuzzy
 msgctxt "collection.sort.newest"
 msgid "New"
-msgstr ""
+msgstr "الأحدث"
 
+#, fuzzy
 msgctxt "collection.sort.oldest"
 msgid "Old"
-msgstr ""
+msgstr "الأقدم"
 
+#, fuzzy
 msgctxt "traceSettings.unlimited"
 msgid "Unlimited"
-msgstr ""
+msgstr "غير محدود"
 
+#, fuzzy
 msgctxt "traceSettings.cyclesUnit"
 msgid "cycles"
-msgstr ""
+msgstr "دورات"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.none"
 msgid "(no action)"
-msgstr ""
+msgstr "(لا إجراء)"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.set"
 msgid "Set"
-msgstr ""
+msgstr "تعيين"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.jump"
 msgid "Jump to"
-msgstr ""
+msgstr "القفز إلى"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.print"
 msgid "Print to console"
-msgstr ""
+msgstr "طباعة في وحدة التحكم"
 
+#, fuzzy
 msgctxt "debug.breakpoint.action.snapshot"
 msgid "Snapshot"
-msgstr ""
+msgstr "لقطة"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.address"
 msgid "Address"
-msgstr ""
+msgstr "العنوان"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.accumulator"
 msgid "Accumulator"
-msgstr ""
+msgstr "المراكم"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.x"
 msgid "X Register"
-msgstr ""
+msgstr "المسجل X"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.y"
 msgid "Y Register"
-msgstr ""
+msgstr "المسجل Y"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.stack"
 msgid "Stack Pointer"
-msgstr ""
+msgstr "مؤشر المكدس"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.status"
 msgid "Processor Status"
-msgstr ""
+msgstr "حالة المعالج"
 
+#, fuzzy
 msgctxt "debug.breakpoint.register.programCounter"
 msgid "Program Counter"
-msgstr ""
+msgstr "عداد البرنامج"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.implied"
 msgid "Implied"
-msgstr ""
+msgstr "ضمني"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.immediate"
 msgid "Immediate"
-msgstr ""
+msgstr "فوري"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageRelative"
 msgid "Zero page/Relative"
-msgstr ""
+msgstr "الصفحة الصفرية/نسبي"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageX"
 msgid "Zero page,X"
-msgstr ""
+msgstr "الصفحة الصفرية,X"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageY"
 msgid "Zero page,Y"
-msgstr ""
+msgstr "الصفحة الصفرية,Y"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.absolute"
 msgid "Absolute"
-msgstr ""
+msgstr "مطلق"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.absoluteX"
 msgid "Abs,X"
-msgstr ""
+msgstr "مطلق,X"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.absoluteY"
 msgid "Abs,Y"
-msgstr ""
+msgstr "مطلق,Y"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.indirectX"
 msgid "Indirect,X"
-msgstr ""
+msgstr "غير مباشر,X"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.indirectY"
 msgid "Indirect,Y"
-msgstr ""
+msgstr "غير مباشر,Y"
 
+#, fuzzy
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
-msgstr ""
+msgstr "غير مباشر"
 
+#, fuzzy
 msgctxt "disk.standbyDisks"
 msgid "Standby Disks (Click to change disk)"
-msgstr ""
+msgstr "أقراص الاستعداد (انقر لتغيير القرص)"
 
+#, fuzzy
 msgctxt "linkBuilder.additionalDiskDrives"
 msgid "Additional Disk Drives"
-msgstr ""
+msgstr "محركات أقراص إضافية"
 
+#, fuzzy
 msgctxt "linkBuilder.slot6Drive1"
 msgid "Slot 6 Drive 1 (Floppy 1)"
-msgstr ""
+msgstr "الفتحة 6 المحرك 1 (قرص مرن 1)"
 
+#, fuzzy
 msgctxt "linkBuilder.slot6Drive2"
 msgid "Slot 6 Drive 2 (Floppy 2)"
-msgstr ""
+msgstr "الفتحة 6 المحرك 2 (قرص مرن 2)"
 
+#, fuzzy
 msgctxt "linkBuilder.slot5Drive1"
 msgid "Slot 5 Drive 1 (3.5-inch Floppy 1)"
-msgstr ""
+msgstr "الفتحة 5 المحرك 1 (قرص مرن 3.5 بوصة 1)"
 
+#, fuzzy
 msgctxt "linkBuilder.slot5Drive2"
 msgid "Slot 5 Drive 2 (3.5-inch Floppy 2)"
-msgstr ""
+msgstr "الفتحة 5 المحرك 2 (قرص مرن 3.5 بوصة 2)"
 
+#, fuzzy
 msgctxt "linkBuilder.slot7Drive1"
 msgid "Slot 7 Drive 1 (Hard Drive 1)"
-msgstr ""
+msgstr "الفتحة 7 المحرك 1 (قرص صلب 1)"
 
+#, fuzzy
 msgctxt "linkBuilder.slot7Drive2"
 msgid "Slot 7 Drive 2 (Hard Drive 2)"
-msgstr ""
+msgstr "الفتحة 7 المحرك 2 (قرص صلب 2)"
 
+#, fuzzy
 msgctxt "linkBuilder.slot2Drive1"
 msgid "Slot 2 Drive 1 (VERA SD)"
-msgstr ""
+msgstr "الفتحة 2 المحرك 1 (VERA SD)"
 
+#, fuzzy
 msgctxt "linkBuilder.slot4Drive1"
 msgid "Slot 4 Drive 1 (VERA SD)"
-msgstr ""
+msgstr "الفتحة 4 المحرك 1 (VERA SD)"
 
+#, fuzzy
 msgctxt "linkBuilder.addAdditionalDisk"
 msgid "Add additional disk for swapping"
-msgstr ""
+msgstr "إضافة قرص إضافي للتبديل"
 
+#, fuzzy
 msgctxt "linkBuilder.removeDisk"
 msgid "Remove this disk"
-msgstr ""
+msgstr "إزالة هذا القرص"
 
+#, fuzzy
 msgctxt "linkBuilder.addAnotherDisk"
 msgid "Add another disk"
-msgstr ""
+msgstr "إضافة قرص آخر"
 
+#, fuzzy
 msgctxt "linkBuilder.diskPlaceholder"
 msgid "Disk {num} filename (e.g. sideB.woz|Scenario Disk)"
-msgstr ""
+msgstr "اسم ملف القرص {num} (مثال: sideB.woz|Scenario Disk)"
