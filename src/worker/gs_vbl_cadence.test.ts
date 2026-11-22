@@ -1,7 +1,7 @@
-import { testWithFixtures } from "../test/fixture_test"
+﻿import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting,
-  getIigsVblCount, resetIigsVblCount, iigsSpeedRegister, getIigsVideoClock,
-  getIigsFrameUnits } from "./motherboard"
+  getIigsVblCount, resetIigsVblCount, iigsSpeedRegister,
+  getIigsBeamFrameCount } from "./motherboard"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
@@ -39,7 +39,11 @@ testWithFixtures(PO_PATH)("IIgs: VBL fires once per refresh even while GS/OS tog
     doBoot()
     doSetRunMode(RUN_MODE.RUNNING, false)
     resetIigsVblCount()
-    const clockStart = getIigsVideoClock()
+    // A "refresh" is the scanner's frame, not the Settings speed budget: with
+    // $C036 bit 7 = 0 honoured the guest runs at 1.020484 MHz, so a refresh is
+    // 17030 CPU cycles and the run loop closes it on the beam position. The beam
+    // frame counter is therefore the authoritative refresh count.
+    const frameStart = getIigsBeamFrameCount()
 
     // Sample $C036 across the whole run: the ROM's own speed-setting code and
     // its interrupt manager write the register during boot and while 8-bit
@@ -51,12 +55,11 @@ testWithFixtures(PO_PATH)("IIgs: VBL fires once per refresh even while GS/OS tog
     }
 
     const vbls = getIigsVblCount()
-    const clockEnd = getIigsVideoClock()
-    const frameUnits = getIigsFrameUnits()
-    const refreshes = Math.floor(clockEnd / frameUnits) - Math.floor(clockStart / frameUnits)
-    // console.log(`[VBLCADENCE] frames=${FRAMES} vbls=${vbls} refreshes=${refreshes} ` +
-      // `videoUnits=${clockEnd - clockStart} $C036 bit7 seen: ` +
-      // [...speedValues].map((v) => v ? "fast" : "slow").join("+"))
+    const refreshes = getIigsBeamFrameCount() - frameStart
+    // getIigsVideoClock() counts CPU cycles, and a refresh is 17030 of them in
+    // slow mode but the Settings budget in fast mode, so dividing it by a frame
+    // budget no longer counts refreshes. The beam frame counter is the one index
+    // the run loop, the VBL and $C02E/$C02F all close on.
 
     // The regression only exists if the OS actually toggles the speed register.
     expect(speedValues.size).toBe(2)
