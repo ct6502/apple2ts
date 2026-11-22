@@ -222,6 +222,28 @@ test("VERA PSG reset closes the worklet context, clearing queued PSG/PCM/FM mess
   expect(workletNodes).toHaveLength(2)
 })
 
+test("VERA audio reset silences the live worklet before the context closes", async () => {
+  installAudioGlobals()
+  jest.spyOn(WebAssembly, "compileStreaming").mockResolvedValue({} as WebAssembly.Module)
+  Object.defineProperty(globalThis, "fetch", {
+    configurable: true,
+    value: jest.fn(async () => ({})),
+    writable: true,
+  })
+  const vera = loadActual<typeof import("./vera_psg_audio")>("./vera_psg_audio")
+
+  await vera.playVeraPsgWrite({ reg: 3, value: 42, cycle: 0 })
+  expect(workletNodes).toHaveLength(1)
+
+  vera.playVeraAudioReset()
+
+  expect(workletNodes[0].port.postMessage).toHaveBeenCalledWith({ type: "audio-reset" })
+  // The live reset must not build a second graph; AUDIO_RESET still owns the
+  // teardown.
+  expect(workletNodes).toHaveLength(1)
+  expect(contexts).toHaveLength(1)
+})
+
 test("MIDI reset sends All Notes Off on every channel and clears active soft-synth notes", async () => {
   installAudioGlobals()
   const output = { id: "output-a", name: "Output", state: "connected", send: jest.fn() }

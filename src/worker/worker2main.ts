@@ -110,6 +110,17 @@ export const passVeraFmReset = () => {
   doPostMessage(MSG_WORKER.VERA_FM_RESET, null)
 }
 
+// A VERA card reset must silence the live PSG/PCM/FM state in the AudioWorklet
+// as well as dropping queued writes. The queued-write flush happens in
+// video_reset(); this message reinitializes the 16 PSG channels and the PCM
+// FIFO/loop state in the worklet. AUDIO_RESET then tears the context down, but
+// without this the channels can keep sounding if the context survives (for
+// example when close() has not completed yet or the graph was suspended).
+export const passVeraAudioReset = () => {
+  pendingFmWrites = []
+  doPostMessage(MSG_WORKER.VERA_AUDIO_RESET, null)
+}
+
 export const passVeraSdStatus = (status: VeraSdStatus) => {
   doPostMessage(MSG_WORKER.VERA_SD_STATUS, status)
 }

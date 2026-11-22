@@ -4,7 +4,7 @@
 import { interruptRequest, registerCycleCountCallback } from "../../cpu6502"
 import { s6502 } from "../../instructions"
 import { setSlotIOCallback } from "../../memory"
-import { passVeraFmReset, passVeraFmWrite } from "../../worker2main"
+import { passVeraAudioReset, passVeraFmReset, passVeraFmWrite } from "../../worker2main"
 import { getCpuCyclesPerRefresh } from "../../motherboard"
 import { video_cycles_until_next_event, video_init, video_step, video_update, video_reset, video_read, video_write, video_get_irq_out } from "./video"
 import { vera_spi_init, vera_spi_step, sdcard_select } from "./sdcard"
@@ -68,6 +68,7 @@ export const initVera = () => {
   scheduleNextSync()
   ymBusyUntil = 0
   passVeraFmReset()
+  passVeraAudioReset()
 }
 
 export const resetVera = () => {
@@ -77,6 +78,7 @@ export const resetVera = () => {
   scheduleNextSync()
   ymBusyUntil = 0
   passVeraFmReset()
+  passVeraAudioReset()
 }
 
 export const enableVera = (enable = true, aslot = 3) => {

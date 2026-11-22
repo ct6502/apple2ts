@@ -15,7 +15,7 @@ import { doSetUIDriveProps } from "./devices/disk/driveprops"
 import { setEnhancedMidi } from "./devices/audio/enhancedmidi"
 import { receiveMidiData, stopMidiAudio } from "./devices/audio/midiinterface"
 import { playMockingboard, stopMockingboardAudio } from "./devices/audio/mockingboard_audio"
-import { playVeraFmReset, playVeraFmWrite, playVeraPcmWrite, playVeraPsgWrite, playVeraPsgBatch, stopVeraPsgAudio } from "./devices/audio/vera_psg_audio"
+import { playVeraAudioReset, playVeraFmReset, playVeraFmWrite, playVeraPcmWrite, playVeraPsgWrite, playVeraPsgBatch, stopVeraPsgAudio } from "./devices/audio/vera_psg_audio"
 import { playEnsoniqSamples, resetEnsoniqAudio } from "./devices/audio/iigs_ensoniq_audio"
 
 import { emulatorSoundEnable, clickSpeaker, stopSpeakerAudio } from "./devices/audio/speaker"
@@ -865,6 +865,10 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     }
     case MSG_WORKER.VERA_FM_RESET: {
       playVeraFmReset()
+      break
+    }
+    case MSG_WORKER.VERA_AUDIO_RESET: {
+      playVeraAudioReset()
       break
     }
     case MSG_WORKER.ENSONIQ_SOUND: {

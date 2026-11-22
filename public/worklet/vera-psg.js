@@ -93,6 +93,10 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
         if (this.fmModule) this.fmModule._ymfm_reset()
         return
       }
+      if (e.data.type === "audio-reset") {
+        this.resetAudio()
+        return
+      }
       if (e.data.type === "fm-enabled") {
         this.fmEnabled = e.data.enabled
         return
@@ -108,6 +112,37 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
         this.writeReg(reg, value)
       }
     }
+  }
+
+  // Silence every PSG channel and stop PCM playback without waiting for the
+  // main thread to close the AudioContext. A system reset turns the VERA video
+  // off but the worklet has its own voice state; without this the last note or
+  // PCM loop keeps sounding behind the reset screen.
+  resetAudio() {
+    for (const ch of this.channels) {
+      ch.freq = 0
+      ch.volume = 0
+      ch.left = false
+      ch.right = false
+      ch.pw = 0
+      ch.waveform = 0
+      ch.noiseval = 0
+      ch.phase = 0
+    }
+    this.noiseState = 1
+    this.psgSample = { left: 0, right: 0 }
+    this.pcmFifoWridx = 0
+    this.pcmFifoRdidx = 0
+    this.pcmFifoCnt = 0
+    this.pcmCtrl = 0
+    this.pcmRate = 0
+    this.pcmLoop = false
+    this.pcmCurL = 0
+    this.pcmCurR = 0
+    this.pcmPhase = 0
+    this.pcmSample = { left: 0, right: 0 }
+    this.pendingFmWrites = []
+    if (this.fmModule) this.fmModule._ymfm_reset()
   }
 
   async initFm(wasmModule) {
