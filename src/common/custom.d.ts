@@ -532,6 +532,16 @@ type DriveState = {
   is35: boolean,
   blockMedia35: boolean,
   spindleOn: boolean,
+  // The drive's own /ENBL latch (gssquared Floppy_woz::enable). The IWM routes
+  // the line to the selected drive only, so deselecting a bay - or switching
+  // EN35 - deasserts it, and that 1->0 edge is what schedules the Sony
+  // mechanism's coast-down (Floppy35_woz::set_enable). Bits clock only while
+  // this latch AND the spindle are on.
+  enable35: boolean,
+  // Selector $D (disk-ready). gssquared latches it: false until a ready timer
+  // set by a seek or by motor-on expires, and cleared again by the next seek or
+  // by the spindle stopping. Status reads invert it (0 = ready).
+  diskReady: boolean,
   stepDirection: number,
   diskSwitched: boolean,
   // True while the media is physically in the 3.5" drive. The IWM status
@@ -541,6 +551,26 @@ type DriveState = {
   diskInPlace: boolean,
   stepEnd: number,
   readyEnd: number,
+  // CPU-cycle deadline of the Sony mechanism's ~0.5 s spin-down. Nonzero means
+  // the spindle latch was just released but the disc is still coasting, which
+  // is what the IWM status selector 4 (motor-on) has to keep reporting and what
+  // the LSS keeps clocking from until the deadline passes.
+  spindleOffEnd: number,
+  // 3.5" media clock, kept per drive like gssquared's Floppy_woz fields: the
+  // fraction of a bit cell left over (headRemainder35), the whole cells the LSS
+  // has not simulated yet (headPending35), and the cycle count this drive's
+  // clock was last advanced to (headCycle35, gssquared's last_cycle). Sharing
+  // them between the two bays handed the cells that accumulated while the other
+  // bay was selected to the drive the guest had just switched to, so its first
+  // bytes after the switch came out shifted.
+  headRemainder35: number,
+  headPending35: number,
+  headCycle35: number,
+  // The 3.5" fake-bit generator (gssquared Floppy_woz::windowBits / random_bits):
+  // the low four bits of the cell stream seen so far, and the position in the
+  // rotating 64-bit sequence handed to the LSS when those four bits are zero.
+  weakWindow35?: number,
+  weakRand35?: number,
   // Flux tracks (WOZ 2.1 FLUX tracks and A2R3 captures) are read only. The
   // per-quarter-track arrays stay empty on a disk with no flux, so that the
   // save states of other disks hardly grow.

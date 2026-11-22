@@ -103,7 +103,9 @@ export const enableHardDrive = (enable = true) => {
   code[1] = enable ? 0x20 : 0x00
   const addr = 0xC000 + driverAddr + slot * 0x100
   setSlotDriver(slot, code, addr, processHardDriveBlockAccess)
-  setSlotDriver(slot, code, addr + 3, processSmartPortAccess)
+  // Hook the instruction *after* the SmartPort entry point's TSX ($C7C4), not
+  // the entry itself ($C7C3): see processSmartPortAccessAtEntry.
+  setSlotDriver(slot, code, addr + 4, processSmartPortAccessAtEntry)
 }
 
 
@@ -438,6 +440,16 @@ const processSmartPortAccess = () => {
   passDriveData()
 }
 
+
+// The firmware's ProDOS-8 dispatch enters the SmartPort firmware at the byte
+// after its entry TSX ($C7C3), i.e. at $C7C4, so the handler is hooked there:
+// a JSR at $C7C3 runs the TSX and then this hook, while a resume at $C7C4 hits
+// it directly. Either way the TSX must have left X pointing at the stack, and
+// the handler may itself reply through X (status/DIB), so seed it afterwards.
+const processSmartPortAccessAtEntry = () => {
+  processSmartPortAccess()
+  s6502.XReg = s6502.StackPtr & 0xFF
+}
 
 const processHardDriveBlockAccess = () => {
   // Assume success. We will set failure if needed.
