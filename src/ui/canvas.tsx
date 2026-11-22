@@ -21,6 +21,7 @@ import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, UI_THEME } from "..
 import { getMachineCapabilities, getMachineTraits } from "../common/machine_profile"
 import { ProcessDisplay, getCanvasSize, handleGetOverrideHires, canvasCoordToNormScreenCoord, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey, handleDiagonalKey, ensureGamepadEventListeners } from "./devices/gamepad"
+import { arrowKeys, arrowKeyCodes, getArrowKeyName, usesDiagonalKey } from "./arrowkeymap"
 import { handleCopyToClipboard } from "./copycanvas"
 import { handleSaveStateToDownload } from "./save_restore_ui"
 import { handleSetCPUState } from "./controller"
@@ -42,7 +43,6 @@ const recallBuffer: string[] = []
 let recallIndex = 99
 
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>  | KeyboardEvent<HTMLBodyElement> | KeyboardEvent<HTMLButtonElement>
-type ArrowKeyCode = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown" | "Numpad4" | "Numpad6" | "Numpad8" | "Numpad2"
 let mainCanvas: HTMLCanvasElement | null = null
 
 const Apple2Canvas = (props: DisplayProps) => {
@@ -147,41 +147,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     })
   }
 
-  const arrowKeys: Record<ArrowKeyCode, ARROW> = {
-    ArrowLeft: ARROW.LEFT,
-    ArrowRight: ARROW.RIGHT,
-    ArrowUp: ARROW.UP,
-    ArrowDown: ARROW.DOWN,
-    // Numpad 8/2/4/6 Joystick Mapping (Immune to NumLock)
-    Numpad4: ARROW.LEFT,
-    Numpad6: ARROW.RIGHT,
-    Numpad8: ARROW.UP,
-    Numpad2: ARROW.DOWN,
-  }
-
-  const arrowKeyCodes: Record<ArrowKeyCode, number> = {
-    ArrowLeft: 8,
-    ArrowRight: 21,
-    ArrowUp: 11,
-    ArrowDown: 10,
-    Numpad4: 8,
-    Numpad6: 21,
-    Numpad8: 11,
-    Numpad2: 10,
-  }
-
-  const diagonalKeys: Record<string, boolean> = {
-    Numpad7: true,
-    Numpad9: true,
-    Numpad1: true,
-    Numpad3: true,
-  }
-
-  const getArrowKeyName = (e: keyEvent): ArrowKeyCode | null => {
-    if (e.code in arrowKeys) return e.code as ArrowKeyCode
-    if (e.key in arrowKeys) return e.key as ArrowKeyCode
-    return null
-  }
+  const getArrowKeyForEvent = (e: keyEvent) =>
+    getArrowKeyName(e.code, e.key, getArrowKeysAsJoystick())
 
   const isMac = navigator.platform.startsWith("Mac")
 
@@ -210,7 +177,20 @@ const Apple2Canvas = (props: DisplayProps) => {
   const isClosedApple = (e: keyEvent) =>
     isClosedAppleCode(e.code, getUIStateBoolean("useOpenAppleKey"))
 
+  // The IIgs keyboard is an ADB device and Open Apple is a real guest modifier
+  // there: on Windows it is bound to Alt, so Alt+1..5, Alt+B, Alt+S and the rest
+  // are chords the guest may be waiting for (game setup screens use them). The
+  // host shortcut table used to swallow them before they reached the ADB path -
+  // pressing Alt+1..5 also changed the CPU speed behind the game's back, which
+  // shifts the machine to a rate the title's own timing loops were not written
+  // for. On the GS let every meta sequence reach the guest; speed, boot, reset,
+  // save state and the like stay available from the controls and menus.
+  const metaKeysBelongToGuest = () => getMachineCapabilities(handleGetMachineName()).isGS
+
   const isMetaSequence = (e: keyEvent): boolean => {
+    if (metaKeysBelongToGuest()) {
+      return false
+    }
     if (e.shiftKey) {
       return false
     }
@@ -362,7 +342,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     const isKeyboardLoop = inKeyboardLoop()
 
-    if (e.code in diagonalKeys) {
+    if (usesDiagonalKey(e.code, getArrowKeysAsJoystick())) {
       if (e.repeat) {
         e.preventDefault()
         e.stopPropagation()
@@ -374,7 +354,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
 
-    const arrowKey = getArrowKeyName(e)
+    const arrowKey = getArrowKeyForEvent(e)
     if (arrowKey) {
       if (e.repeat) {
         e.preventDefault()
@@ -455,7 +435,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const handleKeyUp = (e: keyEvent) => {
     const isBrowserAltKey = e.code === OPEN_APPLE || e.code === CLOSED_APPLE
     stopHardwareKeyboard(e.code)
-    const arrowKey = getArrowKeyName(e)
+    const arrowKey = getArrowKeyForEvent(e)
     if (isOpenApple(e)) {
       passAppleCommandKeyRelease(true)
     }
@@ -469,7 +449,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       e.stopPropagation()
       return
     }
-    if (e.code in diagonalKeys) {
+    if (usesDiagonalKey(e.code, getArrowKeysAsJoystick())) {
       handleDiagonalKey(e.code, true)
     } else if (arrowKey) {
       handleArrowKey(arrowKeys[arrowKey], true)
