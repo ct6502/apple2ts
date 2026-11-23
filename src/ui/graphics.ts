@@ -476,12 +476,17 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   const switches = handleGetSoftSwitches()
   const isDoubleHiresBuffer = hgrPage.length === 12800 || hgrPage.length === 15360
   const video7foreground = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
+  // A latched Video-7 flag is not enough: the card only exposes 160x192 while
+  // 80STORE is on (see exportMemoryToHiresLine). Otherwise a plain HGR program
+  // that toggled AN3, like Shufflepuck Cafe, turns into colored stripes.
+  const video7_160 = switches.DHIRES && !switches.COLUMN80 &&
+    switches.STORE80 && switches.VIDEO7_160 && isDoubleHiresBuffer
   const doubleRes = switches.DHIRES && switches.COLUMN80 && isDoubleHiresBuffer
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const noDelayMode = handleGetNoDelayMode()
   const fillColor = colorMode === COLOR_MODE.INVERSEBLACKANDWHITE ? WHITE : BLACK
   let hgrColors: Uint8Array
-  if (switches.DHIRES && !switches.COLUMN80 && switches.VIDEO7_160 && isDoubleHiresBuffer) {
+  if (video7_160) {
     hgrColors = getVideo7H160Colors(hgrPage)
   } else if (switches.DHIRES && switches.COLUMN80 && switches.VIDEO7_MONO && isDoubleHiresBuffer) {
     hgrColors = getDoubleHiresColors(hgrPage, COLOR_MODE.BLACKANDWHITE, doBlurring())
@@ -499,7 +504,7 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
     // Now apply the Video7 monochrome mode on top of the existing HGR colors.
     hgrColors = applyVideo7MixedMode(hgrPage, hgrColors)
   }
-  const isDoublePalette = doubleRes || video7foreground || (switches.DHIRES && !switches.COLUMN80 && switches.VIDEO7_160)
+  const isDoublePalette = doubleRes || video7foreground || video7_160
   const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, isDoublePalette)
   if (doBlurring()) {
     for (let j = 0; j < nlines; j++) {

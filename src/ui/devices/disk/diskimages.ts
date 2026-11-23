@@ -121,6 +121,7 @@ export const diskImages: DiskCollectionItem[] = [
     type: "builtin",
     lastUpdated: new Date(0),
     fileSize: 33553920,
+    params: "slot3=vidhd",
   },
   {
     title: "Pitch Dark",

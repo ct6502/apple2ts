@@ -31,8 +31,8 @@ export const newReleases: DiskCollectionItem[] = [
     type: "new",
     title: "Undead Demo",
     lastUpdated: new Date("9/10/2024"),
-    imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
-    diskUrl: "https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip",
+    imageUrl: "disks/Undead%20Demo.png",
+    diskUrl: "UNDEAD_DEMO.po",
     detailsUrl: "https://www.kickstarter.com/projects/8-bit-shack/undead-a-new-apple-role-player-game?utm_source=a2central",
     fileSize: 819200,
     exportDisabled: true
@@ -53,7 +53,7 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: "https://www.colino.net/wordpress/wp-content/uploads/shufflepuck-cafe-bar.png",
     diskUrl: "https://github.com/colinleroy/a2tools/releases/latest/download/shufflepuck.po",
     detailsUrl: "https://www.colino.net/wordpress/en/shufflepuck-cafe-for-apple-ii/",
-    params: "color=green",
+    params: "color=color",
     fileSize: 143360
   },
   {
