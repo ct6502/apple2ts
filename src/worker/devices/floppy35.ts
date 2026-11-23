@@ -298,7 +298,10 @@ export const decodeFloppy35Track = (
         INV_DISK_BYTES_62[trackByte(stream, start, nbits, pos + i * 8)])
       if (bytes.every(v => v >= 0)) {
         const [lowTrack, sector, sideAndTrack, format, checksum] = bytes
-        if (format === 0x24 && sector < 12 &&
+        // The address field's format byte is 0x22 on real 3.5" media and 0x24
+        // in the ProDOS 8 "62-524" layout our encoder writes; both carry the
+        // same field layout and checksum.
+        if ((format === 0x24 || format === 0x22) && sector < 12 &&
           ((lowTrack ^ sector ^ sideAndTrack ^ format) & 0x3F) === checksum) {
           // The track number is 7 bits: 6 in the low-track byte and bit 6 of the
           // cylinder in bit 0 of the side byte (IIgs Hardware Reference, $029).

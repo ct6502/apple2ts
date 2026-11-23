@@ -1,4 +1,4 @@
-import { convertdsk2woz } from "../../common/convertdsk2woz"
+import { convertdsk2woz, isProdosOrderDsk } from "../../common/convertdsk2woz"
 import { crc32, ERROR_CODE, FLUX_KIND, isHardDriveImage, isThreePointFiveInchImage } from "../../common/utility"
 import { getMachineCapabilities } from "../../common/machine_profile"
 import { getCurrentMachineName } from "../memory"
@@ -324,7 +324,9 @@ export const decodeA2R3 = (driveState: DriveState, diskData: Uint8Array): boolea
 
 const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   const f = driveState.filename.toLowerCase()
-  const isPO = f.endsWith(".po")
+  // A .dsk normally stores DOS 3.3 sector order, but some ProDOS distributions
+  // ship a ProDOS-order image with a .dsk extension.
+  const isPO = f.endsWith(".po") || ((f.endsWith(".dsk") || f.endsWith(".do")) && isProdosOrderDsk(diskData))
   const newData = convertdsk2woz(diskData, isPO)
   if (newData.length === 0) {
     return new Uint8Array()

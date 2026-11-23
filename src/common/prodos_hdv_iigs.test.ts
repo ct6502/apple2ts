@@ -401,8 +401,8 @@ describe("IIgs 4cade block loading", () => {
     reset6502()
     memory.fill(0)
     memory.set(relay.slice(prelaunchOffset), 0x0106)
-    memory[0xDFB7] = 0x60  // EnableAccelerator in LC bank 2
-    memory[0xDFB4] = 0x60  // DisableAccelerator in LC bank 2
+    memory[0xCFB7] = 0x60  // EnableAccelerator in LC bank 2 ($C000-$CFFF)
+    memory[0xCFB4] = 0x60  // DisableAccelerator in LC bank 2 ($C000-$CFFF)
     memory[0x2000] = 0x60  // decompressor stub
     updateAddressTables()
     setPC(0x0106)
@@ -447,9 +447,9 @@ describe("IIgs 4cade block loading", () => {
     reset6502()
     memory.fill(0)
     memory.set(relay.slice(prelaunchOffset), 0x0106)
-    memory[0xDFB7] = 0x60
-    memory[0xDFB4] = 0x60
-    memory[0xDFAE] = 0x60
+    memory[0xCFB7] = 0x60
+    memory[0xCFB4] = 0x60
+    memory[0xCFAE] = 0x60
     memory.set([0x2C, 0x83, 0xC0, 0x2C, 0x83, 0xC0, 0x60], 0x0800)
     memory[0x03F4] = 0xA5
     updateAddressTables()
@@ -544,9 +544,9 @@ describe("IIgs 4cade block loading", () => {
     reset6502()
     memory.fill(0)
     memory.set(relay.slice(prelaunchOffset), 0x0106)
-    memory[0xDFAE] = 0x60
-    memory[0xDFB4] = 0x60
-    memory[0xDFB7] = 0x60
+    memory[0xCFAE] = 0x60
+    memory[0xCFB4] = 0x60
+    memory[0xCFB7] = 0x60
     memory.set([
       0xAD, 0x2E, 0x94, 0x48, // LDA $942E; PHA
       0xAD, 0x31, 0x94, 0x48, // LDA $9431; PHA

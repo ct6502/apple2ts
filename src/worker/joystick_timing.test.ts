@@ -4,6 +4,7 @@ import { setIsTesting } from "./worker2main"
 import {
   checkJoystickValues,
   resetJoystick,
+  restoreJoystickSaveState,
   setGamepadValue,
   setJoystickClockSource,
   setJoystickCyclesPerRefresh,
@@ -24,6 +25,7 @@ afterEach(() => {
   setJoystickClockSource(null)
   setJoystickSlowMode(false)
   setJoystickCyclesPerRefresh(17030)
+  restoreJoystickSaveState(undefined) // clear leftover timers between cases
 })
 
 // A centered stick (value 0) must cross the PDL midpoint after the same real
@@ -118,19 +120,22 @@ describe("$C036 slow mode drives the paddle execution rate", () => {
     // $C036 bit 7 = 0: the same raw count now means the real 1.020484 MHz
     // execution rate. This is the value the provider sees the moment the guest
     // writes the register, without the run loop having to call a setter.
+    // The 2.8 MHz pulse started at 1000 expires at 1000 + GS_FAST_MIDPOINT
+    // (3891), so the strobe has to come after that to re-arm the axis.
     rate.slowMode = true
-    resetJoystick(2000)
-    checkJoystickValues(2000 + MIDPOINT - 1, 0)
+    resetJoystick(6000)
+    checkJoystickValues(6000 + MIDPOINT - 1, 0)
     expect(readPaddle0()).toBe(0x80)
-    checkJoystickValues(2000 + MIDPOINT, 0)
+    checkJoystickValues(6000 + MIDPOINT, 0)
     expect(readPaddle0()).toBe(0)
 
-    // Back to fast mode: the paddle scale follows the live Settings rate.
+    // Back to fast mode: the paddle scale follows the live Settings rate. The
+    // slow-mode pulse at 6000 expired 1418 raw cycles later.
     rate.slowMode = false
-    resetJoystick(3000)
-    checkJoystickValues(3000 + MIDPOINT, 0)
+    resetJoystick(11000)
+    checkJoystickValues(11000 + MIDPOINT, 0)
     expect(readPaddle0()).toBe(0x80)
-    checkJoystickValues(3000 + GS_FAST_MIDPOINT, 0)
+    checkJoystickValues(11000 + GS_FAST_MIDPOINT, 0)
     expect(readPaddle0()).toBe(0)
   })
 
@@ -145,10 +150,11 @@ describe("$C036 slow mode drives the paddle execution rate", () => {
     expect(readPaddle0()).toBe(0x80)
 
     // A Settings switch to normal speed while $C036 stays fast makes the raw
-    // count calibrated without any extra setter call.
+    // count calibrated without any extra setter call. The 2.8 MHz pulse from
+    // 4000 is only re-armable after its scaled expiry at 4000 + GS_FAST_MIDPOINT.
     rate.cyclesPerRefresh = 17030
-    resetJoystick(5000)
-    checkJoystickValues(5000 + MIDPOINT, 0)
+    resetJoystick(9000)
+    checkJoystickValues(9000 + MIDPOINT, 0)
     expect(readPaddle0()).toBe(0)
   })
 })
@@ -179,21 +185,75 @@ describe("motherboard integration registers the live execution rate", () => {
 
     // The guest writes $C036 bit 7 = 0: the source reports slow mode on the
     // very next paddle read, so a centred paddle crosses at 1418 raw cycles.
+    // The fast pulse from 1000 expires at 1000 + GS_FAST_MIDPOINT.
     memSet(0xC036, 0)
     expect(isIigsSlowMode()).toBe(true)
-    resetJoystick(2000)
-    checkJoystickValues(2000 + MIDPOINT - 1, 0)
+    resetJoystick(6000)
+    checkJoystickValues(6000 + MIDPOINT - 1, 0)
     expect(readPaddle0()).toBe(0x80)
-    checkJoystickValues(2000 + MIDPOINT, 0)
+    checkJoystickValues(6000 + MIDPOINT, 0)
     expect(readPaddle0()).toBe(0)
 
     // Bit 7 set back to 1 restores the Settings budget again.
     memSet(0xC036, 0x80)
     expect(isIigsSlowMode()).toBe(false)
-    resetJoystick(3000)
-    checkJoystickValues(3000 + MIDPOINT, 0)
+    resetJoystick(11000)
+    checkJoystickValues(11000 + MIDPOINT, 0)
     expect(readPaddle0()).toBe(0x80)
-    checkJoystickValues(3000 + GS_FAST_MIDPOINT, 0)
+    checkJoystickValues(11000 + GS_FAST_MIDPOINT, 0)
     expect(readPaddle0()).toBe(0)
+  })
+})
+
+// The NE558 is four one-shots behind one shared trigger line. A strobe while a
+// timer is still running must not restart that axis, and each axis keeps its
+// own expiry (gssquared arm_paddle_axis / game_input_trigger[4]).
+describe("per-axis one-shot timers", () => {
+  const PADDLE2 = 0xC066
+  const readPaddle = (addr: number) => memGetC000(addr) & 0x80
+
+  test("a second strobe inside a running pulse does not restart it", () => {
+    setJoystickCyclesPerRefresh(17030)
+    setGamepadValue(0, 0)
+
+    resetJoystick(1000)
+    checkJoystickValues(1000 + 1000, 0)
+    expect(readPaddle0()).toBe(0x80) // still running
+
+    // The old model restarted the shared start here, so reading 1000 cycles
+    // after the strobe stayed high; a real 558 has already counted out 2000.
+    resetJoystick(2000)
+    checkJoystickValues(3000, 0)
+    expect(readPaddle0()).toBe(0)
+  })
+
+  test("a strobe after the pulse expired arms the axis again", () => {
+    setJoystickCyclesPerRefresh(17030)
+    setGamepadValue(0, 0)
+
+    resetJoystick(1000)
+    checkJoystickValues(1000 + MIDPOINT, 0)
+    expect(readPaddle0()).toBe(0)
+    resetJoystick(1000 + MIDPOINT + 1)
+    checkJoystickValues(1000 + MIDPOINT + 1 + MIDPOINT - 1, 0)
+    expect(readPaddle0()).toBe(0x80)
+  })
+
+  test("each axis runs from its own start instant", () => {
+    setJoystickCyclesPerRefresh(17030)
+    setGamepadValue(0, 0) // axis 0: centred, 1418 cycles
+    setGamepadValue(2, 1) // axis 2: full deflection, 2836 cycles
+
+    resetJoystick(1000)
+    // 2900: axis 0 has expired, axis 2 (2836) still runs.
+    checkJoystickValues(2900, 0)
+    expect(readPaddle0()).toBe(0)
+    expect(readPaddle(PADDLE2)).toBe(0x80)
+
+    // The strobe re-arms only axis 0; axis 2 keeps its 1000 start.
+    resetJoystick(2500)
+    checkJoystickValues(3900, 0)
+    expect(readPaddle0()).toBe(0x80) // 2500 + 1400 < 1418
+    expect(readPaddle(PADDLE2)).toBe(0) // 3900 - 1000 = 2900 > 2836
   })
 })

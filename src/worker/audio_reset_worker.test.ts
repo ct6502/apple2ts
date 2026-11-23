@@ -4,6 +4,7 @@
 import { MSG_WORKER } from "../common/utility"
 import * as motherboard from "./motherboard"
 import * as worker2main from "./worker2main"
+import { resetVera } from "./devices/vera/vera"
 
 jest.mock("./devices/keyboard", () => ({
   apple2KeyRelease: jest.fn(),
@@ -38,6 +39,15 @@ test("passAudioReset delivers exactly one MSG_WORKER.AUDIO_RESET", () => {
   })
 })
 
+test("resetVera resets live PSG/PCM state before the UI closes the audio context", () => {
+  postMessage.mockClear()
+  resetVera()
+  expect(postMessage).toHaveBeenCalledWith({
+    msg: MSG_WORKER.VERA_AUDIO_RESET,
+    payload: null,
+  })
+})
+
 test("doReset notifies the UI once, so Ctrl-Reset clears scheduled audio", () => {
   const audio = jest.spyOn(worker2main, "passAudioReset").mockImplementation()
 
@@ -57,4 +67,5 @@ test("doBoot reaches the same doReset notification, so Boot also clears schedule
 
   audio.mockRestore()
 })
+
 

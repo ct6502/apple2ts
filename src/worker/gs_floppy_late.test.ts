@@ -1,28 +1,27 @@
-﻿import { doSetMachineName, doSetRunMode, doReset, resetCpuSpeedForTesting } from "./motherboard"
+import { doSetMachineName, doSetRunMode, doReset, resetCpuSpeedForTesting } from "./motherboard"
 import { doSetEmuDriveNewData, getDriveStateByIndex } from "./devices/drivestate"
-import { getIwmReadStats } from "./devices/diskdata"
+import { getIwmReadStats, resetIwmReadStats } from "./devices/diskdata"
 import { clearRomTrace, getRomTrace, setRomTraceEnabled } from "./romtrace"
-import { memory } from "./memory"
+import { memory, memGet24 } from "./memory"
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
 import * as fs from "fs"
 
 // Regression test for the Apple IIgs 5.25" floppy boot.
 //
-// Two separate bugs used to stop a 5.25" disk from booting after Ctrl-Reset:
+// doResetDiskDrive() used to park the head at maxQuarterTrack (the outermost
+// track). Only a cold boot re-calibrates the head, so after a reset the ROM read
+// the wrong track; the head-recalibration test below pins the fix.
 //
-//   1. doResetDiskDrive() parked the head at maxQuarterTrack (the outermost
-//      track). Only a cold boot re-calibrates the head, so after a warm reset
-//      the ROM read the wrong track.
-//   2. The IIgs ROM decides cold boot vs warm reset with
-//      LDA $03F3 / EOR #$A5 / CMP $03F4, and the boot sequence writes that
-//      signature as it goes. With the signature present, a reset takes the
-//      warm path, which walks the slots but never touches the IWM at all
-//      (0 $C0E0-$C0EF reads after Ctrl-Reset, against 399,707 during the cold
-//      boot that does find the disk) - so "insert a floppy, press Ctrl-Reset"
-//      could never boot it.
+// The second behaviour is the Programmer's Guide warm-start signature
+// ($03F2/$03F3 = little-endian target, $03F4 = checksum). A Ctrl-Reset is warm:
+// it preserves the signature and takes the booted OS's warm entry, so after a
+// completed boot it returns to that disk's prompt without re-reading the disk.
+// "Insert a floppy after power-on, press Ctrl-Reset" still has to boot it: the
+// boot is waiting at the startup-device scan, where the ROM's provisional
+// signature ($00/$E0/$45) leads back into the scan and finds the new disk.
 //
-// All three scenarios below must now reach the ProDOS welcome screen.
+// Both boot scenarios below must reach the ProDOS screen.
 const PO_PATH = process.env.GSFLOPPY_PO || "public/disks/A2DeskTop-VERA.po"
 
 const mkProps = (index: number): DriveProps => ({
@@ -116,8 +115,24 @@ describe("Apple IIgs 5.25 inch floppy boot", () => {
     expect(scenario(true, false)).toBe(true)
   }, 900000)
 
-  test("boots after Ctrl-Reset when the disk was present at power-on", () => {
-    expect(scenario(true, true)).toBe(true)
+  test("Ctrl-Reset after a completed 5.25 boot warm-starts at the disk's prompt", () => {
+    sawProDos = false
+    doSetMachineName("APPLE2GS")
+    expect(doSetEmuDriveNewData(mkProps(2))).toBe(true)
+    doSetRunMode(RUN_MODE.NEED_BOOT)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    run(1500)
+    expect(sawProDos).toBe(true)
+    const signature = [0, 1, 2].map((i) => memGet24(0x03f2 + i) & 0xff)
+    resetIwmReadStats()
+    doReset()
+    // Programmer's Guide: a Ctrl-Reset is warm and preserves $03F2-$03F4, then
+    // takes the booted OS's warm entry instead of replaying the cold scan.
+    expect([0, 1, 2].map((i) => memGet24(0x03f2 + i) & 0xff)).toEqual(signature)
+    doSetRunMode(RUN_MODE.RUNNING, false)
+    run(1500)
+    expect(getIwmReadStats().reads).toBe(0)
+    expect(screenText()).toContain("*")
   }, 900000)
 
   test("boots a 5.25 inch disk mounted after power-on, on Ctrl-Reset", () => {

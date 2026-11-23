@@ -1,4 +1,4 @@
-import { convertdsk2woz } from "./convertdsk2woz"
+import { convertdsk2woz, isProdosOrderDsk } from "./convertdsk2woz"
 import { convertwoz2dsk, decodeWozToSectorCandidates } from "./convertwoz2dsk"
 import { readFileSync } from "node:fs"
 import { loadWozAndExtractDosImage } from "./prodos_hdv"
@@ -27,6 +27,19 @@ describe("DSK/WOZ conversion", () => {
     const roundTrip = convertwoz2dsk(woz, isPO)
 
     expect(roundTrip).toEqual(disk)
+  })
+
+  test("detects ProDOS block order from the root directory in block 2", () => {
+    const disk = new Uint8Array(35 * 16 * 256)
+    // A ProDOS-order image stores block 2 at file offset 1024. Fill it with a
+    // root directory header entry: previous block 0, header 0xF5, name BLANK.
+    disk[1024 + 4] = 0xf5
+    "BLANK".split("").forEach((c, i) => { disk[1024 + 5 + i] = c.charCodeAt(0) })
+    expect(isProdosOrderDsk(disk)).toBe(true)
+
+    // A DOS-order image has no ProDOS header there.
+    const dos = new Uint8Array(35 * 16 * 256)
+    expect(isProdosOrderDsk(dos)).toBe(false)
   })
 
   test("round-trips CT_SPEEDTEST.DSK", () => {

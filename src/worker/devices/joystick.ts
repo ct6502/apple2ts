@@ -101,7 +101,12 @@ let paddle2timeout = MAX_TIMEOUT_CYCLES / 2
 let paddle3timeout = MAX_TIMEOUT_CYCLES / 2
 // let prevPaddle0timeout = paddle0timeout
 // let prevPaddle1timeout = paddle1timeout
-let countStart = 0
+// One NE558 timer per axis, as gssquared keeps game_input_trigger[4]. A finite
+// timer that is still running is NOT retriggerable: a second $C070-$C07F
+// strobe inside the pulse leaves the axis counting down from its own start
+// instant instead of restarting the whole 2.8 ms. -1 means "never armed or
+// already expired", where bit 7 reads low.
+const countStart: number[] = [-1, -1, -1, -1]
 let leftAppleDown = false
 let rightAppleDown = false
 let leftButtonDown = false
@@ -167,12 +172,36 @@ export const setReverseYAxis = (mode: boolean) => {
   reverseYAxis = mode
 }
 
-// When the paddle timers were last started, which a state saved while a program
-// reads the paddles must keep.
-export const getJoystickSaveState = () => ({countStart})
+const paddleTimeoutFor = (axis: number): number => {
+  switch (axis) {
+    case 0: return paddle0timeout
+    case 1: return paddle1timeout
+    case 2: return paddle2timeout
+    default: return paddle3timeout
+  }
+}
 
-export const restoreJoystickSaveState = (state: {countStart: number} | undefined) => {
-  if (state) countStart = state.countStart
+// Arm every axis whose timer has already run out. $C070-$C07F is one shared
+// trigger line for the four NE558 timers, so a running axis keeps its original
+// start (gssquared arm_paddle_axis) while an expired one restarts from here.
+export const getJoystickSaveState = () => ({ countStart: countStart.slice() })
+
+export const restoreJoystickSaveState = (state: { countStart?: number | number[] } | undefined) => {
+  if (!state || state.countStart === undefined) {
+    countStart.fill(-1)
+    return
+  }
+  if (Array.isArray(state.countStart)) {
+    countStart.fill(-1)
+    for (let axis = 0; axis < countStart.length; axis++) {
+      const start = state.countStart[axis]
+      if (typeof start === "number") countStart[axis] = start
+    }
+  } else {
+    // Save states written before the NE558 rework stored one shared start
+    // instant; replay it for every axis so their paddles keep timing.
+    countStart.fill(state.countStart)
+  }
 }
 
 export const resetJoystick = (cycleCount: number) => {
@@ -180,7 +209,16 @@ export const resetJoystick = (cycleCount: number) => {
   memSetC000(0xC065, 0x80)
   memSetC000(0xC066, 0x80)
   memSetC000(0xC067, 0x80)
-  countStart = cycleCount
+  const scale = paddleCycleScale()
+  for (let axis = 0; axis < countStart.length; axis++) {
+    const start = countStart[axis]
+    // A start instant in the future means the cycle counter went backwards
+    // (machine reset / newly loaded state), so the timer cannot be running.
+    if (start < 0 || cycleCount < start ||
+        (cycleCount - start) * scale >= paddleTimeoutFor(axis)) {
+      countStart[axis] = cycleCount
+    }
+  }
 }
 
 // const largeDiff = (v1: number, v2: number) => {
@@ -194,11 +232,12 @@ export const checkJoystickValues = (cycleCount: number, value: number) => {
 //     prevPaddle1timeout = paddle1timeout
 //     doSaveTimeSlice()
 //   }
-  const diff = (cycleCount - countStart) * paddleCycleScale()
-  memSetC000(0xC064, (diff < paddle0timeout) ? (value | 0x80) : (value & 0x7F))
-  memSetC000(0xC065, (diff < paddle1timeout) ? (value | 0x80) : (value & 0x7F))
-  memSetC000(0xC066, (diff < paddle2timeout) ? (value | 0x80) : (value & 0x7F))
-  memSetC000(0xC067, (diff < paddle3timeout) ? (value | 0x80) : (value & 0x7F))
+  const scale = paddleCycleScale()
+  for (let axis = 0; axis < countStart.length; axis++) {
+    const start = countStart[axis]
+    const diff = start < 0 ? Infinity : (cycleCount - start) * scale
+    memSetC000(0xC064 + axis, (diff < paddleTimeoutFor(axis)) ? (value | 0x80) : (value & 0x7F))
+  }
 }
 
 export const checkPushButtonValues = (addr: number, value: number) => {

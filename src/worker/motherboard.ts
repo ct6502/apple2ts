@@ -1,6 +1,6 @@
 import { FrameClock } from "./frameclock"
 // Chris Torrence, 2022
-import { passAudioReset, passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
+import { passAudioReset, passClickSpeaker, passMachineState, passSoftSwitchDescriptions, passWorkerOperationResult } from "./worker2main"
 import { setCpuPcGetter } from "./cpu_pc"
 import { s6502, setState6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
 import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG, MEMORY_DUMP_STATE, AUTO_SNAPSHOT } from "../common/utility"
@@ -84,7 +84,7 @@ import { vidhd } from "./devices/vidhd"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { clearSlotCardStateHandlers } from "./devices/slot_card_state"
 import { resetMouse, onMouseVBL, iigsMouseStep } from "./devices/mouse"
-import { enableDiskDrive, enableDiskDrive35, iwmResetTiming, processFloppyMotorTimeout } from "./devices/diskdata"
+import { enableDiskDrive, enableDiskDrive35, iwmResetTiming, processFloppyMotorTimeout, setIigs35TimerScale } from "./devices/diskdata"
 import { advanceKeySequence, interruptKeySequence, pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
 import {
   advanceConditionalInputSequence,
@@ -139,6 +139,35 @@ export const isIigsSlowMode = () => !(iigsSpeedRegister & 0x80)
 // is authoritative, so a guest slow-mode toggle no longer rescales a CPU cycle.
 // gssquared does the same by anchoring its scanner to the 14M rail.
 let iigsVideoClock = 0
+// The video scanner itself, anchored to the 14 MHz master clock exactly like
+// gssquared's `VideoScannerII` (65 video cycles per line, 262 lines per
+// refresh). $C02E and $C02F are two views of ONE scan index there, so they can
+// never disagree about where the beam is. Our counters used to be rederived per
+// read from the CPU-cycle frame: the vertical rows used the VBL length while
+// the horizontal counter used the visible-line length (178.0 vs 178.5 video
+// cycles at 2.8 MHz), so their phases drifted and at a VBL row start the
+// horizontal counter sat nearly a whole line behind. Software that beam-races
+// - waits for `$C02E == $F0`, then reads $C02F and branches on the result -
+// needs a consistent line start, and this is that consistent index.
+export const VIDEO_CYCLES_PER_LINE = 65
+export const VIDEO_CYCLES_PER_FRAME = VIDEO_CYCLES_PER_LINE * 262 // 17030, one NTSC refresh
+// The VBL rows (192-261) open our refresh, exactly 70 scanlines long.
+export const VBL_VIDEO_CYCLES = VIDEO_CYCLES_PER_LINE * 70
+let iigsBeamPos = 0 // video cycles into the current refresh, 0 <= pos < 17030
+let iigsBeamFrames = 0 // refreshes the beam has finished (frame numbering)
+export const getIigsBeamPos = () => iigsBeamPos
+export const getIigsBeamFrameCount = () => iigsBeamFrames
+// How many CPU cycles fit in one refresh: the effective clock. $C036 bit 7 = 0
+// asks for the machine's 1.020484 MHz slow clock, which gssquared implements as
+// "1 CPU cycle == 1 video cycle" (MMU_IIgs::set_slow_mode: value & 0x80 ? fast :
+// slow), so a slow refresh is exactly the scanner's 17030 video cycles. Bit 7 =
+// 1 (and the power-on default on ROM 03) runs the fast clock, whose rate comes
+// from the Settings speed preference. Every real-time <-> CPU-cycle conversion
+// must use this function, not cpuCyclesPerRefresh: the IWM bit cell, the ADB
+// repeat cadence and the DOC block cadence all have to follow the clock the
+// guest actually selected, or the media outruns the CPU during a 1 MHz phase.
+export const getIigsCpuCyclesPerRefresh = () =>
+  isGSMachine(machineName) && isIigsSlowMode() ? VIDEO_CYCLES_PER_FRAME : cpuCyclesPerRefresh
 
 // ---- Ensoniq DOC catch-up state ----
 // This lives at module scope on purpose. The run loop (doAdvance6502) is entered
@@ -150,7 +179,7 @@ let iigsVideoClock = 0
 // end of the call, then threw it away at the start of the next, advancing the
 // DOC march ~1.5 refreshes per refresh. Posted audio stayed 1x (439 frames per
 // block), so SenseiPlay's NTP player ran its timer oscillator at ~76 Hz instead
-// of 50 Hz â€” everything 1.5x too fast with correct pitch.
+// of 50 Hz Ã¢â‚¬â€ everything 1.5x too fast with correct pitch.
 let ensoniqRefreshId = -1
 // Total DOC frames generated for the current refresh block. A rate change
 // ($E1 write) starts a new segment at this cursor, so the block is posted as a
@@ -182,6 +211,8 @@ export const getIigsVideoClock = () => iigsVideoClock
 // compares it inside doAdvance6502; a speed-mode switch must leave it at frame
 // 0 so the next timer callback does not fake a mid-refresh beginShrFrame().
 export const getLastShrFrameForTesting = () => lastShrFrame
+// Settings speed rate: the fast-clock cycles per refresh. The effective clock is
+// getIigsCpuCyclesPerRefresh() instead; tests that pin the Settings rate use this.
 export const getIigsFrameUnits = () => cpuCyclesPerRefresh
 // Last refresh boundary at which the captured SHR rows were cleared. This is
 // machine state, not per-call state: doAdvance6502 is entered once per timer
@@ -194,6 +225,18 @@ export const getIigsFrameUnits = () => cpuCyclesPerRefresh
 // flickering aircraft under heavy timer jitter. Keep it at module scope and
 // reset it only when the machine's video clock (and frame numbering) resets.
 let lastShrFrame = -1
+// Last refresh at which the per-frame IIgs devices ran: the ADB micro-controller
+// (keyboard auto-repeat) and the mouse stepper. Like lastShrFrame this is machine
+// state, not per-call state: doAdvance6502 is entered once per timer callback,
+// and while the 65816 waits in WAI (an idle prompt, the Finder's event loop) a
+// call returns after part of a refresh, so two or three calls can fall inside one
+// emulated frame. A per-call sentinel then ticked the micro-controller more than
+// once per frame and halved the ADB repeat delay: the ROM's configured 45-frame
+// delay fired after ~21 frames (0.36 s instead of 0.75 s) and the configured
+// 4-frame rate repeated every 2 frames, so a short key hold produced extra
+// characters. The ADB micro is a 60 Hz device; one tick per emulated frame is the
+// contract (gssquared ADB_Micro::frame_handler).
+let lastIigsFrameTick = -1
 // A speed-mode switch resets the video clock without clearing the SHR display:
 // the beam-captured rows are still the last ones the guest painted, and a late
 // top-row sprite store arriving after the switch should still fold into them.
@@ -201,7 +244,12 @@ let lastShrFrame = -1
 // -1 (no boundary yet) is correct; the speed switch keeps frame 0 as current.
 export const resetIigsVideoClock = (preserveShrFrame = false) => {
   iigsVideoClock = 0
+  iigsBeamPos = 0
+  iigsBeamFrames = 0
   lastShrFrame = preserveShrFrame ? 0 : -1
+  // Frame numbering restarts with the clock, so the next run-loop call must tick
+  // the per-frame devices again even if it lands inside refresh 0.
+  lastIigsFrameTick = -1
   // The DOC catch-up is phased against this clock, so its anchor has to restart
   // with it (boot, Ctrl-Reset and speed-mode changes all reset the clock).
   ensoniqRefreshId = -1
@@ -212,9 +260,23 @@ export const resetIigsVideoClock = (preserveShrFrame = false) => {
   ensoniqCatchUpBusy = false
   ensoniqRebasePending = false
 }
-// $C02E/$C02F are a pure function of this clock, so pinning the frame layout the
-// CPU sees means being able to place the beam at a chosen position in a refresh.
-export const setIigsVideoClockForTesting = (value: number) => { iigsVideoClock = value }
+// $C02E/$C02F are a pure function of the beam position inside a refresh, so
+// pinning the frame layout the CPU sees means being able to place the beam at a
+// chosen position in a refresh. The setter takes the clock's CPU-cycle units and
+// maps them onto the scan index, so existing tests keep their geometry.
+export const setIigsVideoClockForTesting = (value: number) => {
+  iigsVideoClock = value
+  const units = Math.max(1, cpuCyclesPerRefresh)
+  const inFrame = ((value % units) + units) % units
+  iigsBeamPos = (inFrame * VIDEO_CYCLES_PER_FRAME / units) % VIDEO_CYCLES_PER_FRAME
+  // The refresh id has to follow the clock too: the DOC's catch-up state keys on
+  // the finished-refresh count, and a suite that jumps the clock to a boundary
+  // must look like a finished refresh, not a rewind inside the same one.
+  iigsBeamFrames = Math.floor(value / units)
+}
+// Test-only: place the scanner at an exact video cycle inside the refresh, so a
+// suite can walk the 262 rows the counters report without running the machine.
+export const setIigsBeamPosForTesting = (value: number) => { iigsBeamPos = value }
 let cpuSpeed = 0
 export let isDebugging = false
 let appMode = "default"
@@ -386,8 +448,10 @@ const ensoniqStartRefreshBlock = () => {
 
 const ensoniqRebaseRateNow = () => {
   if (!ensoniqActiveSegment) return
-  const frameCycles = Math.max(1, cpuCyclesPerRefresh)
-  const fraction = (iigsVideoClock % frameCycles) / frameCycles
+  // Machine time inside the refresh, from the video scanner: the DOC's sample
+  // clock is hardware time, so neither a $C036 slow-mode flip nor a Settings
+  // speed change may move it.
+  const fraction = iigsBeamPos / VIDEO_CYCLES_PER_FRAME
   const active = ensoniqActiveSegment
   // End the old-rate segment at the frames already rendered. This keeps the
   // pre-$E1 samples at their old rate; the new segment starts here with the new
@@ -414,10 +478,9 @@ export function ensoniqCatchUp() {
   if (ensoniqCatchUpBusy) return
   ensoniqCatchUpBusy = true
   try {
-    const frameCycles = Math.max(1, cpuCyclesPerRefresh)
     // Video-clock position, not cycleCount: the DOC's sample clock is hardware
     // time, so a $C036 slow-mode flip must not move it.
-    const refreshId = Math.floor(iigsVideoClock / frameCycles)
+    const refreshId = iigsBeamFrames
     if (refreshId !== ensoniqRefreshId) {
       // Complete the elapsed refresh, post its rate-labelled segments, then
       // start the new block at the new boundary.
@@ -430,7 +493,7 @@ export function ensoniqCatchUp() {
     if (!ensoniqActiveSegment) {
       ensoniqActiveSegment = { startCursor: 0, startFraction: 0, rate: iigsEnsoniq.outputRate() }
     }
-    const fraction = (iigsVideoClock % frameCycles) / frameCycles
+    const fraction = iigsBeamPos / VIDEO_CYCLES_PER_FRAME
     const active = ensoniqActiveSegment
     const due = active.startCursor +
       Math.floor(active.rate * (fraction - active.startFraction) / 60)
@@ -815,36 +878,6 @@ export const disableVidHD = () => {
   vidhd.reset()
 }
 
-const iigsHasHardDriveMedia = () => {
-  return getHardDriveState(1).filename !== "" || getHardDriveState(2).filename !== ""
-}
-
-// True when the Apple IIgs has a disk image in either of its built-in floppy
-// bays: slot 6 (5.25", drive-state indices 2/3) or slot 5 (3.5", indices 4/5).
-// Tests for actual media the same way the IWM data path does
-// (iigsFloppyHasMedia), so the two can never disagree about whether a drive is
-// loaded. Also covers the Slot 7 SmartPort hard drives, so that mounting a
-// hard-disk image and pressing Ctrl-Reset re-runs the full device scan
-// (matching section 26a's floppy fix).
-const iigsHasFloppyMedia = () => {
-  for (const index of [2, 3, 4, 5]) {
-    if (iigsFloppyHasMedia(index)) return true
-  }
-  return false
-}
-
-const iigsHasAnyDiskMedia = () => iigsHasFloppyMedia() || iigsHasHardDriveMedia()
-// The ROM device scan publishes the provisional warm-start signature
-// $00/$E0/$45 while it is still probing slots. A Ctrl-Reset during that window
-// must treat the machine as mid-boot and continue the current scan, not zero
-// the signature and restart the expensive cold scan. The preserved signature
-// continues the in-flight boot (measured 239,937 IWM reads on the 5.25" probe,
-// 3.5" 1,689); the forced-cold alternative measured 235,648 and 2,761 after reset.
-const iigsBootScanSignatureProvisional = () =>
-  memGet24(0x000000 + 0x03f2) === 0x00 &&
-  memGet24(0x000000 + 0x03f3) === 0xE0 &&
-  memGet24(0x000000 + 0x03f4) === 0x45
-
 const resetMachine = () => {
   softCard.reset()
   videoTerm.reset()
@@ -855,15 +888,12 @@ const resetMachine = () => {
   setButtonState()
   resetMouse()
   // The ADB micro's internal RAM survives a system reset, and the ROM keeps its
-  // warm-boot marker in uC RAM $51 ($A5 = warm, see iigsADB.reset()). Keeping it
-  // lets a Ctrl-Reset at the "Check startup device" screen take the ROM's warm
-  // path and land on the Applesoft prompt (gs_ctrl_reset.test.ts). When bootable
-  // floppy media is attached the reset must still re-run the cold device scan so
-  // the disk boots again; this emulator has no Mega II IIe-mode floppy boot to
-  // fall back on, so it clears the marker (cold reset) in that case, which is
-  // what the IIgs warm/cold policy in doReset() already does for the $03F2-$03F4
-  // signature (gs_reset_signature.test.ts).
-  iigsADB.reset(iigsHasAnyDiskMedia())
+  // warm-boot marker in uC RAM $51 ($A5 = warm, see iigsADB.reset()). Ctrl-Reset
+  // must leave that RAM in place, including when it is pressed during the boot's
+  // device scan: a real Ctrl-Reset is warm, and clearing this marker made every
+  // press restart the full power-on ADB/device scan, which is what the user felt
+  // as a complete reset. doBoot() still clears it for a real power-on cold start.
+  iigsADB.reset(false)
   resetPassport()
   if (veraSlot !== 0) {
     resetVera()
@@ -894,11 +924,15 @@ const resetMachine = () => {
 export const doBoot = () => {
   setCycleCount(0)
   memoryReset()
+  // Power-on is a cold start: invalidate the warm-start signature before the
+  // ROM starts. A Ctrl-Reset deliberately keeps it (see doReset); gssquared's
+  // computer_t::reset(cold_start) only zeroes $03F2-$03F4 for a cold start.
+  if (isGSMachine(machineName)) {
+    memSet24(0x03f2, 0x00)
+    memSet24(0x03f3, 0x00)
+    memSet24(0x03f4, 0x00)
+  }
   if (isGSMachine(machineName)) iigsEnsoniq.reset()
-  // Power-on is a cold start: the ADB micro-controller's internal RAM (and with
-  // it the ROM's warm-boot marker at uC RAM $51) is undefined until the ROM
-  // writes it, unlike a Ctrl-Reset which leaves it in place.
-  iigsADB.reset(true)
   doSetRom(machineName)
   // memoryReset() wipes the peripheral-card windows, so a boot has to rebuild
   // the slot layout even when configureMachine() already ran for a mounted
@@ -925,6 +959,12 @@ export const doBoot = () => {
     applyIigsSlotConfig()
   }
   doReset()
+  // Power-on is a cold start: the ADB micro-controller's internal RAM (and with
+  // it the ROM's warm-boot marker at uC RAM $51) is undefined until the ROM
+  // writes it, unlike a Ctrl-Reset which leaves it in place. doReset() above
+  // deliberately keeps that RAM warm for every reset, so the boot must clear it
+  // after, not before (the reset would otherwise undo the power-on cold start).
+  iigsADB.reset(true)
   // This is a hack. If we don't currently have a hard drive image on boot,
   // temporarily disable the hard drive and then re-enable it later.
   // This allows the floppy disk to boot instead.
@@ -941,7 +981,50 @@ export const doBoot = () => {
   }
 }
 
+// On a real IIgs the ROM's Ctrl-Reset handler beeps before it looks at the
+// warm-start signature: FF:FA87 does JSR $F89A (the tone call) and only then
+// FF:FA8A runs the $03F3 ^ $A5 == $03F4 check and FF:FADE does JMP ($03F2).
+// When that signature is valid doReset jumps straight through $03F2, so the
+// handler never runs and Ctrl-Reset would be silent. Replay the ROM's tone with
+// the number of toggles and the $C030 cadence its speaker loop drives (FF:A0AF
+// LDA $C030: three ~1612-cycle iterations then one ~2014-cycle iteration): a
+// single 93-toggle beep.
+//
+// The tone is delivered 24 toggles per frame instead of all at once. A reset
+// posts AUDIO_RESET, and the UI tears its speaker worklet down on that message,
+// so a single batch would be dropped while the graph rebuilds. Spreading the
+// batches lets the later ones land in the live worklet, the way the ROM's own
+// frame-spread beep survives the same teardown.
+const iigsResetBeepToggles = 93
+const iigsResetBeepPattern = [1612, 1612, 1612, 2014]
+const iigsResetBeepBatch = 24
+const iigsResetBeepFrameMs = 17
+const playIigsResetBeep = () => {
+  // The cadence is deliberately not tied to the CPU's real cycle counter: the
+  // worklet only plays the spacing between toggles, and keeping this sequence
+  // contiguous means a batch boundary cannot change the tone's pitch.
+  let cycle = s6502.cycleCount + iigsResetBeepPattern[0]
+  let toggle = 0
+  const postBatch = () => {
+    const end = Math.min(toggle + iigsResetBeepBatch, iigsResetBeepToggles)
+    while (toggle < end) {
+      passClickSpeaker(cycle)
+      cycle += iigsResetBeepPattern[toggle % iigsResetBeepPattern.length]
+      toggle++
+    }
+    if (toggle < iigsResetBeepToggles) setTimeout(postBatch, iigsResetBeepFrameMs)
+  }
+  postBatch()
+}
+
 export const doReset = () => {
+  // The Programmer's Guide warm-start signature lives at $03F2-$03F4:
+  // $03F2/$03F3 are the little-endian warm-start address, and $03F4 is the
+  // checksum ($03F3 ^ $A5). Capture it before any reset state is torn down so a
+  // valid signature can survive a Ctrl-Reset and be honoured below.
+  const gsWarmSignature = isGSMachine(machineName)
+    ? [(memGet24(0x03f2) & 0xff), (memGet24(0x03f3) & 0xff), (memGet24(0x03f4) & 0xff)]
+    : null
   clearInterrupts()
   resetSoftSwitches()
   resetIigsVideoClock()
@@ -971,25 +1054,12 @@ export const doReset = () => {
     // follow a long pause (breakpoint, menu), so restart its timing rather
     // than letting it shift thousands of idle bits into the data register.
     iwmResetTiming()
-    // The IIgs ROM decides cold boot vs warm reset with
-    //   LDA $03F3 / EOR #$A5 / CMP $03F4
-    // and the boot sequence writes that signature into $03F2-$03F4 as it goes.
-    // Once it is there, a reset is treated as "warm": the ROM walks the slots
-    // but never touches the IWM (measured: 0 $C0E0-$C0EF reads after a
-    // Ctrl-Reset, against 399,707 during the cold boot that does find the
-    // disk), so inserting a floppy and pressing Ctrl-Reset could never boot it.
-    //
-    // Clear the signature when media is present and the boot has completed.
-    // While the ROM is still publishing the provisional $00/$E0/$45 warm
-    // signature, Ctrl-Reset must not force a cold rescan: the device scan is
-    // still in progress and the IWM is already driving the boot. With no
-    // media the warm path is kept, which is what makes Ctrl-Reset land on the
-    // Applesoft prompt (gs_ctrl_reset.test.ts).
-    if (iigsHasAnyDiskMedia() && !iigsBootScanSignatureProvisional()) {
-      memSet24(0x000000 + 0x03f2, 0x00)
-      memSet24(0x000000 + 0x03f3, 0x00)
-      memSet24(0x000000 + 0x03f4, 0x00)
-    }
+    // The Programmer's Guide warm-start signature lives at $03F2-$03F4:
+    //   $03F2/$03F3 = little-endian warm target, $03F4 = checksum ($03F3 ^ $A5)
+    // A warm Ctrl-Reset must preserve it; only power-on/cold start invalidates it
+    // (gssquared's computer_t::reset(cold_start) clears $03F2-$03F4 only for a
+    // cold start). Zeroing it on Ctrl-Reset turned every reset with media into
+    // the cold device-scan path.
     // A hardware reset clears SLTROMSEL; the machine then re-applies the
     // Control Panel assignment.
     applyIigsSlotConfig()
@@ -998,11 +1068,38 @@ export const doReset = () => {
     iigsADB.setRom03(isIigsRom03())
   }
   resetMachine()
+  let iigsWarmStarted = false
+  if (gsWarmSignature) {
+    const [sigLow, sigHigh, sigChecksum] = gsWarmSignature
+    const signatureValid = ((sigHigh ^ 0xa5) & 0xff) === sigChecksum
+    // $00/$E0/$45 and the $03/$E0/$45 tail the ROM writes on its provisional
+    // warm path (the startup slot lands in the low byte) are the device-scan
+    // marker family. Their target is not the guide's generic JMP ($03F2) entry
+    // unless the ROM's provisional path (FF:FADB LDY #3 / JMP FEE6) decides so;
+    // leave the whole family to the ROM instead of jumping the classic vector.
+    const provisionalSignature = sigHigh === 0xe0 && sigChecksum === 0x45
+    if (signatureValid && !provisionalSignature) {
+      // A valid Programmer's Guide signature is a warm start: the ROM's reset
+      // handler jumps through $03F2/$03F3. The target is always read from the
+      // signature ($03F3<<8 | $03F2), never a fixed address, so every OS's own
+      // warm entry works: DOS 3.3 uses $9DBF ($03F2=$BF,$03F3=$9D,$03F4=$38),
+      // ProDOS uses $BE00 ($03F2=$00,$03F3=$BE,$03F4=$1B), and others differ.
+      // This ROM's reset path never takes that branch (its code invalidates the
+      // signature at FF:8055/59), so honour the book's warm start here.
+      const warmStart = (sigHigh << 8) | sigLow
+      ;(cpu as CPU65816).PC = warmStart & 0xffff
+      // The ROM beeps from the same handler we skipped to get here; sound it
+      // after the audio-reset signal below so the tone reaches the worklet that
+      // reset rebuilds.
+      iigsWarmStarted = true
+    }
+  }
   // Boot and Ctrl-Reset must silence transports that hold already-scheduled
   // audio (Mockingboard oscillators/envelopes, MIDI notes, the VERA PSG/FM/PCM
   // queue, and DOC buffers). resetMachine() clears the worker-side sound-chip
   // state; this companion signal clears the UI-side scheduling graphs.
   passAudioReset()
+  if (iigsWarmStarted) playIigsResetBeep()
   // Otherwise Heat Map data survives a reset/reboot indefinitely (it was
   // previously cleared only by doSetCycleCount, a time-travel-only path),
   // so PC/memory activity from before this reboot stays mixed in with the
@@ -1047,7 +1144,7 @@ export const doSetSpeedMode = (speedModeIn: number, operationId?: number) => {
   cpuCyclesPerRefresh = getProfileCyclesPerRefresh(profile, speedMode)
   setJoystickCyclesPerRefresh(cpuCyclesPerRefresh)
   // The new CPU rate changes frame length, so restart the clock in the new
-  // frame â€” but not the captured-row boundary: the guest is still painting
+  // frame Ã¢â‚¬â€ but not the captured-row boundary: the guest is still painting
   // the frame the beam is halfway through, and -1 here would make the next run
   // loop call beginShrFrame() mid-refresh and drop those late draws.
   resetIigsVideoClock(true)
@@ -1164,6 +1261,13 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState 
     cyclesPerRefresh: cpuCyclesPerRefresh,
     slowMode: isGSMachine(machineName) && isIigsSlowMode(),
   }))
+  // The 3.5" drive's seek/motor settle timers are video-cycle counts
+  // (gssquared Floppy35_woz::update_timers) while this model counts CPU
+  // cycles, so the drive needs the live conversion factor for the current
+  // speed. Register it here for the same reason as the paddle source: memory.ts
+  // is loaded *from* devices/diskdata.ts, so pushing the setter during module
+  // initialisation reaches an export that diskdata has not bound yet.
+  setIigs35TimerScale(() => getIigsCpuCyclesPerRefresh() / VIDEO_CYCLES_PER_FRAME)
 
   if (isGSMachine(machineName)) {
     cpu = new CPU65816(memGet24, memSet24)
@@ -1696,7 +1800,7 @@ const doAdvance6502 = () => {
   // between halts. Our old per-video-frame single block ran the march once per
   // refresh; a halt past sample 0 stayed halted until the next refresh's
   // generateSamples ran, so the timer-oscillator tick (Apple TN #23) was
-  // capped at 60/s and every sequencer running off it played at half tempo â€”
+  // capped at 60/s and every sequencer running off it played at half tempo Ã¢â‚¬â€
   // Tass Times title music measured exactly 2.0x slower than real hardware
   // (bassline motif cycle 4.0s vs 2.0s) while every pitch stayed correct.
   //
@@ -1709,23 +1813,31 @@ const doAdvance6502 = () => {
   // Hoisted invariants: machineName, speedMode and tracing do not change while
   // this loop runs (mode changes arrive as worker messages, which can only be
   // delivered between invocations of doAdvance6502). Everything below used to
-  // be recomputed per instruction â€” hoisting them is 11% of CPU time in the
+  // be recomputed per instruction Ã¢â‚¬â€ hoisting them is 11% of CPU time in the
   // V8 profile.
   const isIIgs = isGSMachine(machineName)
   const traceCb = tracing ? updateTrace : null
-  // Frame length in video-clock units. On the IIgs this is the selected CPU
-  // rate's refresh budget. The Settings speed preference is authoritative and
-  // deliberately overrides $C036 slow mode: a classic title that drops the CPU
-  // clock to 1.024 MHz for copy-protected disk I/O must not also erase the
-  // user's 2.8 MHz choice. $C036 still selects the speed-shadow latch and other
-  // register bits, but it no longer rescales what a CPU cycle is worth.
-  let frameCycles = isIIgs ? cpuCyclesPerRefresh : 17030
-  let vblCycles = Math.round((isIIgs ? 12460 / 46727 : 4550 / 17030) * frameCycles)
+  // Refresh length in CPU cycles, from the effective clock (see
+  // getIigsCpuCyclesPerRefresh): $C036 bit 7 = 0 runs the CPU at exactly
+  // VIDEO_CYCLES_PER_FRAME (17030) cycles per refresh, bit 7 = 1 spends the
+  // Settings fast budget. beamStep maps CPU cycles onto the scanner, so the CPU
+  // rate decides how much machine time a cycle buys while iigsBeamPos keeps the
+  // beam on its own 14 MHz anchor. Both are recomputed below when the guest
+  // flips the latch mid-refresh.
+  let frameCycles = isIIgs ? getIigsCpuCyclesPerRefresh() : 17030
+  let beamStep = isIIgs ? VIDEO_CYCLES_PER_FRAME / Math.max(1, frameCycles) : 0
+  // Classic-only geometry: the IIgs reads the scanner through iigsBeamPos.
+  let vblCycles = Math.round((4550 / 17030) * frameCycles)
   let cyclesPerLine = ((frameCycles - vblCycles) / 192) || 1
   let cachedSlowMode = isIigsSlowMode()
-  const videoStart = isIIgs ? iigsVideoClock : s6502.cycleCount
-  // Last emulated refresh the IIgs mouse sync ran on (see iigsMouseStep).
-  let lastMouseSyncFrame = -1
+  // Machine time this call has run, in video cycles. The refresh budget is
+  // counted here rather than on iigsVideoClock so it is independent of how the
+  // guest drives the speed latch mid-frame.
+  let beamElapsed = 0
+  // The per-frame IIgs devices are gated on lastIigsFrameTick at module scope
+  // (see the declaration): the old local sentinel re-armed on every call, which
+  // ticked the ADB repeat and mouse stepper more than once per emulated frame.
+
   // The SHR captured-row state is cleared at the refresh boundary, not at beam
   // line 0: the guest may store to the previous frame's rows during VBL, and
   // only a boundary crossing makes those stores belong to the new frame (see
@@ -1758,7 +1870,7 @@ const doAdvance6502 = () => {
       // Batch 8 instructions between the per-batch housekeeping below (VBL
       // lines, floppy motor, conditional input, IRQ polarity, VIA timers).
       // Those checks only need sub-scanline resolution, so running them every
-      // single instruction was pure overhead â€” the run loop body showed 11%
+      // single instruction was pure overhead Ã¢â‚¬â€ the run loop body showed 11%
       // self time in the V8 profile.
       for (let bi = 0; bi < 1; bi++) {
         cycles = cpu.processInstruction(traceCb)
@@ -1773,11 +1885,19 @@ const doAdvance6502 = () => {
       if (isIIgs) processCycleCountCallbacks()
       if (cycles < 0) break
     }
-    // Advance the video clock by the machine time this instruction consumed.
-    // The selected speed preference defines one video frame's CPU budget, so a
-    // classic-title slow-mode toggle does not change the frame phase or the
-    // user's requested clock.
-    if (isIIgs) iigsVideoClock += cycles
+    // Advance the machine timeline by the CPU cycles this instruction consumed.
+    // iigsVideoClock stays in CPU cycles (the disk and joystick timing use it);
+    // iigsBeamPos is the scanner, which runs off the 14 MHz rail, so it advances
+    // by however much *machine* time those CPU cycles took at the current clock.
+    if (isIIgs) {
+      iigsVideoClock += cycles
+      beamElapsed += cycles * beamStep
+      iigsBeamPos += cycles * beamStep
+      while (iigsBeamPos >= VIDEO_CYCLES_PER_FRAME) {
+        iigsBeamPos -= VIDEO_CYCLES_PER_FRAME
+        iigsBeamFrames++
+      }
+    }
     // Floppy motor-off delay, measured in CPU cycles so it stays locked to the
     // emulated machine's clock rather than to wall time. See stopMotor() in
     // devices/diskdata.ts.
@@ -1791,24 +1911,31 @@ const doAdvance6502 = () => {
     if (cachedSpeedMode !== speedMode || cachedSlowMode !== isIigsSlowMode()) {
       cachedSpeedMode = speedMode
       cachedSlowMode = isIigsSlowMode()
-      frameCycles = isIIgs ? cpuCyclesPerRefresh : 17030
-      vblCycles = Math.round((isIIgs ? 12460 / 46727 : 4550 / 17030) * frameCycles)
+      frameCycles = isIIgs ? getIigsCpuCyclesPerRefresh() : 17030
+      beamStep = isIIgs ? VIDEO_CYCLES_PER_FRAME / Math.max(1, frameCycles) : 0
+      vblCycles = Math.round((4550 / 17030) * frameCycles)
       cyclesPerLine = ((frameCycles - vblCycles) / 192) || 1
     }
+    // The IIgs reads its scanner through iigsBeamPos (65 video cycles per line,
+    // 262 lines, VBL rows first); the classic machine keeps its CPU-cycle frame.
     const videoPos = isIIgs ? iigsVideoClock : s6502.cycleCount
-    const cycleInFrame = videoPos % frameCycles
-    const nowFrame = frameCycles > 0 ? Math.floor(videoPos / frameCycles) : 0
+    const cycleInFrame = isIIgs ? iigsBeamPos : videoPos % frameCycles
+    const nowFrame = isIIgs
+      ? iigsBeamFrames
+      : (frameCycles > 0 ? Math.floor(videoPos / frameCycles) : 0)
     if (isIIgs && nowFrame !== lastShrFrame) {
       lastShrFrame = nowFrame
       beginShrFrame()
     }
-    if (cycleInFrame < vblCycles) {
+    const vblEnd = isIIgs ? VBL_VIDEO_CYCLES : vblCycles
+    const lineLength = isIIgs ? VIDEO_CYCLES_PER_LINE : cyclesPerLine
+    if (cycleInFrame < vblEnd) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
       // Note that VBLINV is the inverse of the vertical blanking status,
       // so if it's set then vertical blanking needs to be activated.
       if (SWITCHES.VBLINV.isSet) {
         startVBL()
-        // IIgs: VBL is a hardware interrupt â€” signal it and raise the IRQ line if enabled.
+        // IIgs: VBL is a hardware interrupt Ã¢â‚¬â€ signal it and raise the IRQ line if enabled.
         if (isIIgs) {
           iigsSignalVbl()
           iigsVblCount++
@@ -1826,11 +1953,10 @@ const doAdvance6502 = () => {
       }
     } else {
       endVBL()
-      // 192 visible lines fill the frame after the VBL window. The per-line
-      // cycle count scales with the frame budget: at the 2.8 MHz rate this is
-      // (46727-12460)/192 = 178.5; at Normal (1.02 MHz) it is
-      // (17030-4550)/192 = 65, the Mega II's 65-cycle scanline.
-      const line = Math.floor((cycleInFrame - vblCycles) / cyclesPerLine)
+      // 192 visible lines fill the frame after the VBL window. On the IIgs the
+      // scanner gives every line exactly 65 video cycles (gssquared
+      // VideoScannerII); the classic machine keeps its CPU-cycle frame.
+      const line = Math.floor((cycleInFrame - vblEnd) / lineLength)
       if (line !== currentLine && line < 192) {
         currentLine = line
         exportMemoryToHiresLine(line)
@@ -1869,8 +1995,8 @@ const doAdvance6502 = () => {
     // per emulated frame (gssquared does the same from its frame hook). Doing
     // it per instruction would hammer the ADB; per frame is plenty because the
     // guest only polls the mouse a handful of times inside a frame.
-    if (isIIgs && nowFrame !== lastMouseSyncFrame) {
-      lastMouseSyncFrame = nowFrame
+    if (isIIgs && nowFrame !== lastIigsFrameTick) {
+      lastIigsFrameTick = nowFrame
       iigsMouseStep()
       // The ADB micro-controller's keyboard auto-repeat runs from its own
       // 60 Hz frame handler (gssquared ADB_Micro::frame_handler); tick it once
@@ -1882,7 +2008,7 @@ const doAdvance6502 = () => {
       doSetRunMode(RUN_MODE.PAUSED, true, undefined, {reason: "cycle-limit"})
       break
     }
-    if (isIIgs ? (iigsVideoClock - videoStart) >= frameCycles
+    if (isIIgs ? beamElapsed >= VIDEO_CYCLES_PER_FRAME
                : cycleTotal >= cpuCyclesPerRefresh) {
       break
     }
@@ -1898,7 +2024,7 @@ const doAdvance6502 = () => {
   
   // Apple IIgs Ensoniq ES5503: the run loop generates the DOC output in
   // cycle-anchored chunks (see ensoniqCatchUp above). Block delivery is gated on
-  // refresh rollover â€” the next catch-up call completes the elapsed refresh and
+  // refresh rollover Ã¢â‚¬â€ the next catch-up call completes the elapsed refresh and
   // posts the whole outRate/60 block, so the UI transport still sees 439-frame
   // per-refresh posts while halts can re-key mid-refresh. This trailing call
   // only catches up to the *elapsed* time (the loop can break without having run
