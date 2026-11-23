@@ -237,7 +237,7 @@ type Apple2SaveState = {
   extraRamSize: number,
   machineName: MACHINE_NAME,
   cardStates?: SlotCardSaveState[],
-  joystick?: {countStart: number},
+  joystick?: {countStart: number | number[]},
   softSwitches: {[name: string]: boolean},
   stackDump: Array<string>,
   memvalid: string,
