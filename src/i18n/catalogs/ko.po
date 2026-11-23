@@ -53,7 +53,6 @@ msgctxt "controls.toggleSound"
 msgid "Toggle Sound"
 msgstr "소리 토글"
 
-#, fuzzy
 msgctxt "controls.retrySound"
 msgid "Sound unavailable. Retry sound."
 msgstr "사운드를 사용할 수 없습니다. 사운드 재시도."
@@ -88,7 +87,6 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "테마"
 
-#, fuzzy
 msgctxt "config.graphics"
 msgid "Graphics"
 msgstr "그래픽"
@@ -103,19 +101,16 @@ msgctxt "config.resetSettings"
 msgid "Reset Settings"
 msgstr "모든 설정 재설정"
 
-#, fuzzy
 msgctxt "config.resetSettingsText"
 msgid ""
 "Are you sure you want to reset emulator settings? This will not erase your "
 "breakpoints, save states, or BASIC program."
 msgstr "에뮬레이터 설정을 초기화하시겠습니까? 중단점, 저장 상태 및 BASIC 프로그램은 삭제되지 않습니다."
 
-#, fuzzy
 msgctxt "config.resetSavedState"
 msgid "Reset Saved State"
 msgstr "저장된 상태 초기화"
 
-#, fuzzy
 msgctxt "config.capsLock"
 msgid "Caps Lock"
 msgstr "Caps Lock"
@@ -158,32 +153,26 @@ msgctxt "config.joystick"
 msgid "Keyboard and Joystick"
 msgstr "조이스틱 설정"
 
-#, fuzzy
 msgctxt "config.saveState"
 msgid "Saved States"
 msgstr "저장된 상태"
 
-#, fuzzy
 msgctxt "config.autoSaveState"
 msgid "Automatically Save and Restore State"
 msgstr "상태 자동 저장 및 복원"
 
-#, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine"
 msgstr "머신"
 
-#, fuzzy
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
 msgstr "Apple II+"
 
-#, fuzzy
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
 msgstr "Apple IIe (미확장형)"
 
-#, fuzzy
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
 msgstr "Apple IIe (확장형)"
@@ -198,12 +187,10 @@ msgctxt "speed.normal"
 msgid "Normal Speed (1 MHz)"
 msgstr "정상 속도 (1 MHz)"
 
-#, fuzzy
 msgctxt "speed.two"
 msgid "2 MHz"
 msgstr "2 MHz"
 
-#, fuzzy
 msgctxt "speed.three"
 msgid "3 MHz"
 msgstr "3 MHz"
@@ -218,27 +205,22 @@ msgctxt "speed.warp"
 msgid "Ludicrous Speed"
 msgstr "터무니없는 속도"
 
-#, fuzzy
 msgctxt "timetravel.snapshotOnKeyPress"
 msgid "Take Snapshot On Keypress"
 msgstr "키 입력 시 스냅샷 찍기"
 
-#, fuzzy
 msgctxt "timetravel.autoSnapshot"
 msgid "Auto Snapshot"
 msgstr "자동 스냅샷"
 
-#, fuzzy
 msgctxt "timetravel.auto_Off"
 msgid "Off"
 msgstr "꺼짐"
 
-#, fuzzy
 msgctxt "timetravel.auto_100k"
 msgid "Every 0.1s (100000 cycles)"
 msgstr "0.1초마다 (100000 사이클)"
 
-#, fuzzy
 msgctxt "timetravel.auto_1M"
 msgid "Every 1s (1M cycles)"
 msgstr "1초마다 (1M 사이클)"
@@ -268,12 +250,10 @@ msgctxt "debug.debugTab"
 msgid "Debugging"
 msgstr "디버깅"
 
-#, fuzzy
 msgctxt "debug.basicTab"
 msgid "Applesoft BASIC"
 msgstr "Applesoft BASIC"
 
-#, fuzzy
 msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
 msgstr "Apple exPectin"
@@ -328,7 +308,6 @@ msgctxt "debug.loadSymbolTable"
 msgid "Load Symbol Table"
 msgstr "심볼 테이블 로드"
 
-#, fuzzy
 msgctxt "debug.agentTab"
 msgid "Agent"
 msgstr "에이전트"
@@ -338,512 +317,411 @@ msgctxt "debug.disassembly"
 msgid "Disassembly"
 msgstr "디스어셈블리"
 
-#, fuzzy
 msgctxt "debug.breakOnce"
 msgid "Break once then remove"
 msgstr "한 번만 중단 후 제거"
 
-#, fuzzy
 msgctxt "debug.basicLineNumber"
 msgid "BASIC Line Number:"
 msgstr "BASIC 라인 번호:"
 
-#, fuzzy
 msgctxt "debug.any"
 msgid "Any"
 msgstr "모두"
 
-#, fuzzy
 msgctxt "disassembly.memory.effectiveAddress"
 msgid "Effective address: {{notation}}"
 msgstr "유효 주소: {{notation}}"
 
-#, fuzzy
 msgctxt "disassembly.memory.value"
 msgid "Value: {{notation}}"
 msgstr "값: {{notation}}"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.character"
 msgid "Keyboard: \"{{character}}\""
 msgstr "키보드: \"{{character}}\""
 
-#, fuzzy
 msgctxt "disassembly.keyboard.strobeClear"
 msgid "Keyboard strobe: CLEAR (MSB = 0)"
 msgstr "키보드 스트로브: 해제 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.strobeSet"
 msgid "Keyboard strobe: SET (MSB = 1)"
 msgstr "키보드 스트로브: 설정 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownClear"
 msgid "Any-key-down flag: CLEAR (MSB = 0)"
 msgstr "Any-key-down 플래그: 해제 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownSet"
 msgid "Any-key-down flag: SET (MSB = 1)"
 msgstr "Any-key-down 플래그: 설정 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.clearStrobe"
 msgid "Clear keyboard strobe"
 msgstr "키보드 스트로브 해제"
 
-#, fuzzy
 msgctxt "disassembly.cassette.toggleOutput"
 msgid "Toggle cassette output"
 msgstr "cassette 출력 토글"
 
-#, fuzzy
 msgctxt "disassembly.cassette.sampleInput"
 msgid "Sample cassette input"
 msgstr "cassette 입력 샘플링"
 
-#, fuzzy
 msgctxt "disassembly.cassette.sampleInputMirror"
 msgid "Sample cassette-input mirror"
 msgstr "cassette 입력 미러 샘플링"
 
-#, fuzzy
 msgctxt "disassembly.speaker.toggleOutput"
 msgid "Toggle speaker output"
 msgstr "스피커 출력 전환"
 
-#, fuzzy
 msgctxt "disassembly.notice.emulatorIdentifier"
 msgid "INFO: Apple2TS emulator identifier: $CD"
 msgstr "정보: Apple2TS 에뮬레이터 식별자: $CD"
 
-#, fuzzy
 msgctxt "disassembly.notice.noWriteEffect"
 msgid "INFO: This write has no effect on {{machine}}"
 msgstr "정보: 이 쓰기 작업은 {{machine}}에 영향을 주지 않습니다"
 
-#, fuzzy
 msgctxt "disassembly.notice.multipleTriggers"
 msgid "WARNING: This instruction triggers the soft switch multiple times"
 msgstr "경고: 이 명령은 soft switch를 여러 번 트리거합니다"
 
-#, fuzzy
 msgctxt "disassembly.notice.unknownWrite"
 msgid "WARNING: This instruction writes an unknown value"
 msgstr "경고: 이 명령은 알 수 없는 값을 씁니다"
 
-#, fuzzy
 msgctxt "disassembly.rom.intCxOff"
 msgid "Internal $Cx ROM: OFF (MSB = 0)"
 msgstr "내부 $Cx ROM: OFF (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.rom.intCxOn"
 msgid "Internal $Cx ROM: ON (MSB = 1)"
 msgstr "내부 $Cx ROM: ON (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.rom.slot3Off"
 msgid "Slot 3 ROM: OFF (MSB = 0)"
 msgstr "슬롯 3 ROM: 꺼짐 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.rom.slot3On"
 msgid "Slot 3 ROM: ON (MSB = 1)"
 msgstr "슬롯 3 ROM: 켜짐 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.rom.internal"
 msgid "Select internal ROM for {{range}}"
 msgstr "{{range}}에 대한 내부 ROM 선택"
 
-#, fuzzy
 msgctxt "disassembly.rom.slot"
 msgid "Select slot ROM for {{range}}"
 msgstr "{{range}}에 대한 슬롯 ROM 선택"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.bank1"
 msgid "Language Card bank: 1 (MSB = 0)"
 msgstr "Language Card 뱅크: 1 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.bank2"
 msgid "Language Card bank: 2 (MSB = 1)"
 msgstr "Language Card 뱅크: 2 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.readSourceRom"
 msgid "Language Card read source: ROM (MSB = 0)"
 msgstr "Language Card 읽기 소스: ROM (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.readSourceRam"
 msgid "Language Card read source: RAM (MSB = 1)"
 msgstr "Language Card 읽기 소스: RAM (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.selectBank"
 msgid "Language Card: Select bank {{bank}}"
 msgstr "Language Card: bank {{bank}} 선택"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.useRamForReads"
 msgid "Language Card: Use RAM for reads"
 msgstr "Language Card: 읽기 시 RAM 사용"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.useRomForReads"
 msgid "Language Card: Use ROM for reads"
 msgstr "Language Card: 읽기 시 ROM 사용"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.disableWrites"
 msgid "Language Card: Disable writes"
 msgstr "Language Card: 쓰기 비활성화"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.resetPrewriteLatch"
 msgid "Language Card: Reset prewrite latch"
 msgstr "Language Card: 쓰기 준비 래치 초기화"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.armOrEnableWrites"
 msgid "Language Card: Arm or enable writes"
 msgstr "Language Card: 쓰기 준비 또는 활성화"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.readStatusOff"
 msgid "Auxiliary-memory reads: OFF (MSB = 0)"
 msgstr "보조 메모리 읽기: OFF (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.readStatusOn"
 msgid "Auxiliary-memory reads: ON (MSB = 1)"
 msgstr "보조 메모리 읽기: ON (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.readMain"
 msgid "Select main memory for reads"
 msgstr "읽기용 메인 메모리 선택"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.readAuxiliary"
 msgid "Select auxiliary memory for reads"
 msgstr "읽기용 보조 메모리 선택"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.writeStatusOff"
 msgid "Auxiliary-memory writes: OFF (MSB = 0)"
 msgstr "보조 메모리 쓰기: OFF (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.writeStatusOn"
 msgid "Auxiliary-memory writes: ON (MSB = 1)"
 msgstr "보조 메모리 쓰기: ON (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.writeMain"
 msgid "Select main memory for writes"
 msgstr "쓰기용 메인 메모리 선택"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.writeAuxiliary"
 msgid "Select auxiliary memory for writes"
 msgstr "쓰기용 보조 메모리 선택"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.selectExpansionBank"
 msgid ""
 "Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
 msgstr "{{addressing}} 어드레싱을 사용하여 보조 확장 뱅크 {{bank}} 선택"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.altzpMain"
 msgid "Select main zero page, stack, and bank-switched RAM"
 msgstr "메인 zero page, stack 및 bank-switched RAM 선택"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.altzpAuxiliary"
 msgid "Select auxiliary zero page, stack, and bank-switched RAM"
 msgstr "보조 zero page, stack 및 bank-switched RAM 선택"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.altzpStatusMain"
 msgid "Zero page, stack, and bank-switched RAM: MAIN (MSB = 0)"
 msgstr "Zero page, stack 및 bank-switched RAM: MAIN (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.altzpStatusAuxiliary"
 msgid "Zero page, stack, and bank-switched RAM: AUXILIARY (MSB = 1)"
 msgstr "Zero page, stack 및 bank-switched RAM: AUXILIARY (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.80storeStatusOff"
 msgid "PAGE2 selects display page 1 or 2 (MSB = 0)"
 msgstr "PAGE2가 디스플레이 페이지 1 또는 2를 선택 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.80storeStatusOn"
 msgid "PAGE2 selects main or auxiliary display memory (MSB = 1)"
 msgstr "PAGE2가 메인 또는 보조 디스플레이 메모리를 선택 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.80storeOff"
 msgid "Make PAGE2 select display page 1 or 2"
 msgstr "PAGE2가 디스플레이 페이지 1 또는 2를 선택하도록 설정"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.80storeOn"
 msgid "Make PAGE2 select main or auxiliary display memory"
 msgstr "PAGE2가 메인 또는 보조 디스플레이 메모리를 선택하도록 설정"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.page2StatusClear"
 msgid "Display-memory selection: PAGE 1 OR MAIN (MSB = 0)"
 msgstr "디스플레이 메모리 선택: PAGE 1 또는 MAIN (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.page2StatusSet"
 msgid "Display-memory selection: PAGE 2 OR AUXILIARY (MSB = 1)"
 msgstr "디스플레이 메모리 선택: PAGE 2 또는 AUXILIARY (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.selectPage1"
 msgid "Select display page 1"
 msgstr "디스플레이 페이지 1 선택"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.selectPage2"
 msgid "Select display page 2"
 msgstr "표시 페이지 2 선택"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.page2Clear"
 msgid "Select display page 1, or main display memory with 80STORE"
 msgstr "80STORE 사용 시 디스플레이 페이지 1 또는 메인 디스플레이 메모리 선택"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.page2Set"
 msgid "Select display page 2, or auxiliary display memory with 80STORE"
 msgstr "80STORE 사용 시 디스플레이 페이지 2 또는 보조 디스플레이 메모리 선택"
 
-#, fuzzy
 msgctxt "disassembly.display.altCharsetStatusOff"
 msgid "Alternate character set: OFF (MSB = 0)"
 msgstr "대체 문자 세트: OFF (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.altCharsetStatusOn"
 msgid "Alternate character set: ON (MSB = 1)"
 msgstr "대체 문자 세트: ON (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.selectPrimaryCharset"
 msgid "Select primary character set"
 msgstr "기본 문자 세트 선택"
 
-#, fuzzy
 msgctxt "disassembly.display.selectAlternateCharset"
 msgid "Select alternate character set"
 msgstr "대체 문자 세트 선택"
 
-#, fuzzy
 msgctxt "disassembly.display.textModeStatusOff"
 msgid "Text mode: OFF (MSB = 0)"
 msgstr "텍스트 모드: OFF (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.textModeStatusOn"
 msgid "Text mode: ON (MSB = 1)"
 msgstr "텍스트 모드: ON (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.selectGraphicsMode"
 msgid "Select graphics mode"
 msgstr "그래픽 모드 선택"
 
-#, fuzzy
 msgctxt "disassembly.display.selectTextMode"
 msgid "Select text mode"
 msgstr "텍스트 모드 선택"
 
-#, fuzzy
 msgctxt "disassembly.display.mixedDisplayStatusOff"
 msgid "Mixed display: OFF (MSB = 0)"
 msgstr "혼합 디스플레이: OFF (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.mixedDisplayStatusOn"
 msgid "Mixed display: ON (MSB = 1)"
 msgstr "혼합 디스플레이: ON (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.selectFullScreenDisplay"
 msgid "Select full-screen display"
 msgstr "전체 화면 디스플레이 선택"
 
-#, fuzzy
 msgctxt "disassembly.display.selectMixedDisplay"
 msgid "Select mixed graphics/text"
 msgstr "Mixed 그래픽/텍스트 선택"
 
-#, fuzzy
 msgctxt "disassembly.display.hiresModeStatusOff"
 msgid "Hi-res mode: OFF (MSB = 0)"
 msgstr "Hi-res 모드: OFF (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.hiresModeStatusOn"
 msgid "Hi-res mode: ON (MSB = 1)"
 msgstr "Hi-res 모드: ON (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.selectLoresGraphics"
 msgid "Select lo-res graphics"
 msgstr "Lo-res 그래픽 선택"
 
-#, fuzzy
 msgctxt "disassembly.display.selectHiresGraphics"
 msgid "Select hi-res graphics"
 msgstr "Hi-res 그래픽 선택"
 
-#, fuzzy
 msgctxt "disassembly.display.disableDhires"
 msgid "Disable DHIRES"
 msgstr "DHIRES 비활성화"
 
-#, fuzzy
 msgctxt "disassembly.display.enableDhires"
 msgid "Enable DHIRES"
 msgstr "DHIRES 활성화"
 
-#, fuzzy
 msgctxt "disassembly.display.verticalBlankActive"
 msgid "Vertical blank: ACTIVE (MSB = 0)"
 msgstr "수직 블랭크: 활성 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.verticalBlankInactive"
 msgid "Vertical blank: INACTIVE (MSB = 1)"
 msgstr "수직 블랭크: 비활성 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.column80StatusOff"
 msgid "80-column display: OFF (MSB = 0)"
 msgstr "80열 디스플레이: OFF (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.column80StatusOn"
 msgid "80-column display: ON (MSB = 1)"
 msgstr "80열 디스플레이: ON (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.setWidth"
 msgid "Set display width to {{columns}} columns"
 msgstr "디스플레이 너비를 {{columns}} 열로 설정"
 
-#, fuzzy
 msgctxt "disassembly.annunciator.disable"
 msgid "Disable annunciator {{number}}"
 msgstr "annunciator {{number}} 비활성화"
 
-#, fuzzy
 msgctxt "disassembly.annunciator.enable"
 msgid "Enable annunciator {{number}}"
 msgstr "annunciator {{number}} 활성화"
 
-#, fuzzy
 msgctxt "disassembly.transWarp.configuredMaximum"
 msgid "TransWarp: Select configured maximum speed"
 msgstr "TransWarp: 설정된 최대 속도 선택"
 
-#, fuzzy
 msgctxt "disassembly.transWarp.oneMhz"
 msgid "TransWarp: Select 1 MHz"
 msgstr "TransWarp: 1 MHz 선택"
 
-#, fuzzy
 msgctxt "disassembly.transWarp.disableUntilColdBoot"
 msgid "TransWarp: Disable acceleration until cold boot"
 msgstr "TransWarp: 콜드 부트 전까지 가속 비활성화"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.oneMhz"
 msgid "Laser 128EX: Select 1 MHz maximum CPU speed"
 msgstr "Laser 128EX: 최대 CPU 속도 1 MHz 선택"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.twoPointThreeMhz"
 msgid "Laser 128EX: Select 2.3 MHz maximum CPU speed"
 msgstr "Laser 128EX: 최대 CPU 속도 2.3 MHz 선택"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.threePointSixMhz"
 msgid "Laser 128EX: Select 3.6 MHz maximum CPU speed"
 msgstr "Laser 128EX: 최대 CPU 속도 3.6 MHz 선택"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.disableDiskSlowdown"
 msgid ""
 "Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access (write-"
 "once bit 5)"
 msgstr "Laser 128EX: 포트 7 디스크 접근 시 자동 1 MHz 감속 비활성화 (한 번만 쓰기 가능한 비트 5)"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.enableDiskSlowdown"
 msgid ""
 "Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access (write-"
 "once bit 5)"
 msgstr "Laser 128EX: 포트 7 디스크 접근 시 자동 1 MHz 감속 활성화 (한 번만 쓰기 가능한 비트 5)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.pulseStrobe"
 msgid "Pulse game-port strobe"
 msgstr "게임 포트 스트로브 펄스 발생"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.startPaddleTimers"
 msgid "Start paddle timers"
 msgstr "paddle 타이머 시작"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.buttonReleased"
 msgid "Pushbutton {{number}}: RELEASED (MSB = 0)"
 msgstr "푸시버튼 {{number}}: 뗌 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.buttonPressed"
 msgid "Pushbutton {{number}}: PRESSED (MSB = 1)"
 msgstr "푸시버튼 {{number}}: 눌림 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.paddleExpired"
 msgid "Paddle {{number}} timer: EXPIRED (MSB = 0)"
 msgstr "paddle {{number}} 타이머: 만료 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.paddleActive"
 msgid "Paddle {{number}} timer: ACTIVE (MSB = 1)"
 msgstr "paddle {{number}} 타이머: 활성 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.buttonMirrorReleased"
 msgid "Pushbutton {{number}} mirror: RELEASED (MSB = 0)"
 msgstr "푸시버튼 {{number}} 미러: 뗌 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.buttonMirrorPressed"
 msgid "Pushbutton {{number}} mirror: PRESSED (MSB = 1)"
 msgstr "푸시버튼 {{number}} 미러: 눌림 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.paddleMirrorExpired"
 msgid "Paddle {{number}} timer mirror: EXPIRED (MSB = 0)"
 msgstr "paddle {{number}} 타이머 미러: 만료 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.paddleMirrorActive"
 msgid "Paddle {{number}} timer mirror: ACTIVE (MSB = 1)"
 msgstr "paddle {{number}} 타이머 미러: 활성 (MSB = 1)"
@@ -1162,22 +1040,18 @@ msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
 msgstr "디스크 로드 위치 >"
 
-#, fuzzy
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
 msgstr "Internet Archive"
 
-#, fuzzy
 msgctxt "disk.DemoZoo"
 msgid "DemoZoo"
 msgstr "DemoZoo"
 
-#, fuzzy
 msgctxt "disk.OneDrive"
 msgid "OneDrive"
 msgstr "OneDrive"
 
-#, fuzzy
 msgctxt "disk.GoogleDrive"
 msgid "Google Drive"
 msgstr "Google Drive"
@@ -1187,7 +1061,6 @@ msgctxt "disk.loadDiskFromInternetArchive"
 msgid "Load Disk from Internet Archive"
 msgstr "Internet Archive에서 디스크 로드"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDemoZoo"
 msgid "Load Disk from DemoZoo"
 msgstr "DemoZoo에서 디스크 불러오기"
@@ -1251,12 +1124,10 @@ msgctxt "disk.syncedAt"
 msgid "Synced {{date}}"
 msgstr "동기화됨 {{date}}"
 
-#, fuzzy
 msgctxt "disk.clickToHide"
 msgid "Click to hide"
 msgstr "클릭하여 숨기기"
 
-#, fuzzy
 msgctxt "disk.clickToShow"
 msgid "Click to show"
 msgstr "클릭하여 표시"
@@ -1266,7 +1137,6 @@ msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image(s)"
 msgstr "디스크 이미지를 로드하려면 클릭"
 
-#, fuzzy
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"
 msgstr "디스크 다운로드 중"
@@ -1392,7 +1262,6 @@ msgctxt "help.appleKeys"
 msgid "The open apple and closed apple keys behave the same as the ctrl key."
 msgstr "open apple과 closed apple 키는 ctrl 키와 같은 방식으로 작동합니다."
 
-#, fuzzy
 msgctxt "help.controlPanelShortcut"
 msgid "<Shift>+<Esc>: display the Apple2TS control panel"
 msgstr "<Shift>+<Esc>: Apple2TS 제어판 표시"
@@ -1481,7 +1350,6 @@ msgctxt "messages.loading"
 msgid "Loading..."
 msgstr "로딩 중..."
 
-#, fuzzy
 msgctxt "messages.fetchingCloudData"
 msgid "Fetching cloud data"
 msgstr "클라우드 데이터 가져오는 중"
@@ -1511,22 +1379,18 @@ msgctxt "messages.off"
 msgid "off"
 msgstr "꺼짐"
 
-#, fuzzy
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
 msgstr "Caps Lock"
 
-#, fuzzy
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
 msgstr "Open Apple"
 
-#, fuzzy
 msgctxt "keyboard.enableGamePatches"
 msgid "Enable Game Patches"
 msgstr "게임 패치 활성화"
 
-#, fuzzy
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
 msgstr "Mockingboard"
@@ -1545,12 +1409,10 @@ msgctxt "print.printer"
 msgid "Printer"
 msgstr "프린터"
 
-#, fuzzy
 msgctxt "print.imageWriter"
 msgid "ImageWriter"
 msgstr "ImageWriter"
 
-#, fuzzy
 msgctxt "print.imageWriterII"
 msgid "ImageWriter II (Slot 1)"
 msgstr "ImageWriter II (슬롯 1)"
@@ -1660,7 +1522,6 @@ msgctxt "collection.diskIsInternetArchive"
 msgid "Disk is part of the Internet Archive"
 msgstr "디스크가 Internet Archive의 일부입니다"
 
-#, fuzzy
 msgctxt "collection.diskIsDemoZoo"
 msgid "Disk is part of DemoZoo"
 msgstr "이 디스크는 DemoZoo의 일부입니다"
@@ -1670,7 +1531,6 @@ msgctxt "collection.clickToRemoveFromCollection"
 msgid "Click to remove from disk collection"
 msgstr "클릭하여 디스크 컬렉션에서 제거"
 
-#, fuzzy
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
 msgstr "클릭하여 디스크 컬렉션에 유지"
@@ -1685,12 +1545,10 @@ msgctxt "collection.loadDiskIntoDrive"
 msgid "Load Disk into Drive"
 msgstr "드라이브에 디스크 로드"
 
-#, fuzzy
 msgctxt "collection.cloudAuthRequired"
 msgid "auth required"
 msgstr "인증 필요"
 
-#, fuzzy
 msgctxt "collection.signIn"
 msgid "Sign in"
 msgstr "로그인"
@@ -1720,52 +1578,42 @@ msgctxt "collection.reportExportIssue"
 msgid "Report an export issue"
 msgstr "내보내기 문제 보고"
 
-#, fuzzy
 msgctxt "collection.hdvExportTitleUnavailable"
 msgid "Apple2TS could not include \"{{title}}\" in the HDV."
 msgstr "Apple2TS가 HDV에 \"{{title}}\"를 포함할 수 없습니다."
 
-#, fuzzy
 msgctxt "collection.continueHdvExportWithoutUnavailableTitles"
 msgid "Continue creating the HDV and skip unavailable titles?"
 msgstr "사용 불가능한 타이틀을 건너뛰고 HDV 생성을 계속하시겠습니까?"
 
-#, fuzzy
 msgctxt "collection.exportUnavailable"
 msgid "This disk cannot be exported"
 msgstr "이 디스크는 내보낼 수 없습니다"
 
-#, fuzzy
 msgctxt "collection.exportTooLarge"
 msgid "This disk is too large to export"
 msgstr "이 디스크는 너무 커서 내보낼 수 없습니다"
 
-#, fuzzy
 msgctxt "collection.exportCopyProtected"
 msgid "Copy protection prevents exporting this disk"
 msgstr "복사 방지 기능으로 인해 이 디스크를 내보낼 수 없습니다"
 
-#, fuzzy
 msgctxt "collection.exportDosMasterIncompatible"
 msgid "This disk is incompatible with DOS.MASTER"
 msgstr "이 디스크는 DOS.MASTER와 호환되지 않습니다"
 
-#, fuzzy
 msgctxt "collection.exportStatusPending"
 msgid "Checking whether this disk can be exported"
 msgstr "이 디스크의 내보내기 가능 여부 확인 중"
 
-#, fuzzy
 msgctxt "collection.exportAvailable"
 msgid "This disk can be exported"
 msgstr "이 디스크는 내보낼 수 있습니다"
 
-#, fuzzy
 msgctxt "collection.creatingHdv"
 msgid "Creating the HDV image"
 msgstr "HDV 이미지 생성 중"
 
-#, fuzzy
 msgctxt "collection.hdvCreatedWithOmissions"
 msgid ""
 "Apple2TS created the HDV with some titles omitted:\n"
@@ -1773,32 +1621,26 @@ msgid ""
 "{{details}}"
 msgstr "Apple2TS가 일부 타이틀을 제외하고 HDV를 생성했습니다:\n\n{{details}}"
 
-#, fuzzy
 msgctxt "collection.hdvCreationFailed"
 msgid "Apple2TS could not create the HDV: {{message}}"
 msgstr "Apple2TS가 HDV를 생성할 수 없습니다: {{message}}"
 
-#, fuzzy
 msgctxt "collection.hdvDownloadFailed"
 msgid "Apple2TS could not download the disk, so HDV creation was canceled."
 msgstr "Apple2TS가 디스크를 다운로드할 수 없어 HDV 생성이 취소되었습니다."
 
-#, fuzzy
 msgctxt "collection.fetchingDisk"
 msgid "Fetching disk {{current}} of {{total}}"
 msgstr "{{total}}개 중 {{current}}번째 디스크 가져오는 중"
 
-#, fuzzy
 msgctxt "collection.checkingDiskForExport"
 msgid "Checking disk {{current}} of {{total}} for export"
 msgstr "내보낼 디스크 확인 중: {{total}}개 중 {{current}}번째"
 
-#, fuzzy
 msgctxt "collection.selectAllDisks"
 msgid "Select all disks"
 msgstr "모든 디스크 선택"
 
-#, fuzzy
 msgctxt "collection.clearDiskSelection"
 msgid "Clear disk selection"
 msgstr "디스크 선택 해제"
@@ -1858,77 +1700,62 @@ msgctxt "internetArchive.go"
 msgid "GO"
 msgstr "검색"
 
-#, fuzzy
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
 msgstr "DemoZoo 검색 (제목, 제작자)..."
 
-#, fuzzy
 msgctxt "demoZoo.all"
 msgid "All"
 msgstr "전체"
 
-#, fuzzy
 msgctxt "demoZoo.demo"
 msgid "Demo"
 msgstr "데모"
 
-#, fuzzy
 msgctxt "demoZoo.intro"
 msgid "Intro"
 msgstr "인트로"
 
-#, fuzzy
 msgctxt "demoZoo.cracktro"
 msgid "Cracktro"
 msgstr "크랙트로"
 
-#, fuzzy
 msgctxt "demoZoo.music"
 msgid "Music"
 msgstr "음악"
 
-#, fuzzy
 msgctxt "demoZoo.previous"
 msgid "Previous"
 msgstr "이전"
 
-#, fuzzy
 msgctxt "demoZoo.next"
 msgid "Next"
 msgstr "다음"
 
-#, fuzzy
 msgctxt "demoZoo.firstPage"
 msgid "First page"
 msgstr "첫 페이지"
 
-#, fuzzy
 msgctxt "demoZoo.lastPage"
 msgid "Last page"
 msgstr "마지막 페이지"
 
-#, fuzzy
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
 msgstr "페이지 번호"
 
-#, fuzzy
 msgctxt "demoZoo.noProductions"
 msgid "No DemoZoo productions found."
 msgstr "DemoZoo 제작물을 찾을 수 없습니다."
 
-#, fuzzy
 msgctxt "demoZoo.youtubeOnly"
 msgid "This production only has a YouTube video link available:"
 msgstr "이 제작물은 YouTube 비디오 링크만 사용 가능합니다:"
 
-#, fuzzy
 msgctxt "demoZoo.externalOnly"
 msgid "This production only has an external DemoZoo link available:"
 msgstr "이 제작물은 외부 DemoZoo 링크만 사용 가능합니다:"
 
-#, fuzzy
 msgctxt "demoZoo.openInNewTab"
 msgid "Open in New Tab"
 msgstr "새 탭에서 열기"
@@ -1938,7 +1765,6 @@ msgctxt "basic.newProgram"
 msgid "New Program"
 msgstr "새 프로그램"
 
-#, fuzzy
 msgctxt "basic.newProgramWarning"
 msgid ""
 "This will clear the current program. You will lose any unsaved changes. Are "
@@ -2069,17 +1895,14 @@ msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Sirius 조이포트 모드"
 
-#, fuzzy
 msgctxt "gamepad.reverseYAxis"
 msgid "Reverse Y-Axis for Joystick"
 msgstr "조이스틱 Y축 반전"
 
-#, fuzzy
 msgctxt "gamepad.touchJoystick"
 msgid "Touch Screen Joystick"
 msgstr "터치스크린 조이스틱"
 
-#, fuzzy
 msgctxt "gamepad.tiltSensorJoystick"
 msgid "Use Tilt Sensor as Joystick"
 msgstr "기울기 센서를 조이스틱으로 사용"
@@ -2089,22 +1912,18 @@ msgctxt "traceSettings.title"
 msgid "Trace Settings"
 msgstr "추적 설정"
 
-#, fuzzy
 msgctxt "traceSettings.numLines"
 msgid "Number of lines to keep:"
 msgstr "유지할 라인 수:"
 
-#, fuzzy
 msgctxt "traceSettings.rangeWarning"
 msgid "Must be between 100 and 100000"
 msgstr "100에서 100000 사이여야 합니다"
 
-#, fuzzy
 msgctxt "traceSettings.collapseLoops"
 msgid "Find repeating lines and collapse loops"
 msgstr "반복되는 라인을 찾아 루프 축소"
 
-#, fuzzy
 msgctxt "traceSettings.ignoreRegisters"
 msgid "Ignore register values when finding repeating lines"
 msgstr "반복되는 라인을 찾을 때 레지스터 값 무시"
@@ -2114,67 +1933,54 @@ msgctxt "traceSettings.settings"
 msgid "Settings"
 msgstr "설정"
 
-#, fuzzy
 msgctxt "keyboardControl.hideKeyboard"
 msgid "Hide Keyboard"
 msgstr "키보드 숨기기"
 
-#, fuzzy
 msgctxt "keyboardControl.showKeyboard"
 msgid "Show Keyboard"
 msgstr "키보드 표시"
 
-#, fuzzy
 msgctxt "linkBuilder.title"
 msgid "Link Builder"
 msgstr "링크 빌더"
 
-#, fuzzy
 msgctxt "linkBuilder.buttonTitle"
 msgid "Link Builder"
 msgstr "링크 빌더"
 
-#, fuzzy
 msgctxt "linkBuilder.userInterface"
 msgid "User interface:"
 msgstr "사용자 인터페이스:"
 
-#, fuzzy
 msgctxt "linkBuilder.machine"
 msgid "Machine:"
 msgstr "머신:"
 
-#, fuzzy
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
 msgstr "색상 모드:"
 
-#, fuzzy
 msgctxt "linkBuilder.monitorMode"
 msgid "Monitor mode:"
 msgstr "모니터 모드:"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb):"
 msgstr "RAM 디스크 크기 (kb):"
 
-#, fuzzy
 msgctxt "linkBuilder.emulatorSpeed"
 msgid "Speed of emulator:"
 msgstr "에뮬레이터 속도:"
 
-#, fuzzy
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
 msgstr "사용자 인터페이스 테마:"
 
-#, fuzzy
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr "디버그 탭 표시"
 
-#, fuzzy
 msgctxt "linkBuilder.sound"
 msgid "Sound"
 msgstr "사운드"
@@ -2183,82 +1989,66 @@ msgctxt "linkBuilder.startupOptionsTab"
 msgid "Startup Options"
 msgstr "시작 옵션"
 
-#, fuzzy
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
 msgstr "시작 시:"
 
-#, fuzzy
 msgctxt "linkBuilder.loadDiskImage"
 msgid "Load Disk Image"
 msgstr "디스크 이미지 로드"
 
-#, fuzzy
 msgctxt "linkBuilder.loadBasicProgram"
 msgid "Load BASIC Program"
 msgstr "BASIC 프로그램 로드"
 
-#, fuzzy
 msgctxt "linkBuilder.loadHexCode"
 msgid "Load Hex Code"
 msgstr "16진수 코드 로드"
 
-#, fuzzy
 msgctxt "linkBuilder.diskImageToLoad"
 msgid "Disk image to load on startup:"
 msgstr "시작 시 로드할 디스크 이미지:"
 
-#, fuzzy
 msgctxt "linkBuilder.customDiskUrl"
 msgid "Custom disk image URL:"
 msgstr "사용자 지정 디스크 이미지 URL:"
 
-#, fuzzy
 msgctxt "linkBuilder.textToType"
 msgid "Text to type after loading disk:"
 msgstr "디스크 로드 후 입력할 텍스트:"
 
-#, fuzzy
 msgctxt "linkBuilder.enterTextPlaceholder"
 msgid "Enter Text or BASIC code here"
 msgstr "여기에 텍스트 또는 BASIC 코드를 입력하십시오"
 
-#, fuzzy
 msgctxt "linkBuilder.runBasicAfterLoading"
 msgid "Run BASIC program after loading"
 msgstr "로드 후 BASIC 프로그램 실행"
 
-#, fuzzy
 msgctxt "linkBuilder.enterHexPlaceholder"
 msgid "Enter hexadecimal code here, e.g. A9 01 8D 00 03"
 msgstr "여기에 16진수 코드를 입력하십시오. 예: A9 01 8D 00 03"
 
-#, fuzzy
 msgctxt "linkBuilder.hexLoadAddress"
 msgid "Hex load address: $"
 msgstr "16진수 로드 주소: $"
 
-#, fuzzy
 msgctxt "linkBuilder.runHexAfterLoading"
 msgid "Run Hex program after loading"
 msgstr "로드 후 16진수 프로그램 실행"
 
-#, fuzzy
 msgctxt "linkBuilder.finalUrl"
 msgid "Final URL:"
 msgstr "최종 URL:"
 
-#, fuzzy
 msgctxt "linkBuilder.copyToClipboard"
 msgid "Copy to Clipboard"
 msgstr "클립보드에 복사"
 
-#, fuzzy
 msgctxt "linkBuilder.tryIt"
 msgid "Try It"
 msgstr "시도하기"
 
-#, fuzzy
 msgctxt "dialog.reset"
 msgid "Reset"
 msgstr "리셋"
@@ -2268,67 +2058,54 @@ msgctxt "dialog.close"
 msgid "Close"
 msgstr "닫기"
 
-#, fuzzy
 msgctxt "linkBuilder.customDiskUrlOption"
 msgid "Custom URL"
 msgstr "사용자 지정 URL"
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.normal"
 msgid "Normal"
 msgstr "일반"
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.game"
 msgid "Game (no drives or tabs)"
 msgstr "게임 (드라이브 및 탭 없음)"
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.embed"
 msgid "Embed (hide all controls)"
 msgstr "임베드 (모든 컨트롤 숨기기)"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.color"
 msgid "Color"
 msgstr "색상"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.nofringe"
 msgid "Color (no fringing)"
 msgstr "색상 (색 번짐 없음)"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.green"
 msgid "Green Screen"
 msgstr "녹색 화면"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.amber"
 msgid "Amber Screen"
 msgstr "호박색 화면"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.white"
 msgid "White Screen"
 msgstr "흰색 화면"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
 msgstr "반전 흰색"
 
-#, fuzzy
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
 msgstr "클래식"
 
-#, fuzzy
 msgctxt "linkBuilder.themes.dark"
 msgid "Dark"
 msgstr "다크"
 
-#, fuzzy
 msgctxt "linkBuilder.themes.minimal"
 msgid "Minimal"
 msgstr "미니멀"
@@ -2349,7 +2126,6 @@ msgctxt "linkBuilder.ramDiskSizes.8192"
 msgid "8192"
 msgstr "8192"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
 msgstr "64 (기본값)"
@@ -2366,153 +2142,124 @@ msgctxt "linkBuilder.slots.cardNone"
 msgid "None (empty)"
 msgstr "없음 (비어 있음)"
 
-#, fuzzy
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
 msgstr "🤖 AI 에이전트 설정"
 
-#, fuzzy
 msgctxt "agent.setupInstruction"
 msgid "Click the gear icon below to configure your AI assistant."
 msgstr "아래 기어 아이콘을 클릭하여 AI 어시스턴트를 설정하세요."
 
-#, fuzzy
 msgctxt "agent.welcomeTitle"
 msgid "Welcome to the Apple II assistant! I can help you with:"
 msgstr "Apple II 어시스턴트에 오신 것을 환영합니다! 다음을 도와드릴 수 있습니다:"
 
-#, fuzzy
 msgctxt "agent.welcomeItem1"
 msgid "Inspecting CPU registers and memory"
 msgstr "CPU 레지스터 및 메모리 검사 중"
 
-#, fuzzy
 msgctxt "agent.welcomeItem2"
 msgid "Controlling execution (boot, reset, step, breakpoints)"
 msgstr "실행 제어 (부팅, 리셋, 스텝, 중단점)"
 
-#, fuzzy
 msgctxt "agent.welcomeItem3"
 msgid "Loading programs and managing disks"
 msgstr "프로그램 로드 및 디스크 관리"
 
-#, fuzzy
 msgctxt "agent.welcomeItem4"
 msgid "Debugging 6502 assembly code"
 msgstr "6502 어셈블리 코드 디버깅"
 
-#, fuzzy
 msgctxt "agent.welcomeItem5"
 msgid "Reading screen content and system state"
 msgstr "화면 내용 및 시스템 상태 읽기"
 
-#, fuzzy
 msgctxt "agent.welcomePrompt"
 msgid "Just ask me anything!"
 msgstr "무엇이든 물어보세요!"
 
-#, fuzzy
 msgctxt "agent.userRole"
 msgid "You"
 msgstr "사용자"
 
-#, fuzzy
 msgctxt "agent.assistantRole"
 msgid "🤖 Assistant"
 msgstr "🤖 어시스턴트"
 
-#, fuzzy
 msgctxt "agent.inputPlaceholder"
 msgid ""
 "Ask me anything about the Apple II emulator... (Press Enter to send, Shift"
 "+Enter for new line)"
 msgstr "Apple II 에뮬레이터에 대해 무엇이든 물어보세요... (Enter를 눌러 전송, Shift+Enter로 줄 바꿈)"
 
-#, fuzzy
 msgctxt "agent.stop"
 msgid "Stop"
 msgstr "중지"
 
-#, fuzzy
 msgctxt "agent.send"
 msgid "Send"
 msgstr "전송"
 
-#, fuzzy
 msgctxt "agent.changeConfiguration"
 msgid "Change configuration"
 msgstr "설정 변경"
 
-#, fuzzy
 msgctxt "agent.processing"
 msgid "Processing..."
 msgstr "처리 중..."
 
-#, fuzzy
 msgctxt "agent.tokens"
 msgid "• {{input}} in / {{output}} out"
 msgstr "• {{input}} 입력 / {{output}} 출력"
 
-#, fuzzy
 msgctxt "agent.configTitle"
 msgid "Configure AI Agent"
 msgstr "AI 에이전트 설정"
 
-#, fuzzy
 msgctxt "agent.provider"
 msgid "Provider:"
 msgstr "제공자:"
 
-#, fuzzy
 msgctxt "agent.model"
 msgid "Model:"
 msgstr "모델:"
 
-#, fuzzy
 msgctxt "agent.apiKey"
 msgid "API Key:"
 msgstr "API 키:"
 
-#, fuzzy
 msgctxt "agent.ollamaUrl"
 msgid "Ollama URL:"
 msgstr "Ollama URL:"
 
-#, fuzzy
 msgctxt "agent.save"
 msgid "Save"
 msgstr "저장"
 
-#, fuzzy
 msgctxt "agent.clear"
 msgid "Clear"
 msgstr "지우기"
 
-#, fuzzy
 msgctxt "agent.storageWarning"
 msgid ""
 "Your API key is stored locally in your browser and never sent to apple2ts."
 "com. Get your {{provider}} API key at"
 msgstr "API 키는 브라우저에 로컬로 저장되며 apple2ts.com으로 전송되지 않습니다. {{provider}} API 키는 다음에서 받으세요:"
 
-#, fuzzy
 msgctxt "agent.ollamaWarning"
 msgid ""
 "Ollama runs locally on your machine. Make sure you have Ollama installed and "
 "running. Download from"
 msgstr "Ollama는 로컬 머신에서 실행됩니다. Ollama가 설치되어 실행 중인지 확인하세요. 다운로드:"
 
-#, fuzzy
 msgctxt "agent.providerNotConfigured"
 msgid "Provider not configured - click the gear icon to set up your AI agent"
 msgstr "제공자가 설정되지 않았습니다 - 기어 아이콘을 클릭하여 AI 에이전트를 설정하세요"
 
-#, fuzzy
 msgctxt "agent.providerConfigured"
 msgid "Provider: {{provider}} ({{model}})"
 msgstr "제공자: {{provider}} ({{model}})"
 
-#, fuzzy
 msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
 msgstr "{{provider}}의 API 키 형식이 잘못되었습니다"
@@ -2541,20 +2288,17 @@ msgstr ""
 "디스크 컬렉션 아이콘을 클릭하여\n"
 "기본 디스크 또는 게임을 불러오세요."
 
-#, fuzzy
 msgctxt "startup.retroControlPanel"
 msgid ""
 "Press SHIFT+ESC to display\n"
 "the control panel."
 msgstr "SHIFT+ESC를 눌러\n제어 패널을 표시하십시오."
 
-#, fuzzy
 msgctxt "startup.mouseCapture"
 msgid ""
 "Press F1 to capture or release mouse."
 msgstr "F1을 눌러 마우스 캡처 또는 해제를 수행하십시오."
 
-#, fuzzy
 msgctxt "retroControl.ariaLabel"
 msgid "Apple2TS control panel"
 msgstr "Apple2TS 제어 패널"
@@ -2751,62 +2495,50 @@ msgctxt "retroControl.color"
 msgid "Color"
 msgstr "색상"
 
-#, fuzzy
 msgctxt "retroControl.colorNoFringe"
 msgid "Color (no fringe)"
 msgstr "컬러 (색 번짐 없음)"
 
-#, fuzzy
 msgctxt "retroControl.green"
 msgid "Green"
 msgstr "녹색"
 
-#, fuzzy
 msgctxt "retroControl.amber"
 msgid "Amber"
 msgstr "앰버"
 
-#, fuzzy
 msgctxt "retroControl.white"
 msgid "White"
 msgstr "흰색"
 
-#, fuzzy
 msgctxt "retroControl.inverse"
 msgid "Inverse"
 msgstr "반전"
 
-#, fuzzy
 msgctxt "retroControl.snail"
 msgid "Snail"
 msgstr "거북이"
 
-#, fuzzy
 msgctxt "retroControl.slow"
 msgid "Slow"
 msgstr "느림"
 
-#, fuzzy
 msgctxt "retroControl.normal"
 msgid "Normal"
 msgstr "일반"
 
-#, fuzzy
 msgctxt "retroControl.twoMhz"
 msgid "2 MHz"
 msgstr "2 MHz"
 
-#, fuzzy
 msgctxt "retroControl.threeMhz"
 msgid "3 MHz"
 msgstr "3 MHz"
 
-#, fuzzy
 msgctxt "retroControl.fast"
 msgid "Fast"
 msgstr "빠름"
 
-#, fuzzy
 msgctxt "retroControl.warp"
 msgid "Warp"
 msgstr "워프"
@@ -2827,17 +2559,14 @@ msgctxt "retroControl.language"
 msgid "Language"
 msgstr "언어"
 
-#, fuzzy
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
 msgstr "내장 ImageWriter"
 
-#, fuzzy
 msgctxt "retroControl.selectExternalPort"
 msgid "Select External Port"
 msgstr "외부 포트 선택"
 
-#, fuzzy
 msgctxt "retroControl.externalPort"
 msgid "External Port"
 msgstr "외부 포트"
@@ -2846,7 +2575,6 @@ msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
 msgstr "소문자 입력"
 
-#, fuzzy
 msgctxt "retroControl.lowercase"
 msgid "Lowercase"
 msgstr "소문자"
@@ -2859,17 +2587,14 @@ msgctxt "retroControl.sortOrder"
 msgid "Sort"
 msgstr "정렬"
 
-#, fuzzy
 msgctxt "retroControl.slot"
 msgid "Slot {{slot}}"
 msgstr "슬롯 {{slot}}"
 
-#, fuzzy
 msgctxt "retroControl.drive"
 msgid "{{drive}}: {{disk}}"
 msgstr "{{drive}}: {{disk}}"
 
-#, fuzzy
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
 msgstr "{{count}}개 설정됨"
@@ -2878,22 +2603,18 @@ msgctxt "retroControl.card.empty"
 msgid "Empty"
 msgstr "비어 있음"
 
-#, fuzzy
 msgctxt "retroControl.card.ssc"
 msgid "Super Serial Card"
 msgstr "Super Serial Card"
 
-#, fuzzy
 msgctxt "retroControl.card.softcard"
 msgid "Z-80 SoftCard"
 msgstr "Z-80 SoftCard"
 
-#, fuzzy
 msgctxt "retroControl.card.aux"
 msgid "Auxiliary memory"
 msgstr "보조 메모리"
 
-#, fuzzy
 msgctxt "retroControl.card.videoterm"
 msgid "Videx VideoTerm"
 msgstr "Videx VideoTerm"
@@ -2902,662 +2623,530 @@ msgctxt "retroControl.card.mockingboard"
 msgid "Mockingboard"
 msgstr "Mockingboard"
 
-#, fuzzy
 msgctxt "retroControl.card.mouse"
 msgid "Mouse card"
 msgstr "마우스 카드"
 
-#, fuzzy
 msgctxt "retroControl.card.vera"
 msgid "VERA graphics"
 msgstr "VERA 그래픽"
 
-#, fuzzy
 msgctxt "retroControl.card.passport"
 msgid "Passport MIDI"
 msgstr "Passport MIDI"
 
-#, fuzzy
 msgctxt "retroControl.card.disk2"
 msgid "Disk II controller"
 msgstr "Disk II 컨트롤러"
 
-#, fuzzy
 msgctxt "retroControl.card.smartport"
 msgid "SmartPort drive"
 msgstr "SmartPort 드라이브"
 
-#, fuzzy
 msgctxt "retroControl.fetchingDisk"
 msgid "Fetching disk {{current}}/{{total}}"
 msgstr "디스크 가져오는 중 {{current}}/{{total}}"
 
-#, fuzzy
 msgctxt "retroControl.downloadFailed"
 msgid "Unable to download {{title}}"
 msgstr "{{title}} 다운로드 실패"
 
-#, fuzzy
 msgctxt "retroControl.exportFailed"
 msgid "Export to HDV failed: {{message}}"
 msgstr "HDV 내보내기 실패: {{message}}"
 
-#, fuzzy
 msgctxt "binaryFile.title"
 msgid "Load Binary File"
 msgstr "Binary 파일 로드"
 
-#, fuzzy
 msgctxt "binaryFile.loadAtAddress"
 msgid "Load into memory at address $"
 msgstr "메모리에 로드할 주소 $"
 
-#, fuzzy
 msgctxt "binaryFile.runAfterLoading"
 msgid "Run code after loading"
 msgstr "로드 후 코드 실행"
 
-#, fuzzy
 msgctxt "disk.importImageIntoEmulator"
 msgid "Import Disk Image into Emulator"
 msgstr "에뮬레이터로 디스크 이미지 가져오기"
 
-#, fuzzy
 msgctxt "disk.downloadDiskImage"
 msgid "Download Disk Image"
 msgstr "디스크 이미지 다운로드"
 
-#, fuzzy
 msgctxt "demoZoo.snapshotBadge"
 msgid "Snapshot at {{date}}"
 msgstr "{{date}} 스냅샷"
 
-#, fuzzy
 msgctxt "demoZoo.snapshotCreated"
 msgid "DemoZoo snapshot created: {{date}}"
 msgstr "DemoZoo 스냅샷 생성됨: {{date}}"
 
-#, fuzzy
 msgctxt "agent.customModel"
 msgid "Custom Model..."
 msgstr "사용자 정의 모델..."
 
-#, fuzzy
 msgctxt "agent.customModelName"
 msgid "Custom Model Name:"
 msgstr "사용자 정의 모델 이름:"
 
-#, fuzzy
 msgctxt "debug.stackDump"
 msgid "Stack Dump"
 msgstr "스택 덤프"
 
-#, fuzzy
 msgctxt "debug.timeTravelSnapshots"
 msgid "Time Travel Snapshots"
 msgstr "타임 트래블 스냅샷"
 
-#, fuzzy
 msgctxt "debug.heatMapTitle"
 msgid "Heat Map"
 msgstr "히트맵"
 
-#, fuzzy
 msgctxt "debug.memoryDumpTitle"
 msgid "Memory Dump"
 msgstr "메모리 덤프"
 
-#, fuzzy
 msgctxt "debug.veraMonitor"
 msgid "VERA Monitor"
 msgstr "VERA 모니터"
 
-#, fuzzy
 msgctxt "debug.pauseForDisassembly"
 msgid "Pause to view disassembly"
 msgstr "역어셈블리 보기 위해 일시 중지"
 
-#, fuzzy
 msgctxt "debug.cycles"
 msgid "Cycles:"
 msgstr "사이클:"
 
-#, fuzzy
 msgctxt "debug.resetCycleCountAndHeatMaps"
 msgid "Reset cycle count and heat maps"
 msgstr "사이클 카운트 및 히트맵 초기화"
 
-#, fuzzy
 msgctxt "debug.breakpointTitle"
 msgid "Edit Breakpoint"
 msgstr "중단점 편집"
 
-#, fuzzy
 msgctxt "debug.breakpoint.breakAt"
 msgid "Break at:"
 msgstr "중단 지점:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.breakpoint"
 msgid "Breakpoint"
 msgstr "중단점"
 
-#, fuzzy
 msgctxt "debug.breakpoint.watchpoint"
 msgid "Watchpoint"
 msgstr "워치포인트"
 
-#, fuzzy
 msgctxt "debug.breakpoint.instruction"
 msgid "Instruction"
 msgstr "명령어"
 
-#, fuzzy
 msgctxt "debug.breakpoint.address"
 msgid "Address:"
 msgstr "주소:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.hitCount"
 msgid "Hit Count:"
 msgstr "적중 횟수:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.expression"
 msgid "Expression:"
 msgstr "식:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.memoryBank"
 msgid "Memory Bank:"
 msgstr "메모리 뱅크:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.opcode"
 msgid "Opcode:"
 msgstr "Opcode:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.addressingMode"
 msgid "Mode:"
 msgstr "모드:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.value"
 msgid "Value:"
 msgstr "값:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.anyIllegal65C02"
 msgid "Any illegal 65C02 opcode"
 msgstr "모든 65C02 비정상 opcode"
 
-#, fuzzy
 msgctxt "debug.breakpoint.anyIllegal6502"
 msgid "Any illegal 6502 opcode"
 msgstr "모든 6502 비정상 opcode"
 
-#, fuzzy
 msgctxt "debug.breakpoint.read"
 msgid "Read"
 msgstr "읽기"
 
-#, fuzzy
 msgctxt "debug.breakpoint.write"
 msgid "Write"
 msgstr "쓰기"
 
-#, fuzzy
 msgctxt "debug.breakpoint.withHexValue"
 msgid "With hex value:"
 msgstr "Hex 값 포함:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.actions"
 msgid "Actions:"
 msgstr "동작:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.haltAfterActions"
 msgid "Halt execution after actions"
 msgstr "동작 후 실행 중지"
 
-#, fuzzy
 msgctxt "debug.breakpoint.actionAddress"
 msgid "address"
 msgstr "주소"
 
-#, fuzzy
 msgctxt "debug.breakpoint.actionToAddress"
 msgid "to address"
 msgstr "주소로"
 
-#, fuzzy
 msgctxt "debug.breakpoint.actionToValue"
 msgid "to value"
 msgstr "값으로"
 
-#, fuzzy
 msgctxt "debug.breakpoint.add"
 msgid "Add new breakpoint"
 msgstr "새 중단점 추가"
 
-#, fuzzy
 msgctxt "debug.breakpoint.removeAll"
 msgid "Remove all breakpoints"
 msgstr "모든 중단점 제거"
 
-#, fuzzy
 msgctxt "debug.breakpoint.edit"
 msgid "Edit breakpoint"
 msgstr "중단점 편집"
 
-#, fuzzy
 msgctxt "debug.breakpoint.delete"
 msgid "Delete breakpoint"
 msgstr "중단점 삭제"
 
-#, fuzzy
 msgctxt "debug.heatMap.cpuProgramCounter"
 msgid "6502 Program Counter"
 msgstr "6502 프로그램 카운터"
 
-#, fuzzy
 msgctxt "debug.heatMap.count"
 msgid "Count"
 msgstr "개수"
 
-#, fuzzy
 msgctxt "debug.heatMap.getMemoryCalls"
 msgid "Get Memory Calls"
 msgstr "메모리 호출 가져오기"
 
-#, fuzzy
 msgctxt "debug.heatMap.setMemoryCalls"
 msgid "Set Memory Calls"
 msgstr "메모리 호출 설정"
 
-#, fuzzy
 msgctxt "debug.heatMap.colorTable"
 msgid "Color Table"
 msgstr "컬러 테이블"
 
-#, fuzzy
 msgctxt "debug.heatMap.showMagnifier"
 msgid "Show Magnifier"
 msgstr "확대경 표시"
 
-#, fuzzy
 msgctxt "debug.heatMap.jumpToProgramCounter"
 msgid "Jump to current program counter"
 msgstr "현재 프로그램 카운터로 점프"
 
-#, fuzzy
 msgctxt "debug.heatMap.jumpToMaximumValue"
 msgid "Jump to maximum heatmap value"
 msgstr "히트맵 최대값으로 점프"
 
-#, fuzzy
 msgctxt "debug.memoryDump.pickWatchpoint"
 msgid "Pick Watchpoint"
 msgstr "워치포인트 선택"
 
-#, fuzzy
 msgctxt "debug.memoryDump.saveMemory"
 msgid "Save Memory"
 msgstr "메모리 저장"
 
-#, fuzzy
 msgctxt "debug.memoryDump.highBitAscii"
 msgid "High Bit ASCII"
 msgstr "하이 비트 ASCII"
 
-#, fuzzy
 msgctxt "debug.memoryDump.searchHex"
 msgid "Search Hex"
 msgstr "Hex 검색"
 
-#, fuzzy
 msgctxt "debug.memoryDump.searchAscii"
 msgid "Search ASCII"
 msgstr "ASCII 검색"
 
-#, fuzzy
 msgctxt "debug.memoryDump.noMatch"
 msgid "no match"
 msgstr "일치 항목 없음"
 
-#, fuzzy
 msgctxt "debug.memoryDump.matchCount"
 msgid "{{match}} of {{total}}"
 msgstr "{{total}}개 중 {{match}}개"
 
-#, fuzzy
 msgctxt "debug.memoryDump.previousMatch"
 msgid "Previous Match"
 msgstr "이전 일치 항목"
 
-#, fuzzy
 msgctxt "debug.memoryDump.nextMatch"
 msgid "Next Match"
 msgstr "다음 일치 항목"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.current"
 msgid "Current memory"
 msgstr "현재 메모리"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.mainRam"
 msgid "Main RAM"
 msgstr "메인 RAM"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.auxiliaryRam"
 msgid "Auxiliary RAM"
 msgstr "보조 RAM"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.hgr1"
 msgid "HGR page 1"
 msgstr "HGR 페이지 1"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.hgr2"
 msgid "HGR page 2"
 msgstr "HGR 페이지 2"
 
-#, fuzzy
 msgctxt "debug.disassemblyPreviousLocation"
 msgid "Previous Location"
 msgstr "이전 위치"
 
-#, fuzzy
 msgctxt "debug.disassemblyNextLocation"
 msgid "Next Location"
 msgstr "다음 위치"
 
-#, fuzzy
 msgctxt "debug.memoryMap.title"
 msgid "Memory Map"
 msgstr "메모리 맵"
 
-#, fuzzy
 msgctxt "debug.memoryMap.read"
 msgid "Read"
 msgstr "읽기"
 
-#, fuzzy
 msgctxt "debug.memoryMap.write"
 msgid "Write"
 msgstr "쓰기"
 
-#, fuzzy
 msgctxt "debug.memoryMap.zeroPage"
 msgid "Zero Page"
 msgstr "제로 페이지"
 
-#, fuzzy
 msgctxt "debug.memoryMap.stack"
 msgid "Stack"
 msgstr "스택"
 
-#, fuzzy
 msgctxt "debug.memoryMap.text"
 msgid "Text"
 msgstr "텍스트"
 
-#, fuzzy
 msgctxt "debug.memoryMap.hiresMode"
 msgid "Hires"
 msgstr "Hires"
 
-#, fuzzy
 msgctxt "debug.memoryMap.hires"
 msgid "HGR"
 msgstr "HGR"
 
-#, fuzzy
 msgctxt "debug.memoryMap.internalRom"
 msgid "Internal ROM"
 msgstr "내부 ROM"
 
-#, fuzzy
 msgctxt "debug.memoryMap.slotRom"
 msgid "Slot ROM"
 msgstr "슬롯 ROM"
 
-#, fuzzy
 msgctxt "debug.memoryMap.auxBank"
 msgid "Aux Bank"
 msgstr "보조 뱅크"
 
-#, fuzzy
 msgctxt "debug.memoryMap.auxRead"
 msgid "Aux Read"
 msgstr "보조 읽기"
 
-#, fuzzy
 msgctxt "debug.memoryMap.auxWrite"
 msgid "Aux Write"
 msgstr "보조 쓰기"
 
-#, fuzzy
 msgctxt "debug.memoryMap.store80"
 msgid "80 Store"
 msgstr "80 저장"
 
-#, fuzzy
 msgctxt "debug.memoryMap.mixed"
 msgid "Mixed"
 msgstr "혼합"
 
-#, fuzzy
 msgctxt "debug.memoryMap.page2"
 msgid "Page 2"
 msgstr "페이지 2"
 
-#, fuzzy
 msgctxt "debug.memoryMap.columns80"
 msgid "80 Column"
 msgstr "80열"
 
-#, fuzzy
 msgctxt "debug.memoryMap.doubleHires"
 msgid "Dbl Hires"
 msgstr "Double Hires"
 
-#, fuzzy
 msgctxt "debug.memoryMap.video7Mono"
 msgid "V7 Mono"
 msgstr "V7 모노"
 
-#, fuzzy
 msgctxt "debug.memoryMap.video7160"
 msgid "V7 160x"
 msgstr "V7 160x"
 
-#, fuzzy
 msgctxt "debug.memoryMap.video7Mixed"
 msgid "V7 Mixed"
 msgstr "V7 혼합"
 
-#, fuzzy
 msgctxt "debug.memoryMap.internalCxxxRom"
 msgid "Cxxx ROM"
 msgstr "Cxxx ROM"
 
-#, fuzzy
 msgctxt "debug.memoryMap.internalC300Rom"
 msgid "C300 ROM"
 msgstr "C300 ROM"
 
-#, fuzzy
 msgctxt "debug.memoryMap.readRam"
 msgid "Read RAM"
 msgstr "RAM 읽기"
 
-#, fuzzy
 msgctxt "debug.memoryMap.writeRam"
 msgid "Write RAM"
 msgstr "RAM 쓰기"
 
-#, fuzzy
 msgctxt "debug.memoryMap.bank2Switch"
 msgid "Bank 2"
 msgstr "뱅크 2 전환"
 
-#, fuzzy
 msgctxt "collection.deleteAllBookmarks"
 msgid "Delete all bookmarks"
 msgstr "모든 북마크 삭제"
 
-#, fuzzy
 msgctxt "collection.restoreAllBookmarks"
 msgid "Restore all bookmarks"
 msgstr "모든 북마크 복원"
 
-#, fuzzy
 msgctxt "collection.sort.nameAscending"
 msgid "A-Z"
 msgstr "A-Z"
 
-#, fuzzy
 msgctxt "collection.sort.nameDescending"
 msgid "Z-A"
 msgstr "Z-A"
 
-#, fuzzy
 msgctxt "collection.sort.newest"
 msgid "New"
 msgstr "최신"
 
-#, fuzzy
 msgctxt "collection.sort.oldest"
 msgid "Old"
 msgstr "오래된 순"
 
-#, fuzzy
 msgctxt "traceSettings.unlimited"
 msgid "Unlimited"
 msgstr "무제한"
 
-#, fuzzy
 msgctxt "traceSettings.cyclesUnit"
 msgid "cycles"
 msgstr "사이클"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.none"
 msgid "(no action)"
 msgstr "(동작 없음)"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.set"
 msgid "Set"
 msgstr "설정"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.jump"
 msgid "Jump to"
 msgstr "점프:"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.print"
 msgid "Print to console"
 msgstr "콘솔에 출력"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.snapshot"
 msgid "Snapshot"
 msgstr "스냅샷"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.address"
 msgid "Address"
 msgstr "주소"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.accumulator"
 msgid "Accumulator"
 msgstr "누산기"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.x"
 msgid "X Register"
 msgstr "X 레지스터"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.y"
 msgid "Y Register"
 msgstr "Y 레지스터"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.stack"
 msgid "Stack Pointer"
 msgstr "스택 포인터"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.status"
 msgid "Processor Status"
 msgstr "프로세서 상태"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.programCounter"
 msgid "Program Counter"
 msgstr "프로그램 카운터"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.implied"
 msgid "Implied"
 msgstr "암시"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.immediate"
 msgid "Immediate"
 msgstr "즉시"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageRelative"
 msgid "Zero page/Relative"
 msgstr "Zero page/상대 주소"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageX"
 msgid "Zero page,X"
 msgstr "제로 페이지,X"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageY"
 msgid "Zero page,Y"
 msgstr "제로 페이지,Y"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.absolute"
 msgid "Absolute"
 msgstr "절대 주소"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.absoluteX"
 msgid "Abs,X"
 msgstr "절대 주소,X"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.absoluteY"
 msgid "Abs,Y"
 msgstr "절대 주소,Y"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.indirectX"
 msgid "Indirect,X"
 msgstr "간접 주소,X"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.indirectY"
 msgid "Indirect,Y"
 msgstr "간접 주소,Y"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
 msgstr "간접 주소"

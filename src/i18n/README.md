@@ -27,6 +27,10 @@ The initial migration marks retained non-English translations fuzzy because
 their alignment with current English has not been confirmed. Translators can
 clear that marker entry by entry after review.
 
+AI-generated drafts are stored as translated rather than fuzzy. With Weblate's
+project review workflow enabled, they count as translated while awaiting human
+review. Leave older fuzzy entries marked until their translations are checked.
+
 ## Commands
 
 ```bash

@@ -87,7 +87,6 @@ msgctxt "config.theme"
 msgid "Theme"
 msgstr "Thème"
 
-#, fuzzy
 msgctxt "config.graphics"
 msgid "Graphics"
 msgstr "Graphismes"
@@ -102,14 +101,12 @@ msgctxt "config.resetSettings"
 msgid "Reset Settings"
 msgstr "Réinitialiser Tous les Paramètres"
 
-#, fuzzy
 msgctxt "config.resetSettingsText"
 msgid ""
 "Are you sure you want to reset emulator settings? This will not erase your "
 "breakpoints, save states, or BASIC program."
 msgstr "Réinitialiser les paramètres de l'émulateur ? Les points d'arrêt, états sauvegardés et programmes BASIC seront conservés."
 
-#, fuzzy
 msgctxt "config.resetSavedState"
 msgid "Reset Saved State"
 msgstr "Réinitialiser l'état enregistré"
@@ -157,12 +154,10 @@ msgctxt "config.joystick"
 msgid "Keyboard and Joystick"
 msgstr "Configuration du joystick"
 
-#, fuzzy
 msgctxt "config.saveState"
 msgid "Saved States"
 msgstr "États sauvegardés"
 
-#, fuzzy
 msgctxt "config.autoSaveState"
 msgid "Automatically Save and Restore State"
 msgstr "Enregistrer et restaurer l'état automatiquement"
@@ -258,12 +253,10 @@ msgctxt "debug.debugTab"
 msgid "Debugging"
 msgstr "Débogage"
 
-#, fuzzy
 msgctxt "debug.basicTab"
 msgid "Applesoft BASIC"
 msgstr "Applesoft BASIC"
 
-#, fuzzy
 msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
 msgstr "Apple exPectin"
@@ -326,7 +319,6 @@ msgctxt "debug.disassembly"
 msgid "Disassembly"
 msgstr "Désassemblage"
 
-#, fuzzy
 msgctxt "debug.breakOnce"
 msgid "Break once then remove"
 msgstr "Arrêter une fois puis supprimer"
@@ -339,7 +331,6 @@ msgctxt "debug.any"
 msgid "Any"
 msgstr "Chaque"
 
-#, fuzzy
 msgctxt "disassembly.memory.effectiveAddress"
 msgid "Effective address: {{notation}}"
 msgstr "Adresse effective : {{notation}}"
@@ -352,263 +343,211 @@ msgctxt "disassembly.keyboard.character"
 msgid "Keyboard: \"{{character}}\""
 msgstr "Clavier: \"{{character}}\""
 
-#, fuzzy
 msgctxt "disassembly.keyboard.strobeClear"
 msgid "Keyboard strobe: CLEAR (MSB = 0)"
 msgstr "Strobe du clavier : EFFACÉ (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.strobeSet"
 msgid "Keyboard strobe: SET (MSB = 1)"
 msgstr "Strobe du clavier : ACTIVÉ (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownClear"
 msgid "Any-key-down flag: CLEAR (MSB = 0)"
 msgstr "Indicateur de touche enfoncée : EFFACÉ (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownSet"
 msgid "Any-key-down flag: SET (MSB = 1)"
 msgstr "Indicateur de touche enfoncée : ACTIVÉ (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.clearStrobe"
 msgid "Clear keyboard strobe"
 msgstr "Effacer le strobe du clavier"
 
-#, fuzzy
 msgctxt "disassembly.cassette.toggleOutput"
 msgid "Toggle cassette output"
 msgstr "Basculer la sortie cassette"
 
-#, fuzzy
 msgctxt "disassembly.cassette.sampleInput"
 msgid "Sample cassette input"
 msgstr "Lire l'entrée cassette"
 
-#, fuzzy
 msgctxt "disassembly.cassette.sampleInputMirror"
 msgid "Sample cassette-input mirror"
 msgstr "Lire le miroir de l'entrée cassette"
 
-#, fuzzy
 msgctxt "disassembly.speaker.toggleOutput"
 msgid "Toggle speaker output"
 msgstr "Basculer la sortie du haut-parleur"
 
-#, fuzzy
 msgctxt "disassembly.notice.emulatorIdentifier"
 msgid "INFO: Apple2TS emulator identifier: $CD"
 msgstr "INFO : Identifiant de l'émulateur Apple2TS : $CD"
 
-#, fuzzy
 msgctxt "disassembly.notice.noWriteEffect"
 msgid "INFO: This write has no effect on {{machine}}"
 msgstr "INFO : Cette écriture n'a aucun effet sur {{machine}}"
 
-#, fuzzy
 msgctxt "disassembly.notice.multipleTriggers"
 msgid "WARNING: This instruction triggers the soft switch multiple times"
 msgstr "ATTENTION : Cette instruction déclenche plusieurs fois le soft switch"
 
-#, fuzzy
 msgctxt "disassembly.notice.unknownWrite"
 msgid "WARNING: This instruction writes an unknown value"
 msgstr "ATTENTION : Cette instruction écrit une valeur inconnue"
 
-#, fuzzy
 msgctxt "disassembly.rom.intCxOff"
 msgid "Internal $Cx ROM: OFF (MSB = 0)"
 msgstr "ROM interne $Cx : NON (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.rom.intCxOn"
 msgid "Internal $Cx ROM: ON (MSB = 1)"
 msgstr "ROM interne $Cx : OUI (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.rom.slot3Off"
 msgid "Slot 3 ROM: OFF (MSB = 0)"
 msgstr "ROM du slot 3 : NON (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.rom.slot3On"
 msgid "Slot 3 ROM: ON (MSB = 1)"
 msgstr "ROM du slot 3 : OUI (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.rom.internal"
 msgid "Select internal ROM for {{range}}"
 msgstr "Sélectionner la ROM interne pour {{range}}"
 
-#, fuzzy
 msgctxt "disassembly.rom.slot"
 msgid "Select slot ROM for {{range}}"
 msgstr "Sélectionner la ROM de slot pour {{range}}"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.bank1"
 msgid "Language Card bank: 1 (MSB = 0)"
 msgstr "Banque Language Card : 1 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.bank2"
 msgid "Language Card bank: 2 (MSB = 1)"
 msgstr "Banque Language Card : 2 (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.readSourceRom"
 msgid "Language Card read source: ROM (MSB = 0)"
 msgstr "Source de lecture Language Card : ROM (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.readSourceRam"
 msgid "Language Card read source: RAM (MSB = 1)"
 msgstr "Source de lecture Language Card : RAM (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.selectBank"
 msgid "Language Card: Select bank {{bank}}"
 msgstr "Language Card : Sélectionner la banque {{bank}}"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.useRamForReads"
 msgid "Language Card: Use RAM for reads"
 msgstr "Language Card : Lire la RAM"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.useRomForReads"
 msgid "Language Card: Use ROM for reads"
 msgstr "Language Card : Lire la ROM"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.disableWrites"
 msgid "Language Card: Disable writes"
 msgstr "Language Card : Désactiver l'écriture"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.resetPrewriteLatch"
 msgid "Language Card: Reset prewrite latch"
 msgstr "Language Card : Réinitialiser le verrou de préécriture"
 
-#, fuzzy
 msgctxt "disassembly.languageCard.armOrEnableWrites"
 msgid "Language Card: Arm or enable writes"
 msgstr "Language Card : Préparer ou activer l'écriture"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.readStatusOff"
 msgid "Auxiliary-memory reads: OFF (MSB = 0)"
 msgstr "Lecture de la mémoire auxiliaire : NON (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.readStatusOn"
 msgid "Auxiliary-memory reads: ON (MSB = 1)"
 msgstr "Lecture de la mémoire auxiliaire : OUI (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.readMain"
 msgid "Select main memory for reads"
 msgstr "Sélectionner la mémoire principale pour la lecture"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.readAuxiliary"
 msgid "Select auxiliary memory for reads"
 msgstr "Sélectionner la mémoire auxiliaire pour la lecture"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.writeStatusOff"
 msgid "Auxiliary-memory writes: OFF (MSB = 0)"
 msgstr "Écriture en mémoire auxiliaire : NON (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.writeStatusOn"
 msgid "Auxiliary-memory writes: ON (MSB = 1)"
 msgstr "Écriture en mémoire auxiliaire : OUI (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.writeMain"
 msgid "Select main memory for writes"
 msgstr "Sélectionner la mémoire principale pour l'écriture"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.writeAuxiliary"
 msgid "Select auxiliary memory for writes"
 msgstr "Sélectionner la mémoire auxiliaire pour l'écriture"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.selectExpansionBank"
 msgid ""
 "Select auxiliary expansion bank {{bank}} using {{addressing}} addressing"
 msgstr "Sélectionner la banque d'extension auxiliaire {{bank}} en adressage {{addressing}}"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.altzpMain"
 msgid "Select main zero page, stack, and bank-switched RAM"
 msgstr "Sélectionner la page zéro, la pile et la RAM à banques principales"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.altzpAuxiliary"
 msgid "Select auxiliary zero page, stack, and bank-switched RAM"
 msgstr "Sélectionner la page zéro, la pile et la RAM à banques auxiliaires"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.altzpStatusMain"
 msgid "Zero page, stack, and bank-switched RAM: MAIN (MSB = 0)"
 msgstr "Page zéro, pile et RAM à banques : PRINCIPALE (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.auxMemory.altzpStatusAuxiliary"
 msgid "Zero page, stack, and bank-switched RAM: AUXILIARY (MSB = 1)"
 msgstr "Page zéro, pile et RAM à banques : AUXILIAIRE (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.80storeStatusOff"
 msgid "PAGE2 selects display page 1 or 2 (MSB = 0)"
 msgstr "PAGE2 sélectionne la page d'affichage 1 ou 2 (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.80storeStatusOn"
 msgid "PAGE2 selects main or auxiliary display memory (MSB = 1)"
 msgstr "PAGE2 sélectionne la mémoire d'affichage principale ou auxiliaire (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.80storeOff"
 msgid "Make PAGE2 select display page 1 or 2"
 msgstr "Faire sélectionner la page d'affichage 1 ou 2 par PAGE2"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.80storeOn"
 msgid "Make PAGE2 select main or auxiliary display memory"
 msgstr "Faire sélectionner la mémoire d'affichage principale ou auxiliaire par PAGE2"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.page2StatusClear"
 msgid "Display-memory selection: PAGE 1 OR MAIN (MSB = 0)"
 msgstr "Mémoire d'affichage : PAGE 1 OU PRINCIPALE (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.page2StatusSet"
 msgid "Display-memory selection: PAGE 2 OR AUXILIARY (MSB = 1)"
 msgstr "Mémoire d'affichage : PAGE 2 OU AUXILIAIRE (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.selectPage1"
 msgid "Select display page 1"
 msgstr "Sélectionner la page d'affichage 1"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.selectPage2"
 msgid "Select display page 2"
 msgstr "Sélectionner la page d'affichage 2"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.page2Clear"
 msgid "Select display page 1, or main display memory with 80STORE"
 msgstr "Sélectionner la page d'affichage 1 ou la mémoire d'affichage principale avec 80STORE"
 
-#, fuzzy
 msgctxt "disassembly.displayMemory.page2Set"
 msgid "Select display page 2, or auxiliary display memory with 80STORE"
 msgstr "Sélectionner la page d'affichage 2 ou la mémoire d'affichage auxiliaire avec 80STORE"
@@ -621,37 +560,30 @@ msgctxt "disassembly.display.altCharsetStatusOn"
 msgid "Alternate character set: ON (MSB = 1)"
 msgstr "Touches alternatives : Activées (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.selectPrimaryCharset"
 msgid "Select primary character set"
 msgstr "Sélectionner le jeu de caractères principal"
 
-#, fuzzy
 msgctxt "disassembly.display.selectAlternateCharset"
 msgid "Select alternate character set"
 msgstr "Sélectionner le jeu de caractères alternatif"
 
-#, fuzzy
 msgctxt "disassembly.display.textModeStatusOff"
 msgid "Text mode: OFF (MSB = 0)"
 msgstr "Mode texte : NON (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.textModeStatusOn"
 msgid "Text mode: ON (MSB = 1)"
 msgstr "Mode texte : OUI (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.selectGraphicsMode"
 msgid "Select graphics mode"
 msgstr "Sélectionner le mode graphique"
 
-#, fuzzy
 msgctxt "disassembly.display.selectTextMode"
 msgid "Select text mode"
 msgstr "Sélectionner le mode texte"
 
-#, fuzzy
 msgctxt "disassembly.display.mixedDisplayStatusOff"
 msgid "Mixed display: OFF (MSB = 0)"
 msgstr "Affichage mixte : NON (MSB = 0)"
@@ -660,171 +592,138 @@ msgctxt "disassembly.display.mixedDisplayStatusOn"
 msgid "Mixed display: ON (MSB = 1)"
 msgstr "Écrans mélangés: Activé (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.selectFullScreenDisplay"
 msgid "Select full-screen display"
 msgstr "Sélectionner l'affichage plein écran"
 
-#, fuzzy
 msgctxt "disassembly.display.selectMixedDisplay"
 msgid "Select mixed graphics/text"
 msgstr "Sélectionner l'affichage mixte graphique/texte"
 
-#, fuzzy
 msgctxt "disassembly.display.hiresModeStatusOff"
 msgid "Hi-res mode: OFF (MSB = 0)"
 msgstr "Mode haute résolution : NON (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.hiresModeStatusOn"
 msgid "Hi-res mode: ON (MSB = 1)"
 msgstr "Mode haute résolution : OUI (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.selectLoresGraphics"
 msgid "Select lo-res graphics"
 msgstr "Sélectionner les graphismes basse résolution"
 
-#, fuzzy
 msgctxt "disassembly.display.selectHiresGraphics"
 msgid "Select hi-res graphics"
 msgstr "Sélectionner les graphismes haute résolution"
 
-#, fuzzy
 msgctxt "disassembly.display.disableDhires"
 msgid "Disable DHIRES"
 msgstr "Désactiver DHIRES"
 
-#, fuzzy
 msgctxt "disassembly.display.enableDhires"
 msgid "Enable DHIRES"
 msgstr "Activer DHIRES"
 
-#, fuzzy
 msgctxt "disassembly.display.verticalBlankActive"
 msgid "Vertical blank: ACTIVE (MSB = 0)"
 msgstr "Suppression verticale : ACTIVE (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.verticalBlankInactive"
 msgid "Vertical blank: INACTIVE (MSB = 1)"
 msgstr "Suppression verticale : INACTIVE (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.column80StatusOff"
 msgid "80-column display: OFF (MSB = 0)"
 msgstr "Affichage 80 colonnes : NON (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.display.column80StatusOn"
 msgid "80-column display: ON (MSB = 1)"
 msgstr "Affichage 80 colonnes : OUI (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.display.setWidth"
 msgid "Set display width to {{columns}} columns"
 msgstr "Régler l'affichage sur {{columns}} colonnes"
 
-#, fuzzy
 msgctxt "disassembly.annunciator.disable"
 msgid "Disable annunciator {{number}}"
 msgstr "Désactiver l'annonciateur {{number}}"
 
-#, fuzzy
 msgctxt "disassembly.annunciator.enable"
 msgid "Enable annunciator {{number}}"
 msgstr "Activer l'annonciateur {{number}}"
 
-#, fuzzy
 msgctxt "disassembly.transWarp.configuredMaximum"
 msgid "TransWarp: Select configured maximum speed"
 msgstr "TransWarp : Sélectionner la vitesse maximale configurée"
 
-#, fuzzy
 msgctxt "disassembly.transWarp.oneMhz"
 msgid "TransWarp: Select 1 MHz"
 msgstr "TransWarp : Sélectionner 1 MHz"
 
-#, fuzzy
 msgctxt "disassembly.transWarp.disableUntilColdBoot"
 msgid "TransWarp: Disable acceleration until cold boot"
 msgstr "TransWarp : Désactiver l'accélération jusqu'au démarrage à froid"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.oneMhz"
 msgid "Laser 128EX: Select 1 MHz maximum CPU speed"
 msgstr "Laser 128EX : Limiter la vitesse CPU à 1 MHz"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.twoPointThreeMhz"
 msgid "Laser 128EX: Select 2.3 MHz maximum CPU speed"
 msgstr "Laser 128EX : Limiter la vitesse CPU à 2,3 MHz"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.threePointSixMhz"
 msgid "Laser 128EX: Select 3.6 MHz maximum CPU speed"
 msgstr "Laser 128EX : Limiter la vitesse CPU à 3,6 MHz"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.disableDiskSlowdown"
 msgid ""
 "Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access (write-"
 "once bit 5)"
 msgstr "Laser 128EX : Désactiver le ralentissement automatique à 1 MHz pour l'accès disque au port 7 (bit 5 inscriptible une fois)"
 
-#, fuzzy
 msgctxt "disassembly.laser128ex.enableDiskSlowdown"
 msgid ""
 "Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access (write-"
 "once bit 5)"
 msgstr "Laser 128EX : Activer le ralentissement automatique à 1 MHz pour l'accès disque au port 7 (bit 5 inscriptible une fois)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.pulseStrobe"
 msgid "Pulse game-port strobe"
 msgstr "Envoyer une impulsion au strobe du port de jeu"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.startPaddleTimers"
 msgid "Start paddle timers"
 msgstr "Démarrer les temporisateurs des paddles"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.buttonReleased"
 msgid "Pushbutton {{number}}: RELEASED (MSB = 0)"
 msgstr "Bouton {{number}} : RELÂCHÉ (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.buttonPressed"
 msgid "Pushbutton {{number}}: PRESSED (MSB = 1)"
 msgstr "Bouton {{number}} : ENFONCÉ (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.paddleExpired"
 msgid "Paddle {{number}} timer: EXPIRED (MSB = 0)"
 msgstr "Temporisateur du paddle {{number}} : EXPIRÉ (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.paddleActive"
 msgid "Paddle {{number}} timer: ACTIVE (MSB = 1)"
 msgstr "Temporisateur du paddle {{number}} : ACTIF (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.buttonMirrorReleased"
 msgid "Pushbutton {{number}} mirror: RELEASED (MSB = 0)"
 msgstr "Miroir du bouton {{number}} : RELÂCHÉ (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.buttonMirrorPressed"
 msgid "Pushbutton {{number}} mirror: PRESSED (MSB = 1)"
 msgstr "Miroir du bouton {{number}} : ENFONCÉ (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.paddleMirrorExpired"
 msgid "Paddle {{number}} timer mirror: EXPIRED (MSB = 0)"
 msgstr "Miroir du temporisateur du paddle {{number}} : EXPIRÉ (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.gameIO.paddleMirrorActive"
 msgid "Paddle {{number}} timer mirror: ACTIVE (MSB = 1)"
 msgstr "Miroir du temporisateur du paddle {{number}} : ACTIF (MSB = 1)"
@@ -1164,22 +1063,18 @@ msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
 msgstr "Charger le Disque depuis >"
 
-#, fuzzy
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
 msgstr "Internet Archive"
 
-#, fuzzy
 msgctxt "disk.DemoZoo"
 msgid "DemoZoo"
 msgstr "DemoZoo"
 
-#, fuzzy
 msgctxt "disk.OneDrive"
 msgid "OneDrive"
 msgstr "OneDrive"
 
-#, fuzzy
 msgctxt "disk.GoogleDrive"
 msgid "Google Drive"
 msgstr "Google Drive"
@@ -1189,7 +1084,6 @@ msgctxt "disk.loadDiskFromInternetArchive"
 msgid "Load Disk from Internet Archive"
 msgstr "Charger le Disque depuis Internet Archive"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDemoZoo"
 msgid "Load Disk from DemoZoo"
 msgstr "Charger un disque depuis DemoZoo"
@@ -1253,12 +1147,10 @@ msgctxt "disk.syncedAt"
 msgid "Synced {{date}}"
 msgstr "Synchronisé {{date}}"
 
-#, fuzzy
 msgctxt "disk.clickToHide"
 msgid "Click to hide"
 msgstr "Cliquer pour masquer"
 
-#, fuzzy
 msgctxt "disk.clickToShow"
 msgid "Click to show"
 msgstr "Cliquer pour afficher"
@@ -1268,7 +1160,6 @@ msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image(s)"
 msgstr "Cliquez pour charger l'image (ou les images) du disque"
 
-#, fuzzy
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"
 msgstr "Téléchargement du disque"
@@ -1399,7 +1290,6 @@ msgstr ""
 "Les touches open apple et closed apple se comportent de la même façon que la "
 "touche ctrl."
 
-#, fuzzy
 msgctxt "help.controlPanelShortcut"
 msgid "<Shift>+<Esc>: display the Apple2TS control panel"
 msgstr "<Shift>+<Esc> : afficher le panneau de commande Apple2TS"
@@ -1489,7 +1379,6 @@ msgctxt "messages.loading"
 msgid "Loading..."
 msgstr "Chargement..."
 
-#, fuzzy
 msgctxt "messages.fetchingCloudData"
 msgid "Fetching cloud data"
 msgstr "Récupération des données cloud"
@@ -1504,7 +1393,6 @@ msgctxt "messages.cancel"
 msgid "Cancel"
 msgstr "Annuler"
 
-#, fuzzy
 msgctxt "messages.ok"
 msgid "OK"
 msgstr "OK"
@@ -1524,17 +1412,14 @@ msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
 msgstr "Verrouillage Majuscule"
 
-#, fuzzy
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
 msgstr "Open Apple"
 
-#, fuzzy
 msgctxt "keyboard.enableGamePatches"
 msgid "Enable Game Patches"
 msgstr "Activer les correctifs de jeux"
 
-#, fuzzy
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
 msgstr "Mockingboard"
@@ -1553,12 +1438,10 @@ msgctxt "print.printer"
 msgid "Printer"
 msgstr "Imprimante"
 
-#, fuzzy
 msgctxt "print.imageWriter"
 msgid "ImageWriter"
 msgstr "ImageWriter"
 
-#, fuzzy
 msgctxt "print.imageWriterII"
 msgid "ImageWriter II (Slot 1)"
 msgstr "ImageWriter II (slot 1)"
@@ -1668,7 +1551,6 @@ msgctxt "collection.diskIsInternetArchive"
 msgid "Disk is part of the Internet Archive"
 msgstr "Le disque fait partie d'Internet Archive"
 
-#, fuzzy
 msgctxt "collection.diskIsDemoZoo"
 msgid "Disk is part of DemoZoo"
 msgstr "Ce disque fait partie de DemoZoo"
@@ -1692,12 +1574,10 @@ msgctxt "collection.loadDiskIntoDrive"
 msgid "Load Disk into Drive"
 msgstr "Charger le Disque dans le Lecteur"
 
-#, fuzzy
 msgctxt "collection.cloudAuthRequired"
 msgid "auth required"
 msgstr "authentification requise"
 
-#, fuzzy
 msgctxt "collection.signIn"
 msgid "Sign in"
 msgstr "Se connecter"
@@ -1727,52 +1607,42 @@ msgctxt "collection.reportExportIssue"
 msgid "Report an export issue"
 msgstr "Signaler un problème d'exportation"
 
-#, fuzzy
 msgctxt "collection.hdvExportTitleUnavailable"
 msgid "Apple2TS could not include \"{{title}}\" in the HDV."
 msgstr "Apple2TS n'a pas pu inclure « {{title}} » dans le HDV."
 
-#, fuzzy
 msgctxt "collection.continueHdvExportWithoutUnavailableTitles"
 msgid "Continue creating the HDV and skip unavailable titles?"
 msgstr "Continuer la création du HDV sans les titres indisponibles ?"
 
-#, fuzzy
 msgctxt "collection.exportUnavailable"
 msgid "This disk cannot be exported"
 msgstr "Ce disque ne peut pas être exporté"
 
-#, fuzzy
 msgctxt "collection.exportTooLarge"
 msgid "This disk is too large to export"
 msgstr "Ce disque est trop volumineux pour être exporté"
 
-#, fuzzy
 msgctxt "collection.exportCopyProtected"
 msgid "Copy protection prevents exporting this disk"
 msgstr "La protection contre la copie empêche l'export"
 
-#, fuzzy
 msgctxt "collection.exportDosMasterIncompatible"
 msgid "This disk is incompatible with DOS.MASTER"
 msgstr "Ce disque est incompatible avec DOS.MASTER"
 
-#, fuzzy
 msgctxt "collection.exportStatusPending"
 msgid "Checking whether this disk can be exported"
 msgstr "Vérification de la possibilité d'exporter ce disque"
 
-#, fuzzy
 msgctxt "collection.exportAvailable"
 msgid "This disk can be exported"
 msgstr "Ce disque peut être exporté"
 
-#, fuzzy
 msgctxt "collection.creatingHdv"
 msgid "Creating the HDV image"
 msgstr "Création de l'image HDV"
 
-#, fuzzy
 msgctxt "collection.hdvCreatedWithOmissions"
 msgid ""
 "Apple2TS created the HDV with some titles omitted:\n"
@@ -1780,32 +1650,26 @@ msgid ""
 "{{details}}"
 msgstr "Apple2TS a créé le HDV en omettant certains titres :\n\n{{details}}"
 
-#, fuzzy
 msgctxt "collection.hdvCreationFailed"
 msgid "Apple2TS could not create the HDV: {{message}}"
 msgstr "Apple2TS n'a pas pu créer le HDV : {{message}}"
 
-#, fuzzy
 msgctxt "collection.hdvDownloadFailed"
 msgid "Apple2TS could not download the disk, so HDV creation was canceled."
 msgstr "Apple2TS n'a pas pu télécharger le disque. La création du HDV a été annulée."
 
-#, fuzzy
 msgctxt "collection.fetchingDisk"
 msgid "Fetching disk {{current}} of {{total}}"
 msgstr "Téléchargement du disque {{current}} sur {{total}}"
 
-#, fuzzy
 msgctxt "collection.checkingDiskForExport"
 msgid "Checking disk {{current}} of {{total}} for export"
 msgstr "Vérification du disque {{current}} sur {{total}} pour l'export"
 
-#, fuzzy
 msgctxt "collection.selectAllDisks"
 msgid "Select all disks"
 msgstr "Sélectionner tous les disques"
 
-#, fuzzy
 msgctxt "collection.clearDiskSelection"
 msgid "Clear disk selection"
 msgstr "Effacer la sélection de disques"
@@ -1840,7 +1704,6 @@ msgctxt "debugControls.pause"
 msgid "Pause"
 msgstr "Suspendre"
 
-#, fuzzy
 msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr "Trace"
@@ -1861,82 +1724,66 @@ msgid "Type the name of a software title or click one of the categories above"
 msgstr ""
 "Entrez le nom d'un logiciel ou cliquez sur une des catégories ci-dessus"
 
-#, fuzzy
 msgctxt "internetArchive.go"
 msgid "GO"
 msgstr "OK"
 
-#, fuzzy
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
 msgstr "Rechercher dans DemoZoo (titre, auteur)..."
 
-#, fuzzy
 msgctxt "demoZoo.all"
 msgid "All"
 msgstr "Tout"
 
-#, fuzzy
 msgctxt "demoZoo.demo"
 msgid "Demo"
 msgstr "Démo"
 
-#, fuzzy
 msgctxt "demoZoo.intro"
 msgid "Intro"
 msgstr "Intro"
 
-#, fuzzy
 msgctxt "demoZoo.cracktro"
 msgid "Cracktro"
 msgstr "Cracktro"
 
-#, fuzzy
 msgctxt "demoZoo.music"
 msgid "Music"
 msgstr "Musique"
 
-#, fuzzy
 msgctxt "demoZoo.previous"
 msgid "Previous"
 msgstr "Précédent"
 
-#, fuzzy
 msgctxt "demoZoo.next"
 msgid "Next"
 msgstr "Suivant"
 
-#, fuzzy
 msgctxt "demoZoo.firstPage"
 msgid "First page"
 msgstr "Première page"
 
-#, fuzzy
 msgctxt "demoZoo.lastPage"
 msgid "Last page"
 msgstr "Dernière page"
 
-#, fuzzy
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
 msgstr "Numéro de page"
 
-#, fuzzy
 msgctxt "demoZoo.noProductions"
 msgid "No DemoZoo productions found."
 msgstr "Aucune production DemoZoo trouvée."
 
-#, fuzzy
 msgctxt "demoZoo.youtubeOnly"
 msgid "This production only has a YouTube video link available:"
 msgstr "Cette production n'a qu'un lien vidéo YouTube :"
 
-#, fuzzy
 msgctxt "demoZoo.externalOnly"
 msgid "This production only has an external DemoZoo link available:"
 msgstr "Cette production n'a qu'un lien DemoZoo externe :"
 
-#, fuzzy
 msgctxt "demoZoo.openInNewTab"
 msgid "Open in New Tab"
 msgstr "Ouvrir dans un nouvel onglet"
@@ -1946,7 +1793,6 @@ msgctxt "basic.newProgram"
 msgid "New Program"
 msgstr "Nouveau programme"
 
-#, fuzzy
 msgctxt "basic.newProgramWarning"
 msgid ""
 "This will clear the current program. You will lose any unsaved changes. Are "
@@ -2028,7 +1874,6 @@ msgstr ""
 "mémoire de l'Apple II. Vous perdrez toutes les modifications non "
 "enregistrées. Êtes-vous sûr ?"
 
-#, fuzzy
 msgctxt "basic.variable"
 msgid "Variable"
 msgstr "Variable"
@@ -2078,17 +1923,14 @@ msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Mode Sirius Joyport"
 
-#, fuzzy
 msgctxt "gamepad.reverseYAxis"
 msgid "Reverse Y-Axis for Joystick"
 msgstr "Inverser l'axe Y du joystick"
 
-#, fuzzy
 msgctxt "gamepad.touchJoystick"
 msgid "Touch Screen Joystick"
 msgstr "Joystick tactile"
 
-#, fuzzy
 msgctxt "gamepad.tiltSensorJoystick"
 msgid "Use Tilt Sensor as Joystick"
 msgstr "Utiliser le capteur d'inclinaison comme joystick"
@@ -2098,17 +1940,14 @@ msgctxt "traceSettings.title"
 msgid "Trace Settings"
 msgstr "Paramètres de trace"
 
-#, fuzzy
 msgctxt "traceSettings.numLines"
 msgid "Number of lines to keep:"
 msgstr "Nombre de lignes à conserver :"
 
-#, fuzzy
 msgctxt "traceSettings.rangeWarning"
 msgid "Must be between 100 and 100000"
 msgstr "Doit être compris entre 100 et 100000"
 
-#, fuzzy
 msgctxt "traceSettings.collapseLoops"
 msgid "Find repeating lines and collapse loops"
 msgstr "Repérer les lignes répétées et réduire les boucles"
@@ -2122,67 +1961,54 @@ msgctxt "traceSettings.settings"
 msgid "Settings"
 msgstr "Paramètres"
 
-#, fuzzy
 msgctxt "keyboardControl.hideKeyboard"
 msgid "Hide Keyboard"
 msgstr "Masquer le clavier"
 
-#, fuzzy
 msgctxt "keyboardControl.showKeyboard"
 msgid "Show Keyboard"
 msgstr "Afficher le clavier"
 
-#, fuzzy
 msgctxt "linkBuilder.title"
 msgid "Link Builder"
 msgstr "Générateur de liens"
 
-#, fuzzy
 msgctxt "linkBuilder.buttonTitle"
 msgid "Link Builder"
 msgstr "Générateur de liens"
 
-#, fuzzy
 msgctxt "linkBuilder.userInterface"
 msgid "User interface:"
 msgstr "Interface utilisateur :"
 
-#, fuzzy
 msgctxt "linkBuilder.machine"
 msgid "Machine:"
 msgstr "Machine :"
 
-#, fuzzy
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode:"
 msgstr "Mode couleur :"
 
-#, fuzzy
 msgctxt "linkBuilder.monitorMode"
 msgid "Monitor mode:"
 msgstr "Mode moniteur :"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb):"
 msgstr "Taille du disque RAM (Ko) :"
 
-#, fuzzy
 msgctxt "linkBuilder.emulatorSpeed"
 msgid "Speed of emulator:"
 msgstr "Vitesse de l'émulateur :"
 
-#, fuzzy
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme:"
 msgstr "Thème de l'interface :"
 
-#, fuzzy
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
 msgstr "Afficher l'onglet de débogage"
 
-#, fuzzy
 msgctxt "linkBuilder.sound"
 msgid "Sound"
 msgstr "Son"
@@ -2191,32 +2017,26 @@ msgctxt "linkBuilder.startupOptionsTab"
 msgid "Startup Options"
 msgstr "Options de démarrage"
 
-#, fuzzy
 msgctxt "linkBuilder.onStartup"
 msgid "On startup:"
 msgstr "Au démarrage :"
 
-#, fuzzy
 msgctxt "linkBuilder.loadDiskImage"
 msgid "Load Disk Image"
 msgstr "Charger une image disque"
 
-#, fuzzy
 msgctxt "linkBuilder.loadBasicProgram"
 msgid "Load BASIC Program"
 msgstr "Charger un programme BASIC"
 
-#, fuzzy
 msgctxt "linkBuilder.loadHexCode"
 msgid "Load Hex Code"
 msgstr "Charger du code hexadécimal"
 
-#, fuzzy
 msgctxt "linkBuilder.diskImageToLoad"
 msgid "Disk image to load on startup:"
 msgstr "Image disque à charger au démarrage :"
 
-#, fuzzy
 msgctxt "linkBuilder.customDiskUrl"
 msgid "Custom disk image URL:"
 msgstr "URL personnalisée d'image disque :"
@@ -2225,47 +2045,38 @@ msgctxt "linkBuilder.textToType"
 msgid "Text to type after loading disk:"
 msgstr "Texte pour écrire après avoir chargés les disques :"
 
-#, fuzzy
 msgctxt "linkBuilder.enterTextPlaceholder"
 msgid "Enter Text or BASIC code here"
 msgstr "Saisir du texte ou du code BASIC ici"
 
-#, fuzzy
 msgctxt "linkBuilder.runBasicAfterLoading"
 msgid "Run BASIC program after loading"
 msgstr "Exécuter le programme BASIC après chargement"
 
-#, fuzzy
 msgctxt "linkBuilder.enterHexPlaceholder"
 msgid "Enter hexadecimal code here, e.g. A9 01 8D 00 03"
 msgstr "Saisir le code hexadécimal ici, par ex. A9 01 8D 00 03"
 
-#, fuzzy
 msgctxt "linkBuilder.hexLoadAddress"
 msgid "Hex load address: $"
 msgstr "Adresse de chargement hex. : $"
 
-#, fuzzy
 msgctxt "linkBuilder.runHexAfterLoading"
 msgid "Run Hex program after loading"
 msgstr "Exécuter le programme hexadécimal après chargement"
 
-#, fuzzy
 msgctxt "linkBuilder.finalUrl"
 msgid "Final URL:"
 msgstr "URL finale :"
 
-#, fuzzy
 msgctxt "linkBuilder.copyToClipboard"
 msgid "Copy to Clipboard"
 msgstr "Copier dans le presse-papiers"
 
-#, fuzzy
 msgctxt "linkBuilder.tryIt"
 msgid "Try It"
 msgstr "Essayer"
 
-#, fuzzy
 msgctxt "dialog.reset"
 msgid "Reset"
 msgstr "Réinitialiser"
@@ -2275,67 +2086,54 @@ msgctxt "dialog.close"
 msgid "Close"
 msgstr "Fermer"
 
-#, fuzzy
 msgctxt "linkBuilder.customDiskUrlOption"
 msgid "Custom URL"
 msgstr "URL personnalisée"
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.normal"
 msgid "Normal"
 msgstr "Normal"
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.game"
 msgid "Game (no drives or tabs)"
 msgstr "Jeu (sans lecteurs ni onglets)"
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.embed"
 msgid "Embed (hide all controls)"
 msgstr "Intégré (masquer les commandes)"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.color"
 msgid "Color"
 msgstr "Couleur"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.nofringe"
 msgid "Color (no fringing)"
 msgstr "Couleur (sans franges)"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.green"
 msgid "Green Screen"
 msgstr "Écran vert"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.amber"
 msgid "Amber Screen"
 msgstr "Écran ambre"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.white"
 msgid "White Screen"
 msgstr "Écran blanc"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
 msgstr "Blanc inversé"
 
-#, fuzzy
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
 msgstr "Classique"
 
-#, fuzzy
 msgctxt "linkBuilder.themes.dark"
 msgid "Dark"
 msgstr "Sombre"
 
-#, fuzzy
 msgctxt "linkBuilder.themes.minimal"
 msgid "Minimal"
 msgstr "Minimal"
@@ -2356,7 +2154,6 @@ msgctxt "linkBuilder.ramDiskSizes.8192"
 msgid "8192"
 msgstr "8192"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
 msgstr "64 (par défaut)"
@@ -2373,153 +2170,124 @@ msgctxt "linkBuilder.slots.cardNone"
 msgid "None (empty)"
 msgstr "Aucune (vide)"
 
-#, fuzzy
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
 msgstr "🤖 Configuration de l'agent IA"
 
-#, fuzzy
 msgctxt "agent.setupInstruction"
 msgid "Click the gear icon below to configure your AI assistant."
 msgstr "Cliquez sur l'engrenage ci-dessous pour configurer l'assistant IA."
 
-#, fuzzy
 msgctxt "agent.welcomeTitle"
 msgid "Welcome to the Apple II assistant! I can help you with:"
 msgstr "Bienvenue dans l'assistant Apple II ! Je peux vous aider à :"
 
-#, fuzzy
 msgctxt "agent.welcomeItem1"
 msgid "Inspecting CPU registers and memory"
 msgstr "Examiner les registres et la mémoire du CPU"
 
-#, fuzzy
 msgctxt "agent.welcomeItem2"
 msgid "Controlling execution (boot, reset, step, breakpoints)"
 msgstr "Contrôler l'exécution (démarrage, reset, pas à pas, points d'arrêt)"
 
-#, fuzzy
 msgctxt "agent.welcomeItem3"
 msgid "Loading programs and managing disks"
 msgstr "Charger des programmes et gérer les disques"
 
-#, fuzzy
 msgctxt "agent.welcomeItem4"
 msgid "Debugging 6502 assembly code"
 msgstr "Déboguer du code assembleur 6502"
 
-#, fuzzy
 msgctxt "agent.welcomeItem5"
 msgid "Reading screen content and system state"
 msgstr "Lire l'écran et l'état du système"
 
-#, fuzzy
 msgctxt "agent.welcomePrompt"
 msgid "Just ask me anything!"
 msgstr "Posez-moi vos questions !"
 
-#, fuzzy
 msgctxt "agent.userRole"
 msgid "You"
 msgstr "Vous"
 
-#, fuzzy
 msgctxt "agent.assistantRole"
 msgid "🤖 Assistant"
 msgstr "🤖 Assistant"
 
-#, fuzzy
 msgctxt "agent.inputPlaceholder"
 msgid ""
 "Ask me anything about the Apple II emulator... (Press Enter to send, Shift"
 "+Enter for new line)"
 msgstr "Posez une question sur l'émulateur Apple II... (Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne)"
 
-#, fuzzy
 msgctxt "agent.stop"
 msgid "Stop"
 msgstr "Arrêter"
 
-#, fuzzy
 msgctxt "agent.send"
 msgid "Send"
 msgstr "Envoyer"
 
-#, fuzzy
 msgctxt "agent.changeConfiguration"
 msgid "Change configuration"
 msgstr "Modifier la configuration"
 
-#, fuzzy
 msgctxt "agent.processing"
 msgid "Processing..."
 msgstr "Traitement..."
 
-#, fuzzy
 msgctxt "agent.tokens"
 msgid "• {{input}} in / {{output}} out"
 msgstr "• {{input}} en entrée / {{output}} en sortie"
 
-#, fuzzy
 msgctxt "agent.configTitle"
 msgid "Configure AI Agent"
 msgstr "Configurer l'agent IA"
 
-#, fuzzy
 msgctxt "agent.provider"
 msgid "Provider:"
 msgstr "Fournisseur :"
 
-#, fuzzy
 msgctxt "agent.model"
 msgid "Model:"
 msgstr "Modèle :"
 
-#, fuzzy
 msgctxt "agent.apiKey"
 msgid "API Key:"
 msgstr "Clé API :"
 
-#, fuzzy
 msgctxt "agent.ollamaUrl"
 msgid "Ollama URL:"
 msgstr "URL Ollama :"
 
-#, fuzzy
 msgctxt "agent.save"
 msgid "Save"
 msgstr "Enregistrer"
 
-#, fuzzy
 msgctxt "agent.clear"
 msgid "Clear"
 msgstr "Effacer"
 
-#, fuzzy
 msgctxt "agent.storageWarning"
 msgid ""
 "Your API key is stored locally in your browser and never sent to apple2ts."
 "com. Get your {{provider}} API key at"
 msgstr "Votre clé API est stockée localement dans votre navigateur et n'est jamais envoyée à apple2ts.com. Obtenez votre clé API {{provider}} sur"
 
-#, fuzzy
 msgctxt "agent.ollamaWarning"
 msgid ""
 "Ollama runs locally on your machine. Make sure you have Ollama installed and "
 "running. Download from"
 msgstr "Ollama s'exécute sur votre ordinateur. Vérifiez qu'il est installé et lancé. Téléchargement :"
 
-#, fuzzy
 msgctxt "agent.providerNotConfigured"
 msgid "Provider not configured - click the gear icon to set up your AI agent"
 msgstr "Fournisseur non configuré : cliquez sur l'engrenage pour configurer l'agent IA"
 
-#, fuzzy
 msgctxt "agent.providerConfigured"
 msgid "Provider: {{provider}} ({{model}})"
 msgstr "Fournisseur : {{provider}} ({{model}})"
 
-#, fuzzy
 msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
 msgstr "Format de clé API invalide pour {{provider}}"
@@ -2550,20 +2318,17 @@ msgstr ""
 "pour charger un disque\n"
 "ou un jeu intégré."
 
-#, fuzzy
 msgctxt "startup.retroControlPanel"
 msgid ""
 "Press SHIFT+ESC to display\n"
 "the control panel."
 msgstr "Appuyez sur MAJ+ÉCHAP pour afficher\nle panneau de commande."
 
-#, fuzzy
 msgctxt "startup.mouseCapture"
 msgid ""
 "Press F1 to capture or release mouse."
 msgstr "Appuyez sur F1 pour capturer ou libérer la souris."
 
-#, fuzzy
 msgctxt "retroControl.ariaLabel"
 msgid "Apple2TS control panel"
 msgstr "Panneau de commande Apple2TS"
@@ -2760,62 +2525,50 @@ msgctxt "retroControl.color"
 msgid "Color"
 msgstr "Couleur"
 
-#, fuzzy
 msgctxt "retroControl.colorNoFringe"
 msgid "Color (no fringe)"
 msgstr "Couleur (sans franges)"
 
-#, fuzzy
 msgctxt "retroControl.green"
 msgid "Green"
 msgstr "Vert"
 
-#, fuzzy
 msgctxt "retroControl.amber"
 msgid "Amber"
 msgstr "Ambre"
 
-#, fuzzy
 msgctxt "retroControl.white"
 msgid "White"
 msgstr "Blanc"
 
-#, fuzzy
 msgctxt "retroControl.inverse"
 msgid "Inverse"
 msgstr "Inversé"
 
-#, fuzzy
 msgctxt "retroControl.snail"
 msgid "Snail"
 msgstr "Escargot"
 
-#, fuzzy
 msgctxt "retroControl.slow"
 msgid "Slow"
 msgstr "Lent"
 
-#, fuzzy
 msgctxt "retroControl.normal"
 msgid "Normal"
 msgstr "Normal"
 
-#, fuzzy
 msgctxt "retroControl.twoMhz"
 msgid "2 MHz"
 msgstr "2 MHz"
 
-#, fuzzy
 msgctxt "retroControl.threeMhz"
 msgid "3 MHz"
 msgstr "3 MHz"
 
-#, fuzzy
 msgctxt "retroControl.fast"
 msgid "Fast"
 msgstr "Rapide"
 
-#, fuzzy
 msgctxt "retroControl.warp"
 msgid "Warp"
 msgstr "Turbo"
@@ -2836,17 +2589,14 @@ msgctxt "retroControl.language"
 msgid "Language"
 msgstr "Langue"
 
-#, fuzzy
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
 msgstr "ImageWriter intégré"
 
-#, fuzzy
 msgctxt "retroControl.selectExternalPort"
 msgid "Select External Port"
 msgstr "Sélectionner le port externe"
 
-#, fuzzy
 msgctxt "retroControl.externalPort"
 msgid "External Port"
 msgstr "Port externe"
@@ -2855,7 +2605,6 @@ msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
 msgstr "Saisie en minuscules"
 
-#, fuzzy
 msgctxt "retroControl.lowercase"
 msgid "Lowercase"
 msgstr "Minuscules"
@@ -2868,17 +2617,14 @@ msgctxt "retroControl.sortOrder"
 msgid "Sort"
 msgstr "Tri"
 
-#, fuzzy
 msgctxt "retroControl.slot"
 msgid "Slot {{slot}}"
 msgstr "Slot {{slot}}"
 
-#, fuzzy
 msgctxt "retroControl.drive"
 msgid "{{drive}}: {{disk}}"
 msgstr "{{drive}} : {{disk}}"
 
-#, fuzzy
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
 msgstr "{{count}} configuré(s)"
@@ -2887,22 +2633,18 @@ msgctxt "retroControl.card.empty"
 msgid "Empty"
 msgstr "Vide"
 
-#, fuzzy
 msgctxt "retroControl.card.ssc"
 msgid "Super Serial Card"
 msgstr "Super Serial Card"
 
-#, fuzzy
 msgctxt "retroControl.card.softcard"
 msgid "Z-80 SoftCard"
 msgstr "Z-80 SoftCard"
 
-#, fuzzy
 msgctxt "retroControl.card.aux"
 msgid "Auxiliary memory"
 msgstr "Mémoire auxiliaire"
 
-#, fuzzy
 msgctxt "retroControl.card.videoterm"
 msgid "Videx VideoTerm"
 msgstr "Videx VideoTerm"
@@ -2911,662 +2653,530 @@ msgctxt "retroControl.card.mockingboard"
 msgid "Mockingboard"
 msgstr "Mockingboard"
 
-#, fuzzy
 msgctxt "retroControl.card.mouse"
 msgid "Mouse card"
 msgstr "Carte souris"
 
-#, fuzzy
 msgctxt "retroControl.card.vera"
 msgid "VERA graphics"
 msgstr "Graphismes VERA"
 
-#, fuzzy
 msgctxt "retroControl.card.passport"
 msgid "Passport MIDI"
 msgstr "Passport MIDI"
 
-#, fuzzy
 msgctxt "retroControl.card.disk2"
 msgid "Disk II controller"
 msgstr "Contrôleur Disk II"
 
-#, fuzzy
 msgctxt "retroControl.card.smartport"
 msgid "SmartPort drive"
 msgstr "Lecteur SmartPort"
 
-#, fuzzy
 msgctxt "retroControl.fetchingDisk"
 msgid "Fetching disk {{current}}/{{total}}"
 msgstr "Téléchargement du disque {{current}}/{{total}}"
 
-#, fuzzy
 msgctxt "retroControl.downloadFailed"
 msgid "Unable to download {{title}}"
 msgstr "Impossible de télécharger {{title}}"
 
-#, fuzzy
 msgctxt "retroControl.exportFailed"
 msgid "Export to HDV failed: {{message}}"
 msgstr "Échec de l'export HDV : {{message}}"
 
-#, fuzzy
 msgctxt "binaryFile.title"
 msgid "Load Binary File"
 msgstr "Charger un fichier binaire"
 
-#, fuzzy
 msgctxt "binaryFile.loadAtAddress"
 msgid "Load into memory at address $"
 msgstr "Charger en mémoire à l'adresse $"
 
-#, fuzzy
 msgctxt "binaryFile.runAfterLoading"
 msgid "Run code after loading"
 msgstr "Exécuter le code après chargement"
 
-#, fuzzy
 msgctxt "disk.importImageIntoEmulator"
 msgid "Import Disk Image into Emulator"
 msgstr "Importer l'image disque dans l'émulateur"
 
-#, fuzzy
 msgctxt "disk.downloadDiskImage"
 msgid "Download Disk Image"
 msgstr "Télécharger l'image disque"
 
-#, fuzzy
 msgctxt "demoZoo.snapshotBadge"
 msgid "Snapshot at {{date}}"
 msgstr "Instantané du {{date}}"
 
-#, fuzzy
 msgctxt "demoZoo.snapshotCreated"
 msgid "DemoZoo snapshot created: {{date}}"
 msgstr "Instantané DemoZoo créé le {{date}}"
 
-#, fuzzy
 msgctxt "agent.customModel"
 msgid "Custom Model..."
 msgstr "Modèle personnalisé..."
 
-#, fuzzy
 msgctxt "agent.customModelName"
 msgid "Custom Model Name:"
 msgstr "Nom du modèle personnalisé :"
 
-#, fuzzy
 msgctxt "debug.stackDump"
 msgid "Stack Dump"
 msgstr "Dump de pile"
 
-#, fuzzy
 msgctxt "debug.timeTravelSnapshots"
 msgid "Time Travel Snapshots"
 msgstr "Instantanés de voyage temporel"
 
-#, fuzzy
 msgctxt "debug.heatMapTitle"
 msgid "Heat Map"
 msgstr "Carte thermique"
 
-#, fuzzy
 msgctxt "debug.memoryDumpTitle"
 msgid "Memory Dump"
 msgstr "Dump mémoire"
 
-#, fuzzy
 msgctxt "debug.veraMonitor"
 msgid "VERA Monitor"
 msgstr "Moniteur VERA"
 
-#, fuzzy
 msgctxt "debug.pauseForDisassembly"
 msgid "Pause to view disassembly"
 msgstr "Mettre en pause pour voir le désassemblage"
 
-#, fuzzy
 msgctxt "debug.cycles"
 msgid "Cycles:"
 msgstr "Cycles :"
 
-#, fuzzy
 msgctxt "debug.resetCycleCountAndHeatMaps"
 msgid "Reset cycle count and heat maps"
 msgstr "Réinitialiser le compteur de cycles et les cartes thermiques"
 
-#, fuzzy
 msgctxt "debug.breakpointTitle"
 msgid "Edit Breakpoint"
 msgstr "Modifier le point d'arrêt"
 
-#, fuzzy
 msgctxt "debug.breakpoint.breakAt"
 msgid "Break at:"
 msgstr "Arrêter à :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.breakpoint"
 msgid "Breakpoint"
 msgstr "Point d'arrêt"
 
-#, fuzzy
 msgctxt "debug.breakpoint.watchpoint"
 msgid "Watchpoint"
 msgstr "Point de surveillance"
 
-#, fuzzy
 msgctxt "debug.breakpoint.instruction"
 msgid "Instruction"
 msgstr "Instruction"
 
-#, fuzzy
 msgctxt "debug.breakpoint.address"
 msgid "Address:"
 msgstr "Adresse :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.hitCount"
 msgid "Hit Count:"
 msgstr "Nombre d'occurrences :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.expression"
 msgid "Expression:"
 msgstr "Expression :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.memoryBank"
 msgid "Memory Bank:"
 msgstr "Banque mémoire :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.opcode"
 msgid "Opcode:"
 msgstr "Opcode :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.addressingMode"
 msgid "Mode:"
 msgstr "Mode :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.value"
 msgid "Value:"
 msgstr "Valeur :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.anyIllegal65C02"
 msgid "Any illegal 65C02 opcode"
 msgstr "Tout opcode 65C02 illégal"
 
-#, fuzzy
 msgctxt "debug.breakpoint.anyIllegal6502"
 msgid "Any illegal 6502 opcode"
 msgstr "Tout opcode 6502 illégal"
 
-#, fuzzy
 msgctxt "debug.breakpoint.read"
 msgid "Read"
 msgstr "Lecture"
 
-#, fuzzy
 msgctxt "debug.breakpoint.write"
 msgid "Write"
 msgstr "Écriture"
 
-#, fuzzy
 msgctxt "debug.breakpoint.withHexValue"
 msgid "With hex value:"
 msgstr "Avec la valeur hex. :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.actions"
 msgid "Actions:"
 msgstr "Actions :"
 
-#, fuzzy
 msgctxt "debug.breakpoint.haltAfterActions"
 msgid "Halt execution after actions"
 msgstr "Arrêter l'exécution après les actions"
 
-#, fuzzy
 msgctxt "debug.breakpoint.actionAddress"
 msgid "address"
 msgstr "adresse"
 
-#, fuzzy
 msgctxt "debug.breakpoint.actionToAddress"
 msgid "to address"
 msgstr "à l'adresse"
 
-#, fuzzy
 msgctxt "debug.breakpoint.actionToValue"
 msgid "to value"
 msgstr "à la valeur"
 
-#, fuzzy
 msgctxt "debug.breakpoint.add"
 msgid "Add new breakpoint"
 msgstr "Ajouter un point d'arrêt"
 
-#, fuzzy
 msgctxt "debug.breakpoint.removeAll"
 msgid "Remove all breakpoints"
 msgstr "Supprimer tous les points d'arrêt"
 
-#, fuzzy
 msgctxt "debug.breakpoint.edit"
 msgid "Edit breakpoint"
 msgstr "Modifier le point d'arrêt"
 
-#, fuzzy
 msgctxt "debug.breakpoint.delete"
 msgid "Delete breakpoint"
 msgstr "Supprimer le point d'arrêt"
 
-#, fuzzy
 msgctxt "debug.heatMap.cpuProgramCounter"
 msgid "6502 Program Counter"
 msgstr "Compteur ordinal 6502"
 
-#, fuzzy
 msgctxt "debug.heatMap.count"
 msgid "Count"
 msgstr "Nombre"
 
-#, fuzzy
 msgctxt "debug.heatMap.getMemoryCalls"
 msgid "Get Memory Calls"
 msgstr "Appels de lecture mémoire"
 
-#, fuzzy
 msgctxt "debug.heatMap.setMemoryCalls"
 msgid "Set Memory Calls"
 msgstr "Appels d'écriture mémoire"
 
-#, fuzzy
 msgctxt "debug.heatMap.colorTable"
 msgid "Color Table"
 msgstr "Table des couleurs"
 
-#, fuzzy
 msgctxt "debug.heatMap.showMagnifier"
 msgid "Show Magnifier"
 msgstr "Afficher la loupe"
 
-#, fuzzy
 msgctxt "debug.heatMap.jumpToProgramCounter"
 msgid "Jump to current program counter"
 msgstr "Aller au compteur ordinal actuel"
 
-#, fuzzy
 msgctxt "debug.heatMap.jumpToMaximumValue"
 msgid "Jump to maximum heatmap value"
 msgstr "Aller à la valeur maximale de la carte thermique"
 
-#, fuzzy
 msgctxt "debug.memoryDump.pickWatchpoint"
 msgid "Pick Watchpoint"
 msgstr "Choisir un point de surveillance"
 
-#, fuzzy
 msgctxt "debug.memoryDump.saveMemory"
 msgid "Save Memory"
 msgstr "Enregistrer la mémoire"
 
-#, fuzzy
 msgctxt "debug.memoryDump.highBitAscii"
 msgid "High Bit ASCII"
 msgstr "ASCII bit haut"
 
-#, fuzzy
 msgctxt "debug.memoryDump.searchHex"
 msgid "Search Hex"
 msgstr "Rechercher en hex."
 
-#, fuzzy
 msgctxt "debug.memoryDump.searchAscii"
 msgid "Search ASCII"
 msgstr "Rechercher en ASCII"
 
-#, fuzzy
 msgctxt "debug.memoryDump.noMatch"
 msgid "no match"
 msgstr "aucune occurrence"
 
-#, fuzzy
 msgctxt "debug.memoryDump.matchCount"
 msgid "{{match}} of {{total}}"
 msgstr "{{match}} sur {{total}}"
 
-#, fuzzy
 msgctxt "debug.memoryDump.previousMatch"
 msgid "Previous Match"
 msgstr "Occurrence précédente"
 
-#, fuzzy
 msgctxt "debug.memoryDump.nextMatch"
 msgid "Next Match"
 msgstr "Occurrence suivante"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.current"
 msgid "Current memory"
 msgstr "Mémoire actuelle"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.mainRam"
 msgid "Main RAM"
 msgstr "RAM principale"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.auxiliaryRam"
 msgid "Auxiliary RAM"
 msgstr "RAM auxiliaire"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.hgr1"
 msgid "HGR page 1"
 msgstr "Page HGR 1"
 
-#, fuzzy
 msgctxt "debug.memoryDump.range.hgr2"
 msgid "HGR page 2"
 msgstr "Page HGR 2"
 
-#, fuzzy
 msgctxt "debug.disassemblyPreviousLocation"
 msgid "Previous Location"
 msgstr "Adresse précédente"
 
-#, fuzzy
 msgctxt "debug.disassemblyNextLocation"
 msgid "Next Location"
 msgstr "Adresse suivante"
 
-#, fuzzy
 msgctxt "debug.memoryMap.title"
 msgid "Memory Map"
 msgstr "Carte mémoire"
 
-#, fuzzy
 msgctxt "debug.memoryMap.read"
 msgid "Read"
 msgstr "Lecture"
 
-#, fuzzy
 msgctxt "debug.memoryMap.write"
 msgid "Write"
 msgstr "Écriture"
 
-#, fuzzy
 msgctxt "debug.memoryMap.zeroPage"
 msgid "Zero Page"
 msgstr "Page zéro"
 
-#, fuzzy
 msgctxt "debug.memoryMap.stack"
 msgid "Stack"
 msgstr "Pile"
 
-#, fuzzy
 msgctxt "debug.memoryMap.text"
 msgid "Text"
 msgstr "Texte"
 
-#, fuzzy
 msgctxt "debug.memoryMap.hiresMode"
 msgid "Hires"
 msgstr "Haute rés."
 
-#, fuzzy
 msgctxt "debug.memoryMap.hires"
 msgid "HGR"
 msgstr "HGR"
 
-#, fuzzy
 msgctxt "debug.memoryMap.internalRom"
 msgid "Internal ROM"
 msgstr "ROM interne"
 
-#, fuzzy
 msgctxt "debug.memoryMap.slotRom"
 msgid "Slot ROM"
 msgstr "ROM de slot"
 
-#, fuzzy
 msgctxt "debug.memoryMap.auxBank"
 msgid "Aux Bank"
 msgstr "Banque aux."
 
-#, fuzzy
 msgctxt "debug.memoryMap.auxRead"
 msgid "Aux Read"
 msgstr "Lecture aux."
 
-#, fuzzy
 msgctxt "debug.memoryMap.auxWrite"
 msgid "Aux Write"
 msgstr "Écriture aux."
 
-#, fuzzy
 msgctxt "debug.memoryMap.store80"
 msgid "80 Store"
 msgstr "80 Store"
 
-#, fuzzy
 msgctxt "debug.memoryMap.mixed"
 msgid "Mixed"
 msgstr "Mixte"
 
-#, fuzzy
 msgctxt "debug.memoryMap.page2"
 msgid "Page 2"
 msgstr "Page 2"
 
-#, fuzzy
 msgctxt "debug.memoryMap.columns80"
 msgid "80 Column"
 msgstr "80 colonnes"
 
-#, fuzzy
 msgctxt "debug.memoryMap.doubleHires"
 msgid "Dbl Hires"
 msgstr "Dbl Hires"
 
-#, fuzzy
 msgctxt "debug.memoryMap.video7Mono"
 msgid "V7 Mono"
 msgstr "V7 mono"
 
-#, fuzzy
 msgctxt "debug.memoryMap.video7160"
 msgid "V7 160x"
 msgstr "V7 160x"
 
-#, fuzzy
 msgctxt "debug.memoryMap.video7Mixed"
 msgid "V7 Mixed"
 msgstr "V7 mixte"
 
-#, fuzzy
 msgctxt "debug.memoryMap.internalCxxxRom"
 msgid "Cxxx ROM"
 msgstr "ROM Cxxx"
 
-#, fuzzy
 msgctxt "debug.memoryMap.internalC300Rom"
 msgid "C300 ROM"
 msgstr "ROM C300"
 
-#, fuzzy
 msgctxt "debug.memoryMap.readRam"
 msgid "Read RAM"
 msgstr "Lecture RAM"
 
-#, fuzzy
 msgctxt "debug.memoryMap.writeRam"
 msgid "Write RAM"
 msgstr "Écriture RAM"
 
-#, fuzzy
 msgctxt "debug.memoryMap.bank2Switch"
 msgid "Bank 2"
 msgstr "Banque 2"
 
-#, fuzzy
 msgctxt "collection.deleteAllBookmarks"
 msgid "Delete all bookmarks"
 msgstr "Supprimer tous les favoris"
 
-#, fuzzy
 msgctxt "collection.restoreAllBookmarks"
 msgid "Restore all bookmarks"
 msgstr "Restaurer tous les favoris"
 
-#, fuzzy
 msgctxt "collection.sort.nameAscending"
 msgid "A-Z"
 msgstr "A-Z"
 
-#, fuzzy
 msgctxt "collection.sort.nameDescending"
 msgid "Z-A"
 msgstr "Z-A"
 
-#, fuzzy
 msgctxt "collection.sort.newest"
 msgid "New"
 msgstr "Récent"
 
-#, fuzzy
 msgctxt "collection.sort.oldest"
 msgid "Old"
 msgstr "Ancien"
 
-#, fuzzy
 msgctxt "traceSettings.unlimited"
 msgid "Unlimited"
 msgstr "Illimité"
 
-#, fuzzy
 msgctxt "traceSettings.cyclesUnit"
 msgid "cycles"
 msgstr "cycles"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.none"
 msgid "(no action)"
 msgstr "(aucune action)"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.set"
 msgid "Set"
 msgstr "Définir"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.jump"
 msgid "Jump to"
 msgstr "Aller à"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.print"
 msgid "Print to console"
 msgstr "Afficher dans la console"
 
-#, fuzzy
 msgctxt "debug.breakpoint.action.snapshot"
 msgid "Snapshot"
 msgstr "Instantané"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.address"
 msgid "Address"
 msgstr "Adresse"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.accumulator"
 msgid "Accumulator"
 msgstr "Accumulateur"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.x"
 msgid "X Register"
 msgstr "Registre X"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.y"
 msgid "Y Register"
 msgstr "Registre Y"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.stack"
 msgid "Stack Pointer"
 msgstr "Pointeur de pile"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.status"
 msgid "Processor Status"
 msgstr "État du processeur"
 
-#, fuzzy
 msgctxt "debug.breakpoint.register.programCounter"
 msgid "Program Counter"
 msgstr "Compteur ordinal"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.implied"
 msgid "Implied"
 msgstr "Implicite"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.immediate"
 msgid "Immediate"
 msgstr "Immédiat"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageRelative"
 msgid "Zero page/Relative"
 msgstr "Page zéro/Relatif"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageX"
 msgid "Zero page,X"
 msgstr "Page zéro,X"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.zeroPageY"
 msgid "Zero page,Y"
 msgstr "Page zéro,Y"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.absolute"
 msgid "Absolute"
 msgstr "Absolu"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.absoluteX"
 msgid "Abs,X"
 msgstr "Abs,X"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.absoluteY"
 msgid "Abs,Y"
 msgstr "Abs,Y"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.indirectX"
 msgid "Indirect,X"
 msgstr "Indirect,X"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.indirectY"
 msgid "Indirect,Y"
 msgstr "Indirect,Y"
 
-#, fuzzy
 msgctxt "debug.breakpoint.mode.indirect"
 msgid "Indirect"
 msgstr "Indirect"
