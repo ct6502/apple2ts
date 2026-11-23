@@ -84,7 +84,7 @@ import { vidhd } from "./devices/vidhd"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { clearSlotCardStateHandlers } from "./devices/slot_card_state"
 import { resetMouse, onMouseVBL, iigsMouseStep } from "./devices/mouse"
-import { enableDiskDrive, enableDiskDrive35, iwmResetTiming, processFloppyMotorTimeout } from "./devices/diskdata"
+import { enableDiskDrive, enableDiskDrive35, iwmResetTiming, processFloppyMotorTimeout, setIigs35TimerScale } from "./devices/diskdata"
 import { advanceKeySequence, interruptKeySequence, pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
 import {
   advanceConditionalInputSequence,
@@ -1261,6 +1261,13 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true, publishState 
     cyclesPerRefresh: cpuCyclesPerRefresh,
     slowMode: isGSMachine(machineName) && isIigsSlowMode(),
   }))
+  // The 3.5" drive's seek/motor settle timers are video-cycle counts
+  // (gssquared Floppy35_woz::update_timers) while this model counts CPU
+  // cycles, so the drive needs the live conversion factor for the current
+  // speed. Register it here for the same reason as the paddle source: memory.ts
+  // is loaded *from* devices/diskdata.ts, so pushing the setter during module
+  // initialisation reaches an export that diskdata has not bound yet.
+  setIigs35TimerScale(() => getIigsCpuCyclesPerRefresh() / VIDEO_CYCLES_PER_FRAME)
 
   if (isGSMachine(machineName)) {
     cpu = new CPU65816(memGet24, memSet24)

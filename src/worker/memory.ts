@@ -20,7 +20,7 @@ import { isDebugging, setIigsSpeedRegister, getIigsBeamPos, getIigsVideoClock, g
 import { iigsClock } from "./iigs_clock"
 import { iigsADB } from "./iigs_adb"
 import { iigsEnsoniq, docAccess } from "./devices/iigs_ensoniq"
-import { iwmAdvance35, iwmAdvance525Write, iwmFloppySpinning, iwmFlushWrites35, iwmGetSense35, iwmReadDataRegister, iwmReadHandshake35, iwmReadSense525, iwmRebase525Timing, iwmReset35Lines, iwmReset525PendingWrites, setIigs35TimerScale, iwmResetTiming, iwmStepHead, iwmSyncDriveEnables35, iwmWriteDataRegister35, iwmWriteDataRegister525 } from "./devices/diskdata"
+import { iwmAdvance35, iwmAdvance525Write, iwmFloppySpinning, iwmFlushWrites35, iwmGetSense35, iwmReadDataRegister, iwmReadHandshake35, iwmReadSense525, iwmRebase525Timing, iwmReset35Lines, iwmReset525PendingWrites, iwmResetTiming, iwmStepHead, iwmSyncDriveEnables35, iwmWriteDataRegister35, iwmWriteDataRegister525 } from "./devices/diskdata"
 import { getDriveDataByIndex, getDriveStateByIndex } from "./devices/drivestate"
 
 // 0x00000: main memory
@@ -329,9 +329,11 @@ const iigsCoastCycles = () => getIigsCpuCyclesPerRefresh() * 30
 // The Sony mechanism's own timers (seek settle, spindle spin-up) are spelled in
 // 1.023 MHz video cycles in gssquared (Floppy35_woz::update_timers compares
 // against clock->get_vid_cycles()), while the drive model latches them in CPU
-// cycles. Install the live ratio so 5000/1000 video cycles really are 5000/1000
-// video cycles in every speed mode instead of settling ~2.7x too early.
-setIigs35TimerScale(() => getIigsCpuCyclesPerRefresh() / VIDEO_CYCLES_PER_FRAME)
+// cycles. Do not install the conversion factor from here: devices/diskdata.ts
+// imports this module, so when a caller loads diskdata first (jest's
+// fluxdrive/fluxseek suites do) the exported setter is still unbound while this
+// module's top level runs. motherboard.ts doSetMachineName registers the live
+// ratio instead, next to the paddle clock source.
 
 // IWM (Integrated Woz Machine) state for Apple IIgs ($C0E0-$C0EF)
 let iwmQ6 = false
@@ -659,13 +661,14 @@ const iigsEffectiveAuxWrite = (offset: number): boolean => {
 // Mirror a write into the Mega II RAM the video scanner reads (gssquared
 // bank_shadow_write). Main text/hires pages shadow into Mega II main; the aux
 // $2000-$9FFF window shadows into Mega II aux and is interleaved while that
-// window is linearized. $2000-$5FFF is both the AUXHGR and SHR window, so it
-// needs either inhibit flag clear; $6000-$9FFF is SHR only.
-// Which Mega II aux window a write shadows into, per 1K slot (gssquared
-// shadow_is_enabled): SHR inhibit clear shadows the whole $2000-$9FFF window,
-// but inside the AUXHGR window ($2000-$5FFF) the HGR page in use and AUXHGR
-// must also both be uninhibited.  $C035 = $08 is the boot default (SHR only),
-// which is exactly why the old "SHR or AUXHGR" rule shadowed too little there.
+// window is linearized.
+//
+// Which aux slot a write reaches (gssquared shadow_is_enabled): SHR inhibit
+// clear shadows the whole window, but inside the AUXHGR window ($2000-$5FFF)
+// the HGR page in use and AUXHGR must both be uninhibited. The old "SHR clear
+// or AUXHGR clear" test ignored the HGR page bits, so it shadowed $2000-$5FFF
+// even when the page in use was inhibited ($C035=$0A); the bank-$01 direct
+// path only checked SHR, so it shadowed too little there.
 const iigsAuxShadowEnabled = (offset: number, shadow: number): boolean => {
     if (!(shadow & 0x08)) return true
     if (offset >= 0x2000 && offset < 0x4000) return (shadow & 0x12) === 0
