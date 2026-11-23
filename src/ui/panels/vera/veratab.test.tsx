@@ -1,7 +1,7 @@
 import { act } from "react"
 import { createRoot, Root } from "react-dom/client"
 import VeraTab from "./veratab"
-import { passMouseEvent } from "../../main2worker"
+import { handleGetVeraFrame, passMouseEvent } from "../../main2worker"
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -49,9 +49,10 @@ describe("VeraTab mouse support", () => {
   let container: HTMLDivElement | null = null
   let root: Root | null = null
   let getContextSpy: jest.SpyInstance
+  let mockCtx: Partial<CanvasRenderingContext2D>
 
   beforeAll(() => {
-    getContextSpy = jest.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+    mockCtx = {
       fillRect: jest.fn(),
       fillText: jest.fn(),
       beginPath: jest.fn(),
@@ -59,7 +60,10 @@ describe("VeraTab mouse support", () => {
       lineTo: jest.fn(),
       stroke: jest.fn(),
       putImageData: jest.fn(),
-    } as unknown as CanvasRenderingContext2D)
+    }
+    getContextSpy = jest.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+      mockCtx as unknown as CanvasRenderingContext2D
+    )
   })
 
   afterAll(() => {
@@ -204,5 +208,30 @@ describe("VeraTab mouse support", () => {
     })
 
     expect(preventDefaultSpy).toHaveBeenCalled()
+  })
+
+  test("offers a fullscreen button for the VERA screen", () => {
+    act(() => {
+      root!.render(<VeraTab />)
+    })
+
+    const labels = Array.from(container!.querySelectorAll("button"))
+      .map(button => button.textContent || "")
+    expect(labels.some(label => label.includes("Full Screen"))).toBe(true)
+  })
+
+  test("shows the single-tab performance tip on the standby screen", () => {
+    ;(handleGetVeraFrame as jest.Mock).mockReturnValue({
+      fb: undefined,
+      dcVideo: 0,
+      sequence: 42,
+    })
+
+    act(() => {
+      root!.render(<VeraTab />)
+    })
+
+    expect(mockCtx.fillText).toHaveBeenCalledWith(
+      "Tip: use a single browser tab for maximum emulation speed", 320, 405)
   })
 })
