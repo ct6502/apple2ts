@@ -158,6 +158,13 @@ export const iigsRegisters = new Uint8Array(256)
 export const megaIIAux = new Uint8Array(65536)
 export const megaIIMain = new Uint8Array(65536)
 iigsRegisters[0x36] = 0x80 // Default fast speed
+// ROMBANK lives in $C068 bit 1 and is toggled by any access to $C028 (the data
+// bits are ignored).  On ROM 01 it masks bit 14 off the Mega II ROM windows, so
+// $D000-$FFFF reads $9000-$BFFF of the IIe compatibility image and the
+// $C100-$CFFF firmware window reads $8100-$8FFF.  ROM 03 stores the bit but its
+// CYA pin is grounded, so nothing moves (gssquared iigs_mega_rom_offset).
+export const iigsMegaRomOffset = (offset: number): number =>
+  (!isIigsRom03() && (iigsRegisters[0x68] & 0x02) !== 0) ? (offset & ~0x4000) : offset
 // $C02D SLTROMSEL: bit N = 1 maps slot N's card ROM, 0 leaves the motherboard's
 // slot firmware mapped. Reset value is 0 (gssquared mmu_iigs); the slot
 // configuration sets it at boot and on reset.
@@ -542,22 +549,22 @@ export const memGet24 = (address: number): number => {
                 return memGet(offset, false)
             }
             if (offset >= 0xD000 && !SWITCHES.BSRREADRAM.isSet) {
-                return gsSystemROM[iigsRomBankFFOffset + offset]
+                return gsSystemROM[iigsRomBankFFOffset + iigsMegaRomOffset(offset)]
             }
             // $C071-$C07F: BRK/IRQ firmware (JML to the interrupt manager).
             // $C100-$CFFF: slot card space or internal ROM pages.
-            if (offset >= 0xC071 && offset <= 0xC07F) return gsSystemROM[iigsRomBankFFOffset + offset]
+            if (offset >= 0xC071 && offset <= 0xC07F) return gsSystemROM[iigsRomBankFFOffset + iigsMegaRomOffset(offset)]
             if (offset >= 0xC100 && offset <= 0xCFFF) {
                 if (offset < 0xC800) {
                     const slot = (offset >> 8) & 0x0F
                     manageC800(slot)
-                    if (SWITCHES.INTCXROM.isSet) return gsSystemROM[iigsRomBankFFOffset + offset]
+                    if (SWITCHES.INTCXROM.isSet) return gsSystemROM[iigsRomBankFFOffset + iigsMegaRomOffset(offset)]
                     const isCard = (slot === 3) ? SWITCHES.SLOTC3ROM.isSet : ((iigsSlotRegister & (1 << slot)) !== 0)
                     if (isCard) return memGet(offset, false)
-                    return gsSystemROM[iigsRomBankFFOffset + offset]
+                    return gsSystemROM[iigsRomBankFFOffset + iigsMegaRomOffset(offset)]
                 } else {
                     if (offset === 0xCFFF) manageC800(0xFF)
-                    if (SWITCHES.INTCXROM.isSet || internalC8ROMIsActive()) return gsSystemROM[iigsRomBankFFOffset + offset]
+                    if (SWITCHES.INTCXROM.isSet || internalC8ROMIsActive()) return gsSystemROM[iigsRomBankFFOffset + iigsMegaRomOffset(offset)]
                     return memGet(offset, false)
                 }
             }
@@ -571,9 +578,9 @@ export const memGet24 = (address: number): number => {
         }
         if (offset >= 0xD000) {
             if (!SWITCHES.BSRREADRAM.isSet) {
-                return gsSystemROM ? gsSystemROM[iigsRomBankFFOffset + offset] : (gsROM[(0xFF << 16) | offset] || 0)
+                return gsSystemROM ? gsSystemROM[iigsRomBankFFOffset + iigsMegaRomOffset(offset)] : (gsROM[(0xFF << 16) | offset] || 0)
             }
-            if (offset < 0xE000 && !SWITCHES.BSRBANK2.isSet) {
+            if (offset < 0xE000 && SWITCHES.BSRBANK2.isSet) {
                 return megaIIMain[offset - 0x1000]
             }
             return megaIIMain[offset]
@@ -591,10 +598,10 @@ export const memGet24 = (address: number): number => {
         if (offset >= 0xD000) {
             // If RDROM is set, read from ROM
             if (!SWITCHES.BSRREADRAM.isSet) {
-                return gsSystemROM ? gsSystemROM[iigsRomBankFFOffset + offset] : (gsROM[(bank << 16) | offset] || 0)
+                return gsSystemROM ? gsSystemROM[iigsRomBankFFOffset + iigsMegaRomOffset(offset)] : (gsROM[(bank << 16) | offset] || 0)
             }
             // Otherwise read from language card RAM
-            if (offset < 0xE000 && !SWITCHES.BSRBANK2.isSet) {
+            if (offset < 0xE000 && SWITCHES.BSRBANK2.isSet) {
                 return megaIIAux[offset - 0x1000]
             }
             return megaIIAux[offset]
@@ -616,10 +623,10 @@ export const memGet24 = (address: number): number => {
         if (offset >= 0xD000 && !(iigsRegisters[0x35] & 0x40)) {
             // If RDROM is set, read from ROM
             if (!SWITCHES.BSRREADRAM.isSet) {
-                return gsSystemROM ? gsSystemROM[iigsRomBankFFOffset + offset] : (gsROM[(0xFF << 16) | offset] || 0)
+                return gsSystemROM ? gsSystemROM[iigsRomBankFFOffset + iigsMegaRomOffset(offset)] : (gsROM[(0xFF << 16) | offset] || 0)
             }
             // Language card region when shadowed
-            if (offset < 0xE000 && !SWITCHES.BSRBANK2.isSet) {
+            if (offset < 0xE000 && SWITCHES.BSRBANK2.isSet) {
                 return memory[RamWorksMemoryStart + offset - 0x1000]
             }
             return memory[RamWorksMemoryStart + offset]
@@ -654,6 +661,18 @@ const iigsEffectiveAuxWrite = (offset: number): boolean => {
 // $2000-$9FFF window shadows into Mega II aux and is interleaved while that
 // window is linearized. $2000-$5FFF is both the AUXHGR and SHR window, so it
 // needs either inhibit flag clear; $6000-$9FFF is SHR only.
+// Which Mega II aux window a write shadows into, per 1K slot (gssquared
+// shadow_is_enabled): SHR inhibit clear shadows the whole $2000-$9FFF window,
+// but inside the AUXHGR window ($2000-$5FFF) the HGR page in use and AUXHGR
+// must also both be uninhibited.  $C035 = $08 is the boot default (SHR only),
+// which is exactly why the old "SHR or AUXHGR" rule shadowed too little there.
+const iigsAuxShadowEnabled = (offset: number, shadow: number): boolean => {
+    if (!(shadow & 0x08)) return true
+    if (offset >= 0x2000 && offset < 0x4000) return (shadow & 0x12) === 0
+    if (offset >= 0x4000 && offset < 0x6000) return (shadow & 0x14) === 0
+    return false
+}
+
 const shadowIigsWrite = (offset: number, data: number, aux: boolean) => {
     const shadow = iigsRegisters[0x35]
     if (offset >= 0x0400 && offset < 0x0800) {
@@ -668,7 +687,7 @@ const shadowIigsWrite = (offset: number, data: number, aux: boolean) => {
     }
     if (offset < 0x2000 || offset >= 0xa000) return
     if (aux) {
-        if (!(shadow & 0x08) || (offset < 0x6000 && !(shadow & 0x10))) {
+        if (iigsAuxShadowEnabled(offset, shadow)) {
             megaIIAux[isIigsAuxLinear() ? iigsAuxLinearToPhys(offset) : offset] = data
             noteLateShrStore(offset, data)
         }
@@ -703,10 +722,9 @@ const shadowIigsBankWrite = (bank: number, offset: number, data: number) => {
     else if (offset >= 0x0800 && offset < 0x0c00) shadowed = isIigsRom03() && !(shadow & 0x20)
     else if (!odd && offset >= 0x2000 && offset < 0x4000) shadowed = !(shadow & 0x02)
     else if (!odd && offset >= 0x4000 && offset < 0x6000) shadowed = !(shadow & 0x04)
-    // $2000-$5FFF is both the AUXHGR and SHR window, so either inhibit clear
-    // is enough; SHR is checked first, as in gssquared shadow_is_enabled().
-    if (!shadowed && addr17 >= 0x12000 && addr17 < 0x1a000) shadowed = !(shadow & 0x08)
-    if (!shadowed && addr17 >= 0x12000 && addr17 < 0x16000) shadowed = !(shadow & 0x10)
+    // Odd banks write Mega II aux. $2000-$5FFF is both the AUXHGR and SHR
+    // window, so the AUXHGR predicate has to be used rather than "SHR clear".
+    if (!shadowed && addr17 >= 0x12000 && addr17 < 0x1a000) shadowed = iigsAuxShadowEnabled(offset, shadow)
     if (shadowed) {
         if (odd && (iigsRegisters[0x29] & 0x01)) {
             megaIIAux[isIigsAuxLinear() ? iigsAuxLinearToPhys(offset) : offset] = data
@@ -742,7 +760,7 @@ export const memSet24 = (address: number, data: number) => {
         }
         if (offset >= 0xD000) {
             if (SWITCHES.BSR_WRITE.isSet) {
-                const targetOffset = (offset < 0xE000 && !SWITCHES.BSRBANK2.isSet) ? (offset - 0x1000) : offset
+                const targetOffset = (offset < 0xE000 && SWITCHES.BSRBANK2.isSet) ? (offset - 0x1000) : offset
                 megaIIMain[targetOffset] = data
             }
             return
@@ -763,7 +781,7 @@ export const memSet24 = (address: number, data: number) => {
         if (offset >= 0xD000) {
             // Check if language card RAM is writable
             if (SWITCHES.BSR_WRITE.isSet) {
-                const targetOffset = (offset < 0xE000 && !SWITCHES.BSRBANK2.isSet) ? (offset - 0x1000) : offset
+                const targetOffset = (offset < 0xE000 && SWITCHES.BSRBANK2.isSet) ? (offset - 0x1000) : offset
                 megaIIAux[targetOffset] = data
             }
             return
@@ -812,7 +830,7 @@ export const memSet24 = (address: number, data: number) => {
         if (offset >= 0xD000 && !(iigsRegisters[0x35] & 0x40)) {
             // Language card region when shadowed
             if (SWITCHES.BSR_WRITE.isSet) {
-                const targetOffset = (offset < 0xE000 && !SWITCHES.BSRBANK2.isSet) ? (offset - 0x1000) : offset
+                const targetOffset = (offset < 0xE000 && SWITCHES.BSRBANK2.isSet) ? (offset - 0x1000) : offset
                 memory[RamWorksMemoryStart + targetOffset] = data
             }
             return
@@ -837,7 +855,7 @@ export const memSet24 = (address: number, data: number) => {
         // Super Hi-Res ($2000-$9FFF) shadowing into Mega II Bank E1. The aux
         // window is linearized in CPU space and interleaved physically, so the
         // shadow target has to be folded like a direct $E1 access.
-        if (offset >= 0x2000 && offset < 0xA000 && !(iigsRegisters[0x35] & 0x08)) {
+        if (offset >= 0x2000 && offset < 0xA000 && iigsAuxShadowEnabled(offset, iigsRegisters[0x35])) {
             shrDbg.b01++
             if (shrDbg.trace) noteShrWrite(getCpuPc(), offset, data)
             megaIIAux[isIigsAuxLinear() ? iigsAuxLinearToPhys(offset) : offset] = data
@@ -1036,8 +1054,10 @@ const updateReadBankSwitchedRamTable = () => {
     for (let i = 0xD0; i <= 0xFF; i++) {
       addressGetTable[i] = altZP ? auxGetPage(i) : i
     }
-    if (!SWITCHES.BSRBANK2.isSet) {
-      // Bank1 of $D000-$DFFF is actually in 0xC0...0xCF
+    if (SWITCHES.BSRBANK2.isSet) {
+      // Language card bank 2 of $D000-$DFFF is physically at $C000-$CFFF;
+      // bank 1 owns $D000-$DFFF and $E000-$FFFF is shared (gssquared
+      // f794ac48, issue #224; ROM 1/ROM 3/KEGS/MAME all agree).
       for (let i = 0xD0; i <= 0xDF; i++) {
         addressGetTable[i] = altZP ? auxGetPage(i - 0x10) : i - 0x10
       }
@@ -1061,8 +1081,10 @@ const updateWriteBankSwitchedRamTable = () => {
     for (let i = 0xD0; i <= 0xFF; i++) {
       addressSetTable[i] = altZP ? auxSetPage(i) : i
     }
-    if (!SWITCHES.BSRBANK2.isSet) {
-      // Bank1 of $D000-$DFFF is actually in 0xC0...0xCF
+    if (SWITCHES.BSRBANK2.isSet) {
+      // Language card bank 2 of $D000-$DFFF is physically at $C000-$CFFF;
+      // bank 1 owns $D000-$DFFF and $E000-$FFFF is shared (gssquared
+      // f794ac48, issue #224; ROM 1/ROM 3/KEGS/MAME all agree).
       for (let i = 0xD0; i <= 0xDF; i++) {
         addressSetTable[i] = altZP ? auxSetPage(i - 0x10) : i - 0x10
       }
@@ -1336,7 +1358,7 @@ const memGetSoftSwitch = (addr: number): number => {
       if (gsSystemROM && gsSystemROM.length > 0) {
           // Last bank of the system ROM (ROM 01: FF@0x10000, ROM 03:
           // FF@0x30000); this is the IIe-compatibility image.
-          return gsSystemROM[iigsRomBankFFOffset + addr]
+          return gsSystemROM[iigsRomBankFFOffset + iigsMegaRomOffset(addr)]
       }
   }
   
@@ -1350,6 +1372,13 @@ const memGetSoftSwitch = (addr: number): number => {
   if (currentMachineName === "APPLE2GS" && addr >= 0xC020 && addr <= 0xC04F) {
       // Handle specific IIgs hardware
       switch (addr) {
+          case 0xC028: // ROMBANK: every access toggles $C068 bit 1
+              // The data bits are ignored and the byte is not stored.  ROM 01
+              // moves the $D000-$FFFF / $C1xx-$CFxx windows through
+              // iigsMegaRomOffset(); ROM 03 only reports the bit.
+              iigsRegisters[0x68] ^= 0x02
+              return getFloatingBus()
+
           case 0xC031: // Disk Control Port
               // Bit 6 (EN35) selects the 3.5" drive family in slot 5 vs the
               // 5.25" pair in slot 6; bit 7 (HDSEL) is the 3.5" head/side
@@ -1392,10 +1421,13 @@ const memGetSoftSwitch = (addr: number): number => {
               return iigsADB.readData()
 
           case 0xC029: // NEWVIDEO
-              return iigsRegisters[0x29]
+              // Only bits 7,6,5,0 exist; the rest read back as zero (gssquared
+              // NEWVIDEO mask 0xE1).
+              return iigsRegisters[0x29] & 0xE1
 
           case 0xC02D: // SLTROMSEL
-              return iigsSlotRegister
+              // Bits 0 and 3 are not settable (gssquared mask 0xF6).
+              return iigsSlotRegister & 0xF6
 
           case 0xC033: // Clock Data
               return iigsClock.readData()
@@ -1622,6 +1654,7 @@ const memGetSoftSwitch = (addr: number): number => {
     if (SWITCHES.AUXRAMWRITE.isSet) val |= 0x10
     if (!SWITCHES.BSRREADRAM.isSet) val |= 0x08 // RDROM
     if (SWITCHES.BSRBANK2.isSet) val |= 0x04
+    if (iigsRegisters[0x68] & 0x02) val |= 0x02 // ROMBANK (ROM 01 window shift)
     if (SWITCHES.INTCXROM.isSet) val |= 0x01
     return val
   }
@@ -1748,7 +1781,7 @@ const memSetSoftSwitch = (addr: number, value: number) => {
         shrDbg.newvideo.push(value)
       }
       SWITCHES.NEWVIDEO.isSet = (value & 0x80) !== 0
-      iigsRegisters[0x29] = value
+      iigsRegisters[0x29] = value & 0xE1
       return
     }
     
@@ -1778,9 +1811,13 @@ const memSetSoftSwitch = (addr: number, value: number) => {
                 break
             
             case 0xC02D: // SLTROMSEL
-                iigsSlotRegister = value & 0xFE
+                iigsSlotRegister = value & 0xF6
                 iigsRegisters[0x2D] = iigsSlotRegister
                 updateAddressTables()
+                break
+
+            case 0xC028: // ROMBANK: every access toggles, data bits ignored
+                iigsRegisters[0x68] ^= 0x02
                 break
 
             case 0xC031: // Disk Control Port (EN35 / HDSEL)
