@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doSetSpeedMode } from "./motherboard"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { getTextPage } from "./memory"
@@ -30,7 +31,7 @@ const screen = () => {
   return rows.join("\n")
 }
 
-test("Card Cat 1.94 completes its slot scan", () => {
+testWithFixtures(DISK_PATH)("Card Cat 1.94 completes its slot scan", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {

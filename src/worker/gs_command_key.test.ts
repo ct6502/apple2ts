@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 // The Apple IIgs key chord, measured against GS/OS 6.0.1.
 //
 // A chord does not exist in an ADB key event - one event byte carries one
@@ -86,12 +87,12 @@ afterAll(() => {
   jest.useRealTimers()
 })
 
-test("GS/OS is up on the Super Hi-Res desktop", () => {
+testWithFixtures(PO_PATH)("GS/OS is up on the Super Hi-Res desktop", () => {
   expect(getShr().length).toBe(32768)
   expect(iigsADB.peekModifiers() & MOD_CLOSED).toBe(0)
 })
 
-test("the guest takes the DA drawer chord while Closed Apple is held", () => {
+testWithFixtures(PO_PATH)("the guest takes the DA drawer chord while Closed Apple is held", () => {
   // Same shape as the Open Apple + W case below but through the $C000 latch,
   // because that is how the Finder reads a chord: the Closed Apple bit in $C025
   // plus the key in $C000, and the release only after the guest has taken the press.
@@ -103,7 +104,7 @@ test("the guest takes the DA drawer chord while Closed Apple is held", () => {
     pump(1)
     frames++
   }
-  console.log(`[DA] Escape consumed after ${frames} frames`)
+  // console.log(`[DA] Escape consumed after ${frames} frames`)
   expect(frames).toBeLessThan(600)
   // The Closed Apple bit (6) is still held while the Finder reads the Escape: that
   // coincidence is the chord, and it is what an un-driven $C025 could not make.
@@ -113,7 +114,7 @@ test("the guest takes the DA drawer chord while Closed Apple is held", () => {
   expect(iigsADB.peekModifiers() & MOD_CLOSED).toBe(0)
 })
 
-test("Open Apple + W reaches the Finder as a chord", () => {
+testWithFixtures(PO_PATH)("Open Apple + W reaches the Finder as a chord", () => {
   // The Finder on this desktop boot keeps the volume icons on an unframed
   // desktop, so there is no front window to close; the measurable proof is the
   // same as the Escape case above: the Finder consumes the $C000 strobe while
@@ -129,7 +130,7 @@ test("Open Apple + W reaches the Finder as a chord", () => {
     pump(1)
     frames++
   }
-  console.log(`[W] W consumed after ${frames} frames`)
+  // console.log(`[W] W consumed after ${frames} frames`)
   expect(frames).toBeLessThan(600)
   expect(iigsADB.peekModifiers() & MOD_OPEN).toBe(MOD_OPEN)
 

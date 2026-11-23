@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 // Reproduce the user-reported gameplay freeze on the first mouse click in
 // Tass Times in Tonetown (in-game, after walking the [More] intro pages to the
 // `Spot is here` room prompt). The pendulum tick keeps playing, so the sound
@@ -11,26 +12,12 @@ const { iigsEnsoniq } = require("./devices/iigs_ensoniq")
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
 import * as fs from "fs"
-import { jest, test, expect } from "@jest/globals"
+import { jest, expect } from "@jest/globals"
 
 const TASS_PATH = process.env.GS_TASS_PATH || "C:\\dev\\emu\\ap2\\Tass Times in Tonetown.2mg"
-const memory = require("./memory").memory as Uint8Array
 
-const screenText = () => {
-  const lines: string[] = []
-  for (let row = 0; row < 24; row++) {
-    let line = ""
-    const base = 0x400 + (row % 8) * 0x80 + Math.floor(row / 8) * 0x28
-    for (let col = 0; col < 40; col++) {
-      const ch = memory[base + col] & 0x7f
-      line += (ch >= 32 && ch < 127) ? String.fromCharCode(ch) : "."
-    }
-    if (line.replace(/\./g, "").trim().length > 0) lines.push(line.trimRight())
-  }
-  return lines.join(" | ")
-}
 
-  test("Tass freeze on first in-game mouse click", () => {
+  testWithFixtures(TASS_PATH)("Tass freeze on first in-game mouse click", () => {
   jest.useFakeTimers()
   setIsTesting()
   doSetMachineName("APPLE2GS")
@@ -74,15 +61,8 @@ const screenText = () => {
     sampling = true
     for (let f = 0; f < frames; f++) jest.advanceTimersByTime(17)
     sampling = false
-    const top = Array.from(hist.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5)
-    const memGet24 = (require("./memory").memGet24 as (a: number) => number)
-    const dump = top.map(([pc, n]) => {
-      const bank = (pc >>> 16) & 0xff, off = pc & 0xffff
-      const bytes = Array.from({ length: 8 }, (_, k) => memGet24(((bank << 16) | ((off + k) & 0xffff))).toString(16).padStart(2, "0"))
-      return `${bank.toString(16)}:${off.toString(16).padStart(4, "0").toUpperCase()} x${n} [${bytes.join(" ")}]`
-    })
-    console.log(`[${label}] topPCs: ${dump.join("  |  ")}`)
-    console.log(`[${label}] screen: ${screenText().slice(0, 220)}`)
+    // console.log(`[${label}] topPCs: ${dump.join("  |  ")}`)
+    // console.log(`[${label}] screen: ${screenText().slice(0, 220)}`)
     return hist
   }
 
@@ -113,16 +93,14 @@ const screenText = () => {
   // Baseline at the `:` prompt, then the click.
   run(200, "in-game-baseline")
   const memGet = (a: number) => (require("./memory").memGet24 as (x: number) => number)(a)
-  const holes = () => `holes X=$${memGet(0x047c).toString(16)}$${memGet(0x057c).toString(16)} ` +
-    `Y=$${memGet(0x04fc).toString(16)}$${memGet(0x057c >> 0).toString(16)}`
-  console.log(`[HOLES] baseline ${holes()}`)
+  // console.log(`[HOLES] baseline ${holes()}`)
   // Mirror the browser: continuous motion for ~1s (60 moves), then press/release.
   for (let i = 0; i < 60; i++) {
     MouseCardEvent({ x: 0.4 + (i % 10) * 0.02, y: 0.5 + (i % 5) * 0.01, buttons: -1 })
     for (let f = 0; f < 1; f++) jest.advanceTimersByTime(17)
   }
-  console.log(`[HOLES] after moves ${holes()}`)
-  console.log("[CLICK] press at 0.5,0.5")
+  // console.log(`[HOLES] after moves ${holes()}`)
+  // console.log("[CLICK] press at 0.5,0.5")
   MouseCardEvent({ x: 0.5, y: 0.5, buttons: 0x10 })
   for (let f = 0; f < 30; f++) jest.advanceTimersByTime(17)
   MouseCardEvent({ x: 0.5, y: 0.5, buttons: 0x00 })
@@ -135,7 +113,7 @@ const screenText = () => {
   // the frozen-range PCs never execute.
   const clickHist = run(300, "after-click")
   run(600, "after-click-idle")
-  console.log(`[HOLES] after click ${holes()}`)
+  // console.log(`[HOLES] after click ${holes()}`)
   let frozenHits = 0
   const frozenPcs: string[] = []
   for (const [pc, n] of clickHist.entries()) {
@@ -144,7 +122,7 @@ const screenText = () => {
       frozenPcs.push((pc & 0xffff).toString(16) + " x" + n)
     }
   }
-  console.log(`[FREEZE-RANGE] hits=${frozenHits} pcs=[${frozenPcs.slice(0, 12).join(",")}]`)
+  // console.log(`[FREEZE-RANGE] hits=${frozenHits} pcs=[${frozenPcs.slice(0, 12).join(",")}]`)
   // Before the video-counter read existed, one PC (the `LDA $C02E / CMP #$E8 /
   // BNE` spin) took ~1.6M of 300 frames' instructions: a hard freeze. Now the
   // wait runs ~17 exits/s as part of normal cursor-refresh work, so aptly no

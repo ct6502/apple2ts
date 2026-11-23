@@ -1,4 +1,5 @@
-﻿import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting } from "./motherboard"
+import { testWithFixtures } from "../test/fixture_test"
+import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting } from "./motherboard"
 import { memGet24 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { MouseCardEvent, resetMouse } from "./devices/mouse"
@@ -12,11 +13,11 @@ import * as fs from "fs"
 // establishes the tracking baseline and produces no motion, so a test that
 // moves the pointer once sees nothing — the baseline must always be set first.
 const FRAMES = Number(process.env.GSCURY_FRAMES || 4000)
-const PO_PATH = process.env.GSCURY_PO || "C:\\\\dev\\\\emu\\\\ap2\\\\GSOS601.po"
+const PO_PATH = process.env.GSCURY_PO || "C:\\dev\\emu\\ap2\\GSOS601.po"
 
 const ypos = () => memGet24(0x04fc) | (memGet24(0x05fc) << 8)
 
-test("GSOS601: the cursor Y follows the pointer in both directions", () => {
+testWithFixtures(PO_PATH)("GSOS601: the cursor Y follows the pointer in both directions", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -51,11 +52,11 @@ test("GSOS601: the cursor Y follows the pointer in both directions", () => {
       rows.push(`   pointer y=${String(ty).padStart(3)}  cursor Y=${String(hy).padStart(3)}` +
         `  offset=${String(hy - ty).padStart(5)}`)
     }
-    console.log("[CURY] cursor vs pointer Y:\\n" + rows.join("\\n"))
+    // console.log("[CURY] cursor vs pointer Y:\\n" + rows.join("\\n"))
 
     // Within the closed-loop deadband: cursor converges to within +/-1 count.
     const offsets = new Set(pairs.map((p) => p.hy - p.ty))
-    console.log("[CURY] offset set:", [...offsets])
+    // console.log("[CURY] offset set:", [...offsets])
     for (const o of offsets) expect(Math.abs(o)).toBeLessThanOrEqual(1)
     expect(offsets.size).toBeLessThanOrEqual(3)
 

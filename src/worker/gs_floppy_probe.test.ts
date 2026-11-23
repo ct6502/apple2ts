@@ -1,6 +1,5 @@
 import { doSetMachineName, doSetRunMode, resetCpuSpeedForTesting } from "./motherboard"
-import { memory, megaIIAux, getCurrentMachineName, iigsGetIwmDriveSelect, iigsGetIwmEnable35, iigsRegisters } from "./memory"
-import { SWITCHES } from "./softswitches"
+import { memory, megaIIAux } from "./memory"
 import { doSetEmuDriveNewData, getDriveDataByIndex, getDriveStateByIndex } from "./devices/drivestate"
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
@@ -44,18 +43,18 @@ test(`Apple IIgs slot 6 5.25" floppy IWM diagnostic: ${PO_PATH}`, () => {
 
     let shrNonZero = 0
     for (let i = 0x2000; i < 0xA000; i++) if (megaIIAux[i] !== 0) shrNonZero++
-    console.log(`machine=${getCurrentMachineName()} TEXT=${SWITCHES.TEXT.isSet} ` +
-      `HIRES=${SWITCHES.HIRES.isSet} 80COL=${SWITCHES.COLUMN80.isSet} ` +
-      `SHR non-zero=${shrNonZero}/32768`)
+    // console.log(`machine=${getCurrentMachineName()} TEXT=${SWITCHES.TEXT.isSet} ` +
+      // `HIRES=${SWITCHES.HIRES.isSet} 80COL=${SWITCHES.COLUMN80.isSet} ` +
+      // `SHR non-zero=${shrNonZero}/32768`)
 
     const ds = getDriveStateByIndex(2)
-    console.log(`IWM: enable35=${iigsGetIwmEnable35()} driveSel=${iigsGetIwmDriveSelect()} ` +
-      `C02D=${iigsRegisters[0x2D].toString(16)}`)
-    console.log(`drive2: file="${ds.filename}" motor=${ds.motorRunning} ` +
-      `qtrTrack=${ds.quarterTrack} maxQtr=${ds.maxQuarterTrack} ` +
-      `trackLoc=${ds.trackLocation} trackStart0=${ds.trackStart[0]} trackNbits0=${ds.trackNbits[0]}`)
+    // console.log(`IWM: enable35=${iigsGetIwmEnable35()} driveSel=${iigsGetIwmDriveSelect()} ` +
+      // `C02D=${iigsRegisters[0x2D].toString(16)}`)
+    // console.log(`drive2: file="${ds.filename}" motor=${ds.motorRunning} ` +
+      // `qtrTrack=${ds.quarterTrack} maxQtr=${ds.maxQuarterTrack} ` +
+      // `trackLoc=${ds.trackLocation} trackStart0=${ds.trackStart[0]} trackNbits0=${ds.trackNbits[0]}`)
     const ddata = getDriveDataByIndex(2)
-    console.log(`drive2 media length=${ddata.length} (WOZ track 0 starts at 1536)`)
+    // console.log(`drive2 media length=${ddata.length} (WOZ track 0 starts at 1536)`)
 
     const textLines: string[] = []
     for (let row = 0; row < 24; row++) {
@@ -69,7 +68,7 @@ test(`Apple IIgs slot 6 5.25" floppy IWM diagnostic: ${PO_PATH}`, () => {
       }
       if (line.trim().length > 0) textLines.push(line.replace(/\s+$/, ""))
     }
-    console.log("TEXT SCREEN:\n" + textLines.join("\n"))
+    // console.log("TEXT SCREEN:\n" + textLines.join("\n"))
 
     // What we can assert today: the ROM found the drive, enabled it and pulled
     // real bits through the IWM data register (a zero trackLocation would mean

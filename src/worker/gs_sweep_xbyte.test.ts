@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting, getCPU } from "./motherboard"
 import { memGet24, memSet24 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -29,7 +30,7 @@ const h2 = (v: number) => "$" + v.toString(16).toUpperCase().padStart(2, "0")
 
 const cur = () => memGet24(XLO) | (memGet24(XHI) << 8)
 
-test("GSOS601: sweep the X report byte and record the cursor words", () => {
+testWithFixtures(PO_PATH)("GSOS601: sweep the X report byte and record the cursor words", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -84,7 +85,7 @@ test("GSOS601: sweep the X report byte and record the cursor words", () => {
         "  delta=" + String(d > 32767 ? d - 65536 : d).padStart(5) +
         "  reads=" + reads)
     }
-    console.log("[SWEEP] X report byte -> cursor words (X=$047C/$057C, Y=$04FC/$05FC):\n" + rows.join("\n"))
+    // console.log("[SWEEP] X report byte -> cursor words (X=$047C/$057C, Y=$04FC/$05FC):\n" + rows.join("\n"))
 
     // Same sweep on the second report byte. The X sweep showed bit 6 always
     // sends the cursor to the screen maximum, which means negative X motion is
@@ -108,7 +109,7 @@ test("GSOS601: sweep the X report byte and record the cursor words", () => {
         "  Y=" + h2(memGet24(YLO)) + "/" + h2(memGet24(YHI)) +
         "  delta=" + String(d > 32767 ? d - 65536 : d).padStart(5))
     }
-    console.log("[SWEEP] Y report byte -> cursor words:\n" + yrows.join("\n"))
+    // console.log("[SWEEP] Y report byte -> cursor words:\n" + yrows.join("\n"))
 
     // Fingerprint: with bit 6 set the low byte of the cursor drops by 1 while
     // the high byte rises by 1, i.e. the 16-bit delta is rebuilt as +$0xx
@@ -140,7 +141,7 @@ test("GSOS601: sweep the X report byte and record the cursor words", () => {
     adb.reportInProgress = false
     for (let f = 0; f < 20; f++) jest.advanceTimersByTime(17)
     watch = false
-    console.log("[SWEEP] negative-path trace (stack bytes at the current S):\n" + notes.join("\n"))
+    // console.log("[SWEEP] negative-path trace (stack bytes at the current S):\n" + notes.join("\n"))
     expect(true).toBe(true)
   } finally {
     doSetRunMode(RUN_MODE.PAUSED, false)

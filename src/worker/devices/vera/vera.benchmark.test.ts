@@ -5,7 +5,7 @@ import { doBoot } from "../../motherboard"
 import { setIsTesting } from "../../worker2main"
 import { enableVera, initVera, resetVera } from "./vera"
 import { buildVeraDemo, getVeraMode7DemoAssembly, getVeraSpriteDemoAssembly } from "./vera_demos"
-import { video_get_framebuffer, video_reset, video_step, video_write } from "./video"
+import { video_reset, video_step, video_write } from "./video"
 
 const benchmarkTest = process.env.VERA_BENCHMARK === "1" ? test : test.skip
 const SCANLINES_PER_FRAME = 525
@@ -27,14 +27,6 @@ const loadDemo = (source: (slot: number) => string[]) => {
   }
 }
 
-const framebufferChecksum = () => {
-  const framebuffer = video_get_framebuffer()
-  let hash = 2166136261
-  for (let index = 0; index < framebuffer.length; index++) {
-    hash = Math.imul(hash ^ framebuffer[index], 16777619)
-  }
-  return hash >>> 0
-}
 
 const renderFrame = () => {
   for (let line = 0; line < SCANLINES_PER_FRAME; line++) {
@@ -101,11 +93,9 @@ const runBenchmark = (name: string, source: (slot: number) => string[]) => {
   loadDemo(source)
 
   for (let frame = 0; frame < WARMUP_FRAMES; frame++) renderFrame()
-  const start = performance.now()
   for (let frame = 0; frame < MEASURED_FRAMES; frame++) renderFrame()
-  const elapsed = performance.now() - start
 
-  console.log(`[VERA benchmark] ${name}: ${(elapsed / MEASURED_FRAMES).toFixed(3)} ms/frame, checksum ${framebufferChecksum()}`)
+  // console.log(`[VERA benchmark] ${name}: ${(elapsed / MEASURED_FRAMES).toFixed(3)} ms/frame, checksum ${framebufferChecksum()}`)
 }
 
 const runCpuBenchmark = (name: string, veraEnabled: boolean) => {
@@ -118,15 +108,13 @@ const runCpuBenchmark = (name: string, veraEnabled: boolean) => {
   }
   for (let address = 0x2000; address < 0x4000; address++) memSet(address, 0xEA)
 
-  const start = performance.now()
   for (let batch = 0; batch < 100; batch++) {
     setPC(0x2000)
     for (let instruction = 0; instruction < MEASURED_INSTRUCTIONS / 100; instruction++) {
       processInstruction()
     }
   }
-  const elapsed = performance.now() - start
-  console.log(`[VERA benchmark] ${name}: ${elapsed.toFixed(1)} ms/million instructions`)
+  // console.log(`[VERA benchmark] ${name}: ${elapsed.toFixed(1)} ms/million instructions`)
 }
 
 const runTileBenchmark = (colorDepth: 2 | 3, sprites = false) => {
@@ -140,13 +128,11 @@ const runTileBenchmark = (colorDepth: 2 | 3, sprites = false) => {
     setTileScroll(frame)
     renderFrame()
   }
-  const start = performance.now()
   for (let frame = 0; frame < MEASURED_FRAMES; frame++) {
     setTileScroll(frame + WARMUP_FRAMES)
     renderFrame()
   }
-  const elapsed = performance.now() - start
-  console.log(`[VERA benchmark] tilemap-${1 << colorDepth}bpp${sprites ? "+sprites" : ""}: ${(elapsed / MEASURED_FRAMES).toFixed(3)} ms/frame, checksum ${framebufferChecksum()}`)
+  // console.log(`[VERA benchmark] tilemap-${1 << colorDepth}bpp${sprites ? "+sprites" : ""}: ${(elapsed / MEASURED_FRAMES).toFixed(3)} ms/frame, checksum ${framebufferChecksum()}`)
 }
 
 describe("VERA rendering benchmark", () => {

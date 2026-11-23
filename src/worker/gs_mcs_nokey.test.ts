@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, resetCpuSpeedForTesting, getCPU } from "./motherboard"
 import { memGet24, getShr } from "./memory"
 import { RUN_MODE, RamWorksMemoryStart } from "../common/utility"
@@ -17,7 +18,7 @@ import * as fs from "fs"
 const MCS_PATH = process.env.GS_MCS_PATH || "C:\\dev\\emu\\ap2\\mcs.2mg"
 const auxRam = require("./memory").memory as Uint8Array
 
-test("MCS: with no keypress the splash timeout loads the demo and reaches the editor", () => {
+testWithFixtures(MCS_PATH)("MCS: with no keypress the splash timeout loads the demo and reaches the editor", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {

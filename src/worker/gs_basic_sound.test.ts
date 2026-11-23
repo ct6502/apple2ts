@@ -2,7 +2,7 @@ import {
   doSetMachineName, doSetRunMode, doBoot, doReset, resetCpuSpeedForTesting,
 } from "./motherboard"
 import { getTextPageAsString } from "./memory"
-import { ensoniqDocRam, iigsEnsoniq } from "./devices/iigs_ensoniq"
+import { iigsEnsoniq } from "./devices/iigs_ensoniq"
 import { isKeyboardInputBusy, sendKeySequence } from "./devices/keyboard"
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
@@ -81,14 +81,13 @@ test("Applesoft POKE programs the DOC and it produces a non-silent block", async
     doReset()
     pump(500)
     const prompt = getTextPageAsString()
-    console.log("[BASIC] prompt:\n" + prompt.slice(-200))
+    // console.log("[BASIC] prompt:\n" + prompt.slice(-200))
     expect(prompt).toContain("]")
 
     await typeText(PROGRAM)
     pump(1500)
 
-    const screen = getTextPageAsString()
-    console.log("[BASIC] screen after RUN:\n" + screen.slice(-260))
+    // console.log("[BASIC] screen after RUN:\n" + screen.slice(-260))
 
     const chip = iigsEnsoniq as unknown as {
       osce: number
@@ -100,12 +99,12 @@ test("Applesoft POKE programs the DOC and it produces a non-silent block", async
       if (!(o.control & 1) && o.vol > 0 && o.freq > 0) started++
     }
     const o0 = chip.oscillators[0]
-    console.log(`[BASIC] osce=${chip.osce} systemVolume=${chip.systemVolume.toFixed(3)} startedOscillators=${started}`)
-    console.log(`[BASIC] osc0 ctrl=$${o0.control.toString(16)} vol=$${o0.vol.toString(16)} ` +
-      `freq=$${o0.freq.toString(16)} wtptr=$${o0.wavetblpointer.toString(16)} ` +
-      `size=$${o0.wavetblsize.toString(16)}`)
-    console.log("[BASIC] DOC RAM $0000: " +
-      Array.from(ensoniqDocRam.subarray(0, 8)).map((b) => "$" + b.toString(16)).join(" "))
+    // console.log(`[BASIC] osce=${chip.osce} systemVolume=${chip.systemVolume.toFixed(3)} startedOscillators=${started}`)
+    // console.log(`[BASIC] osc0 ctrl=$${o0.control.toString(16)} vol=$${o0.vol.toString(16)} ` +
+      // `freq=$${o0.freq.toString(16)} wtptr=$${o0.wavetblpointer.toString(16)} ` +
+      // `size=$${o0.wavetblsize.toString(16)}`)
+    // console.log("[BASIC] DOC RAM $0000: " +
+      // Array.from(ensoniqDocRam.subarray(0, 8)).map((b) => "$" + b.toString(16)).join(" "))
 
     // Render a block and check it is not silence. This is exactly what the worker
     // posts to the UI, so a non-silent block means the whole chain works.
@@ -116,7 +115,7 @@ test("Applesoft POKE programs the DOC and it produces a non-silent block", async
     const block = iigsEnsoniq.generateSamples(1024)
     let peak = 0
     for (const s of block) peak = Math.max(peak, Math.abs(s))
-    console.log(`[BASIC] generated ${block.length} samples (${block.length / 2} stereo frames), peak ${peak}`)
+    // console.log(`[BASIC] generated ${block.length} samples (${block.length / 2} stereo frames), peak ${peak}`)
 
     expect(started).toBeGreaterThan(0)
     expect(peak).toBeGreaterThan(0)

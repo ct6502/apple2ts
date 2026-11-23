@@ -4,6 +4,7 @@ import { iwmReset525PendingWrites } from "./devices/diskdata"
 import { memGet, memSet } from "./memory"
 import { s6502 } from "./instructions"
 import * as fs from "fs"
+import { setIsTesting } from "./worker2main"
 
 const DISK_PATH = process.env.GS_IWM_525_WRITE_DISK || "public/disks/A2DeskTop-VERA.po"
 
@@ -34,6 +35,7 @@ const selectDrive = () => {
 
 describe("Apple IIgs IWM 5.25 synchronous write", () => {
   beforeEach(() => {
+    setIsTesting()
     doSetMachineName("APPLE2GS")
     doReset()
     resetCpuSpeedForTesting()

@@ -1,5 +1,65 @@
 # Changelog
 
+## [v3.8.0](https://github.com/ct6502/apple2ts/tree/v3.8.0) (2026-11-22)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.7.0...v3.8.0)
+
+**Implemented enhancements:**
+
+- Load from Internet Archive choose which disk image [\#422](https://github.com/ct6502/apple2ts/issues/422)
+- VERA: Add help text or getting started text to the blank VERA tab screen [\#274](https://github.com/ct6502/apple2ts/issues/274)
+- VERA: Add I18N for strings [\#273](https://github.com/ct6502/apple2ts/issues/273)
+
+**Fixed bugs:**
+
+- Browser saved state incompatible between emulator revisions [\#509](https://github.com/ct6502/apple2ts/issues/509)
+- ProDOS 2.4.3 "CAT.DOCTOR" program doesn't work in Apple2TS [\#508](https://github.com/ct6502/apple2ts/issues/508)
+- Bug ROM:E10 Error booting unenhanced IIe with Sirius Joyport [\#506](https://github.com/ct6502/apple2ts/issues/506)
+- Bug - WOZ disk images with type FLUX don't boot or give error [\#495](https://github.com/ct6502/apple2ts/issues/495)
+- Scan line accurate screen soft switching not working [\#328](https://github.com/ct6502/apple2ts/issues/328)
+- Apple2TS gameplay freezes randomly [\#205](https://github.com/ct6502/apple2ts/issues/205)
+
+**Closed issues:**
+
+- Add a setting to turn off the game patches [\#514](https://github.com/ct6502/apple2ts/issues/514)
+- Save states leave out the Disk II controller and the paddle timers [\#513](https://github.com/ct6502/apple2ts/issues/513)
+- Paused Disassembly scrolling jumps/snaps in both directions [\#280](https://github.com/ct6502/apple2ts/issues/280)
+
+**Merged pull requests:**
+
+- fix\(disk\): hot reload a picked file only when its timestamp changes [\#547](https://github.com/ct6502/apple2ts/pull/547) ([tgiacchi](https://github.com/tgiacchi))
+- feat: Apple IIgs support with layered classic/GS machine profiles [\#545](https://github.com/ct6502/apple2ts/pull/545) ([anomixer](https://github.com/anomixer))
+- Play WOZ 2.1 FLUX tracks and A2R3 flux captures \(read only\) [\#544](https://github.com/ct6502/apple2ts/pull/544) ([tgiacchi](https://github.com/tgiacchi))
+- chore\(l10n\): update translations [\#543](https://github.com/ct6502/apple2ts/pull/543) ([hosted-weblate[bot]](https://github.com/apps/hosted-weblate))
+- chore\(l10n\): update translations [\#542](https://github.com/ct6502/apple2ts/pull/542) ([hosted-weblate[bot]](https://github.com/apps/hosted-weblate))
+- Revert "Merge staging: sync upstream/main and staged IIgs fixes" [\#540](https://github.com/ct6502/apple2ts/pull/540) ([anomixer](https://github.com/anomixer))
+- Merge staging: sync upstream/main and staged IIgs fixes [\#538](https://github.com/ct6502/apple2ts/pull/538) ([anomixer](https://github.com/anomixer))
+- feat\(disks\): add Freegemas and Alter Ego VERA games to New Releases [\#537](https://github.com/ct6502/apple2ts/pull/537) ([anomixer](https://github.com/anomixer))
+- Vera performance improvements [\#535](https://github.com/ct6502/apple2ts/pull/535) ([code-bythepound](https://github.com/code-bythepound))
+- feat: Move Passport MIDI and VERA audio settings beside their expansion slots [\#534](https://github.com/ct6502/apple2ts/pull/534) ([anomixer](https://github.com/anomixer))
+- fix: Restore VERA video output after worker message ID collision \(URGENT!\) [\#533](https://github.com/ct6502/apple2ts/pull/533) ([anomixer](https://github.com/anomixer))
+- chore\(l10n\): update translations [\#532](https://github.com/ct6502/apple2ts/pull/532) ([hosted-weblate[bot]](https://github.com/apps/hosted-weblate))
+- New Settings Dialog which replaces a bunch of individual dropdown setting menus [\#531](https://github.com/ct6502/apple2ts/pull/531) ([ct6502](https://github.com/ct6502))
+- feat/3-audio-clock: Improve background audio scheduling [\#530](https://github.com/ct6502/apple2ts/pull/530) ([anomixer](https://github.com/anomixer))
+- perf/2-vera-rendering: Optimize VERA rendering [\#529](https://github.com/ct6502/apple2ts/pull/529) ([anomixer](https://github.com/anomixer))
+- feat/1-verafm: Add YM2151 FM audio support to VERA [\#528](https://github.com/ct6502/apple2ts/pull/528) ([anomixer](https://github.com/anomixer))
+- Fix\(npm-audit\) Fix npm dependency advisories and enforce patched Node.js versions [\#526](https://github.com/ct6502/apple2ts/pull/526) ([anomixer](https://github.com/anomixer))
+- fix\(time-travel\): restore snapshots in the version 2 memory layout [\#524](https://github.com/ct6502/apple2ts/pull/524) ([air](https://github.com/air))
+- chore\(l10n\): update translations [\#523](https://github.com/ct6502/apple2ts/pull/523) ([hosted-weblate[bot]](https://github.com/apps/hosted-weblate))
+- feat\(cloud\): multi-disk archives, format-safe writeback, and UI sync protections [\#522](https://github.com/ct6502/apple2ts/pull/522) ([anomixer](https://github.com/anomixer))
+- feat\(demozoo\): smart multi-disk mounting with swapper and DemoZoo API key authentication [\#521](https://github.com/ct6502/apple2ts/pull/521) ([anomixer](https://github.com/anomixer))
+- feat\(ia\): smart multi-disk mounting and swapper support for Internet Archive [\#520](https://github.com/ct6502/apple2ts/pull/520) ([anomixer](https://github.com/anomixer))
+- chore\(i18n\): clarify multi-disk swapping opens quick-swap menu in help text [\#519](https://github.com/ct6502/apple2ts/pull/519) ([anomixer](https://github.com/anomixer))
+- RamWorks: latch out-of-range bank numbers instead of ignoring them [\#518](https://github.com/ct6502/apple2ts/pull/518) ([emdeejay](https://github.com/emdeejay))
+- feat\(disks\): Multi-disk swapper, archive containers \(.zip/.7z/.gz\), WOZ CRC writeback, and Link Builder controls [\#517](https://github.com/ct6502/apple2ts/pull/517) ([anomixer](https://github.com/anomixer))
+- chore\(l10n\): update translations [\#516](https://github.com/ct6502/apple2ts/pull/516) ([hosted-weblate[bot]](https://github.com/apps/hosted-weblate))
+- fix\(save-state\): save the Disk II controller and the paddle timers [\#515](https://github.com/ct6502/apple2ts/pull/515) ([air](https://github.com/air))
+- chore\(l10n\): update translations [\#512](https://github.com/ct6502/apple2ts/pull/512) ([hosted-weblate[bot]](https://github.com/apps/hosted-weblate))
+- feat: support multi-disk / multi-media configuration in Link Builder and Disk Collections \(support .7z, .gz, .zip disk images\) [\#511](https://github.com/ct6502/apple2ts/pull/511) ([anomixer](https://github.com/anomixer))
+- feat: update A2DeskTop collection preset to color=color and rename to Expansion Slots [\#510](https://github.com/ct6502/apple2ts/pull/510) ([anomixer](https://github.com/anomixer))
+- fix: gate Video-7 and Double Hi-Res on DHIRES and allow clocking without STORE80 [\#507](https://github.com/ct6502/apple2ts/pull/507) ([anomixer](https://github.com/anomixer))
+- chore\(l10n\): update translations [\#505](https://github.com/ct6502/apple2ts/pull/505) ([hosted-weblate[bot]](https://github.com/apps/hosted-weblate))
+
 ## [v3.7.0](https://github.com/ct6502/apple2ts/tree/v3.7.0) (2026-10-07)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.6.0...v3.7.0)

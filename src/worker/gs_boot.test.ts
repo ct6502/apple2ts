@@ -1,5 +1,6 @@
 import { doSetRom, memGet24, memSet24, iigsSignalVbl, iigsRegisters, iigsInitInterrupts } from "./memory"
 import { CPU65816 } from "./cpu65816"
+import { setIsTesting } from "./worker2main"
 import * as fs from "fs"
 import * as path from "path"
 
@@ -10,6 +11,7 @@ import * as path from "path"
 const OUT = path.join(__dirname, "..", "..", "gs_boot_out.txt")
 
 test("IIgs boot runs long without crashing", () => {
+  setIsTesting()
   doSetRom("APPLE2GS")
   const e1WritesAll: string[] = []
   const intWrites: string[] = []   // $C041 / $C047 INTEN writes (any bank)

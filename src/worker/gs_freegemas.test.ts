@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doSetSpeedMode, getCPU } from "./motherboard"
 import { getShr, memGet24, iigsEventManagerActive } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -38,7 +39,7 @@ const diffCount = (a: Uint8Array, b: Uint8Array) => {
   return n
 }
 
-test("freegemas: pointer moves with the host and a click starts the game", () => {
+testWithFixtures(FREEGEMAS)("freegemas: pointer moves with the host and a click starts the game", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {

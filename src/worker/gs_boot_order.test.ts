@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doSetSlotConfig, resetCpuSpeedForTesting } from "./motherboard"
 import { getShr } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -21,7 +22,7 @@ const DISK_PATH = process.env.GS_BOOT_ORDER_PATH || "C:\\dev\\emu\\ap2\\SystemDi
 const FRAMES = Number(process.env.GS_BOOT_ORDER_FRAMES || 4200)
 const SHR_SCB_OFFSET = 0x7D00
 
-test(`slot config for another machine cannot poison the IIgs boot (${DISK_PATH})`, () => {
+testWithFixtures(DISK_PATH)(`slot config for another machine cannot poison the IIgs boot (${DISK_PATH})`, () => {
   jest.useFakeTimers()
   setIsTesting()
   try {

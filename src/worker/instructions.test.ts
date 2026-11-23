@@ -78,7 +78,7 @@ export const runAssemblyTest = (instr: string[], accumExpect: number, pstat: num
   memory[irqClear] = 0x00  
   setPC(start)
   while (s6502.PC < start + pcode.length) {
-    if (debug) console.log(s6502.PC.toString(16))
+    // if (debug) console.log(s6502.PC.toString(16))
     processInstruction()
     // check flag for interrupt tests, to make sure we don't go into infinite loop
     if (memory[irqClear]) {

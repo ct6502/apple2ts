@@ -57,10 +57,6 @@ msgctxt "controls.debugPanel"
 msgid "Debug Panel"
 msgstr "Felsökningspanel"
 
-msgctxt "controls.infoPanel"
-msgid "Info Panel"
-msgstr "Informationspanel"
-
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "Rapportera ett problem"
@@ -72,10 +68,6 @@ msgstr "Integritetspolicy"
 msgctxt "config.speed"
 msgid "Emulator Speed"
 msgstr "Emulatorhastighet"
-
-msgctxt "config.display"
-msgid "Display Settings"
-msgstr "Skärminställningar"
 
 msgctxt "config.theme"
 msgid "Theme"
@@ -149,14 +141,6 @@ msgctxt "machine.configuration"
 msgid "Machine"
 msgstr "Maskin"
 
-msgctxt "machine.slotConfigurator"
-msgid "Expansion Slots"
-msgstr "Expansionskortplatser"
-
-msgctxt "machine.iigsDeskPanel"
-msgid "Desk Accessories (Ctrl + Open Apple + Esc)"
-msgstr "Skrivbordstillbehör (Ctrl + Open Apple + Esc)"
-
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
 msgstr "Apple II+"
@@ -169,33 +153,9 @@ msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
 msgstr "Apple IIe (utökad)"
 
-msgctxt "machine.ram.64kb_aux"
-msgid "64 KB (AUX)"
-msgstr "64 KB (AUX)"
-
-msgctxt "machine.ram.512kb"
-msgid "512 KB"
-msgstr "512 KB"
-
-msgctxt "machine.ram.1024kb"
-msgid "1024 KB"
-msgstr "1 024 KB"
-
-msgctxt "machine.ram.4mb"
-msgid "4 MB"
-msgstr "4 MB"
-
-msgctxt "machine.ram.8mb"
-msgid "8 MB"
-msgstr "8 MB"
-
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
 msgstr "Snigelhastighet (0,1 MHz)"
-
-msgctxt "speed.slow"
-msgid "Slow Speed (0.5 MHz)"
-msgstr "Långsam hastighet (0,5 MHz)"
 
 msgctxt "speed.normal"
 msgid "Normal Speed (1 MHz)"
@@ -216,34 +176,6 @@ msgstr "Snabb hastighet (4 MHz)"
 msgctxt "speed.warp"
 msgid "Ludicrous Speed"
 msgstr "Löjlig hastighet"
-
-msgctxt "colors.color"
-msgid "Color"
-msgstr "Färg"
-
-msgctxt "colors.nofringe"
-msgid "Color (no fringe)"
-msgstr "Färg (utan fransar)"
-
-msgctxt "colors.green"
-msgid "Green"
-msgstr "Grön"
-
-msgctxt "colors.amber"
-msgid "Amber"
-msgstr "Bärnsten"
-
-msgctxt "colors.white"
-msgid "Black and White"
-msgstr "Svartvitt"
-
-msgctxt "colors.inverse"
-msgid "Black and White (inverse)"
-msgstr "Svartvitt (inverterat)"
-
-msgctxt "timetravel.configuration"
-msgid "Time Travel Configuration"
-msgstr "Tidsresor konfiguration"
 
 msgctxt "timetravel.snapshotOnKeyPress"
 msgid "Take Snapshot On Keypress"
@@ -277,18 +209,6 @@ msgctxt "themes.minimal"
 msgid "Minimal"
 msgstr "Minimal"
 
-msgctxt "debug.helpPanel"
-msgid "Show help panel"
-msgstr "Visa hjälppanel"
-
-msgctxt "debug.debugPanel"
-msgid "Show debugging panel"
-msgstr "Visa felsökningspanel"
-
-msgctxt "debug.expectinPanel"
-msgid "Show Apple exPectin panel"
-msgstr "Visa panelen Apple exPectin"
-
 msgctxt "debug.helpTab"
 msgid "Help"
 msgstr "Hjälp"
@@ -316,18 +236,6 @@ msgstr "Minne"
 msgctxt "debug.stack"
 msgid "Stack"
 msgstr "Stack"
-
-msgctxt "debug.state"
-msgid "CPU State"
-msgstr "CPU-tillstånd"
-
-msgctxt "debug.registers"
-msgid "Registers"
-msgstr "Register"
-
-msgctxt "debug.flags"
-msgid "Flags"
-msgstr "Flaggor"
 
 msgctxt "debug.step"
 msgid "Step"
@@ -790,22 +698,11 @@ msgctxt "tour.bootButton"
 msgid "Click here to start the emulator."
 msgstr "Klicka här för att starta emulatorn."
 
-msgctxt "tour.retroBootButton"
-msgid "Select this option to start the emulator."
-msgstr "Välj det här alternativet för att starta emulatorn."
-
 msgctxt "tour.resetButton"
 msgid "Click here to Reset the Apple II and either reboot or enter BASIC."
 msgstr ""
 "Klicka här för att återställa Apple II och antingen starta om eller gå in i "
 "BASIC."
-
-msgctxt "tour.retroResetButton"
-msgid ""
-"Select this option to reset the Apple II and either reboot or enter BASIC."
-msgstr ""
-"Välj det här alternativet för att återställa Apple II och antingen starta om "
-"eller gå in i BASIC."
 
 msgctxt "tour.diskImages"
 msgid "Choose one of the installed disk images."
@@ -817,32 +714,12 @@ msgstr ""
 "Du kan också klicka på någon av diskettikonerna för att läsa in en "
 "diskavbildning."
 
-msgctxt "tour.retroFloppyDisks"
-msgid "Or select a disk drive to load a disk image."
-msgstr "Eller välj en diskenhet för att läsa in en diskavbildning."
-
 msgctxt "tour.saveRestore"
 msgid ""
 "You can save and restore the complete state of the emulator using these "
 "buttons."
 msgstr ""
 "Du kan spara och återställa emulatorns hela tillstånd med de här knapparna."
-
-msgctxt "tour.retroSaveRestore"
-msgid ""
-"You can save and restore the complete state of the emulator using these "
-"options."
-msgstr ""
-"Du kan spara och återställa emulatorns hela tillstånd med de här "
-"alternativen."
-
-msgctxt "tour.themeButton"
-msgid "Click here to change the emulator UI theme."
-msgstr "Klicka här för att ändra emulatorns gränssnittstema."
-
-msgctxt "tour.retroThemeButton"
-msgid "Use the arrow keys to change the emulator UI theme."
-msgstr "Använd piltangenterna för att ändra emulatorns gränssnittstema."
 
 msgctxt "tour.endTour"
 msgid "You have reached the end of the tour."
@@ -855,14 +732,6 @@ msgid ""
 msgstr ""
 "Klicka på jordglobsknappen för att prova någon av de andra genomgångarna, "
 "eller tryck på Slutför för att börja använda emulatorn."
-
-msgctxt "tour.retroTourSelectorHint"
-msgid ""
-"Select a menu item to try one of the other tours, or press Finish to start "
-"using the emulator."
-msgstr ""
-"Välj ett menyalternativ för att prova någon av de andra genomgångarna, eller "
-"tryck på Slutför för att börja använda emulatorn."
 
 msgctxt "tour.settingsWelcome"
 msgid ""
@@ -912,14 +781,6 @@ msgstr ""
 "Den nedersta raden med knappar styr Apple II:s tillstånd: emulatorhastighet, "
 "skärmfärg och ljudavstängning."
 
-msgctxt "tour.retroConfigButtons"
-msgid ""
-"The Options menu controls the state of the Apple II, starting with the "
-"emulator speed, the screen color, and muting the sound."
-msgstr ""
-"Alternativmenyn styr Apple II:s tillstånd: emulatorhastighet, skärmfärg och "
-"ljudavstängning."
-
 msgctxt "tour.keyboardButtons"
 msgid ""
 "If the caps lock key is turned on, then all typed characters are UPPERCASE."
@@ -942,15 +803,6 @@ msgid ""
 msgstr ""
 "Apple2TS sparar automatiskt de aktuella emulatorinställningarna som "
 "webbläsarkakor. Tryck på den här knappen för att återställa inställningarna "
-"och ta bort kakorna."
-
-msgctxt "tour.retroClearCookies"
-msgid ""
-"Apple2TS automatically saves the current emulator settings as browser "
-"cookies. Select this option to reset these settings and delete the cookies."
-msgstr ""
-"Apple2TS sparar automatiskt de aktuella emulatorinställningarna som "
-"webbläsarkakor. Välj det här alternativet för att återställa inställningarna "
 "och ta bort kakorna."
 
 msgctxt "tour.debugWelcome"
@@ -1047,18 +899,6 @@ msgctxt "tour.debugLabel"
 msgid "Guided Tours: Debug"
 msgstr "Guidad genomgång: felsökning"
 
-msgctxt "disk.drive1"
-msgid "Drive 1"
-msgstr "Enhet 1"
-
-msgctxt "disk.drive2"
-msgid "Drive 2"
-msgstr "Enhet 2"
-
-msgctxt "disk.hardDisk"
-msgid "Hard Disk"
-msgstr "Hårddisk"
-
 msgctxt "disk.eject"
 msgid "Eject Disk"
 msgstr "Mata ut disk"
@@ -1066,42 +906,6 @@ msgstr "Mata ut disk"
 msgctxt "disk.insert"
 msgid "Insert Disk"
 msgstr "Sätt in disk"
-
-msgctxt "disk.writeProtected"
-msgid "Write Protected"
-msgstr "Skrivskyddad"
-
-msgctxt "disk.readWrite"
-msgid "Read/Write"
-msgstr "Läs/skriv"
-
-msgctxt "disk.empty"
-msgid "Empty"
-msgstr "Tom"
-
-msgctxt "disk.loading"
-msgid "Loading..."
-msgstr "Läser in…"
-
-msgctxt "disk.selectDisk"
-msgid "Select Disk Image"
-msgstr "Välj diskavbildning"
-
-msgctxt "disk.browse"
-msgid "Browse"
-msgstr "Bläddra"
-
-msgctxt "disk.internetArchive"
-msgid "Internet Archive"
-msgstr "Internet Archive"
-
-msgctxt "disk.totalReplay"
-msgid "Total Replay"
-msgstr "Total Replay"
-
-msgctxt "disk.newReleases"
-msgid "New Releases"
-msgstr "Nya utgåvor"
 
 msgctxt "disk.writeProtectDisk"
 msgid "Write Protect Disk"
@@ -1143,14 +947,6 @@ msgctxt "disk.ejectAllDisks"
 msgid "Eject All Disks"
 msgstr "Mata ut alla diskar"
 
-msgctxt "disk.saveDiskToOneDrive"
-msgid "Save Disk to OneDrive"
-msgstr "Spara disk på OneDrive"
-
-msgctxt "disk.saveDiskToGoogleDrive"
-msgid "Save Disk to Google Drive"
-msgstr "Spara disk på Google Drive"
-
 msgctxt "disk.loadDisk"
 msgid "Load Disk..."
 msgstr "Läs in disk…"
@@ -1166,18 +962,6 @@ msgstr "Ladda Disk från"
 msgctxt "disk.loadDiskFromMenu"
 msgid "Load Disk from >"
 msgstr "Ladda Disk från >"
-
-msgctxt "disk.loadDiskFromDevice"
-msgid "Load Disk"
-msgstr "Läs in disk"
-
-msgctxt "disk.loadDiskFromDeviceReadOnly"
-msgid "Load Disk from Device (Read-Only)"
-msgstr "Läs in disk från enhet (skrivskyddat)"
-
-msgctxt "disk.loadDiskFromDeviceReadWrite"
-msgid "Load Disk from Device (Read/Write)"
-msgstr "Läs in disk från enhet (läs/skriv)"
 
 msgctxt "disk.InternetArchive"
 msgid "Internet Archive"
@@ -1456,14 +1240,6 @@ msgctxt "messages.fetchingCloudData"
 msgid "Fetching cloud data"
 msgstr "Hämtar molndata"
 
-msgctxt "messages.error"
-msgid "Error"
-msgstr "Fel"
-
-msgctxt "messages.success"
-msgid "Success"
-msgstr "Lyckades"
-
 msgctxt "messages.confirm"
 msgid "Confirm"
 msgstr "Bekräfta"
@@ -1484,89 +1260,17 @@ msgctxt "messages.off"
 msgid "off"
 msgstr "av"
 
-msgctxt "messages.confirmTheme"
-msgid "Reload the emulator and apply this theme now?"
-msgstr "Läs in emulatorn på nytt och tillämpa det här temat nu?"
-
-msgctxt "messages.confirmReset"
-msgid "Reset all settings to default values?"
-msgstr "Återställa alla inställningar till standardvärden?"
-
-msgctxt "messages.fileNotFound"
-msgid "File not found"
-msgstr "Filen hittades inte"
-
-msgctxt "messages.invalidFile"
-msgid "Invalid file format"
-msgstr "Ogiltigt filformat"
-
-msgctxt "messages.diskInserted"
-msgid "Disk inserted"
-msgstr "Disk har satts in"
-
-msgctxt "messages.diskEjected"
-msgid "Disk ejected"
-msgstr "Disk har matats ut"
-
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
 msgstr "Caps Lock"
-
-msgctxt "keyboard.shift"
-msgid "Shift"
-msgstr "Skift"
-
-msgctxt "keyboard.ctrl"
-msgid "Ctrl"
-msgstr "Ctrl"
-
-msgctxt "keyboard.alt"
-msgid "Alt"
-msgstr "Alt"
 
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
 msgstr "Open Apple"
 
-msgctxt "keyboard.closedApple"
-msgid "Closed Apple"
-msgstr "Closed Apple"
-
-msgctxt "keyboard.escape"
-msgid "Escape"
-msgstr "Esc"
-
-msgctxt "keyboard.tab"
-msgid "Tab"
-msgstr "Tabb"
-
-msgctxt "keyboard.enter"
-msgid "Enter"
-msgstr "Retur"
-
-msgctxt "keyboard.space"
-msgid "Space"
-msgstr "Mellanslag"
-
-msgctxt "keyboard.backspace"
-msgid "Backspace"
-msgstr "Backsteg"
-
-msgctxt "keyboard.delete"
-msgid "Delete"
-msgstr "Ta bort"
-
-msgctxt "keyboard.return"
-msgid "Return"
-msgstr "Retur"
-
 msgctxt "keyboard.enableGamePatches"
 msgid "Enable Game Patches"
 msgstr "Aktivera spelpatchar"
-
-msgctxt "audio.speaker"
-msgid "Speaker"
-msgstr "Högtalare"
 
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
@@ -1579,18 +1283,6 @@ msgstr "MIDI"
 msgctxt "audio.configuration"
 msgid "Audio Configuration"
 msgstr "Ljudkonfiguration"
-
-msgctxt "audio.volume"
-msgid "Volume"
-msgstr "Volym"
-
-msgctxt "audio.mute"
-msgid "Mute"
-msgstr "Tysta"
-
-msgctxt "audio.waveform"
-msgid "Waveform"
-msgstr "Vågform"
 
 msgctxt "print.printer"
 msgid "Printer"
@@ -1607,14 +1299,6 @@ msgstr "ImageWriter II (kortplats 1)"
 msgctxt "print.print"
 msgid "Print"
 msgstr "Skriv ut"
-
-msgctxt "print.clear"
-msgid "Clear"
-msgstr "Rensa"
-
-msgctxt "print.save"
-msgid "Save Output"
-msgstr "Spara utdata"
 
 msgctxt "print.dumpScreen"
 msgid "Dump Current Screen to Printer"
@@ -1655,22 +1339,6 @@ msgstr "11,7 tum (A4)"
 msgctxt "print.pageLengthTwelve"
 msgid "12 inch"
 msgstr "12 tum"
-
-msgctxt "device.machineConfiguration"
-msgid "Machine Configuration"
-msgstr "Maskinkonfiguration"
-
-msgctxt "device.midiDeviceSelect"
-msgid "MIDI Device Select"
-msgstr "Välj MIDI-enhet"
-
-msgctxt "device.serialPortSelect"
-msgid "Serial Port Select"
-msgstr "Välj serieport"
-
-msgctxt "device.mockingboardWaveform"
-msgid "Mockingboard wave form"
-msgstr "Mockingboard-vågform"
 
 msgctxt "collection.showApple2TSCollection"
 msgid "Show Apple2TS Collection"
@@ -1723,10 +1391,6 @@ msgstr "Klicka för att ta bort från disksamlingen"
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
 msgstr "Klicka för att behålla i disksamlingen"
-
-msgctxt "collection.clickToAddToCollection"
-msgid "Click to add to disk collection"
-msgstr "Klicka för att lägga till i disksamlingen"
 
 msgctxt "collection.diskIsSyncedVia"
 msgid "Disk is synced via"
@@ -1862,10 +1526,6 @@ msgctxt "debugControls.trace"
 msgid "Trace"
 msgstr "Spårning"
 
-msgctxt "debugControls.tracing"
-msgid "Tracing"
-msgstr "Spårning pågår"
-
 msgctxt "debugControls.downloadTraceLog"
 msgid "Download Trace Log"
 msgstr "Hämta spårningslogg"
@@ -1886,10 +1546,6 @@ msgstr "SÖK"
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
 msgstr "Sök i DemoZoo (titel, upphovsperson)…"
-
-msgctxt "demoZoo.go"
-msgid "GO"
-msgstr "SÖK"
 
 msgctxt "demoZoo.all"
 msgid "All"
@@ -1930,10 +1586,6 @@ msgstr "Sista sidan"
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
 msgstr "Sidnummer"
-
-msgctxt "demoZoo.pageOf"
-msgid "Page {{page}} of {{pages}}"
-msgstr "Sida {{page}} av {{pages}}"
 
 msgctxt "demoZoo.noProductions"
 msgid "No DemoZoo productions found."
@@ -2263,34 +1915,6 @@ msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
 msgstr "Inverterat vitt"
 
-msgctxt "linkBuilder.speedNames.snail"
-msgid "Snail"
-msgstr "Snigel"
-
-msgctxt "linkBuilder.speedNames.slow"
-msgid "Slow"
-msgstr "Långsam"
-
-msgctxt "linkBuilder.speedNames.normal"
-msgid "1 MHz (default)"
-msgstr "1 MHz (standard)"
-
-msgctxt "linkBuilder.speedNames.two"
-msgid "2 MHz"
-msgstr "2 MHz"
-
-msgctxt "linkBuilder.speedNames.three"
-msgid "3 MHz"
-msgstr "3 MHz"
-
-msgctxt "linkBuilder.speedNames.four"
-msgid "4 MHz"
-msgstr "4 MHz"
-
-msgctxt "linkBuilder.speedNames.warp"
-msgid "Ludicrous"
-msgstr "Löjlig"
-
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
 msgstr "Klassisk"
@@ -2334,10 +1958,6 @@ msgstr "Kortplats {{slot}}:"
 msgctxt "linkBuilder.slots.cardNone"
 msgid "None (empty)"
 msgstr "Ingen (tom)"
-
-msgctxt "agent.tabTitle"
-msgid "Agent"
-msgstr "Agent"
 
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
@@ -2634,10 +2254,6 @@ msgctxt "retroControl.keyboard"
 msgid "Keyboard"
 msgstr "Tangentbord"
 
-msgctxt "retroControl.input"
-msgid "Input"
-msgstr "Indata"
-
 msgctxt "retroControl.joystick"
 msgid "Joystick"
 msgstr "Styrspak"
@@ -2646,17 +2262,9 @@ msgctxt "retroControl.slots"
 msgid "Slots"
 msgstr "Kortplatser"
 
-msgctxt "retroControl.devices"
-msgid "Devices"
-msgstr "Enheter"
-
 msgctxt "retroControl.printerPort"
 msgid "Printer Port"
 msgstr "Skrivarport"
-
-msgctxt "retroControl.modemPort"
-msgid "Modem Port"
-msgstr "Modemport"
 
 msgctxt "retroControl.quit"
 msgid "Quit"
@@ -2693,10 +2301,6 @@ msgstr "Öppna"
 msgctxt "retroControl.load"
 msgid "Load"
 msgstr "Ladda"
-
-msgctxt "retroControl.go"
-msgid "Go"
-msgstr "Kör"
 
 msgctxt "retroControl.save"
 msgid "Save"
@@ -2774,17 +2378,9 @@ msgctxt "retroControl.timeMachine"
 msgid "Snapshots"
 msgstr "Ögonblicksbilder"
 
-msgctxt "retroControl.ports"
-msgid "Ports"
-msgstr "Portar"
-
 msgctxt "retroControl.language"
 msgid "Language"
 msgstr "Språk"
-
-msgctxt "retroControl.port"
-msgid "Port"
-msgstr "Port"
 
 msgctxt "retroControl.builtinImageWriter"
 msgid "Builtin ImageWriter"
@@ -2797,10 +2393,6 @@ msgstr "Välj extern port"
 msgctxt "retroControl.externalPort"
 msgid "External Port"
 msgstr "Extern port"
-
-msgctxt "retroControl.retroTheme"
-msgid "Retro"
-msgstr "Retro"
 
 msgctxt "retroControl.lowercaseInput"
 msgid "Lowercase input"
@@ -2829,10 +2421,6 @@ msgstr "{{drive}}: {{disk}}"
 msgctxt "retroControl.configured"
 msgid "{{count}} configured"
 msgstr "{{count}} konfigurerad"
-
-msgctxt "retroControl.saveDisk"
-msgid "Save Disk"
-msgstr "Spara disk"
 
 msgctxt "retroControl.card.empty"
 msgid "Empty"

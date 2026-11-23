@@ -1,7 +1,9 @@
 import { doSetRom, memGet24, memSet24, memoryReset, getTextPageAsString } from "./memory"
 import { CPU65816 } from "./cpu65816"
+import { setIsTesting } from "./worker2main"
 
 test("check text screen after 3,000,000 and 5,000,000 instructions", () => {
+  setIsTesting()
   doSetRom("APPLE2GS")
   memoryReset()
   
@@ -15,8 +17,8 @@ test("check text screen after 3,000,000 and 5,000,000 instructions", () => {
       const scr = getTextPageAsString().trim()
       if (scr !== lastScreen) {
         lastScreen = scr
-        console.log(`=== SCREEN AT ${i} (PB=${cpu.PB.toString(16)} PC=${cpu.PC.toString(16)}) ===`)
-        console.log(scr)
+        // console.log(`=== SCREEN AT ${i} (PB=${cpu.PB.toString(16)} PC=${cpu.PC.toString(16)}) ===`)
+        // console.log(scr)
       }
     }
   }

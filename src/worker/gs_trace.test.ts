@@ -19,6 +19,6 @@ test("trace first instructions from reset", () => {
     if (pb === 0x00 && pc < 0x200) break
     cpu.processInstruction()
   }
-  console.log(lines.join("\n"))
+  // console.log(lines.join("\n"))
   expect(true).toBe(true)
 })

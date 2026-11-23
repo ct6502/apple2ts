@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 // Per-oscillator key-on cadence probe for the Tass Times gameplay (in-game)
 // audio, to compare the pre-fix vs post-fix interleaved DOC catch-up.
 //
@@ -16,27 +17,13 @@ const { iigsEnsoniq } = require("./devices/iigs_ensoniq")
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
 import * as fs from "fs"
-import { jest, test } from "@jest/globals"
+import { jest } from "@jest/globals"
 
 const TASS_PATH = process.env.GS_TASS_PATH || "C:\\dev\\emu\\ap2\\Tass Times in Tonetown.2mg"
 const OUT = process.env.GS_GAMEPLAY_OUT || "C:\\Users\\USER\\AppData\\Local\\Temp\\opencode\\tass_gameplay_postfix.json"
 const PCM_OUT = process.env.GS_GAMEPLAY_PCM_OUT || "C:\\Users\\USER\\AppData\\Local\\Temp\\opencode\\tass_gameplay_pcm_postfix.json"
 
-const memory = require("./memory").memory as Uint8Array
 
-const screenText = () => {
-  const lines: string[] = []
-  for (let row = 0; row < 24; row++) {
-    let line = ""
-    const base = 0x400 + (row % 8) * 0x80 + Math.floor(row / 8) * 0x28
-    for (let col = 0; col < 40; col++) {
-      const ch = memory[base + col] & 0x7f
-      line += (ch >= 32 && ch < 127) ? String.fromCharCode(ch) : "."
-    }
-    if (line.replace(/\./g, "").trim().length > 0) lines.push(line.trimRight())
-  }
-  return lines.join(" | ")
-}
 
 // Poll once per frame: record key-on stamps per osc.
 const lastKeyOn = new Array<number>(32).fill(-1)
@@ -65,27 +52,23 @@ const poll = () => {
 }
 
 const report = (label: string) => {
-  console.log(`\n================ PHASE ${label} ================`)
+  // console.log(`\n================ PHASE ${label} ================`)
   const c = censuses[label]
-  const s2ms = (s: number) => (s * 1000 / iigsEnsoniq.outputRate()).toFixed(1)
   const entries = Array.from(c.entries()).sort((a, b) => b[1].keyons.length - a[1].keyons.length)
-  for (const [osc, e] of entries) {
+  for (const [, e] of entries) {
     if (e.keyons.length < 2) continue
     const d = []
     for (let i = 1; i < e.keyons.length; i++) d.push(e.keyons[i] - e.keyons[i - 1])
     d.sort((a, b) => a - b)
-    const med = d[Math.floor(d.length / 2)]
-    const osc0 = iigsEnsoniq.oscillators[osc]
-    const seg = e.segs.filter(s => s > 0)
-    console.log(`[OSC${String(osc).padStart(2)}] keyons=${e.keyons.length} medInterval=${med} (${s2ms(med)}ms) ` +
-      `ctrl=$${osc0.control.toString(16)} vol=$${osc0.vol.toString(16)} freq=$${osc0.freq.toString(16)} ` +
-      `wtptr=$${osc0.wavetblpointer.toString(16)} wtsize=${osc0.wtsize} res=${osc0.resolution} ` +
-      `segs=[${seg.slice(-8).join(",")}]`)
+    // console.log(`[OSC${String(osc).padStart(2)}] keyons=${e.keyons.length} medInterval=${med} (${s2ms(med)}ms) ` +
+      // `ctrl=$${osc0.control.toString(16)} vol=$${osc0.vol.toString(16)} freq=$${osc0.freq.toString(16)} ` +
+      // `wtptr=$${osc0.wavetblpointer.toString(16)} wtsize=${osc0.wtsize} res=${osc0.resolution} ` +
+      // `segs=[${seg.slice(-8).join(",")}]`)
   }
-  console.log(`[SCREEN] ${label}: ${screenText().slice(0, 400)}`)
+  // console.log(`[SCREEN] ${label}: ${screenText().slice(0, 400)}`)
 }
 
-test("Tass gameplay: per-osc key-on cadence census", () => {
+testWithFixtures(TASS_PATH)("Tass gameplay: per-osc key-on cadence census", () => {
   jest.useFakeTimers()
   setIsTesting()
   doSetMachineName("APPLE2GS")
@@ -175,7 +158,7 @@ test("Tass gameplay: per-osc key-on cadence census", () => {
   }
   fs.writeFileSync(OUT, JSON.stringify(summary, null, 1))
   fs.writeFileSync(PCM_OUT, JSON.stringify({ sr: iigsEnsoniq.outputRate(), data: captured, capture: "tass in-game idle" }))
-  console.log(`[GAMEPLAY] census dumped to ${OUT}, ${captured.length} mono frames to ${PCM_OUT}`)
+  // console.log(`[GAMEPLAY] census dumped to ${OUT}, ${captured.length} mono frames to ${PCM_OUT}`)
 })
 
 export {}

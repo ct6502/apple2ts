@@ -1,10 +1,11 @@
-import { doSetMachineName, doSetRunMode, getCPU } from "./motherboard"
+import { testWithFixtures } from "../test/fixture_test"
+import { doSetMachineName, doSetRunMode } from "./motherboard"
 import { s6502 } from "./instructions"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { MouseCardEvent, resetMouse } from "./devices/mouse"
 import { setKeyboardState } from "./devices/keyboard"
 import { iigsADB } from "./iigs_adb"
-import { iigsEnsoniq, docAccess, resetDocAccess, ensoniqDocRam } from "./devices/iigs_ensoniq"
+import { iigsEnsoniq, resetDocAccess, ensoniqDocRam } from "./devices/iigs_ensoniq"
 import { RUN_MODE } from "../common/utility"
 import { setIsTesting } from "./worker2main"
 import * as fs from "fs"
@@ -23,7 +24,7 @@ const TASS_PATH = process.env.GS_TASS_PATH || "C:\\dev\\emu\\ap2\\Tass Times in 
 
 const CPU_CYCLES_PER_SEC = 2804720 // 46727 * 60 at the 2.8 MHz speed mode
 
-test("Tass Times: timer oscillator tick period in machine time + wavetable content", () => {
+testWithFixtures(TASS_PATH)("Tass Times: timer oscillator tick period in machine time + wavetable content", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -75,7 +76,6 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
     const haltDump: string[] = []
     const resshiftLocal = [9, 10, 11, 12, 13, 14, 15, 16]
 
-    const cpu = getCPU() as unknown as { PB: number, PC: number }
     doSetRunMode(RUN_MODE.NEED_BOOT)
     doSetRunMode(RUN_MODE.RUNNING, false)
 
@@ -87,8 +87,8 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
     }
     // Progress the screens the way gs_tass.test.ts does.
     for (let f = 0; f < 1000; f++) jest.advanceTimersByTime(17)
-    console.log("[TICK] boot: oscs not-halted: " +
-      iigsEnsoniq.oscillators.filter(o => !(o.control & 1)).map((o, i) => `f${o.freq}/c${o.control}`).join(" "))
+    // console.log("[TICK] boot: oscs not-halted: " +
+      // iigsEnsoniq.oscillators.filter(o => !(o.control & 1)).map((o, i) => `f${o.freq}/c${o.control}`).join(" "))
     {
       const wavesizes2 = [256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
       const wavemasks2 = [0x1ff00, 0x1fe00, 0x1fc00, 0x1f800, 0x1f000, 0x1e000, 0x1c000, 0x18000]
@@ -112,7 +112,7 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
             `traverse=${traverse.toFixed(0)} samp pitch=${pitch.toFixed(1)}Hz midi=${midi.toFixed(2)} ctrl=$${o.control.toString(16)}`)
         }
       }
-      console.log("[TICK] melody voices after BOOT (docRate=26320):\n  " + rows.join("\n  "))
+      // console.log("[TICK] melody voices after BOOT (docRate=26320):\n  " + rows.join("\n  "))
       rows.length = 0
     }
     // Zero-run structure of DOC RAM: long zero RUNS beside the 8-byte end
@@ -134,8 +134,8 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
       }
       let zeroTotal = 0
       for (let p = 0; p < 0x10000; p++) if (ensoniqDocRam[p] === 0) zeroTotal++
-      console.log(`[TICK] docRam zero bytes total=${zeroTotal}/65536 (${(zeroTotal / 655.36).toFixed(1)}%)`)
-      console.log(`[TICK] docRam zero-runs >= 6 (${runs.length}):\n  ` + runs.join("\n  "))
+      // console.log(`[TICK] docRam zero bytes total=${zeroTotal}/65536 (${(zeroTotal / 655.36).toFixed(1)}%)`)
+      // console.log(`[TICK] docRam zero-runs >= 6 (${runs.length}):\n  ` + runs.join("\n  "))
     }
     key(0x0d)
     for (let f = 0; f < 120; f++) jest.advanceTimersByTime(17)
@@ -150,7 +150,7 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
     for (let f = 0; f < 400; f++) jest.advanceTimersByTime(17)
     key(0x1b)
     for (let f = 0; f < 400; f++) jest.advanceTimersByTime(17)
-    console.log(`[TICK] after-input: docAccess=${JSON.stringify(docAccess)} PC=${cpu.PB.toString(16)}:${cpu.PC.toString(16)}`)
+    // console.log(`[TICK] after-input: docAccess=${JSON.stringify(docAccess)} PC=${cpu.PB.toString(16)}:${cpu.PC.toString(16)}`)
     // At the title screen (first 300 frames), capture the melody voices'
     // registers once in detail, then compute their concert pitch.
     for (let f = 0; f < 1000; f++) jest.advanceTimersByTime(17)
@@ -177,7 +177,7 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
             `traverse=${traverse.toFixed(0)} samp pitch=${pitch.toFixed(1)}Hz midi=${midi.toFixed(2)} ctrl=$${o.control.toString(16)}`)
         }
       }
-      console.log("[TICK] melody voices after BOOT 1000 frames (docRate=26320):\n  " + rows.join("\n  "))
+      // console.log("[TICK] melody voices after BOOT 1000 frames (docRate=26320):\n  " + rows.join("\n  "))
     }
 
     // --- Clear the event log, then measure an interval of pure music time. ---
@@ -207,7 +207,6 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
           `o${i}:${o.control >> 3 & 1 ? "I" : "-"}${o.control & 1 ? "H" : "R"}/f${o.freq}/v${o.vol}/w$${o.wavetblpointer.toString(16)}/z${o.wavetblsize}/r${o.resolution}`).join(" "))
         return buf
       }
-    const startCycles = s6502.cycleCount
     // Note-onset logging for the measure window: control register writes
     // ($A0+$n .. $BF) that key-on a voice, stamped with machine time.
     const anyEnW = iigsEnsoniq as unknown as Record<string, number>
@@ -229,10 +228,8 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
         return origWriteDataW.call(iigsEnsoniq, data)
       }
     for (let f = 0; f < 600; f++) jest.advanceTimersByTime(17)   // ~10 s of machine time
-    const endCycles = s6502.cycleCount
-    const machineSecs = (endCycles - startCycles) / CPU_CYCLES_PER_SEC
-    console.log(`[TICK] measure window: cycles=${endCycles - startCycles} machineSecs=${machineSecs.toFixed(3)}` +
-      ` PC=${cpu.PB.toString(16)}:${cpu.PC.toString(16)}`)
+    // console.log(`[TICK] measure window: cycles=${endCycles - startCycles} machineSecs=${machineSecs.toFixed(3)}` +
+      // ` PC=${cpu.PB.toString(16)}:${cpu.PC.toString(16)}`)
 
     // Group by timer oscillator: the one that fires most often.
     const byOsc = new Map<number, number[]>() // onum -> event cycles
@@ -240,45 +237,32 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
       const arr = byOsc.get(e.onum) ?? (byOsc.set(e.onum, []), byOsc.get(e.onum)!)
       arr.push(e.cycles)
     }
-    console.log("[TICK] halt events by oscillator: " +
-      Array.from(byOsc.entries()).sort((a, b) => b[1].length - a[1].length).slice(0, 10)
-        .map(([o, arr]) => `osc${o}: ${arr.length} events (${arr.every(c => true) ? "type-mixed" : ""})`).join("  "))
+    // console.log("[TICK] halt events by oscillator: " +
+      // Array.from(byOsc.entries()).sort((a, b) => b[1].length - a[1].length).slice(0, 10)
+        // .map(([o, arr]) => `osc${o}: ${arr.length} events (${arr.every(c => true) ? "type-mixed" : ""})`).join("  "))
 
     // For the hottest oscillator: interval statistics in machine seconds AND
     // in DOC samples (26321 Hz when osce=32).
-    const osce = iigsEnsoniq.osce
-    const docSampleRate = (28636360 / 32) / (Math.max(1, osce) + 2)
     const report = (onum: number, arr: number[]) => {
       if (arr.length < 3) return
       const deltas: number[] = []
       for (let i = 1; i < arr.length; i++) deltas.push(arr[i] - arr[i - 1])
       deltas.sort((a, b) => a - b)
-      const med = deltas[Math.floor(deltas.length / 2)]
-      const min = deltas[0], max = deltas[deltas.length - 1]
-      const medSamples = med * docSampleRate / CPU_CYCLES_PER_SEC
-      const rate = (arr.length - 1) / ((arr[arr.length - 1] - arr[0]) / CPU_CYCLES_PER_SEC)
-      console.log(`[TICK] osc${onum}: n=${arr.length} rate=${rate.toFixed(2)}/s ` +
-        `medianInterval=${med} cyc = ${(med / CPU_CYCLES_PER_SEC * 1000).toFixed(1)} ms = ${medSamples.toFixed(1)} DOC samples`)
-      console.log(`[TICK] osc${onum} interval percentiles: min=${min} p25=${deltas[Math.floor(deltas.length * 0.25)]} ` +
-        `p50=${med} p75=${deltas[Math.floor(deltas.length * 0.75)]} max=${max}`)
+      // console.log(`[TICK] osc${onum}: n=${arr.length} rate=${rate.toFixed(2)}/s ` +
+        // `medianInterval=${med} cyc = ${(med / CPU_CYCLES_PER_SEC * 1000).toFixed(1)} ms = ${medSamples.toFixed(1)} DOC samples`)
+      // console.log(`[TICK] osc${onum} interval percentiles: min=${min} p25=${deltas[Math.floor(deltas.length * 0.25)]} ` +
+        // `p50=${med} p75=${deltas[Math.floor(deltas.length * 0.75)]} max=${max}`)
     }
     const ranked = Array.from(byOsc.entries()).sort((a, b) => b[1].length - a[1].length)
-    console.log(`[TICK] osce=${osce} docSampleRate=${docSampleRate.toFixed(1)}`)
+    // console.log(`[TICK] osce=${osce} docSampleRate=${docSampleRate.toFixed(1)}`)
     for (const [onum, arr] of ranked.slice(0, 4)) report(onum, arr)
 
     const hotOsc = ranked.length ? ranked[0][0] : -1
-    const hotArr = ranked.length ? ranked[0][1] : []
 
     // --- Oscillator register state now, for the hottest osc. ---
-    const oscDump = (i: number) => {
-      const o = iigsEnsoniq.oscillators[i]
-      return `osc${i}: ctrl=$${o.control.toString(16).padStart(2, "0")} vol=$${o.vol.toString(16).padStart(2, "0")} ` +
-        `freq=${o.freq} wtptr=$${o.wavetblpointer.toString(16)} wtsize=${o.wtsize} wavetblsizeField=${o.wavetblsize} ` +
-        `resolution=${o.resolution} acc=${o.accumulator} irq=${o.irqpend}`
-    }
-    if (hotOsc >= 0) console.log(`[TICK] hot osc state: ${oscDump(hotOsc)}`)
-    console.log("[TICK] all oscs: " + iigsEnsoniq.oscillators.map((o, i) =>
-      o.control & 1 ? "" : `o${i}:c${o.control}/f${o.freq}/v${o.vol}/w$${o.wavetblpointer.toString(16)}`).filter(Boolean).join(" "))
+    // if (hotOsc >= 0) console.log(`[TICK] hot osc state: ${oscDump(hotOsc)}`)
+    // console.log("[TICK] all oscs: " + iigsEnsoniq.oscillators.map((o, i) =>
+      // o.control & 1 ? "" : `o${i}:c${o.control}/f${o.freq}/v${o.vol}/w$${o.wavetblpointer.toString(16)}`).filter(Boolean).join(" "))
 
     // --- Wavetable content of the hot oscillator: the stride between
     // zero bytes IS the model's tick period source. ---
@@ -294,17 +278,15 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
         if (wave[i] === 0) zeros.push(i)
         else { nonzero++; if (wave[i] < minB) minB = wave[i]; if (wave[i] > maxB) maxB = wave[i] }
       }
-      const hex = (from: number, n: number) =>
-        Array.from(wave.subarray(from, from + n)).map(b => b.toString(16).padStart(2, "0")).join(" ")
-      console.log(`[TICK] osc${hotOsc} wave: base=$${waveStart.toString(16)} len=${wave.length} ` +
-        `nonzero=${nonzero} zeros=${zeros.length} min=${minB} max=${maxB}`)
-      console.log(`[TICK] osc${hotOsc} wave first 32 bytes: ${hex(0, 32)}`)
-      console.log(`[TICK] osc${hotOsc} wave bytes 32-64: ${hex(32, 32)}`)
-      console.log(`[TICK] osc${hotOsc} wave last 32 bytes: ${hex(Math.max(0, wave.length - 32), 32)}`)
+      // console.log(`[TICK] osc${hotOsc} wave: base=$${waveStart.toString(16)} len=${wave.length} ` +
+        // `nonzero=${nonzero} zeros=${zeros.length} min=${minB} max=${maxB}`)
+      // console.log(`[TICK] osc${hotOsc} wave first 32 bytes: ${hex(0, 32)}`)
+      // console.log(`[TICK] osc${hotOsc} wave bytes 32-64: ${hex(32, 32)}`)
+      // console.log(`[TICK] osc${hotOsc} wave last 32 bytes: ${hex(Math.max(0, wave.length - 32), 32)}`)
       if (zeros.length && zeros.length <= 40) {
-        console.log(`[TICK] osc${hotOsc} zero positions: ${zeros.join(",")}`)
+        // console.log(`[TICK] osc${hotOsc} zero positions: ${zeros.join(",")}`)
       } else if (zeros.length > 40) {
-        console.log(`[TICK] osc${hotOsc} first 40 zero positions: ${zeros.slice(0, 40).join(",")} (+${zeros.length - 40} more)`)
+        // console.log(`[TICK] osc${hotOsc} first 40 zero positions: ${zeros.slice(0, 40).join(",")} (+${zeros.length - 40} more)`)
       }
       // Model prediction: with freq=f and shift=s, each DOC sample advances the
       // wave position by f/2^s. Tick iff a zero byte is read or the table ends.
@@ -319,31 +301,27 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
       for (let i = 1; i < Math.min(zeros.length, 12); i++) {
         rows2.push(`@${zeros[i]}: ${(zeros[i] - zeros[i - 1]) / (o.freq / Math.pow(2, shift))} samples`)
       }
-      console.log(`[TICK] osc${hotOsc} predicted DOC samples between zeros (shift=${shift}, freq=${o.freq}): ${rows2.join(", ")}`)
-      const medCyc = hotArr.length > 2 ? hotArr[Math.floor(hotArr.length / 2)] - hotArr[0] : 0
-      console.log(`[TICK] osc${hotOsc} MEASURED median interval in DOC samples = ` +
-        `${(medCyc * docSampleRate / CPU_CYCLES_PER_SEC).toFixed(1)}`)
+      // console.log(`[TICK] osc${hotOsc} predicted DOC samples between zeros (shift=${shift}, freq=${o.freq}): ${rows2.join(", ")}`)
+      // console.log(`[TICK] osc${hotOsc} MEASURED median interval in DOC samples = ` +
+        // `${(medCyc * docSampleRate / CPU_CYCLES_PER_SEC).toFixed(1)}`)
     }
 
     // Also show where the OTHER active voices' waves start (are music voices
     // sharing one wave table?) and their intervals if they halt at all.
-    for (const [onum, arr] of ranked.slice(1, 4)) {
-      console.log(`[TICK] side osc${onum}: ${oscDump(onum)} events=${arr.length}`)
-    }
+    // for (const [onum, arr] of ranked.slice(1, 4)) {
+    //   console.log(`[TICK] side osc${onum}: ${oscDump(onum)} events=${arr.length}`)
+    // }
 
     // irqTicks over the window as a cross-check with the browser metric.
-    const ticksStart = iigsEnsoniq.irqTicks
     haltEvents.length = 0
-    const t0 = s6502.cycleCount
     for (let f = 0; f < 300; f++) jest.advanceTimersByTime(17)
-    const t1 = s6502.cycleCount
-    console.log(`[TICK] cross-check: irqTicks ${ticksStart} -> ${iigsEnsoniq.irqTicks} ` +
-      `((+${iigsEnsoniq.irqTicks - ticksStart}) over ${(t1 - t0) / CPU_CYCLES_PER_SEC} s), haltEvents=${haltEvents.length}`)
+    // console.log(`[TICK] cross-check: irqTicks ${ticksStart} -> ${iigsEnsoniq.irqTicks} ` +
+      // `((+${iigsEnsoniq.irqTicks - ticksStart}) over ${(t1 - t0) / CPU_CYCLES_PER_SEC} s), haltEvents=${haltEvents.length}`)
     // What the game writes back into osc31 registers right after each halt:
     // log freq/ctrl changes in the window so the re-key cadence is visible.
-    console.log("[TICK] osc31 halt events in measure window (first 24):\n  " + haltDump.slice(0, 24).join("\n  "))
-    console.log("[TICK] march probe (first 40 blocks):\n  " + marchProbe.slice(0, 40).join("\n  "))
-    console.log(`[TICK] note-onset / tick writes in measure window (${keyOns.length}):\n  ` + keyOns.slice(0, 70).join("\n  "))
+    // console.log("[TICK] osc31 halt events in measure window (first 24):\n  " + haltDump.slice(0, 24).join("\n  "))
+    // console.log("[TICK] march probe (first 40 blocks):\n  " + marchProbe.slice(0, 40).join("\n  "))
+    // console.log(`[TICK] note-onset / tick writes in measure window (${keyOns.length}):\n  ` + keyOns.slice(0, 70).join("\n  "))
     // Melody-voice pitch reconstruction: for each oscillator ever seen RUNNING
     // during the measure window, collect its (freq, wave length, resolution,
     // vol) and compute the implied pitch under the MAME model:
@@ -387,11 +365,11 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
         rows.push(`${key} n=${e.n} vol=${e.vol} len=${e.len} resF=${e.res} shift=${res} ` +
           `pitch=${pitch.toFixed(1)}Hz midi=${midi.toFixed(2)}`)
       }
-      console.log(`[TICK] melody voices (pitch under wave-zero length, docRate=${docRate.toFixed(0)}):\n  ` + rows.join("\n  "))
-      console.log(`[TICK] snapshot count=${oscSnapshots.length}`)
-      console.log(`[TICK] first snapshot:  ${oscSnapshots[0] ?? "(none)"}`)
-      console.log(`[TICK] mid snapshot:    ${oscSnapshots[Math.floor(oscSnapshots.length / 2)] ?? "(none)"}`)
-      console.log(`[TICK] last snapshot:   ${oscSnapshots[oscSnapshots.length - 1] ?? "(none)"}`)
+      // console.log(`[TICK] melody voices (pitch under wave-zero length, docRate=${docRate.toFixed(0)}):\n  ` + rows.join("\n  "))
+      // console.log(`[TICK] snapshot count=${oscSnapshots.length}`)
+      // console.log(`[TICK] first snapshot:  ${oscSnapshots[0] ?? "(none)"}`)
+      // console.log(`[TICK] mid snapshot:    ${oscSnapshots[Math.floor(oscSnapshots.length / 2)] ?? "(none)"}`)
+      // console.log(`[TICK] last snapshot:   ${oscSnapshots[oscSnapshots.length - 1] ?? "(none)"}`)
     }
     // Wire $C026-style register writes to osc31: watch freq/wtptr/control writes.
     const regWrites: string[] = []
@@ -418,8 +396,8 @@ test("Tass Times: timer oscillator tick period in machine time + wavetable conte
       }
     regWrites.push("(start)" )
     for (let f = 0; f < 120; f++) jest.advanceTimersByTime(17) // one tick interval
-    console.log(`[TICK] osc31 DOC register writes during one tick interval (${regWrites.length}):\n  ` +
-      regWrites.slice(0, 40).join("\n  "))
+    // console.log(`[TICK] osc31 DOC register writes during one tick interval (${regWrites.length}):\n  ` +
+      // regWrites.slice(0, 40).join("\n  "))
   } finally {
     jest.useRealTimers()
   }

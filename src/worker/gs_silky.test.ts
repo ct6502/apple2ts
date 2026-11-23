@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doSetSpeedMode } from "./motherboard"
 import { getShr, megaIIAux, memGet24 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -36,7 +37,7 @@ const doubleClick = () => {
   }
 }
 
-test("SilkyGS: Super Mario Bros draws into the SHR screen", () => {
+testWithFixtures(SYS_PATH, GAME_PATH)("SilkyGS: Super Mario Bros draws into the SHR screen", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {

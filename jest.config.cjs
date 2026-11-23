@@ -2,7 +2,7 @@
 // Quarantine: these tracked suites are known to fail and currently block the
 // CI test gate. Keep them out of CI until the underlying emulator bugs are
 // fixed; local runs still exercise them.
-const ciQuarantined = process.env.CI
+const ciQuarantined = process.env.CI && process.env.CI !== "false"
   ? [
       // The GS emulation suites depend on local disk images and saved-state
       // fixtures that are not shipped with the repository; CI runners cannot

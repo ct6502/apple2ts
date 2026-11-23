@@ -23,7 +23,7 @@ describe("Apple IIgs A2DeskTop 1.5 Boot Verification", () => {
 
   test("Mount A2DeskTop-1.5.po in Slot 7 Drive 1 after startup and boot", () => {
     if (!hasFile) {
-      console.warn("Skipping test: " + poPath + " not found")
+      // console.warn("Skipping test: " + poPath + " not found")
       return
     }
 

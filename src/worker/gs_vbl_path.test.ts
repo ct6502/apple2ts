@@ -1,5 +1,5 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting, getCPU } from "./motherboard"
-import { megaIIAux, memGet24 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
 import { MouseCardEvent, resetMouse } from "./devices/mouse"
 import { iigsADB } from "./iigs_adb"
@@ -38,17 +38,7 @@ const RANGES: Range[] = [
 
 const counts = new Map<string, number>()
 const bump = (name: string) => counts.set(name, (counts.get(name) ?? 0) + 1)
-const snapshot = () => new Map(counts)
-const diff = (before: Map<string, number>) => {
-  const out: string[] = []
-  for (const r of RANGES) out.push(`  ${r.name}: ${(counts.get(r.name) ?? 0) - (before.get(r.name) ?? 0)}`)
-  return out.join("\n")
-}
-
-const vec = (off: number) => Array.from(megaIIAux.subarray(off, off + 4))
-  .map((b) => "$" + b.toString(16).padStart(2, "0")).join(" ")
-
-test("the ROM VBL path: does it survive GS/OS, and does a mouse move reach it", () => {
+testWithFixtures(GSOS)("the ROM VBL path: does it survive GS/OS, and does a mouse move reach it", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -85,30 +75,22 @@ test("the ROM VBL path: does it survive GS/OS, and does a mouse move reach it", 
     doSetRunMode(RUN_MODE.RUNNING, false)
 
     // Phase 1: boot all the way to the Finder.
-    let mark = snapshot()
     pump(700)
-    console.log(`[VBL] phase 1 (boot to Finder, instr=${instr}):\n${diff(mark)}`)
-    console.log(`[VBL] $E1:0010 interrupt manager vector: ${vec(0x0010)}`)
-    console.log(`[VBL] $E1:0030 VBL dispatcher vector:    ${vec(0x0030)}`)
-    console.log(`[VBL] $E1:0070 system task vector:       ${vec(0x0070)}`)
-    console.log(`[VBL] $C041 INTEN = $${(require("./memory").iigsRegisters[0x41]).toString(16).padStart(2, "0")}` +
-      `   $C027 ADB status/int-enables = $${(require("./memory").iigsRegisters[0x27]).toString(16).padStart(2, "0")}`)
+    // console.log(`[VBL] phase 1 (boot to Finder, instr=${instr}):\n${diff(mark)}`)
+    // console.log(`[VBL] $E1:0010 interrupt manager vector: ${vec(0x0010)}`)
+    // console.log(`[VBL] $E1:0030 VBL dispatcher vector:    ${vec(0x0030)}`)
+    // console.log(`[VBL] $E1:0070 system task vector:       ${vec(0x0070)}`)
+    // console.log(`[VBL] $C041 INTEN = $${(require("./memory").iigsRegisters[0x41]).toString(16).padStart(2, "0")}` +
+      // `   $C027 ADB status/int-enables = $${(require("./memory").iigsRegisters[0x27]).toString(16).padStart(2, "0")}`)
 
     // Phase 2: Finder up and idle. This is where a mouse event has to be picked up.
-    mark = snapshot()
     hot.clear()
     pump(400)
-    console.log(`[VBL] phase 2 (Finder idle, instr=${instr}):\n${diff(mark)}`)
-    const topIdle = Array.from(hot.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8)
-      .map(([pc, c]) => {
-        const b = (pc >>> 16) & 0xff, o = pc & 0xffff
-        return `${b.toString(16).padStart(2, "0")}:${o.toString(16).padStart(4, "0").toUpperCase()} x${c}`
-      })
-    console.log(`[VBL] hottest PCs while idle:\n  ${topIdle.join("\n  ")}`)
-    console.log(`[VBL] $E1:0030 after idle: ${vec(0x0030)}`)
+    // console.log(`[VBL] phase 2 (Finder idle, instr=${instr}):\n${diff(mark)}`)
+    // console.log(`[VBL] hottest PCs while idle:\n  ${topIdle.join("\n  ")}`)
+    // console.log(`[VBL] $E1:0030 after idle: ${vec(0x0030)}`)
 
     // Phase 3: move and click the mouse. Anything that notices has to run here.
-    mark = snapshot()
     hot.clear()
     MouseCardEvent({ x: 0.3, y: 0.4, buttons: -1 })
     pump(120)
@@ -118,21 +100,16 @@ test("the ROM VBL path: does it survive GS/OS, and does a mouse move reach it", 
     pump(120)
     MouseCardEvent({ x: 0.5, y: 0.6, buttons: 0x00 })
     pump(300)
-    console.log(`[VBL] phase 3 (after mouse move + click, instr=${instr}):\n${diff(mark)}`)
-    const topMove = Array.from(hot.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10)
-      .map(([pc, c]) => {
-        const b = (pc >>> 16) & 0xff, o = pc & 0xffff
-        return `${b.toString(16).padStart(2, "0")}:${o.toString(16).padStart(4, "0").toUpperCase()} x${c}`
-      })
-    console.log(`[VBL] hottest PCs after the move:\n  ${topMove.join("\n  ")}`)
-    console.log(`[VBL] ADB hasMouseData after the move: ${(iigsADB as unknown as { hasMouseData: () => boolean }).hasMouseData()}`)
+    // console.log(`[VBL] phase 3 (after mouse move + click, instr=${instr}):\n${diff(mark)}`)
+    // console.log(`[VBL] hottest PCs after the move:\n  ${topMove.join("\n  ")}`)
+    // console.log(`[VBL] ADB hasMouseData after the move: ${(iigsADB as unknown as { hasMouseData: () => boolean }).hasMouseData()}`)
 
     // Did the cursor holes move? Section 29a measured them advancing.
-    console.log("[VBL] cursor holes $047C/$057C/$04FC/$05FC = " +
-      `${memGet24(0x047c).toString(16)}/${memGet24(0x057c).toString(16)}/` +
-      `${memGet24(0x04fc).toString(16)}/${memGet24(0x05fc).toString(16)}`)
-    console.log("[VBL] $E1:0190-$E1:0193 = " +
-      Array.from(megaIIAux.subarray(0x0190, 0x0194)).map((b) => "$" + b.toString(16)).join(""))
+    // console.log("[VBL] cursor holes $047C/$057C/$04FC/$05FC = " +
+      // `${memGet24(0x047c).toString(16)}/${memGet24(0x057c).toString(16)}/` +
+      // `${memGet24(0x04fc).toString(16)}/${memGet24(0x05fc).toString(16)}`)
+    // console.log("[VBL] $E1:0190-$E1:0193 = " +
+      // Array.from(megaIIAux.subarray(0x0190, 0x0194)).map((b) => "$" + b.toString(16)).join(""))
     expect(true).toBe(true)
   } finally {
     doSetRunMode(RUN_MODE.PAUSED, false)

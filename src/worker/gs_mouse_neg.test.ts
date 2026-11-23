@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting } from "./motherboard"
 import { memGet24 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -48,7 +49,7 @@ test("the ADB encodes a displacement as a seven-bit two's complement", () => {
   }
 })
 
-test("GSOS601: a leftward move delivers negative reports and moves the cursor left", () => {
+testWithFixtures(PO_PATH)("GSOS601: a leftward move delivers negative reports and moves the cursor left", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -104,10 +105,10 @@ test("GSOS601: a leftward move delivers negative reports and moves the cursor le
       const leftX = xpos()
       const leftReports = xbytes()
 
-      console.log(`[MOVE] right reports ${rightReports.map((b) => hex(b)).join(" ")}` +
-        `  cursor ${midX} -> ${rightX}`)
-      console.log(`[MOVE] left  reports ${leftReports.map((b) => hex(b)).join(" ")}` +
-        `  cursor ${rightX} -> ${leftX}`)
+      // console.log(`[MOVE] right reports ${rightReports.map((b) => hex(b)).join(" ")}` +
+        // `  cursor ${midX} -> ${rightX}`)
+      // console.log(`[MOVE] left  reports ${leftReports.map((b) => hex(b)).join(" ")}` +
+        // `  cursor ${rightX} -> ${leftX}`)
 
       // The rightward move: positive displacements only, and the cursor moved
       // right.

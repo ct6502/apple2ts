@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting } from "./motherboard"
 import { memGet24 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -28,7 +29,7 @@ const PO_PATH = process.env.GSCUR_PO || "C:\\dev\\emu\\ap2\\GSOS601.po"
 const xpos = () => memGet24(0x047c) | (memGet24(0x057c) << 8)
 const ypos = () => memGet24(0x04fc) | (memGet24(0x05fc) << 8)
 
-test("GSOS601: the cursor position is an exact affine function of the pointer", () => {
+testWithFixtures(PO_PATH)("GSOS601: the cursor position is an exact affine function of the pointer", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -67,7 +68,7 @@ test("GSOS601: the cursor position is an exact affine function of the pointer", 
       rows.push(`   pointer x=${String(tx).padStart(3)}  cursor X=${String(hx).padStart(3)}` +
         `  offset=${String(hx - tx).padStart(5)}  Y=${ypos()}`)
     }
-    console.log("[CUR] cursor vs pointer:\n" + rows.join("\n"))
+    // console.log("[CUR] cursor vs pointer:\n" + rows.join("\n"))
 
     // Every position shares one constant offset within the closed-loop deadband:
     // the cursor converges to within +/-1 count of the pointer, so the offset

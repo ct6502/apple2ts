@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import {
   decodeFloppy35Track,
   encodeSector62,
@@ -72,7 +73,7 @@ const expectTrackMatchesImage = (image: Uint8Array, headerOffset: number, trackS
   }
 }
 
-test("swapping the disk in a slot-5 bay replays the GCR stream of the disk that arrived", () => {
+testWithFixtures(DISK_PATH)("swapping the disk in a slot-5 bay replays the GCR stream of the disk that arrived", () => {
   setIsTesting()
   doSetMachineName("APPLE2GS")
   const data = new Uint8Array(fs.readFileSync(DISK_PATH))
@@ -95,7 +96,7 @@ test("swapping the disk in a slot-5 bay replays the GCR stream of the disk that 
   expect(ds.diskHasChanges).toBe(false)
 })
 
-test("a write burst still in flight cannot edit the disk swapped in behind it", () => {
+testWithFixtures(DISK_PATH)("a write burst still in flight cannot edit the disk swapped in behind it", () => {
   setIsTesting()
   doSetMachineName("APPLE2GS")
   const data = new Uint8Array(fs.readFileSync(DISK_PATH))

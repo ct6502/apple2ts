@@ -38,7 +38,7 @@ const mount = (index: number) => {
 
 const skip = () => {
   if (hasDisk) return false
-  console.warn(`3.5" WOZ image missing: ${DISK_PATH}`)
+  // console.warn(`3.5" WOZ image missing: ${DISK_PATH}`)
   return true
 }
 

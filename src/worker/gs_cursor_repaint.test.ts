@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, doBoot, resetCpuSpeedForTesting } from "./motherboard"
 import { memGet24 } from "./memory"
 import { doSetEmuDriveNewData } from "./devices/drivestate"
@@ -36,7 +37,7 @@ const changedRows = (a: Uint8Array, b: Uint8Array): number[] => {
   return rows
 }
 
-test("GSOS601: the guest redraws its cursor when the pointer moves", () => {
+testWithFixtures(PO_PATH)("GSOS601: the guest redraws its cursor when the pointer moves", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -74,7 +75,7 @@ test("GSOS601: the guest redraws its cursor when the pointer moves", () => {
     expect(Math.abs(newY - oldY)).toBeGreaterThan(50)
 
     const rows = changedRows(before, Uint8Array.from(getShr()))
-    console.log(`[CURREPAINT] old=${oldX},${oldY} new=${newX},${newY} changed rows=${rows.join(",")}`)
+    // console.log(`[CURREPAINT] old=${oldX},${oldY} new=${newX},${newY} changed rows=${rows.join(",")}`)
 
     // A cursor is 15 rows tall, so the erase must touch the old row and the
     // draw must touch the new one. The menu-bar clock only changes rows 3-9,

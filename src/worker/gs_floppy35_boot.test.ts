@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import { doSetMachineName, doSetRunMode, resetCpuSpeedForTesting } from "./motherboard"
 import { getShr, getTextPageAsString } from "./memory"
 import {
@@ -26,7 +27,7 @@ const FRAMES = Number(process.env.GS_FLOPPY35_BOOT_FRAMES || 4200)
 const SHR_SCB_OFFSET = 0x7D00
 const IMAGE_OFFSET = 64 // 2MG header
 
-test("SystemDisk boots from slot 5 and leaves the 3.5\" media intact", () => {
+testWithFixtures(DISK_PATH)("SystemDisk boots from slot 5 and leaves the 3.5\" media intact", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {
@@ -124,7 +125,7 @@ test("SystemDisk boots from slot 5 and leaves the 3.5\" media intact", () => {
 const P8_PATH = process.env.GS_FLOPPY35_P8_PATH || "C:\\dev\\emu\\ap2\\A2DeskTop-1.5-en_800k.2mg"
 const P8_FRAMES = Number(process.env.GS_FLOPPY35_P8_FRAMES || 1600)
 
-test("ProDOS 8 loads its kernel and startup application from slot-5 3.5\" media", () => {
+testWithFixtures(P8_PATH)("ProDOS 8 loads its kernel and startup application from slot-5 3.5\" media", () => {
   jest.useFakeTimers()
   setIsTesting()
   try {

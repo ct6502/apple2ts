@@ -1,3 +1,4 @@
+import { testWithFixtures } from "../test/fixture_test"
 import {
   decodeFloppy35Track,
   decodeSector62,
@@ -53,7 +54,7 @@ test("6-and-2 sector encode/decode round-trips", () => {
   expect(Array.from(decoded!)).toEqual(Array.from(buffer))
 })
 
-test("800K block image mounts as a 3.5\" disk with a full GCR bit stream", () => {
+testWithFixtures(DISK_PATH)("800K block image mounts as a 3.5\" disk with a full GCR bit stream", () => {
   setIsTesting()
   doSetMachineName("APPLE2GS")
   const data = new Uint8Array(fs.readFileSync(DISK_PATH))
@@ -109,7 +110,7 @@ test("800K block image mounts as a 3.5\" disk with a full GCR bit stream", () =>
     Array.from(data.slice(info.offset, info.offset + 512)))
 })
 
-test("3.5\" async write clocks a data field onto the media and splices it back", () => {
+testWithFixtures(DISK_PATH)("3.5\" async write clocks a data field onto the media and splices it back", () => {
   setIsTesting()
   doSetMachineName("APPLE2GS")
   const data = new Uint8Array(fs.readFileSync(DISK_PATH))
@@ -177,7 +178,7 @@ test("3.5\" async write clocks a data field onto the media and splices it back",
   expect(image[info.offset + 512]).toBe(data[info.offset + 512])
 })
 
-test("write-protected 3.5\" media does not record an async write", () => {
+testWithFixtures(DISK_PATH)("write-protected 3.5\" media does not record an async write", () => {
   setIsTesting()
   doSetMachineName("APPLE2GS")
   const data = new Uint8Array(fs.readFileSync(DISK_PATH))
@@ -250,7 +251,7 @@ const mount800K = (data: Uint8Array) => {
 // bit 0 of the side byte. Decoding only the low 6 makes cylinders 64-79 report
 // themselves as 0-15, and every write splice into them is then discarded for
 // addressing the wrong track.
-test("3.5\" media decodes all 160 track-sides with their own cylinder and block", () => {
+testWithFixtures(DISK_PATH)("3.5\" media decodes all 160 track-sides with their own cylinder and block", () => {
   const data = new Uint8Array(fs.readFileSync(DISK_PATH))
   const info = getFloppy35PayloadInfo(data)
   const { ds, stream } = mount800K(data)
@@ -279,7 +280,7 @@ test("3.5\" media decodes all 160 track-sides with their own cylinder and block"
   expect(seen.filter(v => v === 1).length).toBe(FLOPPY35_SECTORS)
 })
 
-test("3.5\" async write to the last cylinder splices into its block", () => {
+testWithFixtures(DISK_PATH)("3.5\" async write to the last cylinder splices into its block", () => {
   const data = new Uint8Array(fs.readFileSync(DISK_PATH))
   const info = getFloppy35PayloadInfo(data)
   const { ds, stream } = mount800K(data)

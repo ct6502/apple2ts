@@ -89,7 +89,7 @@ const scenario = (mountAtBoot: boolean, doAReset: boolean) => {
     doSetRunMode(RUN_MODE.RUNNING, false)
     run(1500)
   }
-  console.log(`[STATS] ${JSON.stringify(getIwmReadStats())}`)
+  // console.log(`[STATS] ${JSON.stringify(getIwmReadStats())}`)
   if (doAReset && process.env.GS_TRACE_OUT) {
     // Set GS_TRACE_OUT to a path to dump the post-reset PC trace so it can be
     // diffed against a browser run (see AGENTS.md section 26b).
@@ -147,7 +147,7 @@ describe("Apple IIgs 5.25 inch floppy boot", () => {
     doSetRunMode(RUN_MODE.RUNNING, false)
     run(1500)
     const stats = getIwmReadStats()
-    console.log(`[IWMSTATS] ${JSON.stringify(stats)}`)
+    // console.log(`[IWMSTATS] ${JSON.stringify(stats)}`)
     expect(stats.reads).toBeGreaterThan(1000)
     expect(stats.maxGapCycles).toBeGreaterThan(0)
     expect(stats.maxBitsPerRead).toBeGreaterThan(0)
