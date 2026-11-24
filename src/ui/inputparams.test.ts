@@ -27,8 +27,10 @@ jest.mock("./devices/vera/verasdicon", () => ({
 
 import { handleFragment, handleInputParams } from "./inputparams"
 import { APP_MACHINE_NAMES } from "../common/app_target"
-import { getPreferenceSlotConfig, getPreferenceVeraSlot, PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, PREFERENCE_SLOT_CONFIG_GS_KEY } from "./localstorage"
-import { getTabView, getUIStateBoolean } from "./ui_settings"
+import { getPreferenceMachineName, getPreferenceSlotConfig, getPreferenceVeraSlot, PREFERENCE_SLOT_CONFIG_CLASSIC_KEY, PREFERENCE_SLOT_CONFIG_GS_KEY } from "./localstorage"
+import { getTabView, getUIStateBoolean, setTabView } from "./ui_settings"
+import { getPanelTabVisibility } from "./panels/paneltabs"
+import { SETTINGS_CHANGED_EVENT } from "./settingschange"
 import { handleSetDiskFromURL, handleSetDiskSwapperFromURLs, resetAllDiskDrives } from "./devices/disk/driveprops"
 import { handleSetVeraSdFromURL } from "./devices/vera/verasdicon"
 import * as main2worker from "./main2worker"
@@ -38,6 +40,26 @@ describe("handleInputParams slot configuration", () => {
   beforeEach(() => {
     localStorage.clear()
   })
+
+  // Mirrors the right-hand panel: a tab the current layout cannot show falls
+  // back to the info tab, and that fallback is written back to the stored tab
+  // view, so a tab request issued before the slot layout is applied is lost.
+  const withPanelTabFallback = (run: () => void) => {
+    const onSettingsChanged = () => {
+      const visibility = getPanelTabVisibility(getPreferenceMachineName(), getPreferenceSlotConfig())
+      const requestedTab = getTabView()
+      const tab = ((requestedTab === 1 && !visibility.showDebugTab) ||
+        (requestedTab === 3 && !visibility.showExpectinTab) ||
+        (requestedTab === 4 && !visibility.showVeraTab)) ? 0 : requestedTab
+      setTabView(tab)
+    }
+    window.addEventListener(SETTINGS_CHANGED_EVENT, onSettingsChanged)
+    try {
+      run()
+    } finally {
+      window.removeEventListener(SETTINGS_CHANGED_EVENT, onSettingsChanged)
+    }
+  }
 
   test("configures slot 2 with VERA card", () => {
     handleInputParams("slot2=vera")
@@ -78,6 +100,24 @@ describe("handleInputParams slot configuration", () => {
     expect(getPreferenceVeraSlot()).toBe(2)
     expect(getTabView()).toBe(4)
     expect(getUIStateBoolean("infoPanel")).toBe(true)
+  })
+
+  test("opens the VERA tab for a launch that installs the card without naming a tab", () => {
+    withPanelTabFallback(() => handleInputParams("slot2=vera"))
+    expect(getPreferenceSlotConfig()[2]).toBe("vera")
+    expect(getTabView()).toBe(4)
+    expect(getUIStateBoolean("infoPanel")).toBe(true)
+  })
+
+  test("keeps the tab=vera request of a launch that installs the card at the same time", () => {
+    withPanelTabFallback(() => handleInputParams("slot2=vera&tab=vera"))
+    expect(getPreferenceSlotConfig()[2]).toBe("vera")
+    expect(getTabView()).toBe(4)
+  })
+
+  test("an explicit non-VERA tab still wins over the card install", () => {
+    withPanelTabFallback(() => handleInputParams("slot2=vera&tab=basic"))
+    expect(getTabView()).toBe(2)
   })
 
   test("boots a GS URL with the saved IIgs slot layout, not classic defaults", () => {

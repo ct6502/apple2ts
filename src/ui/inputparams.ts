@@ -24,25 +24,29 @@ export const handleInputParams = (paramString = "") => {
   const params = new URLSearchParams(paramString.toLowerCase())
   const porig = new URLSearchParams(paramString)
 
+  // The tab request is applied only after the slot configuration below. The
+  // right-hand panel refuses a tab the current layout cannot show and writes
+  // that fallback back into the stored tab view, so a request issued before
+  // ?slot2=vera (a launch from the Software Library) has installed the card is
+  // dropped before the panel ever sees the card in place.
   const tab = (params.get("tab") as string || "").toLowerCase()
+  const tabParamPresent = !!tab
   const tabNames = ["info", "debug", "basic", "expectin", "vera", "ai"]
+  let pendingTabView: number | null = null
+  let pendingDebug = false
+  let autoVeraTabRequested = false
   if (tab) {
     let tabNum = tabNames.indexOf(tab)
     if (tab === "agent") tabNum = 5
     if (tabNum >= 0) {
-      setUIStateBoolean("infoPanel", true)
-      setTabView(tabNum)
-      passSetIsDebugging(tabNum === 1)
-      passSetShowDebugTab(tabNum === 1)
-      notifySettingsChanged(["panels.tab"], "external")
+      pendingTabView = tabNum
+      pendingDebug = tabNum === 1
     }
   }
 
   if (params.get("debug") === "on") {
-    setTabView(tabNames.indexOf("debug"))
-    passSetIsDebugging(true)
-    passSetShowDebugTab(true)
-    notifySettingsChanged(["panels.tab"], "external")
+    pendingTabView = tabNames.indexOf("debug")
+    pendingDebug = true
   }
 
   // ?iwmgaps=1 turns on the Apple IIgs IWM read-cadence instrumentation, which
@@ -267,10 +271,8 @@ export const handleInputParams = (paramString = "") => {
       nextSlotConfig[slotNum as 1 | 2 | 3 | 4 | 5 | 6 | 7] = card
       if (card === "vera") {
         setPreferenceVeraSlot(slotNum as VERA_SLOT)
-        if (!params.get("tab")) {
-          setUIStateBoolean("infoPanel", true)
-          setTabView(4)
-          notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
+        if (!tabParamPresent) {
+          autoVeraTabRequested = true
         }
       } else if (currentSlotConfig[slotNum as 1 | 2 | 3 | 4 | 5 | 6 | 7] === "vera") {
         setPreferenceVeraSlot(0)
@@ -291,10 +293,8 @@ export const handleInputParams = (paramString = "") => {
         }
         nextSlotConfig[vSlot as 2 | 4] = "vera"
         slotConfigChanged = true
-        if (!params.get("tab")) {
-          setUIStateBoolean("infoPanel", true)
-          setTabView(4)
-          notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
+        if (!tabParamPresent) {
+          autoVeraTabRequested = true
         }
       }
     }
@@ -329,6 +329,25 @@ export const handleInputParams = (paramString = "") => {
     passSetSlotConfig(sanitized)
   } else if (urlSlotConfig) {
     passSetSlotConfig(urlSlotConfig)
+  }
+
+  // Now that the slot layout the panel will see is in place, ask for the tab.
+  // A launch that installs the VERA card opens the VERA monitor unless the URL
+  // names a tab explicitly; an explicit tab request wins.
+  if (autoVeraTabRequested && !tabParamPresent) {
+    setUIStateBoolean("infoPanel", true)
+    setTabView(4)
+    if (pendingDebug) {
+      passSetIsDebugging(true)
+      passSetShowDebugTab(true)
+    }
+    notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
+  } else if (pendingTabView !== null) {
+    setUIStateBoolean("infoPanel", true)
+    setTabView(pendingTabView)
+    passSetIsDebugging(pendingDebug)
+    passSetShowDebugTab(pendingDebug)
+    notifySettingsChanged(["panels.tab", "options.infoPanel"], "external")
   }
 
   const theme = params.get("theme")
