@@ -84,7 +84,7 @@ import { vidhd } from "./devices/vidhd"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { clearSlotCardStateHandlers } from "./devices/slot_card_state"
 import { resetMouse, onMouseVBL, iigsMouseStep } from "./devices/mouse"
-import { enableDiskDrive, enableDiskDrive35, iwmResetTiming, processFloppyMotorTimeout, setIigs35TimerScale } from "./devices/diskdata"
+import { enableDiskDrive, enableDiskDrive35, iwmResetTiming, matchGsLoaderDelayLoop, processFloppyMotorTimeout, setIigs35TimerScale } from "./devices/diskdata"
 import { advanceKeySequence, interruptKeySequence, pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
 import {
   advanceConditionalInputSequence,
@@ -285,29 +285,32 @@ let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 export const getCpuCyclesPerRefresh = () => cpuCyclesPerRefresh
 
-// ---- GS-only Aztec 5.25" loader delay acceleration ----
+// ---- GS-only 5.25" loader delay acceleration ----
 // The decoded Aztec WOZ sectors contain a disk-resident copy-protection timer
-// ($BD9E..$BDAA, called from the $BD00 loader). The IIgs executes the delay
-// loop; the classic path never enters it, so the same title load takes roughly
-// five times as long on the IIgs at 1.024 MHz or 2.8 MHz. The loop only burns
-// CPU cycles: it touches no I/O and leaves $46/$47 at zero for the caller's
-// $BDAB continuation. Fast-forward exactly those cycles, with the machine
-// clock and video/DOC timeline advanced, so the disk keeps its elapsed-time
-// position and the guest resumes at $BDAB with the counters already wrapped.
-// The 13-byte signature is checked against live RAM; the motor + mounted 5.25"
-// media check limits this to a real GS load. Classic optimalTiming, bitTiming
-// and getNextByte are untouched. Test suites run disabled by default; the
-// permanent regression enables this explicitly.
+// ($BD9E..$BDAA, called from the $BD00 loader). DOS 3.3 RWTS carries the same
+// 13-byte loop: boot1 runs it at $3D9E while it still lives in $3600-$3FFF, and
+// at $BD9E once RWTS has relocated itself into the $B900-$BDxx image. The IIgs
+// executes it (21 entries, ~57% of a DOS 3.3 boot's CPU cycles); the classic
+// path never enters it, so the same disk load takes roughly five times as long
+// on the IIgs at 1.024 MHz or 2.8 MHz. The loop only burns CPU cycles: it
+// touches no I/O and leaves $46/$47 at zero for the caller's continuation
+// ($BDAB for Aztec and DOS RWTS). Fast-forward exactly those cycles, with the
+// machine clock and video/DOC timeline advanced, so the disk keeps its
+// elapsed-time position and the guest resumes with the counters already
+// wrapped. The 13-byte signature lives in diskdata.ts next to the IWM read path
+// and is checked against live RAM, so *every* copy of the loop is recognised;
+// the motor + mounted 5.25" media check limits this to a real GS load. Classic
+// optimalTiming, bitTiming and getNextByte are untouched. Test suites run
+// disabled by default; the permanent regression enables this explicitly.
 const nodeProcess = (globalThis as {
   process?: { env?: Record<string, string | undefined> }
 }).process
 const isJestWorker = !!nodeProcess?.env?.JEST_WORKER_ID
 let gsDiskLoadAccelerationEnabled = !isJestWorker
-const GS_AZTEC_DELAY_SIGNATURE = [
-  0xA0, 0x12, 0x88, 0xD0, 0xFD, 0xE6, 0x46, 0xD0, 0xF7, 0xE6, 0x47, 0xD0, 0xF3,
-]
-const GS_AZTEC_DELAY_PC = 0xBD9E
-const GS_AZTEC_DELAY_RESUME_PC = 0xBDAB
+// Low byte shared by every copy of the loop; the full match runs on a hit, so
+// the run loop only pays one array lookup for an unrelated PC.
+const GS_LOADER_DELAY_PC_LOW = 0x9E
+let gsLoaderDelayResumePc = 0
 
 // Total delay-loop cycles for starting counters x ($46) and y ($47), derived
 // from the measured instruction timings:
@@ -327,11 +330,8 @@ export const gsAztecDelayCycleCountForTesting = (x46: number, y47: number) => {
 
 const gsAztecDelaySignatureMatches = () => {
   const gsCpu = cpu as CPU65816
-  if (gsCpu.PC !== GS_AZTEC_DELAY_PC || gsCpu.PB !== 0x00) return false
-  for (let i = 0; i < GS_AZTEC_DELAY_SIGNATURE.length; i++) {
-    if (memGet24(GS_AZTEC_DELAY_PC + i) !== GS_AZTEC_DELAY_SIGNATURE[i]) return false
-  }
-  return true
+  gsLoaderDelayResumePc = matchGsLoaderDelayLoop(gsCpu.PC, gsCpu.PB, memGet24)
+  return gsLoaderDelayResumePc >= 0
 }
 
 const gsAztecDelayCyclesAtCurrentCounters = () => {
@@ -369,7 +369,7 @@ const advanceGsAztecDelay = () => {
   const dp = (cpu as CPU65816).D
   memSet24((dp + 0x46) & 0xFFFF, 0)
   memSet24((dp + 0x47) & 0xFFFF, 0)
-  ;(cpu as CPU65816).PC = GS_AZTEC_DELAY_RESUME_PC
+  ;(cpu as CPU65816).PC = gsLoaderDelayResumePc
   return delayCycles
 }
 
@@ -1847,12 +1847,15 @@ const doAdvance6502 = () => {
   for (;;) {
     let cycles = 0
     let delaySkipped = false
-    // Aztec's GS-only loader timer: fast-forward the pure CPU delay at $BD9E
-    // instead of executing its nested counter loops. The same elapsed cycles
-    // then reach the IWM's $C0EC read path (iwmPrevCycleCount), so the disk
-    // position is exactly where it would have been after the delay; the guest
-    // resumes at $BDAB with $46/$47 already wrapped to zero.
-    if (isIIgs && (cpu as CPU65816).PC === GS_AZTEC_DELAY_PC) {
+    // The 5.25" loader timer: fast-forward the pure CPU delay instead of
+    // executing its nested counter loops. Recognised by PC low byte here and
+    // matched byte-for-byte against live RAM inside advanceGsAztecDelay(), so
+    // boot1's $3D9E copy (DOS 3.3) and the relocated $BD9E copies (DOS RWTS,
+    // Aztec) are all covered. The same elapsed cycles then reach the IWM's
+    // $C0EC read path (iwmPrevCycleCount), so the disk position is exactly
+    // where it would have been after the delay; the guest resumes at the
+    // caller's continuation with $46/$47 already wrapped to zero.
+    if (isIIgs && (cpu as CPU65816).PB === 0 && (((cpu as CPU65816).PC & 0xFF) === GS_LOADER_DELAY_PC_LOW)) {
       cycles = advanceGsAztecDelay()
       if (cycles > 0) {
         delaySkipped = true

@@ -386,14 +386,18 @@ const iwmSetEnableSwitch = (on: boolean) => {
   }
   iwmMotorOn = on
 }
-// Spindle/LSS gate. The MC14536 holdover keeps the 3.5" drive clocked, as it
-// does in gssquared (IWM2::sync_drive_enables pushes the /ENBL line into the
-// drive's enable latch). The 5.25" family stays on the raw ENABLE latch: with
-// the holdover applied there too, the IIgs 5.25" boot derails - the boot
-// signature flips and the machine ends up in a Ctrl-Reset loop. Reads issued
-// after the driver releases ENABLE return a live bit stream for a second
-// instead of the idle 0x80 the ROM's driver is written around.
-const iwmSpindleEnable = () => iwmEnable35 ? iwmEnblAsserted() : iwmMotorOn
+// Spindle/LSS gate. The MC14536 holdover keeps a drive clocked, as it does in
+// gssquared (IWM2::sync_drive_enables pushes the /ENBL line into the drive's
+// enable latch), so both drive families honour it: one second of machine time
+// after the driver releases ENABLE the media is still turning and the data
+// register still returns live bits instead of the idle 0x80. PRODOS' own "is the
+// drive still spinning?" probe ($D4DA, read the data register twice and compare)
+// depends on exactly that: the idle 0x80 reads made every disk burst start with
+// a ~0.55 s spin-up timeout, which is why IIgs disk work was far slower than the
+// classic II's (regression: prodos_gs_speed.test.ts). The holdover stays inert
+// for an empty bay and before the first enable, because iwmEnblAsserted() is
+// only true while ENABLE was driven or its one-second tail is running.
+const iwmSpindleEnable = () => iwmEnblAsserted()
 // True when the given drive-state index holds decodable floppy media.
 export const iigsFloppyHasMedia = (index: number) => {
   const ds = getDriveStateByIndex(index)

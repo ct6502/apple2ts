@@ -328,6 +328,51 @@ export interface IwmReadStats {
   totalTrackCrossings: number
 }
 
+// The Disk II / IWM "is the drive spinning?" motor-on delay loop from DOS 3.3
+// RWTS (file offset $79E):
+//
+//   BD9E A0 12     LDY #$12      ; 18 DEY/BNE iterations per $46 step
+//   BDA0 88        DEY
+//   BDA1 D0 FD     BNE $BDA0
+//   BDA3 E6 46     INC $46
+//   BDA5 D0 F7     BNE $BDA0     ; 256 steps of $46
+//   BDA7 E6 47     INC $47
+//   BDA9 D0 F3     BNE $BDA0     ; $47 steps of the outer counter
+//   BDAB A0 0C     LDY #$0C      ; resume here
+//
+// It is pure CPU work waiting for the drive to come up to speed, so its cost is
+// a count of nested loops, not a hardware event. The very same byte sequence is
+// disk-resident in DOS 3.3 (and in the DOS image's other RWTS copies): the
+// boot1 loader executes it at $3D9E while it still lives in $3600-$3FFF, and at
+// $BD9E once it has relocated itself into the $B900-$BDxx DOS image. Aztec's
+// loader uses the identical block at $BD9E.
+//
+// The IIgs reaches this loop (measured: 21 entries during the DOS 3.3 boot,
+// ~57% of that boot's CPU cycles), while the classic II does not enter it at
+// all for the same disk. Because the loop is pure CPU work, a IIgs boot can
+// spend seconds of emulated time in it; see motherboard.ts's loader-delay
+// fast-forward, which uses this table to recognise *every* copy of the loop
+// instead of only the relocated $BD9E one.
+export const GS_LOADER_DELAY_SIGNATURE = [
+  0xA0, 0x12, 0x88, 0xD0, 0xFD, 0xE6, 0x46, 0xD0, 0xF7, 0xE6, 0x47, 0xD0, 0xF3,
+]
+
+// Returns the address to resume at (the byte after the loop) when the CPU is
+// about to execute a complete copy of GS_LOADER_DELAY_SIGNATURE at pc, else -1.
+// The block is main-RAM resident, so PB must be 0. readByte is the 24-bit read
+// callback (memGet24 in motherboard.ts) and is only called for a first-byte hit.
+export const matchGsLoaderDelayLoop = (
+  pc: number,
+  pb: number,
+  readByte: (addr: number) => number,
+): number => {
+  if (pb !== 0 || (readByte(pc) & 0xFF) !== GS_LOADER_DELAY_SIGNATURE[0]) return -1
+  for (let i = 1; i < GS_LOADER_DELAY_SIGNATURE.length; i++) {
+    if ((readByte(pc + i) & 0xFF) !== GS_LOADER_DELAY_SIGNATURE[i]) return -1
+  }
+  return pc + GS_LOADER_DELAY_SIGNATURE.length
+}
+
 const iwmReadStats: IwmReadStats = {
   reads: 0,
   totalGapCycles: 0,
