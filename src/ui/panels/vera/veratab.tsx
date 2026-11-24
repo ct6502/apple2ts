@@ -5,8 +5,10 @@ import { getMouseButtonReleaseEvents } from "../../mouseevent"
 
 const VeraTab = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const screenRef = useRef<HTMLDivElement>(null)
   const lastSequenceRef = useRef<number | null>(null)
   const [withinScreen, setWithinScreen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [viewSize, setViewSize] = useState<"320" | "640">(() => {
     try {
       return (localStorage.getItem("vera_view_size") as "320" | "640") || "640"
@@ -91,6 +93,31 @@ const VeraTab = () => {
   }
 
   useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === screenRef.current)
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange)
+    }
+  }, [])
+
+  const toggleFullscreen = async () => {
+    const screen = screenRef.current
+    if (!screen) return
+    try {
+      if (document.fullscreenElement === screen) {
+        await document.exitFullscreen()
+      } else if (screen.requestFullscreen) {
+        await screen.requestFullscreen()
+      }
+    } catch {
+      // Browsers reject fullscreen requests without a user gesture; leave the
+      // tab as it is rather than reporting a failure for a convenience button.
+    }
+  }
+
+  useEffect(() => {
     let animationFrameId: number
 
     const render = () => {
@@ -152,6 +179,7 @@ const VeraTab = () => {
             ctx.font = "15px system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
             ctx.fillText("Tip: Dropping floppy & HDD images (.dsk, .woz, .po, .hdv)", 320, 345)
             ctx.fillText("onto the VERA SD icon will auto-boot in Drive 1", 320, 370)
+            ctx.fillText("Tip: use a single browser tab for maximum emulation speed", 320, 405)
           } else {
             const imgData = new ImageData(veraFrame.fb, 640, 480)
             ctx.putImageData(imgData, 0, 0)
@@ -191,12 +219,14 @@ const VeraTab = () => {
     "default"
 
   return (
-    <div className="flex-column-gap debug-section"
+    <div ref={screenRef} className="flex-column-gap debug-section"
       style={{ display: "flex",
         flexDirection: "column",
-        height: "100%",
-        width: "693px", /* should be a better way to do this, but needs to match other debug tabs! */
-        alignItems: "flex-start",
+        height: isFullscreen ? "100vh" : "100%",
+        width: isFullscreen ? "100vw" : "693px", /* should be a better way to do this, but needs to match other debug tabs! */
+        alignItems: isFullscreen ? "center" : "flex-start",
+        justifyContent: isFullscreen ? "center" : "flex-start",
+        backgroundColor: isFullscreen ? "#000" : undefined,
         marginLeft: 0,
         paddingLeft: 0 }}>
       <div style={{
@@ -204,10 +234,10 @@ const VeraTab = () => {
         justifyContent: "flex-start",
         alignItems: "flex-start",
         backgroundColor: "#000",
-        border: "10px solid #333",
-        borderRadius: "20px",
+        border: isFullscreen ? "none" : "10px solid #333",
+        borderRadius: isFullscreen ? 0 : "20px",
         overflow: "hidden",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.6)",
+        boxShadow: isFullscreen ? "none" : "0 4px 16px rgba(0,0,0,0.6)",
       }}>
         <canvas 
           ref={canvasRef} 
@@ -215,11 +245,13 @@ const VeraTab = () => {
           width={640} 
           height={480} 
           style={{ 
-            width: isHalf ? "320px" : "640px",
-            height: isHalf ? "240px" : "480px",
+            width: isFullscreen
+              ? "min(100vw, calc(100vh * 4 / 3))"
+              : (isHalf ? "320px" : "640px"),
+            height: isFullscreen ? "auto" : (isHalf ? "240px" : "480px"),
             display: "block",
             backgroundColor: "#000",
-            imageRendering: isHalf ? "auto" : "pixelated",
+            imageRendering: isHalf && !isFullscreen ? "auto" : "pixelated",
             cursor: cursor,
           }} 
           onMouseDown={(e) => { setFocus(); handleMouseDown(e) }}
@@ -230,7 +262,7 @@ const VeraTab = () => {
           onContextMenu={handleContextMenu}
         />
       </div>
-      <div style={{ display: "flex", gap: "6px", width: "100%", justifyContent: "flex-start", paddingLeft: "4px", marginTop: "8px" }}>
+      <div style={{ display: "flex", gap: "6px", width: "100%", justifyContent: isFullscreen ? "center" : "flex-start", paddingLeft: "4px", marginTop: "8px" }}>
         <button
           type="button"
           className={`push-button text-button${isHalf ? " button-active" : ""}`}
@@ -254,6 +286,19 @@ const VeraTab = () => {
           }}
           onClick={() => handleSizeChange("640")}>
           640×480 (2x)
+        </button>
+        <button
+          type="button"
+          className="push-button text-button"
+          title={isFullscreen ? "Leave fullscreen and return to the panel" : "Show the VERA screen fullscreen"}
+          style={{
+            fontSize: "11px",
+            width: "auto",
+            height: "22px",
+            padding: "2px 8px",
+          }}
+          onClick={() => { void toggleFullscreen() }}>
+          {isFullscreen ? "← Exit Full Screen" : "Full Screen ⤢"}
         </button>
       </div>
     </div>

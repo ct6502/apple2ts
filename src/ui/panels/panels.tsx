@@ -2,7 +2,7 @@ import "./panels.css"
 import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faCode, faRobot, faDesktop } from "@fortawesome/free-solid-svg-icons"
 import { faApple } from "@fortawesome/free-brands-svg-icons"
-import { handleGetShowDebugTab, passSetIsDebugging, passSetShowDebugTab } from "../main2worker"
+import { handleGetMachineName, handleGetShowDebugTab, handleGetSlotConfig, passSetIsDebugging, passSetShowDebugTab } from "../main2worker"
 import { getHelpText, getInfoPanel, getTabView, getTheme, getUIStateBoolean, INFO_PANEL_COLLAPSED_EVENT, isMinimalTheme, setTabView, setUIStateBoolean } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -15,11 +15,21 @@ import AgentTab from "./agent/agent_tab"
 import VeraTab from "./vera/veratab"
 import { isDefaultHelp } from "./help/helpselection"
 import { SETTINGS_CHANGED_EVENT } from "../settingschange"
+import { getPanelTabVisibility } from "./paneltabs"
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, minimalPresentation?: boolean }) => {
 
-  const [activeTab, setActiveTab] = useState<number>(getTabView())
+  const [activeTab, setActiveTab] = useState<number>(() => {
+    const requestedTab = getTabView()
+    const visibility = getPanelTabVisibility(handleGetMachineName(), handleGetSlotConfig())
+    return ((requestedTab === 1 && !visibility.showDebugTab) ||
+      (requestedTab === 3 && !visibility.showExpectinTab) ||
+      (requestedTab === 4 && !visibility.showVeraTab)) ? 0 : requestedTab
+  })
   const [flyoutOpen, setFlyoutOpen] = useState<boolean>(getInfoPanel())
+  const [slotConfig, setSlotConfig] = useState<SlotConfig>(() => ({ ...handleGetSlotConfig() }))
+  const [machineName, setMachineName] = useState<MACHINE_NAME>(() => handleGetMachineName())
+  const { showDebugTab, showExpectinTab, showVeraTab } = getPanelTabVisibility(machineName, slotConfig)
   const isFlyoutOpen = flyoutOpen
   const useMinimalPresentation = props.minimalPresentation || isMinimalTheme()
 
@@ -52,11 +62,24 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
   const isSmall = useMinimalPresentation && window.innerWidth < 800
 
   if (handleGetShowDebugTab()) {
-    setUIStateBoolean("infoPanel", true)
-    setFlyoutOpen(true)
-    passSetIsDebugging(true)
-    setActiveTab(1)
+    // Consume the request even when the tab is hidden, so switching back to a
+    // machine that has the debugger does not open it unexpectedly later.
     passSetShowDebugTab(false)
+    if (showDebugTab) {
+      setUIStateBoolean("infoPanel", true)
+      setFlyoutOpen(true)
+      passSetIsDebugging(true)
+      setActiveTab(1)
+    }
+  }
+
+  // A tab that the current machine or slot layout no longer allows must not
+  // stay selected: fall back to the info tab (the state update is safe here
+  // because it only runs once for the render that hid the tab).
+  if ((activeTab === 1 && !showDebugTab) ||
+    (activeTab === 3 && !showExpectinTab) ||
+    (activeTab === 4 && !showVeraTab)) {
+    setActiveTab(0)
   }
 
   useEffect(() => {
@@ -65,8 +88,17 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
 
   useEffect(() => {
     const handleSettingsChanged = () => {
-      setActiveTab(getTabView())
+      const visibility = getPanelTabVisibility(handleGetMachineName(), handleGetSlotConfig())
+      const requestedTab = getTabView()
+      const tab = ((requestedTab === 1 && !visibility.showDebugTab) ||
+        (requestedTab === 3 && !visibility.showExpectinTab) ||
+        (requestedTab === 4 && !visibility.showVeraTab)) ? 0 : requestedTab
+      setActiveTab(tab)
+      setTabView(tab)
+      passSetIsDebugging(tab === 1)
       setFlyoutOpen(getInfoPanel())
+      setSlotConfig({ ...handleGetSlotConfig() })
+      setMachineName(handleGetMachineName())
     }
     window.addEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
     return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
@@ -101,31 +133,37 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
             onClick={handleTabClick(0)}>
             <FontAwesomeIcon icon={faHelp} size="lg" />
           </div>
-          <div
-            className={`dbg-tab ${tabClass} ${activeTab == 1 ? " dbg-tab-active" : ""}`}
-            title={t("debug.debugTab")}
-            id="tour-debug-button"
-            onClick={handleTabClick(1)}>
-            <FontAwesomeIcon icon={faBug} size="lg" />
-          </div>
+          {showDebugTab &&
+            <div
+              className={`dbg-tab ${tabClass} ${activeTab == 1 ? " dbg-tab-active" : ""}`}
+              title={t("debug.debugTab")}
+              id="tour-debug-button"
+              onClick={handleTabClick(1)}>
+              <FontAwesomeIcon icon={faBug} size="lg" />
+            </div>
+          }
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 2 ? " dbg-tab-active" : ""}`}
             title={t("debug.basicTab")}
             onClick={handleTabClick(2)}>
             <b>{"]"}</b><FontAwesomeIcon icon={faApple as never} size="lg" />
           </div>
-          <div
-            className={`dbg-tab ${tabClass} ${activeTab == 3 ? " dbg-tab-active" : ""}`}
-            title={t("debug.expectinTab")}
-            onClick={handleTabClick(3)}>
-            <FontAwesomeIcon icon={faCode} size="lg" />
-          </div>
-          <div
-            className={`dbg-tab ${tabClass} ${activeTab == 4 ? " dbg-tab-active" : ""}`}
-            title={t("debug.veraMonitor")}
-            onClick={handleTabClick(4)}>
-            <FontAwesomeIcon icon={faDesktop} size="lg" />
-          </div>
+          {showExpectinTab &&
+            <div
+              className={`dbg-tab ${tabClass} ${activeTab == 3 ? " dbg-tab-active" : ""}`}
+              title={t("debug.expectinTab")}
+              onClick={handleTabClick(3)}>
+              <FontAwesomeIcon icon={faCode} size="lg" />
+            </div>
+          }
+          {showVeraTab &&
+            <div
+              className={`dbg-tab ${tabClass} ${activeTab == 4 ? " dbg-tab-active" : ""}`}
+              title={t("debug.veraMonitor")}
+              onClick={handleTabClick(4)}>
+              <FontAwesomeIcon icon={faDesktop} size="lg" />
+            </div>
+          }
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 5 ? " dbg-tab-active" : ""}`}
             title={t("debug.agentTab")}
@@ -142,16 +180,16 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
             useOpenAppleKey={getUIStateBoolean("useOpenAppleKey")}
           />
         }
-        {(activeTab == 1 && !isSmall) &&
+        {(activeTab == 1 && !isSmall && showDebugTab) &&
           <DebugTab updateDisplay={props.updateDisplay} />
         }
         {(activeTab == 2 && !isSmall) && 
           <BasicTab updateDisplay={props.updateDisplay} />
         }
-        {(activeTab == 3 && !isSmall) && 
+        {(activeTab == 3 && !isSmall && showExpectinTab) &&
           <ExpectinTab />
         }
-        {(activeTab == 4 && !isSmall) && 
+        {(activeTab == 4 && !isSmall && showVeraTab) && 
           <VeraTab />
         }
         {(activeTab == 5 && !isSmall) && 
