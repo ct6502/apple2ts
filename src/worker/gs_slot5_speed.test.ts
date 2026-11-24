@@ -3,6 +3,7 @@ import {
   doSetRunMode,
   doSetSpeedMode,
   gsSlot5EnblReleaseCountForTesting,
+  gsSlot5SettleSkipCountForTesting,
   resetCpuSpeedForTesting,
   resetGsSlot5EnblReleaseCountForTesting,
   setGsDiskLoadAccelerationForTesting,
@@ -21,9 +22,10 @@ import * as fs from "fs"
 // 1600-block / 800 KB volume) in the slot-5 bay until the Eamon banner page
 // appears on the text screen:
 //
-//   acceleration   frames   cycles      revolutions  head position
-//   off            747      30,633,792  47           quarter track 54 (~track 14)
-//   on (this fix)  688      27,830,143  47           quarter track 54 (~track 14)
+//   acceleration        frames   cycles      revolutions  head position
+//   off                 747      30,633,792  47           quarter track 54 (~track 14)
+//   on: /ENBL only      688      27,830,143  47           quarter track 54 (~track 14)
+//   on: + settle skip   654      27,389,351  47           quarter track 54 (~track 14)
 //
 // The boot is media-bound, not defect-bound: 47 revolutions of a 77,776-cell
 // track at the 2 us 3.5" cell is 7.3 s of a 12.7 s boot (a real 800K track holds
@@ -33,20 +35,26 @@ import * as fs from "fs"
 // once at mount and the read path is a latch over the bit stream. Forcing the
 // bit-cell rate to 0.5x during this investigation *broke* the boot - 13
 // revolutions, the head never left track 0 - because the ROM's byte-serial
-// reader cannot outrun the media, so the pacing is load-bearing.
+// reader cannot outrun the media, so the pacing is load-bearing. A separate
+// measurement put the usable range at 0.75x-0.9x: 645/603/589 frames with the
+// correct banner at 0.9/0.8/0.75, still 47 revolutions and the same head
+// position, so the media clock is not free headroom for this bug either.
 //
-// The one emulator-side cost left is the MC14536 /ENBL holdover. The ROM's 3.5"
-// nibble reader ($6A6E in the bank $E1 ROM image) runs the SELIWM sequence
-// $C0EE/$C0ED/$C0EE and polls status bit 5 until /ENBL drops; the boot starts by
-// probing the 5.25" bay, and its ENABLE release arms the full one-second
-// holdover, so the first 3.5" byte waits 2,808,604 cycles (59 frames, 0.98 s)
-// doing nothing at all - no media is moving and no read is in flight.
-// motherboard.ts now retires the timer when it sees that exact poll loop, which
-// is the same trade the classic II loader already gets: the browser's load
-// acceleration is allowed to skip pure CPU waits. The media work is unchanged -
-// both boots consume the same 47 revolutions and stop at the same quarter track -
-// and the unaccelerated boot keeps its original 747 frames, which is what pins
-// the change to the wait and not to the drive model.
+// The two emulator-side costs left are both pure waits. The MC14536 /ENBL
+// holdover: the ROM's 3.5" nibble reader ($6A6E in the bank $E1 ROM image) runs
+// the SELIWM sequence $C0EE/$C0ED/$C0EE and polls status bit 5 until /ENBL
+// drops; the boot starts by probing the 5.25" bay, and its ENABLE release arms
+// the full one-second holdover, so the first 3.5" byte waits 2,808,604 cycles
+// (59 frames, 0.98 s) doing nothing at all - no media is moving and no read is
+// in flight. And the driver's slow-mode settle wait at FF:$5E89: its nested
+// DEC $68/$69 loop burns ~55k cycles on each of the 8 calls this boot makes
+// (440,804 cycles, 34 frames), and it is skipped at the loop head so the
+// routine's own $C036 slow/fast writes still run in order. motherboard.ts now
+// retires both, which is the same trade the classic II loader already gets:
+// the browser's load acceleration may skip pure CPU waits. The media work is
+// unchanged - every run consumes the same 47 revolutions and stops at the same
+// quarter track - and the unaccelerated boot keeps its original 747 frames,
+// which is what pins the change to the waits and not to the drive model.
 const DISK_PATH = "public/disks/Eamon 1.po"
 const DISK_INDEX = 4 // slot 5, drive 1
 const BANNER = /Eamon Adventurer's Guild|Hawkhaven Drive/i
@@ -81,6 +89,7 @@ interface BootResult {
   // 77,776 cells, so a healthy boot walks the whole track.
   maxBitOffset: number
   enblReleases: number
+  settleSkips: number
   screen: string
 }
 
@@ -137,6 +146,7 @@ const boot = (accelerated: boolean): BootResult => {
     quarterTracks,
     maxBitOffset,
     enblReleases: gsSlot5EnblReleaseCountForTesting(),
+    settleSkips: gsSlot5SettleSkipCountForTesting(),
     screen,
   }
   doSetRunMode(RUN_MODE.PAUSED, false)
@@ -148,7 +158,7 @@ const boot = (accelerated: boolean): BootResult => {
 
 const results = new Map<boolean, BootResult>()
 const measure = (accelerated: boolean): BootResult =>
-  results.get(accelerated) ?? { frames: -1, cycles: 0, revolutions: 0, quarterTracks: 0, maxBitOffset: 0, enblReleases: 0, screen: "" }
+  results.get(accelerated) ?? { frames: -1, cycles: 0, revolutions: 0, quarterTracks: 0, maxBitOffset: 0, enblReleases: 0, settleSkips: 0, screen: "" }
 
 describeOrSkip("IIgs slot 5 3.5\" boot speed", () => {
   // One boot per acceleration mode, in a fixed order, before any assertion: the
@@ -194,16 +204,19 @@ describeOrSkip("IIgs slot 5 3.5\" boot speed", () => {
     expect(slow.cycles).toBeLessThan(31_500_000)
   })
 
-  test("the acceleration retires the /ENBL holdover, worth ~59 frames of dead time", () => {
+  test("the acceleration retires the /ENBL holdover and the ROM settle waits", () => {
     const slow = measure(false)
     const fast = measure(true)
-    // 2,808,604 cycles / 47,052 cycles per frame = 59 frames, one second of the
-    // MC14536 holdover. Before the fix the accelerated run was identical to the
-    // unaccelerated one (747 frames) and this bound failed.
-    expect(fast.frames).toBeLessThanOrEqual(slow.frames - 40)
-    expect(fast.cycles).toBeLessThan(slow.cycles - 2_000_000)
+    // Holdover: 2,808,604 cycles / 47,052 cycles per frame = 59 frames, one second
+    // of the MC14536 tail. Settle waits: 8 calls x ~55k slow-mode cycles = 440,804
+    // cycles, 34 frames. Together 93 frames; before either fix the accelerated run
+    // was identical to the unaccelerated one (747 frames) and this bound failed.
+    expect(fast.frames).toBeLessThanOrEqual(slow.frames - 85)
+    expect(fast.cycles).toBeLessThan(slow.cycles - 2_800_000)
     expect(slow.enblReleases).toBe(0)
+    expect(slow.settleSkips).toBe(0)
     expect(fast.enblReleases).toBe(1)
+    expect(fast.settleSkips).toBe(8)
   })
 
   test("leaves the slot-5 media work identical in both modes", () => {

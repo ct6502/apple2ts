@@ -424,6 +424,47 @@ const releaseGsSlot5EnblHoldover = () => {
   iigsRetireEnblHoldover()
   gsSlot5EnblReleaseCount++
 }
+
+// The built-in drive firmware also runs a slow-mode settle wait after every
+// seek and drive switch: FF:$5E89 does LDA $C036 / force slow (AND #$7F, STA
+// $C036) / two nested DEC $68,$69 busy loops / PLA / STA $C036, returning with
+// the restore already handled. The routine is entered by JSR from six driver
+// sites ($5BFE,$5E85,$5EB4,$5EDA,$5EF4,$5F1F) and also by fall-through from the
+// $5E84 wrapper's PLA, so the CPU stack is not ours to touch. Instead the skip is
+// taken at the nested-count loop head ($5E98), where the loop's exit state is
+// fully known: both direct-page counters reach zero and the PLA at $5EA1 then
+// restores $C036 from the stack exactly as before. Nothing inside the loops
+// touches a device register, and the IWM advances the media from cycleCount on
+// the next access, so the ROM's own ready polls still decide when a byte
+// arrives. The STA $C036 writes both still execute.
+const GS_SLOT5_SETTLE_PC_LOW = 0x98
+// C6 68 EA D0 FB   DEC $68; NOP; BNE (inner, 100 x DEC on $68)
+// C6 69 D0 F3      DEC $69; BNE outer
+// ...falls through to $5EA1: 68 PLA; 8D 36 C0 STA $C036; 60 RTS
+const GS_SLOT5_SETTLE_SIGNATURE = [0xc6, 0x68, 0xea, 0xd0, 0xfb, 0xc6, 0x69, 0xd0, 0xf3]
+const GS_SLOT5_SETTLE_RESUME = 0x5ea1
+let gsSlot5SettleSkipCount = 0
+export const resetGsSlot5SettleSkipCountForTesting = () => {
+  gsSlot5SettleSkipCount = 0
+}
+export const gsSlot5SettleSkipCountForTesting = () => gsSlot5SettleSkipCount
+
+const skipGsSlot5SettleDelay = () => {
+  if (!gsDiskLoadAccelerationEnabled) return
+  const gsCpu = cpu as CPU65816
+  if (gsCpu.PB !== 0xff) return
+  // Only the 3.5" path: a 5.25" selection keeps the classic drive timing.
+  if (!iigsGetIwmEnable35()) return
+  if (!iigs35FloppyHasMedia(4 + iigsGetIwmDriveSelect())) return
+  const base = ((gsCpu.PB << 16) | gsCpu.PC) >>> 0
+  for (let i = 0; i < GS_SLOT5_SETTLE_SIGNATURE.length; i++) {
+    if (memGet24((base + i) & 0xffffff) !== GS_SLOT5_SETTLE_SIGNATURE[i]) return
+  }
+  memSet24((gsCpu.D + 0x68) & 0xffff, 0)
+  memSet24((gsCpu.D + 0x69) & 0xffff, 0)
+  gsCpu.PC = GS_SLOT5_SETTLE_RESUME
+  gsSlot5SettleSkipCount++
+}
 // ---- Ensoniq DOC catch-up (shared by the run loop and every DOC access) ----
 // gssquared calls ensoniq_catch_up() before applying any $C03C-$C03F access,
 // on its periodic cycle handler and at frame end. A DOC write therefore has
@@ -1917,6 +1958,13 @@ const doAdvance6502 = () => {
       // holdover timer here lets the very next status read answer "released",
       // so the ROM leaves the loop as it would have after the one-second tail.
       releaseGsSlot5EnblHoldover()
+    }
+    if (!delaySkipped && isIIgs && (((cpu as CPU65816).PC & 0xFF) === GS_SLOT5_SETTLE_PC_LOW)) {
+      // Six-byte check only runs on a PC hit, so unrelated code costs one
+      // compare. The skip leaves the CPU in the routine's documented exit state
+      // (PC past the RTS, counters zeroed, $C036 already restored) and charges
+      // no cycles: the drive advances from cycleCount on the next IWM access.
+      skipGsSlot5SettleDelay()
     }
     if (!delaySkipped && softCard.activeCpu === "Z80") {
       const stepT = softCard.stepZ80() || 4
