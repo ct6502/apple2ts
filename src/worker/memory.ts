@@ -2229,7 +2229,14 @@ export const setFloatingBus = (value: number) => { floatingBus = value & 0xff }
 export const exportMemoryToHiresLine = (line: number) => {
   const doubleRes = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet
   const video7foreground = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
-  const video7_160 = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.VIDEO7_160.isSet
+  // The Video-7 card only offers its extra 160x192 mode when 80STORE is on, but
+  // its AN3 flip-flops still latch while 80STORE is off, so a stale flag alone
+  // must not hijack a plain HGR screen. Shufflepuck Cafe is such a case: its
+  // text/HGR setup toggles AN3 with 80COL off and leaves VIDEO7_160 set, and
+  // rendering that as 160x192 gave colored vertical stripes instead of the HGR
+  // picture.
+  const video7_160 = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet &&
+    SWITCHES.STORE80.isSet && SWITCHES.VIDEO7_160.isSet
   const video7_mono = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet && SWITCHES.VIDEO7_MONO.isSet
   // Determine which hi-res buffer to use
   if (doubleRes || video7_160 || video7_mono || video7foreground) {

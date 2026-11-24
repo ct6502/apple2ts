@@ -178,6 +178,60 @@ test("single Hi-Res mode ignores VIDEO7_MONO when DHIRES is off (e.g. AppleVisio
   }
 })
 
+test("a latched Video-7 160x192 flag is ignored while 80STORE is off (Shufflepuck Cafe)", () => {
+  // Shufflepuck Cafe's text/HGR setup leaves VIDEO7_160 set after clocking AN3
+  // with 80COL off. Rendering that stale flag as Video-7 160x192 turned the HGR
+  // picture into colored vertical stripes. The Video-7 card only offers that
+  // mode with 80STORE on, so with 80STORE off the frame must stay plain HGR.
+  const videoSwitches = [
+    SWITCHES.TEXT,
+    SWITCHES.HIRES,
+    SWITCHES.MIXED,
+    SWITCHES.PAGE2,
+    SWITCHES.STORE80,
+    SWITCHES.COLUMN80,
+    SWITCHES.DHIRES,
+    SWITCHES.VIDEO7_160,
+  ]
+  const oldSwitchValues = videoSwitches.map(videoSwitch => videoSwitch.isSet)
+
+  try {
+    memorySetForTests(true)
+    SWITCHES.TEXT.isSet = false
+    SWITCHES.HIRES.isSet = true
+    SWITCHES.MIXED.isSet = false
+    SWITCHES.PAGE2.isSet = false
+    SWITCHES.STORE80.isSet = false
+    SWITCHES.COLUMN80.isSet = false
+    SWITCHES.DHIRES.isSet = true
+    SWITCHES.VIDEO7_160.isSet = true
+
+    const firstAddress = hiresLineToAddress(0x2000, 0)
+    memory[firstAddress] = 0x55
+    memory[RamWorksMemoryStart + firstAddress] = 0xAA
+
+    exportMemoryToHiresLine(0)
+    exportMemoryToHiresLine(191)
+    let frame = getHires()
+    expect(frame).toHaveLength(40 * 192)
+    expect(frame[0]).toBe(0x55)
+
+    // With 80STORE on the same flags do select Video-7 160x192, which needs
+    // both memory banks: the frame is 80 bytes per line.
+    SWITCHES.STORE80.isSet = true
+    exportMemoryToHiresLine(0)
+    exportMemoryToHiresLine(191)
+    frame = getHires()
+    expect(frame).toHaveLength(80 * 192)
+    expect(frame.slice(0, 2)).toEqual(Uint8Array.from([0xAA, 0x55]))
+  } finally {
+    videoSwitches.forEach((videoSwitch, index) => {
+      videoSwitch.isSet = oldSwitchValues[index]
+    })
+    exportMemoryToHiresLine(0)
+  }
+})
+
 test("readMainMemIndex", () => {
   memorySetForTests()
   doTestMemory(0, 0, 0xBF, expectIndex)
