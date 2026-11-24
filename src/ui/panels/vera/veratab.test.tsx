@@ -220,6 +220,41 @@ describe("VeraTab mouse support", () => {
     expect(labels.some(label => label.includes("Full Screen"))).toBe(true)
   })
 
+  test("hides the size and full-screen controls while full screen", () => {
+    act(() => {
+      root!.render(<VeraTab />)
+    })
+
+    const screen = container!.firstElementChild as HTMLElement
+    expect(container!.querySelectorAll("button").length).toBe(3)
+
+    try {
+      // jsdom has no fullscreen implementation, so drive the state the way the
+      // browser reports it: the screen box becomes the fullscreen element.
+      Object.defineProperty(document, "fullscreenElement", {
+        configurable: true,
+        get: () => screen,
+      })
+      act(() => {
+        document.dispatchEvent(new Event("fullscreenchange"))
+      })
+
+      // The controls would sit under a viewport-sized 4:3 screen and cover its
+      // bottom line, so they are not rendered at all while full screen.
+      expect(container!.querySelectorAll("button").length).toBe(0)
+    } finally {
+      Object.defineProperty(document, "fullscreenElement", {
+        configurable: true,
+        get: () => null,
+      })
+      act(() => {
+        document.dispatchEvent(new Event("fullscreenchange"))
+      })
+    }
+
+    expect(container!.querySelectorAll("button").length).toBe(3)
+  })
+
   test("shows the single-tab performance tip on the standby screen", () => {
     ;(handleGetVeraFrame as jest.Mock).mockReturnValue({
       fb: undefined,
