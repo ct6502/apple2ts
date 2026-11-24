@@ -6,7 +6,7 @@ import { s6502 } from "../../instructions"
 import { setSlotIOCallback } from "../../memory"
 import { passVeraAudioReset, passVeraFmReset, passVeraFmWrite } from "../../worker2main"
 import { getCpuCyclesPerRefresh } from "../../motherboard"
-import { video_cycles_until_next_event, video_init, video_step, video_update, video_reset, video_read, video_write, video_get_irq_out } from "./video"
+import { video_cycles_until_next_event, video_init, video_step, video_update, video_reset, video_read, video_write, video_get_irq_out, vera_audio_held, vera_audio_release_hold } from "./video"
 import { vera_spi_init, vera_spi_step, sdcard_select } from "./sdcard"
 
 let slot: number = 5
@@ -81,6 +81,11 @@ export const resetVera = () => {
   passVeraAudioReset()
 }
 
+// A machine power-on calls doReset()/resetVera() too, but it is not a warm
+// reset: release the audio hold so software that never programs the display
+// composer still sounds. See video.ts vera_audio_release_hold().
+export const releaseVeraAudioHold = (): void => vera_audio_release_hold()
+
 export const enableVera = (enable = true, aslot = 3) => {
   if (!enable)
     return
@@ -111,7 +116,7 @@ const handleVeraIO = (addr: number, val = -1): number => {
     if (!fmEnabled) return 0xff
     const port = (addr - ymBase) as 0 | 1
     if (val >= 0) {
-      passVeraFmWrite({ port, value: val & 0xff })
+      if (!vera_audio_held()) passVeraFmWrite({ port, value: val & 0xff })
       if (port === 1) {
         // YM2151 writes hold BUSY for 32 chip clocks at the OPM prescale of 2.
         // Convert those 64 chip clocks to Apple II CPU cycles so software

@@ -78,7 +78,7 @@ export const getCPU = (): ICPU => cpu
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
-import { enableVera, resetVera } from "./devices/vera/vera"
+import { enableVera, releaseVeraAudioHold, resetVera } from "./devices/vera/vera"
 import { videoTerm, enableVideoTerm, disableVideoTerm } from "./devices/videoterm"
 import { vidhd } from "./devices/vidhd"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
@@ -959,6 +959,10 @@ export const doBoot = () => {
     applyIigsSlotConfig()
   }
   doReset()
+  // Like the ADB below, VERA's audio hold belongs to warm starts only: doBoot()
+  // runs doReset() to initialize the machine, but a power-on must not mute a
+  // card whose software never programs the display composer (audio-only use).
+  if (veraSlot !== 0) releaseVeraAudioHold()
   // Power-on is a cold start: the ADB micro-controller's internal RAM (and with
   // it the ROM's warm-boot marker at uC RAM $51) is undefined until the ROM
   // writes it, unlike a Ctrl-Reset which leaves it in place. doReset() above

@@ -1,5 +1,6 @@
-import { doBoot, doSetMachineName, doSetSlotConfig, resetCpuSpeedForTesting } from "./motherboard"
+import { doBoot, doReset, doSetMachineName, doSetSlotConfig, resetCpuSpeedForTesting } from "./motherboard"
 import { memGet } from "./memory"
+import { vera_audio_held } from "./devices/vera/video"
 import { DEFAULT_SLOT_CONFIG, DEFAULT_SLOT_CONFIG_GS } from "../common/utility"
 import { setIsTesting } from "./worker2main"
 
@@ -41,5 +42,21 @@ describe("boot rebuilds peripheral-card slot layouts", () => {
     doBoot()
 
     expect(isBlankPowerUpFill(slotRomBytes(0xC400, 16))).toBe(false)
+  })
+
+  test("power-on lets VERA audio through, a Ctrl-Reset holds it until re-armed", () => {
+    doSetMachineName("APPLE2EE")
+    doSetSlotConfig({ ...DEFAULT_SLOT_CONFIG, 2: "vera" })
+
+    doBoot()
+    // A power-on is not a warm reset: audio-only VERA software never writes the
+    // display composer, so the hold must not survive the boot's doReset().
+    expect(vera_audio_held()).toBe(false)
+
+    // A Ctrl-Reset resets the card and leaves its display off. Time Pilot's
+    // warm-start vector resumes mid-loop and keeps writing music registers, so
+    // audio must stay silent until software programs the composer again.
+    doReset()
+    expect(vera_audio_held()).toBe(true)
   })
 })
