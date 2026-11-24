@@ -62,6 +62,9 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   iigsGetIwmDriveSelect,
   iigsGetIwmEnable35,
   iigsGetIwmMotorOn,
+  iigs35FloppyHasMedia,
+  iigsEnblHoldoverPending,
+  iigsRetireEnblHoldover,
   setIigsSlotRegister,
   setIigsRomVersion,
   isIigsRom03,
@@ -375,6 +378,51 @@ const advanceGsAztecDelay = () => {
 
 export const setGsDiskLoadAccelerationForTesting = (enabled: boolean) => {
   gsDiskLoadAccelerationEnabled = enabled
+}
+// ---- IIgs slot 5: the /ENBL holdover wait in the ROM's 3.5" reader ----
+// The 3.5" nibble reader in the ROM's bank $E1 image ($6A6E; the same bytes are
+// visible at FF:6A6E because $E1 is the ROM's shadow bank) starts every access
+// with the SELIWM sequence: JSR $6F42, then it peeks $C0EE / $C0ED / $C0EE (odd
+// addresses read as 0, the even ones are the status register) and polls status
+// bit 5 until /ENBL drops, only then reading the data register at $C0EC.
+//
+// Bit 5 is the MC14536 holdover. A 3.5" boot begins by probing the 5.25" bay,
+// which asserts and releases ENABLE, so that poll waits out the whole
+// one-second tail before the first slot-5 byte: measured 2,808,604 cycles
+// (59 frames, 0.98 s) on the Eamon 1.po boot below, with ENABLE released and
+// nothing moving - the drive is idle and no read is in flight. The classic II
+// pays no such wait (no holdover, and its 5.25" reader has no SELIWM step), so
+// the browser's load acceleration retires the timer as soon as the ROM begins
+// polling it, the same way it already fast-forwards the classic II's loader
+// delay. Gated on a mounted 3.5" disk in the bay the driver is about to select,
+// so an empty slot 5 leaves the 5.25" holdover timing (prodos_gs_speed /
+// gs_slot6_speed) untouched.
+const GS_SLOT5_ENBL_POLL_PC_LOW = 0x79
+// BD 8E C0   LDA $C08E,X ($C0EE: status)   29 20      AND #$20  (/ENBL)
+// D0 F9      BNE back to the status read
+const GS_SLOT5_ENBL_POLL_SIGNATURE = [0xBD, 0x8E, 0xC0, 0x29, 0x20, 0xD0, 0xF9]
+let gsSlot5EnblReleaseCount = 0
+export const resetGsSlot5EnblReleaseCountForTesting = () => {
+  gsSlot5EnblReleaseCount = 0
+}
+export const gsSlot5EnblReleaseCountForTesting = () => gsSlot5EnblReleaseCount
+
+const releaseGsSlot5EnblHoldover = () => {
+  if (!gsDiskLoadAccelerationEnabled) return
+  if (!iigsEnblHoldoverPending()) return
+  // The driver polls $C0EE before it writes $C0EF, so /ENBL is the IWM's shared
+  // output here and iwmEnable35 is still clear; identify the caller by the poll
+  // loop in ROM and by the 3.5" media it is about to address. Slot 5's drives
+  // start at drive-state index 4 (IWM_FLOPPY_BASE[5] in memory.ts,
+  // FLOPPY_BASE_INDEX in devices/drivestate.ts).
+  if (!iigs35FloppyHasMedia(4 + iigsGetIwmDriveSelect())) return
+  const gsCpu = cpu as CPU65816
+  const base = ((gsCpu.PB << 16) | gsCpu.PC) >>> 0
+  for (let i = 0; i < GS_SLOT5_ENBL_POLL_SIGNATURE.length; i++) {
+    if (memGet24((base + i) & 0xFFFFFF) !== GS_SLOT5_ENBL_POLL_SIGNATURE[i]) return
+  }
+  iigsRetireEnblHoldover()
+  gsSlot5EnblReleaseCount++
 }
 // ---- Ensoniq DOC catch-up (shared by the run loop and every DOC access) ----
 // gssquared calls ensoniq_catch_up() before applying any $C03C-$C03F access,
@@ -1863,6 +1911,12 @@ const doAdvance6502 = () => {
         cycleTotal += cycles
         processCycleCountCallbacks()
       }
+    }
+    if (!delaySkipped && isIIgs && (((cpu as CPU65816).PC & 0xFF) === GS_SLOT5_ENBL_POLL_PC_LOW)) {
+      // The slot-5 /ENBL poll loop costs no guest state of its own: retiring the
+      // holdover timer here lets the very next status read answer "released",
+      // so the ROM leaves the loop as it would have after the one-second tail.
+      releaseGsSlot5EnblHoldover()
     }
     if (!delaySkipped && softCard.activeCpu === "Z80") {
       const stepT = softCard.stepZ80() || 4

@@ -21,7 +21,7 @@ import { iigsClock } from "./iigs_clock"
 import { iigsADB } from "./iigs_adb"
 import { iigsEnsoniq, docAccess } from "./devices/iigs_ensoniq"
 import { iwmAdvance35, iwmAdvance525Write, iwmFloppySpinning, iwmFlushWrites35, iwmGetSense35, iwmReadDataRegister, iwmReadHandshake35, iwmReadSense525, iwmRebase525Timing, iwmReset35Lines, iwmReset525PendingWrites, iwmResetTiming, iwmStepHead, iwmSyncDriveEnables35, iwmWriteDataRegister35, iwmWriteDataRegister525 } from "./devices/diskdata"
-import { getDriveDataByIndex, getDriveStateByIndex } from "./devices/drivestate"
+import { getDriveBitstreamByIndex, getDriveDataByIndex, getDriveStateByIndex } from "./devices/drivestate"
 
 // 0x00000: main memory
 // 0x10000...13FFF: ROM (including page $C0 soft switches)
@@ -386,6 +386,16 @@ const iwmSetEnableSwitch = (on: boolean) => {
   }
   iwmMotorOn = on
 }
+// True while the MC14536 holdover is the only thing holding /ENBL: ENABLE is
+// released and the one-second tail from the last 5.25" release is still running.
+// The IIgs 3.5" driver polls status bit 5 until exactly this ends (see the
+// SELIWM sequence at $6A6E in the ROM's 3.5" nibble reader), so the tail is dead
+// time in the middle of a slot-5 boot; motherboard.ts retires it there when the
+// disk-load acceleration is on.
+export const iigsEnblHoldoverPending = () => !iwmMotorOn && iwmEnblHoldoverEnd !== 0
+export const iigsRetireEnblHoldover = () => {
+  iwmEnblHoldoverEnd = 0
+}
 // Spindle/LSS gate. The MC14536 holdover keeps a drive clocked, as it does in
 // gssquared (IWM2::sync_drive_enables pushes the /ENBL line into the drive's
 // enable latch), so both drive families honour it: one second of machine time
@@ -402,6 +412,12 @@ const iwmSpindleEnable = () => iwmEnblAsserted()
 export const iigsFloppyHasMedia = (index: number) => {
   const ds = getDriveStateByIndex(index)
   return !ds.hardDrive && getDriveDataByIndex(index).length > 0
+}
+// The 3.5" drive consumes the synthesized bit stream, not the block image, so a
+// mounted 800K disk is "media present" here and not in getDriveDataByIndex().
+export const iigs35FloppyHasMedia = (index: number) => {
+  const ds = getDriveStateByIndex(index)
+  return !ds.hardDrive && getDriveBitstreamByIndex(index).length > 0
 }
 export const iigsGetIwmEnable35 = () => iwmEnable35
 export const iigsSetIwmEnable35 = (enable35: boolean) => {
