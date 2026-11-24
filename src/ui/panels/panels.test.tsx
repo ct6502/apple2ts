@@ -2,6 +2,7 @@ import { act } from "react"
 import { createRoot, Root } from "react-dom/client"
 import DebugSection from "./panels"
 import { setTabView } from "../ui_settings"
+import { VERA_VIDEO_STARTED_EVENT } from "../vera_events"
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -89,6 +90,29 @@ describe("DebugSection tab visibility", () => {
     setTabView(4)
     render()
     expect(container!.querySelector(".dbg-tab-active")?.getAttribute("title")).toBe("debug.helpTab")
+    expect(container!.querySelector("#help-content")).not.toBeNull()
+  })
+
+  test("opens the VERA monitor when a VERA title starts drawing", () => {
+    slotConfig[2] = "vera"
+    render()
+    expect(container!.querySelector("#help-content")).not.toBeNull()
+
+    act(() => {
+      window.dispatchEvent(new Event(VERA_VIDEO_STARTED_EVENT))
+    })
+
+    expect(container!.querySelector(".dbg-tab-active")?.getAttribute("title")).toBe("debug.veraMonitor")
+    expect(container!.querySelector("#vera-content")).not.toBeNull()
+  })
+
+  test("ignores the VERA start when no card is installed", () => {
+    render()
+
+    act(() => {
+      window.dispatchEvent(new Event(VERA_VIDEO_STARTED_EVENT))
+    })
+
     expect(container!.querySelector("#help-content")).not.toBeNull()
   })
 

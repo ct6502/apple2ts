@@ -21,6 +21,7 @@ import {
   requestWriteMemory,
   setMain2Worker,
 } from "./main2worker"
+import { VERA_VIDEO_STARTED_EVENT } from "./vera_events"
 
 jest.mock("./panels/disassembly/disassembly_utilities", () => ({
   set6502Instructions: jest.fn(),
@@ -390,4 +391,31 @@ test("publishes only new worker-owned execution snapshots", () => {
   } as MessageEvent)
   expect(snapshots).toEqual([execution, publishedReplacement])
   setExecutionStateCallback(() => {})
+})
+
+describe("VERA video start event", () => {
+  const sendVeraFrame = (dcVideo: number) => {
+    const payload = dcVideo !== 0
+      ? { fb: new Uint8ClampedArray(640 * 480 * 4), dcVideo, sequence: 1 }
+      : { dcVideo, sequence: 0 }
+    doOnMessage({ data: { msg: MSG_WORKER.VERA_FRAME, payload } } as MessageEvent)
+  }
+
+  test("announces each idle-to-drawing transition once", () => {
+    const listener = jest.fn()
+    window.addEventListener(VERA_VIDEO_STARTED_EVENT, listener)
+    try {
+      sendVeraFrame(0)
+      expect(listener).not.toHaveBeenCalled()
+      sendVeraFrame(3)
+      expect(listener).toHaveBeenCalledTimes(1)
+      sendVeraFrame(3)
+      expect(listener).toHaveBeenCalledTimes(1)
+      sendVeraFrame(0)
+      sendVeraFrame(3)
+      expect(listener).toHaveBeenCalledTimes(2)
+    } finally {
+      window.removeEventListener(VERA_VIDEO_STARTED_EVENT, listener)
+    }
+  })
 })
