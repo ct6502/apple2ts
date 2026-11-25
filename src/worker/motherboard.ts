@@ -62,6 +62,9 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   iigsGetIwmDriveSelect,
   iigsGetIwmEnable35,
   iigsGetIwmMotorOn,
+  iigs35FloppyHasMedia,
+  iigsEnblHoldoverPending,
+  iigsRetireEnblHoldover,
   setIigsSlotRegister,
   setIigsRomVersion,
   isIigsRom03,
@@ -84,7 +87,7 @@ import { vidhd } from "./devices/vidhd"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { clearSlotCardStateHandlers } from "./devices/slot_card_state"
 import { resetMouse, onMouseVBL, iigsMouseStep } from "./devices/mouse"
-import { enableDiskDrive, enableDiskDrive35, iwmResetTiming, processFloppyMotorTimeout, setIigs35TimerScale } from "./devices/diskdata"
+import { enableDiskDrive, enableDiskDrive35, iwmResetTiming, matchGsLoaderDelayLoop, processFloppyMotorTimeout, setIigs35TimerScale } from "./devices/diskdata"
 import { advanceKeySequence, interruptKeySequence, pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
 import {
   advanceConditionalInputSequence,
@@ -285,29 +288,32 @@ let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 export const getCpuCyclesPerRefresh = () => cpuCyclesPerRefresh
 
-// ---- GS-only Aztec 5.25" loader delay acceleration ----
+// ---- GS-only 5.25" loader delay acceleration ----
 // The decoded Aztec WOZ sectors contain a disk-resident copy-protection timer
-// ($BD9E..$BDAA, called from the $BD00 loader). The IIgs executes the delay
-// loop; the classic path never enters it, so the same title load takes roughly
-// five times as long on the IIgs at 1.024 MHz or 2.8 MHz. The loop only burns
-// CPU cycles: it touches no I/O and leaves $46/$47 at zero for the caller's
-// $BDAB continuation. Fast-forward exactly those cycles, with the machine
-// clock and video/DOC timeline advanced, so the disk keeps its elapsed-time
-// position and the guest resumes at $BDAB with the counters already wrapped.
-// The 13-byte signature is checked against live RAM; the motor + mounted 5.25"
-// media check limits this to a real GS load. Classic optimalTiming, bitTiming
-// and getNextByte are untouched. Test suites run disabled by default; the
-// permanent regression enables this explicitly.
+// ($BD9E..$BDAA, called from the $BD00 loader). DOS 3.3 RWTS carries the same
+// 13-byte loop: boot1 runs it at $3D9E while it still lives in $3600-$3FFF, and
+// at $BD9E once RWTS has relocated itself into the $B900-$BDxx image. The IIgs
+// executes it (21 entries, ~57% of a DOS 3.3 boot's CPU cycles); the classic
+// path never enters it, so the same disk load takes roughly five times as long
+// on the IIgs at 1.024 MHz or 2.8 MHz. The loop only burns CPU cycles: it
+// touches no I/O and leaves $46/$47 at zero for the caller's continuation
+// ($BDAB for Aztec and DOS RWTS). Fast-forward exactly those cycles, with the
+// machine clock and video/DOC timeline advanced, so the disk keeps its
+// elapsed-time position and the guest resumes with the counters already
+// wrapped. The 13-byte signature lives in diskdata.ts next to the IWM read path
+// and is checked against live RAM, so *every* copy of the loop is recognised;
+// the motor + mounted 5.25" media check limits this to a real GS load. Classic
+// optimalTiming, bitTiming and getNextByte are untouched. Test suites run
+// disabled by default; the permanent regression enables this explicitly.
 const nodeProcess = (globalThis as {
   process?: { env?: Record<string, string | undefined> }
 }).process
 const isJestWorker = !!nodeProcess?.env?.JEST_WORKER_ID
 let gsDiskLoadAccelerationEnabled = !isJestWorker
-const GS_AZTEC_DELAY_SIGNATURE = [
-  0xA0, 0x12, 0x88, 0xD0, 0xFD, 0xE6, 0x46, 0xD0, 0xF7, 0xE6, 0x47, 0xD0, 0xF3,
-]
-const GS_AZTEC_DELAY_PC = 0xBD9E
-const GS_AZTEC_DELAY_RESUME_PC = 0xBDAB
+// Low byte shared by every copy of the loop; the full match runs on a hit, so
+// the run loop only pays one array lookup for an unrelated PC.
+const GS_LOADER_DELAY_PC_LOW = 0x9E
+let gsLoaderDelayResumePc = 0
 
 // Total delay-loop cycles for starting counters x ($46) and y ($47), derived
 // from the measured instruction timings:
@@ -327,11 +333,8 @@ export const gsAztecDelayCycleCountForTesting = (x46: number, y47: number) => {
 
 const gsAztecDelaySignatureMatches = () => {
   const gsCpu = cpu as CPU65816
-  if (gsCpu.PC !== GS_AZTEC_DELAY_PC || gsCpu.PB !== 0x00) return false
-  for (let i = 0; i < GS_AZTEC_DELAY_SIGNATURE.length; i++) {
-    if (memGet24(GS_AZTEC_DELAY_PC + i) !== GS_AZTEC_DELAY_SIGNATURE[i]) return false
-  }
-  return true
+  gsLoaderDelayResumePc = matchGsLoaderDelayLoop(gsCpu.PC, gsCpu.PB, memGet24)
+  return gsLoaderDelayResumePc >= 0
 }
 
 const gsAztecDelayCyclesAtCurrentCounters = () => {
@@ -369,12 +372,98 @@ const advanceGsAztecDelay = () => {
   const dp = (cpu as CPU65816).D
   memSet24((dp + 0x46) & 0xFFFF, 0)
   memSet24((dp + 0x47) & 0xFFFF, 0)
-  ;(cpu as CPU65816).PC = GS_AZTEC_DELAY_RESUME_PC
+  ;(cpu as CPU65816).PC = gsLoaderDelayResumePc
   return delayCycles
 }
 
 export const setGsDiskLoadAccelerationForTesting = (enabled: boolean) => {
   gsDiskLoadAccelerationEnabled = enabled
+}
+// ---- IIgs slot 5: the /ENBL holdover wait in the ROM's 3.5" reader ----
+// The 3.5" nibble reader in the ROM's bank $E1 image ($6A6E; the same bytes are
+// visible at FF:6A6E because $E1 is the ROM's shadow bank) starts every access
+// with the SELIWM sequence: JSR $6F42, then it peeks $C0EE / $C0ED / $C0EE (odd
+// addresses read as 0, the even ones are the status register) and polls status
+// bit 5 until /ENBL drops, only then reading the data register at $C0EC.
+//
+// Bit 5 is the MC14536 holdover. A 3.5" boot begins by probing the 5.25" bay,
+// which asserts and releases ENABLE, so that poll waits out the whole
+// one-second tail before the first slot-5 byte: measured 2,808,604 cycles
+// (59 frames, 0.98 s) on the Eamon 1.po boot below, with ENABLE released and
+// nothing moving - the drive is idle and no read is in flight. The classic II
+// pays no such wait (no holdover, and its 5.25" reader has no SELIWM step), so
+// the browser's load acceleration retires the timer as soon as the ROM begins
+// polling it, the same way it already fast-forwards the classic II's loader
+// delay. Gated on a mounted 3.5" disk in the bay the driver is about to select,
+// so an empty slot 5 leaves the 5.25" holdover timing (prodos_gs_speed /
+// gs_slot6_speed) untouched.
+const GS_SLOT5_ENBL_POLL_PC_LOW = 0x79
+// BD 8E C0   LDA $C08E,X ($C0EE: status)   29 20      AND #$20  (/ENBL)
+// D0 F9      BNE back to the status read
+const GS_SLOT5_ENBL_POLL_SIGNATURE = [0xBD, 0x8E, 0xC0, 0x29, 0x20, 0xD0, 0xF9]
+let gsSlot5EnblReleaseCount = 0
+export const resetGsSlot5EnblReleaseCountForTesting = () => {
+  gsSlot5EnblReleaseCount = 0
+}
+export const gsSlot5EnblReleaseCountForTesting = () => gsSlot5EnblReleaseCount
+
+const releaseGsSlot5EnblHoldover = () => {
+  if (!gsDiskLoadAccelerationEnabled) return
+  if (!iigsEnblHoldoverPending()) return
+  // The driver polls $C0EE before it writes $C0EF, so /ENBL is the IWM's shared
+  // output here and iwmEnable35 is still clear; identify the caller by the poll
+  // loop in ROM and by the 3.5" media it is about to address. Slot 5's drives
+  // start at drive-state index 4 (IWM_FLOPPY_BASE[5] in memory.ts,
+  // FLOPPY_BASE_INDEX in devices/drivestate.ts).
+  if (!iigs35FloppyHasMedia(4 + iigsGetIwmDriveSelect())) return
+  const gsCpu = cpu as CPU65816
+  const base = ((gsCpu.PB << 16) | gsCpu.PC) >>> 0
+  for (let i = 0; i < GS_SLOT5_ENBL_POLL_SIGNATURE.length; i++) {
+    if (memGet24((base + i) & 0xFFFFFF) !== GS_SLOT5_ENBL_POLL_SIGNATURE[i]) return
+  }
+  iigsRetireEnblHoldover()
+  gsSlot5EnblReleaseCount++
+}
+
+// The built-in drive firmware also runs a slow-mode settle wait after every
+// seek and drive switch: FF:$5E89 does LDA $C036 / force slow (AND #$7F, STA
+// $C036) / two nested DEC $68,$69 busy loops / PLA / STA $C036, returning with
+// the restore already handled. The routine is entered by JSR from six driver
+// sites ($5BFE,$5E85,$5EB4,$5EDA,$5EF4,$5F1F) and also by fall-through from the
+// $5E84 wrapper's PLA, so the CPU stack is not ours to touch. Instead the skip is
+// taken at the nested-count loop head ($5E98), where the loop's exit state is
+// fully known: both direct-page counters reach zero and the PLA at $5EA1 then
+// restores $C036 from the stack exactly as before. Nothing inside the loops
+// touches a device register, and the IWM advances the media from cycleCount on
+// the next access, so the ROM's own ready polls still decide when a byte
+// arrives. The STA $C036 writes both still execute.
+const GS_SLOT5_SETTLE_PC_LOW = 0x98
+// C6 68 EA D0 FB   DEC $68; NOP; BNE (inner, 100 x DEC on $68)
+// C6 69 D0 F3      DEC $69; BNE outer
+// ...falls through to $5EA1: 68 PLA; 8D 36 C0 STA $C036; 60 RTS
+const GS_SLOT5_SETTLE_SIGNATURE = [0xc6, 0x68, 0xea, 0xd0, 0xfb, 0xc6, 0x69, 0xd0, 0xf3]
+const GS_SLOT5_SETTLE_RESUME = 0x5ea1
+let gsSlot5SettleSkipCount = 0
+export const resetGsSlot5SettleSkipCountForTesting = () => {
+  gsSlot5SettleSkipCount = 0
+}
+export const gsSlot5SettleSkipCountForTesting = () => gsSlot5SettleSkipCount
+
+const skipGsSlot5SettleDelay = () => {
+  if (!gsDiskLoadAccelerationEnabled) return
+  const gsCpu = cpu as CPU65816
+  if (gsCpu.PB !== 0xff) return
+  // Only the 3.5" path: a 5.25" selection keeps the classic drive timing.
+  if (!iigsGetIwmEnable35()) return
+  if (!iigs35FloppyHasMedia(4 + iigsGetIwmDriveSelect())) return
+  const base = ((gsCpu.PB << 16) | gsCpu.PC) >>> 0
+  for (let i = 0; i < GS_SLOT5_SETTLE_SIGNATURE.length; i++) {
+    if (memGet24((base + i) & 0xffffff) !== GS_SLOT5_SETTLE_SIGNATURE[i]) return
+  }
+  memSet24((gsCpu.D + 0x68) & 0xffff, 0)
+  memSet24((gsCpu.D + 0x69) & 0xffff, 0)
+  gsCpu.PC = GS_SLOT5_SETTLE_RESUME
+  gsSlot5SettleSkipCount++
 }
 // ---- Ensoniq DOC catch-up (shared by the run loop and every DOC access) ----
 // gssquared calls ensoniq_catch_up() before applying any $C03C-$C03F access,
@@ -1847,12 +1936,15 @@ const doAdvance6502 = () => {
   for (;;) {
     let cycles = 0
     let delaySkipped = false
-    // Aztec's GS-only loader timer: fast-forward the pure CPU delay at $BD9E
-    // instead of executing its nested counter loops. The same elapsed cycles
-    // then reach the IWM's $C0EC read path (iwmPrevCycleCount), so the disk
-    // position is exactly where it would have been after the delay; the guest
-    // resumes at $BDAB with $46/$47 already wrapped to zero.
-    if (isIIgs && (cpu as CPU65816).PC === GS_AZTEC_DELAY_PC) {
+    // The 5.25" loader timer: fast-forward the pure CPU delay instead of
+    // executing its nested counter loops. Recognised by PC low byte here and
+    // matched byte-for-byte against live RAM inside advanceGsAztecDelay(), so
+    // boot1's $3D9E copy (DOS 3.3) and the relocated $BD9E copies (DOS RWTS,
+    // Aztec) are all covered. The same elapsed cycles then reach the IWM's
+    // $C0EC read path (iwmPrevCycleCount), so the disk position is exactly
+    // where it would have been after the delay; the guest resumes at the
+    // caller's continuation with $46/$47 already wrapped to zero.
+    if (isIIgs && (cpu as CPU65816).PB === 0 && (((cpu as CPU65816).PC & 0xFF) === GS_LOADER_DELAY_PC_LOW)) {
       cycles = advanceGsAztecDelay()
       if (cycles > 0) {
         delaySkipped = true
@@ -1860,6 +1952,19 @@ const doAdvance6502 = () => {
         cycleTotal += cycles
         processCycleCountCallbacks()
       }
+    }
+    if (!delaySkipped && isIIgs && (((cpu as CPU65816).PC & 0xFF) === GS_SLOT5_ENBL_POLL_PC_LOW)) {
+      // The slot-5 /ENBL poll loop costs no guest state of its own: retiring the
+      // holdover timer here lets the very next status read answer "released",
+      // so the ROM leaves the loop as it would have after the one-second tail.
+      releaseGsSlot5EnblHoldover()
+    }
+    if (!delaySkipped && isIIgs && (((cpu as CPU65816).PC & 0xFF) === GS_SLOT5_SETTLE_PC_LOW)) {
+      // Six-byte check only runs on a PC hit, so unrelated code costs one
+      // compare. The skip leaves the CPU in the routine's documented exit state
+      // (PC past the RTS, counters zeroed, $C036 already restored) and charges
+      // no cycles: the drive advances from cycleCount on the next IWM access.
+      skipGsSlot5SettleDelay()
     }
     if (!delaySkipped && softCard.activeCpu === "Z80") {
       const stepT = softCard.stepZ80() || 4
