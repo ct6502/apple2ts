@@ -15,6 +15,7 @@ import AgentTab from "./agent/agent_tab"
 import VeraTab from "./vera/veratab"
 import { isDefaultHelp } from "./help/helpselection"
 import { SETTINGS_CHANGED_EVENT } from "../settingschange"
+import { VERA_VIDEO_STARTED_EVENT } from "../vera_events"
 import { getPanelTabVisibility } from "./paneltabs"
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, minimalPresentation?: boolean }) => {
@@ -101,7 +102,28 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean, mi
       setMachineName(handleGetMachineName())
     }
     window.addEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
-    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
+
+    // A VERA title that was not launched with an explicit tab request (a disk
+    // loaded from the Internet Archive Software Library or a local file) only
+    // announces itself by starting to draw, so open the monitor on its first
+    // frame instead of leaving the panel on whatever tab was selected.
+    const handleVeraVideoStarted = () => {
+      const visibility = getPanelTabVisibility(handleGetMachineName(), handleGetSlotConfig())
+      if (!visibility.showVeraTab) return
+      setSlotConfig({ ...handleGetSlotConfig() })
+      setMachineName(handleGetMachineName())
+      setUIStateBoolean("infoPanel", true)
+      setTabView(4)
+      setActiveTab(4)
+      passSetIsDebugging(false)
+      setFlyoutOpen(true)
+    }
+    window.addEventListener(VERA_VIDEO_STARTED_EVENT, handleVeraVideoStarted)
+
+    return () => {
+      window.removeEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged)
+      window.removeEventListener(VERA_VIDEO_STARTED_EVENT, handleVeraVideoStarted)
+    }
   }, [])
 
   const tabOrientation = props.narrow ? "horizontal" : "vertical"

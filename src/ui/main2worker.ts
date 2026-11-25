@@ -23,6 +23,7 @@ import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
 import { Buffer } from "buffer"
 import { setDialogMessageContext } from "./ui_utilities"
+import { VERA_VIDEO_STARTED_EVENT } from "./vera_events"
 
 let worker: Worker | null = null
 
@@ -942,7 +943,17 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       break
     }
     case MSG_WORKER.VERA_FRAME: {
-      latestVeraFrame = e.data.payload as VeraUiFrame
+      const frame = e.data.payload as VeraUiFrame
+      latestVeraFrame = frame
+      const isDrawing = !!frame.fb && (frame.dcVideo & 3) !== 0
+      if (isDrawing && !veraIsDrawing) {
+        veraIsDrawing = true
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event(VERA_VIDEO_STARTED_EVENT))
+        }
+      } else if (!isDrawing) {
+        veraIsDrawing = false
+      }
       break
     }
     case MSG_WORKER.ERRORMSG: {
@@ -974,6 +985,7 @@ export type VeraUiFrame = {
 }
 
 let latestVeraFrame: VeraUiFrame | null = null
+let veraIsDrawing = false
 
 export const handleGetVeraFrame = () => {
   return latestVeraFrame

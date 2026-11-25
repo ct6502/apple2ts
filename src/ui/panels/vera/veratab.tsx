@@ -262,45 +262,50 @@ const VeraTab = () => {
           onContextMenu={handleContextMenu}
         />
       </div>
-      <div style={{ display: "flex", gap: "6px", width: "100%", justifyContent: isFullscreen ? "center" : "flex-start", paddingLeft: "4px", marginTop: "8px" }}>
-        <button
-          type="button"
-          className={`push-button text-button${isHalf ? " button-active" : ""}`}
-          style={{
-            fontSize: "11px",
-            width: "auto",
-            height: "22px",
-            padding: "2px 8px",
-          }}
-          onClick={() => handleSizeChange("320")}>
-          320×240 (1x)
-        </button>
-        <button
-          type="button"
-          className={`push-button text-button${!isHalf ? " button-active" : ""}`}
-          style={{
-            fontSize: "11px",
-            width: "auto",
-            height: "22px",
-            padding: "2px 8px",
-          }}
-          onClick={() => handleSizeChange("640")}>
-          640×480 (2x)
-        </button>
-        <button
-          type="button"
-          className="push-button text-button"
-          title={isFullscreen ? "Leave fullscreen and return to the panel" : "Show the VERA screen fullscreen"}
-          style={{
-            fontSize: "11px",
-            width: "auto",
-            height: "22px",
-            padding: "2px 8px",
-          }}
-          onClick={() => { void toggleFullscreen() }}>
-          {isFullscreen ? "← Exit Full Screen" : "Full Screen ⤢"}
-        </button>
-      </div>
+      {/* Hidden while fullscreen: the row sits below the 4:3 screen, and a screen
+          scaled to the viewport leaves no room for it, so it would cover the
+          bottom line of the VERA display. Escape leaves full screen. */}
+      {!isFullscreen &&
+        <div style={{ display: "flex", gap: "6px", width: "100%", justifyContent: "flex-start", paddingLeft: "4px", marginTop: "8px" }}>
+          <button
+            type="button"
+            className={`push-button text-button${isHalf ? " button-active" : ""}`}
+            style={{
+              fontSize: "11px",
+              width: "auto",
+              height: "22px",
+              padding: "2px 8px",
+            }}
+            onClick={() => handleSizeChange("320")}>
+            320×240 (1x)
+          </button>
+          <button
+            type="button"
+            className={`push-button text-button${!isHalf ? " button-active" : ""}`}
+            style={{
+              fontSize: "11px",
+              width: "auto",
+              height: "22px",
+              padding: "2px 8px",
+            }}
+            onClick={() => handleSizeChange("640")}>
+            640×480 (2x)
+          </button>
+          <button
+            type="button"
+            className="push-button text-button"
+            title="Show the VERA screen fullscreen (Escape leaves it)"
+            style={{
+              fontSize: "11px",
+              width: "auto",
+              height: "22px",
+              padding: "2px 8px",
+            }}
+            onClick={() => { void toggleFullscreen() }}>
+            Full Screen ⤢
+          </button>
+        </div>
+      }
     </div>
   )
 }
