@@ -1683,6 +1683,15 @@ const memGetSoftSwitch = (addr: number): number => {
   }
 
   if (addr >= 0xC090) {
+    // An empty slot's $C0n0-$C0nF I/O space returns the floating bus, as the
+    // empty slot's $Cn00 ROM space does. Russki Duck's loader overwrites its
+    // slot variable with $2A and then waits for a byte at $C0B6 with bit 7 set;
+    // on a real Apple II that read gets the video byte and the wait ends.
+    // The IIgs keeps the old behavior for now.
+    if (currentMachineName !== "APPLE2GS" &&
+      slotIOCallbackTable[(addr - 0xC080) >> 4] === undefined) {
+      return getFloatingBus()
+    }
     checkSlotIO(addr)
   } else {
     checkSoftSwitches(addr, false, s6502.cycleCount)

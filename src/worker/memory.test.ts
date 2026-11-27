@@ -15,6 +15,9 @@ import {
   setMemoryBlock,
   setAuxCardEnabled,
   updateAddressTables,
+  clearSlot,
+  setFloatingBus,
+  setSlotIOCallback,
 } from "./memory"
 import { hiresLineToAddress, RamWorksMemoryStart } from "../common/utility"
 import { setIsTesting } from "./worker2main"
@@ -1221,5 +1224,24 @@ test("memory block wraps from $FFFF to $0000", () => {
     expect(memory.slice(0x10000, RamWorksMemoryStart)).toEqual(romArea)
   } finally {
     resetBlockSwitches()
+  }
+})
+
+test("an empty slot's $C0n0 I/O returns the floating bus on the Apple II+", () => {
+  doSetRom("APPLE2P")
+  memoryReset()
+  try {
+    clearSlot(3)
+    setFloatingBus(0xA0)
+    expect(memGet(0xC0B6)).toBe(0xA0)
+    setFloatingBus(0x5A)
+    expect(memGet(0xC0B0)).toBe(0x5A)
+    // A card in the slot still answers its own I/O.
+    setSlotIOCallback(3, () => 0x42)
+    expect(memGet(0xC0B6)).toBe(0x42)
+  } finally {
+    clearSlot(3)
+    doSetRom("APPLE2EE")
+    memoryReset()
   }
 })
