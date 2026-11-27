@@ -4,7 +4,7 @@ import * as fs from "fs"
 import path from "path"
 import { convertdsk2woz } from "../../common/convertdsk2woz"
 import { FLUX_KIND, uint32toBytes } from "../../common/utility"
-import { FLUX_CELL_CYCLES, FLUX_CPU_HZ } from "./fluxtrack"
+import { FLUX_CELL_CYCLES, FLUX_CPU_HZ, fluxJitterAt, fluxPassOf } from "./fluxtrack"
 
 // Real test images, from the folders named by FLUX_TEST_IMAGES (a list, split
 // like PATH). Tests that need them are skipped when they are absent.
@@ -148,7 +148,10 @@ export const lapCapture = (location: number, lap: number[], laps: number): TestC
 // out here independently of fluxtrack.ts. fluxLand starts from the nearest
 // seek checkpoint instead, and the tests check that it gives exactly the
 // cursor this walk gives.
-export const fluxLandWalk = (ds: DriveState, dd: Uint8Array, q: number, frac: number) => {
+// `jitter` is the flux module whose jitter the walk applies: a test that loads
+// its own copy of fluxtrack.ts passes that copy.
+export const fluxLandWalk = (ds: DriveState, dd: Uint8Array, q: number, frac: number,
+  jitter: { fluxJitterAt: typeof fluxJitterAt, fluxPassOf: typeof fluxPassOf } = { fluxJitterAt, fluxPassOf }) => {
   const next = () => {
     const end = ds.fluxLapEnd[q]
     if (ds.fluxByte >= end) {
@@ -164,7 +167,10 @@ export const fluxLandWalk = (ds: DriveState, dd: Uint8Array, q: number, frac: nu
       sum += value
     }
     ds.fluxTicks += sum
-    const intervalEnd = ds.fluxTicks * ds.fluxPsPerTick * (FLUX_CPU_HZ / 1e12)
+    // The selected jitter: the transition moves by fluxtrack's jitter for its
+    // byte and pass, never the running total.
+    const intervalEnd = (ds.fluxTicks + jitter.fluxJitterAt(ds.fluxByte, jitter.fluxPassOf(ds))) *
+      ds.fluxPsPerTick * (FLUX_CPU_HZ / 1e12)
     ds.fluxIntervalStart = ds.fluxIntervalEnd
     ds.fluxIntervalLength = intervalEnd - ds.fluxIntervalEnd
     ds.fluxIntervalEnd = intervalEnd
@@ -178,7 +184,8 @@ export const fluxLandWalk = (ds: DriveState, dd: Uint8Array, q: number, frac: nu
   ds.fluxIntervalEnd = 0
   ds.fluxCycle = 0
   next()
-  while (ds.fluxIntervalEnd <= target && ds.fluxByte < ds.fluxLapEnd[q]) next()
+  // Which interval holds the target is decided without the jitter.
+  while (ds.fluxTicks * ds.fluxPsPerTick * (FLUX_CPU_HZ / 1e12) <= target && ds.fluxByte < ds.fluxLapEnd[q]) next()
   ds.fluxCycle = target
   while (ds.fluxBitIndex < ds.fluxBitsInInterval - 1 &&
     ds.fluxIntervalStart + (ds.fluxBitIndex + 1) * ds.fluxIntervalLength / ds.fluxBitsInInterval <= target) {

@@ -197,7 +197,7 @@ test("an A2R3 snapshot restored with the same A2R3 mounted plays on from the sav
       const a = { ...ds }
       const b = { ...ds }
       m.flux.fluxLand(a, dd, q, frac)
-      fluxLandWalk(b, dd, q, frac)
+      fluxLandWalk(b, dd, q, frac, m.flux)
       expect(fluxCursor(a)).toEqual(fluxCursor(b))
     }
   }

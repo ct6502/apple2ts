@@ -15,6 +15,7 @@ import { FLUX_KIND } from "../../common/utility"
 // Each interval becomes max(1, round(interval / cell)) bits, zeros and then a
 // 1 at the transition, spread evenly across the interval. We do not add
 // synthetic weak bits here: a long run with no flux simply gives many zeros.
+// Every transition is moved by a small jitter, new on each revolution (below).
 //
 // Writes are never applied to flux tracks, so the disk is write protected.
 
@@ -43,6 +44,35 @@ export const fluxLoopTicks = (dd: Uint8Array, start: number, end: number) => {
   return ticks
 }
 
+// Jitter. A real drive never reads a transition at exactly the same time twice,
+// and some protections depend on it: an interval near 6 us (1.5 cells) reads
+// as one cell on some revolutions and two on others. With a fixed time it
+// always rounds the same way. Repton's track 34 holds about 8,200 such
+// intervals per revolution, and its flux only boots with the jitter.
+//
+// Every flux transition moves by a whole number of ticks from -fluxJitterTicks
+// to +fluxJitterTicks, a new value each time the head passes it, so every
+// revolution differs. The jitter moves the transition, not the running tick
+// total, so it never adds up and the track keeps its time. The value is a hash
+// of the transition's place in the data (the byte after its interval) and of
+// how many times this drive has passed a loop's seam, so it is the same for any
+// walk that reaches that transition on that pass, and the same on every boot.
+export let fluxJitterTicks = 2
+export const setFluxJitterTicks = (ticks: number) => { fluxJitterTicks = ticks }
+
+// The number of loop seams each drive has passed, by drive index.
+const fluxPasses: number[] = []
+export const fluxPassOf = (ds: DriveState) => fluxPasses[ds.index] ?? 0
+
+export const fluxJitterAt = (byte: number, pass: number) => {
+  if (fluxJitterTicks <= 0) return 0
+  let h = (Math.imul(byte, 0x9E3779B1) ^ Math.imul(pass + 1, 0x85EBCA6B)) >>> 0
+  h = Math.imul(h ^ (h >>> 16), 0x7FEB352D) >>> 0
+  h = Math.imul(h ^ (h >>> 15), 0x846CA68B) >>> 0
+  h = (h ^ (h >>> 16)) >>> 0
+  return (h % (2 * fluxJitterTicks + 1)) - fluxJitterTicks
+}
+
 // Read the next interval into the cursor. At the end of the loop we go back to
 // its start and keep the time continuous, which is the seam of the loop.
 const nextInterval = (ds: DriveState, dd: Uint8Array, qtrtrack: number) => {
@@ -51,7 +81,9 @@ const nextInterval = (ds: DriveState, dd: Uint8Array, qtrtrack: number) => {
     ds.fluxByte = ds.fluxLapStart[qtrtrack]
     ds.fluxTicks = 0
     ds.fluxCycle -= ds.fluxLoopCycles[qtrtrack]
-    ds.fluxIntervalEnd = 0
+    // The last transition may have been jittered past the loop's end.
+    ds.fluxIntervalEnd -= ds.fluxLoopCycles[qtrtrack]
+    fluxPasses[ds.index] = fluxPassOf(ds) + 1
   }
   let sum = 0
   let value = 255
@@ -60,7 +92,8 @@ const nextInterval = (ds: DriveState, dd: Uint8Array, qtrtrack: number) => {
     sum += value
   }
   ds.fluxTicks += sum
-  const intervalEnd = fluxTicksToCycles(ds.fluxTicks, ds.fluxPsPerTick)
+  const jitter = fluxJitterAt(ds.fluxByte, fluxPassOf(ds))
+  const intervalEnd = fluxTicksToCycles(ds.fluxTicks + jitter, ds.fluxPsPerTick)
   ds.fluxIntervalStart = ds.fluxIntervalEnd
   ds.fluxIntervalLength = intervalEnd - ds.fluxIntervalEnd
   ds.fluxIntervalEnd = intervalEnd
@@ -167,12 +200,17 @@ export const fluxLand = (ds: DriveState, dd: Uint8Array, qtrtrack: number, fract
   }
   ds.fluxByte = checkpoints.bytes[lo]
   ds.fluxTicks = checkpoints.ticks[lo]
-  ds.fluxIntervalEnd = fluxTicksToCycles(ds.fluxTicks, ds.fluxPsPerTick)
+  // The transition just before a checkpoint keeps its jitter, as on the walk.
+  // The loop start has no transition before it in this pass.
+  const jitter = ds.fluxByte > ds.fluxLapStart[qtrtrack] ? fluxJitterAt(ds.fluxByte, fluxPassOf(ds)) : 0
+  ds.fluxIntervalEnd = fluxTicksToCycles(ds.fluxTicks + jitter, ds.fluxPsPerTick)
   ds.fluxCycle = 0
   nextInterval(ds, dd, qtrtrack)
   // Walk to the interval that holds the target. A loop is at least one
-  // revolution long, so this stops before the seam.
-  while (ds.fluxIntervalEnd <= target && ds.fluxByte < ds.fluxLapEnd[qtrtrack]) {
+  // revolution long, so this stops before the seam. Where we land is decided
+  // by the transitions' times without jitter, which always run forward.
+  while (fluxTicksToCycles(ds.fluxTicks, ds.fluxPsPerTick) <= target &&
+    ds.fluxByte < ds.fluxLapEnd[qtrtrack]) {
     nextInterval(ds, dd, qtrtrack)
   }
   ds.fluxCycle = target
