@@ -59,7 +59,7 @@ export const getHeatMapRGBValues = (heatMapValue: number, heatMapMax: number,
   // rewritten was indistinguishable from memory nothing ever wrote to.
   // Floor any actually-touched cell at bucket 0 instead of letting it
   // fall through.
-  const value = heatMapValue > 0 ? Math.max(0, Math.floor(16 * logscale) - 1) : -1
+  const value = heatMapValue > 0 ? Math.min(15, Math.max(0, Math.floor(16 * logscale) - 1)) : -1
   if (value >= 0) {
     const [r, g, b] = colorTable[value]
     return [r, g, b, 255]

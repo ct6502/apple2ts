@@ -13,6 +13,7 @@ import { doBoot, doSetRunMode } from "../../motherboard"
 import { s6502 } from "../../instructions"
 import { processInstruction } from "../../cpu6502"
 import { RUN_MODE } from "../../../common/utility"
+import { handleGameSetup } from "../../games/game_mappings"
 
 export const testDiskImage = async (disk: string, address: number, minCycleCount: number, maxCycleCount: number) => {
   setIsTesting()
@@ -72,6 +73,9 @@ export const testDiskImage = async (disk: string, address: number, minCycleCount
   if (s6502.cycleCount >= 0) {
     for (let i = 0; i < 15000000; i++) {
       processInstruction()
+      // Watch out for special "hacks" like the one that
+      // allows Red Alert to boot.
+      if (i % 1000 === 0) handleGameSetup()
       if (s6502.PC === address && s6502.cycleCount > minCycleCount) {
         break
       }

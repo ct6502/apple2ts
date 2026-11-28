@@ -13,6 +13,7 @@ import { noxarchaist } from "./noxarchaist"
 import { one_on_one } from "./one_on_one"
 import { princeofpersia } from "./princeofpersia"
 import { printshop } from "./printshop"
+import { redalert } from "./redalert"
 import { robotron } from "./robotron"
 import { snoggle } from "./snoggle"
 import { tasstimes } from "./tasstimes"
@@ -49,6 +50,7 @@ AddGameLibraryItem(tasstimes)
 AddGameLibraryItem(ultima4)
 AddGameLibraryItem(ultima5)
 AddGameLibraryItem(wizardry)
+AddGameLibraryItem(redalert)
 AddGameLibraryItem(wolfenstein)
 AddGameLibraryItem(wolfenstein_splash)
 AddGameLibraryItem(beyondwolf)
