@@ -15,6 +15,7 @@ import { FLUX_KIND } from "../../common/utility"
 // Each interval becomes max(1, round(interval / cell)) bits, zeros and then a
 // 1 at the transition, spread evenly across the interval. We do not add
 // synthetic weak bits here: a long run with no flux simply gives many zeros.
+// Every transition is moved by a small jitter, new on each revolution (below).
 //
 // Writes are never applied to flux tracks, so the disk is write protected.
 
@@ -43,6 +44,58 @@ export const fluxLoopTicks = (dd: Uint8Array, start: number, end: number) => {
   return ticks
 }
 
+// Jitter on marginal intervals. A real drive reads an interval near one of the
+// Disk II's decode lines (1.5, 2.5 and 3.5 cells: 6, 10 and 14 us) as the
+// shorter value on some revolutions and the longer on others, and some
+// protections depend on it. Played at a fixed time, it always rounds the same
+// way. Repton's track 34 holds about 8,200 intervals near 6 us per revolution,
+// and its flux only boots with the jitter.
+//
+// An interval within fluxJitterTicks steps of 125 ns (one WOZ tick) of a line
+// moves by -fluxJitterTicks..+fluxJitterTicks steps, a new value each time the
+// head passes it, so every revolution differs. The interval keeps its move, so
+// the transitions after it carry it: a revolution varies by a few us, far less
+// than a real drive's speed varies. Every other interval plays exactly as
+// captured. Moving every transition instead changed intervals by up to 500 ns
+// and broke Fly Wars on real hardware, whose 6.5 us intervals must stay on
+// their side of the line.
+//
+// The value is a hash of the interval's place in the data (the byte after it)
+// and of how many times this drive has passed a loop's seam, so a boot is
+// repeatable. A seek lands with nothing carried, on the times without jitter.
+export let fluxJitterTicks = 2
+export const setFluxJitterTicks = (ticks: number) => { fluxJitterTicks = ticks }
+
+// One step of jitter, and the decode lines, in picoseconds.
+export const FLUX_JITTER_STEP_PS = 125000
+const FLUX_LINES_PS = [6e6, 10e6, 14e6]
+
+// Whether an interval of `ps` picoseconds is within the jitter of a line.
+export const fluxIsMarginal = (ps: number) => {
+  const window = fluxJitterTicks * FLUX_JITTER_STEP_PS
+  return window > 0 && FLUX_LINES_PS.some(line => Math.abs(ps - line) <= window)
+}
+
+// The number of loop seams each drive has passed, by drive index.
+const fluxPasses: number[] = []
+export const fluxPassOf = (ds: DriveState) => fluxPasses[ds.index] ?? 0
+
+// The moves each drive's transitions carry, in picoseconds, by drive index.
+const fluxCarry: number[] = []
+export const fluxCarryOf = (ds: DriveState) => fluxCarry[ds.index] ?? 0
+
+// While a seek lands, intervals are read without jitter.
+let fluxLanding = false
+
+export const fluxJitterAt = (byte: number, pass: number) => {
+  if (fluxJitterTicks <= 0) return 0
+  let h = (Math.imul(byte, 0x9E3779B1) ^ Math.imul(pass + 1, 0x85EBCA6B)) >>> 0
+  h = Math.imul(h ^ (h >>> 16), 0x7FEB352D) >>> 0
+  h = Math.imul(h ^ (h >>> 15), 0x846CA68B) >>> 0
+  h = (h ^ (h >>> 16)) >>> 0
+  return (h % (2 * fluxJitterTicks + 1)) - fluxJitterTicks
+}
+
 // Read the next interval into the cursor. At the end of the loop we go back to
 // its start and keep the time continuous, which is the seam of the loop.
 const nextInterval = (ds: DriveState, dd: Uint8Array, qtrtrack: number) => {
@@ -51,7 +104,9 @@ const nextInterval = (ds: DriveState, dd: Uint8Array, qtrtrack: number) => {
     ds.fluxByte = ds.fluxLapStart[qtrtrack]
     ds.fluxTicks = 0
     ds.fluxCycle -= ds.fluxLoopCycles[qtrtrack]
-    ds.fluxIntervalEnd = 0
+    // The last transition may carry a move past the loop's end.
+    ds.fluxIntervalEnd -= ds.fluxLoopCycles[qtrtrack]
+    fluxPasses[ds.index] = fluxPassOf(ds) + 1
   }
   let sum = 0
   let value = 255
@@ -60,7 +115,11 @@ const nextInterval = (ds: DriveState, dd: Uint8Array, qtrtrack: number) => {
     sum += value
   }
   ds.fluxTicks += sum
-  const intervalEnd = fluxTicksToCycles(ds.fluxTicks, ds.fluxPsPerTick)
+  if (!fluxLanding && fluxIsMarginal(sum * ds.fluxPsPerTick)) {
+    fluxCarry[ds.index] = fluxCarryOf(ds) +
+      fluxJitterAt(ds.fluxByte, fluxPassOf(ds)) * FLUX_JITTER_STEP_PS
+  }
+  const intervalEnd = fluxTicksToCycles(ds.fluxTicks + fluxCarryOf(ds) / ds.fluxPsPerTick, ds.fluxPsPerTick)
   ds.fluxIntervalStart = ds.fluxIntervalEnd
   ds.fluxIntervalLength = intervalEnd - ds.fluxIntervalEnd
   ds.fluxIntervalEnd = intervalEnd
@@ -169,12 +228,16 @@ export const fluxLand = (ds: DriveState, dd: Uint8Array, qtrtrack: number, fract
   ds.fluxTicks = checkpoints.ticks[lo]
   ds.fluxIntervalEnd = fluxTicksToCycles(ds.fluxTicks, ds.fluxPsPerTick)
   ds.fluxCycle = 0
+  // A landing carries no move, and walks the times without jitter.
+  fluxCarry[ds.index] = 0
+  fluxLanding = true
   nextInterval(ds, dd, qtrtrack)
   // Walk to the interval that holds the target. A loop is at least one
   // revolution long, so this stops before the seam.
   while (ds.fluxIntervalEnd <= target && ds.fluxByte < ds.fluxLapEnd[qtrtrack]) {
     nextInterval(ds, dd, qtrtrack)
   }
+  fluxLanding = false
   ds.fluxCycle = target
   while (ds.fluxBitIndex < ds.fluxBitsInInterval - 1 &&
     ds.fluxIntervalStart + (ds.fluxBitIndex + 1) * ds.fluxIntervalLength / ds.fluxBitsInInterval <= target) {

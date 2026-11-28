@@ -1,5 +1,6 @@
-import { FLUX_CELL_CYCLES, FLUX_CPU_HZ, fluxAdvance, fluxAngle, fluxLand, fluxLoopTicks,
-  fluxTicksToCycles } from "./fluxtrack"
+import { FLUX_CELL_CYCLES, FLUX_CPU_HZ, FLUX_JITTER_STEP_PS, fluxAdvance, fluxAngle, fluxIsMarginal,
+  fluxJitterAt, fluxJitterTicks, fluxLand, fluxLoopTicks, fluxPassOf, fluxTicksToCycles,
+  setFluxJitterTicks } from "./fluxtrack"
 import { blankFluxDriveState, encodeFlux, lcg } from "./fluxtest_utils"
 
 // Put a loop of flux bytes at q, starting at `start` in dd.
@@ -12,6 +13,47 @@ const installLoop = (ds: DriveState, dd: Uint8Array, q: number, start: number,
   ds.fluxLapEnd[q] = end
   ds.fluxLoopCycles[q] = loop
   ds.fluxRevCycles[q] = revTicks ? fluxTicksToCycles(revTicks, ds.fluxPsPerTick) : loop
+}
+
+// The bits the player must give, worked out here from the intervals. The first
+// interval is where the head lands, read without jitter. After it, a marginal
+// interval (fluxIsMarginal) adds fluxJitterAt(byte after it, pass) steps of
+// 125 ns to the move every later transition carries. Each interval between two
+// transitions is max(1, round(length / cell)) bits, zeros and then a 1.
+// Only the bits at or before `cycles` from the landing are given.
+const expectedBits = (ps: number, intervals: number[], start: number, pass: number,
+  laps: number, cycles: number) => {
+  const loop = fluxTicksToCycles(intervals.reduce((a, b) => a + b, 0), ps)
+  const out: number[] = []
+  let prevEnd = 0
+  let carry = 0
+  let first = true
+  for (let lap = 0; lap < laps; lap++) {
+    let byte = start
+    let cum = 0
+    for (const iv of intervals) {
+      byte += Math.floor(iv / 255) + 1
+      cum += iv
+      if (!first && fluxIsMarginal(iv * ps)) carry += fluxJitterAt(byte, pass + lap) * FLUX_JITTER_STEP_PS
+      first = false
+      const end = lap * loop + fluxTicksToCycles(cum + carry / ps, ps)
+      const len = end - prevEnd
+      const k = Math.max(1, Math.round(len / FLUX_CELL_CYCLES))
+      for (let m = 1; m <= k; m++) {
+        if (prevEnd + m * len / k > cycles) return out
+        out.push(m === k ? 1 : 0)
+      }
+      prevEnd = end
+    }
+  }
+  return out
+}
+
+// Run `fn` with the jitter set to `ticks`, then put the selected jitter back.
+const withJitter = (ticks: number, fn: () => void) => {
+  const selected = fluxJitterTicks
+  setFluxJitterTicks(ticks)
+  try { fn() } finally { setFluxJitterTicks(selected) }
 }
 
 test("the time base is the emulator's CPU rate and the cell is 4 us of it", () => {
@@ -77,10 +119,38 @@ const bitsOf = (ps: number, intervals: number[], cycles: number) => {
 }
 
 test("the 1-vs-2-cell boundary is 6.0 us: 95 ticks of 62.5 ns is one cell, 97 is two", () => {
-  const one = bitsOf(62500, [95, 95, 95], fluxTicksToCycles(3 * 95, 62500))
-  expect(one).toEqual([1, 1, 1])
-  const two = bitsOf(62500, [97, 97, 97], fluxTicksToCycles(3 * 97, 62500))
-  expect(two).toEqual([0, 1, 0, 1, 0, 1])
+  withJitter(0, () => {
+    const one = bitsOf(62500, [95, 95, 95], fluxTicksToCycles(3 * 95, 62500))
+    expect(one).toEqual([1, 1, 1])
+    const two = bitsOf(62500, [97, 97, 97], fluxTicksToCycles(3 * 97, 62500))
+    expect(two).toEqual([0, 1, 0, 1, 0, 1])
+  })
+})
+
+test("only a marginal interval moves, by the selected jitter, and keeps its move", () => {
+  // 98 ticks of 61,111 ps = 5.989 us (marginal) and 131 = 8.006 us (not):
+  // never exactly 1.5 cells, so no interval rounds on a knife edge.
+  const ps = 61111
+  const intervals: number[] = []
+  for (let i = 0; i < 600; i++) intervals.push(i % 2 ? 98 : 131)
+  expect(fluxIsMarginal(98 * ps)).toBe(fluxJitterTicks > 0)
+  expect(fluxIsMarginal(131 * ps)).toBe(false)
+  const bytes = encodeFlux(intervals)
+  const dd = new Uint8Array(bytes.length)
+  const ds = blankFluxDriveState(ps)
+  installLoop(ds, dd, 0, 0, bytes)
+  const pass = fluxPassOf(ds)
+  const loop = ds.fluxLoopCycles[0]
+  fluxLand(ds, dd, 0, 0)
+  const out: number[] = []
+  fluxAdvance(ds, dd, 0, 2 * loop, b => out.push(b))
+  expect(out).toEqual(expectedBits(ps, intervals, 0, pass, 3, 2 * loop))
+  if (fluxJitterTicks > 0) {
+    // An 8 us interval is "01" every time; a 6 us one reads "1" (one cell)
+    // on some passes and "01" (two) on others.
+    expect(out.join("")).toContain("01101")
+    expect(out.join("")).toContain("010101")
+  }
 })
 
 test("a 1-tick interval still gives a transition", () => {
@@ -104,17 +174,22 @@ test("the seam: the loop repeats with time continuous", () => {
   const ds = blankFluxDriveState(ps)
   installLoop(ds, dd, 0, 0, bytes)
   const loop = ds.fluxLoopCycles[0]
+  const pass = fluxPassOf(ds)
   fluxLand(ds, dd, 0, 0)
   const out: number[] = []
   // Advance 3 whole loops in odd steps
   let t = 0
   while (t + 7.3 < 3 * loop) { fluxAdvance(ds, dd, 0, 7.3, b => out.push(b)); t += 7.3 }
   fluxAdvance(ds, dd, 0, 3 * loop - t, b => out.push(b))
-  const perLoop = out.length / 3
-  expect(Number.isInteger(perLoop)).toBe(true)
-  expect(out.slice(perLoop, 2 * perLoop)).toEqual(out.slice(0, perLoop))
-  expect(out.slice(2 * perLoop)).toEqual(out.slice(0, perLoop))
-  expect(out.filter(b => b === 1).length).toBe(1500)
+  // Each pass moves its own marginal intervals; the bits are those of the passes.
+  expect(out).toEqual(expectedBits(ps, intervals, 0, pass, 4, 3 * loop))
+  if (fluxJitterTicks === 0) {
+    const perLoop = out.length / 3
+    expect(Number.isInteger(perLoop)).toBe(true)
+    expect(out.slice(perLoop, 2 * perLoop)).toEqual(out.slice(0, perLoop))
+    expect(out.slice(2 * perLoop)).toEqual(out.slice(0, perLoop))
+    expect(out.filter(b => b === 1).length).toBe(1500)
+  }
   expect(fluxAngle(ds, 0)).toBeCloseTo(0, 9)
 })
 
